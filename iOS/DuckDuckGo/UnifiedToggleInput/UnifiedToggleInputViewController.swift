@@ -29,6 +29,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapDismiss(_ vc: UnifiedToggleInputViewController)
 }
 
@@ -48,7 +49,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: isToggleEnabled)
 
     // MARK: - Public API
 
@@ -125,6 +126,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     func updateToggleEnabled(_ enabled: Bool) {
+        handler.isToggleEnabled = enabled
         inputBarView.updateToggleEnabled(enabled)
     }
 
@@ -174,6 +176,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapVoice(self)
+    }
+
+    func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapSearchGoTo(self)
     }
 
     func unifiedToggleInputViewDidTapDismiss(_ view: UnifiedToggleInputView) {

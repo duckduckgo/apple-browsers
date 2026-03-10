@@ -159,6 +159,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func showCollapsed() {
         displayState = .aiTab(.collapsed)
+        inputMode = .aiChat
         viewController.setExpanded(false, animated: false)
         viewController.deactivateInput()
         intentSubject.send(.showCollapsed)
@@ -243,7 +244,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
-        let effectiveMode: TextEntryMode = isToggleEnabled ? mode : .search
+        let effectiveMode: TextEntryMode = (!isToggleEnabled && isInlineEditingSession) ? .search : mode
         inputMode = effectiveMode
         viewController.setInputMode(effectiveMode, animated: animated)
         modeChangeSubject.send(effectiveMode)
@@ -258,7 +259,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
-        let effectiveMode: TextEntryMode = isToggleEnabled ? mode : .search
+        let effectiveMode: TextEntryMode = (!isToggleEnabled && isInlineEditingSession) ? .search : mode
         let didModeChange = inputMode != effectiveMode
         inputMode = effectiveMode
         if didModeChange || effectiveMode != mode {
@@ -418,6 +419,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidRequestVoiceSearch()
+    }
+
+    func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {
+        updateInputMode(.search, animated: true)
     }
 
     func unifiedToggleInputVCDidTapDismiss(_ vc: UnifiedToggleInputViewController) {

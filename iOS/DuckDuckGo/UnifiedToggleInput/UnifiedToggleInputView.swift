@@ -30,6 +30,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
     func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapDismiss(_ view: UnifiedToggleInputView)
 }
 
@@ -56,6 +57,7 @@ final class UnifiedToggleInputView: UIView {
 
     private enum Constants {
         static let collapsedCardHeight: CGFloat = 44
+        static let toggleDisabledBottomInputHeight: CGFloat = 56
         static let cardHorizontalMargin: CGFloat = 16
         static let cardVerticalMargin: CGFloat = 8
         static let cardCornerRadiusExpanded: CGFloat = 24
@@ -307,7 +309,14 @@ final class UnifiedToggleInputView: UIView {
             expandedShadow1.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 2 : -2)
         }
         cardView.layer.shadowOpacity = expanded ? 0 : 1.0
-        cardCollapsedHeightConstraint.isActive = !expanded
+        let useToggleDisabledBottomHeight = expanded && !isToggleEnabled && cardPosition == .bottom
+        if useToggleDisabledBottomHeight {
+            cardCollapsedHeightConstraint.constant = Constants.toggleDisabledBottomInputHeight
+            cardCollapsedHeightConstraint.isActive = true
+        } else {
+            cardCollapsedHeightConstraint.constant = Constants.collapsedCardHeight
+            cardCollapsedHeightConstraint.isActive = !expanded
+        }
 
         let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         let expandedCorners: CACornerMask = (cardPosition == .top || usesInlineEditingMargins)
@@ -392,7 +401,7 @@ final class UnifiedToggleInputView: UIView {
     private func updateToolbarVisibility(for mode: TextEntryMode, animated: Bool) {
         guard isExpanded else { return }
 
-        let showToolbar = isToggleEnabled && mode == .aiChat
+        let showToolbar = mode == .aiChat
         toolbarHeightConstraint.constant = showToolbar ? 56 : 0
         cardView.layer.borderWidth = showToolbar ? 0.5 : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
@@ -565,6 +574,14 @@ private extension UnifiedToggleInputView {
             .sink { [weak self] in
                 guard let self else { return }
                 delegate?.unifiedToggleInputViewDidTapVoice(self)
+            }
+            .store(in: &cancellables)
+
+        handler.searchGoToButtonTappedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                delegate?.unifiedToggleInputViewDidTapSearchGoTo(self)
             }
             .store(in: &cancellables)
     }

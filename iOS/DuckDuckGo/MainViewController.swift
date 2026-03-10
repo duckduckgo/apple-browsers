@@ -271,7 +271,6 @@ class MainViewController: UIViewController {
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
-    var unifiedInputContentViewController: UnifiedInputContentContainerViewController?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
@@ -830,16 +829,13 @@ class MainViewController: UIViewController {
 
     var keyboardShowing = false
     private var didSendGestureDismissPixel: Bool = false
-    private var latestKeyboardFrame: CGRect = .zero
+    var latestKeyboardFrame: CGRect = .zero
 
     @objc
     private func keyboardDidShow() {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
-
-        // Dismiss contextual sheet if keyboard is for background web view
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
-        reconcileUnifiedToggleInputLayout(reason: .keyboardDidShow)
     }
 
     private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
@@ -874,14 +870,11 @@ class MainViewController: UIViewController {
         didSendGestureDismissPixel = false
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.reconcileUnifiedToggleInputLayout(reason: .keyboardDidHide)
+            self?.autoCollapseExpandedUTIIfNeeded()
         }
 
         if #available(iOS 26, *) {
-            // Make sure the UI adjusts properly.
-            // Fix for a weird behavior on iOS 26, firing `keyboardWillChangeFrame` event
-            // with the same frame when keyboard is shown and hidden rapidly.
-            // https://app.asana.com/1/137249556945/project/414709148257752/task/1211140989378405
+            latestKeyboardFrame = .zero
             adjustUI(withKeyboardFrame: .zero)
         }
     }
@@ -894,95 +887,22 @@ class MainViewController: UIViewController {
         return true
     }
 
-    private var isExpandedUTIOnAITab: Bool {
-        guard unifiedToggleInputFeature.isAvailable,
-              currentTab?.isAITab == true,
-              let displayState = unifiedToggleInputCoordinator?.displayState,
-              case .aiTab(.expanded) = displayState else { return false }
-        return true
-    }
-
-    private var isNavigationBarEffectivelyAtBottom: Bool {
+    var isNavigationBarEffectivelyAtBottom: Bool {
         if appSettings.currentAddressBarPosition.isBottom {
             return true
         }
         return isAnyAITabUTIState
     }
 
-    enum UnifiedToggleInputLayoutReconcileReason {
-        case intent
-        case keyboardDidShow
-        case keyboardDidHide
-        case aiTabRefresh
-        case modeChange
-        case addressBarPositionChanged
-    }
-
-    func reconcileUnifiedToggleInputLayout(reason: UnifiedToggleInputLayoutReconcileReason = .intent) {
+    func autoCollapseExpandedUTIIfNeeded() {
         guard unifiedToggleInputFeature.isAvailable,
               currentTab?.isAITab == true,
-              let coordinator = unifiedToggleInputCoordinator else {
-            return
-        }
-
-        let isContextualSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented == true
-        let shouldAssumeKeyboardVisibleForExpandedUTI =
-            isExpandedUTIOnAITab &&
-            coordinator.viewController.isInputFirstResponder &&
-            !latestKeyboardFrame.equalTo(.zero)
-
-        let keyboardFrame = (keyboardShowing || shouldAssumeKeyboardVisibleForExpandedUTI) ? latestKeyboardFrame : .zero
-        let isKeyboardVisible = keyboardShowing || !keyboardFrame.equalTo(.zero)
-        let shouldAutoExpandFromCollapsed =
-            reason == .aiTabRefresh ||
-            (reason == .keyboardDidShow && coordinator.viewController.isInputFirstResponder)
-        let shouldAutoCollapseFromExpanded = reason == .keyboardDidHide
-
-        switch coordinator.displayState {
-        case .aiTab(.collapsed):
-            if shouldAutoExpandFromCollapsed &&
-                isKeyboardVisible &&
-                !isContextualSheetPresented {
-                coordinator.showExpanded(inputMode: coordinator.inputMode)
-                return
-            }
-            viewCoordinator.showUnifiedToggleInput()
-            viewCoordinator.constraints.navigationBarContainerHeight.constant = viewCoordinator.standardNavigationBarContainerHeight
-
-        case .aiTab(.expanded):
-            if shouldAutoCollapseFromExpanded &&
-                !isKeyboardVisible &&
-                !isContextualSheetPresented &&
-                !coordinator.viewController.isInputFirstResponder {
-                coordinator.showCollapsed()
-                return
-            }
-
-            viewCoordinator.showUnifiedToggleInput()
-            let expandedHeight = max(
-                coordinator.inlineEditingHeight(),
-                viewCoordinator.standardNavigationBarContainerHeight
-            )
-            viewCoordinator.constraints.navigationBarContainerHeight.constant = expandedHeight
-
-            let shouldRestoreInputFocus =
-                reason == .modeChange &&
-                isKeyboardVisible &&
-                !isContextualSheetPresented &&
-                !coordinator.viewController.isInputFirstResponder
-
-            if shouldRestoreInputFocus {
-                DispatchQueue.main.async { [weak coordinator] in
-                    guard let coordinator, case .aiTab(.expanded) = coordinator.displayState else { return }
-                    coordinator.activateInput()
-                }
-            }
-
-            adjustUI(withKeyboardFrame: keyboardFrame, in: 0, animationCurve: .curveEaseInOut)
-
-        case .inline, .hidden:
-            break
-        }
+              let coordinator = unifiedToggleInputCoordinator,
+              case .aiTab(.expanded) = coordinator.displayState,
+              !keyboardShowing,
+              !coordinator.viewController.isInputFirstResponder,
+              currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
+        coordinator.showCollapsed()
     }
 
     private func setUpToolbarButtonsActions() {
@@ -1096,11 +1016,10 @@ class MainViewController: UIViewController {
     }
 
     @objc func onAddressBarPositionChanged() {
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         if !isAnyAITabUTIState {
-            viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         }
-        reconcileUnifiedToggleInputLayout(reason: .addressBarPositionChanged)
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
     }
@@ -1185,38 +1104,34 @@ class MainViewController: UIViewController {
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
-    private func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
+    func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
+        let keyboardVisible = intersection.height > 0
         keyboardHeight = keyboardFrameInView.height
+        updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
         guard isNavigationBarEffectivelyAtBottom else { return }
 
-        let isAITabDisplayState: Bool
-        if let displayState = unifiedToggleInputCoordinator?.displayState, case .aiTab = displayState {
-            isAITabDisplayState = true
-        } else {
-            isAITabDisplayState = false
-        }
+        let displayState = unifiedToggleInputCoordinator?.displayState
+        let isInlineActive = unifiedToggleInputCoordinator?.isInlineEditingSession == true
 
         let baseInputHeight: CGFloat
-        if isAITabDisplayState, let coordinator = unifiedToggleInputCoordinator {
-            let expandedHeight = coordinator.inlineEditingHeight()
-            baseInputHeight = max(viewCoordinator.standardNavigationBarContainerHeight, expandedHeight)
+        if case .aiTab(.expanded) = displayState, let coordinator = unifiedToggleInputCoordinator {
+            baseInputHeight = max(viewCoordinator.standardNavigationBarContainerHeight, coordinator.inlineEditingHeight())
         } else {
             baseInputHeight = omniBarHeight
         }
 
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
-        if unifiedToggleInputCoordinator?.isInlineEditingActive != true {
+        if !isInlineActive, displayState != .aiTab(.collapsed) {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
         }
 
-        // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
         if appSettings.currentAddressBarPosition.isBottom, let currentTab {
             let inset = intersection.height > 0 ? omniBarHeight : 0
             currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
@@ -1225,8 +1140,6 @@ class MainViewController: UIViewController {
             currentTab.borderView.bottomOffset = -bottomOffset
         }
 
-        // This NTP stuff is to animate the bottom border divider, but also allow the logo to show.
-        //  If we hever have the bottom border and the logo visible at the same... we'll need to do something else.
         if appSettings.currentAddressBarPosition.isBottom,
            let ntp = self.newTabPageViewController,
            !ntp.isShowingLogo {
@@ -1236,7 +1149,6 @@ class MainViewController: UIViewController {
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
             self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
 
-            // In case `isAIChatSearchInputUserSettings` is enabled prevent adjusting the bottom containers along with the keyboard to prevent logo on NTP from transitioning too far
             if self.appSettings.currentAddressBarPosition.isBottom,
                !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                let ntp = self.newTabPageViewController,

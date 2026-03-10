@@ -50,6 +50,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
+    private let userAgentManager: UserAgentManaging
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -87,6 +88,7 @@ final class AIChatContextualWebViewController: UIViewController {
         let webView = WKWebView(frame: .zero, configuration: createWebViewConfiguration())
         webView.isOpaque = false
         webView.backgroundColor = .systemBackground
+        webView.customUserAgent = userAgentManager.userAgent(isDesktop: false, url: aiChatSettings.aiChatURL)
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         if #available(iOS 16.4, *) {
@@ -127,7 +129,8 @@ final class AIChatContextualWebViewController: UIViewController {
          downloadHandler: DownloadHandling,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
          pixelHandler: AIChatContextualModePixelFiring,
-         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -136,6 +139,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
+        self.userAgentManager = userAgentManager
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(

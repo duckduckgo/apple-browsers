@@ -25,6 +25,14 @@ import PrivacyConfig
 
 extension CrashReportingFactory {
 
+    private static func makeCrashReportSender(buildType: any ApplicationBuildType,
+                                              platform: CrashCollectionPlatform) -> CrashReportSending {
+        if buildType.isDebugBuild || buildType.isReviewBuild {
+            return DebugCrashReportSender(platform: platform, pixelEvents: nil)
+        }
+        return CrashReportSender(platform: platform, pixelEvents: CrashReportSender.pixelEvents)
+    }
+
     static func makeCrashReporting(internalUserDecider: InternalUserDecider,
                                    featureFlagger: FeatureFlagger,
                                    keyValueStore: any ThrowingKeyValueStoring,
@@ -41,9 +49,12 @@ extension CrashReportingFactory {
                 fatalError("Failed to instantiate app store crash reporting")
             }
 
+            let sender = makeCrashReportSender(buildType: buildType, platform: .macOSAppStore)
+
             return appStoreFactory.instantiate(
                 internalUserDecider: internalUserDecider,
                 featureFlagger: featureFlagger,
+                crashReportSender: sender,
                 crashSenderPixelEvents: CrashReportSender.pixelEvents,
                 fireCrashPixel: { parameters in
                     var updatedParameters = parameters
@@ -66,9 +77,12 @@ extension CrashReportingFactory {
                 fatalError("Failed to instantiate sparkle crash reporting")
             }
 
+            let sender = makeCrashReportSender(buildType: buildType, platform: .macOS)
+
             return crashReportingFactory.instantiate(
                 internalUserDecider: internalUserDecider,
                 keyValueStore: keyValueStore,
+                crashReportSender: sender,
                 crashSenderPixelEvents: CrashReportSender.pixelEvents,
                 fireCrashPixel: { bundleID, appVersion, failedToReadCrashVersion in
                     let appIdentifier = CrashPixelAppIdentifier(bundleID)

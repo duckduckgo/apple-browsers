@@ -31,24 +31,22 @@ struct SyncWithAnotherDeviceView: View {
 
     var body: some View {
         SyncDialog(spacing: 20.0) {
-            VStack(spacing: 8.0) {
+            VStack(spacing: 20.0) {
                 Image(.sync96)
                 SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
             }
-            if #available(macOS 12.0, *) {
-                Text(syncWithAnotherDeviceInstruction)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.center)
-            } else {
-                Text(UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncWithAnotherDevicePath))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.center)
-            }
 
-            pickerView()
+            VStack(alignment: .leading, spacing: 10) {
+                instructionStepView(number: 1, markdown: UserText.syncWithAnotherDeviceStep1, showAppIcon: true)
+                instructionStepView(number: 2, markdown: UserText.syncWithAnotherDeviceStep2)
+            }
+            .frame(minWidth: Metrics.contentMinWidth, alignment: .leading)
+            .padding(.leading, 4)
+            .padding(.bottom, 10)
 
             VStack(spacing: 20) {
+                pickerView()
+
                 if selectedSegment == 0 {
                     if showQRCode {
                         scanQRCodeView()
@@ -62,38 +60,35 @@ struct SyncWithAnotherDeviceView: View {
                 }
             }
             .padding(16)
-            .frame(height: 332)
-            .frame(minWidth: 380)
+            .frame(minWidth: Metrics.contentMinWidth)
             .roundedBorder()
 
+            singleDeviceSyncPromo()
         }
-    buttons: {
-        Button(UserText.cancel) {
-            model.cancelPressed()
+        buttons: {
+            Button(UserText.cancel) {
+                model.cancelPressed()
+            }
         }
-    }
-    .frame(width: 420)
-    }
-
-    @available(macOS 12, *)
-    private var syncWithAnotherDeviceInstruction: AttributedString {
-        let baseString = UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncWithAnotherDevicePath)
-        var instructions = AttributedString(baseString)
-        if let range = instructions.range(of: UserText.syncWithAnotherDevicePath) {
-            instructions[range].foregroundColor = .primary
-        }
-        return instructions
+        .frame(width: 420)
     }
 
     fileprivate func pickerView() -> some View {
         return HStack(spacing: 0) {
-            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceShowQRCodeButton, tag: 0)
+            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceScanThisQRCodeButton, tag: 0)
             pickerOptionView(imageName: "Keyboard-16D", title: UserText.syncWithAnotherDeviceEnterCodeButton, tag: 1)
         }
-        .padding(4)
+        .padding(2)
         .frame(height: 32)
         .frame(minWidth: 348)
-        .roundedBorder()
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: Metrics.pickerOuterRadius)
+                    .stroke(Color(.blackWhite10), lineWidth: 1)
+                RoundedRectangle(cornerRadius: Metrics.pickerOuterRadius)
+                    .fill(Color.black.opacity(0.09))
+            }
+        )
     }
 
     @ViewBuilder
@@ -105,15 +100,14 @@ struct SyncWithAnotherDeviceView: View {
                 Image(imageName)
                 Text(title)
             }
+            .frame(maxWidth: .infinity)
             .frame(height: 28)
-            .frame(minWidth: 172)
-            .padding(.horizontal, 8)
             .background(
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: Metrics.pickerInnerRadius)
                         .stroke(selectedSegment == tag ? Color(.blackWhite10) : .clear, lineWidth: 1)
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(selectedSegment == tag ? Color(.pickerViewSelected) : Color(.blackWhite1))
+                    RoundedRectangle(cornerRadius: Metrics.pickerInnerRadius)
+                        .fill(selectedSegment == tag ? Color(.pickerViewSelected) : .clear)
                 }
             )
         }
@@ -122,22 +116,6 @@ struct SyncWithAnotherDeviceView: View {
 
     fileprivate func scanQRCodeView() -> some View {
         return VStack(spacing: 0) {
-            HStack(alignment: .center, spacing: 8) {
-                Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationPrefix)
-                HStack(alignment: .center, spacing: 10) {
-                    Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationApp)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.primary)
-                    Image(.duckDuckGo24)
-                        .resizable()
-                        .frame(width: 24, height: 24)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .background(Color(.blackWhite5))
-                .cornerRadius(8)
-            }
-            .padding(.top, 8)
             Spacer()
             QRCode(string: stringForQRCode, desiredSize: 180)
             Spacer()
@@ -176,8 +154,8 @@ struct SyncWithAnotherDeviceView: View {
                 Spacer()
                 Text(codeForDisplayOrPasting)
                     .font(
-                    Font.custom("SF Mono", size: 13)
-                    .weight(.medium)
+                        Font.custom("SF Mono", size: 13)
+                            .weight(.medium)
                     )
                     .kerning(2)
                     .lineSpacing(5)
@@ -219,6 +197,79 @@ struct SyncWithAnotherDeviceView: View {
         .frame(width: 348)
     }
 
+    @ViewBuilder
+    fileprivate func instructionStepView(number: Int, markdown: String, showAppIcon: Bool = false) -> some View {
+        HStack(alignment: .center, spacing: 14) {
+            NumberBadge(number: number)
+
+            if #available(macOS 12.0, *) {
+                HStack(spacing: 4) {
+                    Text(parseBoldMarkdown(markdown))
+                        .fixedSize(horizontal: false, vertical: true)
+                    if showAppIcon {
+                        Image(.duckDuckGo24)
+                            .resizable()
+                            .frame(width: Metrics.appIconSize, height: Metrics.appIconSize)
+                    }
+                }
+            } else {
+                fallbackInstructionStepText(markdown, showAppIcon: showAppIcon)
+            }
+        }
+    }
+
+    /// Fallback view for macOS 11.
+    ///
+    fileprivate func fallbackInstructionStepText(_ markdown: String, showAppIcon: Bool) -> some View {
+        HStack(spacing: 4) {
+            Text(markdown.replacingOccurrences(of: "**", with: ""))
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if showAppIcon {
+                Image(.duckDuckGo24)
+                    .resizable()
+                    .frame(width: Metrics.appIconSize, height: Metrics.appIconSize)
+            }
+        }
+    }
+
+    /// Parses bold markdown text and replaces bold styling with primary color.
+    ///
+    @available(macOS 12.0, *)
+    fileprivate func parseBoldMarkdown(_ string: String) -> AttributedString {
+        guard var result = try? AttributedString(markdown: string) else {
+            var plain = AttributedString(string.replacingOccurrences(of: "**", with: ""))
+            plain.foregroundColor = .secondary
+            return plain
+        }
+        for run in result.runs {
+            let isBold = run.inlinePresentationIntent?.contains(.stronglyEmphasized) == true
+            result[run.range].foregroundColor = isBold ? .primary : .secondary
+            result[run.range].inlinePresentationIntent = nil
+        }
+        return result
+    }
+
+    fileprivate func singleDeviceSyncPromo() -> some View {
+        Button {
+            model.delegate?.turnOnSync()
+        } label: {
+            HStack {
+                Text(UserText.syncSingleDeviceSetupAction)
+                    .foregroundColor(.primary)
+                Spacer()
+                Image(.chevronMediumRight16)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+            .frame(minWidth: Metrics.contentMinWidth)
+            .roundedBorder()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private func shareContent(_ sharedText: String) {
         guard let contentView = NSApp.keyWindow?.contentView else {
             return
@@ -227,4 +278,28 @@ struct SyncWithAnotherDeviceView: View {
 
         sharingPicker.show(relativeTo: contentView.frame, of: contentView, preferredEdge: .maxY)
     }
+}
+
+/// A simple badge with a number inside a circle.
+///
+private struct NumberBadge: View {
+    let number: Int
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.primary.opacity(0.06))
+            Text(verbatim: "\(number)")
+                .font(.system(size: 8.75, weight: .semibold))
+                .foregroundColor(.secondary)
+        }
+        .frame(width: 16, height: 16)
+    }
+}
+
+private enum Metrics {
+    static let pickerOuterRadius: CGFloat = 8
+    static let pickerInnerRadius: CGFloat = 6
+    static let appIconSize: CGFloat = 16
+    static let contentMinWidth: CGFloat = 380
 }

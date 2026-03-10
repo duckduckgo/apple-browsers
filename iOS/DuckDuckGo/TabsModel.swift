@@ -133,9 +133,8 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
     
     func select(tab: Tab) {
-        guard let index = indexOf(tab: tab) else {
-            return // TODO: - Consider throwing or firing a pixel
-        }
+        guard validateTabMode(tab, operation: .select) else { return }
+        guard let index = indexOf(tab: tab) else { return }
         currentIndex = index
     }
 
@@ -145,6 +144,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
     
     func insert(tab: Tab, placement: TabsModel.TabPlacement, selectNewTab: Bool) {
+        guard validateTabMode(tab, operation: .insert) else { return }
         var newTabIndex: Int?
         switch placement {
         case .afterCurrentTab:
@@ -162,10 +162,6 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
 
     private func insert(tab: Tab, at index: Int) {
-        guard shouldCreateFireTabs == tab.fireTab else {
-            assertionFailure("Wrong tab type for this tabs model")
-            return
-        }
         tabs.insert(tab, at: max(0, index))
     }
     
@@ -187,9 +183,8 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
     
     func move(tab: Tab, to destIndex: Int) {
-        guard let sourceIndex = indexOf(tab: tab) else {
-            return
-        }
+        guard validateTabMode(tab, operation: .move) else { return }
+        guard let sourceIndex = indexOf(tab: tab) else { return }
         moveTab(from: sourceIndex, to: destIndex)
     }
     
@@ -219,8 +214,9 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     /// This *does not* add a new empty tab after removing the items.
     func removeTabs(_ tabsToBeRemoved: [Tab]) {
+        let validTabs = tabsToBeRemoved.filter { validateTabMode($0, operation: .removeTabs) }
         let selectedTab = get(tabAt: currentIndex)
-        self.tabs = tabs.filter { !tabsToBeRemoved.contains($0) }
+        self.tabs = tabs.filter { !validTabs.contains($0) }
         setCurrentTab(selectedTab)
     }
 
@@ -236,6 +232,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
  
     func remove(tab: Tab) {
+        guard validateTabMode(tab, operation: .remove) else { return }
         if let index = indexOf(tab: tab) {
             remove(at: index)
         }
@@ -253,5 +250,27 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     
     func tabExists(tab: Tab) -> Bool {
         return tabs.contains { $0 === tab }
+    }
+}
+
+private extension TabsModel {
+
+    private enum Operation: String {
+        case select
+        case insert
+        case move
+        case remove
+        case removeTabs
+    }
+
+    private func validateTabMode(_ tab: Tab, operation: Operation) -> Bool {
+        guard tab.fireTab == shouldCreateFireTabs else {
+            assertionFailure("Tab mode mismatch in \(operation): tab.fireTab=\(tab.fireTab), model.mode=\(mode)")
+            Pixel.fire(pixel: .debugTabsModelCrossModeMismatch, withAdditionalParameters: [
+                PixelParameters.tabsModelOperation: operation.rawValue
+            ])
+            return false
+        }
+        return true
     }
 }

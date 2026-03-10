@@ -188,6 +188,21 @@ final class DDGSyncLifecycleTests: XCTestCase {
         XCTAssertEqual(mockErrorHandler.handledErrors, [])
     }
 
+    func testWhenInitializingAndSyncDisabledAndPreserveClosureTrueAndCannotReadAccountThenAccountIsNotRemoved() {
+        let expectedError = SyncError.failedToReadSecureStore(status: 0)
+        secureStorageStub.theAccount = .mock
+        secureStorageStub.mockReadError = expectedError
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        XCTAssertEqual(syncService.authState, .initializing)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNotNil(secureStorageStub.theAccount)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToLoadAccount])
+    }
+
     func testWhenInitializingAndSyncDisabledAndPreserveClosureFalseThenAccountIsRemoved() {
         secureStorageStub.theAccount = .mock
         dependencies.shouldPreserveAccountWhenSyncDisabled = { false }

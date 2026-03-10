@@ -378,24 +378,36 @@ public class DDGSync: DDGSyncing {
 
         // Proceed to initialization - if needed
         guard syncEnabled else {
+            let shouldPreserveAccount = dependencies.shouldPreserveAccountWhenSyncDisabled()
+
             let storedAccount: SyncAccount?
+            let accountReadFailed: Bool
             do {
                 storedAccount = try dependencies.secureStore.account()
+                accountReadFailed = false
             } catch {
                 dependencies.errorEvents.fire(.failedToLoadAccount, error: error)
                 storedAccount = nil
+                accountReadFailed = true
             }
 
             // Feature-flagged in the app layer (FeatureFlag.syncAutoRestore) and only true when the user opted in.
-            if dependencies.shouldPreserveAccountWhenSyncDisabled(), storedAccount != nil {
+            if shouldPreserveAccount, (storedAccount != nil || accountReadFailed) {
                 authState = .inactive
                 return
             }
 
-            if storedAccount != nil {
+            var didRemoveAccount = false
+            do {
+                try dependencies.secureStore.removeAccount()
+                didRemoveAccount = true
+            } catch {
+                dependencies.errorEvents.fire(.failedToRemoveAccount, error: error)
+            }
+
+            if didRemoveAccount, storedAccount != nil {
                 dependencies.errorEvents.fire(.accountRemoved(.syncEnabledNotSetOnKeyValueStore))
             }
-            try? dependencies.secureStore.removeAccount()
             authState = .inactive
             return
         }

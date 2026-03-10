@@ -264,14 +264,12 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
                 freeTrialConversionService.markDuckAIActivated()
             }
 
-            if featureFlagger.isFeatureOn(.aiChatAtb) {
-                DispatchQueue.main.async {
-                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
-                                                                        application: UIApplication.shared)
-                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
-                        DispatchQueue.main.async {
-                            backgroundAssertion.release()
-                        }
+            DispatchQueue.main.async {
+                let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                    application: UIApplication.shared)
+                self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                    DispatchQueue.main.async {
+                        backgroundAssertion.release()
                     }
                 }
             }

@@ -2281,7 +2281,7 @@ extension TabViewController: WKNavigationDelegate {
                         NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     }
 
-                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL && featureFlagger.isFeatureOn(.aiChatAtb)
+                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL
                     if !shouldSkipSearchAtbForDuckAI {
                         let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
                                                                             application: UIApplication.shared)

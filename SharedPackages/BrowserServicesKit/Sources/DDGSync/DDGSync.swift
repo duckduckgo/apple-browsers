@@ -392,7 +392,7 @@ public class DDGSync: DDGSyncing {
             }
 
             // Feature-flagged in the app layer (FeatureFlag.syncAutoRestore) and only true when the user opted in.
-            if shouldPreserveAccount, (storedAccount != nil || accountReadFailed) {
+            if shouldPreserveAccount, storedAccount != nil || accountReadFailed {
                 authState = .inactive
                 return
             }

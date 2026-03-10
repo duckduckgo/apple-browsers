@@ -139,7 +139,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         currentIndex = index
     }
 
-    func get(tabAt index: Int?) -> Tab? { // TODO: - Make this optional and remove safeGet
+    func get(tabAt index: Int?) -> Tab? {
         guard let index, tabs.indices.contains(index) else { return nil }
         return tabs[index]
     }

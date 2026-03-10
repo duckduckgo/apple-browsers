@@ -269,7 +269,7 @@ class SwitchBarTextEntryView: UIView {
         switch currentMode {
         case .search:
             textView.keyboardType = .webSearch
-            textView.returnKeyType = .go
+            textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             textView.keyboardType = .default

@@ -256,7 +256,6 @@ class MainViewCoordinator {
             inlineEditingStatusBackgroundColor = statusBackground.backgroundColor
         }
         let inlineBackground = UIColor(designSystemColor: .panel)
-        unifiedToggleInputContainer.backgroundColor = .clear
         statusBackground.backgroundColor = inlineBackground
         navigationBarContainer.backgroundColor = inlineBackground
         suggestionTrayContainer.backgroundColor = inlineBackground

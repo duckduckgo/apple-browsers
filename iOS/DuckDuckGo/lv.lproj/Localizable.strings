@@ -2700,6 +2700,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Un, starp citu...";
 
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Vai vēlies atjaunot grāmatzīmes, paroles un citus datus no iepriekšējās DuckDuckGo sinhronizācijas?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Manas lietas atjaunošana";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Izlaist";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Turpināsim no vietas, kur beidzi";
+
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Sākt pārlūkošanu";
 

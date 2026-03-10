@@ -2700,6 +2700,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ó, mielőtt elfelejtem…";
 
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Szeretnéd visszaállítani a könyvjelzőidet, a jelszavaidat és az egyéb dolgokat az előző DuckDuckGo-szinkronizálásból?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Saját adataim visszaállítása";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Kihagyás";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Folytassuk ott, ahol abbahagytad";
+
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Böngészés indítása";
 

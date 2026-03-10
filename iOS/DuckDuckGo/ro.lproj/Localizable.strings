@@ -2700,6 +2700,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oh, înainte să uit...";
 
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Vrei să restaurezi marcajele, parolele și alte elemente din sincronizarea anterioară DuckDuckGo?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Restaurează lucrurile mele";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Ignorare";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Să reluăm de unde ai rămas";
+
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Începe navigarea";
 

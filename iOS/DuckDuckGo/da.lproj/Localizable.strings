@@ -2700,6 +2700,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Åh, før jeg glemmer det...";
 
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Vil du gendanne dine bogmærker, adgangskoder og andet fra din tidligere DuckDuckGo-synkronisering?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Gendan mine data";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Spring over";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Lad os fortsætte, hvor du slap";
+
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Start søgning";
 

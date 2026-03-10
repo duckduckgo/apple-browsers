@@ -201,14 +201,9 @@ class MainViewCoordinator {
     }
 
     func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
-        guard isNavigationChromeHidden else {
-            unifiedToggleInputContainer.backgroundColor = .clear
-            inputView?.backgroundColor = .clear
-            return
-        }
         if isExpanded {
-            inputView?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-            unifiedToggleInputContainer.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+            inputView?.backgroundColor = statusBackground.backgroundColor
+            unifiedToggleInputContainer.backgroundColor = .clear
         } else {
             inputView?.backgroundColor = .clear
             unifiedToggleInputContainer.backgroundColor = .clear
@@ -261,6 +256,7 @@ class MainViewCoordinator {
             inlineEditingStatusBackgroundColor = statusBackground.backgroundColor
         }
         let inlineBackground = UIColor(designSystemColor: .panel)
+        unifiedToggleInputContainer.backgroundColor = .clear
         statusBackground.backgroundColor = inlineBackground
         navigationBarContainer.backgroundColor = inlineBackground
         suggestionTrayContainer.backgroundColor = inlineBackground

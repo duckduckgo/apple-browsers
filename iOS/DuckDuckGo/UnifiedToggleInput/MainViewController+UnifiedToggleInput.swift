@@ -378,12 +378,11 @@ extension MainViewController {
             viewCoordinator.hideUnifiedToggleInputInline()
             viewCoordinator.hideUnifiedInputContent()
             hideSuggestionTray()
-            viewCoordinator.suggestionTrayContainer.isHidden = false
         case .hide:
             unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
             viewCoordinator.hideUnifiedToggleInput()
             viewCoordinator.hideUnifiedInputContent()
-            viewCoordinator.suggestionTrayContainer.isHidden = false
+            hideSuggestionTray()
         }
         updateFloatingSubmitVisibility()
     }

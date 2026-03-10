@@ -299,9 +299,8 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isExpandable = expanded
         updateCardTrailingConstraint()
 
-        let showShadow = expanded && handler.currentToggleState != .aiChat
-        expandedShadow0.isHidden = !showShadow
-        expandedShadow1.isHidden = !showShadow
+        expandedShadow0.isHidden = !expanded
+        expandedShadow1.isHidden = !expanded
         if expanded {
             let shadowGoesDown = cardPosition == .top || usesInlineEditingMargins
             expandedShadow0.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 8 : -8)
@@ -394,16 +393,12 @@ final class UnifiedToggleInputView: UIView {
         guard isExpanded else { return }
 
         let showToolbar = isToggleEnabled && mode == .aiChat
-        let showShadow = mode != .aiChat
         toolbarHeightConstraint.constant = showToolbar ? 56 : 0
         cardView.layer.borderWidth = showToolbar ? 0.5 : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
-        expandedShadow0.isHidden = !showShadow
-        expandedShadow1.isHidden = !showShadow
 
         guard animated else {
             toolsToolbar.alpha = showToolbar ? 1 : 0
-            layoutIfNeeded()
             return
         }
 

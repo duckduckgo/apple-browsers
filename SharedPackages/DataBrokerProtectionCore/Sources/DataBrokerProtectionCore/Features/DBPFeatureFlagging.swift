@@ -40,7 +40,3 @@ public protocol ClickActionDelayReductionOptimizationFeatureFlagging {
 public protocol WebViewUserAgentFeatureFlagging {
     var isWebViewUserAgentOn: Bool { get }
 }
-
-public extension WebViewUserAgentFeatureFlagging {
-    var isWebViewUserAgentOn: Bool { false }
-}

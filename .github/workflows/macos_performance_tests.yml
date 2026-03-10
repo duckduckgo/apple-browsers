@@ -200,6 +200,7 @@ jobs:
         | tee ui-tests.log
 
     - name: Build Performance Report
+      if: always()
       working-directory: macOS
       run: |
         XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
@@ -233,11 +234,19 @@ jobs:
       if: always()
       working-directory: macOS
       run: |
-        echo "Generated insert-statements-memory.sql:"
-        cat insert-statements-memory.sql
+        if [ -f insert-statements-memory.sql ]; then
+          echo "Generated insert-statements-memory.sql:"
+          cat insert-statements-memory.sql
+        else
+          echo "No insert-statements-memory.sql found"
+        fi
 
-        echo "Generated insert-statements-startup-metrics.sql:"
-        cat insert-statements-startup-metrics.sql
+        if [ -f insert-statements-startup-metrics.sql ]; then
+          echo "Generated insert-statements-startup-metrics.sql:"
+          cat insert-statements-startup-metrics.sql
+        else
+          echo "No insert-statements-startup-metrics.sql found"
+        fi
 
     - name: Upload memory metrics
       if: always()

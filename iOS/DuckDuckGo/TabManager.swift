@@ -65,11 +65,6 @@ protocol TrackerAnimationSuppressing {
     @MainActor func applyTrackerAnimationSuppressionBasedOnLaunchSource()
 }
 
-struct ResolvedTabsModel {
-    let model: TabsModelManaging
-    let isActiveMode: Bool
-}
-
 class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private let tabsModelProvider: TabsModelProviding

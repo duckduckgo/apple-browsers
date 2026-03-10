@@ -100,7 +100,8 @@ extension OnboardingRebranding.OnboardingView {
                         AddToDockVideoPlayer(url: videoURL,
                                              frameSize: CGSize(width: Design.videoWidth * ratio,
                                                                height: Design.videoHeight * ratio),
-                                             shouldLoopVideo: true)
+                                             shouldLoopVideo: true,
+                                             cornerRadiusRatio: ratio)
                     }
                 }
             }

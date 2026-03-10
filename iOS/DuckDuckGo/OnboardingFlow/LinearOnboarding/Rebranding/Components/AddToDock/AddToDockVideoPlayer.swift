@@ -23,16 +23,19 @@ import SwiftUI
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockVideoPlayer: View {
+        private static let referenceCornerRadius: CGFloat = 34
+
         let url: URL
         let frameSize: CGSize
         let shouldLoopVideo: Bool
+        let cornerRadiusRatio: CGFloat
 
         @StateObject private var coordinator = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
         var body: some View {
             PlayerView(coordinator: coordinator)
                 .frame(width: frameSize.width, height: frameSize.height)
-                .clipShape(BottomRoundedRectangle(radius: 34))
+                .clipShape(BottomRoundedRectangle(radius: Self.referenceCornerRadius * cornerRadiusRatio))
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
                     coordinator.pause()
                 }

@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import AVFoundation
 import Onboarding
 import SwiftUI
 
@@ -26,39 +25,29 @@ extension OnboardingRebranding.OnboardingView {
     struct AddToDockVideoPlayer: View {
         let url: URL
         let frameSize: CGSize
+        let shouldLoopVideo: Bool
 
         @StateObject private var coordinator = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
-        @State private var aspectRatio: CGFloat?
 
         var body: some View {
             PlayerView(coordinator: coordinator)
-                .aspectRatio(aspectRatio, contentMode: .fit)
+                .frame(width: frameSize.width, height: frameSize.height)
+                .clipShape(BottomRoundedRectangle(radius: 34))
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
                     coordinator.pause()
                 }
-                .frame(width: frameSize.width, height: frameSize.height)
-//                .clipShape(BottomRoundedRectangle(radius: 34))
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                     coordinator.play()
                 }
                 .onFirstAppear {
-                    coordinator.loadAsset(url: url, shouldLoopVideo: true)
+                    if !shouldLoopVideo {
+                        coordinator.player.actionAtItemEnd = .pause // Avoid the video to disappear at the end if not looped
+                    }
+                    coordinator.loadAsset(url: url, shouldLoopVideo: shouldLoopVideo)
                     DispatchQueue.main.async {
                         coordinator.play()
                     }
                 }
-                .task {
-                    await loadVideoAspectRatio()
-                }
-        }
-
-        @MainActor
-        private func loadVideoAspectRatio() async {
-            let asset = AVURLAsset(url: url)
-            guard let track = try? await asset.loadTracks(withMediaType: .video).first,
-                  let naturalSize = try? await track.load(.naturalSize),
-                  naturalSize.height > 0 else { return }
-            aspectRatio = naturalSize.width / naturalSize.height
         }
     }
 

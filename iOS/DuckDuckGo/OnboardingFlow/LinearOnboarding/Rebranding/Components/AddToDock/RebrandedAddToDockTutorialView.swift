@@ -77,10 +77,9 @@ extension OnboardingRebranding.OnboardingView {
                             .padding(borderPadding)
                             .frame(width: borderSize.width, height: borderSize.height)
                         if let videoURL = Self.videoURL {
-                            AddToDockVideoPlayer(
-                                url: videoURL,
-                                frameSize: videoFrameSize
-                            )
+                            AddToDockVideoPlayer(url: videoURL,
+                                                 frameSize: videoFrameSize,
+                                                 shouldLoopVideo: true)
                         }
                     }
                     .scaleEffect(scale)

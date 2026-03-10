@@ -104,5 +104,41 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_image_attached": {
+        "description": "Fired when user attaches an image via the file picker in the duck.ai omnibar",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_image_removed": {
+        "description": "Fired when user removes an attached image in the duck.ai omnibar",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_submit_with_image": {
+        "description": "Fired when user submits a prompt that includes one or more image attachments",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "imageCount",
+                "type": "integer",
+                "description": "Number of images attached to the submitted prompt"
+            }
+        ]
+    },
+    "m_mac_aichat_addressbar_model_selected": {
+        "description": "Fired when user selects a model from the model picker menu",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

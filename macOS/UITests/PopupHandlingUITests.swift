@@ -50,12 +50,8 @@ final class PopupHandlingUITests: UITestCase {
                 "POPUP_TIMEOUT_OVERRIDE": String(PopupTimeout.testingThreshold)  // Reduce from 6s to 2s for faster tests
             ],
             featureFlags: [
-                "newPermissionView": false, // Disabled until UI tests can handle the new permission view
+                "newPermissionView": false,  // Disabled until UI tests can handle the new permission view
                 "popupBlocking": true,
-                "extendedUserInitiatedPopupTimeout": true,
-                "suppressEmptyPopUpsOnApproval": true,
-                "allowPopupsForCurrentPage": true,
-                "popupPermissionButtonPersistence": true
             ]
         )
 

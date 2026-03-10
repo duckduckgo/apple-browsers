@@ -41,13 +41,13 @@ import WebKit
 
     @objc(_webView:requestUserMediaAuthorizationForDevices:url:mainFrameURL:decisionHandler:)
     func webView(_ webView: WKWebView,
-                 requestUserMediaAuthorizationFor devices: _WKCaptureDevices,
+                 requestUserMediaAuthorizationFor devices: UInt,
                  url: URL,
                  mainFrameURL: URL,
                  decisionHandler: @escaping (Bool) -> Void)
 
     @objc(_webView:mediaCaptureStateDidChange:)
-    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: _WKMediaCaptureStateDeprecated)
+    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: UInt /*_WKMediaCaptureStateDeprecated*/)
 
     @objc(_webView:requestGeolocationPermissionForFrame:decisionHandler:)
     func webView(_ webView: WKWebView, requestGeolocationPermissionFor frame: WKFrameInfo, decisionHandler: @escaping (Bool) -> Void)
@@ -109,28 +109,28 @@ final class WebViewMock: WKWebView {
     var mediaCaptureState: _WKMediaCaptureStateDeprecated = [] {
         didSet {
             (self.uiDelegate as? WebViewPermissionsDelegate)!
-                .webView(self, mediaCaptureStateDidChange: mediaCaptureState)
+                .webView(self, mediaCaptureStateDidChange: mediaCaptureState.rawValue)
         }
     }
-    override var _mediaCaptureState: _WKMediaCaptureStateDeprecated {
-        mediaCaptureState
-    }
+    @objc(_mediaCaptureState)
+    var objcMediaCaptureState: UInt { mediaCaptureState.rawValue }
 
     var stopMediaCaptureHandler: (() -> Void)?
-    override func _stopMediaCapture() {
+    @objc(_stopMediaCapture)
+    func objcStopMediaCapture() {
         mediaCaptureState = []
         stopMediaCaptureHandler?()
     }
 
     var mediaMutedStateValue: _WKMediaMutedState = []
     var setPageMutedHandler: ((_WKMediaMutedState) -> Void)?
-    override var mediaMutedState: _WKMediaMutedState {
+    override var mediaMutedState: UInt {
         get {
-            mediaMutedStateValue
+            mediaMutedStateValue.rawValue
         }
         set {
-            mediaMutedStateValue = newValue
-            setPageMutedHandler?(newValue)
+            mediaMutedStateValue = _WKMediaMutedState(rawValue: newValue)
+            setPageMutedHandler?(mediaMutedStateValue)
         }
     }
 

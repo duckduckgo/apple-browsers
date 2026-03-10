@@ -124,7 +124,7 @@ final class RollingEightDaysIntTests: XCTestCase {
 
         // past7DaysAverage should exclude the last value (today)
         // Values: [1, 2, 3, 4, 5, 6, 7], average = (1+2+3+4+5+6+7)/7 = 4
-        let expectedAverage = Int((Float(1+2+3+4+5+6+7) / Float(rollingInt.count-1)).rounded(.toNearestOrAwayFromZero))
+        let expectedAverage = (Float(1+2+3+4+5+6+7) / Float(rollingInt.count-1))
         XCTAssertEqual(rollingInt.past7DaysAverage.average, expectedAverage)
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 7)
     }
@@ -136,26 +136,9 @@ final class RollingEightDaysIntTests: XCTestCase {
         rollingInt.append(11)
         rollingInt.append(1)
         // past7DaysAverage should only count known values (excluding today)
-        // Values excluding today: [3, 8, 11], average = (3+8+11)/3 = 7.333... = 7
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 7)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
-    }
-
-    func testPast7DaysAverageRoundingBehavior() {
-        // Test specific rounding cases
-        rollingInt.append(1)  // Will be excluded (today)
-        rollingInt[0] = 6     // 6
-        rollingInt[1] = 7     // 7
-
-        // Average = (6+7)/2 = 6.5, rounded = 7
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 7)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 2)
-
-        // Test rounding down case
-        rollingInt[2] = 5     // 5
-
-        // Average = (6+7+5)/3 = 6, no rounding needed
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 6)
+        // Values excluding today: [3, 8, 11], average = (3+8+11)/3
+        let expectedAverage = Float(3 + 8 + 11) / 3.0
+        XCTAssertEqual(rollingInt.past7DaysAverage.average, expectedAverage, accuracy: 0.0001)
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
     }
 
@@ -194,32 +177,21 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 0)
     }
 
-    func testPast7DaysAverageRoundingHalfUp() {
-        // Test that 0.5 rounds away from zero (up for positive numbers)
-        rollingInt.append(10)  // Today (excluded)
-        rollingInt[0] = 3
-        rollingInt[1] = 4
-
-        // Average = (3+4)/2 = 3.5, should round to 4
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 4)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 2)
-    }
-
-    func testPast7DaysAverageRoundingDown() {
-        // Test rounding down for values < 0.5
+    func testPast7DaysAverageReturnsExactFloat() {
+        // Test that the average returns an exact Float without rounding
         rollingInt.append(10)  // Today (excluded)
         rollingInt[0] = 5
         rollingInt[1] = 6
         rollingInt[2] = 4
 
-        // Average = (5+6+4)/3 = 5.0, no rounding
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 5)
+        // Average = (5+6+4)/3 = 5.0
+        XCTAssertEqual(rollingInt.past7DaysAverage.average, 5.0)
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
 
-        // Add one more to test decimal < 0.5
-        rollingInt[3] = 5
-        // Average = (5+6+4+5)/4 = 5.0
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 5)
+        // Add one more value to produce a non-integer average
+        rollingInt[3] = 4
+        // Average = (5+6+4+5)/4 = 4.75
+        XCTAssertEqual(rollingInt.past7DaysAverage.average, 4.75)
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 4)
     }
 
@@ -230,8 +202,8 @@ final class RollingEightDaysIntTests: XCTestCase {
         rollingInt[4] = 10       // 3 days ago
 
         // Only two past days have values: [5, 10]
-        // Average = (5+10)/2 = 7.5, rounds to 8
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 8)
+        // Average = (5+10)/2 = 7.5
+        XCTAssertEqual(rollingInt.past7DaysAverage.average, 7.5)
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 2)
     }
 

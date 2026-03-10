@@ -20,6 +20,7 @@
 import XCTest
 @testable import DuckDuckGo
 @testable import Core
+import BrowserServicesKitTestsUtils
 import WebKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -62,7 +63,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: MockInternalUserDecider())
+                                                  internalUserDecider: PrivacyConfig.MockInternalUserDecider())
         return AutoconsentUserScript(config: manager.privacyConfig, preferences: MockAutoconsentPreferences())
     }()
 
@@ -74,7 +75,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitIgnoresNonHttp() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "file://helicopter"
         ])
@@ -93,7 +94,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitResponds() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "https://example.com"
         ])
@@ -120,7 +121,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     // Flaky test that fails often, to re-evaluate. See 15s timeout, something wrong here
     @MainActor
     func testEval() {
-        let message = MockWKScriptMessage(name: "eval", body: [
+        let message = WKScriptMessage.mock(name: "eval", body: [
             "type": "eval",
             "id": "some id",
             "code": "1+1==2"
@@ -141,7 +142,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testPopupFoundNoPromptIfEnabled() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "popupFound", body: [
+        let message = WKScriptMessage.mock(name: "popupFound", body: [
             "type": "popupFound",
             "cmp": "some cmp",
             "url": "some url"
@@ -156,38 +157,6 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
             message: message
         )
         waitForExpectations(timeout: 1.0)
-    }
-}
-
-class MockWKScriptMessage: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-    let mockedFrameInfo: WKFrameInfo
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    override var frameInfo: WKFrameInfo {
-        return mockedFrameInfo
-    }
-
-    init(name: String, body: Any, webView: WKWebView? = nil, frameInfo: WKFrameInfo = MockFrameInfo(isMainFrame: true)) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        self.mockedFrameInfo = frameInfo
-        super.init()
     }
 }
 

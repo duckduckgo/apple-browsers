@@ -21,6 +21,7 @@ import ContentBlocking
 import PrivacyConfig
 import Core
 import DDGSync
+import WebExtensions
 
 final class ContentBlockingService {
 
@@ -34,7 +35,8 @@ final class ContentBlockingService {
          fireproofing: Fireproofing,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          internalUserDecider: InternalUserDecider,
-         syncErrorHandler: SyncErrorHandler) {
+         syncErrorHandler: SyncErrorHandler,
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil) {
 
         common = contentBlocking
 
@@ -45,7 +47,8 @@ final class ContentBlockingService {
                                                                            fireproofing: fireproofing,
                                                                            contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                                            internalUserDecider: internalUserDecider,
-                                                                           syncErrorHandler: syncErrorHandler)
+                                                                           syncErrorHandler: syncErrorHandler,
+                                                                           webExtensionAvailability: webExtensionAvailability)
 
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies)
     }

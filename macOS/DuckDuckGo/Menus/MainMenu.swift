@@ -123,7 +123,7 @@ final class MainMenu: NSMenu {
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
 
     private let featureFlagger: FeatureFlagger
-    private let dockCustomizer: DockCustomization
+    private let dockCustomizer: DockCustomization?
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let internalUserDecider: InternalUserDecider
@@ -136,12 +136,7 @@ final class MainMenu: NSMenu {
     private let pinningManager: PinningManager
     private let subscriptionManager: any SubscriptionManager
 
-    private lazy var webExtensionsMenuItem: NSMenuItem? = {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            return NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
-        }
-        return nil
-    }()
+    private var webExtensionsMenuItem: NSMenuItem?
 
     // MARK: - Initialization
 
@@ -151,7 +146,7 @@ final class MainMenu: NSMenu {
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
-         dockCustomizer: DockCustomization = DockCustomizer(),
+         dockCustomizer: DockCustomization? = nil,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
@@ -504,11 +499,7 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
-#if SPARKLE
-        addToDockMenuItem.isHidden = dockCustomizer.isAddedToDock
-#else
-        addToDockMenuItem.isHidden = true
-#endif
+        addToDockMenuItem.isHidden = dockCustomizer?.isAddedToDock ?? true // always hidden in sandboxed build
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.
@@ -534,11 +525,26 @@ final class MainMenu: NSMenu {
     }
 
     private func updateWebExtensionsMenuItem() {
-        if let webExtensionsMenuItem,
-           webExtensionsMenuItem.parent == nil,
-           let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
-           let debugSubmenu = debugMenuItem.submenu {
-            debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+        guard let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
+              let debugSubmenu = debugMenuItem.submenu else {
+            return
+        }
+
+        if #available(macOS 15.4, *) {
+            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                if webExtensionsMenuItem == nil {
+                    webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
+                        .submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+                }
+                if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
+                    debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+                }
+            } else {
+                if let webExtensionsMenuItem {
+                    debugSubmenu.removeItem(webExtensionsMenuItem)
+                    self.webExtensionsMenuItem = nil
+                }
+            }
         }
     }
 
@@ -730,15 +736,18 @@ final class MainMenu: NSMenu {
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
-            NSMenuItem(title: "Memory Debugging") {
+            NSMenuItem(title: "Performance Debugging") {
                 NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])
+                NSMenuItem(title: "Export Startup Stats", action: #selector(AppDelegate.exportStartupStats), keyEquivalent: [.control, .command, .shift, .option, "s"])
             }
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.resetNextStepsMenuItem)
                 NSMenuItem(title: "Shift top card by 10 impressions", action: #selector(MainViewController.debugShiftCardImpression))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
-            }
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
+            }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
                 NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                 NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
@@ -850,16 +859,14 @@ final class MainMenu: NSMenu {
                 }
             }
 
-            NSMenuItem(title: "Simulate memory pressure event") {
-                NSMenuItem(title: "Critical", action: #selector(AppDelegate.simulateMemoryPressureCritical))
-            }
-
             NSMenuItem(title: "Memory Usage Reporting") {
                 NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
                 NSMenuItem(title: "Clear Simulated Memory", action: #selector(AppDelegate.clearSimulatedMemory))
                 NSMenuItem(title: "Start Reporter Immediately (Skip 5min Delay)", action: #selector(AppDelegate.startMemoryReporterImmediately))
                 NSMenuItem.separator()
                 NSMenuItem(title: "Fire Interval Pixel Now...", action: #selector(AppDelegate.fireIntervalPixelNow))
+                NSMenuItem.separator()
+                NSMenuItem(title: "Simulate Memory Pressure (Critical)", action: #selector(AppDelegate.simulateMemoryPressureCritical))
             }
 
             NSMenuItem(title: "Hang Debugging") {
@@ -903,13 +910,22 @@ final class MainMenu: NSMenu {
                         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
                         let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
                         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
+
+                        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                            subscriptionManager: subscriptionManager,
+                            uiHandler: Application.appDelegate.subscriptionUIHandler,
+                            wideEvent: Application.appDelegate.wideEvent,
+                            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                            pendingTransactionHandler: pendingTransactionHandler
+                        )
+
                         let feature = SubscriptionPagesUseSubscriptionFeature(
                             subscriptionManager: subscriptionManager,
                             stripePurchaseFlow: stripePurchaseFlow,
                             uiHandler: Application.appDelegate.subscriptionUIHandler,
                             aiChatURL: AIChatRemoteSettings().aiChatURL,
                             wideEvent: Application.appDelegate.wideEvent,
-                            pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
+                            pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
                         )
 
                         // Create params matching what the web would send
@@ -1122,7 +1138,7 @@ final class MainMenu: NSMenu {
             url,
             source: .userEntered(url.absoluteString, downloadRequested: true),
             target: nil,
-            event: NSApp.currentEvent
+            with: NSApp.currentEvent
         )
     }
 

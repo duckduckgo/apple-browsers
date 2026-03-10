@@ -76,7 +76,7 @@ file_header:
 # General Config
 excluded:
   - DuckDuckGo/Common/Localizables/UserText.swift
-  - LocalPackages/*/Package.swift
+  - LocalPackages/**/Package.swift
   - scripts
   - DerivedData
   - release

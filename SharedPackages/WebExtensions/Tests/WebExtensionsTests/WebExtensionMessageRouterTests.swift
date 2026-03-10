@@ -25,19 +25,16 @@ final class WebExtensionMessageRouterTests: XCTestCase {
 
     var router: WebExtensionMessageRouter!
     var mockHandler: MockMessageHandler!
-    var mockContext: MockWebExtensionContext!
 
     override func setUp() {
         super.setUp()
         router = WebExtensionMessageRouter()
         mockHandler = MockMessageHandler(featureName: "testFeatureName")
-        mockContext = MockWebExtensionContext(identifier: "test-extension-id")
     }
 
     override func tearDown() {
         router = nil
         mockHandler = nil
-        mockContext = nil
         super.tearDown()
     }
 
@@ -186,19 +183,5 @@ final class MockMessageHandler: WebExtensionMessageHandler {
     func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
         receivedMessages.append(message)
         return responseToReturn
-    }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-final class MockWebExtensionContext: WKWebExtensionContext {
-    private let _uniqueIdentifier: String
-
-    init(identifier: String) {
-        self._uniqueIdentifier = identifier
-        super.init(for: WKWebExtension())
-    }
-
-    override var uniqueIdentifier: String {
-        _uniqueIdentifier
     }
 }

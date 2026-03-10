@@ -23,34 +23,13 @@ import XcodeProjectPlugin
 let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("InfoPlist.xcstrings", .resource),
     .init("DeveloperID.xcstrings", .resource),
-    .init("BWManager.swift", .source),
     .init("DuckDuckGo VPN.app", .unknown),
     .init("DuckDuckGo Personal Information Removal.app", .unknown),
-    .init("ApplicationUpdateDetector.swift", .source),
-    .init("ReleaseNotesNavigationResponder.swift", .source),
-    .init("ReleaseNotesUserScript.swift", .source),
-    .init("ReleaseNotesUserScriptFactory.swift", .source),
-    .init("SPUUpdater+UpdaterAvailabilityChecking.swift", .source),
-    .init("SimplifiedSparkleUpdateController.swift", .source),
-    .init("SimplifiedUpdateUserDriver.swift", .source),
-    .init("SparkleUpdateCompletionValidator.swift", .source),
-    .init("SparkleUpdateController.swift", .source),
-    .init("SparkleUpdateWideEvent.swift", .source),
-    .init("SparkleUpdaterAvailabilityChecker.swift", .source),
-    .init("Update+Sparkle.swift", .source),
-    .init("UpdateProgressState.swift", .source),
-    .init("UpdateUserDriver.swift", .source),
-    .init("UpdateWideEventData.swift", .source),
-    .init("ReleaseNotesParser.swift", .source),
 ])
 
 let sandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("AppStore.xcstrings", .resource),
     .init("AppStoreInfoPlist.xcstrings", .resource),
-    .init("AppStoreOpener.swift", .source),
-    .init("AppStoreUpdateController.swift", .source),
-    .init("AppStoreUpdaterAvailabilityChecker.swift", .source),
-    .init("LatestReleaseChecker.swift", .source),
 ])
 
 /**
@@ -71,24 +50,7 @@ let extraInputFiles: [TargetName: Set<InputFile>] = [
     "DuckDuckGo Privacy Pro": nonSandboxedExtraInputFiles,
 
     "Unit Tests": [
-        .init("BWEncryptionTests.swift", .source),
-        .init("WKWebViewPrivateMethodsAvailabilityTests.swift", .source),
         .init("SupportedOSCheckerTests.swift", .source),
-        .init("SparkleUpdateCompletionValidatorTests.swift", .source),
-        .init("SparkleUpdateWideEventTests.swift", .source),
-        .init("SparkleUpdaterAvailabilityCheckerTests.swift", .source),
-        .init("UpdateCheckStateTests.swift", .source),
-        .init("UpdateWideEventDataTests.swift", .source),
-        .init("SparkleUpdateControllerTests.swift", .source),
-        .init("ApplicationUpdateDetectorTests.swift", .source),
-        .init("SimplifiedSparkleUpdateControllerTests.swift", .source),
-        .init("ReleaseNotesParserTests.swift", .source),
-    ],
-
-    "Unit Tests App Store": [
-        .init("AppStoreUpdateControllerTests.swift", .source),
-        .init("AppStoreUpdaterAvailabilityCheckerTests.swift", .source),
-        .init("LatestReleaseCheckerTests.swift", .source),
     ],
 
     "Integration Tests": []
@@ -157,8 +119,8 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
             }
         }
 
-        // Exclude Memory Usage Tests from the checks - it shares code with UI Tests target
-        otherTargets.removeAll(where: { $0.displayName == "Memory Usage Tests" })
+        // Exclude Performance Tests from the checks - it shares code with UI Tests target
+        otherTargets.removeAll(where: { $0.displayName == "Performance Tests" })
 
         // Validate target sources are only in the target's sources folder
         do {
@@ -220,8 +182,8 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
             return "UnitTests"
         case let name where name.starts(with: "Integration Tests"):
             return "IntegrationTests"
-        case "Memory Usage Tests":
-            return "MemoryUsageTests"
+        case "Performance Tests":
+            return "PerformanceTests"
         case "UI Tests":
             return "UITests"
         case let name where name.starts(with: "SyncE2EUITests"):

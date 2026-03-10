@@ -52,9 +52,6 @@ extension DefaultBrowserAndDockPromptTypeDecider {
         /// - Compares last activity date to current date
         /// - See `DefaultBrowserAndDockPromptService.applicationDidBecomeActive()`
         ///
-        /// **Feature Flag:**
-        /// - `FeatureFlag.scheduledDefaultBrowserAndDockPromptsInactiveUser` must be enabled
-        ///
         /// **Priority:**
         /// - This prompt has HIGHER priority than active user prompts (popover/banner)
         /// - If conditions are met, this shows instead of popover/banner
@@ -65,11 +62,8 @@ extension DefaultBrowserAndDockPromptTypeDecider {
         ///
         /// **See also:**
         /// - `DefaultBrowserAndDockPromptUserActivityManager` - records recent app usage days
-        /// - `DefaultBrowserAndDockPromptFeatureFlagger` - timing values and feature flags
+        /// - `DefaultBrowserAndDockPromptFeatureFlagger` - timing values
         func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
-            // If Feature is disabled return nil
-            guard featureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled else { return nil }
-
             // Conditions to show prompt for inactive users:
             // 1. The user has not seen this modal ever.
             // 2. User has been inactive for at least seven days.

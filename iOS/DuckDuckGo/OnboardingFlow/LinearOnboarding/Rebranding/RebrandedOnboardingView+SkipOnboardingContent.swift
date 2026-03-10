@@ -26,8 +26,6 @@ extension OnboardingRebranding.OnboardingView {
     struct SkipOnboardingContent: View {
         private static let fireButtonCopy = "Fire Button"
 
-        typealias Copy = UserText.Onboarding.Skip
-
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         private let startBrowsingAction: () -> Void
@@ -56,7 +54,7 @@ extension OnboardingRebranding.OnboardingView {
                         .font(onboardingTheme.typography.body)
                 ),
                 title: {
-                    Text(Copy.title)
+                    Text(UserText.Onboarding.Skip.title)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
                         .font(onboardingTheme.typography.title)
@@ -64,12 +62,12 @@ extension OnboardingRebranding.OnboardingView {
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: startBrowsingAction) {
-                            Text(Copy.confirmSkipOnboardingCTA)
+                            Text(UserText.Onboarding.Skip.confirmSkipOnboardingCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         Button(action: resumeOnboardingAction) {
-                            Text(Copy.resumeOnboardingCTA)
+                            Text(UserText.Onboarding.Skip.resumeOnboardingCTA)
                         }
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
@@ -80,7 +78,7 @@ extension OnboardingRebranding.OnboardingView {
         /// Builds the message with bold applied to "Fire Button" via SwiftUI's
         /// attribute system so the theme's body font applies uniformly.
         private static func styledMessage() -> AttributedString {
-            var attributed = AttributedString(Copy.message)
+            var attributed = AttributedString(UserText.Onboarding.Skip.message)
             if let range = attributed.range(of: fireButtonCopy) {
                 attributed[range].inlinePresentationIntent = .stronglyEmphasized
             }

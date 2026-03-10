@@ -806,4 +806,31 @@ class SecureVaultModelTests: XCTestCase {
 
     }
 
+    // MARK: - Content Equality
+
+    func testHasContentEqualTo_WhenAllContentFieldsMatch_ReturnsTrue() {
+        let a = SecureVaultModels.WebsiteAccount(id: "1", title: "Example", username: "user", domain: "example.com", signature: "sig", notes: "notes", created: Date(), lastUpdated: Date())
+        let b = SecureVaultModels.WebsiteAccount(id: "2", title: "Example", username: "user", domain: "example.com", signature: "sig", notes: "notes", created: Date(timeIntervalSince1970: 0), lastUpdated: Date(timeIntervalSince1970: 0))
+        XCTAssertTrue(a.hasContentEqualTo(b))
+    }
+
+    func testHasContentEqualTo_WhenAContentFieldDiffers_ReturnsFalse() {
+        let base = SecureVaultModels.WebsiteAccount(id: "1", title: "Example", username: "user", domain: "example.com", signature: "sig", notes: "notes", created: Date(), lastUpdated: Date())
+
+        let differentTitle = SecureVaultModels.WebsiteAccount(id: "1", title: "Other", username: "user", domain: "example.com", signature: "sig", notes: "notes", created: Date(), lastUpdated: Date())
+        XCTAssertFalse(base.hasContentEqualTo(differentTitle))
+
+        let differentUsername = SecureVaultModels.WebsiteAccount(id: "1", title: "Example", username: "other", domain: "example.com", signature: "sig", notes: "notes", created: Date(), lastUpdated: Date())
+        XCTAssertFalse(base.hasContentEqualTo(differentUsername))
+
+        let differentDomain = SecureVaultModels.WebsiteAccount(id: "1", title: "Example", username: "user", domain: "other.com", signature: "sig", notes: "notes", created: Date(), lastUpdated: Date())
+        XCTAssertFalse(base.hasContentEqualTo(differentDomain))
+
+        let differentSignature = SecureVaultModels.WebsiteAccount(id: "1", title: "Example", username: "user", domain: "example.com", signature: "other", notes: "notes", created: Date(), lastUpdated: Date())
+        XCTAssertFalse(base.hasContentEqualTo(differentSignature))
+
+        let differentNotes = SecureVaultModels.WebsiteAccount(id: "1", title: "Example", username: "user", domain: "example.com", signature: "sig", notes: "other", created: Date(), lastUpdated: Date())
+        XCTAssertFalse(base.hasContentEqualTo(differentNotes))
+    }
+
 }

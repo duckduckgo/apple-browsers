@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 import PrivacyConfig
 import AIChat
@@ -34,7 +35,18 @@ class MainViewFactory {
     var superview: UIView {
         coordinator.superview
     }
-    
+
+    var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    var isiOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        }
+        return false
+    }
+
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
                  featureFlagger: FeatureFlagger) {
@@ -45,6 +57,7 @@ class MainViewFactory {
 
     static func createViewHierarchy(_ parentController: UIViewController,
                                     aiChatSettings: AIChatSettingsProvider,
+                                    aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
                                     suggestionTrayDependencies: SuggestionTrayDependencies? = nil,
@@ -54,11 +67,11 @@ class MainViewFactory {
                                     mobileCustomization: MobileCustomization) -> MainViewCoordinator {
 
         let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
-
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aichatIPadTabFeature: AIChatIPadTabFeature(featureFlagger: featureFlagger),
                                                       aiChatSettings: aiChatSettings,
+                                                      aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       suggestionTrayDependencies: suggestionTrayDependencies,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: presenter,
@@ -88,6 +101,7 @@ extension MainViewFactory {
         createLogoBackground()
         createContentContainer()
         createSuggestionTrayContainer()
+        createUnifiedInputContentContainer()
         createTopSlideContainer()
         createStatusBackground()
         createTabBarContainer()
@@ -95,6 +109,8 @@ extension MainViewFactory {
         createToolbar()
         createNavigationBarContainer()
         createNavigationBarCollectionView()
+        createUnifiedToggleInputContainer()
+        createAIChatTabChatHeaderContainer()
         createProgressView()
     }
     
@@ -111,20 +127,43 @@ extension MainViewFactory {
     }
     
     final class NavigationBarCollectionView: UICollectionView {
-        
+
         var hitTestInsets = UIEdgeInsets.zero
-        
+        var allowsOverflowHitTesting = false
+
         override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-            return bounds.inset(by: hitTestInsets).contains(point)
+            if bounds.inset(by: hitTestInsets).contains(point) {
+                return true
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return false }
+            return visibleCells.contains { cell in
+                let cellPoint = cell.convert(point, from: self)
+                return cell.point(inside: cellPoint, with: event)
+            }
         }
-        
-        // Don't allow the use to drag the scrollbar or the UI will glitch.
+
+        // Don't allow the user to drag the scrollbar or the UI will glitch.
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
             let view = super.hitTest(point, with: event)
             if view == self.subviews.first(where: { $0 is UIImageView }) {
                 return nil
             }
-            return view
+            if let view { return view }
+
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            return overflowHitTest(point, with: event)
+        }
+
+        /// Forwards an overflow point to visible cells for hit testing.
+        /// Supports the iPad expanded search area which extends below the collection view's bounds.
+        private func overflowHitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            for cell in visibleCells.reversed() {
+                let cellPoint = cell.convert(point, from: self)
+                if let result = cell.hitTest(cellPoint, with: event) {
+                    return result
+                }
+            }
+            return nil
         }
     }
     
@@ -139,7 +178,72 @@ extension MainViewFactory {
         coordinator.navigationBarContainer.addSubview(coordinator.navigationBarCollectionView)
     }
     
-    final class NavigationBarContainer: UIView { }
+    final class NavigationBarContainer: UIView {
+
+        /// Enables overflow hit testing for iPad expanded search area.
+        /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
+        var allowsOverflowHitTesting = false {
+            didSet {
+                guard allowsOverflowHitTesting != oldValue else { return }
+                if allowsOverflowHitTesting {
+                    addGestureRecognizer(overflowTapGesture)
+                } else {
+                    removeGestureRecognizer(overflowTapGesture)
+                }
+            }
+        }
+
+        private lazy var overflowTapGesture: UITapGestureRecognizer = {
+            let tap = UITapGestureRecognizer(target: self, action: #selector(handleOverflowTap(_:)))
+            return tap
+        }()
+
+        @objc private func handleOverflowTap(_ gesture: UITapGestureRecognizer) {
+            let point = gesture.location(in: self)
+            guard point.y >= bounds.maxY else { return }
+            if let control = Self.deepHitTest(in: self, point: point, event: nil) as? UIControl, control.isEnabled {
+                control.sendActions(for: .primaryActionTriggered)
+            }
+        }
+
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            if let result = super.hitTest(point, with: event) {
+                return result
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            guard let target = Self.deepHitTest(in: self, point: point, event: event) else { return nil }
+            // Return self for controls so the overflow tap gesture recognizer can activate them.
+            return target is UIControl ? self : target
+        }
+
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            if super.point(inside: point, with: event) {
+                return true
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return false }
+            return Self.deepHitTest(in: self, point: point, event: event) != nil
+        }
+
+        /// Recursively searches descendants for a view that claims the point,
+        /// bypassing intermediate views' bounds checks to support overflow content.
+        private static func deepHitTest(in view: UIView, point: CGPoint, event: UIEvent?) -> UIView? {
+            for subview in view.subviews.reversed() {
+                guard !subview.isHidden, subview.alpha > 0.01, subview.isUserInteractionEnabled else {
+                    continue
+                }
+                let convertedPoint = subview.convert(point, from: view)
+
+                if subview.point(inside: convertedPoint, with: event) {
+                    return subview.hitTest(convertedPoint, with: event)
+                }
+
+                if let result = deepHitTest(in: subview, point: convertedPoint, event: event) {
+                    return result
+                }
+            }
+            return nil
+        }
+    }
     private func createNavigationBarContainer() {
         coordinator.navigationBarContainer = NavigationBarContainer()
         superview.addSubview(coordinator.navigationBarContainer)
@@ -171,6 +275,14 @@ extension MainViewFactory {
         superview.addSubview(coordinator.suggestionTrayContainer)
     }
 
+    final class UnifiedInputContentContainer: UIView { }
+    private func createUnifiedInputContentContainer() {
+        coordinator.unifiedInputContentContainer = UnifiedInputContentContainer()
+        coordinator.unifiedInputContentContainer.isHidden = true
+        coordinator.unifiedInputContentContainer.backgroundColor = .clear
+        superview.addSubview(coordinator.unifiedInputContentContainer)
+    }
+
     private func createToolbar() {
         coordinator.toolbar = HitTestingToolbar()
         coordinator.toolbar.isTranslucent = false
@@ -200,6 +312,22 @@ extension MainViewFactory {
         superview.addSubview(coordinator.topSlideContainer)
     }
 
+    final class UnifiedToggleInputContainer: UIView {}
+    private func createUnifiedToggleInputContainer() {
+        coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
+        coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.unifiedToggleInputContainer.isHidden = true
+        coordinator.navigationBarContainer.addSubview(coordinator.unifiedToggleInputContainer)
+    }
+
+    final class AIChatTabChatHeaderContainer: UIView {}
+    private func createAIChatTabChatHeaderContainer() {
+        coordinator.aiChatTabChatHeaderContainer = AIChatTabChatHeaderContainer()
+        coordinator.aiChatTabChatHeaderContainer.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.aiChatTabChatHeaderContainer.isHidden = true
+        superview.addSubview(coordinator.aiChatTabChatHeaderContainer)
+    }
+
 }
 
 /// Add constraint functions
@@ -210,10 +338,13 @@ extension MainViewFactory {
         constrainTopSlideContainer()
         constrainContentContainer()
         constrainSuggestionTrayContainer()
+        constrainUnifiedInputContentContainer()
         constrainStatusBackground()
         constrainTabBarContainer()
         constrainNavigationBarContainer()
         constrainToolbar()
+        constrainUnifiedToggleInputContainer()
+        constrainAIChatTabChatHeaderContainer()
     }
     
     private func constrainNavigationBarContainer() {
@@ -221,7 +352,16 @@ extension MainViewFactory {
         let toolbar = coordinator.toolbar!
         let navigationBarCollectionView = coordinator.navigationBarCollectionView!
 
+        #if compiler(>=6.2)
+        if #available(iOS 26, *), isPad {
+            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            coordinator.constraints.navigationBarContainerTop = container.topAnchor.constraint(equalTo: guide.topAnchor)
+        } else {
+            coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        }
+        #else
         coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        #endif
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight, relatedBy: .equal)
 
@@ -239,8 +379,17 @@ extension MainViewFactory {
 
     private func constrainTabBarContainer() {
         let tabBarContainer = coordinator.tabBarContainer!
-        
+
+        #if compiler(>=6.2)
+        if #available(iOS 26, *), isPad {
+            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            coordinator.constraints.tabBarContainerTop = tabBarContainer.topAnchor.constraint(equalTo: guide.topAnchor)
+        } else {
+            coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        }
+        #else
         coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        #endif
 
         NSLayoutConstraint.activate([
             tabBarContainer.constrainView(superview, by: .leading),
@@ -274,8 +423,10 @@ extension MainViewFactory {
         let navigationBarContainer = coordinator.navigationBarContainer!
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
+        coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
+        coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop = contentContainer.bottomAnchor.constraint(equalTo: coordinator.unifiedToggleInputContainer.topAnchor)
 
         NSLayoutConstraint.activate([
             contentContainer.constrainView(superview, by: .leading),
@@ -286,13 +437,42 @@ extension MainViewFactory {
     }
 
     private func constrainToolbar() {
+
+        // Changing this?  Best change TabSwitcherViewController too
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
         NSLayoutConstraint.activate([
-            toolbar.constrainView(superview, by: .width),
+            toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
             toolbar.constrainAttribute(.height, to: 49),
             coordinator.constraints.toolbarBottom,
+        ])
+    }
+
+    private func constrainUnifiedToggleInputContainer() {
+        let container = coordinator.unifiedToggleInputContainer!
+        let navigationBarContainer = coordinator.navigationBarContainer!
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: navigationBarContainer.topAnchor),
+            container.leadingAnchor.constraint(equalTo: navigationBarContainer.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: navigationBarContainer.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor),
+        ])
+    }
+
+    private func constrainAIChatTabChatHeaderContainer() {
+        let container = coordinator.aiChatTabChatHeaderContainer!
+
+        coordinator.constraints.contentContainerTopToAIChatHeader = coordinator.contentContainer.topAnchor
+            .constraint(equalTo: container.bottomAnchor)
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 
@@ -304,6 +484,17 @@ extension MainViewFactory {
             suggestionTrayContainer.constrainView(contentContainer, by: .height),
             suggestionTrayContainer.constrainView(contentContainer, by: .centerX),
             suggestionTrayContainer.constrainView(contentContainer, by: .centerY),
+        ])
+    }
+
+    private func constrainUnifiedInputContentContainer() {
+        let container = coordinator.unifiedInputContentContainer!
+        let contentContainer = coordinator.contentContainer!
+        NSLayoutConstraint.activate([
+            container.constrainView(contentContainer, by: .width),
+            container.constrainView(contentContainer, by: .height),
+            container.constrainView(contentContainer, by: .centerX),
+            container.constrainView(contentContainer, by: .centerY),
         ])
     }
 

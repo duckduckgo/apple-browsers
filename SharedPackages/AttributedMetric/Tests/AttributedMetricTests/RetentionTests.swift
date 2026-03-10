@@ -74,6 +74,8 @@ final class RetentionTests: XCTestCase {
         let subscriptionProvider = SubscriptionStateProviderMock()
         let settingsProvider = AttributedMetricSettingsProviderMock()
 
+        let returningUserProvider = AttributedMetricReturningUserProvidingMock()
+
         let attributionManager = AttributedMetricManager(
             pixelKit: pixelKit,
             dataStoring: dataStorage,
@@ -81,6 +83,7 @@ final class RetentionTests: XCTestCase {
             originProvider: originProvider,
             defaultBrowserProviding: defaultBrowserProvider,
             subscriptionStateProvider: subscriptionProvider,
+            returningUserProvider: returningUserProvider,
             dateProvider: timeMachine,
             settingsProvider: settingsProvider
         )

@@ -367,6 +367,7 @@ final class SubscriptionTests: XCTestCase {
         XCTAssertEqual(availableChanges.upgrade.first?.order, 1)
         XCTAssertEqual(availableChanges.downgrade.count, 1)
         XCTAssertEqual(availableChanges.downgrade.first?.tier, "basic")
+        XCTAssertNil(availableChanges.currentProductId)
     }
 
     func testAvailableChangesDecoding_WithNullUpgrade_DefaultsToEmptyArray() throws {
@@ -395,6 +396,22 @@ final class SubscriptionTests: XCTestCase {
 
         XCTAssertEqual(availableChanges.upgrade, [])
         XCTAssertEqual(availableChanges.downgrade, [])
+        XCTAssertNil(availableChanges.currentProductId)
+    }
+
+    func testAvailableChangesDecoding_WithCurrentProductId_DecodesValue() throws {
+        let rawAvailableChanges = """
+        {
+            \"upgrade\": [],
+            \"downgrade\": [],
+            \"currentProductId\": \"com.duckduckgo.plus.monthly.current\"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        let availableChanges = try decoder.decode(DuckDuckGoSubscription.AvailableChanges.self, from: Data(rawAvailableChanges.utf8))
+
+        XCTAssertEqual(availableChanges.currentProductId, "com.duckduckgo.plus.monthly.current")
     }
 
     // MARK: - TierChange Decoding Tests

@@ -148,6 +148,16 @@ extension XCUIElement {
         self.typeURL(url, pressingEnter: pressingEnter)
     }
 
+    /// Shows the bookmarks panel shortcut and taps it. If the bookmarks shortcut is visible, it only taps it.
+    func openBookmarksPanel() {
+        let bookmarksPanelShortcutButton = buttons[XCUIApplication.AccessibilityIdentifiers.bookmarksPanelShortcutButton]
+        if !bookmarksPanelShortcutButton.exists {
+            typeKey("k", modifierFlags: [.command, .shift])
+        }
+
+        bookmarksPanelShortcutButton.tap()
+    }
+
     func clickAfterExistenceTestSucceeds() {
         XCTAssertTrue(
             self.waitForExistence(timeout: UITests.Timeouts.elementExistence),

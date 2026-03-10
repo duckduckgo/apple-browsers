@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppUpdaterShared
 import BrowserServicesKit
 import Foundation
 import HistoryView
@@ -33,7 +34,7 @@ import WebKit
 final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let contextMenuScript = ContextMenuUserScript()
+    let contextMenuSubfeature = ContextMenuSubfeature()
     let hoverUserScript = HoverUserScript()
     let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
@@ -122,7 +123,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             management: sourceProvider.autoconsentManagement,
             preferences: sourceProvider.cookiePopupProtectionPreferences,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
@@ -167,7 +169,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         // Release notes user script - only available for Sparkle builds
-        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateController {
+        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateControlling {
             releaseNotesUserScript = updateController.makeReleaseNotesUserScript(
                 pixelFiring: PixelKit.shared,
                 keyValueStore: UserDefaults.standard,
@@ -177,9 +179,14 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             releaseNotesUserScript = nil
         }
 
-        userScripts.append(autoconsentUserScript)
+        if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
+            userScripts.append(autoconsentUserScript)
+        }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
@@ -232,12 +239,20 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: subscriptionManager,
+            uiHandler: Application.appDelegate.subscriptionUIHandler,
+            wideEvent: Application.appDelegate.wideEvent,
+            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+            pendingTransactionHandler: pendingTransactionHandler
+        )
+
         delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                            stripePurchaseFlow: stripePurchaseFlow,
                                                            uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                            aiChatURL: AIChatRemoteSettings().aiChatURL,
                                                            wideEvent: Application.appDelegate.wideEvent,
-                                                           pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
+                                                           pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
@@ -249,11 +264,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     lazy var userScripts: [UserScript] = [
         debugScript,
-        contextMenuScript,
         surrogatesScript,
         contentBlockerRulesScript,
-        pageObserverScript,
-        hoverUserScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript

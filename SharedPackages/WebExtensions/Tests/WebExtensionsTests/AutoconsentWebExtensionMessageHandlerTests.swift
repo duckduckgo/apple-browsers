@@ -73,76 +73,111 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         }
     }
 
-    // MARK: - sendPixel (Not Implemented)
+    // MARK: - sendPixel
 
-    func testWhenSendPixelThenReturnsNotImplementedError() async {
+    func testWhenSendPixelWithValidParamsThenReturnsSuccess() async throws {
         let message = createMessage(method: "sendPixel", params: ["pixelName": "test", "type": "impression"])
 
         let result = await handler.handleMessage(message)
 
-        if case .failure(let error) = result {
-            let handlerError = error as? WebExtensionMessageHandlerError
-            if case .unknownMethod(let method) = handlerError {
-                XCTAssertEqual(method, "sendPixel")
-            } else {
-                XCTFail("Expected unknownMethod error for sendPixel")
-            }
+        if case .success(let response) = result {
+            let dict = try XCTUnwrap(response as? [String: Any])
+            XCTAssertEqual(dict["response"] as? String, "ok")
         } else {
-            XCTFail("Expected failure result")
+            XCTFail("Expected success result")
         }
     }
 
-    // MARK: - refreshCpmDashboardState (Not Implemented)
+    // MARK: - refreshCpmDashboardState
 
-    func testWhenRefreshCpmDashboardStateThenReturnsNotImplementedError() async {
+    func testWhenRefreshCpmDashboardStateWithNoParamsThenReturnsMissingParameterError() async {
         let message = createMessage(method: "refreshCpmDashboardState")
 
         let result = await handler.handleMessage(message)
 
         if case .failure(let error) = result {
             let handlerError = error as? WebExtensionMessageHandlerError
-            if case .unknownMethod(let method) = handlerError {
-                XCTAssertEqual(method, "refreshCpmDashboardState")
+            if case .missingParameter = handlerError {
+                // Expected
             } else {
-                XCTFail("Expected unknownMethod error")
+                XCTFail("Expected missingParameter error")
             }
         } else {
             XCTFail("Expected failure result")
         }
     }
 
-    // MARK: - showCpmAnimation (Not Implemented)
+    // MARK: - showCpmAnimation
 
-    func testWhenShowCpmAnimationThenReturnsNotImplementedError() async {
+    func testWhenShowCpmAnimationWithNoParamsThenReturnsMissingParameterError() async {
         let message = createMessage(method: "showCpmAnimation")
 
         let result = await handler.handleMessage(message)
 
         if case .failure(let error) = result {
             let handlerError = error as? WebExtensionMessageHandlerError
-            if case .unknownMethod(let method) = handlerError {
-                XCTAssertEqual(method, "showCpmAnimation")
+            if case .missingParameter = handlerError {
+                // Expected
             } else {
-                XCTFail("Expected unknownMethod error")
+                XCTFail("Expected missingParameter error")
             }
         } else {
             XCTFail("Expected failure result")
         }
     }
 
-    // MARK: - cookiePopupHandled (Not Implemented)
+    // MARK: - cookiePopupHandled
 
-    func testWhenCookiePopupHandledThenReturnsNotImplementedError() async {
-        let message = createMessage(method: "cookiePopupHandled")
+    func testWhenCookiePopupHandledWithValidParamsThenReturnsSuccess() async throws {
+        let msg: [String: Any] = [
+            "url": "https://example.com/page",
+            "cmp": "test-cmp",
+            "result": true
+        ]
+        let message = createMessage(method: "cookiePopupHandled", params: ["msg": msg])
+
+        let result = await handler.handleMessage(message)
+
+        if case .success(let response) = result {
+            let dict = try XCTUnwrap(response as? [String: Any])
+            XCTAssertEqual(dict["response"] as? String, "ok")
+        } else {
+            XCTFail("Expected success result")
+        }
+    }
+
+    func testWhenCookiePopupHandledWithMissingMsgThenReturnsMissingParameterError() async {
+        let message = createMessage(method: "cookiePopupHandled", params: [:])
 
         let result = await handler.handleMessage(message)
 
         if case .failure(let error) = result {
             let handlerError = error as? WebExtensionMessageHandlerError
-            if case .unknownMethod(let method) = handlerError {
-                XCTAssertEqual(method, "cookiePopupHandled")
+            if case .missingParameter(let parameter) = handlerError {
+                XCTAssertTrue(parameter.contains("msg") || parameter.contains("url"))
             } else {
-                XCTFail("Expected unknownMethod error")
+                XCTFail("Expected missingParameter error")
+            }
+        } else {
+            XCTFail("Expected failure result")
+        }
+    }
+
+    func testWhenCookiePopupHandledWithMissingUrlInMsgThenReturnsMissingParameterError() async {
+        let msg: [String: Any] = [
+            "cmp": "test-cmp",
+            "result": true
+        ]
+        let message = createMessage(method: "cookiePopupHandled", params: ["msg": msg])
+
+        let result = await handler.handleMessage(message)
+
+        if case .failure(let error) = result {
+            let handlerError = error as? WebExtensionMessageHandlerError
+            if case .missingParameter(let parameter) = handlerError {
+                XCTAssertTrue(parameter.contains("url") || parameter.contains("msg"))
+            } else {
+                XCTFail("Expected missingParameter error")
             }
         } else {
             XCTFail("Expected failure result")
@@ -152,7 +187,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     // MARK: - isFeatureEnabled
 
     func testWhenIsFeatureEnabledWithValidParametersThenReturnsEnabled() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in true }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in true }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "https://example.com"]
@@ -169,7 +204,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     func testWhenIsFeatureEnabledWithDisabledFeatureThenReturnsDisabled() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in false }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in false }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "https://example.com"]
@@ -242,7 +277,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     func testWhenIsFeatureEnabledWithInvalidURLFormatThenStillReturnsResult() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in true }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in true }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "not-a-valid-url"]
@@ -606,7 +641,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
     // MARK: - extensionLog
 
-    func testWhenExtensionLogWithMessageThenReturnsSuccess() async {
+    func testWhenExtensionLogWithMessageThenReturnsSuccess() async throws {
         let message = createMessage(
             method: "extensionLog",
             params: ["message": "Test log message"]
@@ -615,14 +650,14 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: String]
-            XCTAssertEqual(dict?["response"], "ok")
+            let dict = try XCTUnwrap(response as? [String: Any])
+            XCTAssertEqual(dict["response"] as? String, "ok")
         } else {
             XCTFail("Expected success result")
         }
     }
 
-    func testWhenExtensionLogWithEmptyMessageThenReturnsSuccess() async {
+    func testWhenExtensionLogWithEmptyMessageThenReturnsSuccess() async throws {
         let message = createMessage(
             method: "extensionLog",
             params: ["message": ""]
@@ -631,8 +666,8 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: String]
-            XCTAssertEqual(dict?["response"], "ok")
+            let dict = try XCTUnwrap(response as? [String: Any])
+            XCTAssertEqual(dict["response"] as? String, "ok")
         } else {
             XCTFail("Expected success result")
         }

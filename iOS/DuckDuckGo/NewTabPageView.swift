@@ -29,14 +29,17 @@ struct NewTabPageView: View {
     @ObservedObject private var messagesModel: NewTabPageMessagesModel
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
 
+    let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
     let dismissKeyboardOnScroll: Bool
 
-    init(narrowLayoutInLandscape: Bool = false,
+    init(isFocussedState: Bool = false,
+         narrowLayoutInLandscape: Bool = false,
          dismissKeyboardOnScroll: Bool = true,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
          favoritesViewModel: FavoritesViewModel) {
+        self.isFocussedState = isFocussedState
         self.viewModel = viewModel
         self.messagesModel = messagesModel
         self.favoritesViewModel = favoritesViewModel
@@ -83,7 +86,8 @@ private extension NewTabPageView {
         GeometryReader { proxy in
             ScrollView {
                 LazyVStack(spacing: Metrics.sectionSpacing) {
-                    
+                    escapeHatchSectionView
+
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
@@ -107,20 +111,47 @@ private extension NewTabPageView {
 
     @ViewBuilder
     private var emptyStateView: some View {
-        ZStack {
-            if messagesModel.homeMessageViewModels.isEmpty {
-                NewTabPageDaxLogoView()
-            }
+        GeometryReader { proxy in
+            ZStack {
+                if shouldShowLogoInEmptyState {
+                    NewTabPageDaxLogoView()
+                }
 
-            VStack(spacing: Metrics.sectionSpacing) {
-                messagesSectionView
-                    .padding(.top, Metrics.nonGridSectionTopPadding)
-                    .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                    .frame(maxHeight: .infinity, alignment: .top)
+                VStack(spacing: Metrics.sectionSpacing) {
+                    escapeHatchSectionView
+
+                    messagesSectionView
+                        .padding(.top, Metrics.nonGridSectionTopPadding)
+                        .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.vertical, sectionsViewPadding(in: proxy))
+            .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
         }
-        .padding(Metrics.regularPadding)
+        .if(dismissKeyboardOnScroll, transform: {
+            $0.ignoresSafeArea(.keyboard)
+        })
+    }
+
+    private var shouldShowLogoInEmptyState: Bool {
+        guard messagesModel.homeMessageViewModels.isEmpty else { return false }
+        if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
+        if viewModel.escapeHatch != nil && isFocussedState { return false }
+        return true
+    }
+
+    @ViewBuilder
+    private var escapeHatchSectionView: some View {
+        if let escapeHatch = viewModel.escapeHatch {
+            ReturnToTabCard(model: escapeHatch) {
+                viewModel.onEscapeHatchTap?()
+            }
+            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+            .padding(.top, Metrics.nonGridSectionTopPadding)
+            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+        }
     }
 
     private var messagesSectionView: some View {

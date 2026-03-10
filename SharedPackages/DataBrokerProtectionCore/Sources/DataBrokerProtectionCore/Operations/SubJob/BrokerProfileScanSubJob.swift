@@ -70,9 +70,11 @@ struct BrokerProfileScanSubJob {
                                  identifiers: identifiers)
         }
 
+        let isAuthenticated = await dependencies.isAuthenticatedUser()
         let scanContext = createScanStageContext(brokerProfileQueryData: brokerProfileQueryData,
                                                  isManual: isManual,
-                                                 isAuthenticated: await dependencies.isAuthenticatedUser(),
+                                                 isAuthenticated: isAuthenticated,
+                                                 isFreeScan: !isAuthenticated,
                                                  database: dependencies.database,
                                                  pixelHandler: dependencies.pixelHandler,
                                                  parentURL: brokerProfileQueryData.dataBroker.parent,
@@ -84,7 +86,8 @@ struct BrokerProfileScanSubJob {
 
         let metadata = ScanWideEventRecorder.Metadata(
             from: brokerProfileQueryData.scanJobData,
-            referenceDate: stageCalculator.startTime
+            referenceDate: stageCalculator.startTime,
+            isFreeScan: !isAuthenticated
         )
         let scanWideEventRecorder = ScanWideEventRecorder.startIfPossible(
             wideEvent: dependencies.wideEvent,
@@ -191,6 +194,7 @@ struct BrokerProfileScanSubJob {
     internal func createScanStageContext(brokerProfileQueryData: BrokerProfileQueryData,
                                          isManual: Bool,
                                          isAuthenticated: Bool,
+                                         isFreeScan: Bool,
                                          database: DataBrokerProtectionRepository,
                                          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                          parentURL: String?,
@@ -207,6 +211,7 @@ struct BrokerProfileScanSubJob {
             isImmediateOperation: isManual,
             parentURL: parentURL,
             isAuthenticated: isAuthenticated,
+            isFreeScan: isFreeScan,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus,
             featureFlagger: featureFlagger

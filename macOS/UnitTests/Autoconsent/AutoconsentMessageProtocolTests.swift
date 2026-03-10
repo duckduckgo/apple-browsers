@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import Common
 import History
 import HistoryView
@@ -59,7 +60,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitIgnoresNonHttp() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "file://helicopter"
         ])
@@ -78,7 +79,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitResponds() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "https://example.com"
         ])
@@ -105,7 +106,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testEval() {
         let webView = WKWebView()
-        let message = MockWKScriptMessage(name: "eval", body: [
+        let message = WKScriptMessage.mock(name: "eval", body: [
             "type": "eval",
             "id": "some id",
             "code": "1+1==2"
@@ -127,7 +128,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testPopupFoundNoPromptIfEnabled() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "popupFound", body: [
+        let message = WKScriptMessage.mock(name: "popupFound", body: [
             "type": "popupFound",
             "cmp": "some cmp",
             "url": "https://example.com"
@@ -142,37 +143,5 @@ class AutoconsentMessageProtocolTests: XCTestCase {
             message: message
         )
         waitForExpectations(timeout: 1.0)
-    }
-}
-
-class MockWKScriptMessage: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-    let mockedFrameInfo: WKFrameInfo
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    override var frameInfo: WKFrameInfo {
-        return mockedFrameInfo
-    }
-
-    init(name: String? = nil, body: Any? = nil, webView: WKWebView? = nil, frameInfo: WKFrameInfo? = nil) {
-        self.mockedName = name ?? ""
-        self.mockedBody = body ?? ""
-        self.mockedWebView = webView
-        self.mockedFrameInfo = frameInfo ?? .mock(for: webView, isMain: true, request: nil)
-        super.init()
     }
 }

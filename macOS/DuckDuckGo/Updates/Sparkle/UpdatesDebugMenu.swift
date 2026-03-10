@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import AppKit
 import AIChat
+import AppKit
+import AppUpdaterShared
 import Common
 import CryptoKit
 import os.log
@@ -41,11 +42,6 @@ final class UpdatesDebugMenu: NSMenu {
                 .targetting(self)
             NSMenuItem.separator()
 #endif
-            NSMenuItem(title: "Expire current update", action: #selector(expireCurrentUpdate))
-                .targetting(self)
-            NSMenuItem(title: "Reset last update check", action: #selector(resetLastUpdateCheck))
-                .targetting(self)
-            NSMenuItem.separator()
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                 .targetting(self)
             NSMenuItem.separator()
@@ -62,26 +58,6 @@ final class UpdatesDebugMenu: NSMenu {
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    // MARK: - Menu State Update
-
-    private var updateValidityStartDate: Date? {
-        get { try? settings.updateValidityStartDate }
-        set { try? settings.set(newValue, for: \.updateValidityStartDate) }
-    }
-
-    @objc func expireCurrentUpdate() {
-        updateValidityStartDate = .distantPast
-    }
-
-    private var pendingUpdateSince: Date {
-        get { (try? settings.pendingUpdateSince) ?? .distantPast }
-        set { try? settings.set(newValue, for: \.pendingUpdateSince) }
-    }
-
-    @objc func resetLastUpdateCheck() {
-        pendingUpdateSince = .distantPast
     }
 
     @objc func testUpdateSuccessOnNextLaunch() {

@@ -48,19 +48,31 @@ typealias HistoryPaneIdentifier = HistoryView.DataModel.HistoryRange
 extension TabContent {
 
     enum URLSource: Equatable {
+        /// Used for TabContent instantiated by state restoration
         case pendingStateRestoration
+        /// Used to identify already loaded TabContent after state restoration
         case loadedByStateRestoration
+        /// Used for URLs entered by the user in the address bar
         case userEntered(String, downloadRequested: Bool = false)
+        /// Used for history entries opened from browser UI
         case historyEntry
+        /// Used for bookmarks opened from browser UI
         case bookmark(isFavorite: Bool)
+        /// Used for URLs opened from internal browser UI (mostly for URLs like email protection, duck.ai, duckduckgo.com, etc.)
         case ui
+        /// Used for links opened from the web view
         case link
+        /// Used for URLs opened from an external application
         case appOpenUrl
+        /// Set to Tab Content being reloaded
         case reload
+        /// Dummy source for switching to an open tab already displaying the same URL
         case switchToOpenTab
 
+        /// Used for URLs whose change was triggered by the web view
         case webViewUpdated
 
+        /// Value actually entered by the user in the address bar at the moment of submission
         var userEnteredValue: String? {
             if case .userEntered(let userEnteredValue, _) = self {
                 userEnteredValue
@@ -69,10 +81,12 @@ extension TabContent {
             }
         }
 
+        /// Whether the URL was actually entered by the user in the address bar
         var isUserEnteredUrl: Bool {
             userEnteredValue != nil
         }
 
+        /// NavigationAction.navigationType that would be used to load this URLSource
         var navigationType: NavigationType {
             switch self {
             case .userEntered(_, downloadRequested: true):
@@ -100,6 +114,7 @@ extension TabContent {
             }
         }
 
+        /// URLRequest.CachePolicy that would be used to load this URLSource
         var cachePolicy: URLRequest.CachePolicy {
             switch self {
             case .pendingStateRestoration, .historyEntry:

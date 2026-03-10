@@ -106,8 +106,7 @@ final class PopupHandlingTabExtension {
             .filter { event in
                 switch event {
                 case .mouseDown, .keyDown, .middleMouseDown:
-                    guard featureFlagger.isFeatureOn(.popupBlocking),
-                          featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else {
+                    guard featureFlagger.isFeatureOn(.popupBlocking) else {
                         return false
                     }
                     Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
@@ -234,7 +233,7 @@ final class PopupHandlingTabExtension {
         // Disable opening empty or `about:` URLs as the opened pop-ups would be non-functional
         // when opened asynchronously after the user has granted the permission.
         if !isCalledSynchronously,
-           featureFlagger.isFeatureOn(.popupBlocking), featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
+           featureFlagger.isFeatureOn(.popupBlocking),
            url?.isEmpty ?? true || url?.navigationalScheme == .about {
             Logger.navigation.info("handleCreateWebViewRequest: suppressing pop-up for `\(url?.absoluteString ??? "<nil>")`")
             self.popupsTemporarilyAllowedForCurrentPage = true
@@ -288,15 +287,20 @@ final class PopupHandlingTabExtension {
     }
 
     /// Determines if a popup should be allowed bypassing the permission request:
+    /// - If the app is running in WebDriver automation mode, allow all popups
     /// - If the navigation action is user-initiated (clicked link, etc.), allow the popup
-    /// - If the pop-ups temporarily allowed for the current page with the "Only allow pop-ups for this visit" option selected:
-    ///   - Either for empty/about: URLs specifically with `suppressEmptyPopUpsOnApproval` feature flag enabled
-    ///   - OR for all URLs when `allowPopupsForCurrentPage` feature flag is enabled
+    /// - If the pop-ups are temporarily allowed for the current page with the "Only allow pop-ups for this visit" option selected
     /// - If the initiating domain is allowlisted in the popupBlockingConfig
     /// - Otherwise, do not allow the popup
     /// ---
     /// - Returns: A `PopupPermissionBypassReason` describing the reason for bypassing permission, or `nil` if the popup should not be allowed
     @MainActor internal func shouldAllowPopupBypassingPermissionRequest(for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> PopupPermissionBypassReason? {
+        // Bypass popup blocking for WebDriver automation only.
+        // UI tests still validate popup blocking behavior.
+        if LaunchOptionsHandler().isWebDriverAutomationSession {
+            return .automationSession
+        }
+
         // Check if the pop-up is user-initiated (clicked link, etc.)
         if let reason = isNavigationActionUserInitiated(navigationAction) {
             return .userInitiated(reason)
@@ -312,16 +316,9 @@ final class PopupHandlingTabExtension {
             }
         }
 
-        let url = navigationAction.request.url ?? .empty
-        // Check if pop-ups temporarily allowed for the current page with the "Only allow pop-ups for this visit" option selected:
-        // Either for empty/about: URLs specifically with `suppressEmptyPopUpsOnApproval` feature flag enabled,
-        // OR for all URLs when `allowPopupsForCurrentPage` feature flag is enabled
+        // Check if pop-ups temporarily allowed for the current page with the "Only allow pop-ups for this visit" option selected.
         if featureFlagger.isFeatureOn(.popupBlocking),
-           popupsTemporarilyAllowedForCurrentPage
-            && (
-                (featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval) && (url.isEmpty || url.navigationalScheme == .about))
-                || featureFlagger.isFeatureOn(.allowPopupsForCurrentPage)
-            ) {
+           popupsTemporarilyAllowedForCurrentPage {
             return .popupsTemporarilyAllowedForCurrentPage
         }
 
@@ -346,7 +343,6 @@ final class PopupHandlingTabExtension {
 
         // Check if enhanced popup blocking is enabled and configured properly
         guard featureFlagger.isFeatureOn(.popupBlocking),
-              featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout),
               threshold > 0 else {
             assert(threshold > 0, "userInitiatedPopupThreshold in macos-config must be positive")
             // Fall back to WebKit's basic user-initiated check (1s. user interaction timeout) if feature is disabled or misconfigured
@@ -446,7 +442,7 @@ extension PopupHandlingTabExtension: NavigationResponder {
         }()
 
         // Last interaction event that triggered the link activation (regular click, ⌘-click, middle-click, key press, etc.)
-        let userInteractionEvent = if featureFlagger.isFeatureOn(.popupBlocking), featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) {
+        let userInteractionEvent = if featureFlagger.isFeatureOn(.popupBlocking) {
             lastUserInteractionEvent
         } else {
             NSApp.currentEvent
@@ -553,11 +549,14 @@ enum PopupPermissionBypassReason: Equatable {
     case userInitiated(UserInitiatedReason)
     case popupsTemporarilyAllowedForCurrentPage
     case allowlistedDomain(String)
+    /// Popup blocking is bypassed when running in WebDriver automation
+    /// because synthetic clicks don't establish user activation context
+    case automationSession
 
     var isUserInitiated: Bool {
         switch self {
-        case .userInitiated, .allowlistedDomain:
-            // Don‘t show the pop-up button for user-initiated popups, popups temporarily allowed for the current page, or allowlisted domains
+        case .userInitiated, .allowlistedDomain, .automationSession:
+            // Don't show the pop-up button for user-initiated popups, allowlisted domains, or automation sessions
             return true
         case .popupsTemporarilyAllowedForCurrentPage:
             return false
@@ -573,6 +572,8 @@ extension PopupPermissionBypassReason: CustomStringConvertible {
             return "popupsTemporarilyAllowedForCurrentPage"
         case .allowlistedDomain(let domain):
             return "allowlistedDomain(\(domain))"
+        case .automationSession:
+            return "automationSession"
         }
     }
 }

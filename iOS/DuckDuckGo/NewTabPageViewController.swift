@@ -27,7 +27,12 @@ import RemoteMessaging
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
-        favoritesModel.isEmpty
+        guard favoritesModel.isEmpty else { return false }
+        if newTabPageViewModel.escapeHatch != nil {
+            let isLandscape = view.bounds.width > view.bounds.height
+            return !isLandscape
+        }
+        return true
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -46,6 +51,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appWidthObserver: AppWidthObserver
 
     private let internalUserCommands: URLBasedDebugCommands
+
+    var onViewDidAppear: (() -> Void)?
 
     init(isFocussedState: Bool,
          dismissKeyboardOnScroll: Bool,
@@ -81,13 +88,27 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter)
 
-        super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
+        super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
+                                            narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        newTabPageViewModel.escapeHatch = model
+        if let model {
+            let index = model.targetTabIndex
+            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
+                guard let self else { return }
+                self.delegate?.newTabPageDidRequestSwitchToTab(self, index: index)
+            }
+        } else {
+            newTabPageViewModel.onEscapeHatchTap = nil
+        }
     }
 
     override func viewDidLoad() {
@@ -106,6 +127,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         guard presentedViewController?.isBeingDismissed ?? true else {
             return
         }
+
+        onViewDidAppear?()
+        onViewDidAppear = nil
 
         associatedTab.viewed = true
 
@@ -186,7 +210,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         favoritesModel.onFavoriteDeleted = { [weak self] _ in
             guard let self else { return }
 
-            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+            updateBorderView()
         }
     }
 
@@ -271,6 +295,17 @@ extension NewTabPageViewController {
 
         let onManualDismiss: () -> Void = { [weak self] in
             self?.dismissHostingController(didFinishNTPOnboarding: true)
+
+            if spec == .final {
+                let nextSpec = dialogProvider.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    self?.chromeDelegate?.omniBar.endEditing()
+                    self?.showNextDaxDialog()
+                    return
+                }
+                dialogProvider.dismiss()
+            }
+
             // Show keyboard when manually dismiss the Dax tips.
             self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }

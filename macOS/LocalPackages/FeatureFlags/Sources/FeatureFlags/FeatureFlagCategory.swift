@@ -29,6 +29,7 @@ public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case sync = "Sync"
     case updates = "Updates"
     case vpn = "VPN"
+    case webExtensions = "Web Extensions"
     case webNotifications = "Web Notifications"
 
     public static func < (lhs: FeatureFlagCategory, rhs: FeatureFlagCategory) -> Bool {
@@ -57,7 +58,9 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .standaloneMigration,
-                .aiChatSidebarResizable:
+                .aiChatSidebarResizable,
+                .aiChatNtpRecentChats,
+                .aiChatSidebarFloating:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -68,11 +71,9 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .canScanUrlBasedSyncSetupBarcodes,
                 .exchangeKeysToSyncWithAnotherDevice:
             return .sync
-        case .updatesWontAutomaticallyRestartApp,
-                .autoUpdateInDEBUG,
+        case .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
-                .appStoreUpdateFlow,
-                .updatesSimplifiedFlow:
+                .appStoreUpdateFlow:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
@@ -87,14 +88,14 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .blackFridayCampaign,
                 .allowProTierPurchase:
             return .subscription
-        case .popupBlocking,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage,
-                .popupPermissionButtonPersistence:
+        case .popupBlocking:
             return .popupBlocking
         case .webNotifications:
             return .webNotifications
+        case .webExtensions,
+                .forceDarkModeOnWebsites,
+                .embeddedExtension:
+            return .webExtensions
         default:
             return .other
         }

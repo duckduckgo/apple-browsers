@@ -7,13 +7,17 @@ defaults:
 on:
   workflow_dispatch:
 
+concurrency:
+  group: 'macos-release'
+  cancel-in-progress: false
+
 jobs:
 
   create_release_branch:
 
     name: Create Release Branch
 
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 10
 
     steps:

@@ -403,6 +403,38 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
                                             DataBrokerProtectionSharedPixels.Consts.isAuthenticated: "true"])
     }
 
+    // MARK: - initialScanTotalDuration isFreeScan Tests
+
+    func testFireInitialScansTotalDurationPixel_whenFreeScan_pixelIncludesIsFreeScanTrue() {
+        repository.customInitialScansStartDate = Date().addingTimeInterval(-10)
+        let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
+
+        sut.fireInitialScansTotalDurationPixel(numberOfProfileQueries: 3, isFreeScan: true)
+
+        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
+            XCTFail("A pixel should be fired")
+            return
+        }
+
+        XCTAssertEqual(pixel.params?[DataBrokerProtectionSharedPixels.Consts.isFreeScan], "true")
+        XCTAssertEqual(pixel.params?[DataBrokerProtectionSharedPixels.Consts.profileQueries], "3")
+    }
+
+    func testFireInitialScansTotalDurationPixel_whenPaidScan_pixelIncludesIsFreeScanFalse() {
+        repository.customInitialScansStartDate = Date().addingTimeInterval(-10)
+        let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
+
+        sut.fireInitialScansTotalDurationPixel(numberOfProfileQueries: 5, isFreeScan: false)
+
+        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
+            XCTFail("A pixel should be fired")
+            return
+        }
+
+        XCTAssertEqual(pixel.params?[DataBrokerProtectionSharedPixels.Consts.isFreeScan], "false")
+        XCTAssertEqual(pixel.params?[DataBrokerProtectionSharedPixels.Consts.profileQueries], "5")
+    }
+
     #if os(iOS)
     func testTryToFireWeeklyPixels_includesBackgroundTaskSessionMetrics() {
         // Create test events with different session types

@@ -24,6 +24,7 @@ import BrowserServicesKit
 import Common
 import PrivacyDashboard
 import Combine
+import os.log
 
 protocol EntityProviding {
     
@@ -322,6 +323,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
 
     func dismiss() {
+        Logger.onboarding.debug("DaxDialogs.dismiss() called – ending onboarding, isDismissed will be set to true")
         settings.isDismissed = true
         // Reset last shown dialog as we don't have to show it anymore.
         isDismissedPublisher.send(true)
@@ -382,6 +384,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func fireButtonPulseStarted() {
         ViewHighlighter.dismissPrivacyIconPulseAnimation()
+        // Treat the fire button pulse as having seen the fire education, so the End Of Journey dialog
+        // can appear on the next NTP visit even if the user never taps the fire button.
+        setFireEducationMessageSeen()
         if settings.fireButtonPulseDateShown == nil {
             settings.fireButtonPulseDateShown = Date()
         }
@@ -508,6 +513,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
         guard let homeScreenSpec = peekNextHomeScreenMessageExperiment() else {
             currentHomeSpec = nil
+            recoverFromZombieStateIfNeeded()
             return nil
         }
         currentHomeSpec = homeScreenSpec
@@ -544,7 +550,15 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         if !settings.tryVisitASiteShown {
             return .subsequent
         }
-        
+
+        // If the user completed all NTP steps and visited a non-DDG site (saw a tracker dialog)
+        // but skipped the fire dialog step (e.g. navigated away or opened a new tab), unblock End Of Journey (EOJ)
+        // by treating the fire education as seen. This preserves the EOJ → Subscription offer flow.
+        if nonDDGBrowsingMessageSeen {
+            setFireEducationMessageSeen()
+            return .final
+        }
+
         return nil
     }
 
@@ -637,6 +651,19 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         }
 
         return url1.isSameDuckDuckGoSearchURL(other: url2)
+    }
+
+    /// Recovers from a zombie state where the final dialog was seen but `dismiss()` was never
+    /// called (e.g. user tapped the X button instead of the CTA on the final dialog).
+    /// This prevents `dismiss()` from ever being called and the user's settings
+    /// (e.g. the Search/Duck.ai toggle) from being applied.
+    private func recoverFromZombieStateIfNeeded() {
+        guard isEnabled else { return }
+
+        if finalDaxDialogSeen {
+            Logger.onboarding.debug("Recovering from onboarding zombie state – isDismissed: \(self.settings.isDismissed), finalDaxDialogSeen: \(self.finalDaxDialogSeen), fireMessageExperimentShown: \(self.settings.fireMessageExperimentShown)")
+            dismiss()
+        }
     }
 
     private func clearOnboardingBrowsingData() {

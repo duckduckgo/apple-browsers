@@ -32,7 +32,7 @@ protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
-    func tabDidRequestNewTab(_ tab: TabViewController)
+    func tabDidRequestNewTab(_ tab: TabViewController, fireTab: Bool)
     
     func newTab(reuseExisting: Bool)
 

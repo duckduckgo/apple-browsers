@@ -16,14 +16,15 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Common
+import AppUpdaterShared
 import Combine
+import Common
 import FeatureFlags
 import os.log
 import Persistence
 import PixelKit
 import PrivacyConfig
+import SwiftUI
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -66,10 +67,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
-    var useLegacyAutoRestartLogic: Bool {
-        (updateController as? any SparkleUpdateController)?.useLegacyAutoRestartLogic ?? false
-    }
-
     var shouldShowUpdateStatus: Bool {
         #if SPARKLE
         // For Sparkle builds: always show update status regardless of feature flag
@@ -78,10 +75,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         // For App Store builds: only show update status if feature flag is enabled
         return featureFlagger.isFeatureOn(.appStoreUpdateFlow)
         #endif
-    }
-
-    var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
-        !useLegacyAutoRestartLogic
     }
 
     @Published var updateState = UpdateState.upToDate
@@ -186,7 +179,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     private var isAtRestartCheckpoint: Bool {
-        (updateController as? any SparkleUpdateController)?.isAtRestartCheckpoint ?? false
+        (updateController as? any SparkleUpdateControlling)?.isAtRestartCheckpoint ?? false
     }
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
@@ -221,7 +214,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {
             updateController?.checkForUpdateSkippingRollout()
-        } else if let sparkleUpdateController = updateController as? any SparkleUpdateController {
+        } else if let sparkleUpdateController = updateController as? any SparkleUpdateControlling {
             sparkleUpdateController.checkForUpdateRespectingRollout()
         }
     }

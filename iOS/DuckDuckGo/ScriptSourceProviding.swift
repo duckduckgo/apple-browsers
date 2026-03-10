@@ -24,6 +24,7 @@ import BrowserServicesKit
 import PrivacyConfig
 import DDGSync
 import enum UserScript.UserScriptError
+import WebExtensions
 
 public protocol ScriptSourceProviding {
 
@@ -39,6 +40,7 @@ public protocol ScriptSourceProviding {
     var messageSecret: String { get }
     var currentCohorts: [ContentScopeExperimentData] { get }
     var syncErrorHandler: SyncErrorHandling { get }
+    var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
 
 }
 
@@ -53,6 +55,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let contentScopeExperimentsManager: ContentScopeExperimentsManaging
         let internalUserDecider: InternalUserDecider
         let syncErrorHandler: SyncErrorHandling
+        let webExtensionAvailability: WebExtensionAvailabilityProviding?
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -73,6 +76,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     var currentCohorts: [ContentScopeExperimentData] = []
     let syncErrorHandler: SyncErrorHandling
+    let webExtensionAvailability: WebExtensionAvailabilityProviding?
 
     init(dependencies: Dependencies) {
 
@@ -92,6 +96,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         messageSecret = Self.generateSessionKey()
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
         syncErrorHandler = dependencies.syncErrorHandler
+        webExtensionAvailability = dependencies.webExtensionAvailability
 
         contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,

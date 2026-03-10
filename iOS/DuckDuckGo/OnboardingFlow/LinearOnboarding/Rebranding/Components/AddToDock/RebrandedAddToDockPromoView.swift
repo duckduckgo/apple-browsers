@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import Lottie
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 

@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import CommonObjCExtensions
+import WebKit
 
 final class WebViewContainerView: NSView {
     @objc

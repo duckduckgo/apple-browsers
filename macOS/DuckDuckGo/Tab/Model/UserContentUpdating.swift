@@ -26,6 +26,7 @@ import PrivacyConfig
 import UserScript
 import Configuration
 import DDGSync
+import WebExtensions
 
 extension ContentBlockerRulesIdentifier.Difference {
     static let notification = ContentBlockerRulesIdentifier.Difference(rawValue: 1 << 8)
@@ -107,7 +108,8 @@ final class UserContentUpdating {
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
          contentScopePreferences: ContentScopePreferences,
-         syncErrorHandler: SyncErrorHandling
+         syncErrorHandler: SyncErrorHandling,
+         webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
             return NotificationCenter.default.publisher(for: name)
@@ -150,7 +152,8 @@ final class UserContentUpdating {
                                                       autoconsentManagement: autoconsentManagement,
                                                       newTabPageActionsManager: self?.newTabPageActionsManager,
                                                       syncServiceProvider: self?.syncServiceProvider ?? { nil },
-                                                      syncErrorHandler: syncErrorHandler)
+                                                      syncErrorHandler: syncErrorHandler,
+                                                      webExtensionAvailability: webExtensionAvailability)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
         }
 

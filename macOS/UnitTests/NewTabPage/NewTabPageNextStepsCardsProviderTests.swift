@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import CombineSchedulers
 import NewTabPage
 import PixelKit
 import PrivacyConfig
@@ -53,7 +54,8 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
                 featureFlagger: MockFeatureFlagger(),
                 aiChatMenuConfig: MockAIChatConfig()
             ),
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            scheduler: .immediate
         )
     }
 

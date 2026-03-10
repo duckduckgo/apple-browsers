@@ -230,19 +230,6 @@ class AutoClearHandlerTests: XCTestCase {
                        "Burn-on-start should not trigger after automatic relaunch termination")
     }
 
-    func testHandleAppTerminationFallback_whenRelaunchingAutomatically_skipsClearPrompt() {
-        mockStateRestoration.isRelaunchingAutomatically = true
-        dataClearingPreferences.isAutoClearEnabled = true
-        dataClearingPreferences.isWarnBeforeClearingEnabled = true
-        handler.resetTheCorrectTerminationFlag()
-
-        let result = handler.handleAppTerminationFallback()
-
-        XCTAssertEqual(result, .terminateNow)
-        XCTAssertFalse(mockAlertPresenter.confirmAutoClearCalled)
-        XCTAssertFalse(handler.burnOnStartIfNeeded())
-    }
-
     func testDeciderSequenceCompleted_whenTerminationCancelledAndRelaunchFlagTrue_resetsFlag() {
         mockStateRestoration.isRelaunchingAutomatically = true
         dataClearingPreferences.isAutoClearEnabled = true

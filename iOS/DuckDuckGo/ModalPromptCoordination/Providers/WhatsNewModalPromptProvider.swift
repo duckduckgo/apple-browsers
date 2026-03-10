@@ -117,6 +117,17 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
     @MainActor
     func presentActivitySheet(value: String, title: String?) async {
         let activityController = UIActivityViewController(activityItems: [TitleValueShareItem(value: value, title: title).item], applicationActivities: nil)
+        if let popoverPresentationController = activityController.popoverPresentationController,
+           let sourceView = navigationController?.view {
+            popoverPresentationController.sourceView = sourceView
+            popoverPresentationController.sourceRect = CGRect(
+                x: sourceView.bounds.midX,
+                y: sourceView.bounds.midY,
+                width: 0,
+                height: 0
+            )
+            popoverPresentationController.permittedArrowDirections = []
+        }
         activityController.completionWithItemsHandler = { [weak self] _, result, _, _ in
             self?.measureSheetShown(result: result)
         }
@@ -170,7 +181,7 @@ private extension WhatsNewCoordinator {
                 },
                 onItemAction: { [weak self] action, cardId in
                     self?.measureCardTapped(cardId: cardId)
-                    await self?.handleAction(action)
+                    await self?.handleAction(action, dismissSource: .itemAction)
                 },
                 onPrimaryAction: { [weak self] action in
                     self?.measurePrimaryActionTapped()
@@ -208,10 +219,17 @@ private extension WhatsNewCoordinator {
         Logger.modalPrompt.info("\(self.logPrefix) - What's New - Marked message as shown: \(message.id, privacy: .public)")
     }
 
-    func dismiss(source: DismissSource) {
+    func dismiss(source: DismissSource, onComplete: (() -> Void)? = nil) {
         Logger.modalPrompt.info("\(self.logPrefix) - What's New - Dismissed From source: \(source.debugDescription, privacy: .public)")
-        navigationController?.dismiss(animated: true)
         measureMessageDismissed(source: source)
+
+        if let navigationController, navigationController.presentingViewController != nil {
+            navigationController.dismiss(animated: true) {
+                onComplete?()
+            }
+        } else {
+            onComplete?()
+        }
     }
 }
 
@@ -222,7 +240,30 @@ extension WhatsNewCoordinator {
     func handleAction(_ action: RemoteAction) async {
         await remoteMessageActionHandler.handleAction(action, context: .init(presenter: self, presentationStyle: .withinCurrentContext))
     }
-    
+
+    fileprivate func handleAction(_ action: RemoteAction, dismissSource: DismissSource) async {
+        guard case .url = action else {
+            await handleAction(action)
+            return
+        }
+
+        let presentingViewController = displayContext == .onDemand ? navigationController?.presentingViewController : nil
+        let performURLAction: () -> Void = { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                await self.handleAction(action)
+            }
+        }
+
+        dismiss(source: dismissSource, onComplete: {
+            if let presentingViewController {
+                presentingViewController.dismiss(animated: true, completion: performURLAction)
+            } else {
+                performURLAction()
+            }
+        })
+    }
+
 }
 
 // MARK: - Pixels
@@ -252,6 +293,8 @@ private extension WhatsNewCoordinator {
             pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .pullDown)
         case .mainAction:
             pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
+        case .itemAction:
+            pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .itemAction)
         }
     }
 
@@ -311,12 +354,14 @@ private extension WhatsNewCoordinator {
 
     enum DismissSource: String, CustomDebugStringConvertible {
         case closeButton
+        case itemAction
         case mainAction
         case pullDown
 
         var debugDescription: String {
             switch self {
             case .closeButton: "Close Button"
+            case .itemAction: "Item CTA"
             case .mainAction: "Main CTA"
             case .pullDown: "Pull Down"
             }

@@ -19,6 +19,7 @@
 import Foundation
 import XCTest
 import CryptoKit
+import BrowserServicesKitTestsUtils
 @testable import BrowserServicesKit
 import Common
 import WebKit
@@ -153,7 +154,7 @@ class AutofillUserScriptTests: XCTestCase {
         let passwordImportDelegate = MockAutofillPasswordImportDelegate()
         userScript.passwordImportDelegate = passwordImportDelegate
 
-        userScript.startCredentialsImportFlow(MockWKScriptMessage(name: "", body: "")) { _ in }
+        userScript.startCredentialsImportFlow(WKScriptMessage.mock()) { _ in }
         let notificationExpectation = expectation(forNotification: .passwordImportDidCloseImportDialog, object: nil)
         passwordImportDelegate.autofillUserScriptDidRequestPasswordImportFlowCompletion?()
 
@@ -192,7 +193,7 @@ class AutofillUserScriptTests: XCTestCase {
                                                 totalCredentialsCount: Int = 0,
                                                 file: StaticString = #filePath,
                                                 line: UInt = #line) -> AutofillUserScript.RequestAvailableInputTypesResponse? {
-        let userScriptMessage = MockWKScriptMessage(name: "getAvailableInputTypes", body: "")
+        let userScriptMessage = WKScriptMessage.mock(name: "getAvailableInputTypes", body: "")
         let vaultDelegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = vaultDelegate
 
@@ -216,12 +217,12 @@ class AutofillUserScriptTests: XCTestCase {
     }
 
     private func runGetAvailableInputsAndCredentialsImportFlow(userScript: AutofillUserScript, vaultDelegate: MockSecureVaultDelegate, passwordImportDelegate: MockAutofillPasswordImportDelegate) {
-        let userScriptMessage = MockWKScriptMessage(name: "getAvailableInputTypes", body: "")
+        let userScriptMessage = WKScriptMessage.mock(name: "getAvailableInputTypes", body: "")
         userScript.vaultDelegate = vaultDelegate
         userScript.passwordImportDelegate = passwordImportDelegate
 
         userScript.getAvailableInputTypes(userScriptMessage) { _ in }
-        userScript.startCredentialsImportFlow(MockWKScriptMessage(name: "", body: "")) { _ in }
+        userScript.startCredentialsImportFlow(WKScriptMessage.mock()) { _ in }
         passwordImportDelegate.autofillUserScriptDidRequestPasswordImportFlowCompletion?()
     }
 

@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
+import AppUpdaterShared
 import PersistenceTestingUtils
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 // MARK: - Mocks

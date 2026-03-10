@@ -18,9 +18,12 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Combine
+import Core
 import Foundation
 import os.log
+import PrivacyConfig
 import UIKit
 
 // MARK: - State Enums
@@ -70,7 +73,7 @@ struct SheetViewState {
 enum SheetEffect {
     case submitPrompt(prompt: String, context: AIChatPageContextData?)
     case reloadWebView
-    case pushContextToFrontend(AIChatPageContextData)
+    case pushContextToFrontend(AIChatPageContextData?)
     case clearPrompt
 }
 
@@ -84,6 +87,7 @@ final class AIChatContextualChatSessionState {
 
     private let aiChatSettings: AIChatSettingsProvider
     private let pixelHandler: AIChatContextualModePixelFiring
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Core State (private(set) - mutations happen via methods)
 
@@ -117,9 +121,11 @@ final class AIChatContextualChatSessionState {
     // MARK: - Initialization
 
     init(aiChatSettings: AIChatSettingsProvider,
-         pixelHandler: AIChatContextualModePixelFiring) {
+         pixelHandler: AIChatContextualModePixelFiring,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.aiChatSettings = aiChatSettings
         self.pixelHandler = pixelHandler
+        self.featureFlagger = featureFlagger
         self.wasAutoAttachEnabled = aiChatSettings.isAutomaticContextAttachmentEnabled
         rebuildViewState()
     }
@@ -154,6 +160,10 @@ final class AIChatContextualChatSessionState {
     /// Whether automatic context collection is enabled
     var shouldAutoCollectContext: Bool {
         aiChatSettings.isAutomaticContextAttachmentEnabled
+    }
+
+    var supportsMultipleContexts: Bool {
+        featureFlagger.isFeatureOn(.multiplePageContexts)
     }
 
     // MARK: - Frontend Chat State Transitions
@@ -260,6 +270,15 @@ final class AIChatContextualChatSessionState {
         Logger.aiChat.debug("[SessionState] Page navigation detected")
         clearUserDowngradeOnNavigation()
         isProcessingNavigation = true
+    }
+
+    /// Sends a null context to the frontend as a navigation signal.
+    /// Used when auto-collect is OFF but multiple contexts are supported,
+    /// so the FE can show the "Add page content" button for the new page.
+    func notifyFrontendOfMultiContextNavigation() {
+        guard supportsMultipleContexts, canPushToFrontend() else { return }
+        emit(.pushContextToFrontend(nil))
+        Logger.aiChat.debug("[SessionState] Sent null context navigation signal to frontend")
     }
 
     /// Clear the navigation processing flag (called when collection can't start)
@@ -386,8 +405,16 @@ private extension AIChatContextualChatSessionState {
     }
 
     func canPushToFrontend() -> Bool {
-        let canPush = frontendState == .chatWithoutInitialContext || frontendState == .restoredChat
-        Logger.aiChat.debug("[SessionState] canPushToFrontend=\(canPush) (frontendState=\(self.frontendState))")
+        let canPush: Bool
+        switch frontendState {
+        case .chatWithoutInitialContext, .restoredChat:
+            canPush = true
+        case .chatWithInitialContext:
+            canPush = supportsMultipleContexts
+        case .noChat:
+            canPush = false
+        }
+        Logger.aiChat.debug("[SessionState] canPushToFrontend=\(canPush) (frontendState=\(self.frontendState), multipleContexts=\(self.supportsMultipleContexts))")
         return canPush
     }
 

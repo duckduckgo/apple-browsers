@@ -16,6 +16,8 @@ tags:
         "autoclear-ui-test": true
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.burnSingleTab: "true"
+        ff.enhancedDataClearingSettings: "true"
 
 # Enable autoclear
 
@@ -30,8 +32,8 @@ tags:
 - assertVisible: "Data Clearing"
 - tapOn: "Data Clearing"
 - assertVisible: "Off"
-- assertVisible: "Automatically Clear Data"
-- tapOn: "Automatically Clear Data"
+- assertVisible: "Automatically Delete Data"
+- tapOn: "Automatically Delete Data"
 - assertVisible: 
     id: "AutoclearEnabledToggle"
 - tapOn: 

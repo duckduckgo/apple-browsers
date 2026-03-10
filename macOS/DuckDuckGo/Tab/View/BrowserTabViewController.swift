@@ -765,6 +765,7 @@ final class BrowserTabViewController: NSViewController {
                 // Create web view with extension's configuration
                 let webView = WebView(frame: .zero,
                                       configuration: configuration,
+                                      featureFlagger: featureFlagger,
                                       privacyConfig: privacyConfigurationManager.privacyConfig)
                 let request = URLRequest(url: url)
                 webView.load(request)
@@ -1362,9 +1363,7 @@ extension BrowserTabViewController: TabDelegate {
     }
 
     func tabPageDOMLoaded(_ tab: Tab) {
-        if tabViewModel?.tab === tab {
-            tabViewModel?.isLoading = false
-        }
+        // NO-OP
     }
 
     func tabDidStartNavigation(_ tab: Tab) {
@@ -1803,6 +1802,16 @@ extension BrowserTabViewController {
         duckPlayer: Application.appDelegate.duckPlayer,
         pinningManager: Application.appDelegate.pinningManager
     )
+}
+
+// MARK: - Tab Selection for AI Chat Sidebar
+
+extension BrowserTabViewController {
+
+    func selectTab(with tabID: TabIdentifier) {
+        guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
+        tabCollectionViewModel.select(at: tabIndex)
+    }
 }
 
 private extension NSViewController {

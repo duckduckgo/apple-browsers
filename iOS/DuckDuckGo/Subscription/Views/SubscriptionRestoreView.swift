@@ -167,6 +167,10 @@ struct SubscriptionRestoreView: View {
             return UserText.subscriptionPurchasingTitle
         case .restoring:
             return UserText.subscriptionRestoringTitle
+        case .changingPlan:
+            return UserText.subscriptionPlanChangeInProgressTitle
+        case .planChangePolling:
+            return UserText.subscriptionCompletePlanChangeTitle
         case .idle:
             return ""
         }

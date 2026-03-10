@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import BrowserServicesKitTestsUtils
 import Combine
 import UserScript
 import WebKit
@@ -44,14 +45,14 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testOpenSettingsMessageTriggersOpenSettingsMethod() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChatSettings.rawValue))
-        _ = try await handler([""], MockWKScriptMessage())
+        _ = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didOpenSettings, "openSettings should be called")
     }
 
     @MainActor func testGetAIChatNativeConfigValues() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didGetConfigValues, "getAIChatNativeConfigValues should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -59,7 +60,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testCloseAIChat() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.closeAIChat.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didCloseChat, "closeAIChat should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -67,7 +68,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testGetAIChatNativePrompt() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didGetPrompt, "getAIChatNativePrompt should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -75,7 +76,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testOpenAIChat() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChat.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didOpenChat, "openAIChat should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -83,7 +84,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testGetAIChatNativeHandoffData() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeHandoffData.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didGetHandoffData, "getAIChatNativeHandoffData should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -91,7 +92,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testGetAIChatPageContext() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatPageContext.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didGetAIChatPageContext, "getAIChatPageContext should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -99,7 +100,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testStoreMigrationData() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.storeMigrationData.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didStoreMigrationData, "storeMigrationData should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -107,7 +108,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testGetMigrationDataByIndex() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getMigrationDataByIndex.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didGetMigrationDataByIndex, "getMigrationDataByIndex should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -115,7 +116,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testGetMigrationInfo() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getMigrationInfo.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didGetMigrationInfo, "getMigrationInfo should be called")
         XCTAssertNil(result, "Expected result to be nil")
@@ -123,7 +124,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testClearMigrationData() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.clearMigrationData.rawValue))
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didClearMigrationData, "clearMigrationData should be called")
         XCTAssertNil(result, "Expected result to be nil")

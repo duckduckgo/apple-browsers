@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKitTestsUtils
 import WebKit
 import XCTest
 
@@ -41,7 +42,7 @@ final class OnboardingUserScriptTests: XCTestCase {
     func testSetInit_ReturnsExpectedParameters() async throws {
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "init"))
 
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
         XCTAssertEqual(result as? OnboardingConfiguration, mockManager.configuration)
         XCTAssertTrue(mockManager.onboardingStartedCalled)
     }
@@ -51,7 +52,7 @@ final class OnboardingUserScriptTests: XCTestCase {
         let params = ["sabrina": "awesome"]
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "reportPageException"))
 
-        let result = try await handler(params, MockWKScriptMessage())
+        let result = try await handler(params, WKScriptMessage.mock())
         XCTAssertTrue(mockManager.reportExceptionCalled)
         XCTAssertEqual(mockManager.exceptionParams, params)
         XCTAssertNil(result)
@@ -61,7 +62,7 @@ final class OnboardingUserScriptTests: XCTestCase {
     func testDismissToAddressBar_CallsGoToAddressBar() async throws {
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "dismissToAddressBar"))
 
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
         XCTAssertTrue(mockManager.goToAddressBarCalled)
         XCTAssertNil(result)
     }
@@ -70,7 +71,7 @@ final class OnboardingUserScriptTests: XCTestCase {
     func testDismissToSettings_CallsGoToSettings() async throws {
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "dismissToSettings"))
 
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
         XCTAssertTrue(mockManager.goToSettingsCalled)
         XCTAssertNil(result)
     }
@@ -79,7 +80,7 @@ final class OnboardingUserScriptTests: XCTestCase {
     func testRequestDockOptIn_CallsAddToDock() async throws {
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "requestDockOptIn"))
 
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
         XCTAssertTrue(mockManager.addToDockCalled)
         XCTAssertNotNil(result)
     }
@@ -88,7 +89,7 @@ final class OnboardingUserScriptTests: XCTestCase {
     func testRequestImport_CallsImportData() async throws {
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "requestImport"))
 
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
         XCTAssertTrue(mockManager.importDataCalled)
         XCTAssertNotNil(result)
     }
@@ -97,7 +98,7 @@ final class OnboardingUserScriptTests: XCTestCase {
     func testRequestSetAsDefault_CallsSetAsDefault() async throws {
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "requestSetAsDefault"))
 
-        let result = try await handler([""], MockWKScriptMessage())
+        let result = try await handler([""], WKScriptMessage.mock())
         XCTAssertTrue(mockManager.setAsDefaultCalled)
         XCTAssertNotNil(result)
     }
@@ -108,7 +109,7 @@ final class OnboardingUserScriptTests: XCTestCase {
         let params = ["enabled": randomBool]
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "setBookmarksBar"))
 
-        let result = try await handler(params, MockWKScriptMessage())
+        let result = try await handler(params, WKScriptMessage.mock())
         XCTAssertTrue(mockManager.setBookmarkBarCalled)
         XCTAssertEqual(mockManager.bookmarkBarVisible, randomBool)
         XCTAssertNil(result)
@@ -120,7 +121,7 @@ final class OnboardingUserScriptTests: XCTestCase {
         let params = ["enabled": randomBool]
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "setSessionRestore"))
 
-        let result = try? await handler(params, MockWKScriptMessage())
+        let result = try? await handler(params, WKScriptMessage.mock())
         XCTAssertTrue(mockManager.setSessionRestoreCalled)
         XCTAssertEqual(mockManager.sessionRestoreEnabled, randomBool)
         XCTAssertNil(result)
@@ -132,7 +133,7 @@ final class OnboardingUserScriptTests: XCTestCase {
         let params = ["enabled": randomBool]
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "setShowHomeButton"))
 
-        let result = try await handler(params, MockWKScriptMessage())
+        let result = try await handler(params, WKScriptMessage.mock())
         XCTAssertTrue(mockManager.setHomeButtonPositionCalled)
         XCTAssertEqual(mockManager.homeButtonVisible, randomBool)
         XCTAssertNil(result)
@@ -144,7 +145,7 @@ final class OnboardingUserScriptTests: XCTestCase {
         let params = ["id": randomStep.rawValue]
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "stepCompleted"))
 
-        let result = try await handler(params, MockWKScriptMessage())
+        let result = try await handler(params, WKScriptMessage.mock())
         XCTAssertEqual(mockManager.completedStep, randomStep)
         XCTAssertNil(result)
     }

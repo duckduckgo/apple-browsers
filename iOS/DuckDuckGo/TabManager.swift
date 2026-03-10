@@ -45,15 +45,33 @@ protocol TabManaging {
     func controller(for tab: Tab) -> TabViewController?
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
-
 }
 
-class TabManager: TabManaging {
+/// Receives lifecycle events for TabViewController instances managed by TabManager.
+@MainActor
+protocol TabControllerCacheDelegate: AnyObject {
+    /// Called when a new TabViewController has been created and added to the cache for the first time.
+    func tabManager(_ tabManager: TabManager, didCreateController controller: TabViewController)
+    /// Called when a background tab's WebKit process terminated and its controller was evicted
+    /// from the cache. The tab still exists in the model; a replacement will be created on next activation.
+    func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController)
+}
+
+protocol TrackerAnimationSuppressing {
+    @MainActor func markTabAsExternalLaunch(_ tab: Tab)
+    @MainActor func clearExternalLaunchFlags()
+    @MainActor func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool)
+    @MainActor func applyTrackerAnimationSuppressionBasedOnLaunchSource()
+}
+
+class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private(set) var model: TabsModel
     private(set) var persistence: TabsModelPersisting
 
     private var tabControllerCache = [TabViewController]()
+
+    weak var cacheDelegate: (any TabControllerCacheDelegate)?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let bookmarksDatabase: CoreDataDatabase
@@ -69,7 +87,8 @@ class TabManager: TabManaging {
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
-    private let textZoomCoordinator: TextZoomCoordinating
+    private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
+    private let autoconsentManagementProvider: AutoconsentManagementProviding
     private let fireproofing: Fireproofing
     private let websiteDataManager: WebsiteDataManaging
     private let appSettings: AppSettings
@@ -84,6 +103,8 @@ class TabManager: TabManaging {
     private let privacyStats: PrivacyStatsProviding
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private var webExtensionManager: WebExtensionManaging?
+    private let launchSourceManager: LaunchSourceManaging
+    private let darkReaderFeatureSettings: DarkReaderFeatureSettings
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -109,7 +130,8 @@ class TabManager: TabManaging {
          featureFlagger: FeatureFlagger,
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          appSettings: AppSettings,
-         textZoomCoordinator: TextZoomCoordinating,
+         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
+         autoconsentManagementProvider: AutoconsentManagementProviding,
          websiteDataManager: WebsiteDataManaging,
          fireproofing: Fireproofing,
          maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
@@ -121,7 +143,9 @@ class TabManager: TabManaging {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          privacyStats: PrivacyStatsProviding,
-         voiceSearchHelper: VoiceSearchHelperProtocol
+         voiceSearchHelper: VoiceSearchHelperProtocol,
+         launchSourceManager: LaunchSourceManaging,
+         darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
         self.model = model
         self.persistence = persistence
@@ -140,7 +164,8 @@ class TabManager: TabManaging {
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
-        self.textZoomCoordinator = textZoomCoordinator
+        self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
+        self.autoconsentManagementProvider = autoconsentManagementProvider
         self.websiteDataManager = websiteDataManager
         self.fireproofing = fireproofing
         self.maliciousSiteProtectionManager = maliciousSiteProtectionManager
@@ -153,6 +178,8 @@ class TabManager: TabManaging {
         self.sharedSecureVault = sharedSecureVault
         self.privacyStats = privacyStats
         self.voiceSearchHelper = voiceSearchHelper
+        self.launchSourceManager = launchSourceManager
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
         registerForNotifications()
     }
 
@@ -171,7 +198,7 @@ class TabManager: TabManaging {
                                  url: URL?,
                                  inheritedAttribution: AdClickAttributionLogic.State?,
                                  interactionState: Data?) -> TabViewController {
-        let configuration = WKWebViewConfiguration.persistent()
+        let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
 
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
             configuration.webExtensionController = webExtensionManager.controller
@@ -183,6 +210,8 @@ class TabManager: TabManaging {
             )
         )
 
+        let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
+        let autoconsentManagement = autoconsentManagementProvider.management(for: tab.autoconsentContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -197,6 +226,7 @@ class TabManager: TabManaging {
                                                               featureFlagger: featureFlagger,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
+                                                              autoconsentManagement: autoconsentManagement,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
                                                               tabInteractionStateSource: interactionStateSource,
@@ -208,7 +238,8 @@ class TabManager: TabManaging {
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats,
-                                                              voiceSearchHelper: voiceSearchHelper)
+                                                              voiceSearchHelper: voiceSearchHelper,
+                                                              darkReaderFeatureSettings: darkReaderFeatureSettings)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -231,6 +262,7 @@ class TabManager: TabManaging {
             let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
             let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
             tabControllerCache.append(controller)
+            cacheDelegate?.tabManager(self, didCreateController: controller)
             return controller
         } else {
             return nil
@@ -240,7 +272,7 @@ class TabManager: TabManaging {
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
     }
-    
+
     @MainActor
     func viewModel(for tab: Tab) -> TabViewModel {
         if let controller = controller(for: tab) {
@@ -277,12 +309,17 @@ class TabManager: TabManaging {
         return current(createIfNeeded: true)!
     }
 
+    @MainActor
     func addURLRequest(_ request: URLRequest?,
                        with configuration: WKWebViewConfiguration,
                        inheritedAttribution: AdClickAttributionLogic.State?) -> TabViewController {
 
         guard let configCopy = configuration.copy() as? WKWebViewConfiguration else {
             fatalError("Failed to copy configuration")
+        }
+
+        if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
+            configCopy.webExtensionController = webExtensionManager.controller
         }
 
         let tab: Tab
@@ -300,6 +337,8 @@ class TabManager: TabManaging {
             )
         )
 
+        let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
+        let autoconsentManagement = autoconsentManagementProvider.management(for: tab.autoconsentContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -314,6 +353,7 @@ class TabManager: TabManaging {
                                                               featureFlagger: featureFlagger,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
+                                                              autoconsentManagement: autoconsentManagement,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
                                                               tabInteractionStateSource: interactionStateSource,
@@ -325,7 +365,8 @@ class TabManager: TabManaging {
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats,
-                                                              voiceSearchHelper: voiceSearchHelper)
+                                                              voiceSearchHelper: voiceSearchHelper,
+                                                              darkReaderFeatureSettings: darkReaderFeatureSettings)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,
@@ -334,13 +375,16 @@ class TabManager: TabManaging {
         controller.loadViewIfNeeded()
         controller.applyInheritedAttribution(inheritedAttribution)
         tabControllerCache.append(controller)
+        cacheDelegate?.tabManager(self, didCreateController: controller)
 
         save()
         return controller
     }
 
-    func addHomeTab() {
-        model.add(tab: Tab())
+    // TODO: - Make fire tab required to force correct usage when applied app wide
+    func addHomeTab(fireTab: Bool = false) {
+        let tab = Tab(fireTab: fireTab)
+        model.add(tab: tab)
         model.select(tabAt: model.count - 1)
         save()
     }
@@ -395,6 +439,8 @@ class TabManager: TabManaging {
         if !inBackground {
             model.select(tabAt: index + 1)
         }
+
+        cacheDelegate?.tabManager(self, didCreateController: controller)
 
         save()
         return controller
@@ -462,13 +508,14 @@ class TabManager: TabManaging {
             current()?.reload()
         } else {
             removeFromCache(controller)
+            cacheDelegate?.tabManager(self, didInvalidateController: controller)
         }
     }
 
     func save() {
         persistence.save(model: model)
     }
-    
+
     @MainActor
     func prepareAllTabsExceptCurrentForDataClearing() {
         tabControllerCache.filter { $0 !== current() }.forEach { $0.prepareForDataClearing() }
@@ -590,6 +637,83 @@ extension TabManager {
             Task(priority: .utility) {
                 await previewsSource.removePreviewsWithIdNotIn(Set(model.tabs.map { $0.uid }))
             }
+        }
+    }
+
+    // MARK: - External Launch Management
+
+    /// Clears all external launch flags. Should be called on app relaunch
+    /// to ensure existing tabs are not treated as external launches.
+    @MainActor
+    func clearExternalLaunchFlags() {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        Logger.general.debug("Clearing external launch flags for all tabs")
+        for tab in model.tabs {
+            tab.isExternalLaunch = false
+        }
+    }
+
+    @MainActor
+    func markTabAsExternalLaunch(_ tab: Tab) {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        guard !tab.isExternalLaunch else {
+            return
+        }
+        Logger.general.debug("Marking tab \(tab.uid) as external launch")
+        tab.isExternalLaunch = true
+    }
+
+    @MainActor
+    func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool) {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        guard tab.shouldSuppressTrackerAnimationOnFirstLoad != shouldSuppress else {
+            return
+        }
+        Logger.general.debug("Setting suppressTrackerAnimation=\(shouldSuppress) for tab \(tab.uid)")
+        tab.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppress
+    }
+
+    /// Applies tracker animation suppression logic to all tabs based on current launch source.
+    /// - On cold start with standard launch: suppress tracker animations for all tabs
+    /// - On external launch: tracker animation suppression handled per-tab via markTabAsExternalLaunch
+    @MainActor
+    func applyTrackerAnimationSuppressionBasedOnLaunchSource() {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        let source = launchSourceManager.source
+        Logger.general.debug("Applying tracker animation suppression for launch source: \(source.rawValue)")
+
+        switch source {
+        case .standard:
+            // On cold start with standard launch, suppress tracker animations for existing tabs with content
+            for tab in model.tabs {
+                // Only suppress for tabs with non-DDG URLs (not NTP, not DDG search)
+                guard let url = tab.link?.url, !url.isDuckDuckGoSearch else {
+                    continue
+                }
+
+                tab.shouldSuppressTrackerAnimationOnFirstLoad = true
+
+                // Also set on TabViewController if it exists
+                if let controller = controller(for: tab) {
+                    controller.shouldSuppressTrackerAnimationOnFirstLoad = true
+                }
+            }
+        case .URL, .shortcut:
+            // For external launches, only the newly created tab (marked via markTabAsExternalLaunch)
+            // should have tracker animations, all other tabs must have animations suppressed (which is handled elsewhere)
+            break
         }
     }
 

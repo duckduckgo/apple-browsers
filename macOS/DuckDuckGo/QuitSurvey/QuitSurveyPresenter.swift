@@ -95,66 +95,6 @@ final class QuitSurveyPresenter {
         }
     }
 
-    /// Shows the quit survey using the original synchronous pattern (fallback).
-    /// This version directly calls `NSApp.reply(toApplicationShouldTerminate: true)` when the user quits.
-    func showSurveySyncFallback() {
-        var quitSurveyWindow: NSWindow?
-        var hasReplied = false
-
-        let replyToTerminate = {
-            guard !hasReplied else { return }
-            hasReplied = true
-            NSApp.reply(toApplicationShouldTerminate: true)
-        }
-
-        let surveyView = QuitSurveyFlowView(
-            persistor: persistor,
-            onQuit: {
-                if let parentWindow = quitSurveyWindow?.sheetParent {
-                    parentWindow.endSheet(quitSurveyWindow!)
-                } else {
-                    quitSurveyWindow?.close()
-                }
-                replyToTerminate()
-            },
-            onResize: { width, height in
-                guard let window = quitSurveyWindow else { return }
-                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
-                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
-                window.setFrame(newFrame, display: true, animate: false)
-            }
-        )
-
-        let controller = QuitSurveyViewController(rootView: surveyView)
-        quitSurveyWindow = NSWindow(contentViewController: controller)
-
-        guard let window = quitSurveyWindow else { return }
-
-        // Set up window close observation to reply if window is closed via close button
-        let windowDelegate = QuitSurveyWindowDelegate(onWindowWillClose: replyToTerminate)
-        window.delegate = windowDelegate
-        // Retain the delegate to prevent it from being deallocated
-        objc_setAssociatedObject(window, "quitSurveyDelegate", windowDelegate, .OBJC_ASSOCIATION_RETAIN)
-
-        window.styleMask.remove(.resizable)
-        let windowRect = NSRect(
-            x: 0,
-            y: 0,
-            width: QuitSurveyViewController.Constants.initialWidth,
-            height: QuitSurveyViewController.Constants.initialHeight
-        )
-        window.setFrame(windowRect, display: true)
-
-        // Show as sheet on the main window, or as standalone window if no main window
-        if let parentWindowController = windowControllersManager.lastKeyMainWindowController,
-           let parentWindow = parentWindowController.window {
-            parentWindow.beginSheet(window) { _ in }
-        } else {
-            // Fallback: show as a centered window
-            window.center()
-            window.makeKeyAndOrderFront(nil)
-        }
-    }
 }
 
 // MARK: - Window Delegate

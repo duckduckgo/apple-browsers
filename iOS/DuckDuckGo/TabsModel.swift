@@ -145,7 +145,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
     
     func insert(tab: Tab, placement: TabsModel.TabPlacement, selectNewTab: Bool) {
-        var newTabIndex: Int
+        var newTabIndex: Int?
         switch placement {
         case .afterCurrentTab:
             insert(tab: tab, at: currentIndex + 1)
@@ -154,14 +154,9 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
             tabs.append(tab)
             newTabIndex = tabs.count - 1
         case .replacing(let oldTab):
-            guard let index = indexOf(tab: oldTab) else {
-                return
-            }
-            remove(tab: oldTab)
-            insert(tab: tab, at: index)
-            newTabIndex = index
+            newTabIndex = replace(oldTab: oldTab, with: tab)
         }
-        if selectNewTab {
+        if selectNewTab, let newTabIndex {
             currentIndex = newTabIndex
         }
     }
@@ -172,6 +167,23 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
             return
         }
         tabs.insert(tab, at: max(0, index))
+    }
+    
+    
+    /// Replaces a tab with another tab inplace
+    /// - Parameters:
+    ///   - oldTab: tab to remove
+    ///   - newTab: tab to insert
+    /// - Returns: Index of the new tab
+    private func replace(oldTab: Tab, with newTab: Tab) -> Int? {
+        guard let index = indexOf(tab: oldTab) else {
+            return nil
+        }
+        let selectedTab = currentTab
+        remove(tab: oldTab)
+        insert(tab: newTab, at: index)
+        setCurrentTab(selectedTab)
+        return index
     }
     
     func move(tab: Tab, to destIndex: Int) {

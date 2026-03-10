@@ -491,7 +491,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     func replace(tab: Tab, withNewTab newTab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        if model.tabs.count == 1 {
+        if model.tabs.count == 1 { // TODO: - Remove this for fire tabs
             remove(tab: tab, clearTabHistory: clearTabHistory, in: model)
         } else {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)

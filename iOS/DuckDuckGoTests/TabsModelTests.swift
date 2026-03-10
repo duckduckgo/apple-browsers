@@ -220,4 +220,101 @@ class TabsModelTests: XCTestCase {
         XCTAssertNil(model.get(tabAt: 0)?.link)
     }
 
+    // MARK: - Insert afterCurrentTab
+
+    func testWhenCurrentIsLastThenAfterCurrentTabInsertsAtEnd() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[2])
+        let newTab = Tab(link: exampleLink)
+        testee.insert(tab: newTab, placement: .afterCurrentTab, selectNewTab: false)
+        XCTAssertTrue(testee.tabs[3] === newTab)
+        XCTAssertEqual(testee.count, 4)
+    }
+
+    func testWhenInsertAfterCurrentWithSelectThenCurrentIndexMovesToNewTab() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[0])
+        let newTab = Tab(link: exampleLink)
+        testee.insert(tab: newTab, placement: .afterCurrentTab, selectNewTab: true)
+        XCTAssertEqual(testee.currentIndex, 1)
+        XCTAssertTrue(testee.currentTab === newTab)
+    }
+
+    // MARK: - Insert replacing
+
+    func testWhenReplacingThenNewTabTakesOldTabIndex() {
+        let testee = filledModel
+        let oldTab = testee.tabs[1]
+        let newTab = Tab(link: exampleLink)
+        testee.insert(tab: newTab, placement: .replacing(oldTab), selectNewTab: false)
+        XCTAssertTrue(testee.tabs[1] === newTab)
+        XCTAssertEqual(testee.count, 3)
+        XCTAssertNil(testee.indexOf(tab: oldTab))
+    }
+
+    func testWhenReplacingNonCurrentTabThenSelectionIsPreserved() {
+        let testee = filledModel
+        let selectedTab = testee.tabs[0]
+        testee.select(tab: selectedTab)
+        let oldTab = testee.tabs[2]
+        let newTab = Tab(link: exampleLink)
+        testee.insert(tab: newTab, placement: .replacing(oldTab), selectNewTab: false)
+        XCTAssertTrue(testee.currentTab === selectedTab)
+        XCTAssertEqual(testee.currentIndex, 0)
+    }
+
+    func testWhenReplacingNonExistentTabThenNoChange() {
+        let testee = filledModel
+        let orphanTab = Tab(link: exampleLink)
+        let newTab = Tab(link: exampleLink)
+        let originalCount = testee.count
+        testee.insert(tab: newTab, placement: .replacing(orphanTab), selectNewTab: true)
+        XCTAssertEqual(testee.count, originalCount)
+        XCTAssertNil(testee.indexOf(tab: newTab))
+    }
+
+    // MARK: - nextTab / previousTab / tabBefore
+
+    func testWhenCurrentIsLastThenNextTabWrapsToFirst() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[2])
+        XCTAssertTrue(testee.nextTab === testee.tabs[0])
+    }
+
+    func testWhenCurrentIsFirstThenPreviousTabWrapsToLast() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[0])
+        XCTAssertTrue(testee.previousTab === testee.tabs[2])
+    }
+
+    func testWhenCurrentIsNotFirstThenTabBeforeReturnsPrevious() {
+        let testee = filledModel
+        let expectedTab = testee.tabs[1]
+        testee.select(tab: testee.tabs[2])
+        XCTAssertTrue(testee.tabBefore === expectedTab)
+    }
+
+    func testWhenCurrentIsFirstThenTabBeforeReturnsNil() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[0])
+        XCTAssertNil(testee.tabBefore)
+    }
+
+    // MARK: - select / tabExists
+
+    func testWhenSelectingNonExistentTabThenCurrentIndexUnchanged() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[1])
+        let orphanTab = Tab(link: exampleLink)
+        testee.select(tab: orphanTab)
+        XCTAssertEqual(testee.currentIndex, 1)
+    }
+
+    func testWhenTabExistsInModelThenTabExistsReturnsTrue() {
+        let testee = filledModel
+        let tab = testee.tabs[1]
+        XCTAssertTrue(testee.tabExists(tab: tab))
+        XCTAssertFalse(testee.tabExists(tab: Tab(link: exampleLink)))
+    }
+
 }

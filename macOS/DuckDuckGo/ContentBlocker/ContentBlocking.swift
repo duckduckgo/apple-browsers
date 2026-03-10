@@ -22,6 +22,7 @@ import Combine
 import ContentBlocking
 import BrowserServicesKit
 import Common
+import os.log
 import Persistence
 import PixelKit
 import PixelExperimentKit
@@ -91,8 +92,22 @@ final class AppContentBlocking {
         syncErrorHandler: SyncErrorHandling,
         webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
-        let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
-                                                                      fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+#if DEBUG || REVIEW
+        // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use embedded (test) config
+        let useTestConfig = ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
+        let fetchedEtag: String? = useTestConfig ? nil : configurationStore.loadEtag(for: .privacyConfiguration)
+        let fetchedData: Data? = useTestConfig ? nil : configurationStore.loadData(for: .privacyConfiguration)
+
+        if useTestConfig {
+            Logger.general.log("[DDG-TEST-CONFIG] Skipping cached privacy config to use TEST_PRIVACY_CONFIG_PATH")
+        }
+#else
+        let fetchedEtag: String? = configurationStore.loadEtag(for: .privacyConfiguration)
+        let fetchedData: Data? = configurationStore.loadData(for: .privacyConfiguration)
+#endif
+
+        let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: fetchedEtag,
+                                                                      fetchedData: fetchedData,
                                                                       embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
                                                                       localProtection: LocalUnprotectedDomains(database: database),
                                                                       errorReporting: Self.debugEvents,
@@ -153,8 +168,18 @@ final class AppContentBlocking {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
 
-        trackerDataManager = TrackerDataManager(etag: configurationStore.loadEtag(for: .trackerDataSet),
-                                                data: configurationStore.loadData(for: .trackerDataSet),
+#if DEBUG || REVIEW
+        // When using test config, also skip cached tracker data to ensure consistent state
+        let useTestConfig = ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
+        let trackerEtag: String? = useTestConfig ? nil : configurationStore.loadEtag(for: .trackerDataSet)
+        let trackerData: Data? = useTestConfig ? nil : configurationStore.loadData(for: .trackerDataSet)
+#else
+        let trackerEtag: String? = configurationStore.loadEtag(for: .trackerDataSet)
+        let trackerData: Data? = configurationStore.loadData(for: .trackerDataSet)
+#endif
+
+        trackerDataManager = TrackerDataManager(etag: trackerEtag,
+                                                data: trackerData,
                                                 embeddedDataProvider: AppTrackerDataSetProvider(),
                                                 errorReporting: Self.debugEvents)
 

@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import PrivacyConfig
 @testable import Core
 @testable import DuckDuckGo
 import Combine
@@ -36,6 +37,7 @@ final class SwitchBarHandlerTests: XCTestCase {
     private var sut: SwitchBarHandler!
     private var mockVoiceSearchHelper: MockVoiceSearchHelper!
     private var mockStorage: MockKeyValueStore!
+    private var mockFeatureFlagger: MockFeatureFlagger!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -43,6 +45,7 @@ final class SwitchBarHandlerTests: XCTestCase {
         MockDevicePlatform.isIphone = true
         mockVoiceSearchHelper = MockVoiceSearchHelper()
         mockStorage = MockKeyValueStore()
+        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         cancellables = Set<AnyCancellable>()
         createSUT()
     }
@@ -52,14 +55,16 @@ final class SwitchBarHandlerTests: XCTestCase {
         sut = nil
         mockVoiceSearchHelper = nil
         mockStorage = nil
+        mockFeatureFlagger = nil
         super.tearDown()
     }
 
-    private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self) {
+    private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self, featureFlagger: FeatureFlagger? = nil) {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
             storage: mockStorage, aiChatSettings: MockAIChatSettingsProvider(),
             sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
+            featureFlagger: featureFlagger ?? mockFeatureFlagger,
             devicePlatform: devicePlatform
         )
     }

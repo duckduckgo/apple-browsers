@@ -30,7 +30,7 @@ jobs:
 
     name: Assert Hotfix Branch
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 10
 
     outputs:
@@ -74,7 +74,7 @@ jobs:
     name: Update Asana tasks
 
     needs: [assert_release_branch, run_tests]
-    runs-on: macos-14-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 10
 
     outputs:

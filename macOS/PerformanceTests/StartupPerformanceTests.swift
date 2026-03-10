@@ -30,13 +30,13 @@ final class StartupPerformanceTests: XCTestCase {
     }
 
     func testStartupSequenceDurationWithoutStateRestoration() throws {
-        let application = XCUIApplication.setUp()
+        setupInitialState(shouldRestoreSession: false)
+
+        let application = buildApplicationForPerformanceTesting()
         defer {
             application.terminate()
         }
 
-        /// `UITests.firstRun()` closes the browser with no windows open. We'll manually open a new Window
-        application.openNewWindow()
         XCTAssertTrue(application.windows.firstMatch.waitForExistence(timeout: 10), "Window did not appear after launch")
 
         let attachment = try application.buildStartupMetricsAttachment()
@@ -46,39 +46,50 @@ final class StartupPerformanceTests: XCTestCase {
     }
 
     func testStartupSequenceDurationWithStateRestoration() throws {
-        let application = XCUIApplication.setUp()
+        setupInitialState(shouldRestoreSession: true) { application in
+            application.openNewTab()
+            application.openNewTab()
+            application.openNewWindow()
+            application.openNewTab()
+            application.openNewTab()
+        }
 
-        /// Enable session restoration
-        application.openPreferencesWindow()
-        application.preferencesSetRestorePreviousSession(to: .restoreLastSession)
-        application.closePreferencesWindow()
+        let application = buildApplicationForPerformanceTesting()
+        defer {
+            application.terminate()
+        }
 
-        /// Disable warn before quit so Cmd+Q quits immediately
-        application.disableWarnBeforeQuitting()
-
-        /// Create state to restore: 2 windows with multiple tabs
-        application.openNewTab()
-        application.openNewTab()
-        application.openNewWindow()
-        application.openNewTab()
-        application.openNewTab()
-
-        /// Quit properly to save state, then relaunch to trigger restoration
-        application.typeKey("q", modifierFlags: [.command])
-
-        /// Launch
-        application.launch()
         XCTAssertTrue(application.windows.firstMatch.waitForExistence(timeout: 10), "Window did not appear after launch")
 
         let attachment = try application.buildStartupMetricsAttachment()
         XCTContext.runActivity(named: "Attaching Startup Metrics") { activity in
             activity.add(attachment)
         }
+    }
+}
 
-        /// Ensure State Restoration remains disabled
+private extension StartupPerformanceTests {
+
+    func buildApplicationForPerformanceTesting() -> XCUIApplication {
+        XCUIApplication.setUp(environment: ["UITEST_MODE_STARTUP_PERFORMANCE": "1"])
+    }
+
+    func setupInitialState(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
+        let application = buildApplicationForPerformanceTesting()
+
+        /// Enable session restoration
         application.openPreferencesWindow()
-        application.preferencesSetRestorePreviousSession(to: .newWindow)
+        application.preferencesSetRestorePreviousSession(to: shouldRestoreSession ? .restoreLastSession : .newWindow)
         application.closePreferencesWindow()
+
+        /// Disable warn before quit so Cmd+Q quits immediately
+        application.disableWarnBeforeQuitting()
+
+        /// Create state to restore: 2 windows with multiple tabs
+        configurationClosure?(application)
+
+        /// Quit properly to save state, then relaunch to trigger restoration
+        application.typeKey("q", modifierFlags: [.command])
         application.terminate()
     }
 }

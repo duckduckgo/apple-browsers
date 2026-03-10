@@ -1,0 +1,115 @@
+// NTP after idle: pixels tracking user behaviour when the NTP is shown after idle return vs user-initiated.
+{
+    "m_ntp_after_idle_ntp_shown_after_idle": {
+        "description": "Fires when the NTP is shown because the user returned after idle (after-inactivity feature).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_ntp_shown_user_initiated": {
+        "description": "Fires when the NTP is shown because the user opened it (new tab button, etc.).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_return_to_page_tapped_after_idle": {
+        "description": "Fires when the user taps the Return to [page] escape hatch card on an NTP shown after idle.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_return_to_page_tapped_user_initiated": {
+        "description": "Fires when the user taps the Return to [page] escape hatch card on a user-initiated NTP.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_bar_used_from_ntp_after_idle": {
+        "description": "Fires when the user submits a query from the address bar on an NTP shown after idle.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_bar_used_from_ntp_user_initiated": {
+        "description": "Fires when the user submits a query from the address bar on a user-initiated NTP.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_toggle_used_from_ntp_after_idle": {
+        "description": "Fires when the user toggles search/Duck.ai on an NTP shown after idle.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_toggle_used_from_ntp_user_initiated": {
+        "description": "Fires when the user toggles search/Duck.ai on a user-initiated NTP.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_back_button_used_from_ntp_after_idle": {
+        "description": "Fires when the user taps the back (defocus) button on an NTP shown after idle.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_back_button_used_from_ntp_user_initiated": {
+        "description": "Fires when the user taps the back (defocus) button on a user-initiated NTP.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_app_backgrounded_from_ntp_after_idle": {
+        "description": "Fires when the app is backgrounded while on an NTP shown after idle.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_app_backgrounded_from_ntp_user_initiated": {
+        "description": "Fires when the app is backgrounded while on a user-initiated NTP.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_tab_switcher_selected_from_ntp_after_idle": {
+        "description": "Fires when the user opens the tab switcher from an NTP shown after idle.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_tab_switcher_selected_from_ntp_user_initiated": {
+        "description": "Fires when the user opens the tab switcher from a user-initiated NTP.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_setting_changed_to_new_tab": {
+        "description": "Fires when the user changes the after-inactivity setting to New Tab.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_setting_changed_to_last_used_tab": {
+        "description": "Fires when the user changes the after-inactivity setting to Last Used Tab.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

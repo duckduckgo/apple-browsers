@@ -179,13 +179,13 @@ extension VPNConnectionWideEventData {
         }
     }
 
-    public func pixelParameters() -> [String: String] {
-        var params = Dictionary(compacting: [
+    public func jsonParameters() -> [String: Encodable] {
+        var params: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.VPNConnectionFeature.extensionType, extensionType.rawValue),
             (WideEventParameter.VPNConnectionFeature.startupMethod, startupMethod.rawValue),
             (WideEventParameter.VPNConnectionFeature.isSetup, isSetup.rawValue),
             (WideEventParameter.VPNConnectionFeature.onboardingStatus, onboardingStatus?.rawValue),
-            (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.stringValue(.noBucketing)),
+            (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.intValue(.noBucketing)),
         ])
 
         for step in Step.allCases {
@@ -201,14 +201,14 @@ extension VPNConnectionWideEventData {
 
 private extension VPNConnectionWideEventData {
 
-    func addStepLatency(_ interval: WideEvent.MeasuredInterval?, step: Step, to params: inout [String: String]) {
+    func addStepLatency(_ interval: WideEvent.MeasuredInterval?, step: Step, to params: inout [String: Encodable]) {
         guard let duration = interval?.durationMilliseconds else { return }
-        params[WideEventParameter.VPNConnectionFeature.latency(at: step)] = String(Int(duration))
+        params[WideEventParameter.VPNConnectionFeature.latency(at: step)] = Int(duration)
     }
 
-    func addStepError(_ error: WideEventErrorData?, step: Step, to params: inout [String: String]) {
+    func addStepError(_ error: WideEventErrorData?, step: Step, to params: inout [String: Encodable]) {
         guard let error else { return }
-        let errorParams = error.pixelParameters()
+        let errorParams = error.jsonParameters()
         for (key, value) in errorParams {
             let stepKey = transformErrorKey(key, for: step)
             params[stepKey] = value

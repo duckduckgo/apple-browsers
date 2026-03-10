@@ -21,6 +21,7 @@ import SwiftUI
 import DDGSync
 import Bookmarks
 import BrowserServicesKit
+import Combine
 import Core
 import RemoteMessaging
 
@@ -51,6 +52,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appWidthObserver: AppWidthObserver
 
     private let internalUserCommands: URLBasedDebugCommands
+    private var cancellables = Set<AnyCancellable>()
 
     var onViewDidAppear: (() -> Void)?
 
@@ -115,6 +117,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         super.viewDidLoad()
 
         registerForNotifications()
+        subscribeToProductAvailability()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -248,6 +251,20 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private func presentNextDaxDialog() {
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
+    }
+
+    private func subscribeToProductAvailability() {
+        AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailablePublisher
+            .removeDuplicates()
+            .filter { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self,
+                      self.view.window != nil,
+                      self.hostingController == nil else { return }
+                self.presentNextDaxDialog()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: -

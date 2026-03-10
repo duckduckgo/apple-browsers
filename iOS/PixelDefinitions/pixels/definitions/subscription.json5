@@ -251,6 +251,29 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
+    // Onboarding Subscription Promotion Pixels
+    "m_privacy-pro_onboarding_promotion_impression": {
+        "description": "Fired when the subscription promotion is shown during onboarding",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+    "m_privacy-pro_onboarding_promotion_tap": {
+        "description": "Fired when the user taps the subscription promotion CTA during onboarding",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+    "m_privacy-pro_onboarding_promotion_dismiss": {
+        "description": "Fired when the user dismisses the subscription promotion during onboarding",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+
     // Free Trial Journey Pixels
     "m_privacy-pro_freetrial_start": {
         "description": "Fired when a user starts a free trial subscription. Used to measure total trialists independent of trial completion.",

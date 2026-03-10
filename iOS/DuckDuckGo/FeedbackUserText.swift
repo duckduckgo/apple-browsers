@@ -224,5 +224,5 @@ extension UserText {
     public static let feedbackFormCaption = NSLocalizedString("feedback.form.caption",
                                                               value: "Please tell us what we can improve",
                                                               comment: "")
-    
+
 }

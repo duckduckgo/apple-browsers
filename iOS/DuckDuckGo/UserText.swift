@@ -2436,4 +2436,9 @@ public struct UserText {
     public static let daxEasterEggSwitchToThisLogo = NSLocalizedString("dax.easter.egg.switch.to.this.logo", value: "Switch to This Logo", comment: "Button to switch to the displayed easter egg logo")
     public static let daxEasterEggResetToDefault = NSLocalizedString("dax.easter.egg.reset.to.default", value: "Reset Search Logo", comment: "Button to reset the search logo to the default Dax logo")
     public static let daxEasterEggLogoSaved = NSLocalizedString("dax.easter.egg.logo.saved", value: "Logo Saved", comment: "Toast message shown when the user saves a custom logo")
+
+    // MARK: - Test strings (remove before merging)
+
+    public static let smartlingTestScopedUpload = NSLocalizedString("smartling.test.scoped.upload", value: "This is a test string for validating scoped Smartling uploads", comment: "TEST: Remove before merging - scoped upload validation")
+    public static let smartlingTestScopedUploadSecond = NSLocalizedString("smartling.test.scoped.upload.second", value: "Second test string to verify multiple new units are detected", comment: "TEST: Remove before merging - second test string")
 }

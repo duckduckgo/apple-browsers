@@ -68,8 +68,12 @@ case "$ACTION" in
 	after_approve)
 		echo "✅ Processing approval labels..."
 
-		# Always remove the trigger label
-		remove_label "authorize translation"
+		# Remove the trigger label (supports experimental variant)
+		if [ -n "$TRIGGER_LABEL" ]; then
+			remove_label "$TRIGGER_LABEL"
+		else
+			remove_label "authorize translation"
+		fi
 
 		if [ "$STATUS" == "success" ]; then
 			# Success: remove awaiting-authorization, add in-progress
@@ -88,8 +92,12 @@ case "$ACTION" in
 	after_download)
 		echo "📥 Processing download labels..."
 
-		# Always remove the trigger label
-		remove_label "download translations"
+		# Remove the trigger label (supports experimental variant)
+		if [ -n "$TRIGGER_LABEL" ]; then
+			remove_label "$TRIGGER_LABEL"
+		else
+			remove_label "download translations"
+		fi
 
 		if [ "$STATUS" == "success" ] || [ "$STATUS" == "no_changes" ]; then
 			# Success: remove in-progress, no additional labels
@@ -109,8 +117,12 @@ case "$ACTION" in
 	check_status)
 		echo "🔍 Processing status check labels..."
 
-		# Always remove the trigger label
-		remove_label "check translation status"
+		# Remove the trigger label (supports experimental variant)
+		if [ -n "$TRIGGER_LABEL" ]; then
+			remove_label "$TRIGGER_LABEL"
+		else
+			remove_label "check translation status"
+		fi
 
 		# Set labels based on current job status
 		case "$STATUS" in

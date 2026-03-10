@@ -21,8 +21,20 @@ import Foundation
 
 /// Represents the origin point from which the user enters the subscription funnel in the iOS app.
 enum SubscriptionFunnelOrigin: String {
-    /// User entered the funnel via the onboarding dialog screen.
+    /// User entered the funnel via the onboarding dialog screen (legacy, non-attributed).
     case onboarding = "funnel_onboarding_ios"
+
+    /// Returning user who saw the free trial copy.
+    case onboardingReinstallFreeTrial = "funnel_onboarding_ios_reinstall_tryfreecopy"
+
+    /// Returning user who saw the subscribe copy.
+    case onboardingReinstallSubscribe = "funnel_onboarding_ios_reinstall_subscribecopy"
+
+    /// New user who saw the free trial copy.
+    case onboardingNewInstallFreeTrial = "funnel_onboarding_ios_newinstall_tryfreecopy"
+
+    /// New user who saw the subscribe copy.
+    case onboardingNewInstallSubscribe = "funnel_onboarding_ios_newinstall_subscribecopy"
 
     /// User entered the funnel via the App Settings screen.
     case appSettings = "funnel_appsettings_ios"

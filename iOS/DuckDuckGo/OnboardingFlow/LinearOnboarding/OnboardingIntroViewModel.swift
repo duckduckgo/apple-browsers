@@ -99,6 +99,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
+    private let tutorialSettings: TutorialSettings
 
     convenience init(pixelReporter: LinearOnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging, daxDialogsManager: ContextualDaxDialogDisabling) {
         let onboardingManager = OnboardingManager()
@@ -115,7 +116,8 @@ final class OnboardingIntroViewModel: ObservableObject {
             currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog(isReturningUser: false),
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: { AppIconManager.shared.appIcon },
-            addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition }
+            addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition },
+            tutorialSettings: DefaultTutorialSettings()
         )
     }
 
@@ -128,7 +130,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         currentOnboardingStep: OnboardingIntroStep,
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider,
         appIconProvider: @escaping () -> AppIcon,
-        addressBarPositionProvider: @escaping () -> AddressBarPosition
+        addressBarPositionProvider: @escaping () -> AddressBarPosition,
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
         self.defaultBrowserManager = defaultBrowserManager
         self.contextualDaxDialogs = contextualDaxDialogs
@@ -138,6 +141,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.appIconProvider = appIconProvider
         self.addressBarPositionProvider = addressBarPositionProvider
+        self.tutorialSettings = tutorialSettings
 
         currentIntroStep = currentOnboardingStep
         copy = .default
@@ -161,6 +165,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     func confirmSkipOnboardingAction() {
         pixelReporter.measureConfirmSkipOnboardingCTAAction()
         onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
+        tutorialSettings.hasSkippedOnboarding = true
         contextualDaxDialogs.disableContextualDaxDialogs()
         onCompletingOnboardingIntro?()
     }

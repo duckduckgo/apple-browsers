@@ -7,6 +7,7 @@ set -euo pipefail
 
 PLATFORM="$1"
 JOB_NAME="${2:-}"
+UPLOAD_SCOPE="${SMARTLING_UPLOAD_SCOPE:-full}"
 
 if [ -z "$PLATFORM" ]; then
 	echo "Error: Platform is required"
@@ -26,24 +27,75 @@ JOB_NAME="${JOB_NAME}-${DATE_SUFFIX}"
 
 echo "Uploading translations for platform: $PLATFORM"
 echo "Job name: $JOB_NAME"
+echo "Upload scope: $UPLOAD_SCOPE"
 
+# Determine source files based on platform
 if [ "$PLATFORM" = "iOS" ]; then
-	# Upload iOS files (XLIFF and stringsdict)
-	echo "Uploading iOS files..."
-	output=$(./scripts/smartling/loc_tool.sh upload \
-			--job-name "$JOB_NAME" \
-			--files ./iOS/scripts/assets/loc/en.xcloc/Localized\ Contents/en.xliff \
-				./iOS/DuckDuckGo/en.lproj/Localizable.stringsdict 2>&1) || upload_failed=1
+	SOURCE_FILES=(
+		"./iOS/scripts/assets/loc/en.xcloc/Localized Contents/en.xliff"
+		"./iOS/DuckDuckGo/en.lproj/Localizable.stringsdict"
+	)
 elif [ "$PLATFORM" = "macOS" ]; then
-	# Upload macOS file (XLIFF only)
-	echo "Uploading macOS files..."
-	output=$(./scripts/smartling/loc_tool.sh upload \
-			--job-name "$JOB_NAME" \
-			--files ./macOS/scripts/assets/loc/en.xliff 2>&1) || upload_failed=1
+	SOURCE_FILES=(
+		"./macOS/scripts/assets/loc/en.xliff"
+	)
 else
 	echo "Error: Unknown platform '$PLATFORM'. Must be 'iOS' or 'macOS'"
 	exit 1
 fi
+
+# Apply scoping if requested
+UPLOAD_FILES=("${SOURCE_FILES[@]}")
+
+if [ "$UPLOAD_SCOPE" = "scoped" ]; then
+	echo "🔍 Scoping upload to branch-only changes..."
+	scope_output=$(python3 ./scripts/smartling/prepare_scoped_upload.py \
+		--platform "$PLATFORM" \
+		--base-ref origin/main \
+		--files "${SOURCE_FILES[@]}" 2>&1) || scope_failed=1
+
+	echo "$scope_output"
+
+	if [ "${scope_failed:-0}" = "1" ]; then
+		echo "❌ Scoping failed — aborting upload (experimental mode does not fall back to full upload)"
+
+		if [ -n "${GITHUB_OUTPUT:-}" ]; then
+			echo "upload_success=false" >> "$GITHUB_OUTPUT"
+			echo "job_id=" >> "$GITHUB_OUTPUT"
+		fi
+
+		./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "" "$SMARTLING_PROJECT_ID" failed
+		exit 0
+	fi
+
+	# Extract scoped file paths from output (grep || true to avoid exit under set -e)
+	scoped_files_line=$(echo "$scope_output" | { grep '^SCOPED_FILES=' || true; } | cut -d= -f2-)
+	if [ -z "$scoped_files_line" ]; then
+		echo "❌ No scoped files produced"
+
+		if [ -n "${GITHUB_OUTPUT:-}" ]; then
+			echo "upload_success=false" >> "$GITHUB_OUTPUT"
+			echo "job_id=" >> "$GITHUB_OUTPUT"
+		fi
+
+		./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "" "$SMARTLING_PROJECT_ID" failed
+		exit 0
+	fi
+
+	# Replace upload files with scoped versions
+	IFS=' ' read -r -a UPLOAD_FILES <<< "$scoped_files_line"
+	echo "✅ Scoped to ${#UPLOAD_FILES[@]} file(s)"
+
+	# Extract unit count for observability in PR comments
+	scoped_unit_count=$(echo "$scope_output" | { grep '^SCOPED_UNIT_COUNT=' || true; } | cut -d= -f2-)
+	export SCOPED_UNIT_COUNT="${scoped_unit_count:-unknown}"
+fi
+
+# Upload
+echo "Uploading ${PLATFORM} files..."
+output=$(./scripts/smartling/loc_tool.sh upload \
+		--job-name "$JOB_NAME" \
+		--files "${UPLOAD_FILES[@]}" 2>&1) || upload_failed=1
 
 echo "$output"
 

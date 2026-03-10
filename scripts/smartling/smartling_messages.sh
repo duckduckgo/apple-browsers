@@ -31,6 +31,14 @@ generate_upload_message() {
 	local project_id="$3"
 	local result="${4:-success}"
 	local workflow_url="${WORKFLOW_URL:-}"
+	local upload_scope="${SMARTLING_UPLOAD_SCOPE:-full}"
+	local scoped_unit_count="${SCOPED_UNIT_COUNT:-}"
+
+	# Build scope info line
+	local scope_info="**Upload scope:** \`$upload_scope\`"
+	if [ "$upload_scope" = "scoped" ] && [ -n "$scoped_unit_count" ]; then
+		scope_info="$scope_info ($scoped_unit_count translation unit(s))"
+	fi
 
 	if [ "$result" = "success" ]; then
 		cat > "$OUTPUT_FILE" <<- EOF
@@ -38,20 +46,26 @@ generate_upload_message() {
 
 		**Job ID:** \`$job_id\`
 		**Platform:** $platform
+		$scope_info
 
 		🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
 
 		${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 
-		**Next:** 
+		**Next:**
 		* Review translation job
-		* Authorize translation by adding the \`authorize translation\` label
+		$(if [ "$upload_scope" = "scoped" ]; then
+			echo "* Authorize translation by adding the \`authorize translation experimental\` label"
+		else
+			echo "* Authorize translation by adding the \`authorize translation\` label"
+		fi)
 		EOF
 	else
 		cat > "$OUTPUT_FILE" <<- EOF
 		## ❌ Smartling Upload Failed
 
 		**Platform:** $platform
+		$scope_info
 		**Error:** Upload failed - check workflow logs
 
 		${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}

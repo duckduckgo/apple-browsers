@@ -24,6 +24,7 @@ protocol TutorialSettings: AnyObject {
 
     var lastVersionSeen: Int { get }
     var hasSeenOnboarding: Bool { get set }
+    var hasSkippedOnboarding: Bool { get set }
 
 }
 
@@ -37,6 +38,7 @@ final class DefaultTutorialSettings: TutorialSettings {
     private struct Keys {
         static let lastVersionSeen = "com.duckduckgo.tutorials.lastVersionSeen"
         static let hasSeenOnboarding = "com.duckduckgo.tutorials.hasSeenOnboarding"
+        static let hasSkippedOnboarding = "com.duckduckgo.tutorials.hasSkippedOnboarding"
     }
 
     private func userDefaults() -> UserDefaults {
@@ -57,6 +59,15 @@ final class DefaultTutorialSettings: TutorialSettings {
         set(newValue) {
             userDefaults().set(Constants.onboardingVersion, forKey: Keys.lastVersionSeen)
             userDefaults().set(newValue, forKey: Keys.hasSeenOnboarding)
+        }
+    }
+
+    public var hasSkippedOnboarding: Bool {
+        get {
+            userDefaults().bool(forKey: Keys.hasSkippedOnboarding, defaultValue: false)
+        }
+        set {
+            userDefaults().set(newValue, forKey: Keys.hasSkippedOnboarding)
         }
     }
 

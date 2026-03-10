@@ -525,12 +525,18 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             return nextHomeScreenMessageOverride
         }
 
+        // Users who skipped onboarding bypass the normal Dax dialog flow.
+        // Show the subscription promotion after the 7-day cooldown.
+        if onboardingSubscriptionPromotionHelper.shouldDisplay && !subscriptionPromotionDialogSeen {
+            return .subscriptionPromotion
+        }
+
         guard isEnabled else { return nil }
 
         // If the user has already seen the end of journey dialog we want to check if the user is eligible to purchase Subscription and if so, display an additional Subscription promotion dialog.
         guard !finalDaxDialogSeen else {
 
-            if onboardingSubscriptionPromotionHelper.shouldDisplay && !subscriptionPromotionDialogSeen {
+            if onboardingSubscriptionPromotionHelper.isFeatureEnabled && !subscriptionPromotionDialogSeen {
                 return .subscriptionPromotion
             }
 

@@ -3385,6 +3385,12 @@ Take back control of your personal information with the browser designed for dat
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Which website is broken?";
 
+/* TEST: Remove before merging - scoped upload validation */
+"smartling.test.scoped.upload" = "This is a test string for validating scoped Smartling uploads";
+
+/* TEST: Remove before merging - second test string */
+"smartling.test.scoped.upload.second" = "Second test string to verify multiple new units are detected";
+
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Add to Device";
 

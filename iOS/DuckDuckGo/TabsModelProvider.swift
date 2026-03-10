@@ -42,7 +42,7 @@ protocol TabsModelManaging: AnyObject, TabsModelReading {
     var hasUnread: Bool { get }
     var hasActiveTabs: Bool { get }
     func select(tab: Tab)
-    func get(tabAt index: Int) -> Tab
+    func get(tabAt index: Int?) -> Tab?
     func insert(tab: Tab, placement: TabsModel.TabPlacement, selectNewTab: Bool)
     func move(tab: Tab, to destIndex: Int)
     /// This *does not* add a new empty tab after removing the items.

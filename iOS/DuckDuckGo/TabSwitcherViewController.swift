@@ -597,7 +597,7 @@ class TabSwitcherViewController: UIViewController {
         var urls = [URL]()
 
         indexPaths.compactMap {
-            tabsModel.safeGetTabAt($0.row)
+            tabsModel.get(tabAt: $0.row)
         }.forEach { tab in
             guard let link = tab.link else { return }
             if viewModel.bookmark(for: link.url) == nil {
@@ -645,7 +645,7 @@ class TabSwitcherViewController: UIViewController {
         tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
 
         let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
-        let selectedTab = tabsModel.safeGetTabAt(currentSelection)
+        let selectedTab = tabsModel.get(tabAt: currentSelection)
 
         delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
 
@@ -659,7 +659,7 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
         let shouldDismiss = tabsModel.count == indexPaths.count // TODO: - Handle fire mode
-        let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
+        let tabsToClose = indexPaths.compactMap { tabsModel.get(tabAt: $0.row) }
         delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
         collectionView.performBatchUpdates {
@@ -713,8 +713,8 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
         cell.delegate = self
         cell.isDeleting = false
         
-        if indexPath.row < tabsModel.count {
-            let tab = tabsModel.get(tabAt: indexPath.row)
+        if indexPath.row < tabsModel.count,
+           let tab = tabsModel.get(tabAt: indexPath.row) {
             tab.removeObserver(self)
             tab.addObserver(self)
             cell.update(withTab: tab,
@@ -927,7 +927,7 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
         }
 
         collectionView.performBatchUpdates {
-            guard let tab = tabsModel.safeGetTabAt(source.row) else {
+            guard let tab = tabsModel.get(tabAt: source.row) else {
                 return
             }
             tabsModel.move(tab: tab, to: destination.row)

@@ -108,20 +108,20 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     var nextTab: Tab? {
         guard !tabs.isEmpty else { return nil }
         let nextIndex = currentIndex + 1 >= tabs.count ? 0 : currentIndex + 1
-        return safeGetTabAt(nextIndex)
+        return get(tabAt: nextIndex)
     }
 
     /// The tab before the current tab, wrapping from the first tab to the last.
     var previousTab: Tab? {
         guard !tabs.isEmpty else { return nil }
         let previousIndex = currentIndex - 1 < 0 ? tabs.count - 1 : currentIndex - 1
-        return safeGetTabAt(previousIndex)
+        return get(tabAt: previousIndex)
     }
 
     /// The tab immediately before the current tab without wrapping. Returns `nil` when the current tab is first.
     var tabBefore: Tab? {
         guard currentIndex > 0 else { return nil }
-        return safeGetTabAt(currentIndex - 1)
+        return get(tabAt: currentIndex - 1)
     }
 
     var count: Int {
@@ -134,12 +134,13 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     
     func select(tab: Tab) {
         guard let index = indexOf(tab: tab) else {
-            return // TODO: - Consider throwing
+            return // TODO: - Consider throwing or firing a pixel
         }
         currentIndex = index
     }
 
-    func get(tabAt index: Int) -> Tab { // TODO: - Make this optional and remove safeGet
+    func get(tabAt index: Int?) -> Tab? { // TODO: - Make this optional and remove safeGet
+        guard let index, tabs.indices.contains(index) else { return nil }
         return tabs[index]
     }
     
@@ -196,7 +197,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
 
     private func remove(at index: Int) {
-        let selectedTab = safeGetTabAt(currentIndex)
+        let selectedTab = get(tabAt: currentIndex)
         tabs.remove(at: index)
         if tabs.isEmpty {
             tabs.append(Tab(fireTab: shouldCreateFireTabs))
@@ -206,7 +207,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     /// This *does not* add a new empty tab after removing the items.
     func removeTabs(_ tabsToBeRemoved: [Tab]) {
-        let selectedTab = safeGetTabAt(currentIndex)
+        let selectedTab = get(tabAt: currentIndex)
         self.tabs = tabs.filter { !tabsToBeRemoved.contains($0) }
         setCurrentTab(selectedTab)
     }

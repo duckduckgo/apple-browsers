@@ -372,7 +372,7 @@ extension TabsBarViewController {
 extension MainViewController: TabsBarDelegate {
   
     func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int) {
-        guard let tab = tabManager.currentTabsModel.safeGetTabAt(index) else {
+        guard let tab = tabManager.currentTabsModel.get(tabAt: index) else {
             return
         }
 
@@ -387,13 +387,14 @@ extension MainViewController: TabsBarDelegate {
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
-        let tab = tabManager.currentTabsModel.get(tabAt: index)
-        closeTab(tab)
+        if let tab = tabManager.currentTabsModel.get(tabAt: index) {
+            closeTab(tab)
+        }
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int) {
         let tabsModel = tabManager.currentTabsModel
-        guard let tab = tabsModel.safeGetTabAt(fromIndex) else {
+        guard let tab = tabsModel.get(tabAt: fromIndex) else {
             return
         }
         tabsModel.move(tab: tab, to: toIndex)

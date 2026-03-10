@@ -192,6 +192,50 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: true, for: testFlag)
     }
 
+    // MARK: - InternalOnly Default Tests
+
+    func testWhenRemoteReleasable_defaultValueInternalOnly_noRemoteConfig_andIsInternalUser_returnsTrue() {
+        let testFlag = DefaultValueTestFlags(defaultValue: .internalOnly,
+                                             source: .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests)))
+        internalUserDeciderStore.isInternalUser = true
+
+        assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: true, for: testFlag)
+    }
+
+    func testWhenRemoteReleasable_defaultValueInternalOnly_noRemoteConfig_andIsNotInternalUser_returnsFalse() {
+        let testFlag = DefaultValueTestFlags(defaultValue: .internalOnly,
+                                             source: .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests)))
+        internalUserDeciderStore.isInternalUser = false
+
+        assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: false, for: testFlag)
+    }
+
+    func testWhenRemoteReleasable_defaultValueInternalOnly_remoteConfigEnabled_andIsNotInternalUser_returnsTrue() {
+        let testFlag = DefaultValueTestFlags(defaultValue: .internalOnly,
+                                             source: .remoteReleasable(.feature(.autofill)))
+        internalUserDeciderStore.isInternalUser = false
+
+        let embeddedData = Self.embeddedConfig(autofillState: "enabled")
+        assertFeatureFlagger(with: embeddedData, willReturn: true, for: testFlag)
+    }
+
+    func testWhenRemoteReleasable_defaultValueInternalOnly_remoteConfigDisabled_andIsInternalUser_returnsFalse() {
+        let testFlag = DefaultValueTestFlags(defaultValue: .internalOnly,
+                                             source: .remoteReleasable(.feature(.autofill)))
+        internalUserDeciderStore.isInternalUser = true
+
+        let embeddedData = Self.embeddedConfig(autofillState: "disabled")
+        assertFeatureFlagger(with: embeddedData, willReturn: false, for: testFlag)
+    }
+
+    func testWhenRemoteReleasable_defaultValueEnabled_noRemoteConfig_returnsTrue() {
+        let testFlag = DefaultValueTestFlags(defaultValue: .enabled,
+                                             source: .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests)))
+        internalUserDeciderStore.isInternalUser = false
+
+        assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: true, for: testFlag)
+    }
+
     func testWhenRemoteReleasable_isNOTInternalUser_whenFeature_returnsPrivacyConfigValue() {
         internalUserDeciderStore.isInternalUser = false
         let sourceProvider = FeatureFlagSource.remoteReleasable(.feature(.autofill))
@@ -251,7 +295,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         XCTAssertNil(cohort)
     }
 
-    func testWhenResolveCohort_andRemoteReleasable_subfeature_and_cohortAssigned_returnsAssignedCohort2() {
+    func testWhenResolveCohort_andRemoteReleasable_subfeature_and_cohortAssigned_returnsAssignedCohort() {
         let subfeature = AutofillSubfeature.credentialsAutofill
         experimentManager.cohortToReturn = FakeExperimentFlagsCohort.control.rawValue
         let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "enabled"))

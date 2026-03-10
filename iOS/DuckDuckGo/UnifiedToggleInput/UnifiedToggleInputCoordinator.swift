@@ -104,8 +104,8 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private var modelsFetchTask: Task<Void, Never>?
     private(set) var hasSubmittedPrompt = false
 
-    var persistedModelId: String {
-        preferences.selectedModelId ?? models.first(where: { $0.entityHasAccess })?.id ?? ""
+    var persistedModelId: String? {
+        preferences.selectedModelId ?? models.first(where: { $0.entityHasAccess })?.id
     }
 
     var selectedModelSupportsImageUpload: Bool {
@@ -425,7 +425,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private func buildModelMenuDescription() -> UnifiedToggleInputModelMenu {
         UnifiedToggleInputModelMenu.build(
             models: models,
-            selectedId: persistedModelId,
+            selectedId: persistedModelId ?? "",
             isBottomAnchored: viewController.cardPosition == .bottom,
             advancedSectionTitle: UserText.aiChatAdvancedModelsMenuTitle
         )

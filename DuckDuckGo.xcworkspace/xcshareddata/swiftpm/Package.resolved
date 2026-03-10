@@ -100,6 +100,15 @@
       }
     },
     {
+      "identity" : "native-apps-ducksans",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:duckduckgo/native-apps-ducksans.git",
+      "state" : {
+        "branch" : "alessandro/apple-integration",
+        "revision" : "8d84182126a33808e0964f73e7a8da133d7e65ef"
+      }
+    },
+    {
       "identity" : "ohhttpstubs",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/AliSoftware/OHHTTPStubs.git",

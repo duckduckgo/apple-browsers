@@ -54,11 +54,14 @@ struct Launching: LaunchingHandling {
     private let launchTaskManager = LaunchTaskManager()
     private let launchSourceManager = LaunchSourceManager()
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let duckSansFontService = DuckSansFontService()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
+
+        duckSansFontService.registerDuckSansFont()
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()

@@ -125,9 +125,7 @@ final class OnboardingDebugViewModel: ObservableObject {
     }
 
     func resetAllOnboarding() {
-        let defaults = UserDefaults.app
-        defaults.removeObject(forKey: "com.duckduckgo.tutorials.lastVersionSeen")
-        defaults.removeObject(forKey: "com.duckduckgo.tutorials.hasSeenOnboarding")
+        tutorialSettings.hasSeenOnboarding = false
         resetDaxDialogs()
     }
 

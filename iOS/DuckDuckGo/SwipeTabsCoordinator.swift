@@ -33,7 +33,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
 
-    let selectTab: (Int) -> Void
+    let selectTab: (Tab) -> Void
     let newTab: () -> Void
     let onSwipeStarted: () -> Void
     
@@ -57,7 +57,7 @@ class SwipeTabsCoordinator: NSObject {
          tabPreviewsSource: TabPreviewsSource,
          appSettings: AppSettings,
          omnibarDependencies: OmnibarDependencyProvider,
-         selectTab: @escaping (Int) -> Void,
+         selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
         
@@ -287,7 +287,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         if index >= tabsModel.count {
             newTab()
         } else {
-            selectTab(index)
+            if let tab = tabsModel.safeGetTabAt(index) {
+                selectTab(tab)
+            }
         }
     }
 

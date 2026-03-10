@@ -364,15 +364,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func select(tabAt index: Int) -> TabViewController {
-        current()?.dismiss()
-        currentTabsModel.select(tabAt: index)
-
-        save()
-        return current(createIfNeeded: true)!
-    }
-
-    @MainActor
     func addURLRequest(_ request: URLRequest?,
                        with configuration: WKWebViewConfiguration,
                        inheritedAttribution: AdClickAttributionLogic.State?,
@@ -394,8 +385,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         } else {
             tab = Tab(fireTab: shouldCreateFireTab)
         }
-        model.insert(tab: tab, at: model.currentIndex + 1)
-        model.select(tabAt: model.currentIndex + 1)
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
             maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
@@ -450,8 +440,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
-        model.add(tab: tab)
-        model.select(tabAt: model.count - 1)
+        model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         save()
     }
 
@@ -484,11 +473,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         })
     }
 
-    func selectTab(_ tab: Tab, in tabsModel: TabsModelManaging? = nil) {
+    @MainActor
+    @discardableResult
+    func select(_ tab: Tab, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
         let model = tabsModel ?? currentTabsModel
-        guard let index = model.indexOf(tab: tab) else { return }
-        model.select(tabAt: index)
+        current()?.dismiss()
+        model.select(tab: tab)
         save()
+        return current(createIfNeeded: true)
     }
 
     @MainActor
@@ -507,12 +499,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 
-        let index = model.currentIndex
-        model.insert(tab: tab, at: index + 1)
-
-        if !inBackground {
-            model.select(tabAt: index + 1)
-        }
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: !inBackground)
 
         cacheDelegate?.tabManager(self, didCreateController: controller)
 
@@ -523,31 +510,27 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     /// Warning! This will leave the underlying tabs empty.  This is intentional so that the the
     ///  Tab Switcher's UICollectionView 'delete items' function doesn't complain about mis-matching
     ///   number of items.
-    func bulkRemoveTabs(_ indexPaths: [IndexPath], in tabsModel: TabsModelManaging? = nil) {
+    func bulkRemoveTabs(_ tabs: [Tab], in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        let tabs = indexPaths.map { model.get(tabAt: $0.row) }
-        model.remove(indexPaths)
+        model.removeTabs(tabs)
         clean(tabs: tabs, clearTabHistory: true)
         save()
     }
 
-    func remove(at index: Int, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
+    func remove(tab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        let tab = model.get(tabAt: index)
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
         save()
     }
 
-    func replaceTab(at index: Int, withNewTab newTab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
+    func replace(tab: Tab, withNewTab newTab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         if model.tabs.count == 1 {
-            remove(at: index, clearTabHistory: clearTabHistory, in: model)
+            remove(tab: tab, clearTabHistory: clearTabHistory, in: model)
         } else {
-            let oldTab = model.get(tabAt: index)
-            model.remove(at: index)
-            clean(tabs: [oldTab], clearTabHistory: clearTabHistory)
-            model.insert(tab: newTab, at: index)
+            model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)
+            clean(tabs: [tab], clearTabHistory: clearTabHistory)
         }
         save()
     }

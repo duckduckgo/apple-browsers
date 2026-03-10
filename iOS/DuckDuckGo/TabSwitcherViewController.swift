@@ -664,13 +664,14 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
         collectionView.performBatchUpdates {
             isProcessingUpdates = true
-            tabManager.bulkRemoveTabs(indexPaths, in: tabsModel)
+            tabManager.bulkRemoveTabs(tabsToClose, in: tabsModel)
             collectionView.deleteItems(at: indexPaths)
         } completion: { _ in
             self.currentSelection = self.tabsModel.currentIndex
             self.isProcessingUpdates = false
             if self.tabsModel.tabs.isEmpty {
-                self.tabsModel.add(tab: Tab(fireTab: self.tabsModel.shouldCreateFireTabs)) // TODO: - Only in normal mode
+                let newTab = Tab(fireTab: self.tabsModel.shouldCreateFireTabs)
+                self.tabsModel.insert(tab: newTab, placement: .atEnd, selectNewTab: true) // TODO: - Only in normal mode
             }
             self.delegate?.tabSwitcherDidBulkCloseTabs(tabSwitcher: self)
             self.refreshTitleViews()
@@ -926,7 +927,10 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
         }
 
         collectionView.performBatchUpdates {
-            tabsModel.moveTab(from: source.row, to: destination.row)
+            guard let tab = tabsModel.safeGetTabAt(source.row) else {
+                return
+            }
+            tabsModel.move(tab: tab, to: destination.row)
             currentSelection = tabsModel.currentIndex
             collectionView.deleteItems(at: [source])
             collectionView.insertItems(at: [destination])

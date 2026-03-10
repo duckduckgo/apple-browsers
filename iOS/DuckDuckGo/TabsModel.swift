@@ -30,6 +30,12 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         static let tabs = "tabs2"
         static let mode = "mode"
     }
+    
+    enum TabPlacement {
+        case afterCurrentTab
+        case atEnd
+        case replacing(Tab)
+    }
 
     let mode: BrowsingMode
     private(set) var currentIndex: Int
@@ -97,6 +103,18 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         let index = currentIndex
         return tabs.indices.contains(index) ? tabs[index] : nil
     }
+    
+    var nextTab: Tab? {
+        guard !tabs.isEmpty else { return nil }
+        let nextIndex = currentIndex + 1 >= tabs.count ? 0 : currentIndex + 1
+        return safeGetTabAt(nextIndex)
+    }
+
+    var previousTab: Tab? {
+        guard !tabs.isEmpty else { return nil }
+        let previousIndex = currentIndex - 1 < 0 ? tabs.count - 1 : currentIndex - 1
+        return safeGetTabAt(previousIndex)
+    }
 
     var count: Int {
         return tabs.count
@@ -105,25 +123,41 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     var hasActiveTabs: Bool {
         return tabs.count > 1 || tabs.last?.link != nil
     }
-
-    func select(tabAt index: Int) {
+    
+    func select(tab: Tab) {
+        guard let index = indexOf(tab: tab) else {
+            return // TODO: - Consider throwing
+        }
         currentIndex = index
     }
 
-    func get(tabAt index: Int) -> Tab {
+    func get(tabAt index: Int) -> Tab { // TODO: - Make this optional and remove safeGet
         return tabs[index]
     }
-
-    func add(tab: Tab) {
-        guard shouldCreateFireTabs == tab.fireTab else {
-            assertionFailure("Wrong tab type for this tabs model")
-            return
+    
+    func insert(tab: Tab, placement: TabsModel.TabPlacement, selectNewTab: Bool) {
+        var newTabIndex: Int
+        switch placement {
+        case .afterCurrentTab:
+            insert(tab: tab, at: currentIndex + 1)
+            newTabIndex = currentIndex + 1
+        case .atEnd:
+            tabs.append(tab)
+            newTabIndex = tabs.count - 1
+        case .replacing(let oldTab):
+            guard let index = indexOf(tab: oldTab) else {
+                return
+            }
+            remove(tab: oldTab)
+            insert(tab: tab, at: index)
+            newTabIndex = index
         }
-        tabs.append(tab)
-        currentIndex = tabs.count - 1
+        if selectNewTab {
+            currentIndex = newTabIndex
+        }
     }
 
-    func insert(tab: Tab, at index: Int) {
+    private func insert(tab: Tab, at index: Int) {
         guard shouldCreateFireTabs == tab.fireTab else {
             assertionFailure("Wrong tab type for this tabs model")
             return
@@ -131,7 +165,14 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         tabs.insert(tab, at: max(0, index))
     }
     
-    func moveTab(from sourceIndex: Int, to destIndex: Int) {
+    func move(tab: Tab, to destIndex: Int) {
+        guard let sourceIndex = indexOf(tab: tab) else {
+            return
+        }
+        moveTab(from: sourceIndex, to: destIndex)
+    }
+    
+    private func moveTab(from sourceIndex: Int, to destIndex: Int) {
         guard sourceIndex >= 0, sourceIndex < tabs.count,
             destIndex >= 0, destIndex < tabs.count else {
                 return
@@ -146,7 +187,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         }
     }
 
-    func remove(at index: Int) {
+    private func remove(at index: Int) {
         let selectedTab = safeGetTabAt(currentIndex)
         tabs.remove(at: index)
         if tabs.isEmpty {
@@ -156,10 +197,9 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
 
     /// This *does not* add a new empty tab after removing the items.
-    func remove(_ indexPaths: [IndexPath]) {
+    func removeTabs(_ tabsToBeRemoved: [Tab]) {
         let selectedTab = safeGetTabAt(currentIndex)
-        let indexes = Set(indexPaths.map { $0.row })
-        self.tabs = tabs.enumerated().filter { !indexes.contains($0.offset) }.map { $0.element }
+        self.tabs = tabs.filter { !tabsToBeRemoved.contains($0) }
         setCurrentTab(selectedTab)
     }
 

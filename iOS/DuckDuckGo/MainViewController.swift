@@ -653,11 +653,11 @@ class MainViewController: UIViewController {
                                                     appSettings: appSettings,
                                                     omnibarDependencies: omnibarDependencies) { [weak self] in
 
-            guard $0 != self?.tabManager.currentTabsModel.currentIndex else { return }
+            guard $0 !== self?.tabManager.currentTabsModel.currentTab else { return }
 
             DailyPixel.fire(pixel: .swipeTabsUsedDaily)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-            self?.select(tabAt: $0)
+            self?.selectTab($0)
 
         } newTab: { [weak self] in
             Pixel.fire(pixel: .swipeToOpenNewTab)
@@ -1504,7 +1504,7 @@ class MainViewController: UIViewController {
                 if autoClearInProgress {
                     autoClearShouldRefreshUIAfterClear = false
                 }
-                tabManager.selectTab(existing)
+                tabManager.select(existing)
                 loadUrl(url, fromExternalLink: fromExternalLink)
             }
             // Add a new tab if no existing tab is reused.
@@ -1597,7 +1597,7 @@ class MainViewController: UIViewController {
         
         request()
         dismissOmniBar()
-        select(tab: tab, replacing: nil)
+        transitionTo(tab: tab, from: nil)
     }
 
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
@@ -1615,20 +1615,7 @@ class MainViewController: UIViewController {
         attachTab(tab: tab)
     }
 
-    func select(tabAt index: Int) {
-        viewCoordinator.navigationBarContainer.alpha = 1
-        allowContentUnderflow = false
-        
-        if tabManager.currentTabsModel.tabs.indices.contains(index) {
-            let previousTab = tabManager.current()
-            let tab = tabManager.select(tabAt: index)
-            select(tab: tab, replacing: previousTab)
-        } else {
-            assertionFailure("Invalid index selected")
-        }
-    }
-
-    private func select(tab: TabViewController, replacing previousTab: TabViewController?) {
+    private func transitionTo(tab: TabViewController, from previousTab: TabViewController?) {
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
@@ -1686,7 +1673,7 @@ class MainViewController: UIViewController {
     fileprivate func updateCurrentTab() {
         // prepopulate VC for current tab if needed
         if let currentTab = tabManager.current(createIfNeeded: true) {
-            select(tab: currentTab, replacing: nil)
+            transitionTo(tab: currentTab, from: nil)
             viewCoordinator.omniBar.endEditing()
         } else {
             attachHomeScreen()
@@ -2148,7 +2135,7 @@ class MainViewController: UIViewController {
         let previousTab = tabManager.current()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.selectTab(existing)
+            tabManager.select(existing)
         } else {
             tabManager.addHomeTab()
         }
@@ -3655,7 +3642,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestActivate(_ tab: TabViewController) {
-        select(tab: tab, replacing: nil)
+        transitionTo(tab: tab, from: nil)
     }
 
     func tab(_ tab: TabViewController,
@@ -3869,8 +3856,13 @@ extension MainViewController: TabDelegate {
     }
 
     func selectTab(_ tab: Tab) {
-        guard let index = tabManager.currentTabsModel.indexOf(tab: tab) else { return }
-        select(tabAt: index)
+        viewCoordinator.navigationBarContainer.alpha = 1
+        allowContentUnderflow = false
+
+        let previousTab = tabManager.current()
+        if let tab = tabManager.select(tab) {
+            transitionTo(tab: tab, from: previousTab)
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             self.performCancel()
         }
@@ -3922,7 +3914,7 @@ extension MainViewController: TabSwitcherDelegate {
             assertionFailure("Couldn't create new tab")
             return
         }
-        select(tab: newTab, replacing: previousTab)
+        transitionTo(tab: newTab, from: previousTab)
     }
 
     private func animateLogoAppearance() {
@@ -3977,8 +3969,6 @@ extension MainViewController: TabSwitcherDelegate {
     func closeTab(_ tab: Tab,
                   behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true) {
-        guard let index = tabManager.currentTabsModel.indexOf(tab: tab) else { return }
-
         if #available(iOS 18.4, *) {
             if let closingTabController = tabManager.controller(for: tab) {
                 webExtensionEventsCoordinator?.didCloseTab(closingTabController)
@@ -3992,19 +3982,19 @@ extension MainViewController: TabSwitcherDelegate {
         switch behavior {
         case .createEmptyTabAtSamePosition:
             let newTab = Tab(fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
-            tabManager.replaceTab(at: index, withNewTab: newTab, clearTabHistory: clearTabHistory)
-            tabManager.selectTab(newTab)
+            tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
+            tabManager.select(newTab)
             showBars() // In case the browser chrome bars are hidden when calling this method
         case .createOrReuseEmptyTab:
-            tabManager.remove(at: index, clearTabHistory: clearTabHistory)
+            tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
             if let existing = tabManager.firstHomeTab() {
-                tabManager.selectTab(existing)
+                tabManager.select(existing)
             } else {
                 tabManager.addHomeTab()
             }
             showBars() // In case the browser chrome bars are hidden when calling this method
         case .onlyClose:
-            tabManager.remove(at: index, clearTabHistory: clearTabHistory)
+            tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
         }
 
         updateCurrentTab()

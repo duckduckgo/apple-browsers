@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
 "-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
 
 /* No comment provided by engineer. */

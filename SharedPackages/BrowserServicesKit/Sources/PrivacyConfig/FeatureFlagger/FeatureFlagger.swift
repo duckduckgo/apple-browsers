@@ -457,12 +457,23 @@ public class DefaultFeatureFlagger: FeatureFlagger {
                     return featureFlag.cohortType?.cohort(for: resolvedCohortID)
                 }
             }
-            // Fall back to defaultValue cohort if no cohort was resolved from remote config
+            // Fall back to defaultValue cohort ONLY when feature is missing from remote config
             if case .internalOnlyWithCohort(let cohort) = featureFlag.defaultValue,
-               internalUserDecider.isInternalUser {
+               internalUserDecider.isInternalUser,
+               isFeatureMissingFromRemoteConfig(featureType) {
                 return cohort
             }
             return nil
+        }
+    }
+
+    private func isFeatureMissingFromRemoteConfig(_ featureType: PrivacyConfigFeatureLevel) -> Bool {
+        let config = privacyConfigManager.privacyConfig
+        switch featureType {
+        case .feature(let feature):
+            return config.stateFor(featureKey: feature) == .disabled(.featureMissing)
+        case .subfeature(let subfeature):
+            return config.stateFor(subfeatureID: subfeature.rawValue, parentFeatureID: subfeature.parent.rawValue) == .disabled(.featureMissing)
         }
     }
 

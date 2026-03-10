@@ -415,6 +415,67 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         XCTAssertNil(cohort)
     }
 
+    // MARK: - Cohort fallback for remotely-disabled features
+
+    func testWhenResolveCohort_andInternalOnlyWithCohort_andSubfeatureDisabledInConfig_andInternalUser_returnsNil() {
+        internalUserDeciderStore.isInternalUser = true
+        let subfeature = AutofillSubfeature.credentialsAutofill
+        experimentManager.cohortToReturn = nil
+        let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "disabled"))
+
+        let flag = FakeExperimentFlags.internalFlagWithRemoteSubfeature
+        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
+        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
+        XCTAssertNil(cohort)
+    }
+
+    func testWhenResolveCohort_andInternalOnlyWithCohort_andSubfeatureEnabledWithRemoteCohort_andInternalUser_returnsRemoteCohort() {
+        internalUserDeciderStore.isInternalUser = true
+        let subfeature = AutofillSubfeature.credentialsAutofill
+        experimentManager.cohortToReturn = FakeExperimentFlagsCohort.control.rawValue
+        let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "enabled"))
+
+        let flag = FakeExperimentFlags.internalFlagWithRemoteSubfeature
+        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
+        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
+        XCTAssertEqual(cohort?.rawValue, FakeExperimentFlagsCohort.control.rawValue)
+    }
+
+    func testWhenResolveCohort_andInternalOnlyWithCohort_andFeatureDisabledInConfig_andInternalUser_returnsNil() {
+        internalUserDeciderStore.isInternalUser = true
+        experimentManager.cohortToReturn = nil
+        let embeddedData = Self.embeddedConfig(autofillState: "disabled")
+
+        let flag = FakeExperimentFlags.internalFlagWithRemoteFeature
+        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
+        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
+        XCTAssertNil(cohort)
+    }
+
+    func testWhenResolveCohort_andInternalOnlyWithCohort_andFeatureMissingFromConfig_andInternalUser_returnsFallbackCohort() {
+        internalUserDeciderStore.isInternalUser = true
+        experimentManager.cohortToReturn = nil
+        // Use empty config so autofill feature is missing
+        let embeddedData = Self.emptyConfig()
+
+        let flag = FakeExperimentFlags.internalFlagWithRemoteFeature
+        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
+        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
+        XCTAssertEqual(cohort?.rawValue, FakeExperimentFlagsCohort.blue.rawValue)
+    }
+
+    func testWhenResolveCohort_andInternalOnlyWithCohort_andSubfeatureMissingFromConfig_andInternalUser_returnsFallbackCohort() {
+        internalUserDeciderStore.isInternalUser = true
+        experimentManager.cohortToReturn = nil
+        // Use empty config where autofill feature is not present at all
+        let embeddedData = Self.emptyConfig()
+
+        let flag = FakeExperimentFlags.internalFlagWithRemoteSubfeature
+        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
+        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
+        XCTAssertEqual(cohort?.rawValue, FakeExperimentFlagsCohort.blue.rawValue)
+    }
+
     // MARK: - Overrides
 
     func testWhenFeatureFlaggerIsInitializedWithLocalOverridesAndUserIsNotInternalThenAllFlagsAreCleared() throws {
@@ -531,6 +592,15 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         """.data(using: .utf8)!
     }
 
+    private static func emptyConfig() -> Data {
+        """
+        {
+            "features": {},
+            "unprotectedTemporary": []
+        }
+        """.data(using: .utf8)!
+    }
+
     private func assertFeatureFlagger(with embeddedData: Data,
                                       willReturn bool: Bool,
                                       for sourceProvider: any FeatureFlagDescribing,
@@ -568,12 +638,14 @@ private enum FakeExperimentFlags: String, CaseIterable {
     case remoteDevelopmentFeature
     case remoteReleasableFlag
     case remoteReleasableFeature
+    case internalFlagWithRemoteSubfeature
+    case internalFlagWithRemoteFeature
 }
 
 extension FakeExperimentFlags: FeatureFlagDescribing {
     var defaultValue: FeatureFlagDefaultValue {
         switch self {
-        case .internalFlag:
+        case .internalFlag, .internalFlagWithRemoteSubfeature, .internalFlagWithRemoteFeature:
             .internalOnlyWithCohort(FakeExperimentFlagsCohort.blue)
         default:
             .disabled
@@ -597,6 +669,10 @@ extension FakeExperimentFlags: FeatureFlagDescribing {
         case .remoteReleasableFlag:
                 .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
         case .remoteReleasableFeature:
+                .remoteReleasable(.feature(.autofill))
+        case .internalFlagWithRemoteSubfeature:
+                .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
+        case .internalFlagWithRemoteFeature:
                 .remoteReleasable(.feature(.autofill))
         }
     }

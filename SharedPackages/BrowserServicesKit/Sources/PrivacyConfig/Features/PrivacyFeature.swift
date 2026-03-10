@@ -90,9 +90,7 @@ public enum PrivacyFeature: String {
     case webExtensions
     case forceDarkModeOnWebsites
     case crashReportOptInStatusResetting
-    case iPadAIToggle
     case autofillPasswordsStatusBar
-    case startupMetrics
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

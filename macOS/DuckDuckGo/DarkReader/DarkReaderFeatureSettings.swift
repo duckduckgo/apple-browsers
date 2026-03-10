@@ -41,7 +41,7 @@ protocol DarkReaderFeatureSettings: DarkReaderExcludedDomainsProviding {
 }
 
 struct DarkReaderSettings: StoringKeys {
-    let forceDarkModeOnWebsitesEnabled = StorageKey<Bool>(.forceDarkModeOnWebsitesEnabled)
+    let forceDarkModeOnWebsitesEnabled = StorageKey<Bool>(.forceDarkModeOnWebsites)
 }
 
 final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {

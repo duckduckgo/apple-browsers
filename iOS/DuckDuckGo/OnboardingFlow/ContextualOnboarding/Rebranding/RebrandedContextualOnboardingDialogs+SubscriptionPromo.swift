@@ -69,6 +69,7 @@ extension OnboardingRebranding {
                 }
                 .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
+            .scrollIfNeeded()
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }
     }

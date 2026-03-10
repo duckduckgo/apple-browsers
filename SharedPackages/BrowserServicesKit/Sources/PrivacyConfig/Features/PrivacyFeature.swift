@@ -176,6 +176,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     case webViewLookUpAction
+
+    /// Startup Metrics Reporting
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
+    case startupMetrics
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -236,6 +240,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
     case suppressTrackerAnimationOnColdStart
+
+    case customXSafariRedirectHandling
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -597,7 +603,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
 
     case newSafariFilePicker
-    case dataImportWideEventMeasurement
     case newDataImportExperience
     case dataImportSummarySyncPromotion
 }
@@ -622,7 +627,7 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
-    case embeddedExtension
+    case embeddedExtension = "embedded"
 }
 
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {

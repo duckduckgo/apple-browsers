@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import WebExtensions
 import PrivacyConfig
 
@@ -41,10 +42,7 @@ extension CookiePopupProtectionPreferences: AutoconsentPreferencesProviding {}
 enum WebExtensionManagerFactory {
 
     private static var extensionsDirectory: URL {
-        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            fatalError("Application Support directory not found")
-        }
-        return appSupport.appendingPathComponent("WebExtensions", isDirectory: true)
+        URL.sandboxApplicationSupportURL.appendingPathComponent("WebExtensions", isDirectory: true)
     }
 
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.

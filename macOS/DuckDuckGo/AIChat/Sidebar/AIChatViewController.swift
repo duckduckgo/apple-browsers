@@ -34,6 +34,8 @@ protocol AIChatViewControllerDelegate: AnyObject {
     func didClickAttachButton(for tabID: TabIdentifier)
     /// Called when the user clicks the title button to bring the associated tab to front.
     func didClickTitleButton(for tabID: TabIdentifier)
+    /// Returns whether the chat is in floating (detached) presentation mode for the given tab.
+    func isChatFloating(for tabID: TabIdentifier) -> Bool
 }
 
 /// A view controller that manages the AI Chat sidebar interface.
@@ -67,6 +69,10 @@ final class AIChatViewController: NSViewController {
             guard isViewLoaded else { return }
             updateTopBarForHostingContext()
         }
+    }
+    private var isChatFloating: Bool {
+        guard let tabID else { return false }
+        return delegate?.isChatFloating(for: tabID) ?? false
     }
     private(set) var currentAIChatURL: URL
 
@@ -159,10 +165,8 @@ final class AIChatViewController: NSViewController {
     }
 
     private func createAndSetupSeparator(in container: NSView) {
-        separator = NSView()
+        separator = ColorView(frame: .zero, backgroundColor: themeManager.theme.colorsProvider.separatorColor)
         separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.wantsLayer = true
-        separator.layer?.backgroundColor = NSColor.separatorColor.cgColor
         container.addSubview(separator)
 
         NSLayoutConstraint.activate([
@@ -329,14 +333,21 @@ final class AIChatViewController: NSViewController {
     }
 
     private func updateTopBarForHostingContext() {
-        let isFloating = view.window is AIChatFloatingWindow
-        openInNewTabButton.isHidden = isFloating
-        detachButton.isHidden = isFloating || !isChatFloatingEnabled
-        attachButton.isHidden = !isFloating
-        closeButton.isHidden = isFloating
+        openInNewTabButton.isHidden = isChatFloating
+        detachButton.isHidden = isChatFloating || !isChatFloatingEnabled
+        attachButton.isHidden = !isChatFloating
+        closeButton.isHidden = isChatFloating
         titleLabel.isHidden = true
-        titleButton.isHidden = !isFloating
-        titleArrowView?.isHidden = !isFloating
+        titleButton.isHidden = !isChatFloating
+        titleArrowView?.isHidden = !isChatFloating
+        separator.isHidden = isChatFloating
+        updateBackgroundForHostingContext()
+    }
+
+    private func updateBackgroundForHostingContext() {
+        guard let contentView = view as? ColorView else { return }
+        let colorsProvider = themeManager.theme.colorsProvider
+        contentView.backgroundColor = isChatFloating ? colorsProvider.baseBackgroundColor : colorsProvider.navigationBackgroundColor
     }
 
     private func createAndSetupWebViewContainer(in container: NSView) {
@@ -475,7 +486,8 @@ extension AIChatViewController: ThemeUpdateListening {
             return
         }
 
-        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+        contentView.backgroundColor = isChatFloating ? theme.colorsProvider.baseBackgroundColor : theme.colorsProvider.navigationBackgroundColor
+        (separator as? ColorView)?.backgroundColor = theme.colorsProvider.separatorColor
 
         let iconsPrimary = theme.colorsProvider.iconsColor
         openInNewTabButton?.normalTintColor = iconsPrimary

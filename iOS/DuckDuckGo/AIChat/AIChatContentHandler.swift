@@ -122,7 +122,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let featureFlagger: FeatureFlagger
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
-    private lazy var statisticsLoader: StatisticsLoader = .shared
+    private let statisticsLoader: StatisticsLoader
 
     private var userScript: AIChatUserScriptProviding?
 
@@ -139,6 +139,7 @@ final class AIChatContentHandler: AIChatContentHandling {
          featureFlagger: FeatureFlagger,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
+         statisticsLoader: StatisticsLoader = .shared,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
@@ -147,6 +148,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.featureFlagger = featureFlagger
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
+        self.statisticsLoader = statisticsLoader
         self.getPageContext = getPageContext
     }
 

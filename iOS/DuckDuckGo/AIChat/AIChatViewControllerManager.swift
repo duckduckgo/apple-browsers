@@ -64,7 +64,7 @@ final class AIChatViewControllerManager {
     private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private var productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
-    private lazy var statisticsLoader: StatisticsLoader = .shared
+    private let statisticsLoader: StatisticsLoader
 
     // MARK: - Initialization
 
@@ -78,7 +78,8 @@ final class AIChatViewControllerManager {
          aiChatSettings: AIChatSettingsProvider,
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService) {
+         freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
+         statisticsLoader: StatisticsLoader = .shared) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -91,6 +92,7 @@ final class AIChatViewControllerManager {
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
+        self.statisticsLoader = statisticsLoader
     }
 
     // MARK: - Public Methods

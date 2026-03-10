@@ -23,6 +23,7 @@ import SwiftUI
 import SyncUI_iOS
 import DDGSync
 import AVFoundation
+import os.log
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     var syncBookmarksPausedTitle: String? {
@@ -298,8 +299,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         dismissPresentedViewController { [weak self] in
             guard let self else { return }
             let readyView = AutoRestoreReadyView(model: self.rootView.model, onCancel: { [weak self] in
-                Pixel.fire(pixel: .syncAutoRestoreSettingsCancelled,
-                           withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
+                Pixel.fire(pixel: .syncAutoRestoreSettingsCancelled, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
                 self?.rootView.model.clearPendingPreservedAccountContinuation()
                 self?.autoRestorePromptSource = nil
                 self?.dismissPresentedViewController()
@@ -311,8 +311,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 }
             })
             self.navigationController?.present(controller, animated: true) {
-                Pixel.fire(pixel: .syncAutoRestoreSettingsReadyShown,
-                           withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
+                Pixel.fire(pixel: .syncAutoRestoreSettingsReadyShown, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
             }
         }
     }
@@ -418,11 +417,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .manualRecoveryShown:
             Pixel.fire(pixel: .syncAutoRestoreSettingsManualRecoveryShown)
         case .readyRestoreTapped:
-            Pixel.fire(pixel: .syncAutoRestoreSettingsRestoreTapped,
-                       withAdditionalParameters: autoRestorePromptSourceParameters)
+            Pixel.fire(pixel: .syncAutoRestoreSettingsRestoreTapped, withAdditionalParameters: autoRestorePromptSourceParameters)
         case .readySkipRestoreTapped:
-            Pixel.fire(pixel: .syncAutoRestoreSettingsSkipRestoreTapped,
-                       withAdditionalParameters: autoRestorePromptSourceParameters)
+            Pixel.fire(pixel: .syncAutoRestoreSettingsSkipRestoreTapped, withAdditionalParameters: autoRestorePromptSourceParameters)
         }
     }
 
@@ -482,15 +479,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         do {
             try syncService.removePreservedSyncAccount()
         } catch {
-            Pixel.fire(pixel: .syncAutoRestorePreservedAccountClearFailed,
-                       error: error,
-                       withAdditionalParameters: autoRestorePromptSourceParameters)
+            Pixel.fire(pixel: .syncAutoRestorePreservedAccountClearFailed, error: error, withAdditionalParameters: autoRestorePromptSourceParameters)
             await handleError(.unknownError, error: error, event: nil)
+            dismissPresentedViewController()
             return false
         }
 
-        Pixel.fire(pixel: .syncAutoRestorePreservedAccountCleared,
-                   withAdditionalParameters: autoRestorePromptSourceParameters)
+        Pixel.fire(pixel: .syncAutoRestorePreservedAccountCleared, withAdditionalParameters: autoRestorePromptSourceParameters)
         needsPreservedAccountCleanupBeforeServerOperation = false
         autoRestorePromptSource = nil
         return true

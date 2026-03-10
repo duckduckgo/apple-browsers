@@ -208,7 +208,7 @@ final class PageContextTabExtension {
     /// When the browser tab navigates to a new URL while the sidebar has an active chat,
     /// push the new page's context to the frontend so the user can reference multiple pages.
     private func handleNavigationForMultipleContexts(from previousContent: Tab.TabContent?, to newContent: Tab.TabContent) {
-        guard featureFlagger.isFeatureOn(.multiplePageContexts),
+        guard featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
               case .url(let newURL, _, _) = newContent,
               case .url(let oldURL, _, _) = previousContent,
               newURL != oldURL,

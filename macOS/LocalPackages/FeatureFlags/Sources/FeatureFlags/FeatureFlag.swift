@@ -264,7 +264,7 @@ public enum FeatureFlag: String, CaseIterable {
     case supportsSyncChatsDeletion
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
-    case multiplePageContexts
+    case aiChatMultiplePageContexts
 
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
@@ -404,7 +404,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .wideEventPostEndpoint,
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
-                .multiplePageContexts,
+                .aiChatMultiplePageContexts,
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
@@ -576,8 +576,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .supportsSyncChatsDeletion:
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
-        case .multiplePageContexts:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
+        case .aiChatMultiplePageContexts:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatMultiplePageContexts))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:

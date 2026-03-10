@@ -25,7 +25,7 @@ public class SubscriptionRestoreWideEventData: WideEventData {
         featureName: "subscription-restore",
         mobileMetaType: "ios-subscription-restore",
         desktopMetaType: "macos-subscription-restore",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     public static let restoreTimeout: TimeInterval = .minutes(15)
@@ -127,13 +127,13 @@ extension SubscriptionRestoreWideEventData {
         case timeout
     }
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (WideEventParameter.SubscriptionRestoreFeature.restorePlatform, restorePlatform.rawValue),
             (WideEventParameter.SubscriptionRestoreFeature.funnelName, funnelName),
             (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLastURL, emailAddressRestoreLastURL?.rawValue),
-            (WideEventParameter.SubscriptionRestoreFeature.appleAccountRestoreLatency, appleAccountRestoreDuration?.stringValue(.bucketed(Self.appleAccountBucket))),
-            (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLatency, emailAddressRestoreDuration?.stringValue(.bucketed(Self.emailAddressBucket))),
+            (WideEventParameter.SubscriptionRestoreFeature.appleAccountRestoreLatency, appleAccountRestoreDuration?.intValue(.bucketed(Self.appleAccountBucket))),
+            (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLatency, emailAddressRestoreDuration?.intValue(.bucketed(Self.emailAddressBucket))),
         ])
     }
 }

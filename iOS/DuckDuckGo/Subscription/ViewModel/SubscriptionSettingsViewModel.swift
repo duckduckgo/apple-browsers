@@ -420,8 +420,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         state.cancelPendingDowngradeDetails = nil
         state.subscriptionInfo = subscription
 
-        // Check for pending plan first (downgrade scheduled)
-        if let pendingPlan = subscription.firstPendingPlan {
+        // Check for pending plan first (downgrade scheduled) — only show downgrade copy when pending tier differs from current
+        if let pendingPlan = subscription.firstPendingPlan,
+           let currentTier = subscription.tier,
+           pendingPlan.tier != currentTier {
             let effectiveDate = dateFormatter.string(from: pendingPlan.effectiveAt)
             let tierName = pendingPlan.tier.rawValue.capitalized
             state.subscriptionDetails = UserText.pendingDowngradeInfo(tierName: tierName, billingPeriod: pendingPlan.billingPeriod, effectiveDate: effectiveDate)

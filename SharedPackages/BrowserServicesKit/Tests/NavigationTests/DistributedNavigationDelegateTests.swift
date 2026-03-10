@@ -634,6 +634,11 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         }
         waitForExpectations()
 
+        let responsesReceived = expectation(for: NSPredicate(block: { [unowned self] _, _ in
+            responder(at: 0).navigationResponses.count >= 2
+        }), evaluatedWith: nil)
+        wait(for: [responsesReceived], timeout: 5)
+
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(NavAction(req(urls.local), .other, src: main())),
             .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),

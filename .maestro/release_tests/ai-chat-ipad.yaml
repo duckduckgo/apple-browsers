@@ -27,8 +27,10 @@ tags:
     direction: DOWN
 - tapOn: "AI Features"
 - assertVisible: "Duck.ai"
-- assertVisible: "Search Only"
-- assertVisible: "Search & Duck.ai"
+- assertVisible:
+    id: "Settings.AIFeatures.Picker.SearchOnly"
+- assertVisible:
+    id: "Settings.AIFeatures.Picker.SearchAndDuckAI"
 - scrollUntilVisible:
     element: "Manage Duck.ai Shortcuts"
     direction: DOWN
@@ -37,7 +39,8 @@ tags:
 - tapOn: "AI Features"
 
 # Set mode to "Search & Duck.ai" and verify mode toggle appears when address bar is selected
-- tapOn: "Search & Duck.ai"
+- tapOn:
+    id: "Settings.AIFeatures.Picker.SearchAndDuckAI"
 - tapOn: "Settings"
 - tapOn: "Done"
 - tapOn:
@@ -55,7 +58,8 @@ tags:
     element: "AI Features"
     direction: DOWN
 - tapOn: "AI Features"
-- tapOn: "Search Only"
+- tapOn:
+    id: "Settings.AIFeatures.Picker.SearchOnly"
 - tapOn: "Settings"
 - tapOn: "Done"
 - assertNotVisible:

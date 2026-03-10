@@ -98,7 +98,7 @@ class TabsModelPersistenceTests: XCTestCase {
 
     func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() throws {
         let model = self.model
-        model.select(tabAt: 1)
+        model.select(tab: model.tabs[1])
         persistence.save(model: model, for: .normal)
 
         let loaded = try persistence.getTabsModel(for: .normal)

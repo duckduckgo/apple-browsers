@@ -34,11 +34,11 @@ final class TabManagerTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         XCTAssertEqual(1, tabsModel.count)
 
-        let originalTab = tabsModel.get(tabAt: 0)
+        let originalTab = try XCTUnwrap(tabsModel.get(tabAt: 0))
         XCTAssertTrue(originalTab === tabsModel.get(tabAt: 0))
 
         let manager = try makeManager(tabsModel)
-        manager.remove(at: 0)
+        manager.remove(tab: originalTab)
 
         XCTAssertEqual(1, tabsModel.count)
         XCTAssertFalse(originalTab === tabsModel.get(tabAt: 0))
@@ -46,11 +46,12 @@ final class TabManagerTests: XCTestCase {
 
     func testWhenTabOpenedFromOtherTabThenRemovingTabSetsIndexToPreviousTab() async throws {
         let tabsModel = TabsModel(desktop: false)
-        tabsModel.add(tab: Tab(link: Link(title: "example", url: URL(string: "https://example.com")!)))
-        tabsModel.add(tab: Tab())
+        let exampleTab = Tab(link: Link(title: "example", url: URL(string: "https://example.com")!))
+        tabsModel.insert(tab: exampleTab, placement: .atEnd, selectNewTab: true)
+        tabsModel.insert(tab: Tab(), placement: .atEnd, selectNewTab: true)
         XCTAssertEqual(3, tabsModel.count)
 
-        tabsModel.select(tabAt: 1)
+        tabsModel.select(tab: exampleTab)
 
         let manager = try makeManager(tabsModel)
 
@@ -60,7 +61,7 @@ final class TabManagerTests: XCTestCase {
 
         XCTAssertEqual(3, tabsModel.count)
 
-        manager.remove(at: 1)
+        manager.remove(tab: exampleTab)
         // We expect the new current index to be the previous index
         XCTAssertEqual(0, tabsModel.currentIndex)
     }
@@ -69,8 +70,8 @@ final class TabManagerTests: XCTestCase {
         let mock = MockTabPreviewsSource(totalStoredPreviews: 5)
         let tabsModel = TabsModel(desktop: false)
         let fireModel = TabsModel(desktop: false)
-        tabsModel.add(tab: Tab())
-        fireModel.add(tab: Tab())
+        tabsModel.insert(tab: Tab(), placement: .atEnd, selectNewTab: false)
+        fireModel.insert(tab: Tab(fireTab: true), placement: .atEnd, selectNewTab: false)
         let manager = try makeManager(tabsModel, fireModel: fireModel, previewsSource: mock)
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         try await Task.sleep(interval: 0.5)
@@ -85,14 +86,14 @@ final class TabManagerTests: XCTestCase {
     func testWhenTabRemoved_ThenTabHistoryIsCleared() async throws {
         let tabsModel = TabsModel(desktop: false)
         let tabToRemove = Tab(link: Link(title: "example", url: URL(string: "https://example.com")!))
-        tabsModel.add(tab: tabToRemove)
+        tabsModel.insert(tab: tabToRemove, placement: .atEnd, selectNewTab: true)
         let tabID = tabToRemove.uid
         
         let mockHistoryManager = MockHistoryManager()
         mockHistoryManager.removeTabHistoryExpectation = expectation(description: "removeTabHistory called")
         let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)
         
-        manager.remove(at: 1)
+        manager.remove(tab: tabToRemove)
         
         await fulfillment(of: [mockHistoryManager.removeTabHistoryExpectation!], timeout: 5.0)
         
@@ -102,9 +103,9 @@ final class TabManagerTests: XCTestCase {
     
     func testWhenAllTabsRemoved_ThenTabHistoryIsCleared() async throws {
         let tabsModel = TabsModel(desktop: false)
-        let initialTab = tabsModel.get(tabAt: 0)
+        let initialTab = tabsModel.tabs[0]
         let tab1 = Tab(link: Link(title: "example1", url: URL(string: "https://example1.com")!))
-        tabsModel.add(tab: tab1)
+        tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: true)
         let tabIDs = [initialTab.uid, tab1.uid]
         
         let mockHistoryManager = MockHistoryManager()
@@ -121,7 +122,7 @@ final class TabManagerTests: XCTestCase {
     
     func testWhenViewModelRequested_ThenReturnsViewModelForTab() throws {
         let tabsModel = TabsModel(desktop: false)
-        let tab = tabsModel.get(tabAt: 0)
+        let tab = try XCTUnwrap(tabsModel.get(tabAt: 0))
         
         let mockHistoryManager = MockHistoryManager()
         let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)

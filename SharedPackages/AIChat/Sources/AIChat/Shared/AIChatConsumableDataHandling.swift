@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 /// A protocol that defines a standard interface for handling consumable data.
 /// Types conforming to this protocol can set, consume, and reset data of a specified type.
 public protocol AIChatConsumableDataHandling {
@@ -140,14 +142,40 @@ public struct AIChatPageContextData: Codable, Equatable {
     public let content: String
     public let truncated: Bool
     public let fullContentLength: Int
+    public let attachable: Bool
 
-    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int) {
+    enum CodingKeys: String, CodingKey {
+        case title, favicon, url, content, truncated, fullContentLength, attachable
+    }
+
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool = true) {
         self.title = title
         self.favicon = favicon
         self.url = url
         self.content = content
         self.truncated = truncated
         self.fullContentLength = fullContentLength
+
+        let host = URL(string: url)?.host?.lowercased() ?? ""
+        if host.hasSuffix("wikipedia.org") || host == "as.com" || host.hasSuffix(".as.com") {
+            self.attachable = false
+        } else {
+            self.attachable = attachable
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let decodedUrl = try container.decode(String.self, forKey: .url)
+        self.init(
+            title: try container.decode(String.self, forKey: .title),
+            favicon: try container.decode([PageContextFavicon].self, forKey: .favicon),
+            url: decodedUrl,
+            content: try container.decode(String.self, forKey: .content),
+            truncated: try container.decode(Bool.self, forKey: .truncated),
+            fullContentLength: try container.decode(Int.self, forKey: .fullContentLength),
+            attachable: try container.decodeIfPresent(Bool.self, forKey: .attachable) ?? true
+        )
     }
 
     public struct PageContextFavicon: Codable, Equatable {
@@ -168,4 +196,5 @@ public struct AIChatPageContextData: Codable, Equatable {
     public func isEmpty() -> Bool {
         return title.isEmpty && favicon.isEmpty && content.isEmpty && fullContentLength == 0
     }
+
 }

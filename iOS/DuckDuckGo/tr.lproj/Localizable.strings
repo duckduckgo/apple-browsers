@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Bazı web sitesi özellikleri bu tarayıcıda uyumlu olmayabilir.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Bu site Safari'de açılmak istiyor.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "YENİDEN MARKALANDI";
 

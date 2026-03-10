@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Některé funkce webových stránek nemusí být v tomto prohlížeči kompatibilní.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Tento web chce být otevřen v Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "REBRANDED";
 

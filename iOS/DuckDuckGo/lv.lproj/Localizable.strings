@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Dažas vietnes funkcijas var nebūt saderīgas ar šo pārlūkprogrammu.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Šī vietne vēlas atvērties Safari pārlūkprogrammā.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "PĀRDĒVĒTS";
 

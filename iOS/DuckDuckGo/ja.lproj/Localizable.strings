@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "一部のウェブサイト機能はこのブラウザと互換性がない場合があります。";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "このサイトはSafariで開こうとしています。";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "ブランド刷新";
 

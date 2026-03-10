@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Előfordulhat, hogy a webhely egyes funkciói nem kompatibilisek ezzel a böngészővel.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Az oldal a Safariban próbál megnyílni.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "ÚJRAMÁRKÁZVA";
 

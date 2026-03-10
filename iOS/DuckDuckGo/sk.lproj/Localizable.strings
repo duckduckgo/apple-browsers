@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Niektoré funkcie webových stránok nemusia byť v tomto prehliadači kompatibilné.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Táto stránka sa chce otvoriť v Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "REBRANDED";
 

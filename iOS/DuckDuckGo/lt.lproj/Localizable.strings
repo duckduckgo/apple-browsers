@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Kai kurios interneto svetainės funkcijos šioje naršyklėje gali būti nesuderinamos.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Ši svetainė nori atsidaryti naršyklėje „Safari".";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "PERVADINTAS";
 

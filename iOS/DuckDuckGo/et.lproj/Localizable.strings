@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Mõned veebisaidi funktsioonid ei pruugi selle brauseriga ühilduda.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "See sait soovib avaneda Safaris.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "ÜMBER BRÄNDITUD";
 

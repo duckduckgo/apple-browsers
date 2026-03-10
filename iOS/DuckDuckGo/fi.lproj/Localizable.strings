@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Jotkin verkkosivuston ominaisuudet eivät välttämättä ole yhteensopivia tämän selaimen kanssa.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Tämä sivusto haluaa avata Safarin.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "UUDELLEENBRÄNDÄTTY";
 

@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Ορισμένες λειτουργίες του ιστότοπου ενδέχεται να μην είναι συμβατές σε αυτό το πρόγραμμα περιήγησης.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Αυτός ο ιστότοπος θέλει να ανοίξει στο Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "ΕΓΙΝΕ ΑΝΑΝΕΩΣΗ ΕΤΑΙΡΙΚΗΣ ΤΑΥΤΟΤΗΤΑΣ";
 

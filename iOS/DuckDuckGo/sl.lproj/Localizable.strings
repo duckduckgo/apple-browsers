@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Nekatere funkcije spletnega mesta morda niso združljive s tem brskalnikom.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "To spletno mesto se želi odpreti v brskalniku Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "PREIMENOVANO";
 

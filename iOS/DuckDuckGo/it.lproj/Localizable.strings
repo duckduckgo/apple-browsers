@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Alcune funzionalità del sito web potrebbero non essere compatibili con questo browser.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Questo sito vuole essere aperto in Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "REBRANDED";
 

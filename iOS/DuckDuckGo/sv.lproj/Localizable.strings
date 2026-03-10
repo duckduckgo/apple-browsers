@@ -2985,6 +2985,9 @@
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Vissa webbplatsfunktioner kanske inte är kompatibla med den här webbläsaren.";
 
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Webbplatsen vill öppnas i Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "MED ETT NYTT NAMN";
 

@@ -3450,6 +3450,8 @@
 		BB6EE5302F33DB6D009420FA /* MemoryUsageThresholdReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6EE52E2F33DB6D009420FA /* MemoryUsageThresholdReporter.swift */; };
 		BB6EE5322F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6EE5312F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift */; };
 		BB6EE5332F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6EE5312F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift */; };
+		BB44A0022F50000000000001 /* MemoryUsageMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB44A0012F50000000000001 /* MemoryUsageMonitorTests.swift */; };
+		BB44A0032F50000000000001 /* MemoryUsageMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB44A0012F50000000000001 /* MemoryUsageMonitorTests.swift */; };
 		BB72939D2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */; };
@@ -6158,6 +6160,7 @@
 		BB6EE52B2F33C74F009420FA /* MemoryUsagePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsagePixel.swift; sourceTree = "<group>"; };
 		BB6EE52E2F33DB6D009420FA /* MemoryUsageThresholdReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageThresholdReporter.swift; sourceTree = "<group>"; };
 		BB6EE5312F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageThresholdReporterTests.swift; sourceTree = "<group>"; };
+		BB44A0012F50000000000001 /* MemoryUsageMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageMonitorTests.swift; sourceTree = "<group>"; };
 		BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionTests.swift; sourceTree = "<group>"; };
 		BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowTests.swift; sourceTree = "<group>"; };
 		BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresenting.swift; sourceTree = "<group>"; };
@@ -12244,6 +12247,7 @@
 				BB153C542F3A11DF004D9F5E /* MemoryUsageIntervalPixelTests.swift */,
 				BB6EE5312F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift */,
 				3727A5A92F180136002E10E1 /* MemoryPressureReporterTests.swift */,
+				BB44A0012F50000000000001 /* MemoryUsageMonitorTests.swift */,
 				ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */,
 				EDF339132E8BFD110062E7C3 /* MockWatchdogDiagnosticProvider.swift */,
 				B5F31F4B2F50E2B90060E5C1 /* PerformanceMetricsReporterTests.swift */,
@@ -15582,6 +15586,7 @@
 				9F3910632B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */,
 				3706FE47293F661700E42796 /* URLExtensionTests.swift in Sources */,
 				BB6EE5322F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift in Sources */,
+				BB44A0022F50000000000001 /* MemoryUsageMonitorTests.swift in Sources */,
 				6590DB552DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift in Sources */,
 				9F8D57332BCCCB9A00AEA660 /* UserDefaultsBookmarkFoldersStoreTests.swift in Sources */,
 				F1F861172C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift in Sources */,
@@ -17444,6 +17449,7 @@
 				9FBB0C092CBD39B70006B6A6 /* ViewHighlighterTests.swift in Sources */,
 				56B234BF2A84EFD200F2A1CC /* NavigationBarUrlExtensionsTests.swift in Sources */,
 				BB6EE5332F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift in Sources */,
+				BB44A0032F50000000000001 /* MemoryUsageMonitorTests.swift in Sources */,
 				56A0542D2C201DA8007D8FAB /* MockContentBlocking.swift in Sources */,
 				56A054442C2252CE007D8FAB /* OnboardingUserScriptTests.swift in Sources */,
 				9FAD623A2BCFDB32007F3A65 /* WebsiteInfoHelpers.swift in Sources */,

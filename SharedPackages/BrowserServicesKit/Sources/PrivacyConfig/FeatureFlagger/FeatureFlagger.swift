@@ -29,7 +29,14 @@ public protocol FeatureFlagDescribing: CaseIterable {
     /// Returns a string representation of the flag, suitable for persisting the flag state to disk.
     var rawValue: String { get }
 
-    /// To be used to determine what the state of the feature flag should be when no remote definition exists
+    /// The default value of the feature flag when no remote privacy config definition exists.
+    ///
+    /// This determines who sees the flag when it has not been configured remotely:
+    /// - `.disabled` — off for everyone
+    /// - `.internalOnly` — on for internal users only
+    /// - `.internalOnlyWithCohort` — on for internal users only, with a fallback cohort
+    /// - `.enabled` — on for everyone
+    ///
     /// This is NOT to be used by the apps themselves, only the internal FeatureFlagger logic.
     var defaultValue: FeatureFlagDefaultValue { get }
 
@@ -51,15 +58,27 @@ public protocol FeatureFlagDescribing: CaseIterable {
     /// ```
     /// public enum FeatureFlag: FeatureFlagDescribing {
     ///    case sync
-    ///    case autofill
-    ///    case cookieConsent
     ///    case duckPlayer
+    ///    case myInternalFeature
+    ///
+    ///    var defaultValue: FeatureFlagDefaultValue {
+    ///        switch self {
+    ///        case .sync:            return .disabled
+    ///        case .duckPlayer:      return .enabled
+    ///        case .myInternalFeature: return .internalOnly
+    ///        }
+    ///    }
     ///
     ///    var source: FeatureFlagSource {
+    ///        switch self {
     ///        case .sync:
     ///            return .disabled
     ///        case .duckPlayer:
     ///            return .remoteReleasable(.feature(.duckPlayer))
+    ///        case .myInternalFeature:
+    ///            // Defaults to internal-only, but can be promoted via remote config
+    ///            return .remoteReleasable(.feature(.myInternalFeature))
+    ///        }
     ///    }
     /// }
     /// ```
@@ -438,7 +457,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
                     return featureFlag.cohortType?.cohort(for: resolvedCohortID)
                 }
             }
-            // Fall back to defaultValue cohort if feature is missing from config
+            // Fall back to defaultValue cohort if no cohort was resolved from remote config
             if case .internalOnlyWithCohort(let cohort) = featureFlag.defaultValue,
                internalUserDecider.isInternalUser {
                 return cohort

@@ -40,7 +40,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onVoiceSearchRequested(from mode: TextEntryMode)
     func onChatHistorySelected(url: URL)
     func onDismissRequested()
-    func onSwitchToTabPosition(_ position: TabPosition)
+    func onSwitchToTab(_ tab: Tab)
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -349,7 +349,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         if let escapeHatchModel {
             manager.setEscapeHatch(escapeHatchModel, onTapped: { [weak self] in
-                self?.delegate?.onSwitchToTabPosition(escapeHatchModel.targetTabPosition)
+                self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
             })
         }
     }
@@ -631,8 +631,8 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
         delegate?.onEditFavorite(favorite)
     }
 
-    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTabPosition position: TabPosition) {
-        delegate?.onSwitchToTabPosition(position)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
+        delegate?.onSwitchToTab(tab)
     }
 
 }

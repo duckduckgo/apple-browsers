@@ -1218,49 +1218,46 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.omniDelegate = self
     }
     
-    private func makeEscapeHatchModel(from tab: Tab, targetTabPosition: TabPosition) -> EscapeHatchModel? {
-        if tab.isAITab {
+    private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
+        if targetTab.isAITab {
             return EscapeHatchModel(
                 title: UserText.omnibarFullAIChatModeDisplayTitle,
                 subtitle: "Duck.ai",
                 isAITab: true,
                 domain: nil,
-                targetTabPosition: targetTabPosition
+                targetTab: targetTab
             )
         }
-        if let link = tab.link {
+        if let link = targetTab.link {
             let subtitle = link.url.host?.droppingWwwPrefix() ?? link.url.absoluteString
             return EscapeHatchModel(
                 title: link.displayTitle,
                 subtitle: subtitle,
                 isAITab: false,
                 domain: link.url.host,
-                targetTabPosition: targetTabPosition
+                targetTab: targetTab
             )
         }
         return nil
     }
 
     // TODO: - Adjust this to support cross-mode hatches
-    private func buildEscapeHatch(previousTab: TabViewController? = nil) -> EscapeHatchModel? {
+    private func buildEscapeHatch(sourceTabViewController: TabViewController? = nil) -> EscapeHatchModel? {
         guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
             return nil
         }
-        let tabs = tabManager.currentTabsModel.tabs
-        let currentPosition = tabManager.currentPosition
-        let targetPosition: TabPosition?
-        if let previousTab,
-           let tabSwitchedFromPosition = tabManager.position(for: previousTab.tabModel),
-           tabSwitchedFromPosition != currentPosition {
-            targetPosition = tabSwitchedFromPosition
-        } else if tabs.count > 1, currentPosition.index > 0 {
-            targetPosition = TabPosition(mode: currentPosition.mode, index: currentPosition.index - 1)
+        let currentTab = tabManager.currentTabsModel.currentTab
+        let targetTab: Tab?
+        if let sourceTab = sourceTabViewController?.tabModel,
+           sourceTab !== currentTab {
+            targetTab = sourceTab
+        } else if let previousTab = tabManager.currentTabsModel.tabBefore {
+            targetTab = previousTab
         } else {
-            targetPosition = nil
+            targetTab = nil
         }
-        guard let targetPosition,
-              let tab = tabManager.tabAtPosition(targetPosition) else { return nil }
-        return makeEscapeHatchModel(from: tab, targetTabPosition: targetPosition)
+        guard let targetTab else { return nil }
+        return makeEscapeHatchModel(targetTab: targetTab)
     }
 
     fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil) {
@@ -1308,7 +1305,7 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        let hatch = buildEscapeHatch(previousTab: previousTab)
+        let hatch = buildEscapeHatch(sourceTabViewController: previousTab)
         controller.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
 
@@ -3434,18 +3431,17 @@ extension MainViewController: OmniBarDelegate {
         escapeHatchForEditingState() != nil
     }
 
-    func onSwitchToTabPosition(_ position: TabPosition) {
-        guard tabManager.tabAtPosition(position) != nil,
-              position != tabManager.currentPosition else {
+    func onSwitchToTab(_ tab: Tab) {
+        let currentTab = tabManager.currentTabsModel.currentTab
+        guard tab !== currentTab else {
             viewCoordinator.omniBar.endEditing()
             return
         }
-        let tabToClose = tabManager.currentTabsModel.currentTab
-        tabManager.apply(position)
+        tabManager.select(tab, forcingMode: true)
         updateCurrentTab()
         viewCoordinator.omniBar.endEditing()
-        if let tabToClose {
-            closeTab(tabToClose)
+        if let currentTab {
+            closeTab(currentTab)
         }
     }
 }
@@ -3545,18 +3541,13 @@ extension MainViewController: NewTabPageControllerDelegate {
         faviconsFetcherOnboarding.presentOnboardingIfNeeded(from: self)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, position: TabPosition) {
-        guard tabManager.tabAtPosition(position) != nil else {
-            controller.setEscapeHatch(nil)
-            currentNTPEscapeHatch = nil
-            return
-        }
-        guard position != tabManager.currentPosition else { return }
-        let tabToClose = tabManager.currentTabsModel.currentTab
-        tabManager.apply(position)
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+        let currentTab = tabManager.currentTabsModel.currentTab
+        guard tab !== currentTab else { return }
+        tabManager.select(tab, forcingMode: true)
         updateCurrentTab()
-        if let tabToClose {
-            closeTab(tabToClose)
+        if let currentTab {
+            closeTab(currentTab)
         }
         currentNTPEscapeHatch = nil
     }
@@ -3892,17 +3883,16 @@ extension MainViewController: TabDelegate {
 
 extension MainViewController: TabSwitcherDelegate {
 
-    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishAtPosition position: TabPosition?) {
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
         defer { showMenuHighlighterIfNeeded() }
-        let previousPosition = tabManager.currentPosition
         let previousTab = currentTab
         
-        if let position, let tab = tabManager.tabAtPosition(position) {
+        if let tab {
             tab.viewed = true
-            tabManager.apply(position)
+            tabManager.select(tab, forcingMode: true)
         }
 
-        guard tabManager.currentPosition != previousPosition else {
+        guard tabManager.currentTabsModel.currentTab !== previousTab else {
             if daxDialogsManager.shouldShowFireButtonPulse {
                 showFireButtonPulse()
             }

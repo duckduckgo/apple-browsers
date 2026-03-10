@@ -644,10 +644,10 @@ class TabSwitcherViewController: UIViewController {
         canUpdateCollection = false
         tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
 
-        let position = currentSelection.map {
-            TabPosition(mode: selectedBrowsingMode, index: $0)
-        }
-        delegate?.tabSwitcher(self, didFinishAtPosition: position)
+        let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
+        let selectedTab = tabsModel.safeGetTabAt(currentSelection)
+
+        delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
 
         super.dismiss(animated: animated) {
             completion?()

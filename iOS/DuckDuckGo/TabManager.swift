@@ -65,11 +65,6 @@ protocol TrackerAnimationSuppressing {
     @MainActor func applyTrackerAnimationSuppressionBasedOnLaunchSource()
 }
 
-struct TabPosition: Equatable {
-    let mode: BrowsingMode
-    let index: Int
-}
-
 struct ResolvedTabsModel {
     let model: TabsModelManaging
     let isActiveMode: Bool
@@ -217,10 +212,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
         self.webExtensionManager = manager
     }
-    
-    var currentPosition: TabPosition {
-        TabPosition(mode: currentBrowsingMode, index: currentTabsModel.currentIndex)
-    }
 
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
         switch mode {
@@ -230,27 +221,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func resolveTabsModel(for tab: Tab) -> ResolvedTabsModel {
-        let mode: BrowsingMode = tab.fireTab ? .fire : .normal
-        let model = tabsModel(for: mode)
-        let isActiveMode = (mode == currentBrowsingMode)
+        let model = tabsModel(for: tab.mode)
+        let isActiveMode = (tab.mode == currentBrowsingMode)
         return ResolvedTabsModel(model: model, isActiveMode: isActiveMode)
-    }
-    
-    func position(for tab: Tab) -> TabPosition? {
-        let mode: BrowsingMode = tab.fireTab ? .fire : .normal
-        guard let index = tabsModel(for: mode).indexOf(tab: tab) else { return nil }
-        return TabPosition(mode: mode, index: index)
-    }
-    
-    func tabAtPosition(_ position: TabPosition) -> Tab? {
-        return tabsModel(for: position.mode).safeGetTabAt(position.index)
-    }
-
-    @MainActor
-    func apply(_ position: TabPosition) {
-        setBrowsingMode(position.mode)
-        currentTabsModel.select(tabAt: position.index)
-        save()
     }
 
     @MainActor
@@ -475,7 +448,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     @discardableResult
-    func select(_ tab: Tab, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
+    func select(_ tab: Tab, forcingMode: Bool = false, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
+        if forcingMode {
+            setBrowsingMode(tab.mode)
+        }
         let model = tabsModel ?? currentTabsModel
         current()?.dismiss()
         model.select(tab: tab)
@@ -775,4 +751,10 @@ extension TabManager {
         }
     }
 
+}
+
+extension Tab {
+    var mode: BrowsingMode {
+        return fireTab ? .fire : .normal
+    }
 }

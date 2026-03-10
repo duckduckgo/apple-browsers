@@ -25,7 +25,7 @@ protocol TabSwitcherDelegate: AnyObject {
 
     /// Called when the tab switcher is dismissed. Carries the final browsing mode
     /// and selected tab index so MainViewController can apply the transition atomically.
-    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishAtPosition position: TabPosition?)
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?)
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL)
 

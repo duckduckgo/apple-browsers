@@ -49,7 +49,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
-    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTabPosition position: TabPosition)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
 }
 
 /// Manages the suggestion tray functionality including favorites and autocomplete
@@ -293,7 +293,7 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
         // no-op this is handled by the main view controller on a real new tab page
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, position: TabPosition) {
-        delegate?.suggestionTrayManager(self, requestsSwitchToTabPosition: position)
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+        delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
     }
 }

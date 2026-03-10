@@ -104,16 +104,24 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         return tabs.indices.contains(index) ? tabs[index] : nil
     }
     
+    /// The tab after the current tab, wrapping from the last tab back to the first.
     var nextTab: Tab? {
         guard !tabs.isEmpty else { return nil }
         let nextIndex = currentIndex + 1 >= tabs.count ? 0 : currentIndex + 1
         return safeGetTabAt(nextIndex)
     }
 
+    /// The tab before the current tab, wrapping from the first tab to the last.
     var previousTab: Tab? {
         guard !tabs.isEmpty else { return nil }
         let previousIndex = currentIndex - 1 < 0 ? tabs.count - 1 : currentIndex - 1
         return safeGetTabAt(previousIndex)
+    }
+
+    /// The tab immediately before the current tab without wrapping. Returns `nil` when the current tab is first.
+    var tabBefore: Tab? {
+        guard currentIndex > 0 else { return nil }
+        return safeGetTabAt(currentIndex - 1)
     }
 
     var count: Int {

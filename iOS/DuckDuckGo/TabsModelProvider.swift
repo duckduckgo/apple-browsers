@@ -37,6 +37,7 @@ protocol TabsModelManaging: AnyObject, TabsModelReading {
     var currentTab: Tab? { get }
     var nextTab: Tab? { get }
     var previousTab: Tab? { get }
+    var tabBefore: Tab? { get }
     var currentIndex: Int { get }
     var hasUnread: Bool { get }
     var hasActiveTabs: Bool { get }

@@ -51,7 +51,6 @@ final class AIChatViewController: NSViewController {
         static let barButtonHeight: CGFloat = 28
         static let barButtonWidth: CGFloat = 28
         static let barButtonMargin: CGFloat = 12
-        static let titleLabelSideMargin: CGFloat = 8
         static let titleButtonHeight: CGFloat = 28
         static let titleButtonHorizontalPadding: CGFloat = 8
         static let titleFaviconSize: CGFloat = 16
@@ -89,7 +88,6 @@ final class AIChatViewController: NSViewController {
     private var titleFaviconView: NSImageView!
     private var titleTextLabel: NSTextField!
     private var titleArrowView: NSImageView!
-    private var titleLabel: NSTextField!
     private var webViewContainer: WebViewContainerView!
     private var separator: NSView!
     private var topBar: NSView!
@@ -191,13 +189,6 @@ final class AIChatViewController: NSViewController {
         attachButton.isHidden = true
         topBar.addSubview(attachButton)
 
-        titleLabel = NSTextField(labelWithString: UserText.aiChatSidebarTitle)
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.alignment = .center
-        titleLabel.font = .systemFont(ofSize: 13, weight: .medium)
-        titleLabel.textColor = .labelColor
-        titleLabel.isHidden = true
-        topBar.addSubview(titleLabel)
 
         titleButton = makeTitleButton()
         titleButton.isHidden = true
@@ -223,12 +214,7 @@ final class AIChatViewController: NSViewController {
             attachButton.heightAnchor.constraint(equalToConstant: Constants.barButtonHeight),
             attachButton.widthAnchor.constraint(equalToConstant: Constants.barButtonWidth),
 
-            // Center: static title (docked) or clickable title button (floating)
-            titleLabel.centerXAnchor.constraint(equalTo: topBar.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleLabelSideMargin),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: detachButton.leadingAnchor, constant: -Constants.titleLabelSideMargin),
-
+            // Center: clickable title button (floating only)
             titleButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
             titleButton.heightAnchor.constraint(equalToConstant: Constants.titleButtonHeight),
             titleButton.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleButtonGutter),
@@ -337,7 +323,6 @@ final class AIChatViewController: NSViewController {
         detachButton.isHidden = isChatFloating || !isChatFloatingEnabled
         attachButton.isHidden = !isChatFloating
         closeButton.isHidden = isChatFloating
-        titleLabel.isHidden = true
         titleButton.isHidden = !isChatFloating
         titleArrowView?.isHidden = !isChatFloating
         separator.isHidden = isChatFloating

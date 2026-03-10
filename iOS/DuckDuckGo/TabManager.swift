@@ -437,12 +437,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     @discardableResult
-    func select(_ tab: Tab, forcingMode: Bool = false, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
+    func select(_ tab: Tab, forcingMode: Bool = false, dismissCurrent: Bool = true, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
         if forcingMode {
             setBrowsingMode(tab.mode)
         }
         let model = tabsModel ?? currentTabsModel
-        current()?.dismiss()
+        if dismissCurrent {
+            current()?.dismiss()
+        }
         model.select(tab: tab)
         save()
         return current(createIfNeeded: true)

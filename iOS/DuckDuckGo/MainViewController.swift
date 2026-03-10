@@ -1501,7 +1501,7 @@ class MainViewController: UIViewController {
                 if autoClearInProgress {
                     autoClearShouldRefreshUIAfterClear = false
                 }
-                tabManager.select(existing)
+                tabManager.select(existing, dismissCurrent: false)
                 loadUrl(url, fromExternalLink: fromExternalLink)
             }
             // Add a new tab if no existing tab is reused.
@@ -2132,7 +2132,7 @@ class MainViewController: UIViewController {
         let previousTab = tabManager.current()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.select(existing)
+            tabManager.select(existing, dismissCurrent: false)
         } else {
             tabManager.addHomeTab()
         }
@@ -3887,17 +3887,17 @@ extension MainViewController: TabSwitcherDelegate {
         defer { showMenuHighlighterIfNeeded() }
         let previousTab = currentTab
         
-        if let tab {
-            tab.viewed = true
-            tabManager.select(tab, forcingMode: true)
-        }
-
         guard tab !== previousTab?.tabModel else {
             if daxDialogsManager.shouldShowFireButtonPulse {
                 showFireButtonPulse()
             }
             themeColorManager.updateThemeColor()
             return
+        }
+        
+        if let tab {
+            tab.viewed = true
+            tabManager.select(tab, forcingMode: true)
         }
 
         guard let newTab = tabManager.current(createIfNeeded: true) else {
@@ -3973,12 +3973,12 @@ extension MainViewController: TabSwitcherDelegate {
         case .createEmptyTabAtSamePosition:
             let newTab = Tab(fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
             tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
-            tabManager.select(newTab)
+            tabManager.select(newTab, dismissCurrent: false)
             showBars() // In case the browser chrome bars are hidden when calling this method
         case .createOrReuseEmptyTab:
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
             if let existing = tabManager.firstHomeTab() {
-                tabManager.select(existing)
+                tabManager.select(existing, dismissCurrent: false)
             } else {
                 tabManager.addHomeTab()
             }

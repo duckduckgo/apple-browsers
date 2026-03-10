@@ -73,6 +73,14 @@ final class AIChatContextualModeFeatureTests: XCTestCase {
         XCTAssertFalse(feature.isAvailable)
     }
 
+    func testWhenIphoneAndOnlyIPadPageContextEnabledThenIsNotAvailable() {
+        let feature = makeFeature(
+            enabledFlags: [.contextualDuckAIMode, .iPadPageContext],
+            isIphone: true
+        )
+        XCTAssertFalse(feature.isAvailable)
+    }
+
     // MARK: - iPad Tests
 
     func testWhenIPadAndIpadPageContextEnabledThenIsAvailable() {

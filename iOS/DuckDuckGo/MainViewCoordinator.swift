@@ -40,6 +40,7 @@ class MainViewCoordinator {
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
+    var unifiedInputContentContainer: UIView!
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
@@ -184,40 +185,57 @@ class MainViewCoordinator {
 
     // MARK: - AI Tab Native Input Layout
 
-    func showUnifiedToggleInput(aboveKeyboard: Bool) {
+    func showUnifiedToggleInput() {
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
         constraints.navigationBarContainerTop.isActive = false
         if !constraints.navigationBarContainerBottom.isActive {
             constraints.navigationBarContainerBottom.isActive = true
         }
-        if aboveKeyboard {
-            setNavBarContainerBottomToKeyboard()
-        } else {
-            setNavBarContainerBottomToToolbar()
-        }
+        setNavBarContainerBottomToToolbar()
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.alpha = 1
+        updateUnifiedToggleInputColors(isExpanded: false, inputView: nil)
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
     }
 
+    func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
+        guard isNavigationChromeHidden else {
+            unifiedToggleInputContainer.backgroundColor = .clear
+            inputView?.backgroundColor = .clear
+            return
+        }
+        if isExpanded {
+            inputView?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            unifiedToggleInputContainer.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        } else {
+            inputView?.backgroundColor = .clear
+            unifiedToggleInputContainer.backgroundColor = .clear
+        }
+    }
+
     @MainActor
-    func anchorUnifiedToggleInputToKeyboardPreservingHeight() {
-        navigationBarCollectionView.layer.removeAllAnimations()
-        unifiedToggleInputContainer.layer.removeAllAnimations()
-        constraints.navigationBarContainerTop.isActive = false
+    func restoreNavBarToToolbarForInlineInactive() {
+        guard addressBarPosition.isBottom else { return }
+        if !constraints.navigationBarContainerBottom.isActive {
+            constraints.navigationBarContainerBottom.isActive = true
+        }
+        setNavBarContainerBottomToToolbar()
+    }
+
+    @MainActor
+    func restoreNavBarToKeyboardForInlineActive() {
+        guard addressBarPosition.isBottom else { return }
         if !constraints.navigationBarContainerBottom.isActive {
             constraints.navigationBarContainerBottom.isActive = true
         }
         setNavBarContainerBottomToKeyboard()
-        unifiedToggleInputContainer.isHidden = false
-        unifiedToggleInputContainer.alpha = 1
-        navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
     }
 
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
+        unifiedToggleInputContainer.backgroundColor = .clear
         if addressBarPosition == .top {
             setNavBarContainerBottomToToolbar()
             constraints.navigationBarContainerBottom.isActive = false
@@ -274,20 +292,35 @@ class MainViewCoordinator {
             self.unifiedToggleInputContainer.alpha = 0
             self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
             self.superview.layoutIfNeeded()
-        } completion: { _ in
+        } completion: { finished in
             self.statusBackground.backgroundColor = savedColor
             self.navigationBarContainer.backgroundColor = nil
             self.suggestionTrayContainer.backgroundColor = .clear
-            if self.isNavigationChromeHidden {
-                self.navigationBarCollectionView.alpha = 0
-                self.unifiedToggleInputContainer.isHidden = false
-                self.unifiedToggleInputContainer.alpha = 1
-                return
-            }
-            self.unifiedToggleInputContainer.isHidden = true
-            self.unifiedToggleInputContainer.alpha = 1
             self.navigationBarCollectionView.isUserInteractionEnabled = true
+
+            if self.isNavigationChromeHidden {
+                if finished {
+                    self.navigationBarCollectionView.alpha = 0
+                    self.unifiedToggleInputContainer.isHidden = false
+                    self.unifiedToggleInputContainer.alpha = 1
+                }
+            } else {
+                if finished {
+                    self.unifiedToggleInputContainer.isHidden = true
+                    self.unifiedToggleInputContainer.alpha = 1
+                }
+            }
         }
+    }
+
+    @MainActor
+    func showUnifiedInputContent() {
+        unifiedInputContentContainer.isHidden = false
+    }
+
+    @MainActor
+    func hideUnifiedInputContent() {
+        unifiedInputContentContainer.isHidden = true
     }
 
     // MARK: - AI Tab Chrome

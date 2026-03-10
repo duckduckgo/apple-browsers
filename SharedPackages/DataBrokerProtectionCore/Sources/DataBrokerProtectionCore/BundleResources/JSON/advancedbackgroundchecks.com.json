@@ -1,7 +1,7 @@
 {
   "name": "AdvancedBackgroundChecks",
   "url": "advancedbackgroundchecks.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "parent": "peoplefinders.com",
   "addedDatetime": 1678060800000,
   "optOutUrl": "https://www.advancedbackgroundchecks.com/removal",
@@ -14,6 +14,16 @@
           "actionType": "navigate",
           "id": "070b6417-8ccd-4111-b5ae-7ae470b0399a",
           "url": "https://www.advancedbackgroundchecks.com/names/${firstName}-${lastName}_${city}-${state}"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".logo-advanced"
+            }
+          ],
+          "id": "95594c0e-e6a3-4b60-8596-489e58cead2c"
         },
         {
           "actionType": "extract",
@@ -34,7 +44,7 @@
               "selector": ".card-title",
               "afterText": "Age"
             },
-            "addressFullList": {
+            "addressCityStateList": {
               "selector": ".//p[@class='card-text address-link-list']//a",
               "findElements": true
             },

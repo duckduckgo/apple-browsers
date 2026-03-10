@@ -23,7 +23,6 @@ import Common
 import Foundation
 import Navigation
 import Persistence
-import PixelKit
 import WebKit
 
 public struct ReleaseNotesValues: Codable {
@@ -140,7 +139,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: any SparkleUpdateControlling, pixelFiring: PixelFiring?, keyValueStore: ThrowingKeyValueStoring) {
+    init(from updateController: any SparkleUpdateControlling, keyValueStore: ThrowingKeyValueStoring) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
@@ -174,8 +173,6 @@ extension ReleaseNotesValues {
                           automaticUpdate: updateController.areAutomaticUpdatesEnabled)
                 return
             }
-
-            pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
 
             self.init(status: .loadingError,
                       currentVersion: currentVersion,

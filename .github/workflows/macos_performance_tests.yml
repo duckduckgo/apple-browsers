@@ -200,6 +200,7 @@ jobs:
         | tee ui-tests.log
 
     - name: Build Performance Report
+      if: always()
       working-directory: macOS
       run: |
         XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
@@ -230,22 +231,33 @@ jobs:
           > insert-statements-startup-metrics.sql
 
     - name: Debug Insert SQL
+      if: always()
       working-directory: macOS
       run: |
-        echo "Generated insert-statements-memory.sql:"
-        cat insert-statements-memory.sql
+        if [ -f insert-statements-memory.sql ]; then
+          echo "Generated insert-statements-memory.sql:"
+          cat insert-statements-memory.sql
+        else
+          echo "No insert-statements-memory.sql found"
+        fi
 
-        echo "Generated insert-statements-startup-metrics.sql:"
-        cat insert-statements-startup-metrics.sql
-        
+        if [ -f insert-statements-startup-metrics.sql ]; then
+          echo "Generated insert-statements-startup-metrics.sql:"
+          cat insert-statements-startup-metrics.sql
+        else
+          echo "No insert-statements-startup-metrics.sql found"
+        fi
+
     - name: Upload memory metrics
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: memory-metrics
         path: macOS/insert-statements-memory.sql
         retention-days: 1
-    
+
     - name: Upload startup metrics
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: startup-metrics
@@ -347,6 +359,7 @@ jobs:
   report-memory-metrics-to-clickhouse:
     name: Report Memory Metrics to ClickHouse
     needs: performance-tests
+    if: always()
     runs-on: [ self-hosted, apple ]
 
     steps:

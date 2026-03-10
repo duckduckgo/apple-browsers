@@ -51,6 +51,10 @@ public final class CrashReportSender: CrashReportSending {
     }
 
     public func send(_ crashReportData: Data, crcid: String?, completion: @escaping (_ result: Result<Data?, Error>, _ response: HTTPURLResponse?) -> Void) {
+        #if DEBUG
+        assertionFailure("CrashReportSender should not be used in debug builds")
+        #endif
+
         var request = URLRequest(url: Self.reportServiceUrl)
         request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
         request.setValue(platform.userAgent, forHTTPHeaderField: "User-Agent")

@@ -34,9 +34,9 @@ final class TabsModelProviderTests: XCTestCase {
             Tab(link: exampleLink)
         ], desktop: false)
         let fireModel = TabsModel(tabs: [
-            Tab(link: exampleLink),
-            Tab(link: exampleLink),
-            Tab(link: exampleLink)
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true)
         ], desktop: false, mode: .fire)
 
         let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
@@ -60,8 +60,8 @@ final class TabsModelProviderTests: XCTestCase {
 
     func testWhenTabRemovedThenAggregateCountUpdates() {
         let fireModel = TabsModel(tabs: [
-            Tab(link: exampleLink),
-            Tab(link: exampleLink)
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true)
         ], desktop: false, mode: .fire)
         let normalModel = TabsModel(desktop: false)
 

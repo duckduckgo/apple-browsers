@@ -36,6 +36,8 @@ class TabsModelPersistenceTests: XCTestCase {
     var mockFireStore: ThrowingKeyValueStoring!
     var mockLegacyStore: KeyValueStoring!
     var persistence: TabsModelPersisting!
+    private var firstTab: Tab!
+    private var secondTab: Tab!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -46,6 +48,8 @@ class TabsModelPersistenceTests: XCTestCase {
         mockNormalStore = normalStore
         mockFireStore = fireStore
         mockLegacyStore = legacyStore
+        firstTab = tab(title: Constants.firstTitle, url: Constants.firstUrl)
+        secondTab = tab(title: Constants.firstTitle, url: Constants.firstUrl)
 
         persistence = TabsModelPersistence(normalStore: normalStore,
                                            fireStore: fireStore,
@@ -57,14 +61,6 @@ class TabsModelPersistenceTests: XCTestCase {
 
     private func tab(title: String, url: String) -> Tab {
         return Tab(link: Link(title: title, url: URL(string: url)!))
-    }
-
-    private var firstTab: Tab {
-        return tab(title: Constants.firstTitle, url: Constants.firstUrl)
-    }
-
-    private var secondTab: Tab {
-        return tab(title: Constants.firstTitle, url: Constants.firstUrl)
     }
 
     private var model: TabsModel {

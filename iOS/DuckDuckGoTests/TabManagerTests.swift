@@ -69,7 +69,7 @@ final class TabManagerTests: XCTestCase {
     func testWhenAppBecomesActiveAndExcessPreviewsThenCleanUpHappens() async throws {
         let mock = MockTabPreviewsSource(totalStoredPreviews: 5)
         let tabsModel = TabsModel(desktop: false)
-        let fireModel = TabsModel(desktop: false)
+        let fireModel = TabsModel(desktop: false, mode: .fire)
         tabsModel.insert(tab: Tab(), placement: .atEnd, selectNewTab: false)
         fireModel.insert(tab: Tab(fireTab: true), placement: .atEnd, selectNewTab: false)
         let manager = try makeManager(tabsModel, fireModel: fireModel, previewsSource: mock)

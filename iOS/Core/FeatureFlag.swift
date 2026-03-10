@@ -379,9 +379,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .iPadDuckaiOnTab,
              .suppressTrackerAnimationOnColdStart:
             .enabled
-        case .crashReportOptInStatusResetting,
-             .iPadAIToggle,
-             .webExtensions:
+        case .crashReportOptInStatusResetting:
             .internalOnly
         default:
             .disabled

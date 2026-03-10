@@ -31,7 +31,7 @@ jobs:
   report_failure:
     name: Report Failure
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     steps:
 

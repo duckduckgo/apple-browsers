@@ -197,8 +197,8 @@ public enum DataBrokerProtectionSharedPixels {
     case serviceEmailConfirmationJobSuccess(dataBrokerURL: String, brokerVersion: String)
 
     // Broker update pixels
-    case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?)
-    case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, error: Error)
+    case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?)
+    case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?, error: Error)
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
@@ -587,18 +587,18 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .serviceEmailConfirmationJobSuccess(let dataBrokerURL, let brokerVersion):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion]
-        case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+        case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt, let isFreeScan):
             var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
             if let removedAt = removedAt {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
-            return params
-        case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, let isFreeScan, _):
             var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
             if let removedAt = removedAt {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
-            return params
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         }
     }
 
@@ -796,7 +796,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .updateDataBrokersSuccess:
 
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
-            case .updateDataBrokersFailure(_, _, let error):
+            case .updateDataBrokersFailure(_, _, _, let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 #if os(iOS)
             case .scanStarted:

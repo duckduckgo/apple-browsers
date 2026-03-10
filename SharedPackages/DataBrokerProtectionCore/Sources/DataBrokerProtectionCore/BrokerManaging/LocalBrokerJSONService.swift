@@ -134,22 +134,47 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
     private let appVersion: AppVersionNumberProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let runTypeProvider: AppRunTypeProviding
+    private let isAuthenticatedUser: () async -> Bool
 
     public init(repository: BrokerUpdaterRepository = BrokerUpdaterUserDefaults(),
                 resources: ResourcesRepository,
                 vault: any DataBrokerProtectionSecureVault,
                 appVersion: AppVersionNumberProvider = AppVersionNumber(),
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                runTypeProvider: AppRunTypeProviding) {
+                runTypeProvider: AppRunTypeProviding,
+                isAuthenticatedUser: @escaping () async -> Bool) {
         self.repository = repository
         self.resources = resources
         self.vault = vault
         self.appVersion = appVersion
         self.pixelHandler = pixelHandler
         self.runTypeProvider = runTypeProvider
+        self.isAuthenticatedUser = isAuthenticatedUser
     }
 
-    public func updateBrokers() {
+    public func bundledBrokers() throws -> [BrokerResource]? {
+        try resources.fetchBrokerResourcesFromFiles()
+    }
+
+    public func checkForUpdates() async throws {
+        let isFreeScan = !(await isAuthenticatedUser())
+        if let lastCheckedVersion = repository.getLastCheckedVersion() {
+            if Self.shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
+                updateBrokersAndSaveLatestVersion(isFreeScan: isFreeScan)
+            }
+        } else {
+            // There was not a last checked version. Probably new builds or ones without this new implementation
+            // or user deleted user defaults.
+            updateBrokersAndSaveLatestVersion(isFreeScan: isFreeScan)
+        }
+    }
+
+    private func updateBrokersAndSaveLatestVersion(isFreeScan: Bool) {
+        repository.saveLatestAppVersionCheck(version: appVersion.versionNumber)
+        updateBrokers(isFreeScan: isFreeScan)
+    }
+
+    private func updateBrokers(isFreeScan: Bool?) {
         guard runTypeProvider.runType != .integrationTests else {
             Logger.dataBrokerProtection.error("🧩 LocalBrokerJSONService updateBrokers skipping due to running integration tests")
             return
@@ -171,36 +196,16 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
             do {
                 try upsertBroker(brokerResource)
                 let brokerFileName = "\(brokerResource.broker.url).json"
-                pixelHandler.fire(.updateDataBrokersSuccess(dataBrokerFileName: brokerFileName, removedAt: brokerResource.broker.removedAtTimestamp))
+                pixelHandler.fire(.updateDataBrokersSuccess(dataBrokerFileName: brokerFileName, removedAt: brokerResource.broker.removedAtTimestamp, isFreeScan: isFreeScan))
             } catch {
                 let broker = brokerResource.broker
                 let brokerFileName = "\(broker.url).json"
                 Logger.dataBrokerProtection.log("🧩 Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
-                pixelHandler.fire(.updateDataBrokersFailure(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp, error: error))
+                pixelHandler.fire(.updateDataBrokersFailure(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp, isFreeScan: isFreeScan, error: error))
             }
         }
     }
 
-    public func bundledBrokers() throws -> [BrokerResource]? {
-        try resources.fetchBrokerResourcesFromFiles()
-    }
-
-    public func checkForUpdates() async throws {
-        if let lastCheckedVersion = repository.getLastCheckedVersion() {
-            if Self.shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
-                updateBrokersAndSaveLatestVersion()
-            }
-        } else {
-            // There was not a last checked version. Probably new builds or ones without this new implementation
-            // or user deleted user defaults.
-            updateBrokersAndSaveLatestVersion()
-        }
-    }
-
-    private func updateBrokersAndSaveLatestVersion() {
-        repository.saveLatestAppVersionCheck(version: appVersion.versionNumber)
-        updateBrokers()
-    }
 }
 
 fileprivate extension URL {

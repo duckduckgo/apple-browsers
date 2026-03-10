@@ -51,6 +51,7 @@ public struct OnboardingConditionalCenteredScrollableContainerView<Content: View
             ScrollView(.vertical, showsIndicators: false) {
                 content
             }
+            .scrollIfNeeded()
             // Only apply fixedSize when centering to make ScrollView size to content
             .fixedSize(horizontal: false, vertical: shouldCenterContent)
 

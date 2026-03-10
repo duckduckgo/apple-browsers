@@ -58,6 +58,8 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.alwaysBounceVertical = true
+        tableView.keyboardDismissMode = .onDrag
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
@@ -75,7 +77,9 @@ final class AIChatHistoryListViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(viewModel: AIChatSuggestionsViewModel, isIPadExperience: Bool, onChatSelected: @escaping (AIChatSuggestion) -> Void) {
+    init(viewModel: AIChatSuggestionsViewModel,
+         isIPadExperience: Bool,
+         onChatSelected: @escaping (AIChatSuggestion) -> Void) {
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected

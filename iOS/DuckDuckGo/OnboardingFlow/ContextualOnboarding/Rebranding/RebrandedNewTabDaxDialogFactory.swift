@@ -133,18 +133,21 @@ private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         return FadeInView {
-            OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-                cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                dismissAction: { [weak self] in
-                    self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                    onCompletion(true)
-                },
-                onManualDismiss: { [weak self] in
-                    self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
-                    onManualDismiss()
-                }
-            )
+            ScrollView(.vertical, showsIndicators: false) {
+                OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                    message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                    dismissAction: { [weak self] in
+                        self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                        onCompletion(true)
+                    },
+                    onManualDismiss: { [weak self] in
+                        self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+                        onManualDismiss()
+                    }
+                )
+            }
+            .scrollIfNeeded()
         }
         .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
         .onFirstAppear { [weak self] in

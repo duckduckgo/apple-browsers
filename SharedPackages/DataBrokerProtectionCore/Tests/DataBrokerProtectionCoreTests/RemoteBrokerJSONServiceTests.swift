@@ -52,7 +52,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
                                                         resources: resources,
                                                         vault: vault,
                                                         pixelHandler: pixelHandler,
-                                                        runTypeProvider: runTypeProvider)
+                                                        runTypeProvider: runTypeProvider,
+                                                        isAuthenticatedUser: { [authenticationManager] in authenticationManager.isUserAuthenticated })
 
         let defaults = UserDefaults(suiteName: "com.dbp.tests.\(UUID().uuidString)")!
         settings = DataBrokerProtectionSettings(defaults: defaults)
@@ -237,13 +238,14 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag123"],
             activeBrokers: ["\(fixtureFileName).json"],
-            testBrokers: []
+            testBrokers: [],
+            isFreeScan: false
         )
 
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let successPixels = firedPixels.compactMap { pixel in
             switch pixel {
-            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt, _):
                 return (dataBrokerFileName, removedAt)
             default:
                 return nil
@@ -278,13 +280,14 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag456"],
             activeBrokers: ["\(fixtureFileName).json"],
-            testBrokers: []
+            testBrokers: [],
+            isFreeScan: false
         )
 
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let successPixels = firedPixels.compactMap { pixel in
             switch pixel {
-            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt, _):
                 return (dataBrokerFileName, removedAt)
             default:
                 return nil
@@ -328,7 +331,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag-raw"],
             activeBrokers: ["\(fixtureFileName).json"],
-            testBrokers: []
+            testBrokers: [],
+            isFreeScan: false
         )
 
         // Then: vault update is used and raw bytes are forwarded as-is.
@@ -384,13 +388,14 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag789"],
             activeBrokers: ["\(fixtureFileName).json"],
-            testBrokers: []
+            testBrokers: [],
+            isFreeScan: false
         )
 
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let failurePixels = firedPixels.compactMap { pixel in
             switch pixel {
-            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _, _):
                 return (dataBrokerFileName, removedAt)
             default:
                 return nil
@@ -429,12 +434,13 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag999"],
             activeBrokers: ["\(fixtureFileName).json"],
-            testBrokers: []))
+            testBrokers: [],
+            isFreeScan: false))
 
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let failurePixels = firedPixels.compactMap { pixel in
             switch pixel {
-            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _, _):
                 return (dataBrokerFileName, removedAt)
             default:
                 return nil
@@ -447,6 +453,76 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         XCTAssertNil(removedAt, "removedAt should be nil when upsert fails")
         vault.shouldReturnOldVersionBroker = false
         vault.shouldThrowOnUpdate = false
+    }
+
+    func testWhenProcessBrokerJSONsSucceeds_thenFreeScanParameterIsIncluded() throws {
+        let testBrokerContent = """
+        {
+            "name": "Test Broker",
+            "url": "broker.com",
+            "steps": [],
+            "version": "1.0.0",
+            "schedulingConfig": {
+                "retryError": 48,
+                "confirmOptOutScan": 72,
+                "maintenanceScan": 120,
+                "maxAttempts": -1
+            },
+            "optOutUrl": "https://broker.com/optout"
+        }
+        """
+
+        let realFileManager = FileManager.default
+        let testRemoteService = RemoteBrokerJSONService(
+            featureFlagger: MockFeatureFlagger(),
+            settings: settings,
+            vault: vault,
+            fileManager: realFileManager,
+            urlSession: urlSession,
+            authenticationManager: authenticationManager,
+            pixelHandler: pixelHandler,
+            localBrokerProvider: localBrokerJSONService
+        )
+
+        let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-freescan")
+        let jsonDir = tempDir.appendingPathComponent("json")
+        try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
+
+        let testFile = jsonDir.appendingPathComponent("broker.com.json")
+        try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
+
+        // isFreeScan = true (unauthenticated)
+        try testRemoteService.processBrokerJSONs(
+            eTag: "test-etag-freescan",
+            fileNames: ["broker.com.json"],
+            eTagMapping: ["broker.com.json": "etag-fs"],
+            activeBrokers: ["broker.com.json"],
+            testBrokers: [],
+            isFreeScan: true
+        )
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        XCTAssertFalse(firedPixels.isEmpty)
+        XCTAssertEqual(firedPixels.first?.parameters?["free_scan"], "true")
+
+        pixelHandler.clear()
+
+        // isFreeScan = false (authenticated)
+        try testRemoteService.processBrokerJSONs(
+            eTag: "test-etag-freescan",
+            fileNames: ["broker.com.json"],
+            eTagMapping: ["broker.com.json": "etag-fs2"],
+            activeBrokers: ["broker.com.json"],
+            testBrokers: [],
+            isFreeScan: false
+        )
+
+        let firedPixels2 = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        XCTAssertFalse(firedPixels2.isEmpty)
+        XCTAssertEqual(firedPixels2.first?.parameters?["free_scan"], "false")
+
+        // Clean up
+        try? realFileManager.removeItem(at: tempDir)
     }
 
 }

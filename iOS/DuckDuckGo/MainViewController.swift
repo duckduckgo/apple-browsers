@@ -1383,6 +1383,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
+        currentNTPEscapeHatch = nil
     }
 
     @IBAction func onFirePressed() {

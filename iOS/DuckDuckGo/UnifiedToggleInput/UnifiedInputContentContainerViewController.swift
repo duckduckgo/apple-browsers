@@ -71,7 +71,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private var isLandscapeOrientation: Bool = false {
         didSet {
-            isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
+            isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
+        }
+    }
+    var forceBottomBarLayout: Bool = false {
+        didSet {
+            isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
         }
     }
     private var isUsingTopBarPosition: Bool

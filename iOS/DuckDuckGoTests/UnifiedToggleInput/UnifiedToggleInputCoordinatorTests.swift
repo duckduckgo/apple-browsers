@@ -481,7 +481,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
-    func test_updateInputMode_toggleDisabled_forcesSearch() {
+    func test_updateInputMode_toggleDisabled_forcesSearchInOmnibarSession() {
+        sut.activateFromOmnibar()
         sut.updateToggleEnabled(false)
         sut.updateInputMode(.aiChat, animated: false)
         XCTAssertEqual(sut.inputMode, .search)
@@ -492,7 +493,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
-    func test_syncInputModeFromExternalSource_toggleDisabled_forcesSearch() {
+    func test_syncInputModeFromExternalSource_toggleDisabled_forcesSearchInOmnibarSession() {
+        sut.activateFromOmnibar()
         sut.updateToggleEnabled(false)
         sut.syncInputModeFromExternalSource(.aiChat)
         XCTAssertEqual(sut.inputMode, .search)
@@ -580,6 +582,68 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
         sut.clearText()
         XCTAssertEqual(sut.textState, .empty)
+    }
+
+    // MARK: - showCollapsed Resets Input Mode
+
+    func test_showCollapsed_resetsInputModeToAIChat() {
+        sut.showExpanded(inputMode: .search)
+        XCTAssertEqual(sut.inputMode, .search)
+
+        sut.showCollapsed()
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    // MARK: - VC Delegate: SearchGoTo
+
+    func test_searchGoToTap_expandsInSearchMode() {
+        sut.showCollapsed()
+        sut.unifiedToggleInputVCDidTapSearchGoTo(sut.viewController)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    // MARK: - VC Delegate: Dismiss from AI Tab
+
+    func test_dismissTap_fromAITab_collapsesInsteadOfDeactivating() {
+        sut.showExpanded()
+        sut.unifiedToggleInputVCDidTapDismiss(sut.viewController)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    // MARK: - AI Tab Search Inactive State
+
+    func test_updateOmnibarInputVisibility_aiTabSearch_becomesInactiveOnHide() {
+        sut.showExpanded(inputMode: .search)
+
+        sut.updateOmnibarInputVisibility(false)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+    }
+
+    func test_updateOmnibarInputVisibility_aiTabSearch_becomesActiveOnShow() {
+        sut.showExpanded(inputMode: .search)
+        sut.updateOmnibarInputVisibility(false)
+
+        sut.updateOmnibarInputVisibility(true)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+    }
+
+    func test_updateOmnibarInputVisibility_aiTabAIChat_isIgnored() {
+        sut.showExpanded(inputMode: .aiChat)
+
+        let exp = expectation(description: "no intent emitted")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.updateOmnibarInputVisibility(false)
+        waitForExpectations(timeout: 0.1)
     }
 }
 

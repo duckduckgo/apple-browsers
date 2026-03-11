@@ -263,6 +263,7 @@ extension MainViewController {
         let showContent = shouldShowUnifiedInputContent(for: coordinator)
 
         if case .aiTab(let aiTabState) = coordinator.displayState {
+            coordinator.contentViewController.forceBottomBarLayout = true
             let shouldShowInlineHeader = shouldOverlayAIChatHeader(for: coordinator)
             coordinator.updateContentHeaderForAITab(shouldOverlay: shouldShowInlineHeader)
             viewCoordinator.updateUnifiedToggleInputColors(
@@ -270,6 +271,7 @@ extension MainViewController {
                 inputView: coordinator.viewController.view
             )
         } else {
+            coordinator.contentViewController.forceBottomBarLayout = false
             viewCoordinator.updateUnifiedToggleInputColors(
                 isExpanded: false,
                 inputView: coordinator.viewController.view

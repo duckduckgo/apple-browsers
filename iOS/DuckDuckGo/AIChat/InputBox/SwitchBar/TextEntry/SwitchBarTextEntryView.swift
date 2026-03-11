@@ -580,7 +580,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            if currentMode == .aiChat {
+            if currentMode == .aiChat && handler.isToggleEnabled {
                 return true
             }
             fireKeyboardGoPressedPixel()

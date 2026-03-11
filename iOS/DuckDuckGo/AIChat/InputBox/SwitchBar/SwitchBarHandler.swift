@@ -43,6 +43,7 @@ protocol SwitchBarHandling: AnyObject {
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
     var isTopBarPosition: Bool { get }
+    var isToggleEnabled: Bool { get }
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
@@ -100,6 +101,10 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static var hasUsedAIChatInSession = false
 
     private(set) var isTopBarPosition: Bool = true
+
+    var isToggleEnabled: Bool {
+        return true
+    }
 
     var isUsingExpandedBottomBarHeight: Bool {
         isUsingFadeOutAnimation && !isTopBarPosition

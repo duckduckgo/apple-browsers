@@ -870,7 +870,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 PixelKit.fire(
                     AIChatPixel.aiChatSidebarOpened(
                         source: .tabbarButton,
-                        shouldAutomaticallySendPageContext: nil,
+                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
                         minutesSinceSidebarHidden: aiChatCoordinator?.sidebarHiddenAt(for: tabID)?.minutesSinceNow()
                     ),
                     frequency: .dailyAndStandard

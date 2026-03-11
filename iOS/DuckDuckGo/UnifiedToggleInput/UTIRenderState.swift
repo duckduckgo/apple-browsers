@@ -26,9 +26,7 @@ struct UTIRenderState: Equatable {
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
     var showsDismissButton: Bool
-    var showsToolbar: Bool
     var isToolbarSubmitHidden: Bool
-    var showsToggle: Bool
     var inactiveAppearance: Bool
     var isFloatingSubmitVisible: Bool
     var headerDisplayMode: UnifiedInputContentContainerViewController.HeaderDisplayMode
@@ -42,7 +40,6 @@ struct UTIRenderState: Equatable {
             usesOmnibarMargins: usesOmnibarMargins,
             showsDismissButton: showsDismissButton,
             isToolbarSubmitHidden: isToolbarSubmitHidden,
-            showsToggle: showsToggle,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
             isTopBarPosition: usesOmnibarMargins

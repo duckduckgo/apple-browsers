@@ -25,7 +25,6 @@ struct UTIViewConfig: Equatable {
     var usesOmnibarMargins: Bool
     var showsDismissButton: Bool
     var isToolbarSubmitHidden: Bool
-    var showsToggle: Bool
     var inactiveAppearance: Bool
     var inputMode: TextEntryMode
     var isTopBarPosition: Bool

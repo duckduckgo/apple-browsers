@@ -408,8 +408,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let isContentVisible: Bool
         let headerDisplayMode: UnifiedInputContentContainerViewController.HeaderDisplayMode
         let inactiveAppearance: Bool
-        let showsToggle: Bool
-        let showsToolbar: Bool
 
         switch displayState {
         case .hidden:
@@ -418,8 +416,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             isContentVisible = false
             headerDisplayMode = .hidden
             inactiveAppearance = false
-            showsToggle = false
-            showsToolbar = false
 
         case .aiTab(.collapsed):
             isExpanded = false
@@ -427,8 +423,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             isContentVisible = false
             headerDisplayMode = .hidden
             inactiveAppearance = false
-            showsToggle = false
-            showsToolbar = false
 
         case .aiTab(.expanded):
             isExpanded = true
@@ -441,8 +435,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
                 ? (isSearchKeyboardHidden ? .inactive : .active)
                 : .hidden
             inactiveAppearance = isSearchKeyboardHidden
-            showsToggle = isToggleEnabled
-            showsToolbar = inputMode == .aiChat
 
         case .omnibar(.active):
             isExpanded = true
@@ -450,8 +442,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             isContentVisible = true
             headerDisplayMode = .active
             inactiveAppearance = false
-            showsToggle = isToggleEnabled
-            showsToolbar = inputMode == .aiChat
 
         case .omnibar(.inactive):
             isExpanded = true
@@ -459,8 +449,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             isContentVisible = true
             headerDisplayMode = .inactive
             inactiveAppearance = (cardPosition == .bottom)
-            showsToggle = isToggleEnabled
-            showsToolbar = inputMode == .aiChat
         }
 
         let isFloatingSubmitVisible = displayState == .omnibar(.active)
@@ -474,9 +462,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             cardPosition: cardPosition,
             usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
             showsDismissButton: cardPosition == .top && isOmnibarSession,
-            showsToolbar: showsToolbar,
             isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
-            showsToggle: showsToggle,
             inactiveAppearance: inactiveAppearance,
             isFloatingSubmitVisible: isFloatingSubmitVisible,
             headerDisplayMode: headerDisplayMode,

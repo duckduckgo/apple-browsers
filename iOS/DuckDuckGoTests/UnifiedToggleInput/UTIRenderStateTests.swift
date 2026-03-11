@@ -56,7 +56,6 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertFalse(state.isContentVisible)
         XCTAssertFalse(state.isExpanded)
         XCTAssertEqual(state.headerDisplayMode, .hidden)
-        XCTAssertFalse(state.showsToggle)
     }
 
     // MARK: - AI Tab Expanded
@@ -109,19 +108,6 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState(isOnAITab: true)
         XCTAssertFalse(state.inactiveAppearance)
         XCTAssertEqual(state.headerDisplayMode, .active)
-    }
-
-    func test_aiTabExpanded_showsToggleWhenEnabled() {
-        sut.showExpanded()
-        let state = sut.computeRenderState()
-        XCTAssertTrue(state.showsToggle)
-    }
-
-    func test_aiTabExpanded_hidesToggleWhenDisabled() {
-        sut.updateToggleEnabled(false)
-        sut.showExpanded(inputMode: .aiChat)
-        let state = sut.computeRenderState()
-        XCTAssertFalse(state.showsToggle)
     }
 
     // MARK: - Omnibar Active
@@ -204,15 +190,6 @@ final class UTIRenderStateTests: XCTestCase {
         sut.showExpanded(inputMode: .aiChat)
         let state = sut.computeRenderState()
         XCTAssertFalse(state.isFloatingSubmitVisible)
-    }
-
-    // MARK: - Toggle Disabled
-
-    func test_toggleDisabled_hidesToggleInOmnibar() {
-        sut.updateToggleEnabled(false)
-        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
-        let state = sut.computeRenderState()
-        XCTAssertFalse(state.showsToggle)
     }
 
     // MARK: - Content Input Mode

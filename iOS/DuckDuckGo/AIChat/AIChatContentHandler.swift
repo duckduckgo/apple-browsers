@@ -119,10 +119,9 @@ final class AIChatContentHandler: AIChatContentHandling {
     private var payloadHandler: AIChatPayloadHandler
     private let pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private let featureDiscovery: FeatureDiscovery
-    private let featureFlagger: FeatureFlagger
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
-    private lazy var statisticsLoader: StatisticsLoader = .shared
+    private let statisticsLoader: StatisticsLoader
 
     private var userScript: AIChatUserScriptProviding?
 
@@ -136,17 +135,17 @@ final class AIChatContentHandler: AIChatContentHandling {
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler(),
          featureDiscovery: FeatureDiscovery,
-         featureFlagger: FeatureFlagger,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
+         statisticsLoader: StatisticsLoader = .shared,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
-        self.featureFlagger = featureFlagger
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
+        self.statisticsLoader = statisticsLoader
         self.getPageContext = getPageContext
     }
 
@@ -264,14 +263,12 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
                 freeTrialConversionService.markDuckAIActivated()
             }
 
-            if featureFlagger.isFeatureOn(.aiChatAtb) {
-                DispatchQueue.main.async {
-                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
-                                                                        application: UIApplication.shared)
-                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
-                        DispatchQueue.main.async {
-                            backgroundAssertion.release()
-                        }
+            DispatchQueue.main.async {
+                let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                    application: UIApplication.shared)
+                self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                    DispatchQueue.main.async {
+                        backgroundAssertion.release()
                     }
                 }
             }

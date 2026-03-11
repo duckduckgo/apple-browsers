@@ -89,7 +89,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
     private var syncObserverCancellable: AnyCancellable?
-    private let storage: AIChatPreferencesStorage
+    private var storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
@@ -589,10 +589,29 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
+        case .userDidAcceptTermsAndConditions:
+            handleTermsAccepted()
+            completion?()
         default:
             completion?()
             return
         }
+    }
+
+    private func handleTermsAccepted() {
+        let alreadyAccepted = storage.hasAcceptedTermsAndConditions
+
+        if alreadyAccepted {
+            let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
+            let pixel: AIChatPixel = syncIsOn
+                ? .aiChatTermsAcceptedDuplicateSyncOn
+                : .aiChatTermsAcceptedDuplicateSyncOff
+            Task { @MainActor [weak self] in
+                self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
+            }
+        }
+
+        storage.hasAcceptedTermsAndConditions = true
     }
 
     private func refreshAtbs(completion: (() -> Void)? = nil) {

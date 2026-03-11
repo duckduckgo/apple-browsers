@@ -369,9 +369,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
-    /// Enables ATB measurement for Duck.ai usage on iOS
-    case aiChatAtb
-
     /// Controls whether automatic page context attachment defaults to enabled
     case autoAttachContextByDefault
 

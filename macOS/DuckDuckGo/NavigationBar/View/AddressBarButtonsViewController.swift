@@ -1326,11 +1326,6 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateAIChatButtonVisibility() {
         aiChatButton.isHidden = !shouldShowAIChatButton()
         updateAIChatDividerVisibility()
-
-        // Hide the AI chat button during onboarding
-        if let tabViewModel, tabViewModel.tab.content == .onboarding {
-            aiChatButton.isHidden = true
-        }
     }
 
     private var isAskAIChatButtonExpanded: Bool = false
@@ -1376,6 +1371,7 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatMenuConfig.shouldDisplayAddressBarShortcut
         && !isChromeSidebarFeatureEnabled
         && !shouldSkipShowingAnyAIChatButton()
+        && tabViewModel?.tab.content != .onboarding
     }
 
     private func shouldShowAskAIChatButton() -> Bool {

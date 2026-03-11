@@ -203,6 +203,9 @@ enum AIChatPixel: PixelKitEvent {
     case aiChatSyncDecryptionError(reason: String)
     case aiChatSyncHistoryEnabledError(reason: String)
 
+    case aiChatTermsAcceptedDuplicateSyncOff
+    case aiChatTermsAcceptedDuplicateSyncOn
+
     // MARK: - Image Attachments
 
     /// Event Trigger: User attaches an image via the file picker in the duck.ai omnibar
@@ -362,6 +365,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sync_internal_decryption-error"
         case .aiChatSyncHistoryEnabledError:
             return "aichat_sync_internal_history_enabled-error"
+        case .aiChatTermsAcceptedDuplicateSyncOff:
+            return "aichat_terms_accepted_duplicate_sync_off"
+        case .aiChatTermsAcceptedDuplicateSyncOn:
+            return "aichat_terms_accepted_duplicate_sync_on"
         case .aiChatOnboardingTogglePreferenceOn:
             return "aichat_onboarding_toggle_preference_on"
         case .aiChatOnboardingTogglePreferenceOff:
@@ -442,7 +449,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarModelSelected,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
-                .aiChatMetricSentPromptOngoingChat:
+                .aiChatMetricSentPromptOngoingChat,
+                .aiChatTermsAcceptedDuplicateSyncOff,
+                .aiChatTermsAcceptedDuplicateSyncOn:
             return nil
         case .aiChatAddressBarSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
@@ -540,7 +549,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarModelSelected,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
-                .aiChatMetricSentPromptOngoingChat:
+                .aiChatMetricSentPromptOngoingChat,
+                .aiChatTermsAcceptedDuplicateSyncOff,
+                .aiChatTermsAcceptedDuplicateSyncOn:
             return [.pixelSource]
         }
     }

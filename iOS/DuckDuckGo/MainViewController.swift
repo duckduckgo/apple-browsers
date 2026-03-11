@@ -542,10 +542,6 @@ class MainViewController: UIViewController {
     }
 
     private func configureStartupPresentation() {
-        // Failure modes:
-        // - Launch overrides can force onboarding on or off regardless of persisted tutorial state.
-        // - The initial browser UI must stay unattached until startup onboarding is complete.
-        // - The home screen still needs its deferred post-onboarding setup when attached late.
         let startupOnboardingDecision = StartupOnboardingDecision(
             onboardingStatus: LaunchOptionsHandler().onboardingStatus,
             tutorialSettings: tutorialSettings

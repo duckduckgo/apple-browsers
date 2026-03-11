@@ -901,17 +901,6 @@ class MainViewController: UIViewController {
         return isAnyAITabUTIState
     }
 
-    func autoCollapseExpandedUTIIfNeeded() {
-        guard unifiedToggleInputFeature.isAvailable,
-              currentTab?.isAITab == true,
-              let coordinator = unifiedToggleInputCoordinator,
-              case .aiTab(.expanded) = coordinator.displayState,
-              !keyboardShowing,
-              !coordinator.viewController.isInputFirstResponder,
-              currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
-        coordinator.showCollapsed()
-    }
-
     private func setUpToolbarButtonsActions() {
 
         viewCoordinator.toolbarBackButton.setCustomItemAction(on: self, action: #selector(onBackPressed))

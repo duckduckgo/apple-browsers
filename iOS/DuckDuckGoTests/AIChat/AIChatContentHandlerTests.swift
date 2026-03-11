@@ -33,7 +33,6 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockSettings: MockAIChatSettingsProvider!
     var mockPayloadHandler: AIChatPayloadHandler!
     var mockMetricHandler: MockAIChatPixelMetricHandler!
-    var mockFeatureFlagger: MockFeatureFlagger!
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
 
@@ -41,7 +40,6 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockSettings = MockAIChatSettingsProvider()
         mockPayloadHandler = AIChatPayloadHandler()
         mockMetricHandler = MockAIChatPixelMetricHandler()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
 
@@ -50,7 +48,6 @@ final class AIChatContentHandlerTests: XCTestCase {
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: mockFeatureFlagger,
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {})
@@ -299,7 +296,6 @@ final class AIChatContentHandlerTests: XCTestCase {
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: mockFeatureFlagger,
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
@@ -328,7 +324,6 @@ final class AIChatContentHandlerTests: XCTestCase {
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: mockFeatureFlagger,
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),

@@ -291,10 +291,17 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateToggleDisabledSearchPadding(for mode: TextEntryMode) {
-        let usePadding = isExpanded && !isToggleEnabled && mode == .search && cardPosition == .bottom
-        let padding = usePadding ? Constants.toggleDisabledSearchTopPadding : 0
-        inputTopConstraint.constant = padding
-        toolbarBottomConstraint.constant = -padding
+        guard isExpanded else { return }
+        
+        if isToggleEnabled {
+            inputTopConstraint.constant = Constants.toggleBottomPadding
+            toolbarBottomConstraint.constant = 0
+        } else {
+            let usePadding = mode == .search && cardPosition == .bottom
+            let padding = usePadding ? Constants.toggleDisabledSearchTopPadding : 0
+            inputTopConstraint.constant = padding
+            toolbarBottomConstraint.constant = -padding
+        }
     }
 
     func setExpanded(_ expanded: Bool, animated: Bool) {

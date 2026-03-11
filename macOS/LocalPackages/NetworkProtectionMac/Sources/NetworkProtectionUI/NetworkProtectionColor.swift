@@ -34,11 +34,6 @@ enum NetworkProtectionColor: String {
     case secondaryText = "SecondaryColor"
     case linkColor = "LinkBlueColor"
     case onboardingButtonBackgroundColor = "OnboardingButtonBackgroundColor"
-#if swift(<5.9)
-    case alertBubbleBackground = "AlertBubbleBackground"
-    case onboardingStepBorder = "OnboardingStepBorderColor"
-    case onboardingStepBackground = "OnboardingStepBackgroundColor"
-#endif
 
     var asColor: Color {
         Color(rawValue, bundle: .module)

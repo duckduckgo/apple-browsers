@@ -560,8 +560,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
 
-        let hasEscapeHatchWithoutFavorites = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false)
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavorites) && !isHorizontallyCompactLayoutEnabled
+        let hasRemoteMessages = suggestionTrayManager?.hasRemoteMessages ?? false
+        let hasEscapeHatchWithoutFavoritesOrMessages = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false) && !hasRemoteMessages
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavoritesOrMessages) && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {

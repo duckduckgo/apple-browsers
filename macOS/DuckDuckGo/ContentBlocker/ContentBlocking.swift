@@ -92,19 +92,15 @@ final class AppContentBlocking {
         syncErrorHandler: SyncErrorHandling,
         webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
-#if DEBUG || REVIEW
+        let buildType = StandardApplicationBuildType()
         // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use embedded (test) config
-        let useTestConfig = ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
+        let useTestConfig = (buildType.isDebugBuild || buildType.isReviewBuild) && ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
         let fetchedEtag: String? = useTestConfig ? nil : configurationStore.loadEtag(for: .privacyConfiguration)
         let fetchedData: Data? = useTestConfig ? nil : configurationStore.loadData(for: .privacyConfiguration)
 
         if useTestConfig {
             Logger.general.log("[DDG-TEST-CONFIG] Skipping cached privacy config to use TEST_PRIVACY_CONFIG_PATH")
         }
-#else
-        let fetchedEtag: String? = configurationStore.loadEtag(for: .privacyConfiguration)
-        let fetchedData: Data? = configurationStore.loadData(for: .privacyConfiguration)
-#endif
 
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: fetchedEtag,
                                                                       fetchedData: fetchedData,
@@ -168,15 +164,11 @@ final class AppContentBlocking {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
 
-#if DEBUG || REVIEW
+        let buildType = StandardApplicationBuildType()
         // When using test config, also skip cached tracker data to ensure consistent state
-        let useTestConfig = ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
+        let useTestConfig = (buildType.isDebugBuild || buildType.isReviewBuild) && ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
         let trackerEtag: String? = useTestConfig ? nil : configurationStore.loadEtag(for: .trackerDataSet)
         let trackerData: Data? = useTestConfig ? nil : configurationStore.loadData(for: .trackerDataSet)
-#else
-        let trackerEtag: String? = configurationStore.loadEtag(for: .trackerDataSet)
-        let trackerData: Data? = configurationStore.loadData(for: .trackerDataSet)
-#endif
 
         trackerDataManager = TrackerDataManager(etag: trackerEtag,
                                                 data: trackerData,

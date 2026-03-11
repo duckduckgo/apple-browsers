@@ -182,7 +182,8 @@ final class MainCoordinator {
         let idleReturnEligibilityManager = IdleReturnEligibilityManager(
             featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyConfigurationManager
+            privacyConfigurationManager: privacyConfigurationManager,
+            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,

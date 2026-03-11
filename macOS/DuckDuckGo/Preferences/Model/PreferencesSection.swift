@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Common
 import Foundation
-import SwiftUI
 import Subscription
 import SubscriptionUI
-import BrowserServicesKit
+import SwiftUI
 
 struct PreferencesSection: Hashable, Identifiable {
     let id: PreferencesSectionIdentifier
@@ -53,12 +54,11 @@ struct PreferencesSection: Hashable, Identifiable {
             return [.general] + panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
         }()
 
-#if APPSTORE
         // App Store guidelines don't allow references to other platforms, so the Mac App Store build omits the otherPlatforms section.
-        let otherPanes: [PreferencePaneIdentifier] = [.about]
-#else
-        let otherPanes: [PreferencePaneIdentifier] = [.about, .otherPlatforms]
-#endif
+        var otherPanes: [PreferencePaneIdentifier] = [.about]
+        if !NSApp.isSandboxed {
+            otherPanes.append(.otherPlatforms)
+        }
 
         var sections: [PreferencesSection] = [
             .init(id: .privacyProtections, panes: privacyPanes),

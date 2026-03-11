@@ -71,8 +71,9 @@ final class SyncDebugMenu: NSMenu {
     }
 
     @objc func switchSyncEnvironment(_ sender: NSMenuItem) {
-#if DEBUG || REVIEW
-        guard let syncService = NSApp.delegateTyped.syncService,
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild,
+              let syncService = NSApp.delegateTyped.syncService,
               let environment = sender.representedObject as? ServerEnvironment
         else {
             return
@@ -80,11 +81,11 @@ final class SyncDebugMenu: NSMenu {
 
         syncService.updateServerEnvironment(environment)
         UserDefaults.standard.set(environment.description, forKey: UserDefaultsWrapper<String>.Key.syncEnvironment.rawValue)
-#endif
     }
 
     @objc func createStubsForDebug() {
-#if DEBUG || REVIEW
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
         let db = NSApp.delegateTyped.bookmarkDatabase
 
         let context = db.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
@@ -122,7 +123,6 @@ final class SyncDebugMenu: NSMenu {
 
             try? context.save()
         }
-#endif
     }
 
     @MainActor

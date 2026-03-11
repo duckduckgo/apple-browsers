@@ -37,7 +37,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
                 date: Date(),
                 releaseNotes: ["Bug fixes"],
                 releaseNotesSubscription: [],
-                needsLatestReleaseNote: false
+
             )
         }
     }
@@ -92,8 +92,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Critical security fix"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
+            releaseNotesSubscription: []
         )
 
         // When
@@ -113,8 +112,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Bug fixes"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
+            releaseNotesSubscription: []
         )
 
         // When

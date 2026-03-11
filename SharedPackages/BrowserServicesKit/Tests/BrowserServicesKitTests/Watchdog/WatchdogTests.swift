@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 import XCTest
 @testable import BrowserServicesKit
@@ -59,6 +60,23 @@ final class WatchdogTests: XCTestCase {
 
         func reset() {
             wasKilled = false
+        }
+    }
+
+    private final class FiredEventsStore: @unchecked Sendable {
+        private let lock = NSLock()
+        private var _events: [Watchdog.Event] = []
+
+        var events: [Watchdog.Event] {
+            lock.lock()
+            defer { lock.unlock() }
+            return _events
+        }
+
+        func append(_ event: Watchdog.Event) {
+            lock.lock()
+            defer { lock.unlock() }
+            _events.append(event)
         }
     }
 
@@ -482,17 +500,125 @@ final class WatchdogTests: XCTestCase {
         await watchdog.stop()
     }
 
+    // MARK: - Timeout Cooldown Tests
+
+    func testTimeoutCooldownSuppressesDuplicateEvents() async throws {
+        let store = FiredEventsStore()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
+            store.append(event)
+            onComplete(nil)
+        }
+
+        let cooldownWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 5.0, eventMapper: eventMapper)
+
+        await cooldownWatchdog.start()
+        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+
+        // First hang (1.0s > 0.3s max): should fire uiHangNotRecovered
+        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+
+        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "First timeout should fire uiHangNotRecovered")
+
+        // Wait for recovery (2 heartbeats at 0.1s, give generous buffer)
+        try await Task.sleep(nanoseconds: 500 * NSEC_PER_MSEC)
+
+        // Second hang: should be suppressed by cooldown
+        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+
+        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "Second timeout within cooldown should be suppressed")
+
+        await cooldownWatchdog.stop()
+    }
+
+    func testTimeoutFiresAgainAfterCooldownExpires() async throws {
+        let store = FiredEventsStore()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
+            store.append(event)
+            onComplete(nil)
+        }
+
+        let cooldownWatchdog = Watchdog(minimumHangDuration: 0.2, maximumHangDuration: 0.3, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 1.0, eventMapper: eventMapper)
+
+        await cooldownWatchdog.start()
+        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+
+        // First hang: should fire
+        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+
+        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "First timeout should fire")
+
+        // Wait for recovery + cooldown expiry (1.0s cooldown)
+        try await Task.sleep(nanoseconds: 2_000 * NSEC_PER_MSEC)
+
+        // Second hang: cooldown expired, should fire again
+        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+
+        XCTAssertGreaterThanOrEqual(store.events.numberOfHangNotRecoveredEvents, 2, "Second timeout after cooldown should fire")
+
+        await cooldownWatchdog.stop()
+    }
+
+    func testCooldownDoesNotAffectRecoveredEvents() async throws {
+        let store = FiredEventsStore()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
+            store.append(event)
+            onComplete(nil)
+        }
+
+        let cooldownWatchdog = Watchdog(minimumHangDuration: 0.2, maximumHangDuration: 1.0, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 5.0, eventMapper: eventMapper)
+
+        await cooldownWatchdog.start()
+        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+
+        // Short hang that recovers before timeout (0.5s hang < 1.0s max)
+        try await blockMainThread(for: 0.5, andSleepFor: 1.0)
+
+        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 0, "Short hang should not fire uiHangNotRecovered")
+        XCTAssertGreaterThanOrEqual(store.events.numberOfHangRecoveredEvents, 1, "Short hang should fire uiHangRecovered")
+
+        await cooldownWatchdog.stop()
+    }
+
+    func testZeroCooldownDisablesSuppression() async throws {
+        let store = FiredEventsStore()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
+            store.append(event)
+            onComplete(nil)
+        }
+
+        let cooldownWatchdog = Watchdog(minimumHangDuration: 0.2, maximumHangDuration: 0.3, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 0, eventMapper: eventMapper)
+
+        await cooldownWatchdog.start()
+        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+
+        // First hang
+        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+
+        // Wait for recovery
+        try await Task.sleep(nanoseconds: 1_000 * NSEC_PER_MSEC)
+
+        // Second hang: cooldown is 0, should fire again
+        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+
+        XCTAssertGreaterThanOrEqual(store.events.numberOfHangNotRecoveredEvents, 2, "Zero cooldown should not suppress any events")
+
+        await cooldownWatchdog.stop()
+    }
+
     // MARK: - Helpers
 
     private func blockMainThread(for duration: TimeInterval, andSleepFor sleepDuration: TimeInterval) async throws {
-        Task.detached {
-            DispatchQueue.main.sync {
-                let startTime = Date()
-                while Date().timeIntervalSince(startTime) < duration {
+        await withUnsafeContinuation { continuation in
+            Task.detached {
+                DispatchQueue.main.sync {
+                    let startTime = Date()
+                    while Date().timeIntervalSince(startTime) < duration {
+                        // NO-OP
+                    }
+                    continuation.resume()
                 }
             }
         }
-
         try await Task.sleep(nanoseconds: UInt64(sleepDuration * Double(NSEC_PER_SEC)))
     }
 }
@@ -507,5 +633,28 @@ private extension XCTest {
     func XCTAssertAsyncFalse(_ expression: @autoclosure () async -> Bool, _ description: String = "") async {
         let result = await expression()
         XCTAssertFalse(result, description)
+    }
+}
+
+private extension Collection where Element == Watchdog.Event {
+
+    var numberOfHangNotRecoveredEvents: Int {
+        count { event in
+            if case .uiHangNotRecovered = event {
+                return true
+            }
+
+            return false
+        }
+    }
+
+    var numberOfHangRecoveredEvents: Int {
+        count { event in
+            if case .uiHangRecovered = event {
+                return true
+            }
+
+            return false
+        }
     }
 }

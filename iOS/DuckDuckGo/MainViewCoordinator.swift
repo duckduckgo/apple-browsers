@@ -196,11 +196,46 @@ class MainViewCoordinator {
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.alpha = 1
+        updateUnifiedToggleInputColors(isExpanded: false, inputView: nil)
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
+    }
+
+    func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
+        guard isNavigationChromeHidden else {
+            unifiedToggleInputContainer.backgroundColor = .clear
+            inputView?.backgroundColor = .clear
+            return
+        }
+        if isExpanded {
+            inputView?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            unifiedToggleInputContainer.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        } else {
+            inputView?.backgroundColor = .clear
+            unifiedToggleInputContainer.backgroundColor = .clear
+        }
+    }
+
+    @MainActor
+    func restoreNavBarToToolbarForInlineInactive() {
+        guard addressBarPosition.isBottom else { return }
+        if !constraints.navigationBarContainerBottom.isActive {
+            constraints.navigationBarContainerBottom.isActive = true
+        }
+        setNavBarContainerBottomToToolbar()
+    }
+
+    @MainActor
+    func restoreNavBarToKeyboardForInlineActive() {
+        guard addressBarPosition.isBottom else { return }
+        if !constraints.navigationBarContainerBottom.isActive {
+            constraints.navigationBarContainerBottom.isActive = true
+        }
+        setNavBarContainerBottomToKeyboard()
     }
 
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
+        unifiedToggleInputContainer.backgroundColor = .clear
         if addressBarPosition == .top {
             setNavBarContainerBottomToToolbar()
             constraints.navigationBarContainerBottom.isActive = false
@@ -261,17 +296,20 @@ class MainViewCoordinator {
             self.statusBackground.backgroundColor = savedColor
             self.navigationBarContainer.backgroundColor = nil
             self.suggestionTrayContainer.backgroundColor = .clear
-            
-            guard finished else { return }
-            if self.isNavigationChromeHidden {
-                self.navigationBarCollectionView.alpha = 0
-                self.unifiedToggleInputContainer.isHidden = false
-                self.unifiedToggleInputContainer.alpha = 1
-                return
-            }
-            self.unifiedToggleInputContainer.isHidden = true
-            self.unifiedToggleInputContainer.alpha = 1
             self.navigationBarCollectionView.isUserInteractionEnabled = true
+
+            if self.isNavigationChromeHidden {
+                if finished {
+                    self.navigationBarCollectionView.alpha = 0
+                    self.unifiedToggleInputContainer.isHidden = false
+                    self.unifiedToggleInputContainer.alpha = 1
+                }
+            } else {
+                if finished {
+                    self.unifiedToggleInputContainer.isHidden = true
+                    self.unifiedToggleInputContainer.alpha = 1
+                }
+            }
         }
     }
 

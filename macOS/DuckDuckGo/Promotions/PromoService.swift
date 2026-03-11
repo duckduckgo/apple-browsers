@@ -148,9 +148,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
                 session.showTask?.cancel()
                 session.timeout?.cancel()
                 session.eligibilityCancellable?.cancel()
-                let delegate = session.delegate as? PromoDelegate
+                let delegate = session.delegate
                 Task { @MainActor in
-                    delegate?.hide()
+                    delegate.hide()
                 }
             }
             activeSessions.removeAll()

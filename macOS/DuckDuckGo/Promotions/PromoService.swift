@@ -127,10 +127,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         debugSimulatedDate ?? Date()
     }
 
-#if DEBUG
     /// Test-only accessor for draining the state queue. Use `drainStateQueue()` in tests.
     var testQueue: DispatchQueue { stateQueue }
-#endif
 
     /// Debug: Set a simulated "now" for cooldown and eligibility checks. In-memory only; does not persist across app launches.
     func setDebugSimulatedDate(_ date: Date?) {
@@ -156,12 +154,11 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             activeSessions.removeAll()
             historyStore.resetAll()
             recordsSubject.send([:])
-#if DEBUG || REVIEW
+
             for promo in promos {
                 guard let delegate = promo.delegate as? TestPromoDelegate else { continue }
                 delegate.resetEligibility()
             }
-#endif
         }
     }
 

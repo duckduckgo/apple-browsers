@@ -21,6 +21,10 @@ import Combine
 import Persistence
 
 struct PromoServiceFactory {
+    static var includeTestPromos: Bool {
+        let buildType = StandardApplicationBuildType()
+        return buildType.isDebugBuild || buildType.isReviewBuild
+    }
 
     @MainActor
     static func makePromoService(dependencies: PromoDependencies) -> PromoService {
@@ -43,9 +47,9 @@ struct PromoServiceFactory {
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel)
         ]
 
-#if DEBUG || REVIEW
-        promos.append(contentsOf: testPromos)
-#endif
+        if includeTestPromos {
+            promos.append(contentsOf: testPromos)
+        }
 
         return promos
     }

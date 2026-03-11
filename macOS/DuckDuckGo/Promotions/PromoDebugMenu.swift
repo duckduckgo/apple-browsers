@@ -89,14 +89,14 @@ final class PromoDebugMenu: NSMenu {
             }
             .store(in: &cancellables)
 
-#if DEBUG || REVIEW
-        let fireItem = NSMenuItem(title: "Fire Test Trigger", action: #selector(fireTestTrigger), keyEquivalent: "t")
-        fireItem.keyEquivalentModifierMask = [.command, .shift, .option, .control]
-        fireItem.target = self
-        fireItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.fireTestTriggerMenuItem)
-        addItem(fireItem)
-        addItem(.separator())
-#endif
+        if PromoServiceFactory.includeTestPromos {
+            let fireItem = NSMenuItem(title: "Fire Test Trigger", action: #selector(fireTestTrigger), keyEquivalent: "t")
+            fireItem.keyEquivalentModifierMask = [.command, .shift, .option, .control]
+            fireItem.target = self
+            fireItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.fireTestTriggerMenuItem)
+            addItem(fireItem)
+            addItem(.separator())
+        }
 
         for promo in promos {
             let status = statusString(for: promo)
@@ -200,9 +200,8 @@ final class PromoDebugMenu: NSMenu {
     }
 
     @objc private func fireTestTrigger() {
-#if DEBUG || REVIEW
+        guard PromoServiceFactory.includeTestPromos else { return }
         NotificationCenter.default.post(name: .promoDebugTestTrigger, object: nil)
-#endif
     }
 
     @objc private func forceShowPromo(_ sender: NSMenuItem) {

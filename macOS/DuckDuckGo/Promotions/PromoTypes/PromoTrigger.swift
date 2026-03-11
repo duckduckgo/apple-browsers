@@ -28,9 +28,7 @@ enum PromoTrigger {
     case appLaunched
     case windowBecameKey
     case newTabPageAppeared
-#if DEBUG || REVIEW
     case testTriggered
-#endif
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
     static let triggerPublisher: AnyPublisher<PromoTrigger, Never> = {
@@ -42,20 +40,19 @@ enum PromoTrigger {
             NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
                 .map { _ in PromoTrigger.windowBecameKey }
         ).eraseToAnyPublisher()
-#if DEBUG || REVIEW
-        return Publishers.Merge(triggers,
-            NotificationCenter.default.publisher(for: .promoDebugTestTrigger)
+
+        if PromoServiceFactory.includeTestPromos{
+            return Publishers.Merge(triggers,
+                                    NotificationCenter.default.publisher(for: .promoDebugTestTrigger)
                 .map { _ in PromoTrigger.testTriggered }
-        ).eraseToAnyPublisher()
-#else
-        return triggers
-#endif
+            ).eraseToAnyPublisher()
+        } else {
+            return triggers
+        }
     }()
 }
 
 extension Notification.Name {
     static let promoServiceAppLaunched = Notification.Name("com.duckduckgo.app.promoService.appLaunched")
-#if DEBUG || REVIEW
     static let promoDebugTestTrigger = Notification.Name("com.duckduckgo.app.promoService.debugTestTrigger")
-#endif
 }

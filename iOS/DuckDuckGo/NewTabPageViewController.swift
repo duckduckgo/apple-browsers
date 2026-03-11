@@ -109,6 +109,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         } else {
             newTabPageViewModel.onEscapeHatchTap = nil
         }
+        updateBorderView()
     }
 
     override func viewDidLoad() {
@@ -155,7 +156,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func updateBorderView() {
-        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        let hasEscapeHatch = newTabPageViewModel.escapeHatch != nil
+        borderView.isTopVisible = !hasEscapeHatch && appSettings.currentAddressBarPosition == .top
         borderView.isBottomVisible = !appWidthObserver.isLargeWidth
     }
 

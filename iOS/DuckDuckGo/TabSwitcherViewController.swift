@@ -667,12 +667,12 @@ extension TabSwitcherViewController: TabViewCellDelegate {
             tabManager.bulkRemoveTabs(tabsToClose, in: tabsModel)
             collectionView.deleteItems(at: indexPaths)
         } completion: { _ in
-            self.currentSelection = self.tabsModel.currentIndex
             self.isProcessingUpdates = false
             if self.tabsModel.tabs.isEmpty {
                 let newTab = Tab(fireTab: self.tabsModel.shouldCreateFireTabs)
                 self.tabsModel.insert(tab: newTab, placement: .atEnd, selectNewTab: true) // TODO: - Only in normal mode
             }
+            self.currentSelection = self.tabsModel.currentIndex
             self.delegate?.tabSwitcherDidBulkCloseTabs(tabSwitcher: self)
             self.refreshTitleViews()
             self.updateUIForSelectionMode()

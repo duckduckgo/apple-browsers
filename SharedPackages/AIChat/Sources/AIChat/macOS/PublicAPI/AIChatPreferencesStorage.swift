@@ -162,6 +162,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.showSearchAndDuckAIToggle = UserDefaults.showSearchAndDuckAIToggleDefaultValue
         userDefaults.userDidSeeToggleOnboarding = false
         userDefaults.lastUsedSidebarWidth = nil
+        userDefaults.hasAcceptedTermsAndConditions = false
     }
 }
 

@@ -346,6 +346,8 @@ find_resolved_files() {
         while IFS= read -r f; do
             verbose "Found resolved file: $f"
         done <<< "$results"
+    else
+        verbose "No Package.resolved files found"
     fi
     echo "$results"
 }

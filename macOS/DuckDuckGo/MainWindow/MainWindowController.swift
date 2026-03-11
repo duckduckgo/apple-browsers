@@ -135,7 +135,7 @@ final class MainWindowController: NSWindowController {
         }
 
         return shouldShow()
- #elseif REVIEW
+ #else
         if !AppVersion.runType.allowsOnboarding {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             OnboardingActionsManager.isOnboardingFinished = true
@@ -147,10 +147,7 @@ final class MainWindowController: NSWindowController {
 
             return shouldShow()
         }
- #else
-        // Check if we override onboarding flag and show/hide onboarding accordingly
-        return shouldShow()
- #endif
+#endif
     }
 
     private func setupWindow(_ window: NSWindow) {

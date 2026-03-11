@@ -282,11 +282,11 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_dismissTap_deactivatesInlineEditing() {
         sut.activateInlineEditing()
-        XCTAssertTrue(sut.isInlineEditingActive)
+        XCTAssertTrue(sut.isInlineEditingSession)
 
         sut.unifiedToggleInputVCDidTapDismiss(sut.viewController)
         XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertFalse(sut.isInlineEditingActive)
+        XCTAssertFalse(sut.isInlineEditingSession)
     }
 
     // MARK: - Inline Editing Lifecycle
@@ -294,7 +294,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_activateInlineEditing_setsDisplayState() {
         sut.activateInlineEditing()
         XCTAssertEqual(sut.displayState, .inline(.active))
-        XCTAssertTrue(sut.isInlineEditingActive)
+        XCTAssertTrue(sut.isInlineEditingSession)
     }
 
     func test_activateInlineEditing_emitsIntent() {
@@ -336,7 +336,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.displayState, .hidden)
         XCTAssertEqual(sut.textState, .empty)
-        XCTAssertFalse(sut.isInlineEditingActive)
+        XCTAssertFalse(sut.isInlineEditingSession)
     }
 
     func test_deactivateInlineEditing_emitsIntent() {
@@ -360,6 +360,108 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.deactivateInlineEditing()
         waitForExpectations(timeout: 0.1)
+    }
+
+    // MARK: - Inline Editing Input Visibility
+
+    func test_updateInlineEditingInputVisibility_activeToInactive() {
+        sut.activateInlineEditing()
+
+        sut.updateInlineEditingInputVisibility(false)
+
+        XCTAssertEqual(sut.displayState, .inline(.inactive))
+    }
+
+    func test_updateInlineEditingInputVisibility_inactiveToActive() {
+        sut.activateInlineEditing()
+        sut.updateInlineEditingInputVisibility(false)
+
+        sut.updateInlineEditingInputVisibility(true)
+
+        XCTAssertEqual(sut.displayState, .inline(.active))
+    }
+
+    func test_updateInlineEditingInputVisibility_emitsInactiveIntent() {
+        sut.activateInlineEditing()
+        let exp = expectation(description: "showInlineInactive intent emitted")
+        sut.intentPublisher
+            .sink { if $0 == .showInlineInactive { exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.updateInlineEditingInputVisibility(false)
+
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_updateInlineEditingInputVisibility_emitsActiveIntent() {
+        sut.activateInlineEditing()
+        sut.updateInlineEditingInputVisibility(false)
+        let exp = expectation(description: "showInlineActive intent emitted")
+        sut.intentPublisher
+            .sink { if $0 == .showInlineActive { exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.updateInlineEditingInputVisibility(true)
+
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_updateInlineEditingInputVisibility_ignoresWhenNotInline() {
+        sut.showExpanded()
+        let exp = expectation(description: "no intent emitted")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.updateInlineEditingInputVisibility(false)
+
+        waitForExpectations(timeout: 0.1)
+    }
+
+    func test_deactivateInlineEditing_fromInactive_hidesInlineEditing() {
+        sut.activateInlineEditing()
+        sut.updateInlineEditingInputVisibility(false)
+
+        sut.deactivateInlineEditing()
+
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_isInlineEditingSession_trueForInactiveState() {
+        sut.activateInlineEditing()
+        sut.updateInlineEditingInputVisibility(false)
+
+        XCTAssertEqual(sut.displayState, .inline(.inactive))
+        XCTAssertTrue(sut.isInlineEditingSession)
+    }
+
+    func test_dismissInlineKeyboard_guardsWhenNotInlineActive() {
+        sut.showExpanded()
+        sut.dismissInlineKeyboard()
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+    }
+
+    func test_dismissInlineKeyboard_guardsWhenInlineInactive() {
+        sut.activateInlineEditing()
+        sut.updateInlineEditingInputVisibility(false)
+        sut.dismissInlineKeyboard()
+        XCTAssertEqual(sut.displayState, .inline(.inactive))
+    }
+
+    func test_submitSearch_fromInlineInactive_deactivates() {
+        sut.activateInlineEditing(inputMode: .search)
+        sut.updateInlineEditingInputVisibility(false)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
+
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    // MARK: - Content View Controller Ownership
+
+    func test_contentViewController_createdOnInit() {
+        XCTAssertNotNil(sut.contentViewController)
     }
 
     // MARK: - Input Mode Management
@@ -426,14 +528,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateInlineEditing(inputMode: .search)
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
         XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertFalse(sut.isInlineEditingActive)
+        XCTAssertFalse(sut.isInlineEditingSession)
     }
 
     func test_submitAIChat_fromInlineEditing_deactivates() {
         sut.activateInlineEditing(inputMode: .aiChat)
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
         XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertFalse(sut.isInlineEditingActive)
+        XCTAssertFalse(sut.isInlineEditingSession)
     }
 
     // MARK: - External Submission Handlers

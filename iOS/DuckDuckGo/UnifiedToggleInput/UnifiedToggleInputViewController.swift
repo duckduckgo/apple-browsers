@@ -48,7 +48,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    private(set) lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
 
     // MARK: - Public API
 
@@ -126,6 +126,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func updateToggleEnabled(_ enabled: Bool) {
         inputBarView.updateToggleEnabled(enabled)
+    }
+
+    func setInactiveCardAppearance(_ inactive: Bool) {
+        inputBarView.setInactiveCardAppearance(inactive)
     }
 
     func activateInput() {

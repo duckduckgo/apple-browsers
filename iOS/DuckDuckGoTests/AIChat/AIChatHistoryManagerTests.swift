@@ -208,6 +208,18 @@ final class AIChatHistoryManagerTests: XCTestCase {
         XCTAssertEqual(parentVC.children.count, 1)
     }
 
+    func testInstallInContainerView_ConfiguresHistoryListToDismissKeyboardOnDrag() {
+        let containerView = UIView()
+        let parentVC = UIViewController()
+
+        sut.installInContainerView(containerView, parentViewController: parentVC)
+
+        let tableView = findTableView(in: parentVC.children.first?.view)
+
+        XCTAssertEqual(tableView?.keyboardDismissMode, .onDrag)
+        XCTAssertEqual(tableView?.alwaysBounceVertical, true)
+    }
+
     func testInstallInContainerView_FetchesSuggestionsImmediately() {
         let containerView = UIView()
         let parentVC = UIViewController()
@@ -248,10 +260,17 @@ private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
     }
 }
 
-private final class MockAIChatHistoryManagerDelegate: AIChatHistoryManagerDelegate {
-    var selectedURLs: [URL] = []
-
-    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
-        selectedURLs.append(url)
+private func findTableView(in view: UIView?) -> UITableView? {
+    guard let view else { return nil }
+    if let tableView = view as? UITableView {
+        return tableView
     }
+
+    for subview in view.subviews {
+        if let tableView = findTableView(in: subview) {
+            return tableView
+        }
+    }
+
+    return nil
 }

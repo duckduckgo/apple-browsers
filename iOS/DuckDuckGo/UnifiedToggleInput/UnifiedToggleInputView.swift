@@ -351,6 +351,43 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
+    func setInactiveCardAppearance(_ inactive: Bool) {
+        guard isExpanded else { return }
+
+        let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        let topOnlyCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+
+        UIView.animate(withDuration: Constants.animationDuration, delay: 0, options: .curveEaseInOut) {
+            if inactive {
+                self.cardView.layer.maskedCorners = allCorners
+                self.expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
+                self.expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
+                self.cardTopConstraint.constant = Constants.cardVerticalMargin
+                self.cardLeadingConstraint.constant = Constants.cardHorizontalMargin
+                self.cardTrailingConstraint.constant = -Constants.cardHorizontalMargin
+                self.cardBottomConstraint.constant = -Constants.cardVerticalMargin
+                self.toolbarHeightConstraint.constant = 0
+                self.toolsToolbar.alpha = 0
+            } else {
+                self.cardView.layer.maskedCorners = self.usesInlineEditingMargins ? allCorners : topOnlyCorners
+                let shadowGoesDown = self.cardPosition == .top || self.usesInlineEditingMargins
+                self.expandedShadow0.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 8 : -8)
+                self.expandedShadow1.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 2 : -2)
+                let horizontalMargin: CGFloat = (!self.showsDismissButton && !self.usesInlineEditingMargins) ? 0 : Constants.cardHorizontalMargin
+                let verticalMargin: CGFloat = self.usesInlineEditingMargins ? Constants.cardVerticalMargin : 0
+                let showToolbar = self.isToggleEnabled && self.toggleView.selectedMode == .aiChat
+                self.cardTopConstraint.constant = verticalMargin
+                self.cardLeadingConstraint.constant = horizontalMargin
+                self.cardTrailingConstraint.constant = -horizontalMargin
+                self.cardBottomConstraint.constant = -verticalMargin
+                self.toolbarHeightConstraint.constant = showToolbar ? 56 : 0
+                self.toolsToolbar.alpha = showToolbar ? 1 : 0
+            }
+            self.layoutIfNeeded()
+            self.onNeedsHierarchyLayout?()
+        }
+    }
+
     // MARK: - Private
 
     private func updateToolbarVisibility(for mode: TextEntryMode, animated: Bool) {
@@ -428,10 +465,6 @@ private extension UnifiedToggleInputView {
 
         dismissButton.isHidden = true
         addSubview(dismissButton)
-
-        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeToDismiss))
-        swipe.direction = .right
-        addGestureRecognizer(swipe)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleCollapsedTap))
         tap.cancelsTouchesInView = false
@@ -549,11 +582,6 @@ extension UnifiedToggleInputView {
     @objc private func handleCollapsedTap() {
         guard !isExpanded else { return }
         delegate?.unifiedToggleInputViewDidTapWhileCollapsed(self)
-    }
-
-    @objc private func handleSwipeToDismiss() {
-        guard isExpanded, showsDismissButton else { return }
-        delegate?.unifiedToggleInputViewDidTapDismiss(self)
     }
 
     private func makeDismissButton() -> UIButton {

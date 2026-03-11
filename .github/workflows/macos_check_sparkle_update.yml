@@ -50,15 +50,15 @@ jobs:
           labels: dependencies,macOS${{ steps.check.outputs.bump_type == 'major' && ',breaking' || '' }}
           draft: false
 
-      - name: Create Asana review subtasks for CODEOWNERS
+      - name: Create Asana review subtasks
         if: steps.create-pr.outputs.pull-request-url
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
-          owners=$(grep 'macOS/LocalPackages/AppUpdater/' .github/CODEOWNERS | sed 's|macOS/LocalPackages/AppUpdater/||' | tr ' ' '\n' | grep '^@' | sed 's/@//')
+          sparkle_owners="diegoreymendez jotaemepereira"
           mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml")
 
-          for handle in $owners; do
+          for handle in $sparkle_owners; do
             echo "Resolving Asana user for ${handle}..."
             asana_user_id=$(echo "$mapping" | grep "^${handle}:" | awk '{print $2}' | tr -d '"') || true
 

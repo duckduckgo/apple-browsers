@@ -273,8 +273,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
 
-    /// Internal-only flag for Duck.ai chrome/sidebar POC
-    case chromeSidebar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
+    case aiChatChromeSidebar
    
      /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
@@ -307,6 +307,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
+                .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics:
@@ -400,7 +401,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarFloating,
                 .startupMetrics,
                 .privateProcessName,
-                .chromeSidebar,
+                .aiChatChromeSidebar,
                 .webViewLookUpAction:
             return true
         case .freemiumDBP,
@@ -573,8 +574,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
-        case .chromeSidebar:
-            return .internalOnly()
+        case .aiChatChromeSidebar:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .webViewLookUpAction:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         }

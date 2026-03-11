@@ -272,7 +272,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var trackerAnimationTriggerCancellable: AnyCancellable?
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
     private var tabRemovalCancellables = Set<AnyCancellable>()
-    private var chromeSidebarFeatureFlagCancellable: AnyCancellable?
+    private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
 
     private struct TrackerAnimationDomainState {
         var lastVisitedDomain: String?
@@ -305,7 +305,7 @@ final class AddressBarButtonsViewController: NSViewController {
                                       hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }()
     private var isChromeSidebarFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.chromeSidebar)
+        featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
     private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
@@ -448,7 +448,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func subscribeToChromeSidebarFeatureFlag() {
-        chromeSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
+        aiChatChromeSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
             .map { [weak self] in
                 self?.isChromeSidebarFeatureEnabled ?? false
             }

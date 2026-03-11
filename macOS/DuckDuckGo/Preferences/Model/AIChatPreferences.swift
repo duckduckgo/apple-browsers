@@ -125,7 +125,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     var shouldShowTabBarButtonVisibilityOptions: Bool {
-        featureFlagger.isFeatureOn(.chromeSidebar)
+        featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
     var isPageContextToggleDisabled: Bool {

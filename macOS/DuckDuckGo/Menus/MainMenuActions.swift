@@ -1271,12 +1271,12 @@ extension MainViewController {
     }
 
     @objc func toggleDuckAIChromeButtonVisibility(_ sender: Any?) {
-        guard featureFlagger.isFeatureOn(.chromeSidebar) else { return }
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
         duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .duckAI)
     }
 
     @objc func toggleDuckAIChromeSidebarButtonVisibility(_ sender: Any?) {
-        guard featureFlagger.isFeatureOn(.chromeSidebar) else { return }
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
         duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .sidebar)
     }
 

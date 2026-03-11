@@ -1273,7 +1273,7 @@ extension AddressBarTextField: NSTextViewDelegate {
 
         let featureFlagger = Application.appDelegate.featureFlagger
         let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        let isChromeSidebarEnabled = featureFlagger.isFeatureOn(.chromeSidebar)
+        let isChromeSidebarEnabled = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
         let isGlobalAIEnabled = AIChatPreferences().isAIFeaturesEnabled
 
         var additionalMenuItems: [NSMenuItem] = [

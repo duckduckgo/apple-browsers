@@ -82,7 +82,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var pinnedTabsCollectionCancellable: AnyCancellable?
     private var fireButtonMouseOverCancellable: AnyCancellable?
-    private var chromeSidebarFeatureFlagCancellable: AnyCancellable?
+    private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
     private var aiChatSidebarPresenceCancellable: AnyCancellable?
     private var aiChatFloatingStateCancellable: AnyCancellable?
     private var aiChatMenuConfigCancellable: AnyCancellable?
@@ -184,7 +184,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var duckAIChromeDivider: ColorView?
 
     private var isChromeSidebarFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.chromeSidebar)
+        featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
     var footerCurrentWidthDimension: CGFloat {
@@ -714,7 +714,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func subscribeToChromeSidebarFeatureFlag() {
-        chromeSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
+        aiChatChromeSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
             .map { [weak self] in
                 self?.isChromeSidebarFeatureEnabled ?? false
             }

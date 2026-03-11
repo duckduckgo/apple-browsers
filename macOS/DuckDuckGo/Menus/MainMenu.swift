@@ -731,7 +731,7 @@ final class MainMenu: NSMenu {
     }
 
     private func updateDuckAIChromeButtonMenuItems() {
-        let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.chromeSidebar)
+        let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
         toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems

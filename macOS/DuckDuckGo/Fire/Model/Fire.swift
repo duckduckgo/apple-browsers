@@ -856,6 +856,17 @@ final class Fire: FireProtocol {
             }
         }
 
+        func closeFloatingAIChatWindows(for tabIDs: [TabIdentifier]) {
+            let uniqueTabIDs = Set(tabIDs)
+            guard !uniqueTabIDs.isEmpty,
+                  let aiChatCoordinator = windowControllersManager.mainWindowControllers.first?.mainViewController.aiChatCoordinator else {
+                return
+            }
+            uniqueTabIDs.forEach { tabID in
+                aiChatCoordinator.closeFloatingWindow(for: tabID)
+            }
+        }
+
         // Close tabs or reset history based on entity.close
         switch burningEntity {
         case .none: break
@@ -866,6 +877,7 @@ final class Fire: FireProtocol {
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
             if shouldClose {
                 let startTime = CACurrentMediaTime()
+                closeFloatingAIChatWindows(for: [tabViewModel.tab.uuid])
 
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
                     let tab = replacementPinnedTab(from: tabViewModel.tab)
@@ -888,6 +900,9 @@ final class Fire: FireProtocol {
                      close: let shouldClose):
             if shouldClose {
                 let startTime = CACurrentMediaTime()
+                let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
+                let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.map(\.uuid) ?? []
+                closeFloatingAIChatWindows(for: unpinnedTabIDs + pinnedTabIDs)
                 // If closing last Window: Insert a new tab to prevent key window closing:
                 var insertedTabIndex: Int?
                 if windowControllersManager.mainWindowControllers.count == 1 {
@@ -907,11 +922,15 @@ final class Fire: FireProtocol {
             guard shouldClose else { break }
             let startTime = CACurrentMediaTime()
             for windowController in mainWindowControllers {
+                let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
+                let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
+                let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.map(\.uuid) ?? []
+                closeFloatingAIChatWindows(for: unpinnedTabIDs + pinnedTabIDs)
                 // If closing all Tabs/Windows: Insert a new tab to prevent key window closing:
                 let insertedTabIndex = insertNewTabIfNeeded(into: windowController, with: customURL)
-                windowController.mainViewController.tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
-                burnPinnedTabs(in: windowController.mainViewController.tabCollectionViewModel)
-                selectPinnedTabIfNeeded(in: windowController.mainViewController.tabCollectionViewModel)
+                tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
+                burnPinnedTabs(in: tabCollectionViewModel)
+                selectPinnedTabIfNeeded(in: tabCollectionViewModel)
             }
 
             dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)

@@ -21,6 +21,7 @@ import UIKit
 import BrowserServicesKit
 import Core
 import LocalAuthentication
+import PrivacyConfig
 
 protocol SaveLoginViewModelDelegate: AnyObject {
     func saveLoginViewModelDidSave(_ viewModel: SaveLoginViewModel)
@@ -55,6 +56,7 @@ final class SaveLoginViewModel: ObservableObject {
     private let maximumPasswordDisplayCount = 40
     private let credentialManager: SaveAutofillLoginManagerProtocol
     private let appSettings: AppSettings
+    private let featureFlagger: FeatureFlagger
     private let biometryType: LABiometryType
 
     private var dismissButtonWasPressed = false
@@ -64,7 +66,7 @@ final class SaveLoginViewModel: ObservableObject {
 
     var minHeight: CGFloat {
         switch layoutType {
-        case .newUser, .saveLogin:
+        case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3, .saveLogin:
             return AutofillViews.saveLoginMinHeight
         case .savePassword, .updatePassword:
             return AutofillViews.savePasswordMinHeight
@@ -129,7 +131,19 @@ final class SaveLoginViewModel: ObservableObject {
         }
         
         if autofillFirstTimeUser {
-            return .newUser
+            guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.autofillOnboardingExperiment) as? FeatureFlag.AutofillOnboardingExperimentCohort else {
+                return .newUser
+            }
+            switch cohort {
+            case .control:
+                return .newUser
+            case .variant1:
+                return .newUserVariant1
+            case .variant2:
+                return .newUserVariant2
+            case .variant3:
+                return .newUserVariant3
+            }
         }
         
         if credentialManager.isPasswordOnlyAccount {
@@ -151,11 +165,13 @@ final class SaveLoginViewModel: ObservableObject {
     
     internal init(credentialManager: SaveAutofillLoginManagerProtocol,
                   appSettings: AppSettings,
+                  featureFlagger: FeatureFlagger,
                   layoutType: SaveLoginView.LayoutType? = nil,
                   domainLastShownOn: String? = nil,
                   biometryType: LABiometryType = LAContext().biometryType) {
         self.credentialManager = credentialManager
         self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
         self.attributedLayoutType = layoutType
         self.domainLastShownOn = domainLastShownOn
         self.biometryType = biometryType

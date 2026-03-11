@@ -26,6 +26,7 @@ import PrivacyDashboard
 import os.log
 import PixelKit
 import Combine
+import WebExtensions
 
 protocol AutoconsentPreferences {
     var autoconsentEnabled: Bool { get set }
@@ -57,12 +58,15 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     var topUrl: URL?
     var preferences: AutoconsentPreferences
-    let management = AutoconsentManagement.shared
+    
+    /// This gets set when the script is injected via didInstallContentRuleLists calls.
+    var management: AutoconsentManaging?
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
     private let ignoreNonHTTPURLs: Bool
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding?
     weak var delegate: AutoconsentUserScriptDelegate?
 
     // Publisher for cookie popup managed events
@@ -71,7 +75,10 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         popupManagedSubject.eraseToAnyPublisher()
     }
 
-    init(config: PrivacyConfiguration, preferences: AutoconsentPreferences = AppUserDefaults(), ignoreNonHTTPURLs: Bool = true) {
+    init(config: PrivacyConfiguration,
+         preferences: AutoconsentPreferences = AppUserDefaults(),
+         ignoreNonHTTPURLs: Bool = true,
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
             source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
@@ -84,6 +91,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.config = config
         self.preferences = preferences
         self.ignoreNonHTTPURLs = ignoreNonHTTPURLs
+        self.webExtensionAvailability = webExtensionAvailability
         super.init()
     }
 
@@ -254,6 +262,12 @@ extension AutoconsentUserScript {
             return
         }
 
+        if webExtensionAvailability?.isAutoconsentExtensionAvailable == true {
+            Logger.autoconsent.debug("Web extension active, deferring autoconsent to extension")
+            replyHandler([ "type": "ok" ], nil)
+            return
+        }
+
         if preferences.autoconsentEnabled == false {
             // this will only happen if the user has just declined a prompt in this tab
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
@@ -275,7 +289,7 @@ extension AutoconsentUserScript {
             // reset dashboard state
             refreshDashboardState(
                 // keep "cookies managed" if we did it for this site since app launch
-                consentManaged: management.sitesNotifiedCache.contains(url.host ?? ""),
+                consentManaged: management?.sitesNotifiedCache.contains(url.host ?? "") ?? false,
                 cosmetic: nil,
                 optoutFailed: nil,
                 selftestFailed: nil,
@@ -389,7 +403,7 @@ extension AutoconsentUserScript {
         popupManagedSubject.send(messageData)
 
         // remember that we did it for this site
-        management.sitesNotifiedCache.insert(host)
+        management?.sitesNotifiedCache.insert(host)
 
         // post popover notification on main thread
         Logger.autoconsent.debug("bragging that we closed a popup")
@@ -453,6 +467,12 @@ extension AutoconsentUserScript {
             replyHandler(nil, "cannot decode message")
             return
         }
+        guard let management else {
+            Logger.autoconsent.error("Cache not properly set")
+            PixelKit.fire(AutoconsentPixel.errorCacheNotSet, frequency: .daily)
+            replyHandler(nil, "Cache not properly set")
+            return
+        }
         let heuristicMatch = report.state.heuristicPatterns.count > 0 || report.state.heuristicSnippets.count > 0
         if message.frameInfo.isMainFrame && heuristicMatch && !management.detectedByPatternsCache.contains(report.instanceId) {
                     management.detectedByPatternsCache.insert(report.instanceId)
@@ -472,8 +492,15 @@ extension AutoconsentUserScript {
     }
 
     func firePixel(pixel: AutoconsentPixel) {
-        // Delegate to the shared management instance to handle pixel firing and task scheduling
-        management.firePixel(pixel: pixel)
+        var additionalParams: [String: String] = [:]
+
+        // Add fromExtension=0 when web extensions are available but autoconsent extension is not
+        if webExtensionAvailability?.isAvailable == true &&
+           webExtensionAvailability?.isAutoconsentExtensionAvailable == false {
+            additionalParams["fromExtension"] = "0"
+        }
+
+        management?.firePixel(pixel: pixel, additionalParameters: additionalParams)
     }
 }
 

@@ -643,6 +643,13 @@ final class SubscriptionDebugViewController: UITableViewController {
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: AppDependencyProvider.shared.featureFlagger)
             )
 
+            let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+                subscriptionManager: subscriptionManager,
+                appStorePurchaseFlow: appStorePurchaseFlow,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+
             let feature = DefaultSubscriptionPagesUseSubscriptionFeature(
                 subscriptionManager: subscriptionManager,
                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,
@@ -651,7 +658,9 @@ final class SubscriptionDebugViewController: UITableViewController {
                 appStoreRestoreFlow: appStoreRestoreFlow,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 wideEvent: AppDependencyProvider.shared.wideEvent,
-                pendingTransactionHandler: pendingTransactionHandler
+                pendingTransactionHandler: pendingTransactionHandler,
+                subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
             )
 
             // Create params matching what the web would send

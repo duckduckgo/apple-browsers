@@ -1454,16 +1454,12 @@
 "duckai.context.chip.info" = "Duck.aiに送信するメッセージと一緒に送信されます";
 
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-"duckai.contextual.onboarding.body" = "Duck.aiは、現在表示しているページに関する質問に回答できるようになりました。\n\nページの内容は、添付した場合にのみ含まれます。この設定は、「設定」でいつでも変更できます。";
 
 /* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.gotIt" = "了解";
 
 /* Title for the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.title" = "このページについて質問する";
 
 /* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.viewSettings" = "設定を表示";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
@@ -3013,11 +3009,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "すべて削除";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "このチャットを削除";
-"scoped.fire.confirmation.delete.this.chat.description" = "「すべて削除」はDuck.aiのチャット履歴を削除しません。";
-"scoped.fire.confirmation.delete.this.tab.button" = "このタブを削除";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "「すべて削除」はDuck.aiのチャット履歴を削除しません。";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "このタブを削除";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "これにより、進行中のダウンロードがキャンセルされます。";
@@ -3127,6 +3126,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "コンテンツを自動的に送信";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "チャットの提案";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI生成画像を非表示にする";
 
@@ -3213,6 +3215,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "入力に応じて検索候補を表示し、ブックマークも含めます。すべての検索は非公開です。";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "検索バーに入力する際に、履歴、ブックマーク、（オプションで）Duck.aiのチャット履歴からの提案が表示されます。すべての検索は非公開です。";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "アプリケーションロック";
@@ -3327,6 +3332,9 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof化されたサイト";
+
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "ウェブサイトを強制的にダークモードにする";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "一般";
@@ -3498,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "テーマ";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "ダークモードを使うと、ウェブサイトがダーク表示になります。";
 
 /* Title for the Settings View */
 "settings.title" = "設定";
@@ -3691,6 +3702,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "このデバイスからサブスクリプションが削除されました。";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "ダウングレードをキャンセル";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "プランは%2$@に%1$@にダウングレードされます。";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "プランを更新するかキャンセル";
 
@@ -3784,8 +3801,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "サブスクリプションプラン";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "プラン変更を完了しています…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "購入を完了しています...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "プランを変更しています…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "購入が進行中です...";
@@ -4031,7 +4054,7 @@
 "tab.switcher.tracker.count.keep.action" = "保持";
 
 /* Subtitle for tracker count banner indicating time window */
-"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+"tab.switcher.tracker.count.subtitle" = "過去7日間";
 
 /* Do not translate - stringsdict entry */
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";

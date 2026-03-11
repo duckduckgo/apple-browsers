@@ -17,33 +17,75 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Onboarding
 import DuckUI
-
-private enum OnboardingViewMetrics {
-    static let landingScreenDuration = 2.0
-}
-
-private enum OnboardingViewCopy {
-    static let introTitle = "Hi There!"
-    static let introMessage = "Ready for a faster browser that keeps you protected?"
-    static let browsersComparisonTitle = "Protections activated!"
-}
+import Onboarding
+import SwiftUI
 
 private enum BubbleBackedDialogMetrics {
     static let introAdditionalTopMargin: CGFloat = 40
     static let browsersComparisonAdditionalTopMargin: CGFloat = 0
+    static let addressBarPositionAdditionalTopMargin: CGFloat = 0
+    static let searchExperienceAdditionalTopMargin: CGFloat = 0
+    static let addToDockAdditionalTopMargin: CGFloat = 0
+    static let appIconPickerAdditionalTopMargin: CGFloat = 0
+}
+
+/// Animation timing constants for the rebranded onboarding bubble dialogs.
+///
+/// The onboarding flow uses a two-level animation approach to create polished transitions:
+///
+/// 1. **Parent-level animations** (this view): Handles step-to-step transitions where the
+///    bubble resizes and content changes (e.g., intro → browsers comparison).
+///    - Bubble resizes with explicit duration
+///    - Content hides, waits for resize, then fades in
+///
+/// 2. **Child-level animations** (individual content views): Some views have internal state
+///    transitions that don't change `state.type` (e.g., showing skip dialog, tutorial overlay).
+///    - Child views receive a `showContent` binding to control their visibility
+///    - They manage their own hide/show sequencing using the parent's animation timing constants
+enum OnboardingBubbleAnimationMetrics {
+    /// How long the bubble takes to resize between steps
+    static let bubbleResizeAnimationDuration: TimeInterval = 0.25
+    /// How long to wait before triggering state change after content is hidden
+    static let contentFadeOutDelay: TimeInterval = 0.15
+    /// How long to wait before fading in new content (includes bubble resize duration plus buffer)
+    static let contentFadeInDelay: TimeInterval = 0.3
 }
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// A theme-driven layout container for rebranded onboarding dialog steps.
+    ///
+    /// `LinearDialogContentContainer` arranges dialog content into a standardised vertical
+    /// stack without applying any visual chrome (backgrounds, shadows, or mascot elements).
+    /// The outer visual container — typically an ``OnboardingBubbleView`` — is responsible
+    /// for the surrounding decoration; this view handles **inner layout only**.
+    ///
+    /// The layout is split into two top-level groups separated by ``Metrics/outerSpacing``:
+    ///
+    /// ```
+    /// ┌──────────────────────────┐
+    /// │  Title                   │  ← required
+    /// │  Message                 │  ← optional
+    /// ├──────────────────────────┤  ← outerSpacing
+    /// │  Content                 │  ← optional (e.g. image, picker)
+    /// │  Actions                 │  ← required (buttons)
+    /// └──────────────────────────┘
+    /// ```
+    ///
+    /// All spacing values are supplied through ``Metrics`` and should be sourced from the
+    /// current ``OnboardingTheme`` to stay consistent with the 2026 design system.
     struct LinearDialogContentContainer<Title: View, Actions: View>: View {
 
+        /// Spacing values that control the vertical gaps between each region of the container.
         struct Metrics {
+            /// Spacing between the text group (title + message) and the content group (content + actions).
             let outerSpacing: CGFloat
+            /// Spacing between the title and the optional message within the text group.
             let textSpacing: CGFloat
+            /// Spacing between the optional content and the actions within the content group.
             let contentSpacing: CGFloat
+            /// Additional top padding applied above the actions view.
             let actionsSpacing: CGFloat
         }
 
@@ -53,6 +95,15 @@ extension OnboardingRebranding.OnboardingView {
         private let title: Title
         private let actions: Actions
 
+        /// Creates a new dialog content container.
+        ///
+        /// - Parameters:
+        ///   - metrics: Spacing configuration sourced from the current onboarding theme.
+        ///   - message: An optional subtitle or description displayed below the title.
+        ///   - content: An optional main content area (e.g. an illustration, picker, or comparison table)
+        ///              displayed above the action buttons.
+        ///   - title: A view builder producing the primary heading.
+        ///   - actions: A view builder producing the call-to-action buttons.
         init(
             metrics: Metrics,
             message: AnyView? = nil,
@@ -82,7 +133,8 @@ extension OnboardingRebranding.OnboardingView {
                         content
                     }
 
-                    actions.padding(.top, metrics.actionsSpacing)
+                    actions
+                        .padding(.top, metrics.actionsSpacing)
                 }
             }
         }
@@ -99,38 +151,62 @@ extension OnboardingRebranding {
 
         typealias ViewState = LegacyOnboardingViewState
 
-        static let daxGeometryEffectID = "DaxIcon"
-
+        @Environment(\.onboardingTheme) private var onboardingTheme
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
+        @State private var dialogContentHeight: CGFloat = 0
+        @State private var showBubbleContent: Bool = false
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
         }
 
+        /// Direction the bubble's tail arrow points toward.
         private enum BubbleTailDirection {
             case leading
             case trailing
         }
 
+        /// Layout configuration for a bubble-backed onboarding dialog step.
+        ///
+        /// Each onboarding step that renders inside an ``OnboardingBubbleView`` uses this
+        /// configuration to control the bubble's tail position, vertical placement, visibility,
+        /// and whether a step progress indicator is shown.
+        ///
+        /// Steps that return `nil` from ``bubbleBackedDialogConfiguration(for:)`` fall through
+        /// to the legacy Dax dialog path instead.
         private struct BubbleBackedDialogConfiguration {
+            /// Horizontal offset of the bubble tail arrow from the leading/trailing edge.
             let tailOffset: CGFloat
+            /// Which side the tail arrow points toward.
             let tailDirection: BubbleTailDirection
+            /// Extra top padding added on top of the base minimum top margin.
             let additionalTopMargin: CGFloat
+            /// Whether the dialog content is visible (used for entrance sequencing).
             let isVisible: Bool
+            /// Whether to display the step progress indicator (e.g. "3 of 5").
             let showsStepCounter: Bool
         }
 
         var body: some View {
             ZStack(alignment: .topTrailing) {
-                OnboardingTheme.rebranding2026.colorPalette.background
-                    .ignoresSafeArea()
-
                 switch model.state {
                 case .landing:
+                    onboardingTheme.colorPalette.background
+                        .ignoresSafeArea()
+
                     landingView
+                        .transition(AnyTransition.slideLeftAndFade.animation(.easeOut(duration: 1.0)))
                 case let .onboarding(viewState):
+                    onboardingTheme.colorPalette.background
+                        .ignoresSafeArea()
+
+                    ScrollableOnboardingBackground(viewState: viewState)
+
                     onboardingDialogView(state: viewState)
+                        .transition( // Scale content from 0.1 to 1.0 and fade in when appearing for the first time
+                            .scale.combined(with: .opacity)
+                        )
 #if DEBUG || ALPHA
                         .safeAreaInset(edge: .bottom) {
                             Button {
@@ -145,64 +221,51 @@ extension OnboardingRebranding {
             }
             .overlay(alignment: .topLeading) {
                 RebrandingBadge()
-                    .padding(.leading, OnboardingTheme.rebranding2026.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
-                    .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.rebrandingBadgeTopPadding)
+                    .padding(.leading, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
+                    .padding(.top, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeTopPadding)
             }
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
         }
 
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
-            GeometryReader { geometry in
-                VStack(alignment: .center) {
-                    if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
-                        bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
+            let configuration = bubbleBackedDialogConfiguration(for: state.type)
+
+            return GeometryReader { geometry in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .center) {
+                        bubbleBackedDialogView(state: state, configuration: configuration)
+                            .animation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration), value: state.type)
+                            .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
+                            .frame(maxWidth: .infinity, alignment: .center)
                             .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
-                    } else {
-                        DaxDialogView(
-                            logoPosition: .top,
-                            matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
-                            showDialogBox: $model.introState.showDaxDialogBox,
-                            onTapGesture: {
-                                model.tapped()
-                            },
-                            content: {
-                                switch state.type {
-                                case .browsersComparisonDialog:
-                                    EmptyView()
-                                case .addToDockPromoDialog:
-                                    addToDockPromoView
-                                case .chooseAppIconDialog:
-                                    appIconPickerView
-                                case .chooseAddressBarPositionDialog:
-                                    addressBarPreferenceSelectionView
-                                case .chooseSearchExperienceDialog:
-                                    searchExperienceSelectionView
-                                default:
-                                    EmptyView()
-                                }
-                            }
-                        )
-                        .frame(width: geometry.size.width, alignment: .center)
-                        .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin)
-                        .onAppear {
-                            model.introState.showDaxDialogBox = true
+                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin)
+                    }
+                    .frame(minHeight: geometry.size.height, alignment: .top)
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: OnboardingDialogHeightPreferenceKey.self,
+                                value: proxy.size.height
+                            )
                         }
                     }
+                }
+                .withoutScroll(dialogContentHeight <= geometry.size.height)
+                .onPreferenceChange(OnboardingDialogHeightPreferenceKey.self) { height in
+                    dialogContentHeight = height
                 }
             }
             .padding()
         }
 
         private var landingView: some View {
-            LandingView(animationNamespace: animationNamespace)
-                .ignoresSafeArea(edges: .bottom)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingViewMetrics.landingScreenDuration) {
-                        model.onAppear()
-                    }
+            LandingView(animationNamespace: animationNamespace) {
+                withAnimation {
+                    model.onAppear()
                 }
+            }
+            .ignoresSafeArea(edges: .bottom)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
 
         private func introView(shouldShowSkipOnboardingButton: Bool) -> some View {
@@ -211,7 +274,9 @@ extension OnboardingRebranding {
                     SkipOnboardingContent(
                         startBrowsingAction: model.confirmSkipOnboardingAction,
                         resumeOnboardingAction: {
-                            animateBrowserComparisonViewState(isResumingOnboarding: true)
+                            animateContentTransition {
+                                model.startOnboardingAction(isResumingOnboarding: true)
+                            }
                         }
                     )
                 )
@@ -220,12 +285,13 @@ extension OnboardingRebranding {
             }
 
             return IntroDialogContent(
-                title: OnboardingViewCopy.introTitle,
-                message: OnboardingViewCopy.introMessage,
+                title: UserText.Onboarding.Intro.title,
                 skipOnboardingView: skipOnboardingView,
-                showCTA: $model.introState.showIntroButton,
+                showContent: $showBubbleContent,
                 continueAction: {
-                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                    animateContentTransition {
+                        model.startOnboardingAction(isResumingOnboarding: false)
+                    }
                 },
                 skipAction: model.skipOnboardingAction
             )
@@ -233,9 +299,14 @@ extension OnboardingRebranding {
 
         private var browsersComparisonView: some View {
             BrowsersComparisonContent(
-                title: OnboardingViewCopy.browsersComparisonTitle,
+                showContent: $showBubbleContent,
+                title: UserText.Onboarding.BrowsersComparison.title,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
-                cancelAction: model.cancelSetDefaultBrowserAction
+                cancelAction: {
+                    animateContentTransition {
+                        model.cancelSetDefaultBrowserAction()
+                    }
+                }
             )
         }
 
@@ -243,50 +314,38 @@ extension OnboardingRebranding {
             state: ViewState.Intro,
             configuration: BubbleBackedDialogConfiguration
         ) -> some View {
-            let stepInfo: ViewState.Intro.StepInfo? = if configuration.showsStepCounter {
+            let stepInfo: ViewState.Intro.StepInfo = if configuration.showsStepCounter {
                 .init(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
             } else {
-                nil
+                .hidden
             }
             return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
-                bubbleBackedDialogContent(for: state.type)
+                VStack {
+                    bubbleBackedDialogContent(for: state.type)
+                        .opacity(showBubbleContent ? 1 : 0)
+                }
             }
-            .frame(maxWidth: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleMaxWidth)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .visibility(configuration.isVisible ? .visible : .invisible)
+            .onAppear {
+                // Show content after initial bubble animation on first appearance
+                animateContentTransition()
+            }
         }
 
+        @ViewBuilder
         private func makeBubbleView<Content: View>(
             configuration: BubbleBackedDialogConfiguration,
-            stepInfo: ViewState.Intro.StepInfo?,
+            stepInfo: ViewState.Intro.StepInfo,
             @ViewBuilder content: @escaping () -> Content
-        ) -> AnyView {
-            let tailPosition: OnboardingBubbleView<Content>.TailPosition
-            switch configuration.tailDirection {
-            case .leading:
-                tailPosition = .bottom(offset: configuration.tailOffset, direction: .leading)
-            case .trailing:
-                tailPosition = .bottom(offset: configuration.tailOffset, direction: .trailing)
-            }
-
-            if let stepInfo {
-                return AnyView(OnboardingBubbleView.withStepProgressIndicator(
-                    tailPosition: tailPosition,
-                    currentStep: stepInfo.currentStep,
-                    totalSteps: stepInfo.totalSteps
-                ) {
-                    content()
-                })
-            }
-
-            return AnyView(OnboardingBubbleView(
-                tailPosition: tailPosition,
-                contentInsets: OnboardingTheme.rebranding2026.linearBubbleMetrics.contentInsets,
-                arrowLength: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowLength,
-                arrowWidth: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowWidth
+        ) -> some View {
+            // Always use withStepProgressIndicator to maintain consistent view identity
+            // Use isVisible to control whether the counter is shown
+            OnboardingBubbleView.withStepProgressIndicator(
+                currentStep: stepInfo.currentStep,
+                totalSteps: stepInfo.totalSteps,
+                isVisible: configuration.showsStepCounter
             ) {
                 content()
-            })
+            }
         }
 
         @ViewBuilder
@@ -296,16 +355,22 @@ extension OnboardingRebranding {
                 introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
             case .browsersComparisonDialog:
                 browsersComparisonView
-            default:
-                EmptyView()
+            case .addToDockPromoDialog:
+                addToDockPromoView
+            case .chooseAppIconDialog:
+                appIconPickerView
+            case .chooseAddressBarPositionDialog:
+                addressBarPositionView
+            case .chooseSearchExperienceDialog:
+                searchExperienceSelectionView
             }
         }
 
-        private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration? {
+        private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration {
             switch type {
             case .startOnboardingDialog:
                 BubbleBackedDialogConfiguration(
-                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
                     isVisible: model.introState.showIntroViewContent,
@@ -313,64 +378,129 @@ extension OnboardingRebranding {
                 )
             case .browsersComparisonDialog:
                 BubbleBackedDialogConfiguration(
-                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.browsersComparisonAdditionalTopMargin,
                     isVisible: true,
                     showsStepCounter: true
                 )
-            default:
-                nil
+            case .addToDockPromoDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.addToDockAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseAppIconDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .trailing,
+                    additionalTopMargin: BubbleBackedDialogMetrics.appIconPickerAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseAddressBarPositionDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseSearchExperienceDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
             }
         }
 
         private var addToDockPromoView: some View {
             AddToDockPromoContent(
-                isAnimating: $model.addToDockState.isAnimating,
-                isSkipped: $model.isSkipped,
+                showContent: $showBubbleContent,
                 showTutorialAction: {
+                    // Don't use animateContentTransition here - the child handles it
                     model.addToDockShowTutorialAction()
                 },
                 dismissAction: { fromAddToDockTutorial in
-                    model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
+                    animateContentTransition {
+                        model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
+                    }
                 }
             )
         }
 
         private var appIconPickerView: some View {
             AppIconPickerContent(
-                animateTitle: $model.appIconPickerContentState.animateTitle,
-                animateMessage: $model.appIconPickerContentState.animateMessage,
                 showContent: $model.appIconPickerContentState.showContent,
-                isSkipped: $model.isSkipped,
-                action: model.appIconPickerContinueAction
+                action: {
+                    animateContentTransition {
+                        model.appIconPickerContinueAction()
+                    }
+                }
             )
-            .onboardingDaxDialogStyle()
         }
 
-        private var addressBarPreferenceSelectionView: some View {
+        private var addressBarPositionView: some View {
             AddressBarPositionContent(
-                animateTitle: $model.addressBarPositionContentState.animateTitle,
-                showContent: $model.addressBarPositionContentState.showContent,
-                isSkipped: $model.isSkipped,
-                action: model.selectAddressBarPositionAction
+                action: {
+                    animateContentTransition {
+                        model.selectAddressBarPositionAction()
+                    }
+                }
             )
-            .onboardingDaxDialogStyle()
         }
 
         private var searchExperienceSelectionView: some View {
             SearchExperienceContent(
-                animateTitle: $model.searchExperienceContentState.animateTitle,
-                isSkipped: $model.isSkipped,
-                action: model.selectSearchExperienceAction
+                action: {
+                    animateContentTransition {
+                        model.selectSearchExperienceAction()
+                    }
+                }
             )
-            .onboardingDaxDialogStyle()
         }
 
-        private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
-            model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
-            model.browserComparisonState.showComparisonButton = true
-            model.browserComparisonState.animateComparisonText = true
+        /// Animates bubble content with a hide → optional action → show sequence.
+        ///
+        /// This three-phase sequence prevents cross-fading between old and new content:
+        /// 1. Hide current content immediately (no fade-out animation)
+        /// 2. Optionally execute action after brief delay (triggers state change and bubble resize)
+        /// 3. Show new content after bubble finishes resizing
+        ///
+        /// - Parameter action: Optional closure to execute between hiding and showing content.
+        ///                     If nil, content is shown immediately after fade-in delay (for initial appearance).
+        private func animateContentTransition(action: (() -> Void)? = nil) {
+            // Phase 1: Hide current content immediately
+            showBubbleContent = false
+
+            if let action {
+                // Phase 2: After content is hidden, trigger the action
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeOutDelay) {
+                    // Call action without animation wrapper
+                    // The bubble resize animation is handled by .animation(..., value: state.type) modifier on the bubble view
+                    action()
+                }
+
+                // Phase 3: After bubble resize completes, show new content
+                let totalDelay = OnboardingBubbleAnimationMetrics.contentFadeOutDelay + OnboardingBubbleAnimationMetrics.contentFadeInDelay
+                DispatchQueue.main.asyncAfter(deadline: .now() + totalDelay) {
+                    withAnimation {
+                        showBubbleContent = true
+                    }
+                }
+            } else {
+                // First appearance of bubble. Show content after fade-in delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                    withAnimation {
+                        showBubbleContent = true
+                    }
+                }
+            }
         }
 
     }
@@ -390,5 +520,52 @@ private struct RebrandingBadge: View {
                     .fill(Color.black.opacity(0.7))
             )
             .accessibilityIdentifier("RebrandedBadge")
+    }
+}
+
+private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+// MARK: - Custom Transitions
+
+extension AnyTransition {
+    /// Slides content to the left while fading out, matching the scrollable background exit animation.
+    ///
+    /// This transition mimics the behavior of `ExitingBackgroundView` in `ScrollableOnboardingBackground`,
+    /// sliding the view until its trailing edge aligns with the screen's leading edge while fading out
+    /// at twice the rate of the slide animation.
+    static var slideLeftAndFade: AnyTransition {
+        .asymmetric(
+            insertion: .identity,
+            removal: .modifier(
+                active: SlideLeftAndFadeModifier(progress: 1.0),
+                identity: SlideLeftAndFadeModifier(progress: 0.0)
+            )
+        )
+    }
+}
+
+private struct SlideLeftAndFadeModifier: ViewModifier, Animatable {
+    var progress: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        GeometryReader { geometry in
+            content
+                // Slide left: at progress=1.0, trailing edge reaches screen's leading edge
+                // Image is centered in frame, so: offset = -(screenWidth/2 + imageWidth/2)
+                .offset(x: -(geometry.size.width / 2 + geometry.size.width / 2) * progress)
+                // Fade out twice as fast as the slide, clamped to avoid negative opacity
+                .opacity(max(0, 1.0 - progress * 2))
+        }
     }
 }

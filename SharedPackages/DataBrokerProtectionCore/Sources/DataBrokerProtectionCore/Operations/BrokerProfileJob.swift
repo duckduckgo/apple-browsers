@@ -33,7 +33,8 @@ public protocol BrokerProfileJobStatusReportingDelegate: AnyObject {
                                      withBrokerURL brokerURL: String?,
                                      version: String?,
                                      stepType: StepType?,
-                                     dataBrokerParent: String?)
+                                     dataBrokerParent: String?,
+                                     isFreeScan: Bool?)
     func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                     version: String?,
                                                     dataBrokerParent: String?)
@@ -172,6 +173,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
             Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
 
+            let isFreeScan = !(await jobDependencies.isAuthenticatedUser())
+
             do {
                 var executed = false
 
@@ -228,7 +231,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                                      withBrokerURL: dataBroker?.url,
                                                                      version: dataBroker?.version,
                                                                      stepType: stepType,
-                                                                     dataBrokerParent: dataBroker?.parent)
+                                                                     dataBrokerParent: dataBroker?.parent,
+                                                                     isFreeScan: isFreeScan)
             }
         }
     }

@@ -51,18 +51,18 @@ protocol AIChatSummarizing {
 final class AIChatSummarizer: AIChatSummarizing {
 
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let aiChatCoordinator: AIChatCoordinating
     private let aiChatTabOpener: AIChatTabOpening
     private let pixelFiring: PixelFiring?
 
     init(
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-        aiChatSidebarPresenter: AIChatSidebarPresenting,
+        aiChatCoordinator: AIChatCoordinating,
         aiChatTabOpener: AIChatTabOpening,
         pixelFiring: PixelFiring?
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.aiChatCoordinator = aiChatCoordinator
         self.aiChatTabOpener = aiChatTabOpener
         self.pixelFiring = pixelFiring
     }
@@ -80,16 +80,16 @@ final class AIChatSummarizer: AIChatSummarizing {
         let prompt = AIChatNativePrompt.summaryPrompt(request.text, url: request.websiteURL, title: request.websiteTitle)
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
 
-        if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
+        if !aiChatCoordinator.isChatPresentedForCurrentTab() {
             pixelFiring?.fire(
                 AIChatPixel.aiChatSidebarOpened(
                     source: .summarization,
                     shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
-                    minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
+                    minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
                 ),
                 frequency: .dailyAndStandard
             )
         }
-        aiChatSidebarPresenter.presentSidebar(for: prompt)
+        aiChatCoordinator.revealChat(for: prompt)
     }
 }

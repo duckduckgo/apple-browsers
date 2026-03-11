@@ -18,12 +18,12 @@
 
 import Foundation
 
-protocol MaliciousSiteProtectioUpdateManagerInfoStorage: AnyObject {
+protocol MaliciousSiteProtectionUpdateManagerInfoStorage: AnyObject {
     var lastHashPrefixSetsUpdateDate: Date { get set }
     var lastFilterSetsUpdateDate: Date { get set }
 }
 
-final class UpdateManagerInfoStore: MaliciousSiteProtectioUpdateManagerInfoStorage {
+final class UpdateManagerInfoStore: MaliciousSiteProtectionUpdateManagerInfoStorage {
     enum Keys {
         static let maliciousSiteProtectionLastHashPrefixSetUpdateDate = "com.duckduckgo.ios.maliciousSiteProtection.lastHashPrefixSetRefreshDate"
         static let maliciousSiteProtectionLastFilterSetUpdateDate = "com.duckduckgo.ios.maliciousSiteProtection.lastFilterSetsRefreshDate"

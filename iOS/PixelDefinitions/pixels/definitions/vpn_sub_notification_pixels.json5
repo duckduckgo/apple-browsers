@@ -7,12 +7,6 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "vpnAuthVersion",
-                "type": "string",
-                "description": "Version of auth",
-                "enum": ["v1", "v2"]
-            },
-            {
                 "key": "vpnSubscriptionActive",
                 "type": "string",
                 "description": "Whether the subscription is active",
@@ -33,12 +27,6 @@
         "triggers": ["other"],
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
-            {
-                "key": "vpnAuthVersion",
-                "type": "string",
-                "description": "Version of auth",
-                "enum": ["v1", "v2"]
-            },
             {
                 "key": "vpnSubscriptionActive",
                 "type": "string",
@@ -61,12 +49,6 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "vpnAuthVersion",
-                "type": "string",
-                "description": "Version of auth",
-                "enum": ["v1", "v2"]
-            },
-            {
                 "key": "vpnSubscriptionActive",
                 "type": "string",
                 "description": "Whether the subscription is active",
@@ -87,12 +69,6 @@
         "triggers": ["other"],
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
-            {
-                "key": "vpnAuthVersion",
-                "type": "string",
-                "description": "Version of auth",
-                "enum": ["v1", "v2"]
-            },
             {
                 "key": "vpnSubscriptionActive",
                 "type": "string",

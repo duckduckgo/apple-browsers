@@ -31,7 +31,13 @@ struct BrowsingMenuModel {
 struct BrowsingMenuSheetView: View {
 
     enum Metrics {
-        static let headerButtonVerticalPadding: CGFloat = 12
+        static let headerButtonVerticalPadding: CGFloat = {
+            if #available(iOS 26, *) {
+                return 16
+            } else {
+                return 12
+            }
+        }()
         static let headerButtonHorizontalPadding: CGFloat = 8
         static let headerButtonIconSize: CGFloat = 26
         static let headerButtonIconTextSpacing: CGFloat = 4
@@ -39,13 +45,26 @@ struct BrowsingMenuSheetView: View {
         /// Approximate row size for `.insetGrouped` style.
         /// This is an estimate used for height calculation and may not exactly match
         /// the system-provided height in all configurations.
-        static let defaultListRowHeight: CGFloat = 44
+        static let defaultListRowHeight: CGFloat = {
+            if #available(iOS 26, *) {
+                return 56
+            } else {
+                return 44
+            }
+        }()
 
         /// Approximate spacing between list sections.
         /// Note: The actual UI uses `.compactSectionSpacingIfAvailable()` which applies
         /// `.compact` section spacing on iOS 17+. This value is an approximation and
         /// the actual spacing may differ slightly on earlier versions.
-        static let listSectionSpacing: CGFloat = 20
+        static let listSectionSpacing: CGFloat = {
+            if #available(iOS 26, *) {
+                return 24
+            } else {
+                return 20
+            }
+        }()
+
         static let listTopPadding: CGFloat = 20
         static let grabberHeight: CGFloat = 20
 
@@ -390,7 +409,7 @@ private struct BrowsingMenuHeaderView: View {
         Button(action: onDismiss) {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
-        .buttonStyle(BrowsingMenuCloseButtonStyle())
+        .buttonStyle(CloseButtonStyle())
         .accessibilityLabel(UserText.keyCommandClose)
     }
 
@@ -416,10 +435,10 @@ private struct BrowsingMenuHeaderView: View {
             }
         }
         .frame(width: MenuHeaderConstant.faviconSize, height: MenuHeaderConstant.faviconSize)
-        .menuHeaderEntryShape()
+        .faviconShape()
         .padding(MenuHeaderConstant.faviconPadding)
         .background(Color.rowBackgroundColor)
-        .menuHeaderEntryShape()
+        .faviconShape()
     }
 
     @ViewBuilder
@@ -444,6 +463,7 @@ private struct BrowsingMenuHeaderView: View {
 
 private enum MenuHeaderConstant {
     static let cornerRadius: CGFloat = 10
+    static let iOS26CornerRadius: CGFloat = 24
     static let faviconSize: CGFloat = 32
     static let faviconPadding: CGFloat = 8
     static let contentSpacing: CGFloat = 12
@@ -454,10 +474,23 @@ private enum MenuHeaderConstant {
 private extension View {
     @ViewBuilder
     func menuHeaderEntryShape() -> some View {
+        if #available(iOS 26, *) {
+            self
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.iOS26CornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.iOS26CornerRadius, style: .continuous))
+        } else {
+            self
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    func faviconShape() -> some View {
         if #available(iOS 17, *) {
             self
-                .clipShape(ButtonBorderShape.automatic)
-                .contentShape(ButtonBorderShape.automatic)
+                .clipShape(ButtonBorderShape.roundedRectangle)
+                .contentShape(ButtonBorderShape.roundedRectangle)
         } else {
             self
                 .clipShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))

@@ -49,6 +49,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchTabToIndex index: Int)
 }
 
 /// Manages the suggestion tray functionality including favorites and autocomplete
@@ -75,6 +76,14 @@ final class SuggestionTrayManager: NSObject {
         return !shouldDisplaySuggestionTray && (canDisplayFavorites || hasRemoteMessages)
     }
 
+    var hasFavorites: Bool {
+        suggestionTrayViewController?.hasFavorites ?? false
+    }
+
+    var hasRemoteMessages: Bool {
+        suggestionTrayViewController?.hasRemoteMessages ?? false
+    }
+
     var shouldDisplaySuggestionTray: Bool {
         let query = switchBarHandler.currentText
         // No text so don't show suggestins
@@ -99,9 +108,9 @@ final class SuggestionTrayManager: NSObject {
     }
     
     // MARK: - Public Methods
-    
+
     /// Installs the suggestion tray in the provided container view
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController) {
+    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil) {
         guard suggestionTrayViewController == nil else { return }
         
         let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
@@ -147,6 +156,7 @@ final class SuggestionTrayManager: NSObject {
         controller.autocompleteDelegate = self
         controller.newTabPageControllerDelegate = self
         controller.didMove(toParent: parentViewController)
+        controller.setEscapeHatch(escapeHatch)
 
         showInitialSuggestions()
         containerView.layoutIfNeeded()
@@ -287,4 +297,7 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
         // no-op this is handled by the main view controller on a real new tab page
     }
 
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
+        delegate?.suggestionTrayManager(self, requestsSwitchTabToIndex: index)
+    }
 }

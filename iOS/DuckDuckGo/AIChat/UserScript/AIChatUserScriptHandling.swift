@@ -211,14 +211,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
+        let supportsNativeChatInput = supportsFullMode && featureFlagger.isFeatureOn(.unifiedToggleInput)
+
         return AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
             supportsOpeningSettings: defaults.supportsOpeningSettings,
             supportsNativePrompt: defaults.supportsNativePrompt,
             supportsStandaloneMigration: experimentalAIChatManager.isStandaloneMigrationSupported,
-            supportsNativeChatInput: defaults.supportsNativeChatInput,
-            supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
+            supportsNativeChatInput: supportsNativeChatInput,
+            supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: supportsContextualMode,
             supportsAIChatFullMode: supportsFullMode,
@@ -226,7 +228,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
-            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync)
+            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync),
+            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts)
         )
     }
 
@@ -400,7 +403,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
+            let payload = try await syncHandler.getScopedToken()
+            fireSyncAiChatActiveDailyIfNeeded()
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -418,7 +423,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 reason = "internal error"
             }
 
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncScopedSyncTokenError, withAdditionalParameters: ["reason": reason])
+            fireSyncDailyAndCountPixel(.aiChatSyncScopedSyncTokenError, withAdditionalParameters: ["reason": reason])
             return AIChatErrorResponse(reason: reason)
         }
     }
@@ -433,12 +438,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncEncryptionError, withAdditionalParameters: ["reason": "invalid parameters"])
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndCountPixel(.aiChatSyncEncryptionError, withAdditionalParameters: ["reason": "invalid parameters"])
+            }
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
+            let payload = try syncHandler.encrypt(data)
+            Task { @MainActor [weak self] in
+                self?.fireSyncAiChatActiveDailyIfNeeded()
+            }
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -447,7 +458,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             default:
                 reason = "internal error"
             }
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncEncryptionError, withAdditionalParameters: ["reason": reason])
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndCountPixel(.aiChatSyncEncryptionError, withAdditionalParameters: ["reason": reason])
+            }
             return AIChatErrorResponse(reason: reason)
         }
     }
@@ -462,15 +475,23 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncDecryptionError, withAdditionalParameters: ["reason": "invalid parameters"])
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndCountPixel(.aiChatSyncDecryptionError, withAdditionalParameters: ["reason": "invalid parameters"])
+            }
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
+            let payload = try syncHandler.decrypt(data)
+            Task { @MainActor [weak self] in
+                self?.fireSyncAiChatActiveDailyIfNeeded()
+            }
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncDecryptionError, withAdditionalParameters: ["reason": reason])
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndCountPixel(.aiChatSyncDecryptionError, withAdditionalParameters: ["reason": reason])
+            }
             return AIChatErrorResponse(reason: "internal error")
         }
     }
@@ -486,12 +507,25 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let dict = params as? [String: Any],
               let enabled = dict["enabled"] as? Bool else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncHistoryEnabledError, withAdditionalParameters: ["reason": "invalid parameters"])
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndCountPixel(.aiChatSyncHistoryEnabledError, withAdditionalParameters: ["reason": "invalid parameters"])
+            }
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         syncHandler.setAIChatHistoryEnabled(enabled)
         return nil
+    }
+
+    @MainActor
+    private func fireSyncAiChatActiveDailyIfNeeded() {
+        DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+    }
+
+    @MainActor
+    private func fireSyncDailyAndCountPixel(_ pixel: Pixel.Event,
+                                            withAdditionalParameters params: [String: String]) {
+        DailyPixel.fireDailyAndCount(pixel: pixel, withAdditionalParameters: params)
     }
 }
 // swiftlint:enable inclusive_language

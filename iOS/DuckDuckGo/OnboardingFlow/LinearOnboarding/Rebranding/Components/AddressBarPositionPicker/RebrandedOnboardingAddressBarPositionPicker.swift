@@ -27,11 +27,11 @@ extension OnboardingRebranding.OnboardingView {
         @StateObject private var viewModel = OnboardingAddressBarPositionPickerViewModel()
 
         var body: some View {
-            VStack(spacing: AddressBarPositionPickerMetrics.Button.itemSpacing) {
+            VStack(spacing: AddressBarPositionPickerMetrics.itemSpacing) {
                 ForEach(viewModel.items, id: \.type) { item in
                     AddressBarPositionButton(
                         icon: item.icon,
-                        title: AttributedString(item.title),
+                        title: Self.strippingFontAttributes(from: item.title),
                         message: item.message,
                         isSelected: item.isSelected,
                         action: {
@@ -41,26 +41,36 @@ extension OnboardingRebranding.OnboardingView {
                 }
             }
         }
+
+        /// Strips UIKit font attributes from the attributed string so that
+        /// the SwiftUI `.font()` modifier on the `Text` view takes effect,
+        /// while preserving color attributes from the shared view model.
+        private static func strippingFontAttributes(from source: NSAttributedString) -> AttributedString {
+            let mutable = NSMutableAttributedString(attributedString: source)
+            mutable.removeAttribute(.font, range: NSRange(location: 0, length: mutable.length))
+            return AttributedString(mutable)
+        }
     }
 
 }
 
 private enum AddressBarPositionPickerMetrics {
-    enum Button {
-        static let messageFont = Font.system(size: 15)
-        static let overlayRadius: CGFloat = 13.0
-        static let overlayStroke: CGFloat = 1
-        static let itemSpacing: CGFloat = 16.0
-        static let borderLightColor = Color.black.opacity(0.18)
-        static let borderDarkColor = Color.white.opacity(0.18)
-    }
-    enum Checkbox {
+    static let itemSpacing: CGFloat = 16.0
+    static let iconSpacing: CGFloat = 12.0
+    static let textSpacing: CGFloat = 0
+    static let cornerRadius: CGFloat = 16.0
+    static let borderWidth: CGFloat = 1.0
+    static let minHeight: CGFloat = 63.0
+    static let borderLightColor = Color.black.opacity(0.18)
+    static let borderDarkColor = Color.white.opacity(0.18)
+
+    static let accentColor = Color(singleUseColor: .rebranding(.accentPrimary))
+
+    enum Radio {
         static let size: CGFloat = 24.0
         static let checkSize: CGFloat = 16.0
-        static let strokeInset = 0.75
-        static let strokeWidth = 1.5
-        static let borderLightColor = Color.black.opacity(0.18)
-        static let borderDarkColor = Color.white.opacity(0.18)
+        static let strokeInset: CGFloat = 0.75
+        static let strokeWidth: CGFloat = 1.5
     }
 }
 
@@ -68,6 +78,7 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
 
     struct AddressBarPositionButton: View {
         @Environment(\.colorScheme) private var colorScheme
+        @Environment(\.onboardingTheme) private var onboardingTheme
 
         let icon: ImageResource
         let title: AttributedString
@@ -77,46 +88,46 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
 
         var body: some View {
             Button(action: action) {
-                HStack(spacing: AddressBarPositionPickerMetrics.Button.itemSpacing) {
+                HStack(spacing: AddressBarPositionPickerMetrics.iconSpacing) {
                     Image(icon)
 
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: AddressBarPositionPickerMetrics.textSpacing) {
                         Text(title)
+                            .font(onboardingTheme.typography.row)
                         Text(message)
-                            .font(AddressBarPositionPickerMetrics.Button.messageFont)
-                            .foregroundStyle(Color.secondary)
+                            .font(onboardingTheme.typography.rowDetails)
+                            .foregroundColor(onboardingTheme.colorPalette.textSecondary)
                     }
 
                     Spacer()
 
-                    Checkbox(isSelected: isSelected)
+                    RadioIndicator(isSelected: isSelected)
                 }
             }
             .overlay {
-                RoundedRectangle(cornerRadius: AddressBarPositionPickerMetrics.Button.overlayRadius)
-                    .stroke(strokeColor, lineWidth: AddressBarPositionPickerMetrics.Button.overlayStroke)
+                RoundedRectangle(cornerRadius: AddressBarPositionPickerMetrics.cornerRadius)
+                    .stroke(borderColor, lineWidth: AddressBarPositionPickerMetrics.borderWidth)
             }
-            .buttonStyle(AddressBarPostionButtonStyle(isSelected: isSelected))
+            .buttonStyle(AddressBarPositionButtonStyle(isSelected: isSelected))
         }
 
-        private var strokeColor: Color {
+        private var borderColor: Color {
             if isSelected {
-                Color(designSystemColor: .accent)
+                AddressBarPositionPickerMetrics.accentColor
             } else {
-                colorScheme == .light ? AddressBarPositionPickerMetrics.Button.borderLightColor : AddressBarPositionPickerMetrics.Button.borderDarkColor
+                colorScheme == .light ? AddressBarPositionPickerMetrics.borderLightColor : AddressBarPositionPickerMetrics.borderDarkColor
             }
         }
 
     }
 
-    struct Checkbox: View {
+    struct RadioIndicator: View {
         @Environment(\.colorScheme) private var colorScheme
-
         let isSelected: Bool
 
         var body: some View {
             Circle()
-                .frame(width: AddressBarPositionPickerMetrics.Checkbox.size, height: AddressBarPositionPickerMetrics.Checkbox.size)
+                .frame(width: AddressBarPositionPickerMetrics.Radio.size, height: AddressBarPositionPickerMetrics.Radio.size)
                 .foregroundColor(foregroundColor)
                 .overlay {
                     selectionOverlay
@@ -132,44 +143,34 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
                     .background(
                         Circle()
                             .fill(Color.white)
-                            // Use smaller frame for checkbox bg to not fill the transparent edge of the glyph
-                            .frame(width: AddressBarPositionPickerMetrics.Checkbox.checkSize, height: AddressBarPositionPickerMetrics.Checkbox.checkSize)
+                            .frame(width: AddressBarPositionPickerMetrics.Radio.checkSize, height: AddressBarPositionPickerMetrics.Radio.checkSize)
                     )
-                    .foregroundStyle(Color(designSystemColor: .accent))
-                    .frame(width: AddressBarPositionPickerMetrics.Checkbox.size, height: AddressBarPositionPickerMetrics.Checkbox.size)
+                    .foregroundStyle(AddressBarPositionPickerMetrics.accentColor)
+                    .frame(width: AddressBarPositionPickerMetrics.Radio.size, height: AddressBarPositionPickerMetrics.Radio.size)
                     .clipShape(Circle())
             } else {
                 Circle()
-                    .inset(by: AddressBarPositionPickerMetrics.Checkbox.strokeInset)
-                    .stroke(checkboxStrokeColor, lineWidth: AddressBarPositionPickerMetrics.Checkbox.strokeWidth)
+                    .inset(by: AddressBarPositionPickerMetrics.Radio.strokeInset)
+                    .stroke(checkboxStrokeColor, lineWidth: AddressBarPositionPickerMetrics.Radio.strokeWidth)
             }
         }
 
         private var checkboxStrokeColor: Color {
-            colorScheme == .light ? AddressBarPositionPickerMetrics.Checkbox.borderLightColor : AddressBarPositionPickerMetrics.Checkbox.borderDarkColor
+            colorScheme == .light ? AddressBarPositionPickerMetrics.borderLightColor : AddressBarPositionPickerMetrics.borderDarkColor
         }
 
         private var foregroundColor: Color {
-            switch (colorScheme, isSelected) {
-            case (.light, true), (.dark, true):
-                Color(designSystemColor: .accent)
-            case (.light, false):
-                .black.opacity(0.03)
-            case (.dark, false):
-                .white.opacity(0.06)
-            default:
-                .clear
+            if isSelected {
+                AddressBarPositionPickerMetrics.accentColor
+            } else {
+                Color(designSystemColor: .controlsFillPrimary)
             }
         }
     }
 
 }
 
-private struct AddressBarPostionButtonStyle: ButtonStyle {
-    @Environment(\.colorScheme) private var colorScheme
-
-    private let minHeight = 63.0
-
+private struct AddressBarPositionButtonStyle: ButtonStyle {
     let isSelected: Bool
 
     func makeBody(configuration: Configuration) -> some View {
@@ -178,13 +179,19 @@ private struct AddressBarPostionButtonStyle: ButtonStyle {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, minHeight: minHeight)
-            .background(backgroundColor(configuration.isPressed || isSelected))
-            .cornerRadius(12)
-            .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: AddressBarPositionPickerMetrics.minHeight)
+            .background(backgroundColor(isSelected: isSelected, isPressed: configuration.isPressed))
+            .cornerRadius(AddressBarPositionPickerMetrics.cornerRadius)
+            .contentShape(Rectangle())
     }
 
-    private func backgroundColor(_ isHighlighted: Bool) -> Color {
-        isHighlighted ? Color(designSystemColor: .buttonsGhostPressedFill) : .clear
+    private func backgroundColor(isSelected: Bool, isPressed: Bool) -> Color {
+        if isSelected {
+            return Color(singleUseColor: .rebranding(.accentAltGlowPrimary))
+        } else if isPressed {
+            return Color(designSystemColor: .buttonsGhostPressedFill)
+        } else {
+            return .clear
+        }
     }
 }

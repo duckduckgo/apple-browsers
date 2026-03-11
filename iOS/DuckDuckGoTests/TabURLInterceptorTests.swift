@@ -58,12 +58,12 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     func testNotificationForInterceptedSubscriptionPath() {
         _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
 
-        let url = URL(string: "https://duckduckgo.com/pro")!
+        let url = URL(string: "https://duckduckgo.com/subscriptions")!
         let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
-        
+
         // Fail if no note is posted
         XCTAssertFalse(canNavigate)
-        
+
         waitForExpectations(timeout: 1) { error in
             if let error = error {
                 XCTFail("Notification expectation failed: \(error)")
@@ -78,7 +78,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
             capturedNotification = notification
             return true
         })
-        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/pro?origin=test_origin"))
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions?origin=test_origin"))
         
         // WHEN
         _ = urlInterceptor.allowsNavigatingTo(url: url)
@@ -97,7 +97,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
             capturedNotification = notification
             return true
         })
-        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/pro"))
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions"))
 
         // WHEN
         _ = urlInterceptor.allowsNavigatingTo(url: url)
@@ -186,7 +186,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         notificationExpectation.isInverted = true
 
         // GIVEN
-        let url = URL(string: "https://duck.co/pro")!
+        let url = URL(string: "https://duck.co/subscriptions")!
         mockInternalUserStoring.isInternalUser = false
 
         // WHEN
@@ -201,7 +201,37 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
 
         // GIVEN
-        let url = URL(string: "https://duck.co/pro")!
+        let url = URL(string: "https://duck.co/subscriptions")!
+        mockInternalUserStoring.isInternalUser = true
+
+        // WHEN
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        // THEN
+        XCTAssertFalse(canNavigate)
+        await fulfillment(of: [notificationExpectation], timeout: 0.5)
+    }
+
+    func testNotificationForInterceptedSubscriptionPlansPath() async {
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
+        // GIVEN
+        let url = URL(string: "https://duck.co/subscriptions/plans")!
+        mockInternalUserStoring.isInternalUser = true
+
+        // WHEN
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        // THEN
+        XCTAssertFalse(canNavigate)
+        await fulfillment(of: [notificationExpectation], timeout: 0.5)
+    }
+
+    func testNotificationForInterceptedSubscriptionUpgradePath() async {
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
+        // GIVEN
+        let url = URL(string: "https://duckduckgo.com/subscriptions/plans?tier=pro")!
         mockInternalUserStoring.isInternalUser = true
 
         // WHEN

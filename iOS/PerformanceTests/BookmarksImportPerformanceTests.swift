@@ -72,8 +72,8 @@ class BookmarksImportPerformanceTests: XCTestCase {
             startMeasuring()
             
             Task {
-                let importer = await BookmarksImporter(coreDataStore: db, favoritesDisplayMode: .displayNative(.mobile))
-                let result = await importer.parseAndSave(html: html)
+                let importer = await BookmarksImporter(coreDataStore: db, favoritesDisplayMode: .displayNative(.mobile), htmlContent: html)
+                let result = await importer.parseAndSave()
                 switch result {
                 case .failure:
                     XCTFail("Could not import bookmarks")

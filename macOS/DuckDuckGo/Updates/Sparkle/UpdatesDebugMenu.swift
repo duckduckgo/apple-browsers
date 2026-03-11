@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
-import AppKit
 import AIChat
+import AppKit
+import AppUpdaterShared
 import Common
 import CryptoKit
 import os.log
 import Persistence
+import PixelKit
 
 final class UpdatesDebugMenu: NSMenu {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
@@ -31,20 +33,16 @@ final class UpdatesDebugMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
-            NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
-                .targetting(self)
-            NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
-                .targetting(self)
-            NSMenuItem(title: "Set up Sparkle testing environment…", action: #selector(setupSparkleTestingEnvironment))
-                .targetting(self)
-            NSMenuItem.separator()
-#endif
-            NSMenuItem(title: "Expire current update", action: #selector(expireCurrentUpdate))
-                .targetting(self)
-            NSMenuItem(title: "Reset last update check", action: #selector(resetLastUpdateCheck))
-                .targetting(self)
-            NSMenuItem.separator()
+            let buildType = StandardApplicationBuildType()
+            if buildType.isSparkleBuild && (buildType.isDebugBuild || buildType.isReviewBuild) {
+                NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
+                    .targetting(self)
+                NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
+                    .targetting(self)
+                NSMenuItem(title: "Set up Sparkle testing environment…", action: #selector(setupSparkleTestingEnvironment))
+                    .targetting(self)
+                NSMenuItem.separator()
+            }
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                 .targetting(self)
             NSMenuItem.separator()
@@ -63,26 +61,6 @@ final class UpdatesDebugMenu: NSMenu {
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - Menu State Update
-
-    private var updateValidityStartDate: Date? {
-        get { try? settings.updateValidityStartDate }
-        set { try? settings.set(newValue, for: \.updateValidityStartDate) }
-    }
-
-    @objc func expireCurrentUpdate() {
-        updateValidityStartDate = .distantPast
-    }
-
-    private var pendingUpdateSince: Date {
-        get { (try? settings.pendingUpdateSince) ?? .distantPast }
-        set { try? settings.set(newValue, for: \.pendingUpdateSince) }
-    }
-
-    @objc func resetLastUpdateCheck() {
-        pendingUpdateSince = .distantPast
-    }
-
     @objc func testUpdateSuccessOnNextLaunch() {
         SparkleDebugHelper.configureExpectedUpdateSuccess()
     }
@@ -96,15 +74,10 @@ final class UpdatesDebugMenu: NSMenu {
     }
 
     @objc func showBrowserUpdatedPopover() {
-        let presenter = UpdateNotificationPresenter()
-        presenter.showUpdateNotification(
-            icon: NSImage.successCheckmark,
-            text: UserText.browserUpdatedNotification,
-            buttonText: UserText.viewDetails
-        )
+        let presenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
+        presenter.showUpdateNotification(for: .updated)
     }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     // MARK: - Custom Feed URL
 
     private var customFeedURL: String? {
@@ -112,8 +85,8 @@ final class UpdatesDebugMenu: NSMenu {
         set { try? settings.set(newValue, for: \.debugSparkleCustomFeedURL) }
     }
 
-    private var sparkleUpdateController: SparkleCustomFeedURLProviding? {
-        Application.appDelegate.updateController as? SparkleCustomFeedURLProviding
+    private var sparkleUpdateController: (any SparkleCustomFeedURLProviding)? {
+        Application.appDelegate.updateController as? any SparkleCustomFeedURLProviding
     }
 
     @objc func setCustomFeedURL() {
@@ -263,11 +236,9 @@ final class UpdatesDebugMenu: NSMenu {
         // Return base64-encoded signature
         return signature.base64EncodedString()
     }
-#endif
 
 }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
 // MARK: - Sparkle Testing Resources
 
 private enum SparkleTestingResources {
@@ -510,4 +481,3 @@ private enum SparkleTestingResources {
     """#
 
 }
-#endif

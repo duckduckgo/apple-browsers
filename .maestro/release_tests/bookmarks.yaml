@@ -41,9 +41,10 @@ tags:
 
 # Verify site has been bookmarked
 - assertVisible: "Browsing menu"
-- tapOn: "Browsing menu"
-- assertVisible: "Bookmarks"
-- tapOn: "Bookmarks"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Bookmarks"
 - assertVisible: "Privacy Test Pages - Home"
 
 # Edit bookmark

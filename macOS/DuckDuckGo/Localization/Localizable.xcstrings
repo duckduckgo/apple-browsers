@@ -2120,6 +2120,66 @@
         }
       }
     },
+    "aichat.address-bar.show-button" : {
+      "comment" : "Button to bring detached Duck.ai window to front",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать Duck.ai"
+          }
+        }
+      }
+    },
     "aichat.address-bar.toggle-sidebar-button" : {
       "comment" : "Button to toggle Duck.ai sidebar",
       "extractionState" : "extracted_with_value",
@@ -2302,7 +2362,7 @@
     },
     "aichat.customize-button.tooltip" : {
       "comment" : "Tooltip for the customize button in AI chat omnibar",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2356,6 +2416,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настрой ответы"
+          }
+        }
+      }
+    },
+    "aichat.floating.close-confirmation.action" : {
+      "comment" : "Action text shown in Cmd+W confirmation overlay when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte oder drücke erneut, um den Tab und den Duck.ai Chat zu schließen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold or press again to close tab and Duck.ai chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado o pulsa de nuevo para cerrar la pestaña y el chat de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenir la touche enfoncée ou appuyer à nouveau pour fermer l'onglet et le chat Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto o premi di nuovo per chiudere la scheda e la chat di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd ingedrukt of druk nogmaals om het tabblad en Duck.ai-chat te sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aby zamknąć zakładkę i czat Duck.ai, przytrzymaj lub naciśnij ponownie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prime sem soltar ou prime novamente para fechar o separador e o chat do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы закрыть вкладку и чат Duck.ai, удерживайте или повторите нажатие."
+          }
+        }
+      }
+    },
+    "aichat.floating.close-warning.subtitle" : {
+      "comment" : "Subtitle shown in popover warning when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch wird auch die abgetrennte Seitenleiste geschlossen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will also close the detached sidebar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta acción también cerrará la barra lateral independiente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette action fermera également la barre latérale détachée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In questo modo verrà chiusa anche la barra laterale separata."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiermee wordt ook de losgekoppelde zijbalk gesloten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spowoduje to również zamknięcie oddzielonego paska bocznego."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isto também fecha a barra lateral desanexada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это также закроет отсоединенную боковую панель."
+          }
+        }
+      }
+    },
+    "aichat.floating.close-warning.title" : {
+      "comment" : "Title shown in popover warning when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab und Duck.ai-Chat schließen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close tab and Duck.ai chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar pestaña y chat de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer l'onglet et le chat Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi la scheda e la chat di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabblad en Duck.ai-chat sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij kartę i czat Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar separador e conversa do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть вкладку и чат Duck.ai"
           }
         }
       }
@@ -2420,6 +2660,126 @@
         }
       }
     },
+    "aichat.model-picker-button.tooltip" : {
+      "comment" : "Tooltip for the model picker button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modell auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose model"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige modelo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir un modèle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli il modello"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model kiezen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz model"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher modelo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите модель"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.advanced-section-header" : {
+      "comment" : "Section header in the model picker menu for premium models that require a subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erweiterte Modelle – DuckDuckGo-Abo"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced Models - DuckDuckGo subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelos avanzados - suscripción a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modèles avancés - Abonnement DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelli avanzati - Abbonamento DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geavanceerde modellen - DuckDuckGo-abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaawansowane modele – subskrypcja DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelos Avançados - subscrição da DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расширенные модели — подписка на DuckDuckGo"
+          }
+        }
+      }
+    },
     "aichat.omnibar.placeholder" : {
       "comment" : "Placeholder text shown in the Duck.ai chat input field",
       "extractionState" : "extracted_with_value",
@@ -2476,6 +2836,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задать вопрос (конфиденциально)"
+          }
+        }
+      }
+    },
+    "aichat.remove-attachment-button.accessibility" : {
+      "comment" : "Accessibility label for the remove attachment button on image thumbnails in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anhang entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove attachment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar archivo adjunto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la pièce jointe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi allegato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bijlage verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń załącznik"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover anexo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить вложение"
+          }
+        }
+      }
+    },
+    "aichat.remove-attachment-button.tooltip" : {
+      "comment" : "Tooltip for the remove attachment button on image thumbnails in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anhang entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove attachment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar archivo adjunto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la pièce jointe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi allegato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bijlage verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń załącznik"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover anexo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить вложение"
           }
         }
       }
@@ -2660,6 +3140,66 @@
         }
       }
     },
+    "aichat.sidebar.attach-button.tooltip" : {
+      "comment" : "Tooltip for button to dock the floating duck.ai window back into the sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In die Seitenleiste verschieben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move to sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover a la barra lateral"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déplacer dans la barre latérale"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sposta nella barra laterale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verplaats naar zijbalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przenieś do paska bocznego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover para a barra lateral"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переместить на боковую панель"
+          }
+        }
+      }
+    },
     "aichat.sidebar.close-button.tooltip" : {
       "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
       "extractionState" : "extracted_with_value",
@@ -2716,6 +3256,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрыть"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.detach-button.tooltip" : {
+      "comment" : "Tooltip for button to detach the duck.ai sidebar into a floating window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Fenster verschieben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move to window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover a la ventana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déplacer vers une fenêtre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai alla finestra"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verplaatsen naar venster"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź do okna"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover para a janela"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открепить и вынести в окно"
           }
         }
       }
@@ -2836,6 +3436,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.title-button.tooltip" : {
+      "comment" : "Tooltip for the title button in the floating duck.ai window that brings the associated tab to front",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show tab"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar pestaña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher l'onglet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra scheda"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabblad tonen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż kartę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar separador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать вкладку"
           }
         }
       }
@@ -43513,13 +44173,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lesezeichen importieren …"
+            "value" : "Lesezeichen importieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Import Bookmarks…"
+            "value" : "Import Bookmarks"
           }
         },
         "es" : {
@@ -43531,37 +44191,37 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importer les signets…"
+            "value" : "Importer des favoris"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importa segnalibri…"
+            "value" : "Importa segnalibri"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bladwijzers importeren …"
+            "value" : "Bladwijzers importeren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importuj zakładki..."
+            "value" : "Importuj zakładki"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importar marcadores…"
+            "value" : "Importar marcadores"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Импортировать закладки..."
+            "value" : "Импортировать закладки"
           }
         }
       }
@@ -80108,6 +80768,126 @@
         }
       }
     },
+    "preferences.appearance.force-dark-mode-on-websites" : {
+      "comment" : "Toggle to force dark mode on websites using DarkReader",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erzwinge den Dunkelmodus für Webseiten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Force dark mode for websites"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forzar Modo Oscuro para sitios web"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forcer le mode sombre pour les sites web"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forzare la modalità scura sui siti web"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donkere modus forceren voor websites"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wymuszaj tryb ciemny witryn internetowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forçar o Modo Escuro para Websites"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переводить сайты на темный режим"
+          }
+        }
+      }
+    },
+    "preferences.appearance.force-dark-mode-on-websites.footer" : {
+      "comment" : "Footer shown below the force dark mode toggle explaining its behavior",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verleiht Webseiten ein dunkles Aussehen, wenn du ein dunkles Design verwendest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gives websites a dark appearance if you're using dark theme."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da a los sitios web un aspecto oscuro si utilizas un tema oscuro."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donne aux sites Web une apparence sombre si vous utilisez le thème sombre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea un effetto scuro sui siti web se stai usando un tema scuro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geeft websites een donker uiterlijk als je een donker thema gebruikt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nadaje witrynom ciemny wygląd, jeśli używasz ciemnego motywu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dá aos sites um aspeto escuro se estiveres a usar um tema escuro."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если у вас включена темная тема, она применится к сайтам."
+          }
+        }
+      }
+    },
     "preferences.appearance.show-aichat" : {
       "comment" : "Option to show AI Chat the address bar",
       "extractionState" : "extracted_with_value",
@@ -86175,7 +86955,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Issue importing my stuff"
+            "value" : "Problem beim Importieren meiner Sachen"
           }
         },
         "en" : {
@@ -86199,7 +86979,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Issue importing my stuff"
+            "value" : "Problema con l'importazione dei miei contenuti"
           }
         },
         "nl" : {
@@ -86211,13 +86991,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Issue importing my stuff"
+            "value" : "Problem z importowaniem moich rzeczy"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Issue importing my stuff"
+            "value" : "Problema ao importar as minhas coisas"
           }
         },
         "ru" : {
@@ -86475,7 +87255,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No password manager extensions"
+            "value" : "Keine Passwort-Manager-Erweiterungen"
           }
         },
         "en" : {
@@ -86499,7 +87279,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No password manager extensions"
+            "value" : "Nessuna estensione del gestore di password"
           }
         },
         "nl" : {
@@ -86511,13 +87291,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No password manager extensions"
+            "value" : "Brak rozszerzeń menedżera haseł"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No password manager extensions"
+            "value" : "Sem extensões do gestor de palavras-passe"
           }
         },
         "ru" : {
@@ -86559,7 +87339,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No website translations"
+            "value" : "Nessuna traduzione di siti web"
           }
         },
         "nl" : {
@@ -86571,13 +87351,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No website translations"
+            "value" : "Brak tłumaczeń stron internetowych"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No website translations"
+            "value" : "Sem traduções para websites"
           }
         },
         "ru" : {
@@ -87495,7 +88275,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites didn't work"
+            "value" : "Websites haben nicht funktioniert"
           }
         },
         "en" : {
@@ -87519,7 +88299,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites didn't work"
+            "value" : "I siti web non funzionavano"
           }
         },
         "nl" : {
@@ -87531,13 +88311,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites didn't work"
+            "value" : "Strony internetowe nie działają"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites didn't work"
+            "value" : "Os sites não funcionaram"
           }
         },
         "ru" : {
@@ -95486,6 +96266,66 @@
         }
       }
     },
+    "subscription.progress.view.completing.plan.change" : {
+      "comment" : "Progress view title when completing a plan change with the backend",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planänderung wird abgeschlossen …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Completing plan change…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completando cambio de plan…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finalisation de la modification du forfait…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completamento della modifica del piano…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De planwijziging wordt afgerond …"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kończenie zmiany planu…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A concluir a mudança de plano..."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершается смена тарифа..."
+          }
+        }
+      }
+    },
     "subscription.progress.view.completing.purchase" : {
       "comment" : "Progress view title when completing the purchase",
       "extractionState" : "extracted_with_value",
@@ -95542,6 +96382,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Завершение покупки..."
+          }
+        }
+      }
+    },
+    "subscription.progress.view.plan.change.in.progress" : {
+      "comment" : "Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planänderung in Bearbeitung …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Plan change in progress…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambio de plan en curso…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changement de plan en cours…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifica del piano in corso…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het plan wordt gewijzigd ..."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmiana planu w toku…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mudança de plano em progresso..."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполняется смена тарифа..."
           }
         }
       }
@@ -101680,66 +102580,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Обновить"
-          }
-        }
-      }
-    },
-    "update.available.menu.item" : {
-      "comment" : "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update verfügbar – jetzt installieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Update Available - Install Now"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualización disponible - Instalar ahora"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mise à jour disponible : installer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiornamento disponibile - Installa ora"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update beschikbaar - nu installeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dostępna aktualizacja — zainstaluj teraz"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atualização disponível – Instalar agora"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Доступно обновление – установить сейчас"
           }
         }
       }

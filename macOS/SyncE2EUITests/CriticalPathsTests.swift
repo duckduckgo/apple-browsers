@@ -48,6 +48,7 @@ final class CriticalPathsTests: XCTestCase {
         app = XCUIApplication(bundleIdentifier: "com.duckduckgo.macos.browser.review")
         app.launchEnvironment["UITEST_MODE"] = "1"
         app.launch()
+        ensureMainWindowOpen()
         selectDevelopmentEnvironment()
         cleanupAndResetData()
     }
@@ -57,10 +58,30 @@ final class CriticalPathsTests: XCTestCase {
         app.typeKey(",", modifierFlags: [.command, .option, .shift])
     }
 
+    private func ensureMainWindowOpen() {
+        if app.windows.firstMatch.exists {
+            return
+        }
+
+        app.typeKey("n", modifierFlags: .command)
+        XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: XCUIElement.Timeouts.elementExistence), "Main browser window is not visible")
+    }
+
+    private func syncSettingsWindow() -> XCUIElement {
+        let settingsWindow = app.windows.containing(.button, identifier: "Sync & Backup").firstMatch
+        XCTAssertTrue(settingsWindow.waitForExistence(timeout: XCUIElement.Timeouts.elementExistence), "Settings window is not visible")
+        return settingsWindow
+    }
+
+    private func bookmarkManagerWindow() -> XCUIElement {
+        let bookmarksWindow = app.windows.containing(.button, identifier: "BookmarkManagementDetailViewController.newBookmarkButton").firstMatch
+        XCTAssertTrue(bookmarksWindow.waitForExistence(timeout: XCUIElement.Timeouts.elementExistence), "Bookmarks window is not visible")
+        return bookmarksWindow
+    }
+
     private func accessSettings() {
-        app.typeKey(",", modifierFlags: .command)
-        let settingsWindow = app.windows["Settings"]
-        XCTAssertTrue(settingsWindow.exists, "Settings window is not visible")
+        app.menuItems["MainMenu.preferencesMenuItem"].assertExists().click()
+        _ = syncSettingsWindow()
     }
 
     private func selectDevelopmentEnvironment() {
@@ -90,7 +111,7 @@ final class CriticalPathsTests: XCTestCase {
     func testCanCreateSyncAccount() throws {
         // Go to Sync Set up
         accessSettings()
-        let settingsWindow = app.windows["Settings"]
+        let settingsWindow = syncSettingsWindow()
         settingsWindow.buttons["Sync & Backup"].click()
 
         // Create Account
@@ -115,7 +136,7 @@ final class CriticalPathsTests: XCTestCase {
     func testCanRecoverSyncAccount() throws {
         // Go to Sync Set up
         accessSettings()
-        let settingsWindow = app.windows["Settings"]
+        let settingsWindow = syncSettingsWindow()
         settingsWindow.buttons["Sync & Backup"].click()
 
         // Create Account
@@ -155,7 +176,7 @@ final class CriticalPathsTests: XCTestCase {
         // Go to Sync Set up
         accessSettings()
 
-        let settingsWindow = app.windows["Settings"]
+        let settingsWindow = syncSettingsWindow()
         settingsWindow.buttons["Sync & Backup"].click()
 
         // Create Account
@@ -195,7 +216,7 @@ final class CriticalPathsTests: XCTestCase {
 
         // Go to Sync Set up
         accessSettings()
-        let settingsWindow = app.windows["Settings"]
+        let settingsWindow = syncSettingsWindow()
         settingsWindow.buttons["Sync & Backup"].click()
 
         // Copy code to clipboard
@@ -230,13 +251,13 @@ final class CriticalPathsTests: XCTestCase {
         copyToClipboard(code: code)
 
         // Log In
-        let bookmarksWindow = app.windows["Bookmarks"]
+        let bookmarksWindow = bookmarkManagerWindow()
         bookmarksWindow.splitGroups.children(matching: .popUpButton).element.click()
         bookmarksWindow.menuItems["Settings"].click()
         logIn()
 
         // Ensure Unify Favorites not checked
-        let settingsWindow = app.windows["Settings"]
+        let settingsWindow = syncSettingsWindow()
         XCTAssertFalse(settingsWindow.checkBoxes["Unify Favorites Across Devices"].value as! Bool)
 
         // Log Out
@@ -284,7 +305,7 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func logIn() {
-        let settingsWindow = app.windows["Settings"]
+        let settingsWindow = syncSettingsWindow()
         settingsWindow.buttons["Sync & Backup"].click()
         settingsWindow.buttons["Sync With Another Device"].click()
         let settingsSheetsQuery = settingsWindow.sheets
@@ -297,7 +318,7 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func logOut() {
-        let settingsWindow = app.windows["Settings"]
+        let settingsWindow = syncSettingsWindow()
         let settingsSheetsQuery = settingsWindow.sheets
         settingsWindow.buttons["Turn Off Sync…"].click()
         settingsSheetsQuery.buttons["Turn Off"].click()
@@ -314,12 +335,12 @@ final class CriticalPathsTests: XCTestCase {
 
     private func addBookmarksAndFavorites() {
         app.menuItems["MainMenu.manageBookmarksMenuItem"].click()
-        let bookmarksWindow = app.windows["Bookmarks"]
+        let bookmarksWindow = bookmarkManagerWindow()
         let newBookmarkButton = bookmarksWindow.buttons["BookmarkManagementDetailViewController.newBookmarkButton"].assertExists()
 
         newBookmarkButton.click()
 
-        let sheetsQuery = app.windows["Bookmarks"].sheets
+        let sheetsQuery = bookmarksWindow.sheets
         let titleTextField = sheetsQuery.textFields["bookmark.add.name.textfield"].assertExists()
         let urlTextField = sheetsQuery.textFields["bookmark.add.url.textfield"].assertExists()
         let addButton = sheetsQuery.buttons["BookmarkDialogButtonsView.defaultButton"].assertExists()
@@ -341,7 +362,7 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func addLogin() {
-        let bookmarksWindow = app.windows["Bookmarks"]
+        let bookmarksWindow = bookmarkManagerWindow()
         bookmarksWindow.buttons["NavigationBarViewController.optionsButton"].click()
         bookmarksWindow.menuItems["MoreOptionsMenu.autofill"].click()
         bookmarksWindow.popovers.buttons["add item"].click()
@@ -356,7 +377,7 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func addCreditCard() {
-        let bookmarksWindow = app.windows["Bookmarks"]
+        let bookmarksWindow = bookmarkManagerWindow()
         bookmarksWindow.buttons["NavigationBarViewController.optionsButton"].click()
         bookmarksWindow.menuItems["MoreOptionsMenu.autofill"].click()
         let autofillPopover = bookmarksWindow.popovers
@@ -383,7 +404,7 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func addIdentity() {
-        let bookmarksWindow = app.windows["Bookmarks"]
+        let bookmarksWindow = bookmarkManagerWindow()
         bookmarksWindow.buttons["NavigationBarViewController.optionsButton"].click()
         bookmarksWindow.menuItems["MoreOptionsMenu.autofill"].click()
         let autofillPopover = bookmarksWindow.popovers
@@ -416,10 +437,10 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func checkBookmarks() {
-        let settingsWindow = app.windows["Settings"]
-        let bookmarksWindow = app.windows["Bookmarks"]
+        let settingsWindow = syncSettingsWindow()
         settingsWindow.popUpButtons["Settings"].click()
         settingsWindow.menuItems["Bookmarks"].click()
+        let bookmarksWindow = bookmarkManagerWindow()
         if bookmarksWindow.sheets.buttons["Not Now"].exists {
             bookmarksWindow.sheets.buttons["Not Now"].click()
         }

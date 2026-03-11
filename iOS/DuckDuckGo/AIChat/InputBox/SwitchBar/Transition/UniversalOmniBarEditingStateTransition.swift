@@ -22,6 +22,7 @@ import UIKit
 final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitioning {
     private let isPresenting: Bool
     private let isTopBarPosition: Bool
+    private let useNewTransitionBehaviour: Bool
 
     private struct TransitionOffsets {
         let switcherYOffset: CGFloat
@@ -47,9 +48,10 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         )
     }
 
-    init(isPresenting: Bool, addressBarPosition: AddressBarPosition) {
+    init(isPresenting: Bool, addressBarPosition: AddressBarPosition, useNewTransitionBehaviour: Bool = false) {
         self.isPresenting = isPresenting
         self.isTopBarPosition = addressBarPosition == .top
+        self.useNewTransitionBehaviour = useNewTransitionBehaviour
         super.init()
     }
 
@@ -104,8 +106,14 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
             return
         }
 
+        if useNewTransitionBehaviour {
+            toVC.view.backgroundColor = toVC.view.backgroundColor ?? UIColor.systemBackground
+            toVC.view.alpha = 1.0
+        } else {
+            toVC.view.alpha = 0
+        }
+
         toVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
-        toVC.view.alpha = 0
         toVC.actionBarView?.alpha = 0
         toVC.switchBarVC.textEntryViewController.isExpandable = false
         toVC.setLogoYOffset(offsets.logoYOffset)
@@ -125,8 +133,9 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
             if !self.isTopBarPosition {
                 fromVC.logoView?.alpha = 0
             }
-
-            toVC.view.alpha = 1.0
+            if !self.useNewTransitionBehaviour {
+                toVC.view.alpha = 1.0
+            }
             toVC.view.layer.sublayerTransform = CATransform3DIdentity
             toVC.switchBarVC.textEntryViewController.isExpandable = true
             toVC.setLogoYOffset(0)

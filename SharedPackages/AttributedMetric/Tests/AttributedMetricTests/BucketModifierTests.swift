@@ -323,6 +323,81 @@ final class BucketModifierTests: XCTestCase {
         XCTAssertEqual(bucket.value, 1)
     }
 
+    // MARK: - Float Bucket Tests
+
+    func testBucketFloatValueBelowFirstThreshold() throws {
+        let modifier = createModifierWithStandardConfig()
+
+        // buckets: [5, 9], value 4.9 <= 5, should return bucket 0
+        let bucket = try modifier.bucket(value: Float(4.9), pixelName: .userAverageSearchesPastWeekFirstMonth)
+        XCTAssertEqual(bucket.value, 0)
+        XCTAssertEqual(bucket.version, 1)
+    }
+
+    func testBucketFloatValueExactlyAtFirstThreshold() throws {
+        let modifier = createModifierWithStandardConfig()
+
+        // buckets: [5, 9], value 5.0 <= 5, should return bucket 0
+        let bucket = try modifier.bucket(value: Float(5.0), pixelName: .userAverageSearchesPastWeekFirstMonth)
+        XCTAssertEqual(bucket.value, 0)
+        XCTAssertEqual(bucket.version, 1)
+    }
+
+    func testBucketFloatValueJustAboveFirstThreshold() throws {
+        let modifier = createModifierWithStandardConfig()
+
+        // buckets: [5, 9], value 5.01 > 5, should fall into bucket 1
+        let bucket = try modifier.bucket(value: Float(5.01), pixelName: .userAverageSearchesPastWeekFirstMonth)
+        XCTAssertEqual(bucket.value, 1)
+        XCTAssertEqual(bucket.version, 1)
+    }
+
+    func testBucketFloatValueBetweenThresholds() throws {
+        let modifier = createModifierWithStandardConfig()
+
+        // buckets: [5, 9], value 7.33 <= 9, should return bucket 1
+        let bucket = try modifier.bucket(value: Float(7.33), pixelName: .userAverageSearchesPastWeekFirstMonth)
+        XCTAssertEqual(bucket.value, 1)
+        XCTAssertEqual(bucket.version, 1)
+    }
+
+    func testBucketFloatValueExactlyAtSecondThreshold() throws {
+        let modifier = createModifierWithStandardConfig()
+
+        // buckets: [5, 9], value 9.0 <= 9, should return bucket 1
+        let bucket = try modifier.bucket(value: Float(9.0), pixelName: .userAverageSearchesPastWeekFirstMonth)
+        XCTAssertEqual(bucket.value, 1)
+        XCTAssertEqual(bucket.version, 1)
+    }
+
+    func testBucketFloatValueJustAboveLastThreshold() throws {
+        let modifier = createModifierWithStandardConfig()
+
+        // buckets: [5, 9], value 9.01 > 9, should return bucket 2 (overflow)
+        let bucket = try modifier.bucket(value: Float(9.01), pixelName: .userAverageSearchesPastWeekFirstMonth)
+        XCTAssertEqual(bucket.value, 2)
+        XCTAssertEqual(bucket.version, 1)
+    }
+
+    func testBucketFloatValueFractionalAverage() throws {
+        let modifier = createModifierWithStandardConfig()
+
+        // buckets: [2, 5], value 1.5 <= 2, should return bucket 0
+        let bucket = try modifier.bucket(value: Float(1.5), pixelName: .userAverageAdClicksPastWeek)
+        XCTAssertEqual(bucket.value, 0)
+        XCTAssertEqual(bucket.version, 1)
+    }
+
+    func testBucketIntDelegatesToFloat() throws {
+        let modifier = createModifierWithStandardConfig()
+
+        // Verify Int and Float overloads produce identical results
+        let intBucket = try modifier.bucket(value: 7, pixelName: .userAverageSearchesPastWeekFirstMonth)
+        let floatBucket = try modifier.bucket(value: Float(7.0), pixelName: .userAverageSearchesPastWeekFirstMonth)
+        XCTAssertEqual(intBucket.value, floatBucket.value)
+        XCTAssertEqual(intBucket.version, floatBucket.version)
+    }
+
     // MARK: - Helper Methods
 
     private func createModifierWithStandardConfig() -> DefaultBucketModifier {

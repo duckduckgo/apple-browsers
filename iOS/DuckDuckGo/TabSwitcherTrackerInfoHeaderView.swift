@@ -23,9 +23,10 @@ import SwiftUI
 final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
 
     static let reuseIdentifier = "TabSwitcherTrackerInfoHeaderView"
-    static let estimatedHeight: CGFloat = 60
+    static let estimatedHeight: CGFloat = 50
 
     private enum Constants {
+        static let topPadding: CGFloat = 14
         static let horizontalPadding: CGFloat = 14
     }
 
@@ -61,6 +62,7 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
         let host = UIHostingController(rootView: rootView)
         self.host = host
 
+        host.disableSafeArea()
         host.view.backgroundColor = .clear
         host.view.translatesAutoresizingMaskIntoConstraints = false
         host.view.isHidden = (model == nil)
@@ -70,34 +72,16 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
         host.didMove(toParent: parent)
 
         NSLayoutConstraint.activate([
-            host.view.topAnchor.constraint(equalTo: topAnchor),
+            host.view.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
             host.view.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             host.view.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            host.view.bottomAnchor.constraint(equalTo: bottomAnchor)
+            host.view.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor)
         ])
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
         cleanupHostingController()
-    }
-
-    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
-        let attributes = super.preferredLayoutAttributesFitting(layoutAttributes)
-
-        guard let host, !host.view.isHidden else {
-            attributes.size.height = 0
-            return attributes
-        }
-
-        let targetSize = CGSize(width: layoutAttributes.size.width, height: UIView.layoutFittingCompressedSize.height)
-        let size = systemLayoutSizeFitting(
-            targetSize,
-            withHorizontalFittingPriority: .required,
-            verticalFittingPriority: .fittingSizeLevel
-        )
-        attributes.size.height = size.height
-        return attributes
     }
 
     private func cleanupHostingController() {

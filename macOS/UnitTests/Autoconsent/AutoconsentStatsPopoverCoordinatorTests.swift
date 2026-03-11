@@ -109,12 +109,10 @@ final class AutoconsentStatsPopoverCoordinatorTests: XCTestCase {
         mockAppearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: mockFeatureFlagger,
+            featureFlagger: MockFeatureFlagger(),
             aiChatMenuConfig: MockAIChatConfig()
         )
         mockAppearancePreferences.isProtectionsReportVisible = true
-
-        mockFeatureFlagger.featuresStub[FeatureFlag.newTabPageAutoconsentStats.rawValue] = true
 
         mockPresenter = MockAutoconsentStatsPopoverPresenter()
         mockOnboardingStateUpdater = MockOnboardingStateUpdater()
@@ -140,21 +138,9 @@ final class AutoconsentStatsPopoverCoordinatorTests: XCTestCase {
             windowControllersManager: mockWindowControllersManager,
             cookiePopupProtectionPreferences: mockCookiePopupProtectionPreferences,
             appearancePreferences: mockAppearancePreferences,
-            featureFlagger: mockFeatureFlagger,
             onboardingStateUpdater: mockOnboardingStateUpdater,
             presenter: mockPresenter
         )
-    }
-
-    @MainActor
-    func testCheckAndShowDialogIfNeeded_DoesNotShow_WhenFeatureFlagDisabled() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.newTabPageAutoconsentStats.rawValue] = false
-        coordinator = makeCoordinator()
-        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
-
-        await coordinator.checkAndShowDialogIfNeeded()
-
-        XCTAssertFalse(mockPresenter.showPopoverCalled)
     }
 
     @MainActor

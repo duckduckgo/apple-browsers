@@ -40,10 +40,6 @@ extension NewTabPageDataModel {
         }
     }
 
-    struct ProtectionsDataLegacy: Encodable, Equatable {
-        let totalCount: Int64
-    }
-
     struct ProtectionsConfig: Codable, Equatable {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion
         let feed: Feed

@@ -35,7 +35,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
 
         await viewModel.updateExtensionStatus()
         XCTAssertFalse(viewModel.isExtensionEnabled)
@@ -56,7 +56,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
 
         await viewModel.updateExtensionStatus()
         XCTAssertFalse(viewModel.isExtensionEnabled)
@@ -78,7 +78,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
 
         await viewModel.updateExtensionStatus()
         XCTAssertFalse(viewModel.isExtensionEnabled)
@@ -104,7 +104,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
         viewModel.delegate = delegate
 
         await viewModel.enableExtension()
@@ -123,7 +123,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
         viewModel.delegate = delegate
 
         await viewModel.enableExtension()
@@ -141,7 +141,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
 
         await viewModel.enableExtension()
         XCTAssertTrue(viewModel.isEnableRequestThrottled)
@@ -164,7 +164,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             settingsHelper: settingsHelper,
             enableRetryThrottleDuration: 0.1
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
 
         await viewModel.enableExtension()
         XCTAssertTrue(viewModel.isEnableRequestThrottled)
@@ -184,7 +184,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
 
         await viewModel.disableExtension()
 
@@ -201,7 +201,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
 
         await viewModel.disableExtension()
 
@@ -219,7 +219,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
             credentialStore: store,
             settingsHelper: settingsHelper
         )
-        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator, experimentPixels: MockAutofillOnboardingExperimentPixelFiring())
         viewModel.delegate = delegate
 
         await viewModel.disableExtension()

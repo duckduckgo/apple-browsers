@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -32,17 +33,18 @@ extension Preferences {
         @State private var areAutomaticUpdatesEnabled: Bool = true
 
         var autoUpdatesEnabled: Bool {
-#if SPARKLE
-    #if DEBUG
-            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-    #elseif REVIEW
-            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
-    #else
-            return true
-    #endif
-#else
-            return false
-#endif
+            let buildType = StandardApplicationBuildType()
+            if buildType.isSparkleBuild {
+                if buildType.isDebugBuild {
+                    return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+                } else if buildType.isReviewBuild {
+                    return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+                } else {
+                    return true
+                }
+            } else {
+                return false
+            }
         }
 
         var body: some View {
@@ -57,17 +59,18 @@ extension Preferences {
 
                     AboutContentSection(model: model)
 
-                    #if SPARKLE
-                    UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
-                    #endif
+                    let buildType = StandardApplicationBuildType()
+                    if buildType.isSparkleBuild {
+                        UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
-                    Spacer(minLength: 20)
-                    customFeedURLWarning
-#endif
+                        if buildType.isDebugBuild || buildType.isReviewBuild {
+                            Spacer(minLength: 20)
+                            customFeedURLWarning
+                        }
+                    }
                 }
             }.task {
-                if autoUpdatesEnabled && model.mustCheckForUpdatesBeforeUserCanTakeAction {
+                if autoUpdatesEnabled {
                     model.checkForUpdate(userInitiated: false)
                 }
             }
@@ -79,7 +82,6 @@ extension Preferences {
             }
         }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
         /// Warning banner shown when a custom Sparkle feed URL is configured.
         ///
         /// This reminder helps developers avoid accidentally forgetting they have a custom
@@ -108,7 +110,6 @@ extension Preferences {
                 .cornerRadius(8)
             }
         }
-#endif
     }
 
     struct AboutContentSection: View {
@@ -208,11 +209,11 @@ extension Preferences {
 
         @ViewBuilder
         private var logoImage: some View {
-#if ALPHA
-            Image(.aboutPageLogoAlpha)
-#else
-            Image(.aboutPageLogo)
-#endif
+            if StandardApplicationBuildType().isAlphaBuild {
+                Image(.aboutPageLogoAlpha)
+            } else {
+                Image(.aboutPageLogo)
+            }
         }
 
         private var hasPendingUpdate: Bool {
@@ -340,40 +341,11 @@ extension Preferences {
         @ViewBuilder
         private var updateButton: some View {
             if model.shouldShowUpdateStatus {
-                // Feature flag is ON - show full update functionality
-                if model.useLegacyAutoRestartLogic {
-                    switch model.updateState {
-                    case .upToDate:
-                        Button(UserText.checkForUpdate) {
-                            model.checkForUpdate(userInitiated: true)
-                        }
-                        .buttonStyle(UpdateButtonStyle(enabled: true))
-                    case .updateCycle(let progress):
-                        if hasPendingUpdate {
-                            Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
-                                model.runUpdate()
-                            }
-                            .buttonStyle(UpdateButtonStyle(enabled: true))
-                        } else if progress.isFailed {
-                            Button(UserText.retryUpdate) {
-                                model.checkForUpdate(userInitiated: true)
-                            }
-                            .buttonStyle(UpdateButtonStyle(enabled: true))
-                        } else {
-                            Button(UserText.checkForUpdate) {
-                                model.checkForUpdate(userInitiated: true)
-                            }
-                            .buttonStyle(UpdateButtonStyle(enabled: false))
-                            .disabled(true)
-                        }
-                    }
-                } else {
-                    let configuration = model.updateButtonConfiguration
+                let configuration = model.updateButtonConfiguration
 
-                    Button(configuration.title, action: configuration.action)
-                        .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
-                        .disabled(!configuration.enabled)
-                }
+                Button(configuration.title, action: configuration.action)
+                    .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
+                    .disabled(!configuration.enabled)
             } else {
                 // Feature flag is OFF - show simple App Store button
                 Button(UserText.checkForUpdate) {
@@ -384,7 +356,6 @@ extension Preferences {
         }
     }
 
-#if SPARKLE
     struct UpdatesSection: View {
         @Binding var areAutomaticUpdatesEnabled: Bool
         @ObservedObject var model: AboutPreferences
@@ -411,7 +382,6 @@ extension Preferences {
             }
         }
     }
-#endif
 
     struct UnsupportedDeviceInfoBox: View {
 

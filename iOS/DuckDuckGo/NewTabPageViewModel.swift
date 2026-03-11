@@ -26,6 +26,9 @@ final class NewTabPageViewModel: ObservableObject {
 
     @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
+    @Published var escapeHatch: EscapeHatchModel?
+    var onEscapeHatchTap: (() -> Void)?
+
     private(set) var isDragging: Bool = false
 
     private let pixelFiring: PixelFiring.Type

@@ -106,7 +106,7 @@ class KeyValueFileStorePerformanceTests: XCTestCase {
         let name = UUID().uuidString
         let key = "KeyValueFileStorePerformanceTests"
 
-        let kvs = KeyValueFileStore(location: Self.tempDir, name: name)
+        let kvs = try KeyValueFileStore(location: Self.tempDir, name: name)
 
         // warm up to measure consecutive storing
         let model = makeTabsModel(count: 1000)
@@ -150,7 +150,7 @@ class KeyValueFileStorePerformanceTests: XCTestCase {
         let name = UUID().uuidString
         let key = "KeyValueFileStorePerformanceTests"
 
-        let kvs = KeyValueFileStore(location: Self.tempDir, name: name)
+        let kvs = try KeyValueFileStore(location: Self.tempDir, name: name)
         try kvs.set(Data(), forKey: key)
 
         measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {

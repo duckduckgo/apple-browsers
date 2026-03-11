@@ -8,6 +8,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -23,6 +24,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -38,6 +40,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -53,6 +56,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -68,6 +72,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -83,6 +88,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -98,6 +104,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -113,6 +120,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -128,6 +136,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -143,6 +152,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -158,6 +168,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -173,6 +184,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -188,6 +200,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -203,6 +216,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -218,6 +232,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -233,6 +248,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -248,6 +264,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "init",
                 "description": "Number of autoconsent init pixels fired.",

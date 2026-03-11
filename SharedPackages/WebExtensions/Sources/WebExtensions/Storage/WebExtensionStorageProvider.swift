@@ -22,15 +22,14 @@ import Foundation
 public final class WebExtensionStorageProvider: WebExtensionStorageProviding {
 
     public let fileManager: FileManager
+    public let extensionsDirectory: URL
 
-    public init(fileManager: FileManager = .default) {
+    /// Creates a storage provider with a custom extensions directory.
+    /// - Parameters:
+    ///   - extensionsDirectory: The directory where extensions will be stored.
+    ///   - fileManager: The file manager to use for file operations.
+    public init(extensionsDirectory: URL, fileManager: FileManager = .default) {
+        self.extensionsDirectory = extensionsDirectory
         self.fileManager = fileManager
-    }
-
-    public var extensionsDirectory: URL {
-        guard let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            fatalError("Application Support directory not found")
-        }
-        return appSupport.appendingPathComponent("WebExtensions", isDirectory: true)
     }
 }

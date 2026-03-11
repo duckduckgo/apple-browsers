@@ -56,8 +56,9 @@ struct AsyncHeadlessWebViewSettings {
         // Allow navigation to baseURLs domain
         allowedDomains.insert(baseURL.host ?? "duckduckgo.com")
 
-        // Always allow Stripe checkout domain
+        // Allow Stripe (checkout and billing)
         allowedDomains.insert("checkout.stripe.com")
+        allowedDomains.insert("billing.stripe.com")
 
         // For internal user allow these domains as required for DUO based authentication flow
         if isInternalUser {

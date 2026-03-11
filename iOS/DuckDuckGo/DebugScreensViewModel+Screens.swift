@@ -93,6 +93,9 @@ extension DebugScreensViewModel {
             .view(title: "DuckPlayer", { _ in
                 DuckPlayerDebugSettingsView()
             }),
+            .view(title: "Idle Return NTP", { _ in
+                IdleReturnNTPDebugView()
+            }),
             .view(title: "WebView State Restoration", { _ in
                 WebViewStateRestorationDebugView()
             }),

@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import SwiftUI
 import BrowserServicesKit
 import Core
 import Common
@@ -42,6 +43,7 @@ class AutofillDebugViewController: UITableViewController {
         case resetAutofillImportPromos = 212
         case resetAutofillExtensionPromos = 213
         case resetDaysSinceInstalledTo7 = 214
+        case viewSaveLoginPrompts = 215
     }
 
     let defaults = AppUserDefaults()
@@ -164,6 +166,11 @@ class AutofillDebugViewController: UITableViewController {
                     extensionPromotionManager.resetPromotionDismissal(for: placement)
                 }
                 ActionMessageView.present(message: "Extension Promos reset")
+            } else if cell.tag == Row.viewSaveLoginPrompts.rawValue {
+                let saveLoginDebugView = SaveLoginDebugView()
+                let hostingController = UIHostingController(rootView: saveLoginDebugView)
+                hostingController.title = "Save Login Prompts"
+                navigationController?.pushViewController(hostingController, animated: true)
             }
         }
     }

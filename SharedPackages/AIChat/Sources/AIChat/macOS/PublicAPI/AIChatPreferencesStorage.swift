@@ -47,6 +47,8 @@ public protocol AIChatPreferencesStorage {
 
     var userDidSeeToggleOnboarding: Bool { get set }
 
+    var lastUsedSidebarWidth: Double? { get set }
+
     func reset()
 }
 
@@ -137,6 +139,11 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.userDidSeeToggleOnboarding = newValue }
     }
 
+    public var lastUsedSidebarWidth: Double? {
+        get { userDefaults.lastUsedSidebarWidth }
+        set { userDefaults.lastUsedSidebarWidth = newValue }
+    }
+
     public func reset() {
         userDefaults.isAIFeaturesEnabled = UserDefaults.isAIFeaturesEnabledDefaultValue
         userDefaults.showAIChatShortcutOnNewTabPage = UserDefaults.showAIChatShortcutOnNewTabPageDefaultValue
@@ -147,6 +154,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.shouldAutomaticallySendPageContext = UserDefaults.shouldAutomaticallySendPageContextDefaultValue
         userDefaults.showSearchAndDuckAIToggle = UserDefaults.showSearchAndDuckAIToggleDefaultValue
         userDefaults.userDidSeeToggleOnboarding = false
+        userDefaults.lastUsedSidebarWidth = nil
     }
 }
 
@@ -161,6 +169,7 @@ private extension UserDefaults {
         static let shouldAutomaticallySendPageContext = "aichat.sendPageContextAutomatically"
         static let showSearchAndDuckAIToggle = "aichat.showSearchAndDuckAIToggle"
         static let userDidSeeToggleOnboarding = "aichat.userDidSeeToggleOnboarding"
+        static let lastUsedSidebarWidth = "aichat.sidebar.lastUsedWidth"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
@@ -305,6 +314,20 @@ private extension UserDefaults {
         set {
             guard newValue != userDidSeeToggleOnboarding else { return }
             set(newValue, forKey: Keys.userDidSeeToggleOnboarding)
+        }
+    }
+
+    var lastUsedSidebarWidth: Double? {
+        get {
+            value(forKey: Keys.lastUsedSidebarWidth) as? Double
+        }
+
+        set {
+            if let newValue {
+                set(newValue, forKey: Keys.lastUsedSidebarWidth)
+            } else {
+                removeObject(forKey: Keys.lastUsedSidebarWidth)
+            }
         }
     }
 }

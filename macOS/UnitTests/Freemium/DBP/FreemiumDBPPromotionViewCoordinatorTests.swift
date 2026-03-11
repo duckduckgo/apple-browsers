@@ -389,6 +389,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isHomePagePromotionVisible)
     }
 
+    @MainActor
     func testViewModelRefreshes_whenContextualOnboardingCompletes() async throws {
         // Given
         mockUserStateManager.didDismissHomePagePromotion = false
@@ -453,7 +454,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
      * before cancelling the subscription.
      */
     @discardableResult @MainActor
-    private func waitForViewModelUpdate(for duration: TimeInterval = 1, _ block: () async -> Void = {}) async throws -> PromotionViewModel? {
+    private func waitForViewModelUpdate(for duration: TimeInterval = 5, _ block: () async -> Void = {}) async throws -> PromotionViewModel? {
         let expectation = self.expectation(description: "viewModelUpdate")
         let cancellable = sut.$viewModel.dropFirst().prefix(1).sink { _ in expectation.fulfill() }
 

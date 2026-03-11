@@ -298,10 +298,6 @@ final class AppearancePreferences: ObservableObject {
         return featureFlagger?.isFeatureOn(.newTabPageOmnibar) ?? true
     }
 
-    var areThemesAvailable: Bool {
-        return featureFlagger?.isFeatureOn(.themes) ?? true
-    }
-
     @Published var isOmnibarVisible: Bool {
         didSet {
             persistor.isOmnibarVisible = isOmnibarVisible
@@ -432,6 +428,21 @@ final class AppearancePreferences: ObservableObject {
             NotificationCenter.default.post(name: Notifications.showTabsAndBookmarksBarOnFullScreenChanged,
                                             object: nil,
                                             userInfo: [Constants.showTabsAndBookmarksBarOnFullScreenParameter: showTabsAndBookmarksBarOnFullScreen])
+        }
+    }
+
+    var darkReaderFeatureSettings: DarkReaderFeatureSettings?
+
+    var isForceDarkModeVisible: Bool {
+        guard let darkReaderFeatureSettings else { return false }
+        return darkReaderFeatureSettings.isFeatureEnabled && themeAppearance != .light
+    }
+
+    var forceDarkModeEnabled: Bool {
+        get { darkReaderFeatureSettings?.isForceDarkModeEnabled ?? false }
+        set {
+            darkReaderFeatureSettings?.setForceDarkModeEnabled(newValue)
+            objectWillChange.send()
         }
     }
 

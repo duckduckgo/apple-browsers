@@ -24,15 +24,19 @@ import XCTest
 final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
 
     func testWebViewRespondsTo_printOperationWithPrintInfo() {
-        XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.printOperationWithPrintInfoForFrame))
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_printOperationWithPrintInfo:forFrame:")))
     }
 
     func testWebViewRespondsTo_fullScreenPlaceholderView() {
-        XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.fullScreenPlaceholderView))
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_fullScreenPlaceholderView")))
     }
 
     func testWebViewRespondsTo_loadAlternateHTMLString() {
-        XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.loadAlternateHTMLString))
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_loadAlternateHTMLString:baseURL:forUnreachableURL:")))
+    }
+
+    func testWebViewRespondsTo_immediateActionAnimationControllerForHitTestResult() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_immediateActionAnimationControllerForHitTestResult:withType:userData:")))
     }
 
     func testWKBackForwardListRespondsTo_removeAllItems() {
@@ -44,8 +48,8 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
     }
 
     func testWebViewRespondsTo_pageMutedState() {
-        XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.setPageMuted))
-        XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.mediaMutedState))
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_setPageMuted:")))
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_mediaMutedState")))
     }
 
     func testWKWebpagePreferencesCustomHeaderFieldsSupported() {
@@ -65,7 +69,27 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
     }
 
     func testWebViewRespondsTo_isPlayingAudio() {
-        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString(WKWebView.Selector.isPlayingAudio)))
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_isPlayingAudio")))
     }
 
+    func testWebViewConfigurationRespondsTo_processName() {
+        XCTAssertTrue(WKWebViewConfiguration.instancesRespond(to: WKWebViewConfiguration.ProcessNameSelector.processName))
+        XCTAssertTrue(WKWebViewConfiguration.instancesRespond(to: WKWebViewConfiguration.ProcessNameSelector.setProcessName))
+    }
+
+    @MainActor
+    func testApplyStandardConfigurationDoesModifyProcessNameWhenPrivateProcessNameIsEnabled() {
+        let configuration = WKWebViewConfiguration()
+
+        configuration.applyStandardConfiguration(contentBlocking: MockContentBlocking(), burnerMode: .regular, privateProcessName: true)
+        XCTAssertEqual(configuration.systemProcessName, "DuckDuckGo Web Content")
+    }
+
+    @MainActor
+    func testApplyStandardConfigurationDoesNotModifyProcessNameWhenPrivateProcessNameIsDisabled() {
+        let configuration = WKWebViewConfiguration()
+
+        configuration.applyStandardConfiguration(contentBlocking: MockContentBlocking(), burnerMode: .regular, privateProcessName: false)
+        XCTAssertEqual(configuration.systemProcessName, "")
+    }
 }

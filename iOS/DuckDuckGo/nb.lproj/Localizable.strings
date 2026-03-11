@@ -1454,16 +1454,12 @@
 "duckai.context.chip.info" = "Sendt med meldingen din til Duck.ai";
 
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-"duckai.contextual.onboarding.body" = "Duck.ai kan nå hjelpe deg med å svare på spørsmål om siden du ser på.\n\nSideinnhold inkluderes bare når du legger det ved. Du kan endre dette når som helst i innstillingene.";
 
 /* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.gotIt" = "Den er grei";
 
 /* Title for the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.title" = "Spør om denne siden";
 
 /* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.viewSettings" = "Vis innstillinger";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "AI-funksjonene i DuckDuckGo er private og valgfrie. Dataene dine brukes ikke til å trene AI.";
@@ -3013,11 +3009,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Slett alt";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Slett denne chatten";
-"scoped.fire.confirmation.delete.this.chat.description" = "«Slett alt» sletter ikke Duck.ai-chattehistorikken din.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Slett denne fanen";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "«Slett alt» sletter ikke Duck.ai-chattehistorikken din.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Slett denne fanen";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Dette avbryter pågående nedlastinger.";
@@ -3127,6 +3126,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Send innhold automatisk";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Forslag til chat";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skjul AI-genererte bilder";
 
@@ -3213,6 +3215,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Vis søkeforslag mens du skriver, inkludert bokmerkene dine. Alle søk er private.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Vis forslag fra historikken, bokmerkene og (valgfritt) Duck.ai-chattehistorikken din mens du skriver i søkefeltet. Alle søk er private.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Applås";
@@ -3327,6 +3332,9 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Nettsteder med Fireproof";
+
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Tving mørk modus for nettsteder";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Generelt";
@@ -3498,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Utseende";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Hvis du bruker mørkt tema, blir nettsteder også mørke.";
 
 /* Title for the Settings View */
 "settings.title" = "Innstillinger";
@@ -3691,6 +3702,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Abonnementet ditt er fjernet fra denne enheten.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Avbryt nedgraderingen";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Abonnementet ditt blir nedgradert til %1$@ den %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Oppdater eller avslutt abonnementet";
 
@@ -3784,8 +3801,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Abonnementer";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Fullfører endring av abonnement…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Fullfører kjøpet...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Endring av abonnement pågår…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Kjøpet behandles...";
@@ -4031,7 +4054,7 @@
 "tab.switcher.tracker.count.keep.action" = "Behold";
 
 /* Subtitle for tracker count banner indicating time window */
-"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+"tab.switcher.tracker.count.subtitle" = "de siste 7 dagene";
 
 /* Do not translate - stringsdict entry */
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";

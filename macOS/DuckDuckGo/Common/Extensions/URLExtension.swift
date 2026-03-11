@@ -17,13 +17,14 @@
 //
 
 import AppKit
+import AppKitExtensions
 import BrowserServicesKit
 import Common
 import Foundation
-import AppKitExtensions
+import os.log
 import Persistence
 import URLPredictor
-import os.log
+
 #if !SANDBOX_TEST_TOOL
 import PixelKit
 #endif
@@ -73,15 +74,6 @@ extension URL {
             return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         }
         return nonSandboxLibraryDirectoryURL.appendingPathComponent("Application Support")
-    }
-
-    static var sandboxApplicationSupportURL: URL {
-        if NSApp.isSandboxed {
-            return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        }
-        let sandboxPathComponent = "Containers/\(Bundle.main.bundleIdentifier!)/Data/Library/Application Support/"
-        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        return libraryURL.appendingPathComponent(sandboxPathComponent)
     }
 
     static func persistenceLocation(for fileName: String) -> URL {
@@ -174,7 +166,6 @@ extension URL {
     static let settings = URL(string: "duck://settings")!
     static let bookmarks = URL(string: "duck://bookmarks")!
     static let history = URL(string: "duck://history")!
-    static let releaseNotes = URL(string: "duck://release-notes")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
 
@@ -867,12 +858,6 @@ extension URL {
         } else {
             return false
         }
-    }
-
-    // MARK: - Other
-
-    static var appStore: URL {
-        URL(string: "https://apps.apple.com/app/duckduckgo-privacy-browser/id663592361")!
     }
 
 }

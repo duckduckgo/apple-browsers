@@ -52,8 +52,10 @@ tags:
 # Check bookmarks were added
 - tapOn: "Done"
 
-- tapOn: "Browsing menu"
-- tapOn: "Bookmarks"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Bookmarks"
 - assertVisible: "Privacy Test Pages - Home"
 - assertVisible: "Ad Click Flow"
 

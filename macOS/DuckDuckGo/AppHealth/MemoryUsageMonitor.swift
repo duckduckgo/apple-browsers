@@ -21,6 +21,7 @@ import Combine
 import Foundation
 import os.log
 import PrivacyConfig
+import WebKit
 
 protocol MemoryUsageMonitoring {
     func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport
@@ -51,6 +52,10 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
         let residentBytes: UInt64
         /// Physical footprint in bytes (memory process is responsible for, matches Activity Monitor).
         let physFootprintBytes: UInt64
+        /// Total resident memory of all WebContent processes in bytes, or `nil` if unavailable.
+        let webContentBytes: UInt64?
+        /// Number of WebContent processes found, or `nil` if unavailable.
+        let webContentProcessCount: Int?
 
         /// Resident memory in megabytes.
         var residentMB: Double { Double(residentBytes) / Double(Self.oneMB) }
@@ -61,6 +66,16 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
         var physFootprintMB: Double { Double(physFootprintBytes) / Double(Self.oneMB) }
         /// Physical footprint in gigabytes.
         var physFootprintGB: Double { Double(physFootprintBytes) / Double(Self.oneGB) }
+
+        /// WebContent memory in megabytes, or `nil` if unavailable.
+        var webContentMB: Double? { webContentBytes.map { Double($0) / Double(Self.oneMB) } }
+        /// WebContent memory in gigabytes, or `nil` if unavailable.
+        var webContentGB: Double? { webContentBytes.map { Double($0) / Double(Self.oneGB) } }
+
+        /// Total memory (main process footprint + WebContent) in bytes, or `nil` if WebContent is unavailable.
+        var totalBytes: UInt64? { webContentBytes.map { physFootprintBytes + $0 } }
+        var totalMB: Double? { totalBytes.map { Double($0) / Double(Self.oneMB) } }
+        var totalGB: Double? { totalBytes.map { Double($0) / Double(Self.oneGB) } }
 
         var residentMemoryString: String {
             if residentBytes > Self.oneGB {
@@ -80,9 +95,30 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
             return "\(formattedValue) MB"
         }
 
-        /// Comparison string showing both resident and physical footprint values.
+        var webContentMemoryString: String {
+            guard let webContentBytes, let webContentMB, let webContentGB else { return "N/A" }
+            if webContentBytes > Self.oneGB {
+                let formattedValue = Self.gbFormatter.string(from: NSNumber(value: webContentGB)) ?? String(webContentGB)
+                return "\(formattedValue) GB"
+            }
+            let formattedValue = Self.mbFormatter.string(from: NSNumber(value: webContentMB)) ?? String(webContentMB)
+            return "\(formattedValue) MB"
+        }
+
+        var totalMemoryString: String {
+            guard let totalBytes, let totalMB, let totalGB else { return "N/A" }
+            if totalBytes > Self.oneGB {
+                let formattedValue = Self.gbFormatter.string(from: NSNumber(value: totalGB)) ?? String(totalGB)
+                return "\(formattedValue) GB"
+            }
+            let formattedValue = Self.mbFormatter.string(from: NSNumber(value: totalMB)) ?? String(totalMB)
+            return "\(formattedValue) MB"
+        }
+
+        /// Comparison string showing physical footprint and WebContent values.
         var comparisonString: String {
-            return "R:\(residentMemoryString) | F:\(footprintMemoryString)"
+            let wcCount = webContentProcessCount.map(String.init) ?? "?"
+            return "M:\(footprintMemoryString) | WC:\(webContentMemoryString)(\(wcCount))"
         }
 
         private static let oneMB: UInt64 = 1_048_576
@@ -204,7 +240,109 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
             physFootprintBytes = 0
         }
 
-        return MemoryReport(residentBytes: residentBytes, physFootprintBytes: physFootprintBytes)
+        let webContentInfo = Self.getWebContentProcessMemory()
+
+        return MemoryReport(
+            residentBytes: residentBytes,
+            physFootprintBytes: physFootprintBytes,
+            webContentBytes: webContentInfo?.totalBytes,
+            webContentProcessCount: webContentInfo?.processCount)
+    }
+
+    /// Queries WebContent process memory using the private WebKit API to get PIDs,
+    /// then reads each process's resident memory via proc_pidinfo.
+    ///
+    /// Returns `nil` if the private API is unavailable or fails, so callers can
+    /// distinguish "0 bytes used" from "unable to measure."
+    ///
+    /// - Parameters:
+    ///   - pidProvider: Override for PID collection. When `nil` (default), uses the real
+    ///     `WKProcessPool._webContentProcessInfo` API. Provided for testing only.
+    ///   - memoryProvider: Override for per-PID resident size lookup. When `nil` (default),
+    ///     uses `proc_pidinfo`. Returns `nil` for a given PID if memory is unreadable
+    ///     (e.g. the process has exited). Provided for testing only.
+    static func getWebContentProcessMemory(
+        pidProvider: (() -> [pid_t]?)? = nil,
+        memoryProvider: ((pid_t) -> UInt64?)? = nil
+    ) -> (totalBytes: UInt64, processCount: Int)? {
+        // _webContentProcessInfo must be called on the main thread. WebKit's
+        // AuxiliaryProcessProxy objects are owned and destroyed on the main thread;
+        // calling this API off the main thread races with WebContent process termination,
+        // causing a use-after-free crash inside AuxiliaryProcessProxy::taskInfo.
+        // We extract the PIDs (plain integers) on the main thread, then query
+        // proc_pidinfo with those values — proc_pidinfo is a syscall with no WebKit
+        // involvement and handles dead processes safely via its return value.
+        //
+        // Callers and their thread context:
+        //   - MemoryUsageThresholdReporter.checkThresholdAndFire — Task.detached(priority: .utility) [background] ← crash path
+        //   - MemoryUsageMonitor internal polling loop            — Task {} [background]
+        //   - MemoryPressureReporter.handleMemoryPressureEvent   — @MainActor [main thread]
+        //   - MemoryUsageIntervalReporter                        — await MainActor.run { } [main thread]
+        //   - MemoryUsageDisplayer.present(in:)                  — @MainActor [main thread]
+        //
+        // DispatchQueue.main.sync from the main thread deadlocks, so we skip the dispatch
+        // when already on the main thread. Thread.isMainThread is the right guard here: all
+        // main-thread callers use @MainActor or await MainActor.run, and Swift's MainActor
+        // is backed by DispatchQueue.main, so Thread.isMainThread is equivalent to holding
+        // the main queue's serial token for these callers. If that backing ever changed, the
+        // guard would need to be revisited.
+        let collectPIDs: () -> [pid_t]?
+        if let pidProvider {
+            collectPIDs = pidProvider
+        } else {
+            let selector = Selector(("_webContentProcessInfo"))
+            guard WKProcessPool.responds(to: selector) else { return nil }
+            // autoreleasepool ensures the objects returned by the private API are kept alive
+            // for the duration of the call. takeUnretainedValue() does not retain, and
+            // _webContentProcessInfo's memory management convention is unknown — if it returns
+            // an autoreleased value, the array and its AuxiliaryProcessProxy-derived elements
+            // could be freed before compactMap finishes without an explicit pool scope.
+            collectPIDs = {
+                autoreleasepool {
+                    guard let processInfoList = WKProcessPool.perform(selector)?
+                        .takeUnretainedValue() as? [NSObject] else { return nil }
+                    let pidSelector = Selector(("pid"))
+                    return processInfoList.compactMap { processInfo in
+                        guard processInfo.responds(to: pidSelector),
+                              let pid = processInfo.value(forKey: "pid") as? pid_t,
+                              pid > 0 else { return nil }
+                        return pid
+                    }
+                }
+            }
+        }
+
+        let pids: [pid_t]? = Thread.isMainThread
+            ? collectPIDs()
+            : DispatchQueue.main.sync { collectPIDs() }
+
+        guard let pids else { return nil }
+
+        var totalBytes: UInt64 = 0
+        var processCount = 0
+
+        for pid in pids {
+            guard pid > 0 else { continue }
+            let residentSize: UInt64?
+            if let memoryProvider {
+                residentSize = memoryProvider(pid)
+            } else {
+                var taskInfo = proc_taskinfo()
+                let size = Int32(MemoryLayout<proc_taskinfo>.size)
+                let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, size)
+                // A reused PID between collectPIDs() and proc_pidinfo() could attribute another
+                // process's memory to WebContent, slightly inflating the total. The window is
+                // vanishingly small and the over-count is acceptable for telemetry purposes.
+                residentSize = result == size ? taskInfo.pti_resident_size : nil
+            }
+
+            if let residentSize {
+                totalBytes += residentSize
+                processCount += 1
+            }
+        }
+
+        return (totalBytes, processCount)
     }
 
     deinit {
@@ -309,7 +447,9 @@ extension MemoryUsageMonitor {
         let physFootprintBytes = UInt64(physFootprintMB * 1_048_576)
         let report = MemoryReport(
             residentBytes: physFootprintBytes,
-            physFootprintBytes: physFootprintBytes
+            physFootprintBytes: physFootprintBytes,
+            webContentBytes: nil,
+            webContentProcessCount: nil
         )
         simulatedReport = report
         memoryReportSubject.send(report)

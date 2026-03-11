@@ -155,7 +155,7 @@ final class PermissionContextMenu: NSMenu {
             }
 
             // Check if we should group empty/about URLs
-            let shouldGroupEmptyUrls = featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval)
+            let shouldGroupEmptyUrls = featureFlagger.isFeatureOn(.popupBlocking)
             let isEmptyUrl = query.url?.isEmpty ?? true || query.url?.navigationalScheme == .about
 
             if shouldGroupEmptyUrls && isEmptyUrl {
@@ -180,7 +180,7 @@ final class PermissionContextMenu: NSMenu {
 
             // Add temporary "Allow for this page" option for pop-ups
             if permission == .popups,
-               featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.allowPopupsForCurrentPage) {
+               featureFlagger.isFeatureOn(.popupBlocking) {
                 addItem(.allowPopups(queries: emptyUrlPopupQueries, target: self, isChecked: hasTemporaryPopupAllowance && persistedValue == .ask))
             }
 

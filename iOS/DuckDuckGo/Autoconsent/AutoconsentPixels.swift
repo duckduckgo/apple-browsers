@@ -25,9 +25,11 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     case acInit
     case errorMultiplePopups
     case errorOptoutFailed
+    case errorReloadLoop
     case popupFound
     case done
     case doneCosmetic
+    case doneHeuristic
     case animationShown
     case animationShownCosmetic
     case disabledForSite
@@ -36,6 +38,7 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
+    case errorCacheNotSet
 
     case summary(events: [String: Int])
 
@@ -43,9 +46,11 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         .acInit,
         .errorMultiplePopups,
         .errorOptoutFailed,
+        .errorReloadLoop,
         .popupFound,
         .done,
         .doneCosmetic,
+        .doneHeuristic,
         .animationShown,
         .animationShownCosmetic,
         .disabledForSite,
@@ -61,9 +66,11 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         case .acInit: "autoconsent_init"
         case .errorMultiplePopups: "autoconsent_error_multiple-popups"
         case .errorOptoutFailed: "autoconsent_error_optout"
+        case .errorReloadLoop: "autoconsent_error_reload-loop"
         case .popupFound: "autoconsent_popup-found"
         case .done: "autoconsent_done"
         case .doneCosmetic: "autoconsent_done_cosmetic"
+        case .doneHeuristic: "autoconsent_done_heuristic"
         case .animationShown: "autoconsent_animation-shown"
         case .animationShownCosmetic: "autoconsent_animation-shown_cosmetic"
         case .disabledForSite: "autoconsent_disabled-for-site"
@@ -72,6 +79,7 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         case .detectedOnlyRules: "autoconsent_detected-only-rules"
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
+        case .errorCacheNotSet: "autoconsent_error_cache-not-set"
         case .summary: "autoconsent_summary"
         }
     }
@@ -95,9 +103,11 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         case .acInit,
                 .errorMultiplePopups,
                 .errorOptoutFailed,
+                .errorReloadLoop,
                 .popupFound,
                 .done,
                 .doneCosmetic,
+                .doneHeuristic,
                 .animationShown,
                 .animationShownCosmetic,
                 .disabledForSite,
@@ -108,6 +118,9 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
                 .selfTestFail,
                 .summary:
             return [.pixelSource]
+        case .errorCacheNotSet:
+            return []
+
         }
     }
 

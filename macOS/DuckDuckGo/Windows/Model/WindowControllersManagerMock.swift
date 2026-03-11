@@ -98,7 +98,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
         return nil
     }
 
-    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, with event: NSEvent?) {
         openCalls.append(.init(url, source, window, event))
     }
     func showTab(with content: Tab.TabContent) {

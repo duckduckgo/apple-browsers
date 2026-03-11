@@ -1,0 +1,7 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+- tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element: ${ITEM}
+- tapOn: ${ITEM}

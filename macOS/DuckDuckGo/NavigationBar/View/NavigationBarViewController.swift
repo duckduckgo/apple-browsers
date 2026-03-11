@@ -142,6 +142,8 @@ final class NavigationBarViewController: NSViewController {
     var isDownloadsPopoverShown: Bool {
         popovers.isDownloadsPopoverShown
     }
+
+    private var allowsUserInteraction: Bool = true
     private var isAutoFillAutosaveMessageVisible: Bool = false
 
     private var urlCancellable: AnyCancellable?
@@ -159,7 +161,7 @@ final class NavigationBarViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
     private let searchPreferences: SearchPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let aiChatCoordinator: AIChatCoordinating
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let downloadsPreferences: DownloadsPreferences
     private let tabsPreferences: TabsPreferences
@@ -196,11 +198,12 @@ final class NavigationBarViewController: NSViewController {
         tabCollectionViewModel.isPopup
     }
 
-    var controlsForUserPrevention: [NSControl?] {
+    private var controlsForUserPrevention: [NSControl?] {
         return [homeButton,
                 optionsButton,
                 overflowButton,
                 bookmarkListButton,
+                downloadsButton,
                 passwordManagementButton,
                 addressBarViewController?.addressBarTextField,
                 addressBarViewController?.passiveTextField,
@@ -228,7 +231,7 @@ final class NavigationBarViewController: NSViewController {
                        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
                        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-                       aiChatSidebarPresenter: AIChatSidebarPresenting,
+                       aiChatCoordinator: AIChatCoordinating,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
                        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
@@ -265,7 +268,7 @@ final class NavigationBarViewController: NSViewController {
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 themeManager: themeManager,
                 aiChatMenuConfig: aiChatMenuConfig,
-                aiChatSidebarPresenter: aiChatSidebarPresenter,
+                aiChatCoordinator: aiChatCoordinator,
                 vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
                 vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
@@ -300,7 +303,7 @@ final class NavigationBarViewController: NSViewController {
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         themeManager: ThemeManaging,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-        aiChatSidebarPresenter: AIChatSidebarPresenting,
+        aiChatCoordinator: AIChatCoordinating,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
@@ -354,7 +357,7 @@ final class NavigationBarViewController: NSViewController {
         self.searchPreferences = searchPreferences
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.aiChatCoordinator = aiChatCoordinator
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.downloadsPreferences = downloadsPreferences
         self.tabsPreferences = tabsPreferences
@@ -431,7 +434,7 @@ final class NavigationBarViewController: NSViewController {
                                                                       accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
-                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter) else {
+                                                                      aiChatCoordinator: aiChatCoordinator) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 
@@ -505,12 +508,6 @@ final class NavigationBarViewController: NSViewController {
 #if DEBUG || REVIEW
         addDebugNotificationListeners()
 #endif
-
-        if #available(macOS 15.4, *), !burnerMode.isBurner, let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            Task { @MainActor [weak self] in
-                await WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager, container: self?.menuButtons).runUpdateLoop()
-            }
-        }
 
         memoryUsageDisplayer.setUpMemoryMonitorView()
     }
@@ -856,6 +853,14 @@ final class NavigationBarViewController: NSViewController {
                                          withDelegate: self)
         } else {
             Logger.passwordManager.error("Received save autofill data call, but there was no data to present")
+        }
+    }
+
+    func userInteraction(prevented: Bool) {
+        allowsUserInteraction = !prevented
+
+        controlsForUserPrevention.forEach { control in
+            control?.isEnabled = !prevented
         }
     }
 
@@ -1414,16 +1419,13 @@ final class NavigationBarViewController: NSViewController {
     @IBAction func optionsButtonAction(_ sender: NSButton) {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
-        var dockCustomization: DockCustomization?
-#if SPARKLE
-        dockCustomization = Application.appDelegate.dockCustomization
-#endif
+        let dockCustomization = Application.appDelegate.dockCustomization
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
                                    historyCoordinator: historyCoordinator,
                                    recentlyClosedCoordinator: recentlyClosedCoordinator,
                                    fireproofDomains: fireproofDomains,
-                                   passwordManagerCoordinator: PasswordManagerCoordinator.shared,
+                                   passwordManagerCoordinator: Application.appDelegate.passwordManagerCoordinator,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
                                    internalUserDecider: internalUserDecider,
                                    subscriptionManager: subscriptionManager,
@@ -1550,12 +1552,12 @@ final class NavigationBarViewController: NSViewController {
     }
 
     @objc private func showAutoconsentFeedback(_ sender: Notification) {
-        guard view.window?.isKeyWindow == true,
-              let topUrl = sender.userInfo?["topUrl"] as? URL,
-              let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool
-        else { return }
-
         DispatchQueue.main.async { [weak self] in
+            guard self?.view.window?.isKeyWindow == true,
+                  let topUrl = sender.userInfo?["topUrl"] as? URL,
+                  let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool
+            else { return }
+
             guard let self = self, self.tabCollectionViewModel.selectedTabViewModel?.tab.url == topUrl else {
                 return // if the tab is not active, don't show the popup
             }
@@ -1906,7 +1908,9 @@ extension NavigationBarViewController: NSMenuDelegate {
     public func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        BookmarksBarMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences)
+        let bookmarksMenu = BookmarksBarMenuFactory.makeMenuItem(NSApp.delegateTyped.appearancePreferences)
+        bookmarksMenu.isEnabled = allowsUserInteraction
+        menu.addItem(bookmarksMenu)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -2016,7 +2020,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedOpenExternalPasswordManager(_ menu: NSMenu) {
-        BWManager.shared.openBitwarden()
+        Application.appDelegate.passwordManagerCoordinator.openPasswordManager()
     }
 
     func optionsButtonMenuRequestedBookmarkThisPage(_ sender: NSMenuItem) {

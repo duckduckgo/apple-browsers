@@ -42,6 +42,7 @@ class BlankSnapshotViewController: UIViewController {
     let addressBarPosition: AddressBarPosition
     let featureFlagger: FeatureFlagger
     let aiChatSettings: AIChatSettings
+    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
     let mobileCustomization: MobileCustomization
@@ -52,12 +53,14 @@ class BlankSnapshotViewController: UIViewController {
 
     init(addressBarPosition: AddressBarPosition,
          aiChatSettings: AIChatSettings,
+         aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
          appSettings: AppSettings,
          mobileCustomization: MobileCustomization) {
         self.addressBarPosition = addressBarPosition
         self.aiChatSettings = aiChatSettings
+        self.aiChatAddressBarExperience = aiChatAddressBarExperience
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
@@ -76,6 +79,7 @@ class BlankSnapshotViewController: UIViewController {
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
+                                                              aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
                                                               appSettings: appSettings,

@@ -24,19 +24,24 @@ enum LaunchAction {
 
     case openURL(URL)
     case handleShortcutItem(UIApplicationShortcutItem)
-    case showKeyboard(Date?)
+    case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool)
 
-    init(actionToHandle: AppAction?, lastBackgroundDate: Date?) {
+    init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false) {
         switch actionToHandle {
         case .openURL(let url)?:
             self = .openURL(url)
         case .handleShortcutItem(let shortcutItem)?:
             self = .handleShortcutItem(shortcutItem)
         case nil:
-            self = .showKeyboard(lastBackgroundDate)
+            self = .standardLaunch(lastBackgroundDate: lastBackgroundDate, isFirstForeground: isFirstForeground)
         }
     }
 
+}
+
+@MainActor
+protocol IdleReturnLaunchDelegate: AnyObject {
+    func showNewTabPageAfterIdleReturn()
 }
 
 @MainActor
@@ -54,16 +59,22 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let keyboardPresenter: KeyboardPresenting
     private let pixelFiring: PixelFiring.Type
     private let launchSourceManager: LaunchSourceManaging
+    private let idleReturnEvaluator: IdleReturnEvaluating
+    private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
     init(urlHandler: URLHandling,
          shortcutItemHandler: ShortcutItemHandling,
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
+         idleReturnEvaluator: IdleReturnEvaluating,
+         idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
+        self.idleReturnEvaluator = idleReturnEvaluator
+        self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
     }
 
@@ -75,12 +86,16 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .handleShortcutItem(let shortcutItem):
             launchSourceManager.setSource(.shortcut)
             shortcutItemHandler.handleShortcutItem(shortcutItem)
-        case .showKeyboard(let lastBackgroundDate):
+        case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
-            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate)
+            if idleReturnEvaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lastBackgroundDate) {
+                idleReturnDelegate?.showNewTabPageAfterIdleReturn()
+            } else {
+                keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
+            }
         }
     }
-
+    
     private func openURL(_ url: URL) {
         Logger.sync.debug("App launched with url \(url.absoluteString)")
         fireAppLaunchedWithExternalLinkPixel(url: url)

@@ -57,7 +57,8 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
             dataImportProvider: dataImportProvider,
             duckPlayerPreferences: duckPlayerPreferences,
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-            syncService: syncService
+            syncService: syncService,
+            scheduler: scheduler
         )
         let legacyCardsProvider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: HomePage.Models.ContinueSetUpModel(
@@ -68,7 +69,8 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
                 cardActionsHandler: cardActionsHandler
             ),
             appearancePreferences: appearancePreferences,
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            scheduler: scheduler
         )
         self.featureFlagger = featureFlagger
         self.singleCardProvider = singleCardProvider

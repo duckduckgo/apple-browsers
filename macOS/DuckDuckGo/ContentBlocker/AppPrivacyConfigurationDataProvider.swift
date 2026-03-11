@@ -22,8 +22,13 @@ import PrivacyConfig
 final class AppPrivacyConfigurationDataProvider: EmbeddedDataProvider {
 
     public struct Constants {
-        public static let embeddedDataETag = "\"88f8ca90409357ed59d9b48bded61d72\""
-        public static let embeddedDataSHA = "18f71ba7189a77b78c2871df6e467a0e8157ef430f83bb9567c857f9220bc36c"
+        public static let embeddedDataETag = "\"a74277e2c12446204cfe44c38d7d3db0\""
+        public static let embeddedDataSHA = "6dbd26a7a764cedcd183cfdaaae2299a8a2a8d697e13e9cbca7e49c1b0c1279f"
+    }
+
+    public enum EnvironmentKeys {
+        /// Used for automated testing to allow overriding Privacy Config with a local file
+        public static let testPrivacyConfigPath = "TEST_PRIVACY_CONFIG_PATH"
     }
 
     var embeddedDataEtag: String {

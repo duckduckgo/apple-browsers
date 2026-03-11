@@ -339,6 +339,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                 }
                 
                 NotificationCenter.default.post(name: .autofillSaveEvent, object: nil)
+                AutofillOnboardingExperimentPixelReporter().firePasswordsSaved()
             } catch let error {
                 handleSecureVaultError(error)
             }

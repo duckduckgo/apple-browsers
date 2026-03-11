@@ -56,10 +56,13 @@ final class ContextMenuManager: NSObject {
         return WKWebView.handlesURLScheme(scheme)
     }
 
+    private var receivedScriptInitialization = false
+    private var onWillShowContextMenu: (() -> Void)?
+
     fileprivate weak var webView: WKWebView?
 
     @MainActor
-    init(contextMenuScriptPublisher: some Publisher<ContextMenuUserScript?, Never>,
+    init(contextMenuSubfeaturePublisher: some Publisher<ContextMenuSubfeature?, Never>,
          contentPublisher: some Publisher<Tab.TabContent, Never>,
          tabsPreferences: TabsPreferences,
          isLoadedInSidebar: Bool = false,
@@ -74,9 +77,9 @@ final class ContextMenuManager: NSObject {
         self.tld = tld
         super.init()
 
-        contextMenuScriptPublisher
-            .sink { [weak self] contextMenuScript in
-                contextMenuScript?.delegate = self
+        contextMenuSubfeaturePublisher
+            .sink { [weak self] contextMenuSubfeature in
+                contextMenuSubfeature?.delegate = self
             }
             .store(in: &cancellables)
 
@@ -281,18 +284,49 @@ extension ContextMenuManager: WebViewContextMenuDelegate {
 
         self.webView = webView
 
-        for (index, item) in menu.items.enumerated().reversed() {
-            guard let identifier = item.identifier.flatMap(WKMenuItemIdentifier.init) else { continue }
-            Self.menuItemHandlers[identifier]?(self)(item, index, menu)
+        /// Workaround:
+        /// `willShowContextMenu` might be invoked after this API. We'll defer the NSMenu Initialization, when appropriate
+        if receivedScriptInitialization {
+            refreshMenuItemsAndResetScriptState(menu: menu)
+            return
+        }
+
+        onWillShowContextMenu = { [weak self, weak menu] in
+            guard let self, let menu else {
+                return
+            }
+
+            self.refreshMenuItemsAndResetScriptState(menu: menu)
         }
     }
 
     func webView(_ webView: WebView, didCloseContextMenu menu: NSMenu, with event: NSEvent?) {
+        onWillShowContextMenu = nil
+        receivedScriptInitialization = false
+
         DispatchQueue.main.async { [weak self] in
             self?.selectedText = nil
             self?.linkURL = nil
             self?.originalItems = nil
         }
+    }
+}
+
+private extension ContextMenuManager {
+
+    func refreshMenuItems(menu: NSMenu) {
+        for (index, item) in menu.items.enumerated().reversed() {
+            guard let identifier = item.identifier.flatMap(WKMenuItemIdentifier.init) else { continue }
+            Self.menuItemHandlers[identifier]?(self)(item, index, menu)
+        }
+
+        /// We're "forcing relayout" as this invocation may occur late in the NSMenu Initialization, and we may end up with incorrect left padding on some items
+        menu.forceRelayout()
+    }
+
+    func refreshMenuItemsAndResetScriptState(menu: NSMenu) {
+        refreshMenuItems(menu: menu)
+        receivedScriptInitialization = false
     }
 }
 
@@ -725,6 +759,11 @@ extension ContextMenuManager: ContextMenuUserScriptDelegate {
     func willShowContextMenu(withSelectedText selectedText: String?, linkURL: String?) {
         self.selectedText = selectedText
         self.linkURL = linkURL
+        self.receivedScriptInitialization = true
+
+        /// Run deferred NSMenu Initialization (if needed)
+        self.onWillShowContextMenu?()
+        self.onWillShowContextMenu = nil
     }
 }
 

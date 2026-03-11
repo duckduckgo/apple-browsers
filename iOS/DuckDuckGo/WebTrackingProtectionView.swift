@@ -102,6 +102,10 @@ struct WebTrackingProtectionView: View {
                 SettingsDescriptionView(content: description)
                 WebTrackingProtectionViewSettings()
                 WebTrackingProtectionFeatureGrid(features: trackingProtectionFeatures)
+#if os(iOS)
+                // Prevent the table's corner radius clipping the bottom item
+                    .padding(.bottom, 24)
+#endif
             }
             .applySettingsListModifiers(title: UserText.webTrackingProtection,
                                         displayMode: .inline,

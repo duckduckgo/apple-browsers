@@ -16,11 +16,9 @@
 //  limitations under the License.
 //
 
-import Combine
 import Foundation
 import os.log
 import PixelKit
-import PrivacyConfig
 
 extension Notification.Name {
     static let memoryPressureCritical = Notification.Name("com.duckduckgo.macos.memoryPressure.critical")
@@ -54,7 +52,6 @@ enum MemoryPressurePixel: PixelKitEvent {
 ///
 final class MemoryPressureReporter {
 
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private let memoryUsageMonitor: MemoryUsageMonitoring
     private let windowContext: () -> WindowContext?
@@ -64,10 +61,8 @@ final class MemoryPressureReporter {
     private let logger: Logger?
     private let notificationCenter: NotificationCenter
     private var memoryPressureSource: DispatchSourceMemoryPressure?
-    private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger,
-         pixelFiring: PixelFiring?,
+    init(pixelFiring: PixelFiring?,
          memoryUsageMonitor: MemoryUsageMonitoring,
          windowContext: @autoclosure @escaping () -> WindowContext?,
          isSyncEnabled: @escaping () -> Bool?,
@@ -75,7 +70,6 @@ final class MemoryPressureReporter {
          launchDate: Date = Date(),
          logger: Logger? = nil,
          notificationCenter: NotificationCenter = .default) {
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.memoryUsageMonitor = memoryUsageMonitor
         self.windowContext = windowContext
@@ -84,33 +78,15 @@ final class MemoryPressureReporter {
         self.launchDate = launchDate
         self.logger = logger
         self.notificationCenter = notificationCenter
-        subscribeToFeatureFlagUpdates()
+        startMonitoring()
     }
 
     deinit {
         stopMonitoring()
     }
 
-    private func subscribeToFeatureFlagUpdates() {
-        featureFlagger.updatesPublisher
-            .compactMap { [weak featureFlagger] in
-                featureFlagger?.isFeatureOn(.memoryPressureReporting)
-            }
-            .prepend(featureFlagger.isFeatureOn(.memoryPressureReporting))
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isEnabled in
-                if isEnabled {
-                    self?.startMonitoring()
-                } else {
-                    self?.stopMonitoring()
-                }
-            }
-            .store(in: &cancellables)
-    }
-
-    func startMonitoring() {
-        guard memoryPressureSource == nil, featureFlagger.isFeatureOn(.memoryPressureReporting) else { return }
+    private func startMonitoring() {
+        guard memoryPressureSource == nil else { return }
 
         let source = DispatchSource.makeMemoryPressureSource(eventMask: .critical, queue: .main)
 
@@ -127,7 +103,7 @@ final class MemoryPressureReporter {
         logger?.warning("Memory pressure reporter started")
     }
 
-    func stopMonitoring() {
+    private func stopMonitoring() {
         memoryPressureSource?.cancel()
         memoryPressureSource = nil
         logger?.warning("Memory pressure reporter stopped")

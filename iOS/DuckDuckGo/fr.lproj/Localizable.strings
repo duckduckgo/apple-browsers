@@ -1454,16 +1454,12 @@
 "duckai.context.chip.info" = "Envoyé avec votre message à Duck.ai";
 
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-"duckai.contextual.onboarding.body" = "Duck.ai peut désormais vous aider à répondre aux questions concernant la page que vous consultez.\n\nLe contenu de la page n'est inclus que lorsque vous le joignez. Vous pouvez modifier cela à tout moment dans Réglages.";
 
 /* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.gotIt" = "J'ai compris";
 
 /* Title for the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.title" = "Posez des questions sur cette page";
 
 /* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.viewSettings" = "Afficher les paramètres";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Les fonctionnalités de DuckDuckGo AI sont privées et facultatives. Vos données ne servent pas à entraîner l'IA.";
@@ -2972,7 +2968,7 @@
 "prompt.custom.url.scheme.title" = "Ouvrir dans une autre application ?";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "REBRANDED";
+"REBRANDED" = "RENOMMÉ";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Journaux de traitement récents";
@@ -3013,11 +3009,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Tout supprimer";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Supprimer cette discussion";
-"scoped.fire.confirmation.delete.this.chat.description" = "« Tout supprimer » ne supprimera pas l'historique de vos discussions Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Supprimer cet onglet";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "« Tout supprimer » ne supprimera pas l'historique de vos discussions Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Supprimer cet onglet";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Cela annulera les téléchargements en cours.";
@@ -3127,6 +3126,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Envoyer automatiquement le contenu";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Suggestions de chat";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Masquer les images générées par l'IA";
 
@@ -3213,6 +3215,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Affichez les suggestions de recherche au fur et à mesure que vous tapez, y compris vos signets. Toutes les recherches sont privées.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Afficher les suggestions issues de votre historique, de vos signets et de votre historique de discussion Duck.ai (facultatif) au fur et à mesure que vous saisissez vos termes de recherche. Toutes les recherches sont privées.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Verrouillage de l'application";
@@ -3327,6 +3332,9 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Sites protégés par la fonction Fireproof";
+
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Forcer le mode sombre pour les sites web";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Général";
@@ -3498,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Thème";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Donne aux sites Web une apparence sombre si vous utilisez le thème sombre.";
 
 /* Title for the Settings View */
 "settings.title" = "Paramètres";
@@ -3691,6 +3702,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Votre abonnement a été supprimé de cet appareil.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Annuler la rétrogradation";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Votre forfait passera à %1$@ le %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Modifier le forfait ou le résilier";
 
@@ -3784,8 +3801,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Forfaits d'abonnement";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Finalisation de la modification du forfait…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Finalisation de l’achat en cours…";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Changement de plan en cours…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Achat en cours…";
@@ -4031,7 +4054,7 @@
 "tab.switcher.tracker.count.keep.action" = "Conserver";
 
 /* Subtitle for tracker count banner indicating time window */
-"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+"tab.switcher.tracker.count.subtitle" = "au cours des 7 derniers jours";
 
 /* Do not translate - stringsdict entry */
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";

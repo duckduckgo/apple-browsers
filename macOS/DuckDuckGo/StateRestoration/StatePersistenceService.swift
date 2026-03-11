@@ -104,10 +104,6 @@ final class StatePersistenceService {
         } catch {
             dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
         }
-
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnLastSessionStateHasResidue) {
-            check(at: location, fileStore: fileStore)
-        }
     }
 
     /// rename `persistentState` to `persistentState.1` after the state was loaded
@@ -170,6 +166,7 @@ final class StatePersistenceService {
             throw CocoaError(.fileReadNoSuchFile)
         }
         let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        registerLegacyClassMappings(on: unarchiver)
         try restore(unarchiver)
     }
 
@@ -179,10 +176,10 @@ final class StatePersistenceService {
 
 private extension StatePersistenceService {
 
-    func check(at location: URL, fileStore: FileStore) -> Bool {
-        let hasDataAtLocation = fileStore.hasData(at: location)
-        let hasDataAtLastLoadedStateFile = fileStore.hasData(at: .persistenceLocation(for: self.lastLoadedStateFileName))
-        let hasDataAtOldStateFile = fileStore.hasData(at: .persistenceLocation(for: self.oldStateFileName))
-        return hasDataAtLocation || hasDataAtOldStateFile || hasDataAtLastLoadedStateFile
+    func registerLegacyClassMappings(on unarchiver: NSKeyedUnarchiver) {
+        // Older archives encoded AI chat state under AIChatSidebar class names.
+        // Map those names to AIChatState so legacy sessions can decode on rename.
+        unarchiver.setClass(AIChatState.self, forClassName: "DuckDuckGo_Privacy_Browser.AIChatSidebar")
     }
+
 }

@@ -79,6 +79,8 @@ public extension OnboardingTheme {
         public let rowDetails: Font
         /// Small text and button label style.
         public let small: Font
+        /// Caption style for small iconographic elements.
+        public let caption: Font
         /// Typography used by contextual onboarding flow.
         public let contextual: Contextual
         /// Typography used by linear onboarding flow.
@@ -95,6 +97,7 @@ public extension OnboardingTheme {
             row: Font,
             rowDetails: Font,
             small: Font,
+            caption: Font,
             contextual: Contextual = .init(),
             linear: Linear? = nil
         ) {
@@ -107,6 +110,7 @@ public extension OnboardingTheme {
             self.row = row
             self.rowDetails = rowDetails
             self.small = small
+            self.caption = caption
             self.contextual = contextual
             self.linear = linear ?? Linear(
                 largeTitle: largeTitle,
@@ -137,6 +141,7 @@ public extension OnboardingTheme.Typography {
         row: makeFont(size: 16, family: .duckSansProduct, weight: .medium),
         rowDetails: makeFont(size: 14, family: .duckSansProduct, weight: .regular),
         small: makeFont(size: 14, family: .duckSansProduct, weight: .regular),
+        caption: makeFont(size: 10, family: .duckSansProduct, weight: .bold),
         linear: .init(
             largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .medium),
             title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
@@ -158,6 +163,7 @@ public extension OnboardingTheme.Typography {
         row: .system(size: 16, weight: .medium),
         rowDetails: .system(size: 14, weight: .regular),
         small: .system(size: 14, weight: .regular),
+        caption: .system(size: 10, weight: .bold),
         linear: .init(
             largeTitle: .system(size: 44, weight: .medium),
             title: .system(size: 24, weight: .bold),

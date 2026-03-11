@@ -25,4 +25,12 @@ struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
     var applicationNameForUserAgent: String {
         UserAgent.brandedDefaultSuffix
     }
+
+    var isInspectable: Bool {
+#if DEBUG
+        return true
+#else
+        return false
+#endif
+    }
 }

@@ -95,7 +95,8 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
-    private var cancellables = Set<AnyCancellable>()
+    private(set) var messageDestinationPolicy: MessageOriginPolicy
+    private var inputBoxCancellables = Set<AnyCancellable>()
 
     var inputBoxHandler: AIChatInputBoxHandling? {
         didSet { subscribeToInputBoxEvents() }
@@ -108,6 +109,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     init(handler: AIChatUserScriptHandling, debugSettings: AIChatDebugSettingsHandling) {
         self.handler = handler
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
+        self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
         super.init()
 
         // Set self as the metric reporting handler
@@ -123,6 +125,19 @@ final class AIChatUserScript: NSObject, Subfeature {
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }
+
+        if let duckAiDomain = URL.duckAi.host {
+            rules.append(.exact(hostname: duckAiDomain))
+        }
+
+        if let debugHostname = debugSettings.messagePolicyHostname {
+            rules.append(.exact(hostname: debugHostname))
+        }
+        return rules
+    }
+
+    private static func buildMessageDestinationRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
+        var rules: [HostnameMatchingRule] = []
 
         if let duckAiDomain = URL.duckAi.host {
             rules.append(.exact(hostname: duckAiDomain))
@@ -217,21 +232,23 @@ final class AIChatUserScript: NSObject, Subfeature {
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {
+        inputBoxCancellables.removeAll()
+
         inputBoxHandler?.didSubmitPrompt
             .sink(receiveValue: submitPrompt)
-            .store(in: &cancellables)
+            .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressNewChatButton
             .sink(receiveValue: { [weak self] _ in self?.push(.newChatAction) })
-            .store(in: &cancellables)
+            .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressFireButton
             .sink(receiveValue: { [weak self] _ in self?.push(.fireButtonAction) })
-            .store(in: &cancellables)
+            .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressStopGeneratingButton
             .sink(receiveValue: { [weak self] _ in self?.push(.promptInterruption) })
-            .store(in: &cancellables)
+            .store(in: &inputBoxCancellables)
 
         handler.setAIChatInputBoxHandler(inputBoxHandler)
     }
@@ -264,6 +281,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).
     func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
+        // Push only to websites matching origin policy
+        guard let host = webView?.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return }
+
         push(.syncStatusChanged(status))
     }
 

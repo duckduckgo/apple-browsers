@@ -78,29 +78,25 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
 
         overrideDateMenuItem.target = self
 
-        let defaultMenuItems = [
-            overrideDateMenuItem,
+        buildItems {
+            overrideDateMenuItem
             NSMenuItem(title: "Advance by 14 Days", action: #selector(advanceBy14Days))
                 .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.advanceBy14DaysMenuItem)
-                .targetting(self),
+                .targetting(self)
             NSMenuItem(title: "Simulate Fresh App Install", action: #selector(simulateFreshAppInstall))
                 .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.simulateFreshAppInstallMenuItem)
-                .targetting(self),
+                .targetting(self)
             NSMenuItem(title: "Reset Prompts And Today/Install Dates", action: #selector(resetPrompts))
-                .targetting(self),
-            NSMenuItem.separator(),
-            simulatedTodayDateMenuItem,
-            appInstallDateMenuItem,
-            popoverWillShowDateMenuItem,
-            bannerWillShowDateMenuItem,
-            numberOfBannersShownMenuItem,
-            promptPermanentlyDismissedMenuItem,
-        ]
-
-        let menuItems = defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled ? defaultMenuItems + [inactiveDaysMenuItem, inactiveWillShowDateMenuItem] : defaultMenuItems
-
-        buildItems {
-            menuItems
+                .targetting(self)
+            NSMenuItem.separator()
+            simulatedTodayDateMenuItem
+            appInstallDateMenuItem
+            popoverWillShowDateMenuItem
+            bannerWillShowDateMenuItem
+            numberOfBannersShownMenuItem
+            promptPermanentlyDismissedMenuItem
+            inactiveDaysMenuItem
+            inactiveWillShowDateMenuItem
         }
     }
 

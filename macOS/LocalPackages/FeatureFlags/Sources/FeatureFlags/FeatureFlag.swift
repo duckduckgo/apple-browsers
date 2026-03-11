@@ -577,7 +577,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .supportsSyncChatsDeletion:
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatMultiplePageContexts:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatMultiplePageContexts))
+            return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:

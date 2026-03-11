@@ -510,8 +510,8 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onExperimentalAddressBarCancelPressed()
     }
 
-    func onSwitchTabToIndex(_ index: Int) {
-        omniDelegate?.onSwitchTabToIndex(index)
+    func onSwitchToTab(_ tab: Tab) {
+        omniDelegate?.onSwitchToTab(tab)
     }
 
     func onToggleModeSwitched() {

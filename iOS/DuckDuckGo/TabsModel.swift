@@ -30,6 +30,12 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         static let tabs = "tabs2"
         static let mode = "mode"
     }
+    
+    enum TabPlacement {
+        case afterCurrentTab
+        case atEnd
+        case replacing(Tab)
+    }
 
     let mode: BrowsingMode
     private(set) var currentIndex: Int
@@ -97,6 +103,26 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         let index = currentIndex
         return tabs.indices.contains(index) ? tabs[index] : nil
     }
+    
+    /// The tab after the current tab, wrapping from the last tab back to the first.
+    var nextTab: Tab? {
+        guard !tabs.isEmpty else { return nil }
+        let nextIndex = currentIndex + 1 >= tabs.count ? 0 : currentIndex + 1
+        return get(tabAt: nextIndex)
+    }
+
+    /// The tab before the current tab, wrapping from the first tab to the last.
+    var previousTab: Tab? {
+        guard !tabs.isEmpty else { return nil }
+        let previousIndex = currentIndex - 1 < 0 ? tabs.count - 1 : currentIndex - 1
+        return get(tabAt: previousIndex)
+    }
+
+    /// The tab immediately before the current tab without wrapping. Returns `nil` when the current tab is first.
+    var tabBefore: Tab? {
+        guard currentIndex > 0 else { return nil }
+        return get(tabAt: currentIndex - 1)
+    }
 
     var count: Int {
         return tabs.count
@@ -105,33 +131,64 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     var hasActiveTabs: Bool {
         return tabs.count > 1 || tabs.last?.link != nil
     }
-
-    func select(tabAt index: Int) {
+    
+    func select(tab: Tab) {
+        guard validateTabMode(tab, operation: .select) else { return }
+        guard let index = indexOf(tab: tab) else { return }
         currentIndex = index
     }
 
-    func get(tabAt index: Int) -> Tab {
+    func get(tabAt index: Int?) -> Tab? {
+        guard let index, tabs.indices.contains(index) else { return nil }
         return tabs[index]
     }
-
-    func add(tab: Tab) {
-        guard shouldCreateFireTabs == tab.fireTab else {
-            assertionFailure("Wrong tab type for this tabs model")
-            return
+    
+    func insert(tab: Tab, placement: TabsModel.TabPlacement, selectNewTab: Bool) {
+        guard validateTabMode(tab, operation: .insert) else { return }
+        var newTabIndex: Int?
+        switch placement {
+        case .afterCurrentTab:
+            insert(tab: tab, at: currentIndex + 1)
+            newTabIndex = currentIndex + 1
+        case .atEnd:
+            tabs.append(tab)
+            newTabIndex = tabs.count - 1
+        case .replacing(let oldTab):
+            newTabIndex = replace(oldTab: oldTab, with: tab)
         }
-        tabs.append(tab)
-        currentIndex = tabs.count - 1
+        if selectNewTab, let newTabIndex {
+            currentIndex = newTabIndex
+        }
     }
 
-    func insert(tab: Tab, at index: Int) {
-        guard shouldCreateFireTabs == tab.fireTab else {
-            assertionFailure("Wrong tab type for this tabs model")
-            return
-        }
+    private func insert(tab: Tab, at index: Int) {
         tabs.insert(tab, at: max(0, index))
     }
     
-    func moveTab(from sourceIndex: Int, to destIndex: Int) {
+    
+    /// Replaces a tab with another tab inplace
+    /// - Parameters:
+    ///   - oldTab: tab to remove
+    ///   - newTab: tab to insert
+    /// - Returns: Index of the new tab
+    private func replace(oldTab: Tab, with newTab: Tab) -> Int? {
+        guard let index = indexOf(tab: oldTab) else {
+            return nil
+        }
+        let selectedTab = currentTab
+        remove(tab: oldTab)
+        insert(tab: newTab, at: index)
+        setCurrentTab(selectedTab)
+        return index
+    }
+    
+    func move(tab: Tab, to destIndex: Int) {
+        guard validateTabMode(tab, operation: .move) else { return }
+        guard let sourceIndex = indexOf(tab: tab) else { return }
+        moveTab(from: sourceIndex, to: destIndex)
+    }
+    
+    private func moveTab(from sourceIndex: Int, to destIndex: Int) {
         guard sourceIndex >= 0, sourceIndex < tabs.count,
             destIndex >= 0, destIndex < tabs.count else {
                 return
@@ -146,8 +203,8 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         }
     }
 
-    func remove(at index: Int) {
-        let selectedTab = safeGetTabAt(currentIndex)
+    private func remove(at index: Int) {
+        let selectedTab = get(tabAt: currentIndex)
         tabs.remove(at: index)
         if tabs.isEmpty {
             tabs.append(Tab(fireTab: shouldCreateFireTabs))
@@ -156,10 +213,10 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
 
     /// This *does not* add a new empty tab after removing the items.
-    func remove(_ indexPaths: [IndexPath]) {
-        let selectedTab = safeGetTabAt(currentIndex)
-        let indexes = Set(indexPaths.map { $0.row })
-        self.tabs = tabs.enumerated().filter { !indexes.contains($0.offset) }.map { $0.element }
+    func removeTabs(_ tabsToBeRemoved: [Tab]) {
+        let validTabs = tabsToBeRemoved.filter { validateTabMode($0, operation: .removeTabs) }
+        let selectedTab = get(tabAt: currentIndex)
+        self.tabs = tabs.filter { !validTabs.contains($0) }
         setCurrentTab(selectedTab)
     }
 
@@ -175,6 +232,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
  
     func remove(tab: Tab) {
+        guard validateTabMode(tab, operation: .remove) else { return }
         if let index = indexOf(tab: tab) {
             remove(at: index)
         }
@@ -188,5 +246,31 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     
     func tabExists(withHost host: String) -> Bool {
         return tabs.contains { $0.link?.url.host == host }
+    }
+    
+    func tabExists(tab: Tab) -> Bool {
+        return tabs.contains { $0 === tab }
+    }
+}
+
+private extension TabsModel {
+
+    private enum Operation: String {
+        case select
+        case insert
+        case move
+        case remove
+        case removeTabs
+    }
+
+    private func validateTabMode(_ tab: Tab, operation: Operation) -> Bool {
+        guard tab.fireTab == shouldCreateFireTabs else {
+            assertionFailure("Tab mode mismatch in \(operation): tab.fireTab=\(tab.fireTab), model.mode=\(mode)")
+            Pixel.fire(pixel: .debugTabsModelCrossModeMismatch, withAdditionalParameters: [
+                PixelParameters.tabsModelOperation: operation.rawValue
+            ])
+            return false
+        }
+        return true
     }
 }

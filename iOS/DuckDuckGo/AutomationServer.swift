@@ -73,13 +73,13 @@ final class IOSAutomationProvider: BrowserAutomationProvider {
     }
 
     func switchToTab(handle: String) -> Bool {
-        if let tabIndex = main.tabManager.currentTabsModel.tabs.firstIndex(where: { tab in
+        if let tab = main.tabManager.currentTabsModel.tabs.first(where: { tab in
             guard let tabView = main.tabManager.controller(for: tab) else {
                 return false
             }
             return tabView.tabModel.uid == handle
         }) {
-            _ = main.tabManager.select(tabAt: tabIndex)
+            _ = main.tabManager.select(tab)
             return true
         }
         return false

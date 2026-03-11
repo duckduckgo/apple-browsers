@@ -194,7 +194,7 @@ public class Tab: NSObject, NSCoding {
 
     public override func isEqual(_ other: Any?) -> Bool {
         guard let other = other as? Tab else { return false }
-        return link == other.link && fireTab == other.fireTab
+        return uid == other.uid
     }
     
     func toggleDesktopMode() {

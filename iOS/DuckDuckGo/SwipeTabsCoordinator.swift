@@ -33,7 +33,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
 
-    let selectTab: (Int) -> Void
+    let selectTab: (Tab) -> Void
     let newTab: () -> Void
     let onSwipeStarted: () -> Void
     
@@ -57,7 +57,7 @@ class SwipeTabsCoordinator: NSObject {
          tabPreviewsSource: TabPreviewsSource,
          appSettings: AppSettings,
          omnibarDependencies: OmnibarDependencyProvider,
-         selectTab: @escaping (Int) -> Void,
+         selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
         
@@ -211,7 +211,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let targetSize = coordinator.contentContainer.frame.size
         var height = targetSize.height
 
-        let tab = tabsModel.safeGetTabAt(nextIndex)
+        let tab = tabsModel.get(tabAt: nextIndex)
         if let tab, let image = tabPreviewsSource.preview(for: tab) {
             createPreviewFromImage(image)
             if appSettings.currentAddressBarPosition.isBottom,
@@ -287,7 +287,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         if index >= tabsModel.count {
             newTab()
         } else {
-            selectTab(index)
+            if let tab = tabsModel.get(tabAt: index) {
+                selectTab(tab)
+            }
         }
     }
 
@@ -349,7 +351,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let tab = tabsModel.safeGetTabAt(indexPath.row)
+            let tab = tabsModel.get(tabAt: indexPath.row)
             let url = tab?.link?.url
 
             let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
@@ -427,13 +429,4 @@ class OmniBarCell: UICollectionViewCell {
         controller?.removeFromParent()
         controller = nil
     }
-}
-
-extension TabsModelManaging {
-    
-    func safeGetTabAt(_ index: Int) -> Tab? {
-        guard tabs.indices.contains(index) else { return nil }
-        return tabs[index]
-    }
-    
 }

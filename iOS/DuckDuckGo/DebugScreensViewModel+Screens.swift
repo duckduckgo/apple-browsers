@@ -117,7 +117,7 @@ extension DebugScreensViewModel {
                 configuration.processPool = WKProcessPool()
 
                 let ddgURL = URL(string: "https://duckduckgo.com/")!
-                let tab = d.tabManager.currentTabsModel.safeGetTabAt(d.tabManager.currentTabsModel.currentIndex)
+                let tab = d.tabManager.currentTabsModel.currentTab
                 let url = tab?.link?.url ?? ddgURL
                 return BareBonesBrowserView(initialURL: url,
                                             homeURL: ddgURL,

@@ -11,7 +11,7 @@
 				<key>com.duckduckgo.memory.allocations.used.final</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>173542428.800000</real>
+					<real>194000000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>
@@ -21,14 +21,14 @@
 				<key>com.duckduckgo.memory.allocations.used.final</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>186860000.000000</real>
+					<real>208000000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>
 				<key>com.duckduckgo.memory.allocations.used.initial</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>184130000.000000</real>
+					<real>206000000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>
@@ -38,14 +38,14 @@
 				<key>com.duckduckgo.memory.allocations.used.final</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>208900000.000000</real>
+					<real>228000000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>
 				<key>com.duckduckgo.memory.allocations.used.initial</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>201350000.000000</real>
+					<real>220000000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>

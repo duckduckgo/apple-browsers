@@ -68,7 +68,7 @@ struct BookmarkDialogButtonsView: View {
                 .cornerRadius(6)
                 .opacity(action.isDisabled ? 0.4 : 1)
         )
-        .keyboardShortcut(action.keyboardShortCut)
+        .ifLet(action.keyboardShortCut) { $0.keyboardShortcut($1) }
         .disabled(action.isDisabled)
         .ifLet(action.accessibilityIdentifier) { view, value in
             view.accessibilityIdentifier(value)

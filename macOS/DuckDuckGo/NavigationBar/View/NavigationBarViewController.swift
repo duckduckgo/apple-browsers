@@ -1566,7 +1566,7 @@ final class NavigationBarViewController: NSViewController {
                                    historyCoordinator: historyCoordinator,
                                    recentlyClosedCoordinator: recentlyClosedCoordinator,
                                    fireproofDomains: fireproofDomains,
-                                   passwordManagerCoordinator: PasswordManagerCoordinator.shared,
+                                   passwordManagerCoordinator: Application.appDelegate.passwordManagerCoordinator,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
                                    internalUserDecider: internalUserDecider,
                                    subscriptionManager: subscriptionManager,
@@ -2161,7 +2161,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedOpenExternalPasswordManager(_ menu: NSMenu) {
-        BWManager.shared.openBitwarden()
+        Application.appDelegate.passwordManagerCoordinator.openPasswordManager()
     }
 
     func optionsButtonMenuRequestedBookmarkThisPage(_ sender: NSMenuItem) {

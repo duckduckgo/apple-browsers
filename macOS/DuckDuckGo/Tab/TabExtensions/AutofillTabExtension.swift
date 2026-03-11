@@ -36,7 +36,7 @@ final class AutofillTabExtension: TabExtension {
     static var featureFlagger = NSApp.delegateTyped.featureFlagger
 
     static var vaultManagerProvider: (SecureVaultManagerDelegate) -> AutofillSecureVaultDelegate = { delegate in
-        let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
+        let manager = SecureVaultManager(passwordManager: Application.appDelegate.passwordManagerCoordinator,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
                                          tld: Application.appDelegate.tld)
         manager.delegate = delegate
@@ -61,7 +61,7 @@ final class AutofillTabExtension: TabExtension {
     private var emailManager: AutofillEmailDelegate?
     private var vaultManager: AutofillSecureVaultDelegate?
     private let credentialsImportManager: AutofillCredentialsImportManager
-    private var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
+    private var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences

@@ -17,9 +17,11 @@
 //
 
 import AIChat
+import AppKitExtensions
 import AppUpdaterShared
 import AttributedMetric
 import AutoconsentStats
+import BWManagementShared
 import Bookmarks
 import BrokenSitePrompt
 import BrowserServicesKit
@@ -77,12 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let urlEventHandler = URLEventHandler()
 
-#if CI
-    private let keyStore = (NSClassFromString("MockEncryptionKeyStore") as? EncryptionKeyStoring.Type)!.init()
-#else
-    private let keyStore = EncryptionKeyStore()
-#endif
-
+    private let keyStore: EncryptionKeyStoring
     let fileStore: FileStore
 
     private let crashReporting: any CrashReporting
@@ -146,6 +143,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let bookmarkDragDropManager: BookmarkDragDropManager
     let historyCoordinator: HistoryCoordinator
     let fireproofDomains: FireproofDomains
+    let bitwardenManager: BWManagement?
+    let passwordManagerCoordinator: PasswordManagerCoordinator
     let webCacheManager: WebCacheManager
     let tld = TLD()
     let privacyFeatures: AnyPrivacyFeatures
@@ -251,6 +250,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared)
 
+    // MARK: - Automation Server
+    private var automationServer: AutomationServer?
+    private let launchOptionsHandler = LaunchOptionsHandler()
+
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature
     public let freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator
@@ -311,19 +314,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Win-back Campaign
     lazy var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = {
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
-#if DEBUG || REVIEW
-        let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
-        let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
-        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionManager,
-                                                                      winbackOfferStore: winbackOfferStore,
-                                                                      winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
-                                                                      dateProvider: dateProvider,
-                                                                      timeBeforeOfferAvailability: .seconds(5))
-#else
-        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionManager,
-                                                                      winbackOfferStore: winbackOfferStore,
-                                                                      winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider)
-#endif
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild {
+            let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
+            let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
+            winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionManager,
+                                                                        winbackOfferStore: winbackOfferStore,
+                                                                        winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
+                                                                        dateProvider: dateProvider,
+                                                                        timeBeforeOfferAvailability: .seconds(5))
+        } else {
+            winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionManager,
+                                                                          winbackOfferStore: winbackOfferStore,
+                                                                          winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider)
+        }
         return winBackOfferVisibilityManager
     }()
 
@@ -351,7 +355,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var wideEventService: WideEventService = {
         return WideEventService(
             wideEvent: wideEvent,
-            featureFlagger: featureFlagger,
             subscriptionManager: subscriptionManager
         )
     }()
@@ -418,6 +421,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.startupProfiler = startupProfiler
         self.dockCustomization = dockCustomization
+
+        if [.unitTests, .integrationTests].contains(AppVersion.runType) {
+            keyStore = (NSClassFromString("MockEncryptionKeyStore") as? EncryptionKeyStoring.Type)!.init()
+        } else {
+            keyStore = EncryptionKeyStore()
+        }
 
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
         let didCrashDuringCrashHandlersSetUp = UserDefaultsWrapper(key: .didCrashDuringCrashHandlersSetUp, defaultValue: false)
@@ -504,12 +513,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let privacyConfigurationManager: PrivacyConfigurationManager
+        let buildType = StandardApplicationBuildType()
 
-#if DEBUG
+        // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use the test config from embedded data provider
+        let useTestConfig = (buildType.isDebugBuild || buildType.isReviewBuild) && ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
+        let fetchedEtag: String? = useTestConfig ? nil : configurationStore.loadEtag(for: .privacyConfiguration)
+        let fetchedData: Data? = useTestConfig ? nil : configurationStore.loadData(for: .privacyConfiguration)
+
+        if useTestConfig {
+            Logger.general.log("[DDG-TEST-CONFIG] Skipping cached privacy config to use TEST_PRIVACY_CONFIG_PATH")
+        }
+
         if AppVersion.runType.requiresEnvironment {
             privacyConfigurationManager = PrivacyConfigurationManager(
-                fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
-                fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+                fetchedETag: fetchedEtag,
+                fetchedData: fetchedData,
                 embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
                 localProtection: LocalUnprotectedDomains(database: database.db),
                 errorReporting: AppContentBlocking.debugEvents,
@@ -517,24 +535,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         } else {
             privacyConfigurationManager = PrivacyConfigurationManager(
-                fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
-                fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+                fetchedETag: fetchedEtag,
+                fetchedData: fetchedData,
                 embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
                 localProtection: LocalUnprotectedDomains(database: nil),
                 errorReporting: AppContentBlocking.debugEvents,
                 internalUserDecider: internalUserDecider
             )
         }
-#else
-        privacyConfigurationManager = PrivacyConfigurationManager(
-            fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
-            fetchedData: configurationStore.loadData(for: .privacyConfiguration),
-            embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
-            localProtection: LocalUnprotectedDomains(database: database.db),
-            errorReporting: AppContentBlocking.debugEvents,
-            internalUserDecider: internalUserDecider
-        )
-#endif
 
         let featureFlagger: FeatureFlagger
         if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
@@ -1079,6 +1087,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             atbProvider: { LocalStatisticsStore().atb }
         )
 
+        bitwardenManager = BWManagerProvider.makeManager()
+        passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: bitwardenManager)
+
         // AttributedMetric initialisation
 
         let errorHandler = AttributedMetricErrorHandler(pixelKit: PixelKit.shared)
@@ -1257,7 +1268,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         profilerToken.advance(to: .appStateRestoration)
 
-        if [.normal, .uiTests].contains(AppVersion.runType) {
+        if AppVersion.runType.stateRestorationAllowed {
             stateRestorationManager.applicationDidFinishLaunching()
         }
 
@@ -1266,9 +1277,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
-        BWManager.shared.initCommunication()
+        bitwardenManager?.initCommunication()
 
-        if case .normal = AppVersion.runType,
+        if AppVersion.runType.opensWindowOnStartupIfNeeded,
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
@@ -1339,6 +1350,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         userChurnScheduler.start()
 
         memoryUsageMonitor.enableIfNeeded(featureFlagger: featureFlagger)
+
+        startAutomationServerIfNeeded()
 
         PixelKit.fire(GeneralPixel.launch, doNotEnforcePrefix: true)
         profilerToken.stop()
@@ -1438,7 +1451,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func initializeUpdateController() {
-        guard AppVersion.runType != .uiTests else { return }
+        guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
         let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
@@ -1605,6 +1618,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return manager
     }
 
+    // MARK: - Automation Server
+
+    private func startAutomationServerIfNeeded() {
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild,
+              let port = launchOptionsHandler.automationPort else {
+            return
+        }
+        Task { @MainActor in
+            automationServer = AutomationServer(
+                windowControllersManager: windowControllersManager,
+                contentBlockingManager: privacyFeatures.contentBlocking.contentBlockingManager,
+                port: port
+            )
+        }
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,
            case .normal = AppVersion.runType {
@@ -1655,17 +1685,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &darkReaderCancellables)
 
-        let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
-            .flagDidChangePublisher
-
-        let webExtensionsPublisher = flagPublisher?
-            .filter { $0.0 == .webExtensions }
-            .map { $0.1 }
+        let webExtensionsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.webExtensions)
+            }
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
-        let embeddedExtensionPublisher = flagPublisher?
-            .filter { $0.0 == .embeddedExtension }
-            .map { $0.1 }
+        let embeddedExtensionPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.embeddedExtension)
+            }
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
@@ -1750,12 +1781,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private static func setUpPixelKit(dryRun: Bool) {
-#if APPSTORE
-        let source = "browser-appstore"
-#else
-        let source = "browser-dmg"
-#endif
-
+        let source = NSApp.isSandboxed ? "browser-appstore" : "browser-dmg"
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: dryRun,
@@ -1790,13 +1816,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let defaultEnvironment = ServerEnvironment.production
 #endif
 
-#if DEBUG || REVIEW
-        let environment = ServerEnvironment(
-            UserDefaultsWrapper(key: .syncEnvironment, defaultValue: defaultEnvironment.description).wrappedValue
-        ) ?? defaultEnvironment
-#else
-        let environment = defaultEnvironment
-#endif
+        let environment: ServerEnvironment
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild {
+            environment = ServerEnvironment(
+                UserDefaultsWrapper(key: .syncEnvironment, defaultValue: defaultEnvironment.description).wrappedValue
+            ) ?? defaultEnvironment
+        } else {
+            environment = defaultEnvironment
+        }
         let syncDataProviders = SyncDataProvidersSource(
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
@@ -1928,7 +1956,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func subscribeToUpdateControllerChanges() {
-        guard AppVersion.runType != .uiTests,
+        guard AppVersion.runType.allowsUpdates,
               let sparkleUpdateController = updateController as? any SparkleUpdateControlling else { return }
 
         updateProgressCancellable = sparkleUpdateController.updateProgressPublisher
@@ -1998,7 +2026,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     PixelKit.fire(GeneralPixel.autofillIdentitiesStacked, withAdditionalParameters: params)
                 }
             },
-            passwordManager: PasswordManagerCoordinator.shared,
+            passwordManager: passwordManagerCoordinator,
             installDate: AppDelegate.firstLaunchDate)
 
         _ = NotificationCenter.default.addObserver(forName: .autofillUserSettingsDidChange,

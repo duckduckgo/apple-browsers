@@ -277,7 +277,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.fireproofDomains = fireproofDomains
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.featureFlagger = featureFlagger
-        self.navigationDelegate = DistributedNavigationDelegate(isPerformanceReportingEnabled: featureFlagger.isFeatureOn(.webKitPerformanceReporting))
+        self.navigationDelegate = DistributedNavigationDelegate()
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
         self.privacyFeatures = privacyFeatures
@@ -957,12 +957,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func startOnboarding() {
         userInteractionDialog = nil
 
-#if DEBUG || REVIEW
         if AppVersion.runType == .uiTestsOnboarding {
             setContent(.onboarding)
             return
         }
-#endif
         if #available(macOS 12.0, *) {
             Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         }
@@ -1107,9 +1105,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         switch content.urlForWebView {
         case .some(let url) where url.isFileURL:
-#if APPSTORE
-            guard url.isWritableLocation() else { fallthrough }
-#endif
+            guard !NSApp.isSandboxed || url.isWritableLocation() else { fallthrough }
 
             // request file system access before restoration
             webView.navigator(distributedNavigationDelegate: navigationDelegate)

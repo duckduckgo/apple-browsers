@@ -41,21 +41,35 @@ final class ScriptStyleProviderTests: XCTestCase {
     func testThemeNameChangesAreRelayedThroughThemeStylePublisher() async {
         let (styleProvider, themeManager) = buildStyleProvider()
 
-        let (_, themeName) = await styleProvider.themeStylePublisher.awaitFirst {
-            themeManager.themeName = .green
+        let styleUpdated = expectation(description: "Theme style updated")
+        var themeName: String?
+        let cancellable = styleProvider.themeStylePublisher.first().sink { value in
+            themeName = value.1
+            styleUpdated.fulfill()
         }
 
+        themeManager.themeName = .green
+
+        await fulfillment(of: [styleUpdated], timeout: 5)
         XCTAssertEqual(themeName, ThemeName.green.rawValue)
+        withExtendedLifetime(cancellable) {}
     }
 
     func testAppearanceChangesAreRelayedThroughThemeStylePublisher() async {
         let (styleProvider, themeManager) = buildStyleProvider()
 
-        let (appearance, _) = await styleProvider.themeStylePublisher.awaitFirst {
-            themeManager.appearance = .light
+        let styleUpdated = expectation(description: "Theme style updated")
+        var appearance: String?
+        let cancellable = styleProvider.themeStylePublisher.first().sink { value in
+            appearance = value.0
+            styleUpdated.fulfill()
         }
 
+        themeManager.appearance = .light
+
+        await fulfillment(of: [styleUpdated], timeout: 5)
         XCTAssertEqual(appearance, ThemeAppearance.light.rawValue)
+        withExtendedLifetime(cancellable) {}
     }
 }
 
@@ -66,25 +80,5 @@ private extension ScriptStyleProviderTests {
         let styleProvider = ScriptStyleProvider(themeManager: themeManager)
 
         return (styleProvider, themeManager)
-    }
-}
-
-// MARK: - Published.Publisher Private Testing Helpers
-//
-private extension AnyPublisher {
-
-    func awaitFirst(afterPerforming action: () -> Void) async -> Output where Failure == Never {
-        await withCheckedContinuation { continuation in
-            var cancellable: AnyCancellable?
-            cancellable = self
-                .first()
-                .sink { value in
-                    cancellable?.cancel()
-                    continuation.resume(returning: value)
-                }
-
-            // Action runs, effectively, AFTER the subscription is established
-            action()
-        }
     }
 }

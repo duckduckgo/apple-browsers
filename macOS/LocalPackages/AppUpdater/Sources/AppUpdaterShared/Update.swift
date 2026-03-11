@@ -33,7 +33,6 @@ public final class Update {
     public let date: Date
     public let releaseNotes: [String]
     public let releaseNotesSubscription: [String]
-    public let needsLatestReleaseNote: Bool
     private let dateFormatterProvider: () -> DateFormatter
 
     /// Returns a date formatter configured with the standard date visualization format for release dates.
@@ -60,7 +59,6 @@ public final class Update {
                 date: Date,
                 releaseNotes: [String],
                 releaseNotesSubscription: [String],
-                needsLatestReleaseNote: Bool,
                 dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
         self.isInstalled = isInstalled
         self.type = type
@@ -69,7 +67,6 @@ public final class Update {
         self.date = date
         self.releaseNotes = releaseNotes
         self.releaseNotesSubscription = releaseNotesSubscription
-        self.needsLatestReleaseNote = needsLatestReleaseNote
         self.dateFormatterProvider = dateFormatterProvider
     }
 }
@@ -89,7 +86,6 @@ extension Update {
                   date: date,
                   releaseNotes: [], // App Store doesn't provide detailed release notes via this API
                   releaseNotesSubscription: [],
-                  needsLatestReleaseNote: false,
                   dateFormatterProvider: dateFormatterProvider())
     }
 }

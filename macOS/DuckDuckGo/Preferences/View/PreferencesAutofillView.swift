@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
+import BWManagementShared
+import Combine
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
-import PixelKit
 
 fileprivate extension Preferences.Const {
     static let autoLockWarningOffset: CGFloat = {
@@ -35,7 +37,8 @@ extension Preferences {
 
     struct AutofillView: View {
         @ObservedObject var model: AutofillPreferencesModel
-        @ObservedObject var bitwardenManager = BWManager.shared
+        private let bitwardenManager = Application.appDelegate.bitwardenManager
+        @State private var bitwardenStatus: BWStatus = Application.appDelegate.bitwardenManager?.status ?? .disabled
         @State private var showingResetNeverPromptSitesSheet = false
 
         var passwordManagerBinding: Binding<PasswordManager> {
@@ -80,52 +83,52 @@ extension Preferences {
                     Button(UserText.autofillViewContentButtonCreditCards) {
                         model.showAutofillPopover(.cards, source: .settings)
                     }
-#if APPSTORE
-                    Button(UserText.importPasswords) {
-                        model.openImportPasswordsWindow()
+                    if NSApp.isSandboxed {
+                        Button(UserText.importPasswords) {
+                            model.openImportPasswordsWindow()
+                        }
+                        Button(UserText.exportLogins) {
+                            model.openExportLogins()
+                        }
                     }
-                    Button(UserText.exportLogins) {
-                        model.openExportLogins()
-                    }
-#endif
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
                         .foregroundColor(.textSecondary)
                 }
 
-#if !APPSTORE
-                // SECTION 1: Password Manager
-                PreferencePaneSection(UserText.autofillPasswordManager) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        passwordManagerPicker(passwordManagerBinding) {
-                            Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
-                        }
-                    }
-
-                    if shouldShowImportExportButtons {
-                        VStack(spacing: 12) {
-                            Button(UserText.importPasswords) {
-                                model.openImportPasswordsWindow()
-                            }
-                            Button(UserText.exportLogins) {
-                                model.openExportLogins()
+                if !NSApp.isSandboxed {
+                    // SECTION 1: Password Manager
+                    PreferencePaneSection(UserText.autofillPasswordManager) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            passwordManagerPicker(passwordManagerBinding) {
+                                Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
                             }
                         }
-                        .padding(.leading, 15)
-                        .padding(.bottom, 4)
-                    }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        passwordManagerPicker(passwordManagerBinding) {
-                            Text(UserText.autofillPasswordManagerBitwarden).tag(PasswordManager.bitwarden)
+                        if shouldShowImportExportButtons {
+                            VStack(spacing: 12) {
+                                Button(UserText.importPasswords) {
+                                    model.openImportPasswordsWindow()
+                                }
+                                Button(UserText.exportLogins) {
+                                    model.openExportLogins()
+                                }
+                            }
+                            .padding(.leading, 15)
+                            .padding(.bottom, 4)
                         }
-                        if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
-                            bitwardenStatusView(for: bitwardenManager.status)
-                        }
-                    }
 
+                        VStack(alignment: .leading, spacing: 6) {
+                            passwordManagerPicker(passwordManagerBinding) {
+                                Text(UserText.autofillPasswordManagerBitwarden).tag(PasswordManager.bitwarden)
+                            }
+                            if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
+                                bitwardenStatusView(for: bitwardenStatus)
+                            }
+                        }
+
+                    }
                 }
-#endif
 
                 // SECTION 2: Ask to Save:
                 PreferencePaneSection {
@@ -198,6 +201,9 @@ extension Preferences {
                     }
                 }
             }
+            .onReceive(bitwardenStatusPublisher) { status in
+                bitwardenStatus = status
+            }
         }
 
         @ViewBuilder
@@ -211,16 +217,15 @@ extension Preferences {
 
         // MARK: - Password Manager Availability Methods
 
-        private var shouldShowBitwardenNativeOption: Bool {
-            #if !APPSTORE
-            return true
-            #else
-            return false
-            #endif
-        }
-
         private var shouldShowImportExportButtons: Bool {
             return model.passwordManager == .duckduckgo
+        }
+
+        private var bitwardenStatusPublisher: AnyPublisher<BWStatus, Never> {
+            if let bitwardenManager {
+                return bitwardenManager.statusPublisher.eraseToAnyPublisher()
+            }
+            return Just(.disabled).eraseToAnyPublisher()
         }
 
         @ViewBuilder private func bitwardenStatusView(for status: BWStatus) -> some View {

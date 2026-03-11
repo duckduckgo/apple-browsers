@@ -507,8 +507,8 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-#if APPSTORE
-        if providedUrl.isFileURL, !providedUrl.isWritableLocation(), // is sandbox extension available for the file?
+        if providedUrl.isFileURL,
+           NSApp.isSandboxed && !providedUrl.isWritableLocation(), // is sandbox extension available for the file?
            let window = self.window {
 
             NSAlert.cannotOpenFileAlert().beginSheetModal(for: window) { response in
@@ -523,7 +523,6 @@ final class AddressBarTextField: NSTextField {
             }
             return
         }
-#endif
 
         // Prevent typing in subscription URLs directly in the address bar
         let baseURL = Application.appDelegate.subscriptionManager.url(for: .baseURL)

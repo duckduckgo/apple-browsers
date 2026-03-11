@@ -476,18 +476,11 @@ final class MainMenu: NSMenu {
 
     @MainActor
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
-#if DEBUG || REVIEW || ALPHA
-        NSMenuItem(title: "Debug")
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild || internalUserDecider.isInternalUser else { return nil }
+        return NSMenuItem(title: "Debug")
             .withAccessibilityIdentifier(AccessibilityIdentifiers.debugMenu)
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
-#else
-        if internalUserDecider.isInternalUser {
-            NSMenuItem(title: "Debug")
-                .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
-        } else {
-            nil
-        }
-#endif
     }
 
     func buildHelpMenu() -> NSMenuItem {
@@ -499,10 +492,10 @@ final class MainMenu: NSMenu {
                 NSMenuItem.separator()
 
                 aboutMenuItem
-#if SPARKLE
-                releaseNotesMenuItem
-                whatIsNewMenuItem
-#endif
+                if StandardApplicationBuildType().isSparkleBuild {
+                    releaseNotesMenuItem
+                    whatIsNewMenuItem
+                }
                 sendFeedbackMenuItem
             })
     }
@@ -569,7 +562,7 @@ final class MainMenu: NSMenu {
 
     private func updateAppAboutDDGMenuItem() {
         if internalUserDecider.isInternalUser {
-            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel().versionLabelShort))"
         } else {
             appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
         }
@@ -996,9 +989,9 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
-#if SPARKLE
-            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
-#endif
+            if StandardApplicationBuildType().isSparkleBuild {
+                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
+            }
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)")
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu)
@@ -1042,10 +1035,9 @@ final class MainMenu: NSMenu {
         debugMenu.insertItem(separatorItem, at: 1)
 
         debugMenu.addItem(internalUserItem)
-#if !ALPHA
         debugMenu.addItem(.separator())
         debugMenu.addItem(NSMenuItem(title: "Download DuckDuckGo Alpha Build", action: #selector(downloadAlphaBuild), target: self))
-#endif
+
         debugMenu.autoenablesItems = false
         return debugMenu
     }

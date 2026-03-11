@@ -24,6 +24,7 @@ struct OnboardingDebugView: View {
 
     @StateObject private var viewModel = OnboardingDebugViewModel()
     @State private var isShowingResetDaxDialogsAlert = false
+    @State private var isShowingResetOnboardingAlert = false
 
     private let newOnboardingIntroStartAction: (OnboardingDebugFlow) -> Void
     @State private var selectedFlow: OnboardingDebugFlow
@@ -44,6 +45,18 @@ struct OnboardingDebugView: View {
                 })
                 .alert(isPresented: $isShowingResetDaxDialogsAlert, content: {
                     Alert(title: Text(verbatim: "Dax Dialogs reset"), dismissButton: .cancel(Text(verbatim: "Done")))
+                })
+
+                Button(action: {
+                    viewModel.resetAllOnboarding()
+                    isShowingResetOnboardingAlert = true
+                }, label: {
+                    Text(verbatim: "Reset All Onboarding")
+                })
+                .alert(isPresented: $isShowingResetOnboardingAlert, content: {
+                    Alert(title: Text(verbatim: "All onboarding reset"),
+                          message: Text(verbatim: "Kill and relaunch the app to restart onboarding."),
+                          dismissButton: .cancel(Text(verbatim: "Done")))
                 })
             }
 
@@ -98,14 +111,22 @@ final class OnboardingDebugViewModel: ObservableObject {
 
     private let manager: OnboardingNewUserProviderDebugging
     private var settings: DaxDialogsSettings
+    private let tutorialSettings: TutorialSettings
 
     init(
         manager: OnboardingNewUserProviderDebugging = OnboardingManager(),
-        settings: DaxDialogsSettings = DefaultDaxDialogsSettings()
+        settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
         self.manager = manager
         self.settings = settings
+        self.tutorialSettings = tutorialSettings
         onboardingUserType = manager.onboardingUserTypeDebugValue
+    }
+
+    func resetAllOnboarding() {
+        tutorialSettings.hasSeenOnboarding = false
+        resetDaxDialogs()
     }
 
     func resetDaxDialogs() {

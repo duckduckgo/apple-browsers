@@ -1,8 +1,9 @@
 {
   "images" : [
     {
-      "filename" : "contextual-bg-try-search-light.pdf",
-      "idiom" : "universal"
+      "filename" : "contextual-bg-try-search-light.png",
+      "idiom" : "universal",
+      "scale" : "1x"
     },
     {
       "appearances" : [
@@ -11,15 +12,45 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-try-search-dark.pdf",
-      "idiom" : "universal"
+      "filename" : "contextual-bg-try-search-dark.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "contextual-bg-try-search-light@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "contextual-bg-try-search-dark@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "contextual-bg-try-search-light@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "contextual-bg-try-search-dark@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
-  },
-  "properties" : {
-    "preserves-vector-representation" : true
   }
 }

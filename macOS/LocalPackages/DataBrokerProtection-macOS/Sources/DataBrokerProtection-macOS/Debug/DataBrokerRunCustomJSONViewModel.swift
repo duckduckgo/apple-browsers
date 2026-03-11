@@ -185,7 +185,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     var error: Error?
     var profileQueryLabels: [Int64: String] = [:]
 
-    let brokers: [DataBroker]
+    let brokerResources: [BrokerResource]
+    var brokers: [DataBroker] { brokerResources.map(\.broker) }
 
     private let emailService: EmailService
     lazy var emailConfirmationDataService: EmailConfirmationDataServiceProvider = {
@@ -275,7 +276,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let vault = try! vaultFactory.makeVault(reporter: reporter)
 
-        self.brokers = try! vault.fetchAllBrokers()
+        self.brokerResources = try! vault.fetchAllBrokerResources()
 
         self.emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                              settings: dbpSettings,
@@ -550,6 +551,14 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     func appVersion() -> String {
         AppVersion.shared.versionNumber
+    }
+
+    func brokerJSONString(for brokerURL: String) -> String {
+        guard let brokerResource = brokerResources.first(where: { $0.broker.url == brokerURL }) else {
+            return ""
+        }
+
+        return DebugHelper.prettyJSONString(from: brokerResource.rawJSON) ?? (String(data: brokerResource.rawJSON, encoding: .utf8) ?? "")
     }
 
     var dbpEndpoint: String {
@@ -836,25 +845,6 @@ final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventRepo
     }
 }
 
-extension DataBroker {
-    func toJSONString() -> String {
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted // Optional: for pretty-printed JSON
-            let jsonData = try encoder.encode(self)
-            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                return jsonString
-            }
-
-            return ""
-        } catch {
-            print("Error encoding object to JSON: \(error)")
-            return ""
-        }
-
-    }
-}
-
 extension DataBrokerProtectionError {
     var title: String {
         switch self {
@@ -872,6 +862,6 @@ extension DataBrokerProtectionError {
 // swiftlint:enable force_try
 
 private struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
-    func bundledBrokers() throws -> [DataBroker]? { [] }
+    func bundledBrokers() throws -> [BrokerResource]? { [] }
     func checkForUpdates() async throws {}
 }

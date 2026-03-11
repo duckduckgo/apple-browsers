@@ -572,12 +572,13 @@
     },
     "m_mac_dbp_update_databrokers_success": {
         "description": "Fired when a data broker JSON is updated successfuly.",
-        "owners": ["edulpn"],
+        "owners": ["edulpn", "jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
             "appVersion",
             "pixelSource",
+            "dbpIsFreeScan",
             {
                 "key": "data_broker_json_file",
                 "description": "The JSON file name for the data broker that this action was operating on",
@@ -592,12 +593,13 @@
     },
     "m_mac_dbp_update_databrokers_failure": {
         "description": "Fired when a data broker JSON update has failed.",
-        "owners": ["edulpn"],
+        "owners": ["edulpn", "jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
+            "dbpIsFreeScan",
             "errorDomain",
             "errorCode",
             "underlyingErrorDomain",
@@ -968,6 +970,25 @@
                 "type": "string"
             },
             "dbpIsFreeScan"
+        ]
+    },
+    "m_mac_dbp_data_broker_action-payload_typed-fallback_unexpected": {
+        "description": "Fired when a broker action is unexpectedly injected using typed fallback payload instead of raw JSON.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "dbpActionType",
+            {
+                "key": "stepType",
+                "description": "Step type where typed-fallback payload injection occurred",
+                "type": "string",
+                "enum": ["scan", "optOut", "unknown"]
+            }
         ]
     },
     "m_mac_dbp_engagement_dau": {

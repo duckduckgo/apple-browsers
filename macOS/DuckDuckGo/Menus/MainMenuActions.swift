@@ -44,22 +44,20 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
-#if APPSTORE
-        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
-        NSWorkspace.shared.open(.appStore)
-#elseif SPARKLE
-        if let warning = SupportedOSChecker().supportWarning,
-           case .unsupported = warning {
-
-            // Show not supported info
-            if NSAlert.osNotSupported(warning).runModal() != .cancel {
-                let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
-                NSWorkspace.shared.open(url)
+        if StandardApplicationBuildType().isAppStoreBuild {
+            PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
+            NSWorkspace.shared.open(.appStore)
+        } else if StandardApplicationBuildType().isSparkleBuild {
+            if let warning = SupportedOSChecker().supportWarning,
+               case .unsupported = warning {
+                // Show not supported info
+                if NSAlert.osNotSupported(warning).runModal() != .cancel {
+                    let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
+                    NSWorkspace.shared.open(url)
+                }
             }
+            showAbout(sender)
         }
-
-        showAbout(sender)
-#endif
     }
 
     // MARK: - File
@@ -386,7 +384,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func copyVersion(_ sender: Any?) {
-        NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
+        NSPasteboard.general.copy(AppVersionModel().versionLabelShort)
     }
 
     @objc func openBookmark(_ sender: Any?) {

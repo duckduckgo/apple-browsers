@@ -21,6 +21,7 @@ import Combine
 import Common
 import Lottie
 import os.log
+import PixelKit
 import PrivacyConfig
 import RemoteMessaging
 import SwiftUI
@@ -842,6 +843,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     @objc private func duckAITitlebarButtonAction(_ sender: NSButton) {
         if let mainViewController = parent as? MainViewController {
+            PixelKit.fire(AIChatPixel.aiChatTabbarButtonClicked, frequency: .dailyAndStandard)
             mainViewController.openNewDuckAIChatTab()
             return
         }
@@ -861,6 +863,19 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         if isChatFloating {
             aiChatCoordinator?.focusFloatingWindow(for: tabID)
         } else if canToggleSidebar {
+            let isSidebarOpen = aiChatCoordinator?.isSidebarOpen(for: tabID) ?? false
+            if isSidebarOpen {
+                PixelKit.fire(AIChatPixel.aiChatSidebarClosed(source: .tabbarButton), frequency: .dailyAndStandard)
+            } else {
+                PixelKit.fire(
+                    AIChatPixel.aiChatSidebarOpened(
+                        source: .tabbarButton,
+                        shouldAutomaticallySendPageContext: nil,
+                        minutesSinceSidebarHidden: aiChatCoordinator?.sidebarHiddenAt(for: tabID)?.minutesSinceNow()
+                    ),
+                    frequency: .dailyAndStandard
+                )
+            }
             aiChatCoordinator?.toggleSidebar()
         } else {
             updateDuckAIChromeSegmentedControlState()

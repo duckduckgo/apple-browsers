@@ -112,6 +112,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks the floating title to activate associated tab.
     case aiChatSidebarFloatingTabActivated
 
+    /// Event Trigger: User clicks the Duck.ai button in the tab bar to open a new chat tab.
+    case aiChatTabbarButtonClicked
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -293,6 +296,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sidebar_floating_closed"
         case .aiChatSidebarFloatingTabActivated:
             return "aichat_sidebar_floating_tab_activated"
+        case .aiChatTabbarButtonClicked:
+            return "aichat_tabbar_button_clicked"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -404,6 +409,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarAttached,
                 .aiChatSidebarFloatingClosed,
                 .aiChatSidebarFloatingTabActivated,
+                .aiChatTabbarButtonClicked,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
@@ -494,6 +500,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarAttached,
                 .aiChatSidebarFloatingClosed,
                 .aiChatSidebarFloatingTabActivated,
+                .aiChatTabbarButtonClicked,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
@@ -554,6 +561,7 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case serp = "serp"
     case contextMenu = "context-menu"
     case translation = "translation"
+    case tabbarButton = "tabbar-button"
 }
 
 /// Source of AI Chat sidebar close action
@@ -561,4 +569,5 @@ enum AIChatSidebarCloseSource: String, CaseIterable {
     case addressBarButton = "address-bar-button"
     case sidebarCloseButton = "sidebar-close-button"
     case contextMenu = "context-menu"
+    case tabbarButton = "tabbar-button"
 }

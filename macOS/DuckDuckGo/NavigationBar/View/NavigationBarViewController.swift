@@ -1494,6 +1494,19 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
+        if isSidebarOpen {
+            PixelKit.fire(AIChatPixel.aiChatSidebarClosed(source: .tabbarButton), frequency: .dailyAndStandard)
+        } else {
+            PixelKit.fire(
+                AIChatPixel.aiChatSidebarOpened(
+                    source: .tabbarButton,
+                    shouldAutomaticallySendPageContext: nil,
+                    minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow()
+                ),
+                frequency: .dailyAndStandard
+            )
+        }
+
         if let mainViewController = parent as? MainViewController {
             mainViewController.toggleDuckAISidebar()
         } else {

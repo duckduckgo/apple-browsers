@@ -456,7 +456,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             do {
                 try await syncService.disconnect(deviceId: preservedDeviceId)
             } catch {
-                // Best-effort remote cleanup.
+                Logger.sync.error("Best-effort remote disconnect failed for preserved sync account: \(error.localizedDescription, privacy: .public)")
+                // Continue with local cleanup so setup can proceed even when remote logout fails.
             }
         }
 

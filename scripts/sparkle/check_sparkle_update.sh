@@ -125,6 +125,10 @@ main() {
         exit 0
     fi
 
+    if [[ "$bump_type" == "unknown" ]]; then
+        die "Could not parse semver from current='${current}' or latest='${latest}'"
+    fi
+
     echo "Update type: ${bump_type}"
 
     # Collect release notes

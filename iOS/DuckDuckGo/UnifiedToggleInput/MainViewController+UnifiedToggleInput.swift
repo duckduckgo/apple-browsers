@@ -237,9 +237,9 @@ extension MainViewController {
             }
         }
 
-        if case .aiTab = coordinator.displayState {
+        if coordinator.isAITabState {
             coordinator.contentViewController.forceBottomBarLayout = true
-            coordinator.updateContentHeaderForAITab(shouldOverlay: renderState.headerDisplayMode == .active && isAITab)
+            coordinator.applyContentHeaderFromRenderState(isOnAITab: isOnAITab)
             viewCoordinator.updateUnifiedToggleInputColors(
                 isExpanded: renderState.isExpanded,
                 inputView: coordinator.viewController.view

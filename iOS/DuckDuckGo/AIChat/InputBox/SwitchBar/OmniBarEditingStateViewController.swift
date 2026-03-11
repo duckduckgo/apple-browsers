@@ -159,17 +159,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             installChatHistoryList()
         }
 
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
         switchBarVC.focusTextField()
         if automaticallySelectsTextOnAppear {
             DispatchQueue.main.async {
                 self.switchBarVC.textEntryViewController.selectAllText()
             }
         }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
         DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)

@@ -551,9 +551,9 @@ class MainViewController: UIViewController {
 
         if isStartupOnboardingPending {
             installStartupOnboardingCoverViewIfNeeded()
-        } else {
-            loadInitialViewIfNeeded()
         }
+
+        loadInitialViewIfNeeded()
     }
 
     private func installStartupOnboardingCoverViewIfNeeded() {
@@ -578,20 +578,6 @@ class MainViewController: UIViewController {
     private func removeStartupOnboardingCoverViewIfNeeded() {
         startupOnboardingCoverView?.removeFromSuperview()
         startupOnboardingCoverView = nil
-    }
-
-    private func finishDeferredStartupPresentationIfNeeded() {
-        guard startupOnboardingCoverView != nil else { return }
-        guard !needsToShowOnboardingIntro() else { return }
-
-        if !hasLoadedInitialView {
-            loadInitialViewIfNeeded()
-        }
-
-        guard hasLoadedInitialView else { return }
-
-        view.layoutIfNeeded()
-        removeStartupOnboardingCoverViewIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -627,7 +613,6 @@ class MainViewController: UIViewController {
         }
 
         presentSyncRecoveryPromptIfNeeded()
-        finishDeferredStartupPresentationIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -789,7 +774,9 @@ class MainViewController: UIViewController {
         if let startupOnboardingCoverView {
             view.bringSubviewToFront(startupOnboardingCoverView)
         }
-        segueToDaxOnboarding()
+        segueToDaxOnboarding { [weak self] in
+            self?.removeStartupOnboardingCoverViewIfNeeded()
+        }
     }
 
     func presentSyncRecoveryPromptIfNeeded() {
@@ -4195,23 +4182,12 @@ extension MainViewController {
 extension MainViewController: OnboardingDelegate {
         
     func onboardingCompleted(controller: UIViewController) {
-        let shouldLoadInitialViewAfterOnboarding = isStartupOnboardingPending
         isStartupOnboardingPending = false
         markOnboardingSeen()
 
         controller.modalTransitionStyle = .crossDissolve
-        controller.dismiss(animated: true) { [weak self] in
-            guard let self else { return }
-
-            if shouldLoadInitialViewAfterOnboarding {
-                self.loadInitialViewIfNeeded()
-                self.newTabPageViewController?.handleDeferredStartupOnboardingCompletion()
-            } else {
-                self.newTabPageViewController?.onboardingCompleted()
-            }
-
-            self.finishDeferredStartupPresentationIfNeeded()
-        }
+        controller.dismiss(animated: true)
+        newTabPageViewController?.onboardingCompleted()
     }
     
     func markOnboardingSeen() {

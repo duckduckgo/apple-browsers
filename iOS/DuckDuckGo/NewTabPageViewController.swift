@@ -220,20 +220,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
-    func handleDeferredStartupOnboardingCompletion() {
-        view.backgroundColor = UIColor(designSystemColor: .background)
-        associatedTab.viewed = true
-
-        if !favoritesModel.isEmpty {
-            if borderView.superview == nil {
-                borderView.insertSelf(into: view)
-            }
-            updateBorderView()
-        }
-
-        onboardingCompleted()
-    }
-
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {

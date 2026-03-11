@@ -128,6 +128,20 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertFalse(decision.shouldShowOnboarding)
     }
 
+    func testStartupOnboardingDecisionShowsOnboardingWhenDeveloperOverrideMarksItIncomplete() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.developer(completed: false)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        XCTAssertTrue(decision.shouldShowOnboarding)
+    }
+
     func testStartupOnboardingDecisionPersistsUITestCompletionOverride() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)

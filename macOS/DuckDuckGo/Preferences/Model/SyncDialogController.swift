@@ -553,6 +553,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
         if let source { // Must be if let so as not to override any existing source with nil
             syncPromoSource = source.rawValue
         }
+
         guard await checkAuthenticated() else {
             return
         }

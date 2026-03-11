@@ -31,10 +31,10 @@ extension UITests {
         /// Disable warn before quit so Cmd+Q quits immediately
         application.disableWarnBeforeQuitting()
 
-        /// Create state to restore: 2 windows with multiple tabs
+        /// Optionally create state to restore (for example, multiple windows/tabs) via the provided closure
         configurationClosure?(application)
 
-        /// Quit properly to save state, then relaunch to trigger restoration
+        /// Quit properly to save state; the caller can relaunch the app to trigger restoration
         application.typeKey("q", modifierFlags: [.command])
         application.terminate()
     }

@@ -68,13 +68,13 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     var shouldShowUpdateStatus: Bool {
-        #if SPARKLE
-        // For Sparkle builds: always show update status regardless of feature flag
-        return true
-        #else
-        // For App Store builds: only show update status if feature flag is enabled
-        return featureFlagger.isFeatureOn(.appStoreUpdateFlow)
-        #endif
+        if StandardApplicationBuildType().isSparkleBuild {
+            // For Sparkle builds: always show update status regardless of feature flag
+            return true
+        } else {
+            // For App Store builds: only show update status if feature flag is enabled
+            return featureFlagger.isFeatureOn(.appStoreUpdateFlow)
+        }
     }
 
     @Published var updateState = UpdateState.upToDate
@@ -182,11 +182,9 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         (updateController as? any SparkleUpdateControlling)?.isAtRestartCheckpoint ?? false
     }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     var customFeedURL: String? {
         return try? settings.debugSparkleCustomFeedURL
     }
-#endif
 
     private var cancellable: AnyCancellable?
 

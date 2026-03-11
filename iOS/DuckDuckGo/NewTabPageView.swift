@@ -117,18 +117,22 @@ private extension NewTabPageView {
                     NewTabPageDaxLogoView()
                 }
 
-                VStack(spacing: Metrics.sectionSpacing) {
-                    escapeHatchSectionView
+                ScrollView {
+                    VStack(spacing: Metrics.sectionSpacing) {
+                        escapeHatchSectionView
 
-                    messagesSectionView
-                        .padding(.top, Metrics.nonGridSectionTopPadding)
-                        .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                        .frame(maxHeight: .infinity, alignment: .top)
+                        messagesSectionView
+                            .padding(.top, Metrics.nonGridSectionTopPadding)
+                            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.vertical, sectionsViewPadding(in: proxy))
+                    .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .if(dismissKeyboardOnScroll, transform: {
+                    $0.withScrollKeyboardDismiss()
+                })
             }
-            .padding(.vertical, sectionsViewPadding(in: proxy))
-            .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
         }
         .if(dismissKeyboardOnScroll, transform: {
             $0.ignoresSafeArea(.keyboard)

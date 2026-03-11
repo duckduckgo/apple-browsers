@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import DuckUI
 import Onboarding
 import SwiftUI
 
@@ -26,15 +25,21 @@ extension OnboardingRebranding.OnboardingView {
     struct AddToDockTutorialView: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
-        private static let videoSize = CGSize(width: 898.0, height: 680.0)
-        private static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
+        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-tutorial", withExtension: "mp4")
+
+        private enum Design {
+            static let borderWidth: CGFloat = 321
+            static let borderHeight: CGFloat = 239
+            static let videoWidth: CGFloat = 300
+            static let videoHeight: CGFloat = 231
+            static let borderHorizontalPadding: CGFloat = -8
+            static let borderVerticalPadding: CGFloat = -1
+        }
 
         private let title: String
         private let message: String
         private let cta: String
         private let action: () -> Void
-
-        @StateObject private var videoPlayerModel = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
         init(title: String,
              message: String,
@@ -61,21 +66,7 @@ extension OnboardingRebranding.OnboardingView {
                         .multilineTextAlignment(.center)
                 ),
                 content: AnyView(
-                    ZStack(alignment: .center) {
-                        OnboardingRebrandingImages.AddToDock.tutorialBorder
-                            .resizable()
-                            .scaledToFit()
-                            .padding(.horizontal, -11)
-                        videoPlayer
-                            .tempPlaceholder()
-                            .onFirstAppear {
-                                videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
-                                // Need to delay playing a video. If calling play too early the video won't play.
-                                DispatchQueue.main.async {
-                                    videoPlayerModel.play()
-                                }
-                            }
-                    }
+                    videoContent
                 ),
                 title: {
                     Text(title)
@@ -92,15 +83,29 @@ extension OnboardingRebranding.OnboardingView {
             )
         }
 
-        private var videoPlayer: some View {
-            PlayerView(coordinator: videoPlayerModel)
-                .aspectRatio(Self.videoSize.width / Self.videoSize.height, contentMode: .fit)
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-                    videoPlayerModel.pause()
+        private var videoContent: some View {
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let ratio = width / Design.borderWidth
+
+                ZStack(alignment: .top) {
+                    OnboardingRebrandingImages.AddToDock.tutorialBorder
+                        .resizable()
+                        .padding(EdgeInsets(top: Design.borderVerticalPadding * ratio,
+                                            leading: Design.borderHorizontalPadding * ratio,
+                                            bottom: Design.borderVerticalPadding * ratio,
+                                            trailing: Design.borderHorizontalPadding * ratio))
+                        .frame(width: width, height: Design.borderHeight * ratio)
+                    if let videoURL = Self.videoURL {
+                        AddToDockVideoPlayer(url: videoURL,
+                                             frameSize: CGSize(width: Design.videoWidth * ratio,
+                                                               height: Design.videoHeight * ratio),
+                                             shouldLoopVideo: true,
+                                             cornerRadiusRatio: ratio)
+                    }
                 }
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                    videoPlayerModel.play()
-                }
+            }
+            .aspectRatio(Design.borderWidth / Design.borderHeight, contentMode: .fit)
         }
 
     }

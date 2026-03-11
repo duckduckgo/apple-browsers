@@ -202,8 +202,12 @@ extension NewTabPageActionsManager {
         let dataImportProvider = BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager)
         let nextStepsPixelHandler = NewTabPageNextStepsCardsPixelHandler()
 
+        let buildType = StandardApplicationBuildType()
+        let environment: NewTabPageConfigurationClient.Environment = (buildType.isDebugBuild || buildType.isReviewBuild) ? .development : .production
+
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
+                environment: environment,
                 sectionsAvailabilityProvider: availabilityProvider,
                 sectionsVisibilityProvider: appearancePreferences,
                 omnibarConfigProvider: omnibarConfigProvider,

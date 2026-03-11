@@ -1,5 +1,5 @@
 //
-//  PromoTrigger.swift
+//  PromoDependencies.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
-/// Events that can trigger a promo.
-///
-/// Triggers should map to e.g. an `NSNotification` or `@Published` property
-/// that can be subscribed to by the PromoService.
-enum PromoTrigger {
-    case appLaunched
-    case windowBecameKey
-    case newTabPageAppeared
+import Foundation
+import Persistence
+import RemoteMessaging
+
+/// Centralized dependencies required to build promo delegates.
+/// Add new fields as promo groups require them (e.g. subscriptionManager, onboardingState).
+struct PromoDependencies {
+    let keyValueStore: ThrowingKeyValueStoring
+    let isExternallyActivated: Bool
+    let activeRemoteMessageModel: ActiveRemoteMessageModel
 }

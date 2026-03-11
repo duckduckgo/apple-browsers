@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-authv2-token-refresh",
-            "version": "0.0"
+            "version": "0.1"
         },
         "feature": {
             "name": "authv2-token-refresh",

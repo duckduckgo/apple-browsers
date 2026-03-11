@@ -33,15 +33,16 @@ final class UpdatesDebugMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
-            NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
-                .targetting(self)
-            NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
-                .targetting(self)
-            NSMenuItem(title: "Set up Sparkle testing environment…", action: #selector(setupSparkleTestingEnvironment))
-                .targetting(self)
-            NSMenuItem.separator()
-#endif
+            let buildType = StandardApplicationBuildType()
+            if buildType.isSparkleBuild && (buildType.isDebugBuild || buildType.isReviewBuild) {
+                NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
+                    .targetting(self)
+                NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
+                    .targetting(self)
+                NSMenuItem(title: "Set up Sparkle testing environment…", action: #selector(setupSparkleTestingEnvironment))
+                    .targetting(self)
+                NSMenuItem.separator()
+            }
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                 .targetting(self)
             NSMenuItem.separator()
@@ -77,7 +78,6 @@ final class UpdatesDebugMenu: NSMenu {
         presenter.showUpdateNotification(for: .updated)
     }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     // MARK: - Custom Feed URL
 
     private var customFeedURL: String? {
@@ -236,11 +236,9 @@ final class UpdatesDebugMenu: NSMenu {
         // Return base64-encoded signature
         return signature.base64EncodedString()
     }
-#endif
 
 }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
 // MARK: - Sparkle Testing Resources
 
 private enum SparkleTestingResources {
@@ -483,4 +481,3 @@ private enum SparkleTestingResources {
     """#
 
 }
-#endif

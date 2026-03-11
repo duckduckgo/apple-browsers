@@ -19,8 +19,6 @@
 import Foundation
 import Common
 
-#if !APPSTORE
-
 final class SystemInfo {
 
     static func pixelParameters(appVersion: AppVersion = AppVersion.shared) async -> [String: String] {
@@ -72,5 +70,3 @@ final class SystemInfo {
     }
 
 }
-
-#endif

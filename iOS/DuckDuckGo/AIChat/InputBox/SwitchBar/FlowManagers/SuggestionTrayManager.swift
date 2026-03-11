@@ -76,6 +76,14 @@ final class SuggestionTrayManager: NSObject {
         return !shouldDisplaySuggestionTray && (canDisplayFavorites || hasRemoteMessages)
     }
 
+    var hasFavorites: Bool {
+        suggestionTrayViewController?.hasFavorites ?? false
+    }
+
+    var hasRemoteMessages: Bool {
+        suggestionTrayViewController?.hasRemoteMessages ?? false
+    }
+
     var shouldDisplaySuggestionTray: Bool {
         let query = switchBarHandler.currentText
         // No text so don't show suggestins

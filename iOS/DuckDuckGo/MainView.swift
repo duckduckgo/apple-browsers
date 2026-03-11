@@ -101,6 +101,7 @@ extension MainViewFactory {
         createLogoBackground()
         createContentContainer()
         createSuggestionTrayContainer()
+        createUnifiedInputContentContainer()
         createTopSlideContainer()
         createStatusBackground()
         createTabBarContainer()
@@ -126,20 +127,43 @@ extension MainViewFactory {
     }
     
     final class NavigationBarCollectionView: UICollectionView {
-        
+
         var hitTestInsets = UIEdgeInsets.zero
-        
+        var allowsOverflowHitTesting = false
+
         override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-            return bounds.inset(by: hitTestInsets).contains(point)
+            if bounds.inset(by: hitTestInsets).contains(point) {
+                return true
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return false }
+            return visibleCells.contains { cell in
+                let cellPoint = cell.convert(point, from: self)
+                return cell.point(inside: cellPoint, with: event)
+            }
         }
-        
-        // Don't allow the use to drag the scrollbar or the UI will glitch.
+
+        // Don't allow the user to drag the scrollbar or the UI will glitch.
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
             let view = super.hitTest(point, with: event)
             if view == self.subviews.first(where: { $0 is UIImageView }) {
                 return nil
             }
-            return view
+            if let view { return view }
+
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            return overflowHitTest(point, with: event)
+        }
+
+        /// Forwards an overflow point to visible cells for hit testing.
+        /// Supports the iPad expanded search area which extends below the collection view's bounds.
+        private func overflowHitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            for cell in visibleCells.reversed() {
+                let cellPoint = cell.convert(point, from: self)
+                if let result = cell.hitTest(cellPoint, with: event) {
+                    return result
+                }
+            }
+            return nil
         }
     }
     
@@ -187,13 +211,9 @@ extension MainViewFactory {
                 return result
             }
             guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
-            // Return self so the overflow tap gesture recognizer receives the touch.
-            // Returning the deep target directly doesn't work because UIKit can't deliver
-            // touches to views whose intermediate ancestors don't claim the point.
-            if Self.deepHitTest(in: self, point: point, event: event) is UIControl {
-                return self
-            }
-            return Self.deepHitTest(in: self, point: point, event: event)
+            guard let target = Self.deepHitTest(in: self, point: point, event: event) else { return nil }
+            // Return self for controls so the overflow tap gesture recognizer can activate them.
+            return target is UIControl ? self : target
         }
 
         override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
@@ -255,6 +275,14 @@ extension MainViewFactory {
         superview.addSubview(coordinator.suggestionTrayContainer)
     }
 
+    final class UnifiedInputContentContainer: UIView { }
+    private func createUnifiedInputContentContainer() {
+        coordinator.unifiedInputContentContainer = UnifiedInputContentContainer()
+        coordinator.unifiedInputContentContainer.isHidden = true
+        coordinator.unifiedInputContentContainer.backgroundColor = .clear
+        superview.addSubview(coordinator.unifiedInputContentContainer)
+    }
+
     private func createToolbar() {
         coordinator.toolbar = HitTestingToolbar()
         coordinator.toolbar.isTranslucent = false
@@ -289,19 +317,7 @@ extension MainViewFactory {
         coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
         coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
         coordinator.unifiedToggleInputContainer.isHidden = true
-        superview.addSubview(coordinator.unifiedToggleInputContainer)
-
-        coordinator.keyboardSeamView = UIView()
-        coordinator.keyboardSeamView.translatesAutoresizingMaskIntoConstraints = false
-        coordinator.keyboardSeamView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        coordinator.keyboardSeamView.isHidden = true
-        superview.addSubview(coordinator.keyboardSeamView)
-        NSLayoutConstraint.activate([
-            coordinator.keyboardSeamView.topAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
-            coordinator.keyboardSeamView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            coordinator.keyboardSeamView.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            coordinator.keyboardSeamView.heightAnchor.constraint(equalToConstant: 44),
-        ])
+        coordinator.navigationBarContainer.addSubview(coordinator.unifiedToggleInputContainer)
     }
 
     final class AIChatTabChatHeaderContainer: UIView {}
@@ -322,6 +338,7 @@ extension MainViewFactory {
         constrainTopSlideContainer()
         constrainContentContainer()
         constrainSuggestionTrayContainer()
+        constrainUnifiedInputContentContainer()
         constrainStatusBackground()
         constrainTabBarContainer()
         constrainNavigationBarContainer()
@@ -436,19 +453,13 @@ extension MainViewFactory {
 
     private func constrainUnifiedToggleInputContainer() {
         let container = coordinator.unifiedToggleInputContainer!
-        let toolbar = coordinator.toolbar!
-
-        coordinator.constraints.unifiedToggleInputBottom = container.bottomAnchor.constraint(equalTo: toolbar.topAnchor)
-
-        // Ceiling constraint: input bar must never fall below the toolbar,
-        // even when UIKeyboardLayoutGuide contracts (keyboard hides temporarily).
-        let ceilingConstraint = container.bottomAnchor.constraint(lessThanOrEqualTo: toolbar.topAnchor)
+        let navigationBarContainer = coordinator.navigationBarContainer!
 
         NSLayoutConstraint.activate([
-            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            coordinator.constraints.unifiedToggleInputBottom,
-            ceilingConstraint,
+            container.topAnchor.constraint(equalTo: navigationBarContainer.topAnchor),
+            container.leadingAnchor.constraint(equalTo: navigationBarContainer.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: navigationBarContainer.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor),
         ])
     }
 
@@ -473,6 +484,17 @@ extension MainViewFactory {
             suggestionTrayContainer.constrainView(contentContainer, by: .height),
             suggestionTrayContainer.constrainView(contentContainer, by: .centerX),
             suggestionTrayContainer.constrainView(contentContainer, by: .centerY),
+        ])
+    }
+
+    private func constrainUnifiedInputContentContainer() {
+        let container = coordinator.unifiedInputContentContainer!
+        let contentContainer = coordinator.contentContainer!
+        NSLayoutConstraint.activate([
+            container.constrainView(contentContainer, by: .width),
+            container.constrainView(contentContainer, by: .height),
+            container.constrainView(contentContainer, by: .centerX),
+            container.constrainView(contentContainer, by: .centerY),
         ])
     }
 

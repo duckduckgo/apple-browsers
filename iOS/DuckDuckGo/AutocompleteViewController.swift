@@ -60,7 +60,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private var task: URLSessionDataTask?
-    private var lastReportedContentHeight: CGFloat = 0
 
     private var isUsingUnifiedPrediction: Bool {
         featureFlagger.isFeatureOn(.unifiedURLPredictor)
@@ -113,7 +112,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
         self.model.isPad = isPad
-        self.model.usePlainListStyle = isPad && featureFlagger.isFeatureOn(.iPadAIToggle)
     }
     
     @MainActor required dynamic init?(coder aDecoder: NSCoder) {
@@ -124,12 +122,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         super.viewDidLoad()
 
         view.backgroundColor = UIColor(designSystemColor: .background)
-
-        model.onContentHeightChanged = { [weak self] height in
-            guard let self, height > 0, height != self.lastReportedContentHeight else { return }
-            self.lastReportedContentHeight = height
-            self.presentationDelegate?.autocompleteDidChangeContentHeight(height: height)
-        }
 
         queryDebounceCancellable = $query
             .debounce(for: .milliseconds(Self.debounceDelayMS), scheduler: RunLoop.main)
@@ -249,9 +241,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     private func updateHeight() {
         guard let lastResults else { return }
-
-        // For plain list style, height is reported by SwiftUI via ContentHeightPreferenceKey.
-        if model.usePlainListStyle { return }
 
         let messageHeight = model.isMessageVisible ? 196 : 0
         let sectionPadding = 12

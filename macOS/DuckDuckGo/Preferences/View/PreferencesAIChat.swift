@@ -146,7 +146,7 @@ extension Preferences {
                         ToggleMenuItem(UserText.aiChatAutomaticallySendPageContentToggle,
                                        isOn: $model.shouldAutomaticallySendPageContext)
                         .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
-                        .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)
+                        .disabled(model.isPageContextToggleDisabled)
                         .padding(.leading, 19)
                     }
                 }

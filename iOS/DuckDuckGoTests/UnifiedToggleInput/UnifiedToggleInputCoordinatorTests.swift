@@ -59,6 +59,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
+    func test_showCollapsed_setsInputModeToAIChat() {
+        sut.showExpanded(inputMode: .search)
+        sut.showCollapsed()
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    func test_showCollapsed_deactivatesInput() {
+        sut.showExpanded()
+        sut.showCollapsed()
+        XCTAssertFalse(sut.viewController.isInputExpanded)
+    }
+
     func test_showCollapsed_emitsIntent() {
         let exp = expectation(description: "showCollapsed intent emitted")
         sut.intentPublisher
@@ -91,6 +103,16 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func test_showExpanded_setsExpandedOnVC() {
+        sut.showExpanded()
+        XCTAssertTrue(sut.viewController.isInputExpanded)
+    }
+
+    func test_showExpanded_setsInputModeOnVC() {
+        sut.showExpanded(inputMode: .search)
+        XCTAssertEqual(sut.viewController.inputMode, .search)
+    }
+
     func test_showExpanded_withPrefilledText_setsTextStateToPrefilledSelected() {
         sut.showExpanded(prefilledText: "hello")
         XCTAssertEqual(sut.textState, .prefilledSelected)
@@ -112,6 +134,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.showExpanded()
         sut.hide()
         XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_hide_collapsesVC() {
+        sut.showExpanded()
+        sut.hide()
+        XCTAssertFalse(sut.viewController.isInputExpanded)
     }
 
     func test_hide_emitsIntent() {
@@ -328,6 +356,38 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.updateToggleEnabled(false)
         sut.activateFromOmnibar(inputMode: .aiChat)
         XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_activateFromOmnibar_topPosition_setsVCProperties() {
+        sut.activateFromOmnibar(cardPosition: .top)
+        XCTAssertEqual(sut.viewController.cardPosition, .top)
+        XCTAssertTrue(sut.viewController.usesOmnibarMargins)
+        XCTAssertTrue(sut.viewController.showsDismissButton)
+        XCTAssertTrue(sut.viewController.isToolbarSubmitHidden)
+    }
+
+    func test_activateFromOmnibar_bottomPosition_setsVCProperties() {
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        XCTAssertEqual(sut.viewController.cardPosition, .bottom)
+        XCTAssertFalse(sut.viewController.usesOmnibarMargins)
+        XCTAssertFalse(sut.viewController.showsDismissButton)
+        XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
+    }
+
+    func test_activateFromOmnibar_setsExpandedTrue() {
+        sut.activateFromOmnibar()
+        XCTAssertTrue(sut.viewController.isInputExpanded)
+    }
+
+    func test_deactivateToOmnibar_resetsVCProperties() {
+        sut.activateFromOmnibar(cardPosition: .top)
+        sut.deactivateToOmnibar()
+
+        XCTAssertEqual(sut.viewController.cardPosition, .bottom)
+        XCTAssertFalse(sut.viewController.usesOmnibarMargins)
+        XCTAssertFalse(sut.viewController.showsDismissButton)
+        XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
+        XCTAssertFalse(sut.viewController.isInputExpanded)
     }
 
     func test_deactivateToOmnibar_resetsState() {

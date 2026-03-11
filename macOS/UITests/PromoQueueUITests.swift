@@ -26,6 +26,7 @@ final class PromoQueueUITests: UITestCase {
         app = XCUIApplication.setUp(featureFlags: ["promoQueue": true])
         app.enforceSingleWindow()
         app.resetPromoState()
+        app.dismissNextSteps()
     }
 
     override func tearDown() {
@@ -160,6 +161,17 @@ private extension XCUIApplication {
         promoQueueMenu.menuItems[Identifiers.advanceSimulatedDate1Day].clickAfterExistenceTestSucceeds()
     }
 
+    /// Dismisses Next Steps (external promo) and advances date to remove its cooldown,
+    /// so test promos can be reliably triggered for each scenario.
+    func dismissNextSteps() {
+        guard nextSteps.exists else { return }
+        debugMenu
+            .menuItems[Utilities.AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu]
+            .menuItems[Utilities.AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem]
+            .clickAfterExistenceTestSucceeds()
+        advanceSimulatedDateByDay()
+    }
+
     private func openPromoQueueMenu() {
         debugMenu.click()
         promoQueueMenu.hover()
@@ -201,5 +213,9 @@ private extension XCUIElement {
 
     var actionButton: XCUIElement {
         buttons["Action"]
+    }
+
+    var nextSteps: XCUIElement {
+        webViews.firstMatch.staticTexts["Next Steps"]
     }
 }

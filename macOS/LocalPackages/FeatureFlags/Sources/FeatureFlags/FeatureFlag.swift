@@ -275,8 +275,8 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
     case aiChatChromeSidebar
-   
-     /// Enable Look Up (three-finger click) while keeping link preview disabled
+
+    /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 }

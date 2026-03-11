@@ -189,7 +189,6 @@ final class AIChatViewController: NSViewController {
         attachButton.isHidden = true
         topBar.addSubview(attachButton)
 
-
         titleButton = makeTitleButton()
         titleButton.isHidden = true
         topBar.addSubview(titleButton)

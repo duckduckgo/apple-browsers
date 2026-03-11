@@ -100,7 +100,6 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var optionsButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var optionsButtonHeightConstraint: NSLayoutConstraint!
 
-
     private let downloadListCoordinator: DownloadListCoordinator
 
     lazy var downloadsProgressView: CircularProgressView = {

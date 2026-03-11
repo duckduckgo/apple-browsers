@@ -1,5 +1,5 @@
 //
-//  UTIRenderState.swift
+//  UTIViewConfig.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -19,32 +19,13 @@
 
 import Foundation
 
-struct UTIRenderState: Equatable {
-    var isInputVisible: Bool
-    var isContentVisible: Bool
+struct UTIViewConfig: Equatable {
     var isExpanded: Bool
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
     var showsDismissButton: Bool
-    var showsToolbar: Bool
     var isToolbarSubmitHidden: Bool
     var showsToggle: Bool
     var inactiveAppearance: Bool
-    var isFloatingSubmitVisible: Bool
-    var headerDisplayMode: UnifiedInputContentContainerViewController.HeaderDisplayMode
-    var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
-
-    var viewConfig: UTIViewConfig {
-        UTIViewConfig(
-            isExpanded: isExpanded,
-            cardPosition: cardPosition,
-            usesOmnibarMargins: usesOmnibarMargins,
-            showsDismissButton: showsDismissButton,
-            isToolbarSubmitHidden: isToolbarSubmitHidden,
-            showsToggle: showsToggle,
-            inactiveAppearance: inactiveAppearance,
-            inputMode: inputMode
-        )
-    }
 }

@@ -1786,6 +1786,7 @@
 		C18390B92F4F6F19001939B9 /* UnifiedToggleInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390B82F4F6F19001939B9 /* UnifiedToggleInputViewController.swift */; };
 		C18390BB2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */; };
 		AABB00010001000100010001 /* UTIRenderState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010002 /* UTIRenderState.swift */; };
+		AABB00010001000100010005 /* UTIViewConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010006 /* UTIViewConfig.swift */; };
 		C18390BD2F4F6F57001939B9 /* UnifiedToggleInputDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390BC2F4F6F57001939B9 /* UnifiedToggleInputDelegate.swift */; };
 		C18390BF2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390BE2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift */; };
 		C18390C22F4F712A001939B9 /* AIChatNativeInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C12F4F712A001939B9 /* AIChatNativeInputViewController.swift */; };
@@ -4320,6 +4321,7 @@
 		C18390B82F4F6F19001939B9 /* UnifiedToggleInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputViewController.swift; sourceTree = "<group>"; };
 		C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputCoordinator.swift; sourceTree = "<group>"; };
 		AABB00010001000100010002 /* UTIRenderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIRenderState.swift; sourceTree = "<group>"; };
+		AABB00010001000100010006 /* UTIViewConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIViewConfig.swift; sourceTree = "<group>"; };
 		C18390BC2F4F6F57001939B9 /* UnifiedToggleInputDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputDelegate.swift; sourceTree = "<group>"; };
 		C18390BE2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFeature.swift; sourceTree = "<group>"; };
 		C18390C12F4F712A001939B9 /* AIChatNativeInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatNativeInputViewController.swift; sourceTree = "<group>"; };
@@ -8789,6 +8791,7 @@
 				C18390C32F4F73AE001939B9 /* UnifiedToggleInputHandler.swift */,
 				C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */,
 				AABB00010001000100010002 /* UTIRenderState.swift */,
+				AABB00010001000100010006 /* UTIViewConfig.swift */,
 				0D5BA3FF1041A3BB9396AE65 /* UnifiedToggleInputFloatingSubmitViewController.swift */,
 				A1B2C3D4E5F60001A1B2C3D4 /* UnifiedInputContentContainerViewController.swift */,
 				A1B2C3D4E5F60003A1B2C3D4 /* UnifiedInputTopHeaderView.swift */,
@@ -12264,6 +12267,7 @@
 				D63FF8962C1B67E9006DE24D /* YoutubeOverlayUserScript.swift in Sources */,
 				C18390BB2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift in Sources */,
 				AABB00010001000100010001 /* UTIRenderState.swift in Sources */,
+				AABB00010001000100010005 /* UTIViewConfig.swift in Sources */,
 				71DFABCA706A402AB4B27F50 /* UnifiedToggleInputFloatingSubmitViewController.swift in Sources */,
 				A1B2C3D4E5F60002A1B2C3D4 /* UnifiedInputContentContainerViewController.swift in Sources */,
 				A1B2C3D4E5F60004A1B2C3D4 /* UnifiedInputTopHeaderView.swift in Sources */,

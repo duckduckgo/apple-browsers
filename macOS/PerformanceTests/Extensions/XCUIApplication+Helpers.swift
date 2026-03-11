@@ -20,7 +20,7 @@ import XCTest
 
 extension XCUIApplication {
 
-    static func buildApplicationForPerformanceTesting() -> XCUIApplication {
+    static func setUpForStartupPerformanceTesting() -> XCUIApplication {
         XCUIApplication.setUp(environment: ["UITEST_MODE_STARTUP_PERFORMANCE": "1"])
     }
 }

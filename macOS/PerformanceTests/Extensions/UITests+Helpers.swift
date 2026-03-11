@@ -20,8 +20,8 @@ import XCTest
 
 extension UITests {
 
-    static func setupInitialState(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
-        let application = XCUIApplication.buildApplicationForPerformanceTesting()
+    static func setupInitialStateForPerformanceTesting(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
+        let application = XCUIApplication.setUpForStartupPerformanceTesting()
 
         /// Configure session restoration (enable/disable) based on shouldRestoreSession
         application.openPreferencesWindow()

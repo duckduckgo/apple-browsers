@@ -30,9 +30,9 @@ final class StartupPerformanceTests: XCTestCase {
     }
 
     func testStartupSequenceDurationWithoutStateRestoration() throws {
-        UITests.setupInitialState(shouldRestoreSession: false)
+        UITests.setupInitialStateForPerformanceTesting(shouldRestoreSession: false)
 
-        let application = XCUIApplication.buildApplicationForPerformanceTesting()
+        let application = XCUIApplication.setUpForStartupPerformanceTesting()
         defer {
             application.terminate()
         }
@@ -46,7 +46,7 @@ final class StartupPerformanceTests: XCTestCase {
     }
 
     func testStartupSequenceDurationWithStateRestoration() throws {
-        UITests.setupInitialState(shouldRestoreSession: true) { application in
+        UITests.setupInitialStateForPerformanceTesting(shouldRestoreSession: true) { application in
             application.openNewTab()
             application.openNewTab()
             application.openNewWindow()
@@ -54,7 +54,7 @@ final class StartupPerformanceTests: XCTestCase {
             application.openNewTab()
         }
 
-        let application = XCUIApplication.buildApplicationForPerformanceTesting()
+        let application = XCUIApplication.setUpForStartupPerformanceTesting()
         defer {
             application.terminate()
         }

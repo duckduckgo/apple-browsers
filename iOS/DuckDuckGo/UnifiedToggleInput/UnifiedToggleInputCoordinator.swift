@@ -102,6 +102,23 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         return false
     }
 
+    var isAITabState: Bool {
+        if case .aiTab = displayState { return true }
+        return false
+    }
+
+    var isAITabExpanded: Bool {
+        displayState == .aiTab(.expanded)
+    }
+
+    var isActive: Bool {
+        displayState != .hidden
+    }
+
+    var shouldCollapseOnKeyboardDismiss: Bool {
+        displayState == .aiTab(.expanded) && inputMode == .aiChat
+    }
+
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
 

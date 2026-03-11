@@ -86,7 +86,7 @@ extension MainViewController {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
-        } else if case .aiTab(.expanded) = coordinator.displayState {
+        } else if coordinator.isAITabExpanded {
             handleAITabModeChange(mode, coordinator: coordinator)
         }
     }
@@ -109,7 +109,7 @@ extension MainViewController {
            !coordinator.viewController.isInputFirstResponder,
            currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true {
             DispatchQueue.main.async { [weak coordinator] in
-                guard let coordinator, case .aiTab(.expanded) = coordinator.displayState else { return }
+                guard let coordinator, coordinator.isAITabExpanded else { return }
                 coordinator.activateInput()
             }
         }
@@ -153,7 +153,7 @@ extension MainViewController {
         guard unifiedToggleInputFeature.isAvailable,
               let coordinator = unifiedToggleInputCoordinator else { return }
 
-        if !tab.isAITab && coordinator.displayState == .hidden &&
+        if !tab.isAITab && !coordinator.isActive &&
             viewCoordinator.aiChatTabChatHeaderContainer.isHidden {
             coordinator.unbind()
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -173,9 +173,8 @@ extension MainViewController {
             }
             tab.webView.scrollView.contentInset = .zero
             coordinator.deactivateToOmnibar()
-            switch coordinator.displayState {
-            case .aiTab: break
-            default: coordinator.showCollapsed()
+            if !coordinator.isAITabState {
+                coordinator.showCollapsed()
             }
             viewCoordinator.showAITabChrome()
             updateUnifiedInputContentVisibility(for: coordinator)
@@ -270,13 +269,10 @@ extension MainViewController {
         contentVC.delegate = self
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-            switch coordinator.displayState {
-            case .omnibar:
+            if coordinator.isOmnibarSession {
                 coordinator.deactivateToOmnibar()
-            case .aiTab(.expanded):
+            } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
-            default:
-                break
             }
         }
         contentVC.onSwipeDownRequested = { [weak self] in

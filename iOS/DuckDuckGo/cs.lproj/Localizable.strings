@@ -2700,6 +2700,15 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Než to zapomenu...";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Soukromý. Rychlý. S méně reklamami.";
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "To je vyhledávač DuckDuckGo Search!";
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Jsi připravený na rychlejší prohlížeč, který tě ochrání?";
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Zdravíme tě.";
+
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Spustit procházení";
 

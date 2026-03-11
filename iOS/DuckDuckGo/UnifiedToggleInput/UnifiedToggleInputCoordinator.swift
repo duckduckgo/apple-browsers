@@ -178,8 +178,9 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func showCollapsed() {
         displayState = .aiTab(.collapsed)
         inputMode = .aiChat
-        viewController.setInputMode(.aiChat, animated: false)
-        viewController.setExpanded(false, animated: false)
+
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
         intentSubject.send(.showCollapsed)
     }
@@ -188,14 +189,14 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         displayState = .aiTab(.expanded)
         self.inputMode = inputMode
 
-        viewController.setInputMode(inputMode, animated: false)
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: false)
 
         if let prefilledText, !prefilledText.isEmpty {
             viewController.text = prefilledText
             textState = .prefilledSelected
         }
 
-        viewController.setExpanded(true, animated: false)
         intentSubject.send(.showExpanded)
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
@@ -214,9 +215,11 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func hide() {
         displayState = .hidden
+
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
-        viewController.setExpanded(false, animated: false)
-        contentViewController.setHeaderDisplayMode(.hidden)
+        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         intentSubject.send(.hide)
     }
 
@@ -227,21 +230,17 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         displayState = .omnibar(.active)
         self.inputMode = effectiveInputMode
         self.cardPosition = cardPosition
-        viewController.cardPosition = cardPosition
-        viewController.usesOmnibarMargins = (cardPosition == .top)
+
+        let renderState = computeRenderState()
         viewController.isTopBarPosition = (cardPosition == .top)
-        viewController.setInputMode(effectiveInputMode, animated: false)
-        viewController.showsDismissButton = (cardPosition == .top)
+        viewController.apply(renderState.viewConfig, animated: false)
 
         if let text = prefilledText, !text.isEmpty {
             viewController.text = text
             textState = .prefilledSelected
         }
 
-        viewController.isToolbarSubmitHidden = (cardPosition == .top)
-
-        viewController.setExpanded(true, animated: false)
-        contentViewController.setHeaderDisplayMode(.active)
+        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         let height = omnibarEditingHeight()
         intentSubject.send(.showOmnibarEditing(expandedHeight: height))
 
@@ -321,18 +320,16 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func deactivateToOmnibar() {
         guard isOmnibarSession else { return }
         displayState = .hidden
-        viewController.showsDismissButton = false
-        viewController.usesOmnibarMargins = false
-        viewController.isTopBarPosition = false
-        viewController.isToolbarSubmitHidden = false
         cardPosition = .bottom
-        viewController.cardPosition = .bottom
-        viewController.setInactiveCardAppearance(false)
         viewController.text = ""
         textState = .empty
+
+        let renderState = computeRenderState()
+        viewController.isTopBarPosition = false
+        viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
-        viewController.setExpanded(false, animated: false)
-        contentViewController.setHeaderDisplayMode(.hidden)
+
+        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         intentSubject.send(.hideOmnibarEditing)
     }
 
@@ -353,17 +350,15 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         switch (displayState, isInputVisible) {
         case (.omnibar(.active), false):
             displayState = .omnibar(.inactive)
-            if viewController.cardPosition == .bottom {
-                viewController.setInactiveCardAppearance(true)
-            }
-            contentViewController.setHeaderDisplayMode(.inactive)
+            let renderState = computeRenderState()
+            viewController.setInactiveCardAppearance(renderState.inactiveAppearance)
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
             intentSubject.send(.showOmnibarInactive)
         case (.omnibar(.inactive), true):
             displayState = .omnibar(.active)
-            if viewController.cardPosition == .bottom {
-                viewController.setInactiveCardAppearance(false)
-            }
-            contentViewController.setHeaderDisplayMode(.active)
+            let renderState = computeRenderState()
+            viewController.setInactiveCardAppearance(renderState.inactiveAppearance)
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
             intentSubject.send(.showOmnibarActive)
         case (.aiTab(.expanded), false) where isAITabSearch:
             viewController.setInactiveCardAppearance(true)

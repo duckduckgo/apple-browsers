@@ -26,4 +26,5 @@ final class ApplicationBuildTypeMock: ApplicationBuildType {
     var isAppStoreBuild: Bool = false
     var isDebugBuild: Bool = false
     var isReviewBuild: Bool = false
+    var isAlphaBuild: Bool = false
 }

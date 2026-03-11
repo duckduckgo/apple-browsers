@@ -42,10 +42,14 @@ extension HistoryViewActionsManager {
         )
         let styleProvider = ScriptStyleProvider(themeManager: themeManager)
 
+        let buildType = StandardApplicationBuildType()
+        let environment: DataClient.Environment = (buildType.isDebugBuild || buildType.isReviewBuild) ? .development : .production
+
         self.init(scriptClients: [
             DataClient(
                 dataProvider: dataProvider,
                 styleProvider: styleProvider,
+                environment: environment,
                 actionsHandler: HistoryViewActionsHandler(dataProvider: dataProvider, bookmarksHandler: bookmarksHandler),
                 errorHandler: HistoryViewErrorHandler()
             ),

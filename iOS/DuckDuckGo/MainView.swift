@@ -101,6 +101,7 @@ extension MainViewFactory {
         createLogoBackground()
         createContentContainer()
         createSuggestionTrayContainer()
+        createUnifiedInputContentContainer()
         createTopSlideContainer()
         createStatusBackground()
         createTabBarContainer()
@@ -274,6 +275,14 @@ extension MainViewFactory {
         superview.addSubview(coordinator.suggestionTrayContainer)
     }
 
+    final class UnifiedInputContentContainer: UIView { }
+    private func createUnifiedInputContentContainer() {
+        coordinator.unifiedInputContentContainer = UnifiedInputContentContainer()
+        coordinator.unifiedInputContentContainer.isHidden = true
+        coordinator.unifiedInputContentContainer.backgroundColor = .clear
+        superview.addSubview(coordinator.unifiedInputContentContainer)
+    }
+
     private func createToolbar() {
         coordinator.toolbar = HitTestingToolbar()
         coordinator.toolbar.isTranslucent = false
@@ -308,19 +317,7 @@ extension MainViewFactory {
         coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
         coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
         coordinator.unifiedToggleInputContainer.isHidden = true
-        superview.addSubview(coordinator.unifiedToggleInputContainer)
-
-        coordinator.keyboardSeamView = UIView()
-        coordinator.keyboardSeamView.translatesAutoresizingMaskIntoConstraints = false
-        coordinator.keyboardSeamView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        coordinator.keyboardSeamView.isHidden = true
-        superview.addSubview(coordinator.keyboardSeamView)
-        NSLayoutConstraint.activate([
-            coordinator.keyboardSeamView.topAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
-            coordinator.keyboardSeamView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            coordinator.keyboardSeamView.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            coordinator.keyboardSeamView.heightAnchor.constraint(equalToConstant: 44),
-        ])
+        coordinator.navigationBarContainer.addSubview(coordinator.unifiedToggleInputContainer)
     }
 
     final class AIChatTabChatHeaderContainer: UIView {}
@@ -341,6 +338,7 @@ extension MainViewFactory {
         constrainTopSlideContainer()
         constrainContentContainer()
         constrainSuggestionTrayContainer()
+        constrainUnifiedInputContentContainer()
         constrainStatusBackground()
         constrainTabBarContainer()
         constrainNavigationBarContainer()
@@ -455,19 +453,13 @@ extension MainViewFactory {
 
     private func constrainUnifiedToggleInputContainer() {
         let container = coordinator.unifiedToggleInputContainer!
-        let toolbar = coordinator.toolbar!
-
-        coordinator.constraints.unifiedToggleInputBottom = container.bottomAnchor.constraint(equalTo: toolbar.topAnchor)
-
-        // Ceiling constraint: input bar must never fall below the toolbar,
-        // even when UIKeyboardLayoutGuide contracts (keyboard hides temporarily).
-        let ceilingConstraint = container.bottomAnchor.constraint(lessThanOrEqualTo: toolbar.topAnchor)
+        let navigationBarContainer = coordinator.navigationBarContainer!
 
         NSLayoutConstraint.activate([
-            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            coordinator.constraints.unifiedToggleInputBottom,
-            ceilingConstraint,
+            container.topAnchor.constraint(equalTo: navigationBarContainer.topAnchor),
+            container.leadingAnchor.constraint(equalTo: navigationBarContainer.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: navigationBarContainer.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor),
         ])
     }
 
@@ -492,6 +484,17 @@ extension MainViewFactory {
             suggestionTrayContainer.constrainView(contentContainer, by: .height),
             suggestionTrayContainer.constrainView(contentContainer, by: .centerX),
             suggestionTrayContainer.constrainView(contentContainer, by: .centerY),
+        ])
+    }
+
+    private func constrainUnifiedInputContentContainer() {
+        let container = coordinator.unifiedInputContentContainer!
+        let contentContainer = coordinator.contentContainer!
+        NSLayoutConstraint.activate([
+            container.constrainView(contentContainer, by: .width),
+            container.constrainView(contentContainer, by: .height),
+            container.constrainView(contentContainer, by: .centerX),
+            container.constrainView(contentContainer, by: .centerY),
         ])
     }
 

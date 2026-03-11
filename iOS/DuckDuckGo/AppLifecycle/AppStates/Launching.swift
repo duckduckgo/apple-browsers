@@ -156,7 +156,6 @@ struct Launching: LaunchingHandling {
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager
         )
 

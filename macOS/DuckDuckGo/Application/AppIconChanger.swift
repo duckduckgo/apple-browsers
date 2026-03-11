@@ -52,15 +52,16 @@ final class AppIconChanger {
         // Fall back to internal user logic
         let icon: NSImage?
         if isInternalChannel {
-#if DEBUG
-            icon = .internalChannelIconDebug
-#elseif REVIEW
-            icon = .internalChannelIconReview
-#elseif ALPHA
-            icon = nil // Don't override icon for alpha builds
-#else
-            icon = .internalChannelIcon
-#endif
+            let buildType = StandardApplicationBuildType()
+            if buildType.isDebugBuild {
+                icon = .internalChannelIconDebug
+            } else if buildType.isReviewBuild {
+                icon = .internalChannelIconReview
+            } else if buildType.isAlphaBuild {
+                icon = nil // Don't override icon for alpha builds
+            } else {
+                icon = .internalChannelIcon
+            }
         } else {
             icon = nil
         }

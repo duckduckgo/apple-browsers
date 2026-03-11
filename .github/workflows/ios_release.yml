@@ -63,7 +63,7 @@ on:
 
 jobs:
   make-release:
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     name: Make App Store Connect Release
 
     env:

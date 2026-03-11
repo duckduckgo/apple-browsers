@@ -23,6 +23,25 @@ MINOR="🟡"
 PATCH="🟢"
 UPTODATE="✅"
 
+# Verbose logging helpers
+verbose() {
+    if [[ "$VERBOSE" == true ]]; then
+        echo -e "${DIM}[verbose]${NC} $*" >&2
+    fi
+}
+
+verbose_warn() {
+    if [[ "$VERBOSE" == true ]]; then
+        echo -e "${BOLD}${YELLOW}[warning]${NC} $*" >&2
+    fi
+}
+
+verbose_error() {
+    if [[ "$VERBOSE" == true ]]; then
+        echo -e "${BOLD}${RED}[error]${NC}   $*" >&2
+    fi
+}
+
 show_help() {
     echo "Usage: $(basename "$0") [OPTIONS]"
     echo ""
@@ -35,6 +54,7 @@ show_help() {
     echo "  -q, --quiet             Only show packages with updates"
     echo "  -j, --json              Output as JSON"
     echo "  -l, --list              Print only the list of direct dependencies (one per line)"
+    echo "  -v, --verbose           Print detailed progress for every step and file analysed"
     echo "  --no-color              Disable colored output"
 }
 
@@ -43,6 +63,7 @@ JSON_OUTPUT=false
 NO_COLOR=false
 SHOW_ALL=false
 LIST_OUTPUT=false
+VERBOSE=false
 SEARCH_PATH=""
 WORKSPACE_PATH=""
 
@@ -53,9 +74,10 @@ while [[ $# -gt 0 ]]; do
         -q|--quiet) QUIET=true; shift ;;
         -j|--json) JSON_OUTPUT=true; shift ;;
         -l|--list) LIST_OUTPUT=true; shift ;;
+        -v|--verbose) VERBOSE=true; shift ;;
         --no-color) NO_COLOR=true; shift ;;
-        -*) echo "Unknown option: $1"; show_help; exit 1 ;;
-        *) echo "Unknown argument: $1"; show_help; exit 1 ;;
+        -*) echo -e "${RED}Unknown option: $1${NC}" >&2; show_help; exit 1 ;;
+        *) echo -e "${RED}Unknown argument: $1${NC}" >&2; show_help; exit 1 ;;
     esac
 done
 
@@ -128,23 +150,27 @@ get_latest_github_release() {
     repo_path="${repo_path%.git}"
 
     if [[ -z "$repo_path" ]]; then
+        verbose_error "Could not extract repo path from URL: $repo_url"
         echo ""
         return
     fi
 
     local api_url="https://api.github.com/repos/${repo_path}/releases/latest"
+    verbose "Fetching latest release from GitHub API: $api_url"
     local response tag
     response=$(curl --max-time 60 -sf -H "Accept: application/vnd.github.v3+json" "$api_url" 2>/dev/null) || true
 
     if [[ -n "$response" ]]; then
         tag=$(echo "$response" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
         if [[ -n "$tag" ]]; then
+            verbose "GitHub API returned tag: $tag for $repo_path"
             echo "$tag"
             return
         fi
     fi
 
     # Fallback: git ls-remote
+    verbose_warn "GitHub API returned no release for $repo_path, falling back to git ls-remote"
     local tags
     tags=$(git ls-remote --tags --refs "https://github.com/${repo_path}.git" 2>/dev/null | \
            awk '{print $2}' | sed 's|refs/tags/||' | \
@@ -156,6 +182,12 @@ get_latest_github_release() {
                print version "\t" tag
            }' | \
            sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -f2) || true
+
+    if [[ -z "$tags" ]]; then
+        verbose_warn "No tags found for $repo_path via git ls-remote either"
+    else
+        verbose "git ls-remote returned tag: $tags for $repo_path"
+    fi
 
     echo "$tags"
 }
@@ -181,8 +213,10 @@ extract_from_package_swift() {
     local search_path="$1"
     local output_file="$2"
 
+    verbose "Searching for Package.swift files in: $search_path"
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
+        verbose "Analysing Package.swift: $file"
         local project_name
         project_name=$(get_project_name "$file")
 
@@ -192,7 +226,10 @@ extract_from_package_swift() {
             sed -nE 's/.*url:[[:space:]]*"([^"]+)".*/\1/p' | while read -r url; do
                 local repo_id
                 repo_id=$(get_repo_id "$url")
-                [[ -n "$repo_id" ]] && echo "${repo_id}|${project_name}"
+                if [[ -n "$repo_id" ]]; then
+                    verbose "  Found dependency: $repo_id (project: $project_name)"
+                    echo "${repo_id}|${project_name}"
+                fi
             done || true
     done < <(find "$search_path" -name "Package.swift" -not -path "*/.build/*" -not -path "*/Packages/*" 2>/dev/null)
 }
@@ -203,8 +240,10 @@ extract_from_xcode_project() {
     local search_path="$1"
     local output_file="$2"
 
+    verbose "Searching for Xcode project files in: $search_path"
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
+        verbose "Analysing Xcode project: $file"
         local project_name
         project_name=$(get_project_name "$file")
 
@@ -213,7 +252,10 @@ extract_from_xcode_project() {
             sed -nE 's/.*repositoryURL[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' | while read -r url; do
                 local repo_id
                 repo_id=$(get_repo_id "$url")
-                [[ -n "$repo_id" ]] && echo "${repo_id}|${project_name}"
+                if [[ -n "$repo_id" ]]; then
+                    verbose "  Found dependency: $repo_id (project: $project_name)"
+                    echo "${repo_id}|${project_name}"
+                fi
             done || true
     done < <(find "$search_path" -name "project.pbxproj" 2>/dev/null)
 }
@@ -225,15 +267,21 @@ build_direct_deps_map() {
 
     rm -rf "$DIRECT_DEPS_FILE"
 
+    verbose "Building direct dependencies map from: $path"
+
     while IFS= read -r root; do
         [[ -n "$root" ]] && roots+=("$root")
     done < <(get_search_roots "$path")
 
     if [[ ${#roots[@]} -eq 0 ]]; then
+        verbose_warn "No search roots found"
         return
     fi
 
+    verbose "Search roots: ${roots[*]}"
+
     for root in "${roots[@]}"; do
+        verbose "Scanning root: $root"
         # Extract from Package.swift files
         extract_from_package_swift "$root" >> "$DIRECT_DEPS_FILE"
 
@@ -243,7 +291,14 @@ build_direct_deps_map() {
 
     # Sort and dedupe
     if [[ -s "$DIRECT_DEPS_FILE" ]]; then
+        local count
+        count=$(wc -l < "$DIRECT_DEPS_FILE" | tr -d ' ')
         sort -u "$DIRECT_DEPS_FILE" -o "$DIRECT_DEPS_FILE"
+        local unique_count
+        unique_count=$(wc -l < "$DIRECT_DEPS_FILE" | tr -d ' ')
+        verbose "Direct dependencies found: $unique_count unique (from $count total entries)"
+    else
+        verbose_warn "No direct dependencies found in project files"
     fi
 }
 
@@ -273,7 +328,12 @@ get_search_roots() {
 
     local root
     for root in "${search_roots[@]}"; do
-        [[ -e "$root" ]] && echo "$root"
+        if [[ -e "$root" ]]; then
+            verbose "Search root exists: $root"
+            echo "$root"
+        else
+            verbose "Search root not found (skipped): $root"
+        fi
     done
 
     if [[ -z $(for root in "${search_roots[@]}"; do [[ -e "$root" ]] && echo "ok" && break; done) ]]; then
@@ -296,14 +356,25 @@ find_resolved_files() {
         return
     fi
 
-    find "${roots[@]}" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
-        -not -path "*/.build/*" 2>/dev/null
+    verbose "Searching for Package.resolved files in: ${roots[*]}"
+    local results
+    results=$(find "${roots[@]}" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
+        -not -path "*/.build/*" 2>/dev/null)
+    if [[ -n "$results" ]]; then
+        while IFS= read -r f; do
+            verbose "Found resolved file: $f"
+        done <<< "$results"
+    else
+        verbose_warn "No Package.resolved files found"
+    fi
+    echo "$results"
 }
 
 # Resolve packages for workspace
 resolve_workspace_packages() {
     local workspace="$1"
 
+    verbose "Resolving workspace packages for: $workspace"
     if ! command -v xcodebuild >/dev/null 2>&1; then
         echo -e "${YELLOW}Warning: xcodebuild not found; skipping package resolution.${NC}" >&2
         return
@@ -338,16 +409,19 @@ resolve_workspace_packages() {
 detect_workspace() {
     local cwd
     cwd="$(dirname "${BASH_SOURCE[0]}")"
+    verbose "Detecting workspace from script directory: $cwd"
 
     if [[ -d "${cwd}/DuckDuckGo.xcworkspace" ]]; then
         WORKSPACE_PATH="${cwd}/DuckDuckGo.xcworkspace"
         SEARCH_PATH="${cwd}"
+        verbose "Found workspace at: $WORKSPACE_PATH"
         return
     fi
 
     if [[ -d "${cwd%/}/../DuckDuckGo.xcworkspace" ]]; then
         WORKSPACE_PATH="${cwd%/}/../DuckDuckGo.xcworkspace"
         SEARCH_PATH="${cwd%/}/.."
+        verbose "Found workspace at: $WORKSPACE_PATH"
         return
     fi
 
@@ -362,11 +436,13 @@ parse_resolved_files() {
 
     rm -rf "$output_file"
 
+    verbose "Parsing Package.resolved files"
     echo "$files" | while IFS= read -r file; do
         [[ -z "$file" ]] && continue
 
         local version
         version=$(grep -o '"version"[[:space:]]*:[[:space:]]*[0-9]' "$file" 2>/dev/null | head -1 | grep -o '[0-9]') || version="2"
+        verbose "Parsing $file (format version: $version)"
 
         if [[ "$version" == "1" ]]; then
             awk '
@@ -417,12 +493,17 @@ main() {
     # Filter to direct dependencies only
     rm -rf "$FILTERED_PKGS_FILE"
     if [[ "$SHOW_ALL" == true ]]; then
+        verbose "Showing all dependencies (no filtering)"
         cp "$RESOLVED_PKGS_FILE" "$FILTERED_PKGS_FILE"
     else
+        verbose "Filtering resolved packages to direct dependencies only"
         while IFS='|' read -r url version; do
             [[ -z "$url" ]] && continue
             if is_direct_dependency "$url"; then
+                verbose "  Direct dependency: $(get_package_name "$url") ($version)"
                 echo "${url}|${version}" >> "$FILTERED_PKGS_FILE"
+            else
+                verbose "  Transitive (skipped): $(get_package_name "$url") ($version)"
             fi
         done < "$RESOLVED_PKGS_FILE"
     fi
@@ -462,6 +543,7 @@ main() {
         echo "  \"packages\": ["
     fi
 
+    verbose "Checking ${pkg_count} packages for updates..."
     while IFS='|' read -r url current; do
         [[ -z "$url" ]] && continue
 
@@ -470,6 +552,8 @@ main() {
         repo_id=$(get_repo_id "$url")
         projects=$(get_projects_for_package "$repo_id")
         [[ -z "$projects" ]] && projects="unknown"
+
+        verbose "Checking package: $name (current: $current, repo: $repo_id, used by: $projects)"
 
         if [[ "$JSON_OUTPUT" != true ]] && [[ "$QUIET" != true ]]; then
             printf "Checking %-40s\r" "$name..."
@@ -483,7 +567,11 @@ main() {
 
         if [[ -n "$latest" ]]; then
             update_type=$(compare_versions "$current" "$latest")
+        else
+            verbose_warn "Could not fetch latest version for $name ($url)"
         fi
+
+        verbose "  Result: $name $current → $latest_display ($update_type)"
 
         if [[ "$JSON_OUTPUT" == true ]]; then
             local comma=""
@@ -521,6 +609,7 @@ main() {
     fi
 
     # Summary
+    verbose "All packages checked, computing summary"
     local m=0 n=0 p=0 u=0 k=0
     if [[ -f "$UPDATE_TYPES_FILE" ]]; then
         while read -r t; do

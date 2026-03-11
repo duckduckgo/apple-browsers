@@ -104,10 +104,6 @@ final class StatePersistenceService {
         } catch {
             dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
         }
-
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnLastSessionStateHasResidue) {
-            check(at: location, fileStore: fileStore)
-        }
     }
 
     /// rename `persistentState` to `persistentState.1` after the state was loaded
@@ -186,10 +182,4 @@ private extension StatePersistenceService {
         unarchiver.setClass(AIChatState.self, forClassName: "DuckDuckGo_Privacy_Browser.AIChatSidebar")
     }
 
-    func check(at location: URL, fileStore: FileStore) -> Bool {
-        let hasDataAtLocation = fileStore.hasData(at: location)
-        let hasDataAtLastLoadedStateFile = fileStore.hasData(at: .persistenceLocation(for: self.lastLoadedStateFileName))
-        let hasDataAtOldStateFile = fileStore.hasData(at: .persistenceLocation(for: self.oldStateFileName))
-        return hasDataAtLocation || hasDataAtOldStateFile || hasDataAtLastLoadedStateFile
-    }
 }

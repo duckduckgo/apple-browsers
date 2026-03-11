@@ -57,6 +57,16 @@ final class SwipeContainerManager: NSObject {
         set { swipeContainerViewController.delegate = newValue }
     }
 
+    var animateProgrammaticModeChanges: Bool {
+        get { swipeContainerViewController.animateProgrammaticModeChanges }
+        set { swipeContainerViewController.animateProgrammaticModeChanges = newValue }
+    }
+
+    var isSwipeEnabled: Bool {
+        get { swipeContainerViewController.isSwipeEnabled }
+        set { swipeContainerViewController.isSwipeEnabled = newValue }
+    }
+
     var fadeOutDelegate: FadeOutContainerViewControllerDelegate? {
         get { fadeOutContainerViewController.delegate }
         set { fadeOutContainerViewController.delegate = newValue }
@@ -79,6 +89,14 @@ final class SwipeContainerManager: NSObject {
     @MainActor
     func installChatHistory(using manager: AIChatHistoryManager) {
         manager.installInContainerView(chatPageContainer, parentViewController: containerViewController)
+    }
+
+    func syncVisibleMode(animated: Bool) {
+        if switchBarHandler.isUsingFadeOutAnimation {
+            fadeOutContainerViewController.setMode(switchBarHandler.currentToggleState)
+        } else {
+            swipeContainerViewController.syncToCurrentMode(animated: animated)
+        }
     }
 
     /// Installs the swipe container in the provided parent view

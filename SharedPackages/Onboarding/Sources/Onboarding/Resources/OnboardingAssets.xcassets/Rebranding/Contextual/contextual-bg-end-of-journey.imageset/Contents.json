@@ -1,8 +1,9 @@
 {
   "images" : [
     {
-      "filename" : "contextual-bg-end-of-journey-light.pdf",
-      "idiom" : "universal"
+      "filename" : "contextual-bg-end-of-journey-light.png",
+      "idiom" : "universal",
+      "scale" : "1x"
     },
     {
       "appearances" : [
@@ -11,15 +12,45 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-end-of-journey-dark.pdf",
-      "idiom" : "universal"
+      "filename" : "contextual-bg-end-of-journey-dark.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "contextual-bg-end-of-journey-light@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "contextual-bg-end-of-journey-dark@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "contextual-bg-end-of-journey-light@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "contextual-bg-end-of-journey-dark@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
-  },
-  "properties" : {
-    "preserves-vector-representation" : true
   }
 }

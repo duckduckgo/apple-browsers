@@ -342,10 +342,8 @@ extension MainViewController {
 
     private func updateFloatingSubmitVisibility() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        let shouldShow = coordinator.displayState == .omnibar(.active)
-            && coordinator.viewController.cardPosition == .top
-            && coordinator.inputMode == .aiChat
-        coordinator.floatingSubmitViewController.view.isHidden = !shouldShow
+        let renderState = coordinator.computeRenderState()
+        coordinator.floatingSubmitViewController.view.isHidden = !renderState.isFloatingSubmitVisible
     }
 
     private func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {

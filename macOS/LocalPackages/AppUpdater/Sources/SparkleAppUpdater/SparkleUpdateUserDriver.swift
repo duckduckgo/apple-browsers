@@ -36,7 +36,7 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
     private var bytesToDownload: UInt64 = 0
     private var bytesDownloaded: UInt64 = 0
 
-    var onProgressChange: (UpdateCycleProgress, (() -> Void)?) -> Void
+    let onProgressChange: (UpdateCycleProgress, (() -> Void)?) -> Void
 
     public private(set) var sparkleUpdateState: SPUUserUpdateState?
 

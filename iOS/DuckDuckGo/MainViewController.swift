@@ -829,13 +829,12 @@ class MainViewController: UIViewController {
 
     var keyboardShowing = false
     private var didSendGestureDismissPixel: Bool = false
+    var latestKeyboardFrame: CGRect = .zero
 
     @objc
     private func keyboardDidShow() {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
-
-        // Dismiss contextual sheet if keyboard is for background web view
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
     }
 
@@ -870,13 +869,40 @@ class MainViewController: UIViewController {
         keyboardShowing = false
         didSendGestureDismissPixel = false
 
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.autoCollapseExpandedUTIIfNeeded()
+        }
+
         if #available(iOS 26, *) {
-            // Make sure the UI adjusts properly.
-            // Fix for a weird behavior on iOS 26, firing `keyboardWillChangeFrame` event
-            // with the same frame when keyboard is shown and hidden rapidly.
-            // https://app.asana.com/1/137249556945/project/414709148257752/task/1211140989378405
+            latestKeyboardFrame = .zero
             adjustUI(withKeyboardFrame: .zero)
         }
+    }
+
+    private var isAnyAITabUTIState: Bool {
+        guard unifiedToggleInputFeature.isAvailable,
+              currentTab?.isAITab == true,
+              let displayState = unifiedToggleInputCoordinator?.displayState,
+              case .aiTab = displayState else { return false }
+        return true
+    }
+
+    var isNavigationBarEffectivelyAtBottom: Bool {
+        if appSettings.currentAddressBarPosition.isBottom {
+            return true
+        }
+        return isAnyAITabUTIState
+    }
+
+    func autoCollapseExpandedUTIIfNeeded() {
+        guard unifiedToggleInputFeature.isAvailable,
+              currentTab?.isAITab == true,
+              let coordinator = unifiedToggleInputCoordinator,
+              case .aiTab(.expanded) = coordinator.displayState,
+              !keyboardShowing,
+              !coordinator.viewController.isInputFirstResponder,
+              currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
+        coordinator.showCollapsed()
     }
 
     private func setUpToolbarButtonsActions() {
@@ -991,7 +1017,9 @@ class MainViewController: UIViewController {
 
     @objc func onAddressBarPositionChanged() {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
-        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        if !isAnyAITabUTIState {
+            refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
     }
@@ -1067,6 +1095,7 @@ class MainViewController: UIViewController {
             let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
             return
         }
+        latestKeyboardFrame = keyboardFrame
         let duration: TimeInterval = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
         let animationCurveRawNSN = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
         let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
@@ -1075,55 +1104,60 @@ class MainViewController: UIViewController {
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
-    private func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
+    func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
+        let keyboardVisible = intersection.height > 0
         keyboardHeight = keyboardFrameInView.height
+        updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
-        if self.appSettings.currentAddressBarPosition.isBottom {
-            let intersection = safeAreaFrame.intersection(keyboardFrameInView)
-            let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
-            let isAITabDisplayState: Bool
-            if let displayState = unifiedToggleInputCoordinator?.displayState, case .aiTab = displayState {
-                isAITabDisplayState = true
-            } else {
-                isAITabDisplayState = false
-            }
-            if unifiedToggleInputCoordinator?.isInlineEditingActive != true,
-               !isAITabDisplayState {
-                self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
-            }
+        guard isNavigationBarEffectivelyAtBottom else { return }
 
-            // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
-            if let currentTab {
-                let inset = intersection.height > 0 ? omniBarHeight : 0
-                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+        let displayState = unifiedToggleInputCoordinator?.displayState
+        let isInlineActive = unifiedToggleInputCoordinator?.isInlineEditingSession == true
 
-                let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
-                currentTab.borderView.bottomOffset = -bottomOffset
-            }
+        let baseInputHeight: CGFloat
+        if case .aiTab(.expanded) = displayState, let coordinator = unifiedToggleInputCoordinator {
+            baseInputHeight = max(viewCoordinator.standardNavigationBarContainerHeight, coordinator.inlineEditingHeight())
+        } else {
+            baseInputHeight = omniBarHeight
+        }
 
-            // This NTP stuff is to animate the bottom border divider, but also allow the logo to show.
-            //  If we hever have the bottom border and the logo visible at the same... we'll need to do something else.
-            if let ntp = self.newTabPageViewController, !ntp.isShowingLogo {
+        let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
+        if !isInlineActive, displayState != .aiTab(.collapsed) {
+            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
+        }
+
+        if appSettings.currentAddressBarPosition.isBottom, let currentTab {
+            let inset = intersection.height > 0 ? omniBarHeight : 0
+            currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+
+            let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
+            currentTab.borderView.bottomOffset = -bottomOffset
+        }
+
+        if appSettings.currentAddressBarPosition.isBottom,
+           let ntp = self.newTabPageViewController,
+           !ntp.isShowingLogo {
+            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+        }
+
+        UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
+            self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+
+            if self.appSettings.currentAddressBarPosition.isBottom,
+               !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+               let ntp = self.newTabPageViewController,
+               ntp.isShowingLogo {
                 self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+            } else {
+                self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
             }
-
-            UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
-                self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-
-                // In case `isAIChatSearchInputUserSettings` is enabled prevent adjusting the bottom containers along with the keyboard to prevent logo on NTP from transitioning too far
-                if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled, let ntp = self.newTabPageViewController, ntp.isShowingLogo {
-                    self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
-                } else {
-                    self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
-                }
-                self.currentTab?.borderView.layoutIfNeeded()
-            }
+            self.currentTab?.borderView.layoutIfNeeded()
         }
     }
 
@@ -1383,6 +1417,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
+        currentNTPEscapeHatch = nil
     }
 
     @IBAction func onFirePressed() {
@@ -2827,7 +2862,9 @@ extension MainViewController: BrowserChromeDelegate {
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
 
-        if viewCoordinator.addressBarPosition.isBottom, !viewCoordinator.isNavigationBarContainerBottomKeyboardBased {
+        if viewCoordinator.addressBarPosition.isBottom,
+           !viewCoordinator.isNavigationBarContainerBottomKeyboardBased,
+           !isAnyAITabUTIState {
             // Push the navigation bar down independently so the content container
             // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
             let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
@@ -2846,7 +2883,7 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
-    private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
+    func handleFavoriteSelected(_ favorite: BookmarkEntity) {
         guard let url = favorite.urlObject else { return }
 
         // Handle shortcuts for internal testing
@@ -2867,7 +2904,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
 
-    private func handleSuggestionSelected(_ suggestion: Suggestion) {
+    func handleSuggestionSelected(_ suggestion: Suggestion) {
         if let tab = tabManager.model.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }

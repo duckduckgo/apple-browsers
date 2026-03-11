@@ -242,9 +242,6 @@ private struct FeedbackFormIssueDescriptionView<Label: View, Content: View, Foot
 
     @ViewBuilder
     func textEditor() -> some View {
-#if APPSTORE
-        FocusableTextEditor(text: $viewModel.feedbackFormText, characterLimit: 1000)
-#else
         if #available(macOS 12, *) {
             FocusableTextEditor(text: $viewModel.feedbackFormText, characterLimit: 1000)
         } else {
@@ -266,7 +263,6 @@ private struct FeedbackFormIssueDescriptionView<Label: View, Content: View, Foot
                     }
                 )
         }
-#endif
     }
 }
 

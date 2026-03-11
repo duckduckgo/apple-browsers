@@ -248,9 +248,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemeterySurfaceUsage
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
-    case dataImportWideEventMeasurement
-
     /// Sort domain matches higher than other matches when searching saved passwords
     /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1212324661709006?focus=true
     case autofillPasswordSearchPrioritizeDomain
@@ -274,6 +271,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case multiplePageContexts
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213608678718359?focus=true
+    case iPadPageContext
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
@@ -283,9 +283,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212697212804653?focus=true
-    case aiChatAtb
-    
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
 
@@ -369,7 +366,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .migrateKeychainAccessibility,
-             .dataImportWideEventMeasurement,
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
              .showWhatsNewPromptOnDemand,
@@ -460,18 +456,18 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
              .autofillPasswordSearchPrioritizeDomain,
-             .dataImportWideEventMeasurement,
              .appRatingPrompt,
              .contextualDuckAIMode,
              .pageContextFeature,
              .aiChatAutoAttachContextByDefault,
              .aiChatSync,
              .multiplePageContexts,
+             .iPadPageContext,
              .aiChatSuggestions,
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
-             .aiChatAtb,
+
              .enhancedDataClearingSettings,
              .genericBackgroundTask,
              .tabSwitcherTrackerCount,
@@ -687,8 +683,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         case .productTelemeterySurfaceUsage:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.productTelemetrySurfaceUsage))
-        case .dataImportWideEventMeasurement:
-            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .dataImportSummarySyncPromotion:
@@ -703,14 +697,15 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .multiplePageContexts:
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
+        case .iPadPageContext:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.iPadPageContext))
         case .aiChatSync:
             return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
         case .showWhatsNewPromptOnDemand:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
-        case .aiChatAtb:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
+
         case .enhancedDataClearingSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.enhancedDataClearingSettings))
         case .wideEventPostEndpoint:

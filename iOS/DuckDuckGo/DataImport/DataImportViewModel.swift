@@ -203,11 +203,8 @@ final class DataImportViewModel: ObservableObject {
     @Published var state: BrowserImportState
     @Published var isLoading = false
     
-    
+
     // Wide Event
-    private var isDataImportWideEventMeasurementEnabled: Bool {
-        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
-    }
     private let wideEvent: WideEventManaging
     private var dataImportWideEventData: DataImportWideEventData?
     enum dataImportWideEventError: Error {
@@ -395,7 +392,6 @@ final class DataImportViewModel: ObservableObject {
 
 private extension DataImportViewModel {
     func setupAndStartWideEvent() {
-        guard isDataImportWideEventMeasurementEnabled else { return }
         let data = DataImportWideEventData(
             source: .init(browserInstructions: state.browser),
             contextData: WideEventContextData(name: funnel(for: state.importScreen))
@@ -406,7 +402,6 @@ private extension DataImportViewModel {
     }
 
     func startDurationMeasurement(for types: [DataImport.DataType]) {
-        guard isDataImportWideEventMeasurementEnabled else { return }
         for type in types {
             dataImportWideEventData?[keyPath: type.importerDurationPath] = WideEvent.MeasuredInterval.startingNow()
         }
@@ -417,7 +412,6 @@ private extension DataImportViewModel {
     }
 
     func completeDurationMeasurement(for types: [DataImport.DataType]) {
-        guard isDataImportWideEventMeasurementEnabled else { return }
         for type in types {
             dataImportWideEventData?[keyPath: type.importerDurationPath]?.complete()
         }
@@ -428,8 +422,6 @@ private extension DataImportViewModel {
     }
     
     func completeAndCleanupWideEvent(with importSummery: DataImportSummary) {
-        guard isDataImportWideEventMeasurementEnabled else { return }
-        
         for type in DataImport.DataType.allCases {
             guard let result = importSummery[type] else { continue }
 
@@ -460,7 +452,7 @@ private extension DataImportViewModel {
     }
 
     func completeAndCleanupWideEvent(with status: WideEventStatus, error: Error? = nil, description: String? = nil) {
-        guard isDataImportWideEventMeasurementEnabled, let data = self.dataImportWideEventData else { return }
+        guard let data = self.dataImportWideEventData else { return }
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)

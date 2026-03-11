@@ -44,10 +44,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// Enable WebKit page load timing performance reporting
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615625098
-    case webKitPerformanceReporting
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -221,9 +217,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
-    case dataImportWideEventMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
 
@@ -301,7 +294,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
                 .blurryAddressBarTahoeFix,
-                .dataImportWideEventMeasurement,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
                 .autofillPasswordSearchPrioritizeDomain,
@@ -372,7 +364,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncFeatureLevel3,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
-                .webKitPerformanceReporting,
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
@@ -392,7 +383,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .autofillPasswordsStatusBar,
                 .warnBeforeQuit,
-                .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
                 .memoryUsageReporting,
                 .aiChatSync,
@@ -513,8 +503,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .webKitPerformanceReporting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .blackFridayCampaign:
@@ -549,8 +537,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
-        case .dataImportWideEventMeasurement:
-            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
         case .memoryUsageReporting:

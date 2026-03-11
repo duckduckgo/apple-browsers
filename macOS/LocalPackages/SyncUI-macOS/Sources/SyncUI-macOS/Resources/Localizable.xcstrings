@@ -3299,6 +3299,66 @@
         }
       }
     },
+    "preferences.sync.single-device-setup.action" : {
+      "comment" : "Button to turn on sync and backup for a single device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur dieses Gerät synchronisieren und sichern"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Back Up This Device Only"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar y hacer una copia de seguridad solo en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser et sauvegarder cet appareil uniquement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza ed esegui il backup solo di questo dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen dit apparaat synchroniseren en back-up maken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj i twórz kopie zapasowe tylko tego urządzenia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar e fazer cópia de segurança apenas deste dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить только на этом устройстве"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.dialog-subtitle1" : {
       "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
       "extractionState" : "stale",
@@ -3361,7 +3421,7 @@
     },
     "preferences.sync.sync-with-another-device.dialog-subtitle2" : {
       "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3599,6 +3659,66 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device.scan-qr-code-button" : {
+      "comment" : "Text on scan QR code button on Sync with another device dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanne diesen QR-Code"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan This QR Code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanear este código QR"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanner ce QR code"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansiona questo codice QR"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan deze QR-code"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeskanuj ten kod QR"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lê este código QR"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отсканировать QR-код"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.show-code-button" : {
       "comment" : "Text on show code button on Sync with another device dialog",
       "extractionState" : "extracted_with_value",
@@ -3780,61 +3900,61 @@
       }
     },
     "preferences.sync.sync-with-another-device.show-qr-code-button" : {
-      "comment" : "Text on show QR code button on Sync with another device dialog",
-      "extractionState" : "extracted_with_value",
+      "comment" : "Text on scan QR code button on Sync with another device dialog",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "QR-Code anzeigen"
+            "value" : "Scanne diesen QR-Code"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show QR Code"
+            "value" : "Scan This QR Code"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar código QR"
+            "value" : "Escanear este código QR"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afficher le code QR"
+            "value" : "Scanner ce QR code"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostra il codice QR"
+            "value" : "Scansiona questo codice QR"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "QR-code weergeven"
+            "value" : "Scan deze QR-code"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokaż kod QR"
+            "value" : "Zeskanuj ten kod QR"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar código QR"
+            "value" : "Lê este código QR"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показать QR-код"
+            "value" : "Отсканировать QR-код"
           }
         }
       }
@@ -3901,7 +4021,7 @@
     },
     "preferences.sync.sync-with-another-device.show-qr-code-explanation-app" : {
       "comment" : "Sync with another device dialog show qr code explanation - app name",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3961,7 +4081,7 @@
     },
     "preferences.sync.sync-with-another-device.show-qr-code-explanation-prefix" : {
       "comment" : "Sync with another device dialog show qr code explanation - first part (second part will be the app name)",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4015,6 +4135,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сканировать с помощью"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step1" : {
+      "comment" : "First instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around 'DuckDuckGo'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne auf einem anderen Gerät **DuckDuckGo**"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On another device, open **DuckDuckGo**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre **DuckDuckGo** en otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur un autre appareil, ouvrez **DuckDuckGo**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su un altro dispositivo, apri **DuckDuckGo**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open **DuckDuckGo** op een ander apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na innym urządzeniu otwórz **DuckDuckGo**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noutro dispositivo, abre o **DuckDuckGo**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте **DuckDuckGo** на втором устройстве."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step2" : {
+      "comment" : "Second instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the Settings path.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gehe zu **Einstellungen › Sync & Backup › Mit einem anderen Gerät synchronisieren**"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go to **Settings › Sync & Backup › Sync With Another Device**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ve a **Ajustes › Sync & Backup › Sincronizar con otro dispositivo**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allez dans **Réglages > Sync & Backup > Synchroniser avec un autre appareil**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai a **Impostazioni › Sync & Backup › Sincronizzazione con un altro dispositivo**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ga naar **Instellingen › Sync & Backup › Synchroniseren met een ander apparaat**"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź do **Ustawienia › Sync & Backup › Synchronizuj z innym urządzeniem**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acede a **Definições › Sync & Backup › Sincronizar com outro dispositivo**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте **Настройки > Sync & Backup > Синхронизировать с другим устройством**."
           }
         }
       }
@@ -7861,7 +8101,7 @@
     },
     "sync.with.another.device.path" : {
       "comment" : "Path to Sync with another device",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

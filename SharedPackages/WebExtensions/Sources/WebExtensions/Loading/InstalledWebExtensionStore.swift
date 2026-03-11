@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 import Persistence
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -50,7 +51,7 @@ public final class InstalledWebExtensionStore: InstalledWebExtensionStoring {
     public func add(_ extension: InstalledWebExtension) {
         let identifiers = installedExtensions.map(\.uniqueIdentifier)
         guard !identifiers.contains(`extension`.uniqueIdentifier) else {
-            assertionFailure("Extension already installed: \(`extension`.uniqueIdentifier)")
+            Logger.webExtensions.error("❌ Extension already installed: \(`extension`.uniqueIdentifier)")
             return
         }
 
@@ -62,7 +63,7 @@ public final class InstalledWebExtensionStore: InstalledWebExtensionStoring {
     public func remove(uniqueIdentifier: String) {
         let identifiers = installedExtensions.map(\.uniqueIdentifier)
         guard identifiers.contains(uniqueIdentifier) else {
-            assertionFailure("Extension not found: \(uniqueIdentifier)")
+            Logger.webExtensions.error("❌ Extension not found: \(uniqueIdentifier)")
             return
         }
 

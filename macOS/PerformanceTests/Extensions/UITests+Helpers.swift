@@ -23,7 +23,7 @@ extension UITests {
     static func setupInitialState(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
         let application = XCUIApplication.buildApplicationForPerformanceTesting()
 
-        /// Enable session restoration
+        /// Configure session restoration (enable/disable) based on shouldRestoreSession
         application.openPreferencesWindow()
         application.preferencesSetRestorePreviousSession(to: shouldRestoreSession ? .restoreLastSession : .newWindow)
         application.closePreferencesWindow()

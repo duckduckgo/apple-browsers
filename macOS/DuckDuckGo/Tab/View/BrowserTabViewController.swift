@@ -616,18 +616,21 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.addArrangedSubview(container)
     }
 
-    /// Adds a child view controller with its view constrained to respect the sidebar container,
-    /// so that the sidebar can overlay from the trailing edge without being covered.
+    /// Adds a child view controller with its trailing edge pinned to the sidebar,
+    /// so non-web content (bookmarks, settings, etc.) doesn't extend behind it.
+    ///
+    /// The child is added as a direct subview of `browserTabView` (not inside
+    /// `containerStackView`) so that `findContentSubview` can locate it via
+    /// `subviews.last` for tab preview snapshot rendering.
     private func addAndLayoutChildBesideSidebar(_ vc: NSViewController) {
         addChild(vc)
-        let childView = vc.view
-        childView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(childView, positioned: .below, relativeTo: sidebarContainer)
+        vc.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(vc.view)
         NSLayoutConstraint.activate([
-            childView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            childView.topAnchor.constraint(equalTo: view.topAnchor),
-            childView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            childView.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor)
+            vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            vc.view.topAnchor.constraint(equalTo: view.topAnchor),
+            vc.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            vc.view.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor),
         ])
     }
 

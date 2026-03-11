@@ -43,6 +43,7 @@ final class PromoDebugMenu: NSMenu {
     private var cancellables = Set<AnyCancellable>()
     private var cachedHistory: [String: PromoHistoryRecord] = [:]
     private var simulatedDate: Date?
+    private var promos: [Promo] = []
 
     private static let dateFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
@@ -72,8 +73,7 @@ final class PromoDebugMenu: NSMenu {
             addItem(item)
             return
         }
-
-        let promos = PromoServiceFactory.promos
+        promos = promoService.promos
 
         if promos.isEmpty {
             let item = NSMenuItem(title: "No promos registered", action: nil)
@@ -89,24 +89,26 @@ final class PromoDebugMenu: NSMenu {
             }
             .store(in: &cancellables)
 
-#if DEBUG || REVIEW
-        let fireItem = NSMenuItem(title: "Fire Test Trigger", action: #selector(fireTestTrigger), keyEquivalent: "t")
-        fireItem.keyEquivalentModifierMask = [.command, .shift, .option, .control]
-        fireItem.target = self
-        fireItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.fireTestTriggerMenuItem)
-        addItem(fireItem)
-        addItem(.separator())
-#endif
+        if PromoServiceFactory.includeTestPromos {
+            let fireItem = NSMenuItem(title: "Fire Test Trigger", action: #selector(fireTestTrigger), keyEquivalent: "t")
+            fireItem.keyEquivalentModifierMask = [.command, .shift, .option, .control]
+            fireItem.target = self
+            fireItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.fireTestTriggerMenuItem)
+            addItem(fireItem)
+            addItem(.separator())
+        }
 
         for promo in promos {
             let status = statusString(for: promo)
             let parentItem = NSMenuItem(title: "\(promo.id)  \(status)", action: nil)
 
             let submenu = NSMenu()
-            let forceShowItem = NSMenuItem(title: "Force Show", action: #selector(forceShowPromo(_:)), keyEquivalent: "")
-            forceShowItem.representedObject = promo.id
-            forceShowItem.target = self
-            submenu.addItem(forceShowItem)
+            if promo.delegate is PromoDelegate {
+                let forceShowItem = NSMenuItem(title: "Force Show", action: #selector(forceShowPromo(_:)), keyEquivalent: "")
+                forceShowItem.representedObject = promo.id
+                forceShowItem.target = self
+                submenu.addItem(forceShowItem)
+            }
 
             let undismissItem = NSMenuItem(title: "Undismiss", action: #selector(undismissPromo(_:)), keyEquivalent: "")
             undismissItem.representedObject = promo.id
@@ -184,7 +186,7 @@ final class PromoDebugMenu: NSMenu {
     private func globalCooldownStatus(for promo: Promo, now: Date) -> (Bool, Date)? {
         guard promo.respectsGlobalCooldown, promo.promoType.severity >= .medium else { return nil }
 
-        let cooldownTypePromos = PromoServiceFactory.promos.filter { other in
+        let cooldownTypePromos = promos.filter { other in
             other.initiated == promo.initiated && other.setsGlobalCooldown && other.promoType.severity >= .medium
         }
         let lastDismissedForType = cooldownTypePromos
@@ -198,9 +200,8 @@ final class PromoDebugMenu: NSMenu {
     }
 
     @objc private func fireTestTrigger() {
-#if DEBUG || REVIEW
+        guard PromoServiceFactory.includeTestPromos else { return }
         NotificationCenter.default.post(name: .promoDebugTestTrigger, object: nil)
-#endif
     }
 
     @objc private func forceShowPromo(_ sender: NSMenuItem) {

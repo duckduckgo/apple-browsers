@@ -31,7 +31,7 @@ enum PromoTestHelpers {
         coexistingPromoIDs: Set<String> = [],
         respectsGlobalCooldown: Bool = true,
         setsGlobalCooldown: Bool = true,
-        delegate: (any PromoDelegate)? = nil
+        delegate: (any AnyPromoDelegate)? = nil
     ) -> Promo {
         Promo(
             id: id,

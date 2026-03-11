@@ -53,7 +53,7 @@ struct Promo {
 
     /// Provides dynamic promo behavior (eligibility, show, hide).
     /// Delegate should be set by feature module when their dependencies are ready.
-    var delegate: (any PromoDelegate)?
+    var delegate: (any AnyPromoDelegate)?
 
     init(id: String,
          triggers: Set<PromoTrigger>,
@@ -63,7 +63,7 @@ struct Promo {
          coexistingPromoIDs: Set<String> = [],
          respectsGlobalCooldown: Bool = true,
          setsGlobalCooldown: Bool = true,
-         delegate: (any PromoDelegate)? = nil) {
+         delegate: (any AnyPromoDelegate)? = nil) {
         self.id = id
         self.triggers = triggers
         self.initiated = initiated
@@ -76,9 +76,19 @@ struct Promo {
     }
 }
 
-/// Protocol for objects that provide dynamic promo behavior (eligibility, show, hide).
-/// Conformances are set as delegates on `Promo` structs when feature modules are ready.
-protocol PromoDelegate: AnyObject {
+/// Base protocol for all promo delegates. Used as the type-erased delegate type on `Promo`.
+///
+/// Conform to `PromoDelegate` for promos that PromoService controls (show, hide, eligibility).
+/// Conform to `ExternalPromoDelegate` for promos whose visibility is controlled by an external
+/// system (e.g. Remote Messaging Framework); PromoService only observes their visibility.
+protocol AnyPromoDelegate: AnyObject { }
+
+/// Delegate for promos that PromoService controls. Use this for most promos.
+///
+/// PromoService evaluates triggers, checks eligibility, and calls `show()` / `hide()` to manage
+/// visibility. The delegate provides eligibility state and implements the UI for showing and hiding.
+/// Conformances are set on `Promo` structs when feature modules are ready.
+protocol PromoDelegate: AnyPromoDelegate {
     /// Current eligibility state. Use isEligiblePublisher to observe changes.
     var isEligible: Bool { get }
 
@@ -104,4 +114,22 @@ protocol PromoDelegate: AnyObject {
 
 extension PromoDelegate {
     func refreshEligibility() { }
+}
+
+/// Delegate for promos whose visibility is controlled outside PromoService.
+///
+/// Use when another system (e.g. Remote Messaging Framework) decides when to show or hide the promo.
+/// PromoService subscribes to `isVisiblePublisher` to observe visibility, record history, and apply
+/// global cooldowns—it never calls `show()` or `hide()`. Use sparingly; most promos should conform
+/// to `PromoDelegate` instead.
+protocol ExternalPromoDelegate: AnyPromoDelegate {
+    /// Current visibility state. Use isVisiblePublisher to observe changes.
+    var isVisible: Bool { get }
+
+    /// Publisher indicating whether this promo is currently visible.
+    /// Must emit a current value immediately on subscription (use CurrentValueSubject).
+    var isVisiblePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Result to apply when the external promo is hidden.
+    var resultWhenHidden: PromoResult { get }
 }

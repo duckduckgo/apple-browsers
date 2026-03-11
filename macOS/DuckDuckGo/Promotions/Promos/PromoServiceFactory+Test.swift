@@ -1,5 +1,5 @@
 //
-//  TestPromoFactory.swift
+//  PromoServiceFactory+Test.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,25 +16,26 @@
 //  limitations under the License.
 //
 
-#if DEBUG || REVIEW
-
 import AppKit
 import BrowserServicesKit
 import Combine
 import Foundation
 import Utilities
 
-final class TestPromoFactory {
-    static var testPromoA = Promo(id: "test-promo-a", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
-    static var testPromoB = Promo(id: "test-promo-b", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .webPage)
-    static var testPromoC = Promo(id: "test-promo-c", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal), context: .global)
-    static var testPromoD = Promo(id: "test-promo-d", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal, customTimeoutInterval: .seconds(3), customTimeoutResult: .ignored()), context: .global)
-
+extension PromoServiceFactory {
     static var testPromos: [Promo] = {
+        guard includeTestPromos else { return [] }
+
+        var testPromoA = Promo(id: "test-promo-a", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
+        var testPromoB = Promo(id: "test-promo-b", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .webPage)
+        var testPromoC = Promo(id: "test-promo-c", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal), context: .global)
+        var testPromoD = Promo(id: "test-promo-d", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal, customTimeoutInterval: .seconds(3), customTimeoutResult: .ignored()), context: .global)
+
         testPromoA.delegate = TestPromoDelegate(for: testPromoA)
         testPromoB.delegate = TestPromoDelegate(for: testPromoB)
         testPromoC.delegate = TestPromoDelegate(for: testPromoC)
         testPromoD.delegate = TestPromoDelegate(for: testPromoD)
+
         return [testPromoA, testPromoB, testPromoC, testPromoD]
     }()
 }
@@ -133,5 +134,3 @@ final class TestPromoDelegate: PromoDelegate {
         self.alert = nil
     }
 }
-
-#endif

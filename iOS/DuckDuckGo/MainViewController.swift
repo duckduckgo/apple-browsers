@@ -135,6 +135,7 @@ class MainViewController: UIViewController {
     private var hasLoadedInitialView = false
     private var isStartupOnboardingPending = false
     private var hasPresentedStartupOnboarding = false
+    private var startupOnboardingCoverViewController: UIViewController?
     private var startupOnboardingCoverView: UIView?
 
     let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -559,8 +560,20 @@ class MainViewController: UIViewController {
     private func installStartupOnboardingCoverViewIfNeeded() {
         guard startupOnboardingCoverView == nil else { return }
 
-        let coverView = UIView()
-        coverView.backgroundColor = themeManager.currentTheme.onboardingBackgroundColor
+        let coverView: UIView
+
+        if let coverViewController = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController() {
+            startupOnboardingCoverViewController = coverViewController
+            addChild(coverViewController)
+            coverViewController.loadViewIfNeeded()
+            coverView = coverViewController.view
+        } else {
+            assertionFailure("Unable to instantiate LaunchScreen storyboard")
+            let fallbackView = UIView()
+            fallbackView.backgroundColor = themeManager.currentTheme.onboardingBackgroundColor
+            coverView = fallbackView
+        }
+
         coverView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(coverView)
 
@@ -572,10 +585,15 @@ class MainViewController: UIViewController {
         ])
 
         view.bringSubviewToFront(coverView)
+        startupOnboardingCoverViewController?.didMove(toParent: self)
         startupOnboardingCoverView = coverView
     }
 
     private func removeStartupOnboardingCoverViewIfNeeded() {
+        startupOnboardingCoverViewController?.willMove(toParent: nil)
+        startupOnboardingCoverViewController?.view.removeFromSuperview()
+        startupOnboardingCoverViewController?.removeFromParent()
+        startupOnboardingCoverViewController = nil
         startupOnboardingCoverView?.removeFromSuperview()
         startupOnboardingCoverView = nil
     }

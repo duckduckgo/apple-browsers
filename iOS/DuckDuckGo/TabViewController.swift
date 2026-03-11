@@ -1050,7 +1050,9 @@ class TabViewController: UIViewController {
             }
 
         case #keyPath(WKWebView.estimatedProgress):
-            progressWorker.progressDidChange(webView.estimatedProgress)
+            if isTabCurrentlyPresented() {
+                progressWorker.progressDidChange(webView.estimatedProgress)
+            }
 
         case #keyPath(WKWebView.url):
             // A short delay is required here, because the URL takes some time

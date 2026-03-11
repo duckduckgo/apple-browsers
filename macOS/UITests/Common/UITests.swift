@@ -106,7 +106,6 @@ enum UITests {
         app.typeKey("w", modifierFlags: [.command, .option])
     }
 
-
     static func dismissNotificationCenterMessages() {
         let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
         if notificationCenter.exists { // If tests-server is asking for network permissions, deny them.

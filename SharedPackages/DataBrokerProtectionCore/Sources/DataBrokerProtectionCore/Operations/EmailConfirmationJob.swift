@@ -134,6 +134,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             dataBrokerVersion: broker.version,
             handler: jobDependencies.pixelHandler,
             parentURL: broker.parent,
+            isFreeScan: false,
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown",
             featureFlagger: jobDependencies.featureFlagger

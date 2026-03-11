@@ -63,7 +63,7 @@ struct WebExtensionsDebugView: View {
                     ForEach(installedExtensions) { installedExtension in
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(installedExtension.name)
+                                Text(installedExtension.displayName)
                                     .font(.body)
                                 Text(installedExtension.identifier)
                                     .font(.caption)
@@ -84,6 +84,8 @@ struct WebExtensionsDebugView: View {
             } header: {
                 Text("Installed Extensions (\(installedExtensions.count))")
             }
+
+            darkReaderSection
 
             if !installedExtensions.isEmpty {
                 Section {
@@ -111,12 +113,34 @@ struct WebExtensionsDebugView: View {
         }
     }
 
+    @ViewBuilder
+    private var darkReaderSection: some View {
+        if let installed = webExtensionManager.installedEmbeddedExtension(for: .darkReader),
+           let context = webExtensionManager.context(for: installed.uniqueIdentifier) {
+            let denied = context.deniedPermissionMatchPatterns.keys.sorted { $0.description < $1.description }
+            Section {
+                if denied.isEmpty {
+                    Text("No excluded domains")
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(denied.map(\.description), id: \.self) { pattern in
+                        Text(pattern)
+                            .font(.caption)
+                    }
+                }
+            } header: {
+                Text("Dark Reader Excluded Domains (\(denied.count))")
+            }
+        }
+    }
+
     private func refreshExtensions() {
         isLoading = true
         let identifiers = webExtensionManager.webExtensionIdentifiers
         installedExtensions = identifiers.map { identifier in
             let name = webExtensionManager.extensionName(for: identifier) ?? "Unknown Extension"
-            return InstalledExtension(identifier: identifier, name: name)
+            let version = webExtensionManager.extensionVersion(for: identifier)
+            return InstalledExtension(identifier: identifier, name: name, version: version)
         }
         isLoading = false
     }
@@ -180,6 +204,11 @@ struct InstalledExtension: Identifiable {
     let id = UUID()
     let identifier: String
     let name: String
+    let version: String?
+
+    var displayName: String {
+        version.map { "\(name) v\($0)" } ?? name
+    }
 }
 
 @available(iOS 18.4, *)

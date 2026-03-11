@@ -21,27 +21,44 @@
 import WebKit
 import Persistence
 
-/// Supports an existing ID set in previous versions of the app, but moving forward does not allocate an ID.  We have gone back to using the default
-///  peristence for the webview storage so that we can fireproof types that don't have an API for accessing their data. (e.g. localStorage)
+/// Manages data store identifiers for WebKit data containers.
+///
+/// This protocol provides two distinct container ID management strategies:
+///
+/// - **Legacy Container ID (`currentID`)**: Supports existing IDs set in previous app versions for backward compatibility.
+///   New IDs are no longer allocated because we've returned to using WebKit's default persistence. This allows us to
+///   fireproof data types that lack a direct API for accessing their data (e.g., `localStorage`).
+///
+/// - **Fire Mode Container ID (`currentFireModeID`)**: Actively allocates and manages a separate container ID used
+///   exclusively for Fire Mode browsing sessions. This container is isolated from normal browsing and is invalidated
+///   when the user triggers the Fire button to clear their session data.
 public protocol DataStoreIDManaging {
 
     var currentID: UUID? { get }
-
     func invalidateCurrentID()
+    
+    var currentFireModeID: UUID { get }
+    func invalidateCurrentFireModeID()
 }
 
 public class DataStoreIDManager: DataStoreIDManaging {
 
     enum Constants: String {
         case currentWebContainerID = "com.duckduckgo.ios.webcontainer.id"
+        case currentFireModeContainerID = "com.duckduckgo.ios.fireMode.webcontainer.id"
     }
 
     public static let shared = DataStoreIDManager()
 
     private let store: KeyValueStoring
+    private let fireModeIDQueue = DispatchQueue(label: "com.duckduckgo.datastoreidmanager.firemode",
+                                                qos: .userInitiated)
+
     init(store: KeyValueStoring = UserDefaults.app) {
         self.store = store
     }
+    
+    // MARK: - Legacy container ID for backward compatibility
 
     public var currentID: UUID? {
         guard let uuidString = store.object(forKey: Constants.currentWebContainerID.rawValue) as? String else {
@@ -53,5 +70,24 @@ public class DataStoreIDManager: DataStoreIDManaging {
     public func invalidateCurrentID() {
         store.removeObject(forKey: Constants.currentWebContainerID.rawValue)
     }
+    
+    // MARK: - Fire Mode Container
 
+    public var currentFireModeID: UUID {
+        fireModeIDQueue.sync {
+            if let uuidString = store.object(forKey: Constants.currentFireModeContainerID.rawValue) as? String,
+               let existingID = UUID(uuidString: uuidString) {
+                return existingID
+            }
+            let newID = UUID()
+            store.set(newID.uuidString, forKey: Constants.currentFireModeContainerID.rawValue)
+            return newID
+        }
+    }
+
+    public func invalidateCurrentFireModeID() {
+        fireModeIDQueue.sync {
+            store.removeObject(forKey: Constants.currentFireModeContainerID.rawValue)
+        }
+    }
 }

@@ -254,7 +254,7 @@ final class BookmarkTableCellView: NSTableCellView {
         faviconImageView.contentTintColor = iconTintColor
         accessoryImageView.contentTintColor = iconTintColor
 
-        titleLabel.textColor = isThemeFeatureEnabled ? themedTextColor : legacyTextColor
+        titleLabel.textColor = themedTextColor
     }
 
     private func ensureTrackingArea() {
@@ -306,24 +306,15 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private func buildTitleAttributedString(tertiaryValue: String) -> NSAttributedString {
-        let isThemesEnabled = isThemeFeatureEnabled
-
-        let textColor = isThemesEnabled ? themedTextColor : legacyTextColor
-        let urlColor = isThemesEnabled ? themedURLColor : legacyURLColor
-
-        let titleAttributes = [NSAttributedString.Key.foregroundColor: textColor]
+        let titleAttributes = [NSAttributedString.Key.foregroundColor: themedTextColor]
         let titleString = NSMutableAttributedString(string: primaryTitleLabelValue, attributes: titleAttributes)
 
-        let urlAttributes = [NSAttributedString.Key.foregroundColor: urlColor]
+        let urlAttributes = [NSAttributedString.Key.foregroundColor: themedURLColor]
         let urlString = NSAttributedString(string: " – \(tertiaryValue)", attributes: urlAttributes)
 
         titleString.append(urlString)
 
         return titleString
-    }
-
-    private var isThemeFeatureEnabled: Bool {
-        NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes)
     }
 
     private var themedTextColor: NSColor {
@@ -332,14 +323,6 @@ final class BookmarkTableCellView: NSTableCellView {
 
     private var themedURLColor: NSColor {
         isSelected ? palette.accentContentSecondary : palette.textSecondary
-    }
-
-    private var legacyTextColor: NSColor {
-        isSelected ? .white : .labelColor
-    }
-
-    private var legacyURLColor: NSColor {
-        isSelected ? NSColor.white.withAlphaComponent(0.6) : NSColor.tertiaryLabelColor
     }
 }
 

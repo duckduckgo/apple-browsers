@@ -106,7 +106,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     private func setUpSubviews() {
 
-        collectionView.clipsToBounds = false
+        collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
 

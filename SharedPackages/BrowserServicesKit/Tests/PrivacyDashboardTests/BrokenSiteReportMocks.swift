@@ -52,6 +52,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
@@ -79,6 +80,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #endif
     }
@@ -114,6 +116,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://somethingelse.zz")!,
@@ -141,6 +144,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #endif
     }
@@ -176,6 +180,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://www.subdomain.example.com/some/pathname?t=param#aaa")!,
@@ -203,6 +208,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #endif
     }

@@ -111,7 +111,7 @@ struct SettingsMainSettingsView: View {
             let statusIndicator = viewModel.syncStatus == .on ? StatusIndicatorView(status: viewModel.syncStatus, isDotHidden: true) : nil
             let label = viewModel.state.sync.title
             AnyView(SettingsCellView(label: label,
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.sync1),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.sync),
                              action: { viewModel.presentLegacyView(.sync(nil)) },
                              statusIndicator: statusIndicator,
                              disclosureIndicator: true,

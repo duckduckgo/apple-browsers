@@ -20,8 +20,13 @@
 
 final class MockAIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
     var isAIChatSyncEnabledResult = true
+    var supportsSyncChatsDeletionResult = true
 
     func isAIChatSyncEnabled() -> Bool {
         return isAIChatSyncEnabledResult
+    }
+
+    func supportsSyncChatsDeletion() -> Bool {
+        supportsSyncChatsDeletionResult
     }
 }

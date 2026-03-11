@@ -130,7 +130,7 @@ enum Preferences {
                 switch model.selectedPane {
                 case .defaultBrowser:
                     DefaultBrowserView(defaultBrowserModel: model.defaultBrowserPreferences,
-                                       dockCustomizer: DockCustomizer(),
+                                       dockCustomizer: NSApp.delegateTyped.dockCustomization,
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
                     PrivateSearchView(model: model.searchPreferences)
@@ -151,14 +151,13 @@ enum Preferences {
                                 tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
-                                dockCustomizer: DockCustomizer())
+                                dockCustomizer: NSApp.delegateTyped.dockCustomization)
                 case .sync:
                     SyncView()
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
                                    aiChatModel: model.aiChatPreferences,
-                                   themeManager: themeManager,
-                                   isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
+                                   themeManager: themeManager)
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .subscription:
@@ -215,7 +214,7 @@ enum Preferences {
 
                     let subscriptionRestoreEmailSettingsWideEventData = SubscriptionRestoreWideEventData(
                         restorePlatform: .emailAddress,
-                        contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+                        funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
                     )
                     showTab(.subscription(url))
 
@@ -229,7 +228,7 @@ enum Preferences {
                                                                                    storePurchaseManager: subscriptionManager.storePurchaseManager())
                             let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
                                 restorePlatform: .appleAccount,
-                                contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+                                funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
                             )
                             let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
                                                                                                      appStoreRestoreFlow: appStoreRestoreFlow,
@@ -313,6 +312,18 @@ enum Preferences {
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModel {
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+            let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                subscriptionManager: subscriptionManager,
+                uiHandler: subscriptionUIHandler,
+                wideEvent: wideEvent,
+                subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+
             let userEventHandler: (PreferencesSubscriptionSettingsModel.UserEvent) -> Void = { event in
                 DispatchQueue.main.async {
                     switch event {
@@ -342,17 +353,22 @@ enum Preferences {
                         pixelHandler(.subscriptionViewAllPlansClick, .standard)
                     case .didClickUpgradeToPro:
                         pixelHandler(.subscriptionUpgradeClick, .standard)
+                    case .didClickCancelPendingDowngrade:
+                        pixelHandler(.subscriptionCancelPendingDowngradeClick, .standard)
                     }
                 }
             }
 
             return PreferencesSubscriptionSettingsModel(userEventHandler: userEventHandler,
-                                                          subscriptionManager: subscriptionManager,
-                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
-                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                          winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                                          blackFridayCampaignProvider: blackFridayCampaignProvider,
-                                                          isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) })
+                                                        subscriptionManager: subscriptionManager,
+                                                        subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
+                                                        keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                                                        blackFridayCampaignProvider: blackFridayCampaignProvider,
+                                                        isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) },
+                                                        cancelPendingDowngradeHandler: { [flowPerformer] productId in
+                _ = await flowPerformer.performTierChange(to: productId, changeType: nil, contextName: "CancelDowngradeButton")
+            })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

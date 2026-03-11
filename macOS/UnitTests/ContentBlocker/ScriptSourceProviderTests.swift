@@ -99,7 +99,9 @@ final class ScriptSourceProviderTests: XCTestCase {
             fireCoordinator: fireCoordinator,
             autoconsentManagement: AutoconsentManagement(),
             newTabPageActionsManager: nil,
-            syncServiceProvider: { nil }
+            syncServiceProvider: { nil },
+            syncErrorHandler: SyncErrorHandler(),
+            webExtensionAvailability: nil
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

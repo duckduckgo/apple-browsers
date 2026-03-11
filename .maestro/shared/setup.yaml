@@ -15,3 +15,4 @@ appId: com.duckduckgo.mobile.ios
         isOnboardingCompleted: ${ONBOARDING_COMPLETED} # Renaming `isOnboardingCompleted` requires to update LaunchOptionsHandler `isOnboardingCompleted` key
         currentAppVariant: ${APP_VARIANT} # Renaming `currentAppVariant` requires to update LaunchOptionsHandler `currentAppVariant` key
         isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"

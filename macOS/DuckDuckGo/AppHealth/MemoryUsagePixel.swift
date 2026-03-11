@@ -20,47 +20,58 @@ import PixelKit
 
 /// Threshold memory usage pixels that fire once daily when memory enters a specific bucket.
 enum MemoryUsagePixel: PixelKitEvent {
+
     // swiftlint:disable identifier_name
-    case less512
-    case range512_1023
-    case range1024_2047
-    case range2048_4095
-    case range4096_8191
-    case range8192_16383
-    case range16384_more
+    enum Threshold {
+        case less512
+        case range512_1023
+        case range1024_2047
+        case range2048_4095
+        case range4096_8191
+        case range8192_16383
+        case range16384_more
+    }
     // swiftlint:enable identifier_name
+
+    case memoryUsage(threshold: Threshold, uptimeMinutes: Int)
 
     var name: String {
         switch self {
-        case .less512:
-            return "m_mac_memory_usage_less_512"
-        case .range512_1023:
-            return "m_mac_memory_usage_512_1023"
-        case .range1024_2047:
-            return "m_mac_memory_usage_1024_2047"
-        case .range2048_4095:
-            return "m_mac_memory_usage_2048_4095"
-        case .range4096_8191:
-            return "m_mac_memory_usage_4096_8191"
-        case .range8192_16383:
-            return "m_mac_memory_usage_8192_16383"
-        case .range16384_more:
-            return "m_mac_memory_usage_16384_more"
+        case .memoryUsage(let threshold, _):
+            switch threshold {
+            case .less512:
+                return "m_mac_memory_usage_less_512"
+            case .range512_1023:
+                return "m_mac_memory_usage_512_1023"
+            case .range1024_2047:
+                return "m_mac_memory_usage_1024_2047"
+            case .range2048_4095:
+                return "m_mac_memory_usage_2048_4095"
+            case .range4096_8191:
+                return "m_mac_memory_usage_4096_8191"
+            case .range8192_16383:
+                return "m_mac_memory_usage_8192_16383"
+            case .range16384_more:
+                return "m_mac_memory_usage_16384_more"
+            }
         }
     }
 
     var parameters: [String: String]? {
-        nil
+        switch self {
+        case .memoryUsage(_, let uptimeMinutes):
+            return ["uptime": String(uptimeMinutes)]
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
         [.pixelSource]
     }
 
-    /// Returns the appropriate pixel for a given memory usage value in megabytes.
+    /// Returns the appropriate threshold for a given memory usage value in megabytes.
     /// - Parameter value: Memory usage in megabytes
-    /// - Returns: The corresponding threshold pixel
-    static func pixel(forMB value: Double) -> MemoryUsagePixel {
+    /// - Returns: The corresponding threshold
+    static func threshold(forMB value: Double) -> Threshold {
         switch Int(value) {
         case ..<512:
             return .less512

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import Bookmarks
 import Combine
 import Common

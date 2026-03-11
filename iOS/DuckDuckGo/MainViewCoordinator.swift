@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 
 class MainViewCoordinator {
@@ -29,7 +30,7 @@ class MainViewCoordinator {
     var logoContainer: UIView!
     var topSlideContainer: UIView!
     var logoText: UIImageView!
-    var navigationBarContainer: UIView!
+    var navigationBarContainer: MainViewFactory.NavigationBarContainer!
     var navigationBarCollectionView: MainViewFactory.NavigationBarCollectionView!
     var notificationBarContainer: UIView!
     var omniBar: OmniBar!
@@ -37,6 +38,9 @@ class MainViewCoordinator {
     var statusBackground: UIView!
     var suggestionTrayContainer: UIView!
     var tabBarContainer: UIView!
+    var aiChatTabChatHeaderContainer: UIView!
+    var unifiedToggleInputContainer: UIView!
+    var unifiedInputContentContainer: UIView!
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
@@ -49,16 +53,27 @@ class MainViewCoordinator {
 
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
+    private var savedStatusBackgroundColor: UIColor?
+    private var inlineEditingStatusBackgroundColor: UIColor?
+    private(set) var isNavigationChromeHidden = false
+    private var isNavBarContainerBottomKeyboardBased = false
+
+    var isNavigationBarContainerBottomKeyboardBased: Bool {
+        isNavBarContainerBottomKeyboardBased
+    }
 
     // The default after creating the hiearchy is top
     var addressBarPosition: AddressBarPosition = .top
 
-    /// STOP - why are you instanciating this?
+    var standardNavigationBarContainerHeight: CGFloat {
+        omniBar.barView.expectedHeight
+    }
+
     init(parentController: UIViewController) {
         self.parentController = parentController
         self.superview = parentController.view
     }
-    
+
     func hideToolbarSeparator() {
         toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
     }
@@ -67,7 +82,6 @@ class MainViewCoordinator {
 
         var navigationBarContainerTop: NSLayoutConstraint!
         var navigationBarContainerBottom: NSLayoutConstraint!
-        var navigationBarContainerKeyboardHeight: NSLayoutConstraint!
         var navigationBarContainerHeight: NSLayoutConstraint!
         var toolbarBottom: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
@@ -84,6 +98,9 @@ class MainViewCoordinator {
         var topSlideContainerTopToStatusBackground: NSLayoutConstraint!
         var topSlideContainerHeight: NSLayoutConstraint!
         var toolbarSpacerHeight: NSLayoutConstraint!
+        var contentContainerBottomToUnifiedToggleInputTop: NSLayoutConstraint!
+        var contentContainerTopToSafeArea: NSLayoutConstraint!
+        var contentContainerTopToAIChatHeader: NSLayoutConstraint!
 
     }
 
@@ -128,12 +145,9 @@ class MainViewCoordinator {
             return
         }
 
-        // Hiding the container won't suffice as it still defines the contentContainer.bottomY through constraints
         navigationBarContainer.isHidden = true
 
-        constraints.contentContainerBottomToToolbarTop.isActive = false
-        constraints.contentContainerBottomToSafeArea.isActive = true
-
+        setContentContainerBottomAnchorMode(.safeArea)
     }
 
     func showNavigationBarWithBottomPosition() {
@@ -144,8 +158,11 @@ class MainViewCoordinator {
         navigationBarContainer.isHidden = false
         constraints.navigationBarContainerBottom.constant = 0
 
-        constraints.contentContainerBottomToToolbarTop.isActive = true
-        constraints.contentContainerBottomToSafeArea.isActive = false
+        if isNavigationChromeHidden {
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        } else {
+            setContentContainerBottomAnchorMode(.toolbar)
+        }
     }
 
     func setAddressBarTopActive(_ active: Bool) {
@@ -166,10 +183,265 @@ class MainViewCoordinator {
         toolbarHandler.updateToolbarWithState(state)
     }
 
+    // MARK: - AI Tab Native Input Layout
+
+    func showUnifiedToggleInput() {
+        navigationBarCollectionView.layer.removeAllAnimations()
+        unifiedToggleInputContainer.layer.removeAllAnimations()
+        constraints.navigationBarContainerTop.isActive = false
+        if !constraints.navigationBarContainerBottom.isActive {
+            constraints.navigationBarContainerBottom.isActive = true
+        }
+        setNavBarContainerBottomToToolbar()
+        constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+        unifiedToggleInputContainer.isHidden = false
+        unifiedToggleInputContainer.alpha = 1
+        updateUnifiedToggleInputColors(isExpanded: false, inputView: nil)
+        navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
+    }
+
+    func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
+        guard isNavigationChromeHidden else {
+            unifiedToggleInputContainer.backgroundColor = .clear
+            inputView?.backgroundColor = .clear
+            return
+        }
+        if isExpanded {
+            inputView?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            unifiedToggleInputContainer.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        } else {
+            inputView?.backgroundColor = .clear
+            unifiedToggleInputContainer.backgroundColor = .clear
+        }
+    }
+
+    @MainActor
+    func restoreNavBarToToolbarForInlineInactive() {
+        guard addressBarPosition.isBottom else { return }
+        if !constraints.navigationBarContainerBottom.isActive {
+            constraints.navigationBarContainerBottom.isActive = true
+        }
+        setNavBarContainerBottomToToolbar()
+    }
+
+    @MainActor
+    func restoreNavBarToKeyboardForInlineActive() {
+        guard addressBarPosition.isBottom else { return }
+        if !constraints.navigationBarContainerBottom.isActive {
+            constraints.navigationBarContainerBottom.isActive = true
+        }
+        setNavBarContainerBottomToKeyboard()
+    }
+
+    func hideUnifiedToggleInput() {
+        unifiedToggleInputContainer.isHidden = true
+        unifiedToggleInputContainer.backgroundColor = .clear
+        if addressBarPosition == .top {
+            setNavBarContainerBottomToToolbar()
+            constraints.navigationBarContainerBottom.isActive = false
+            constraints.navigationBarContainerTop.isActive = true
+        } else {
+            setNavBarContainerBottomToToolbar()
+        }
+        constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+    }
+
+    // MARK: - Inline Editing Layout
+
+    @MainActor
+    func showUnifiedToggleInputInline(expandedHeight: CGFloat) {
+        navigationBarCollectionView.layer.removeAllAnimations()
+        unifiedToggleInputContainer.layer.removeAllAnimations()
+        navigationBarCollectionView.layer.removeAllAnimations()
+        navigationBarCollectionView.isUserInteractionEnabled = false
+        unifiedToggleInputContainer.alpha = 0
+        unifiedToggleInputContainer.isHidden = false
+        unifiedToggleInputContainer.backgroundColor = .clear
+        if inlineEditingStatusBackgroundColor == nil {
+            inlineEditingStatusBackgroundColor = statusBackground.backgroundColor
+        }
+        let inlineBackground = UIColor(designSystemColor: .panel)
+        statusBackground.backgroundColor = inlineBackground
+        navigationBarContainer.backgroundColor = inlineBackground
+        suggestionTrayContainer.backgroundColor = inlineBackground
+
+        if addressBarPosition.isBottom {
+            setNavBarContainerBottomToKeyboard()
+        }
+
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+            self.navigationBarCollectionView.alpha = 0
+            self.unifiedToggleInputContainer.alpha = 1
+            self.constraints.navigationBarContainerHeight.constant = expandedHeight
+            self.superview.layoutIfNeeded()
+        }
+        navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
+    }
+
+    @MainActor
+    func hideUnifiedToggleInputInline() {
+        if addressBarPosition.isBottom {
+            setNavBarContainerBottomToToolbar()
+        }
+
+        let savedColor = inlineEditingStatusBackgroundColor
+        inlineEditingStatusBackgroundColor = nil
+
+        UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
+            self.navigationBarCollectionView.alpha = 1
+            self.unifiedToggleInputContainer.alpha = 0
+            self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
+            self.superview.layoutIfNeeded()
+        } completion: { finished in
+            self.statusBackground.backgroundColor = savedColor
+            self.navigationBarContainer.backgroundColor = nil
+            self.suggestionTrayContainer.backgroundColor = .clear
+            self.navigationBarCollectionView.isUserInteractionEnabled = true
+
+            if self.isNavigationChromeHidden {
+                if finished {
+                    self.navigationBarCollectionView.alpha = 0
+                    self.unifiedToggleInputContainer.isHidden = false
+                    self.unifiedToggleInputContainer.alpha = 1
+                }
+            } else {
+                if finished {
+                    self.unifiedToggleInputContainer.isHidden = true
+                    self.unifiedToggleInputContainer.alpha = 1
+                }
+            }
+        }
+    }
+
+    @MainActor
+    func showUnifiedInputContent() {
+        unifiedInputContentContainer.isHidden = false
+    }
+
+    @MainActor
+    func hideUnifiedInputContent() {
+        unifiedInputContentContainer.isHidden = true
+    }
+
+    // MARK: - AI Tab Chrome
+
+    func showAITabChrome() {
+        showAIChatTabChatHeader()
+        setNavigationChromeHidden(true)
+    }
+
+    func hideAITabChrome() {
+        hideAIChatTabChatHeader()
+        setNavigationChromeHidden(false)
+    }
+
+    func showAIChatTabChatHeader() {
+        aiChatTabChatHeaderContainer.isHidden = false
+        guard isNavigationChromeHidden else { return }
+        constraints.contentContainerTop.isActive = false
+        constraints.contentContainerTopToSafeArea.isActive = false
+        constraints.contentContainerTopToAIChatHeader?.isActive = true
+    }
+
+    func hideAIChatTabChatHeader() {
+        aiChatTabChatHeaderContainer.isHidden = true
+        guard isNavigationChromeHidden else { return }
+        constraints.contentContainerTop.isActive = false
+        constraints.contentContainerTopToAIChatHeader?.isActive = false
+        constraints.contentContainerTopToSafeArea.isActive = true
+    }
+
+    /// Hides the OmniBar collection view (not the container) so that the UTI inside the container
+    /// remains visible when the AI tab chrome is shown. Uses alpha + interaction instead of isHidden
+    /// so the pan gesture for tab swiping stays intact.
+    func setNavigationChromeHidden(_ hidden: Bool) {
+        if hidden {
+            if !isNavigationChromeHidden {
+                savedStatusBackgroundColor = statusBackground.backgroundColor
+            }
+            isNavigationChromeHidden = true
+            statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            navigationBarContainer.backgroundColor = .clear
+            navigationBarCollectionView.alpha = 0
+            navigationBarCollectionView.isUserInteractionEnabled = false
+            constraints.contentContainerTop.isActive = false
+            if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
+                constraints.contentContainerTopToSafeArea.isActive = false
+                constraints.contentContainerTopToAIChatHeader.isActive = true
+            } else {
+                constraints.contentContainerTopToSafeArea.isActive = true
+            }
+            if !addressBarPosition.isBottom {
+                constraints.statusBackgroundToNavigationBarContainerBottom.isActive = false
+                constraints.statusBackgroundBottomToSafeAreaTop.isActive = true
+            }
+            if navigationBarContainer.isHidden {
+                setContentContainerBottomAnchorMode(.safeArea)
+            } else {
+                setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            }
+        } else {
+            if isNavigationChromeHidden {
+                statusBackground.backgroundColor = savedStatusBackgroundColor
+                savedStatusBackgroundColor = nil
+            }
+            isNavigationChromeHidden = false
+            navigationBarContainer.backgroundColor = nil
+            navigationBarCollectionView.alpha = 1
+            navigationBarCollectionView.isUserInteractionEnabled = true
+            constraints.contentContainerTopToSafeArea.isActive = false
+            constraints.contentContainerTopToAIChatHeader?.isActive = false
+            constraints.contentContainerTop.isActive = true
+            if !addressBarPosition.isBottom {
+                constraints.statusBackgroundBottomToSafeAreaTop.isActive = false
+                constraints.statusBackgroundToNavigationBarContainerBottom.isActive = true
+            } else {
+                constraints.navigationBarContainerBottom.constant = 0
+            }
+            if navigationBarContainer.isHidden {
+                setContentContainerBottomAnchorMode(.safeArea)
+            } else {
+                setContentContainerBottomAnchorMode(.toolbar)
+            }
+        }
+    }
+
+    // MARK: - Private Helpers
+
+    private enum ContentContainerBottomAnchorMode: String {
+        case toolbar
+        case unifiedToggleInput
+        case safeArea
+    }
+
+    private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
+        constraints.contentContainerBottomToToolbarTop.isActive = mode == .toolbar
+        constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = mode == .unifiedToggleInput
+        constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
+    }
+
+    private func setNavBarContainerBottomToKeyboard() {
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+            .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
+        constraints.navigationBarContainerBottom.constant = 0
+        constraints.navigationBarContainerBottom.isActive = true
+        isNavBarContainerBottomKeyboardBased = true
+    }
+
+    private func setNavBarContainerBottomToToolbar() {
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+            .constraint(equalTo: toolbar.topAnchor)
+        constraints.navigationBarContainerBottom.constant = 0
+        constraints.navigationBarContainerBottom.isActive = true
+        isNavBarContainerBottomKeyboardBased = false
+    }
+
 }
 
 extension MainViewCoordinator {
-    
+
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
         superview.backgroundColor = theme.mainViewBackgroundColor

@@ -30,6 +30,7 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
     var featureFlagger: FeatureFlagger
     var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     var aiChatSettings: AIChatSettingsProvider
+    var aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     var appSettings: any AppSettings
     var daxEasterEggPresenter: DaxEasterEggPresenting
     var mobileCustomization: DuckDuckGo.MobileCustomization
@@ -38,6 +39,8 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
          aichatIPadTabFeature: AIChatIPadTabFeatureProviding = MockAIChatIPadTabFeature(),
          aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
+         aiChatAddressBarExperience: AIChatAddressBarExperienceProviding? = nil,
+         userInterfaceIdiomProvider: UserInterfaceIdiomProviding = SystemUserInterfaceIdiomProvider(),
          appSettings: AppSettings = AppSettingsMock(),
          daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(logoStore: DaxEasterEggLogoStore(), featureFlagger: MockFeatureFlagger()),
          mobileCustomization: MobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore())) {
@@ -45,6 +48,10 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
         self.featureFlagger = featureFlagger
         self.aichatIPadTabFeature = aichatIPadTabFeature
         self.aiChatSettings = aiChatSettings
+        self.aiChatAddressBarExperience = aiChatAddressBarExperience
+            ?? AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                          aiChatSettings: aiChatSettings,
+                                          userInterfaceIdiomProvider: userInterfaceIdiomProvider)
         self.appSettings = appSettings
         self.daxEasterEggPresenter = daxEasterEggPresenter
         self.mobileCustomization = mobileCustomization

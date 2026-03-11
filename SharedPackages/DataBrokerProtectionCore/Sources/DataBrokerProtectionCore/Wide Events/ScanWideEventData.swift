@@ -25,7 +25,7 @@ public final class ScanWideEventData: WideEventData {
         featureName: "pir-scan-attempt",
         mobileMetaType: "ios-pir-scan-attempt",
         desktopMetaType: "macos-pir-scan-attempt",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     public enum AttemptType: String, Codable {
@@ -42,6 +42,7 @@ public final class ScanWideEventData: WideEventData {
     public var dataBrokerVersion: String?
     public var attemptType: AttemptType
     public var attemptNumber: Int
+    public var isFreeScan: Bool
     public var scanInterval: WideEvent.MeasuredInterval?
 
     public var errorData: WideEventErrorData?
@@ -53,6 +54,7 @@ public final class ScanWideEventData: WideEventData {
                 dataBrokerVersion: String?,
                 attemptType: AttemptType,
                 attemptNumber: Int,
+                isFreeScan: Bool,
                 scanInterval: WideEvent.MeasuredInterval) {
         self.globalData = globalData
         self.contextData = contextData
@@ -61,18 +63,20 @@ public final class ScanWideEventData: WideEventData {
         self.dataBrokerVersion = dataBrokerVersion
         self.attemptType = attemptType
         self.attemptNumber = attemptNumber
+        self.isFreeScan = isFreeScan
         self.scanInterval = scanInterval
     }
 }
 
 extension ScanWideEventData {
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (DBPWideEventParameter.ScanFeature.dataBrokerURL, dataBrokerURL),
             (DBPWideEventParameter.ScanFeature.dataBrokerVersion, dataBrokerVersion),
             (DBPWideEventParameter.ScanFeature.attemptType, attemptType.rawValue),
-            (DBPWideEventParameter.ScanFeature.attemptNumber, String(attemptNumber)),
-            (DBPWideEventParameter.ScanFeature.scanLatency, scanInterval?.stringValue(.noBucketing)),
+            (DBPWideEventParameter.ScanFeature.attemptNumber, attemptNumber),
+            (DBPWideEventParameter.ScanFeature.isFreeScan, isFreeScan),
+            (DBPWideEventParameter.ScanFeature.scanLatency, scanInterval?.intValue(.noBucketing)),
         ])
     }
 }

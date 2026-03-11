@@ -374,8 +374,8 @@ final class TerminationDeciderHandlerTests: XCTestCase {
         XCTAssertEqual(replyCallCount, 0, "No reply call for sync .terminateNow")
     }
 
-    /// Verifies reentry prevention returns .terminateLater without processing when already terminating
-    func testReentryPreventionReturnsTerminateLater() async {
+    /// Verifies that a second call while async chain is running returns .terminateLater
+    func testSecondCallDuringAsyncFlightReturnsTerminateLater() async {
         // Given
         let asyncTask = Task<TerminationDecision, Never> {
             try? await Task.sleep(interval: 0.2)
@@ -399,12 +399,50 @@ final class TerminationDeciderHandlerTests: XCTestCase {
 
         let reply2 = handler.executeTerminationDeciders()
 
-        // Then
+        // Then — second call defers to the in-flight chain
         XCTAssertEqual(reply2, .terminateLater)
 
         await fulfillment(of: [deciderExpectation, replyExpectation], timeout: 1.0)
 
         XCTAssertEqual(decider.completionCallCount, 1)
+    }
+
+    /// Verifies that after cancellation, a fresh handler can run normally
+    func testAfterCancellationFreshHandlerRunsNormally() async {
+        // Given — first handler gets cancelled
+        let cancelTask = Task<TerminationDecision, Never> { .cancel }
+        let cancelDecider = MockDecider(name: "CancelDecider", response: .async(cancelTask), expectation: expectation(description: "Cancel completion"))
+        let cancelReplyExpectation = expectation(description: "Cancel reply")
+
+        let handler1 = TerminationDeciderHandler(
+            deciders: [cancelDecider],
+            replyToApplicationShouldTerminate: { [weak self] value in
+                self?.mockReply(value: value)
+                cancelReplyExpectation.fulfill()
+            }
+        )
+
+        let reply1 = handler1.executeTerminationDeciders()
+        XCTAssertEqual(reply1, .terminateLater)
+
+        await fulfillment(of: [cancelDecider.expectation!, cancelReplyExpectation], timeout: 1.0)
+        XCTAssertEqual(lastReplyValue, false)
+
+        // When — fresh handler runs
+        replyCallCount = 0
+        lastReplyValue = nil
+        let nextDecider = MockDecider(name: "NextDecider", response: .sync(.next))
+        let handler2 = TerminationDeciderHandler(
+            deciders: [nextDecider],
+            replyToApplicationShouldTerminate: mockReply
+        )
+
+        let reply2 = handler2.executeTerminationDeciders()
+
+        // Then — new handler completes normally
+        XCTAssertEqual(reply2, .terminateNow)
+        XCTAssertEqual(nextDecider.completionCallCount, 1)
+        XCTAssertEqual(nextDecider.lastCompletionValue, true)
     }
 
     // MARK: - Helpers

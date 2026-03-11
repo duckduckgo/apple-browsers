@@ -1,7 +1,7 @@
 {
   "name": "OfficialUSA",
   "url": "officialusa.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "parent": "neighbor.report",
   "addedDatetime": 1692594000000,
   "optOutUrl": "https://www.officialusa.com/opt-out/",
@@ -14,6 +14,17 @@
           "actionType": "navigate",
           "id": "947ca80c-3331-4425-9ad3-ab25e2170f29",
           "url": "https://officialusa.com/names/${firstName}-${lastName}/"
+        },
+        {
+          "_comment": "Wait for CF challenge interstitial to complete",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".navbar-brand"
+            }
+          ],
+          "id": "18dda546-a271-454c-ba9e-d213b2b5f4fc"
         },
         {
           "actionType": "extract",

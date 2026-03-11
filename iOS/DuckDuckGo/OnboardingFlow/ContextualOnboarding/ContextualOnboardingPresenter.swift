@@ -146,6 +146,6 @@ extension TabViewController: TabViewControllerType {
     }
 
     var webViewContainerView: UIView {
-        webViewContainer
+        outerContainer
     }
 }

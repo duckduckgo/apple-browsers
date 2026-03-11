@@ -34,7 +34,8 @@ final class ObservableKeyValueStoringTests {
 
     // MARK: - Basic Observation Tests
 
-    @Test("Publisher emits for key changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher emits for key changes", .timeLimit(.minutes(1)))
     func publisherEmitsForKeyChanges() {
         let key = "testKey"
 
@@ -50,7 +51,8 @@ final class ObservableKeyValueStoringTests {
         #expect(changeCount == 1)
     }
 
-    @Test("Publisher does not emit for different key")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher does not emit for different key", .timeLimit(.minutes(1)))
     func publisherDoesNotEmitForDifferentKey() {
         let key1 = "key1"
         let key2 = "key2"
@@ -69,7 +71,8 @@ final class ObservableKeyValueStoringTests {
         #expect(changeCount == 0)
     }
 
-    @Test("Multiple subscribers to same key")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple subscribers to same key", .timeLimit(.minutes(1)))
     func multipleSubscribersToSameKey() {
         let key = "testKey"
 
@@ -95,7 +98,8 @@ final class ObservableKeyValueStoringTests {
         #expect(count2 == 1)
     }
 
-    @Test("Cancelling subscription stops observation")
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancelling subscription stops observation", .timeLimit(.minutes(1)))
     func cancellingSubscriptionStopsObservation() {
         let key = "testKey"
 
@@ -118,7 +122,8 @@ final class ObservableKeyValueStoringTests {
 
     // MARK: - UserDefaults Conformance Tests
 
-    @Test("UserDefaults conforms to ObservableKeyValueStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults conforms to ObservableKeyValueStoring", .timeLimit(.minutes(1)))
     func userDefaultsConformsToObservableKeyValueStoring() throws {
         let suiteName = "test-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -128,7 +133,8 @@ final class ObservableKeyValueStoringTests {
         #expect(conformsToProtocol)
     }
 
-    @Test("UserDefaults publisher does not emit on subscription")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher does not emit on subscription", .timeLimit(.minutes(1)))
     func userDefaultsPublisherDoesNotEmitOnSubscription() {
         let suiteName = "test-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -151,7 +157,8 @@ final class ObservableKeyValueStoringTests {
         #expect(defaults.string(forKey: key) == "existingValue")
     }
 
-    @Test("UserDefaults publisher emits on change and value is updated")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher emits on change and value is updated", .timeLimit(.minutes(1)))
     func userDefaultsPublisherEmitsOnChange() {
         let suiteName = "test-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -189,7 +196,8 @@ final class ObservableKeyValueStoringTests {
         #expect(defaults.string(forKey: key) == "value3")
     }
 
-    @Test("UserDefaults publisher only emits for subscribed key")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher only emits for subscribed key", .timeLimit(.minutes(1)))
     func userDefaultsPublisherOnlyEmitsForSubscribedKey() {
         let suiteName = "test-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -220,7 +228,8 @@ final class ObservableKeyValueStoringTests {
         #expect(defaults.string(forKey: key2) == "value2")
     }
 
-    @Test("UserDefaults publisher emits on removal")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher emits on removal", .timeLimit(.minutes(1)))
     func userDefaultsPublisherEmitsOnRemoval() {
         let suiteName = "test-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -261,13 +270,15 @@ final class ObservableKeyValueStoringTests {
 
     // MARK: - MockKeyValueStore Tests
 
-    @Test("MockKeyValueStore conforms to ObservableKeyValueStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("MockKeyValueStore conforms to ObservableKeyValueStoring", .timeLimit(.minutes(1)))
     func mockKeyValueStoreConformsToObservableKeyValueStoring() throws {
         let conformsToProtocol = mockStore is ObservableKeyValueStoring
         #expect(conformsToProtocol)
     }
 
-    @Test("MockKeyValueStore supports multiple keys")
+    @available(iOS 16, macOS 13, *)
+    @Test("MockKeyValueStore supports multiple keys", .timeLimit(.minutes(1)))
     func mockKeyValueStoreSupportsMultipleKeys() {
         let key1 = "key1"
         let key2 = "key2"
@@ -296,7 +307,8 @@ final class ObservableKeyValueStoringTests {
 
     // MARK: - objectWillChange Tests
 
-    @Test("objectWillChange fires for any key change")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange fires for any key change", .timeLimit(.minutes(1)))
     func objectWillChangeFiresForAnyKey() {
         var changeCount = 0
         mockStore.objectWillChange.sink { _ in
@@ -312,7 +324,8 @@ final class ObservableKeyValueStoringTests {
         #expect(changeCount == 3)
     }
 
-    @Test("objectWillChange fires for remove operations")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange fires for remove operations", .timeLimit(.minutes(1)))
     func objectWillChangeFiresForRemove() {
         var changeCount = 0
 
@@ -330,7 +343,8 @@ final class ObservableKeyValueStoringTests {
         #expect(changeCount == 1)
     }
 
-    @Test("Multiple subscribers to objectWillChange all receive notifications")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple subscribers to objectWillChange all receive notifications", .timeLimit(.minutes(1)))
     func multipleSubscribersToObjectWillChange() {
         var count1 = 0
         var count2 = 0
@@ -350,7 +364,8 @@ final class ObservableKeyValueStoringTests {
         #expect(count3 == 1)
     }
 
-    @Test("objectWillChange and publisher(for:) both work together")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange and publisher(for:) both work together", .timeLimit(.minutes(1)))
     func objectWillChangeAndPublisherWorkTogether() {
         var objectWillChangeCount = 0
         var publisherCount = 0
@@ -383,7 +398,8 @@ final class ObservableKeyValueStoringTests {
 
     // MARK: - UserDefaults Dotted Key Tests
 
-    @Test("UserDefaults publisher works with dotted keys")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher works with dotted keys", .timeLimit(.minutes(1)))
     func userDefaultsPublisherWorksWithDottedKeys() {
         // Given
         let suiteName = "test-\(UUID().uuidString)"
@@ -414,7 +430,8 @@ final class ObservableKeyValueStoringTests {
         #expect(receivedCount == 1)
     }
 
-    @Test("UserDefaults publisher with dotted keys emits on removal")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher with dotted keys emits on removal", .timeLimit(.minutes(1)))
     func userDefaultsPublisherWithDottedKeysEmitsOnRemoval() {
         // Given
         let suiteName = "test-\(UUID().uuidString)"
@@ -443,7 +460,8 @@ final class ObservableKeyValueStoringTests {
         #expect(defaults.object(forKey: key) == nil)
     }
 
-    @Test("UserDefaults publisher with dotted keys only emits on actual changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher with dotted keys only emits on actual changes", .timeLimit(.minutes(1)))
     func userDefaultsPublisherWithDottedKeysOnlyEmitsOnActualChanges() {
         // Given
         let suiteName = "test-\(UUID().uuidString)"
@@ -483,7 +501,8 @@ final class ObservableKeyValueStoringTests {
         #expect(receivedCount == 1)
     }
 
-    @Test("UserDefaults publisher with dotted keys handles nil to value transition")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher with dotted keys handles nil to value transition", .timeLimit(.minutes(1)))
     func userDefaultsPublisherWithDottedKeysHandlesNilToValue() {
         // Given
         let suiteName = "test-\(UUID().uuidString)"

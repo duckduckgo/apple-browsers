@@ -165,7 +165,7 @@ final class Fire: FireProtocol {
     let bookmarkManager: BookmarkManager
     let syncService: DDGSyncing?
     let syncDataProviders: SyncDataProvidersSource?
-    let tabCleanupPreparer = TabCleanupPreparer()
+    let tabCleanupPreparer: TabCleanupPreparing
     let secureVaultFactory: AutofillVaultFactory
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
@@ -279,7 +279,8 @@ final class Fire: FireProtocol {
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
          isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
-         dataClearingPixelsReporter: DataClearingPixelsReporter = .init()
+         dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
+         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -312,6 +313,7 @@ final class Fire: FireProtocol {
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
                                                                                  privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
+        self.tabCleanupPreparer = tabCleanupPreparer
         self.historyCoordinating.dataClearingPixelsHandling = DataClearingPixelsBurnHistoryHandler(dataClearingPixelsReporter)
     }
 
@@ -390,17 +392,23 @@ final class Fire: FireProtocol {
                 group.leave()
             }
 
-            group.notify(queue: .main) {
+            await withCheckedContinuation { continuation in
+                group.notify(queue: .main) {
+                    continuation.resume()
+                }
+            }
+
+            await MainActor.run {
                 self.dispatchGroup = nil
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 self.reopenWindowIfNeeded(customURL: entity.customURLToOpen)
-
                 self.burningData = nil
-
-                completion?()
-
-                Logger.fire.debug("Fire finished")
             }
+
+            await self.reloadWebExtensions()
+
+            completion?()
+            Logger.fire.debug("Fire finished")
         }
     }
 
@@ -467,19 +475,26 @@ final class Fire: FireProtocol {
             self.burnAutoconsentCache()
             self.burnZoomLevels()
 
-            group.notify(queue: .main) {
+            await withCheckedContinuation { continuation in
+                group.notify(queue: .main) {
+                    continuation.resume()
+                }
+            }
+
+            await MainActor.run {
                 self.dispatchGroup = nil
                 // Only close windows at the end if we didn't close them at the beginning
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 if !isBurnOnExit {
                     self.reopenWindowIfNeeded(customURL: url)
                 }
-
                 self.burningData = nil
-                completion?()
-
-                Logger.fire.debug("Fire finished")
             }
+
+            await self.reloadWebExtensions()
+
+            completion?()
+            Logger.fire.debug("Fire finished")
         }
     }
 
@@ -623,15 +638,33 @@ final class Fire: FireProtocol {
     // MARK: - Web cache
 
     private func burnWebCache() async {
+        await unloadWebExtensions()
         Logger.fire.debug("WebsiteDataStore began cookie deletion")
         await webCacheManager.clear()
         Logger.fire.debug("WebsiteDataStore completed cookie deletion")
     }
 
     private func burnWebCache(baseDomains: Set<String>? = nil) async {
+        await unloadWebExtensions()
         Logger.fire.debug("WebsiteDataStore began cookie deletion")
         await webCacheManager.clear(baseDomains: baseDomains)
         Logger.fire.debug("WebsiteDataStore completed cookie deletion")
+    }
+
+    // MARK: - Web Extensions
+
+    @MainActor
+    private func unloadWebExtensions() {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.unloadAllExtensions()
+        }
+    }
+
+    @MainActor
+    private func reloadWebExtensions() async {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            await webExtensionManager.loadInstalledExtensions()
+        }
     }
 
     // MARK: - History
@@ -833,8 +866,6 @@ final class Fire: FireProtocol {
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
             if shouldClose {
                 let startTime = CACurrentMediaTime()
-                let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
-                var expectedCount = countBeforeBurn
 
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
                     let tab = replacementPinnedTab(from: tabViewModel.tab)
@@ -848,12 +879,8 @@ final class Fire: FireProtocol {
                         _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
                     }
                     tabCollectionViewModel.removeSelected(forceChange: true)
-                    expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
                 }
                 dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-                dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)){
-                    tabCollectionViewModel.tabCollection.tabs.count != expectedCount
-                }
             }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
@@ -871,10 +898,6 @@ final class Fire: FireProtocol {
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
 
                 dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-                // A new tab was inserted
-                dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)) {
-                    tabCollectionViewModel.tabCollection.tabs.count > 1
-                }
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
@@ -892,10 +915,6 @@ final class Fire: FireProtocol {
             }
 
             dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-            // A new tab was inserted
-            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)) {
-                mainWindowControllers.contains { $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.count > 1 }
-            }
         }
     }
 

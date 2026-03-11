@@ -38,6 +38,12 @@ import AIChatTestingUtilities
 
 // swiftlint:disable force_try
 
+private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
+    func isEligibleForNTPAfterIdle() -> Bool { false }
+    func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
+    func idleThresholdSeconds() -> Int { 60 }
+}
+
  @MainActor
  final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
@@ -71,8 +77,9 @@ import AIChatTestingUtilities
         let historyManager = MockHistoryManager()
         let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let featureFlagger = MockFeatureFlagger()
+        let aiChatSettings = MockAIChatSettingsProvider()
         let fireproofing = MockFireproofing()
-        let textZoomCoordinator = MockTextZoomCoordinator()
+        let textZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
@@ -88,7 +95,9 @@ import AIChatTestingUtilities
                                                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
                                                                               fireproofing: fireproofing,
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
-                                                                              internalUserDecider: MockInternalUserDecider())
+                                                                              internalUserDecider: MockInternalUserDecider(),
+                                                                              syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                                              webExtensionAvailability: nil)
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
@@ -107,7 +116,8 @@ import AIChatTestingUtilities
                                     featureFlagger: featureFlagger,
                                     contentScopeExperimentManager: MockContentScopeExperimentManager(),
                                     appSettings: AppDependencyProvider.shared.appSettings,
-                                    textZoomCoordinator: textZoomCoordinator,
+                                    textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                    autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                                     websiteDataManager: mockWebsiteDataManager,
                                     fireproofing: fireproofing,
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
@@ -115,10 +125,12 @@ import AIChatTestingUtilities
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
-                                    aiChatSettings: MockAIChatSettingsProvider(),
+                                    aiChatSettings: aiChatSettings,
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
-                                    voiceSearchHelper: MockVoiceSearchHelper()
+                                    voiceSearchHelper: MockVoiceSearchHelper(),
+                                    launchSourceManager: MockLaunchSourceManager(),
+                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
@@ -126,7 +138,8 @@ import AIChatTestingUtilities
                                         syncService: syncService,
                                         bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
                                         fireproofing: fireproofing,
-                                        textZoomCoordinator: textZoomCoordinator,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                        autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
@@ -152,13 +165,16 @@ import AIChatTestingUtilities
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
             featureFlagger: featureFlagger,
+            idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
-            textZoomCoordinator: textZoomCoordinator,
+            textZoomCoordinatorProvider: textZoomCoordinatorProvider,
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-            aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatSettings: aiChatSettings,
+            aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                                   aiChatSettings: aiChatSettings),
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider(),
@@ -175,7 +191,8 @@ import AIChatTestingUtilities
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
-            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
+            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

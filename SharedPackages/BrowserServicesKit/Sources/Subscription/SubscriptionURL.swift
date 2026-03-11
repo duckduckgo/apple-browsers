@@ -40,6 +40,8 @@ public enum SubscriptionURL: Equatable {
     case identityTheftRestoration
     case plans
     case upgradeToTier(String)
+    case addEmail
+    case addEmailSuccess
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -88,6 +90,10 @@ public enum SubscriptionURL: Equatable {
                 baseURL.appendingPathComponent("plans")
             case .upgradeToTier(let tier):
                 baseURL.appendingPathComponent("plans").appendingParameter(name: "tier", value: tier)
+            case .addEmail:
+                baseURL.appendingPathComponent("add-email")
+            case .addEmailSuccess:
+                baseURL.appendingPathComponent("add-email/success")
             }
         }()
 
@@ -106,6 +112,7 @@ public enum SubscriptionURL: Equatable {
             true
         }
     }
+
 }
 
 extension SubscriptionURL {

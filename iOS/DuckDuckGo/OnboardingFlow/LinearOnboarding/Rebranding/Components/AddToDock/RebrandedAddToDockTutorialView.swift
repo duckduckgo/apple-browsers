@@ -17,104 +17,95 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import Onboarding
-import DuckUI
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockTutorialView: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
-        private static let videoSize = CGSize(width: 898.0, height: 680.0)
-        private static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
+        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-tutorial", withExtension: "mp4")
+
+        private enum Design {
+            static let borderWidth: CGFloat = 321
+            static let borderHeight: CGFloat = 239
+            static let videoWidth: CGFloat = 300
+            static let videoHeight: CGFloat = 231
+            static let borderHorizontalPadding: CGFloat = -8
+            static let borderVerticalPadding: CGFloat = -1
+        }
 
         private let title: String
         private let message: String
         private let cta: String
         private let action: () -> Void
-        private let isSkipped: Binding<Bool>
 
-        @State private var animateTitle = true
-        @State private var animateMessage = false
-        @State private var showContent = false
-        @State private var videoPlayerWidth: CGFloat = 0.0
-        @StateObject private var videoPlayerModel = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
-
-        init(
-            title: String,
-            message: String,
-            cta: String,
-            isSkipped: Binding<Bool>,
-            action: @escaping () -> Void
-        ) {
+        init(title: String,
+             message: String,
+             cta: String,
+             action: @escaping () -> Void) {
             self.title = title
             self.message = message
             self.cta = cta
-            self.isSkipped = isSkipped
             self.action = action
         }
 
         var body: some View {
-            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                AnimatableTypingText(title, startAnimating: $animateTitle, skipAnimation: isSkipped) {
-                    withAnimation {
-                        animateMessage = true
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                ),
+                content: AnyView(
+                    videoContent
+                ),
+                title: {
+                    Text(title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                },
+                actions: {
+                    Button(action: action) {
+                        Text(cta)
                     }
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
-
-                AnimatableTypingText(message, startAnimating: $animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showContent = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 16))
-
-                videoPlayer
-                    .visibility(showContent ? .visible : .invisible)
-                    .onChange(of: showContent) { newValue in
-                        if newValue {
-                            // Need to delay playing a video. If calling play too early the video won't play.
-                            DispatchQueue.main.async {
-                                videoPlayerModel.play()
-                            }
-                        }
-                    }
-                    .onFirstAppear {
-                        videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
-                    }
-
-                Button(action: action) {
-                    Text(cta)
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .visibility(showContent ? .visible : .invisible)
-            }
-            .onFrameUpdate(in: .global, using: VideoPlayerFramePreferenceKey.self) { rect in
-                videoPlayerWidth = rect.width
-            }
+            )
         }
 
-        private var videoPlayer: some View {
-            // Calculate the height of the video based on the width it takes maintaining its aspect ratio
-            let heightRatio = videoPlayerWidth * (Self.videoSize.height / Self.videoSize.width)
-            return PlayerView(coordinator: videoPlayerModel)
-                .frame(width: videoPlayerWidth, height: heightRatio)
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-                    videoPlayerModel.pause()
+        private var videoContent: some View {
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let ratio = width / Design.borderWidth
 
+                ZStack(alignment: .top) {
+                    OnboardingRebrandingImages.AddToDock.tutorialBorder
+                        .resizable()
+                        .padding(EdgeInsets(top: Design.borderVerticalPadding * ratio,
+                                            leading: Design.borderHorizontalPadding * ratio,
+                                            bottom: Design.borderVerticalPadding * ratio,
+                                            trailing: Design.borderHorizontalPadding * ratio))
+                        .frame(width: width, height: Design.borderHeight * ratio)
+                    if let videoURL = Self.videoURL {
+                        AddToDockVideoPlayer(url: videoURL,
+                                             frameSize: CGSize(width: Design.videoWidth * ratio,
+                                                               height: Design.videoHeight * ratio),
+                                             shouldLoopVideo: true,
+                                             cornerRadiusRatio: ratio)
+                    }
                 }
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                    videoPlayerModel.play()
-                }
-        }
-
-        private struct VideoPlayerFramePreferenceKey: PreferenceKey {
-            static var defaultValue: CGRect = .zero
-            static func reduce(value: inout CGRect, nextValue: () -> CGRect) {}
+            }
+            .aspectRatio(Design.borderWidth / Design.borderHeight, contentMode: .fit)
         }
 
     }

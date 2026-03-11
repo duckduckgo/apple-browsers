@@ -16,37 +16,26 @@
 //  limitations under the License.
 //
 
-#if SPARKLE
-
+import AppUpdaterShared
 import Cocoa
 
 final class SparkleUpdateMenuItemFactory {
 
-    static func menuItem(for update: Update) -> NSMenuItem {
-        let item = NSMenuItem(title: UserText.updateAvailableMenuItem)
-        item.target = Application.appDelegate.updateController
-        item.action = #selector(SparkleUpdateController.runUpdateFromMenuItem)
-        item.image = NSImage.updateMenuItemIcon
-        return item
-    }
-
-    static func menuItem(for controller: any SparkleUpdateControllerProtocol) -> NSMenuItem {
+    static func menuItem(for controller: any SparkleUpdateControlling) -> NSMenuItem {
 
         let title: String
 
-        if controller.isAtRestartCheckpoint && !controller.shouldForceUpdateCheck {
+        if controller.isAtRestartCheckpoint {
             title = UserText.updateReadyMenuItem
         } else {
             title = UserText.updateNewVersionAvailableMenuItem
         }
 
         let item = NSMenuItem(title: title)
-        item.target = Application.appDelegate.updateController
-        item.action = #selector(SparkleUpdateController.runUpdateFromMenuItem)
+        item.target = controller
+        item.action = #selector(SparkleUpdateControllerObjC.runUpdateFromMenuItem)
         item.image = NSImage.updateMenuItemIcon
         return item
     }
 
 }
-
-#endif

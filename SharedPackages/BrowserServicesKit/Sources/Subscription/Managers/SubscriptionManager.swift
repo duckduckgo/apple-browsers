@@ -67,6 +67,9 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
+    /// Returns subscription tier options (plans and pricing) for the appropriate platform.
+    func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error>
+
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
 
     /// Subscription feature related URL that matches current environment
@@ -178,6 +181,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private var cancellables = Set<AnyCancellable>()
     private let wideEvent: WideEventManaging?
     private let isAuthV2WideEventEnabled: () -> Bool
+    private let tierOptionsProvider: SubscriptionTierOptionsProviding
 
     public init(storePurchaseManager: StorePurchaseManager? = nil,
                 oAuthClient: any OAuthClient,
@@ -189,7 +193,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 initForPurchase: Bool = true,
                 isInternalUserEnabled: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging? = nil,
-                isAuthV2WideEventEnabled: @escaping () -> Bool = { false }) {
+                isAuthV2WideEventEnabled: @escaping () -> Bool = { false },
+                tierOptionsProvider: SubscriptionTierOptionsProviding? = nil) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
         self.userDefaults = userDefaults
@@ -200,6 +205,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.isInternalUserEnabled = isInternalUserEnabled
         self.wideEvent = wideEvent
         self.isAuthV2WideEventEnabled = isAuthV2WideEventEnabled
+        self.tierOptionsProvider = tierOptionsProvider ?? DefaultSubscriptionTierOptionsProvider(
+            subscriptionEnvironmentPlatform: subscriptionEnvironment.purchasePlatform,
+            storePurchaseManager: storePurchaseManager,
+            subscriptionEndpointService: subscriptionEndpointService
+        )
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
             case .appStore:
@@ -340,6 +350,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
         try await subscriptionEndpointService.getTierProducts(region: region, platform: platform)
+    }
+
+    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
+        let subscription = try? await getSubscription(cachePolicy: .cacheFirst)
+        return await tierOptionsProvider.subscriptionTierOptions(includeProTier: includeProTier, currentSubscription: subscription)
     }
 
     public func clearSubscriptionCache() {

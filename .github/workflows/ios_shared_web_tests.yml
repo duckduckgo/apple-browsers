@@ -23,7 +23,7 @@ jobs:
   shared-web-tests:
     name: Shared web tests
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 30
     steps:
     - name: Check out the code

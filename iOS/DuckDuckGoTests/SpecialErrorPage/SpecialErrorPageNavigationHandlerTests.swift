@@ -21,6 +21,7 @@ import Testing
 import WebKit
 import SpecialErrorPages
 import MaliciousSiteProtection
+import BrowserServicesKitTestsUtils
 @testable import DuckDuckGo
 
 @Suite("Special Error Pages - SpecialErrorPageNavigationHandler Unit Tests", .serialized)
@@ -54,7 +55,7 @@ final class SpecialErrorPageNavigationHandlerTests {
     func whenHandleDecidePolicyForNavigationActionIsCalledThenAskMaliciousSiteProtectionNavigationHandlerToHandleTheDecision() throws {
         // GIVEN
         let url = try #require(URL(string: "https://www.example.com"))
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
 
         // WHEN
         sut.handleDecidePolicy(for: navigationAction, webView: webView)
@@ -108,7 +109,7 @@ final class SpecialErrorPageNavigationHandlerTests {
         // GIVEN
         sut.attachWebView(webView)
         let url = try #require(URL(string: "https://www.example.com"))
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         let navigationResponse = MockNavigationResponse.with(url: url)
         let errorData = SpecialErrorData.maliciousSite(kind: threat, url: url)
         maliciousSiteProtectionNavigationHandler.task = Task {
@@ -237,7 +238,7 @@ final class SpecialErrorPageNavigationHandlerTests {
         // GIVEN
         let url = try #require(URL(string: "https://www.example.com"))
         let errorData = SpecialErrorData.maliciousSite(kind: threat, url: url)
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         let navigationResponse = MockNavigationResponse.with(url: url)
         maliciousSiteProtectionNavigationHandler.task = Task {
             .navigationHandled(.mainFrame(MaliciousSiteDetectionNavigationResponse(navigationAction: navigationAction, errorData: errorData)))
@@ -303,7 +304,7 @@ final class SpecialErrorPageNavigationHandlerTests {
         sut.attachWebView(webView)
         let url = try #require(URL(string: "https://example.com"))
         let errorData = SpecialErrorData.maliciousSite(kind: threat, url: url)
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         let navigationResponse = MockNavigationResponse.with(url: url)
         maliciousSiteProtectionNavigationHandler.task = Task {
             .navigationHandled(.mainFrame(MaliciousSiteDetectionNavigationResponse(navigationAction: navigationAction, errorData: errorData)))
@@ -354,7 +355,7 @@ final class SpecialErrorPageNavigationHandlerTests {
         webView.setCurrentURL(url)
         sut.attachWebView(webView)
         let errorData = SpecialErrorData.maliciousSite(kind: threat, url: url)
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         let navigationResponse = MockNavigationResponse.with(url: url)
         maliciousSiteProtectionNavigationHandler.task = Task {
             .navigationHandled(.mainFrame(MaliciousSiteDetectionNavigationResponse(navigationAction: navigationAction, errorData: errorData)))
@@ -412,7 +413,7 @@ final class SpecialErrorPageNavigationHandlerTests {
     func whenAdvancedInfoPresented_AndPhishingError_ThenCallAdvancedInfoPresentedOnMaliciousSiteProtectionNavigationHandler(threat: ThreatKind) async throws {
         let url = try #require(URL(string: "https://www.example.com"))
         let errorData = SpecialErrorData.maliciousSite(kind: threat, url: url)
-        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: MockFrameInfo(isMainFrame: true))
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         let navigationResponse = MockNavigationResponse.with(url: url)
         maliciousSiteProtectionNavigationHandler.task = Task {
             .navigationHandled(.mainFrame(MaliciousSiteDetectionNavigationResponse(navigationAction: navigationAction, errorData: errorData)))

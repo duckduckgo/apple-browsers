@@ -119,6 +119,11 @@ class SwitchBarTextEntryView: UIView {
         set { textView.selectedTextRange = newValue }
     }
 
+    var placeholderTextColor: UIColor {
+        get { placeholderLabel.textColor }
+        set { placeholderLabel.textColor = newValue }
+    }
+
     override var isFirstResponder: Bool {
         textView.isFirstResponder
     }
@@ -521,6 +526,14 @@ class SwitchBarTextEntryView: UIView {
         canExpandOnSelectionChange = true
     }
 
+    func setQueryText(_ text: String) {
+        textView.text = text
+        updatePlaceholderVisibility()
+        updateButtonState()
+        updateTextViewHeight()
+        handler.updateCurrentText(text)
+    }
+
     private func disableAutoCorrectionAndSpellChecking() {
         textView.autocorrectionType = .no
         textView.spellCheckingType = .no
@@ -553,10 +566,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         handler.updateCurrentText(textView.text ?? "")
         handler.markUserInteraction()
 
-        // Only reload input views when fadeOutOnToggle is OFF to preserve legacy behavior.
-        // When ON, reloadInputViews() on every keystroke causes the publisher to deliver
+        // On iPad, reload input views on each keystroke (old behavior, without fade-out animation)
+        // On iPhone, skip reloadInputViews() as it causes the publisher to deliver
         // stale text values that interfere with iOS autocomplete.
-        // When deleting .fadeOutOnToggle flag, delete textView.reloadInputViews() here as this fixes
         // https://app.asana.com/1/137249556945/inbox/1210947754150827/item/1212750684390654/story/1212749500239461?focus=true
         if !handler.isUsingFadeOutAnimation {
             textView.reloadInputViews()

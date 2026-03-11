@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppUpdaterShared
 import Common
 
 final class AppStoreUpdatesDebugMenu: NSMenu {

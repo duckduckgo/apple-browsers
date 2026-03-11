@@ -19,14 +19,44 @@
 import Foundation
 import BrowserServicesKit
 import Combine
+import BWManagementShared
 import Common
 import PixelKit
 import os.log
 
+enum BWManagerProvider {
+
+    static func makeManager(buildType: ApplicationBuildType = StandardApplicationBuildType()) -> BWManagement? {
+        guard !buildType.isAppStoreBuild else {
+            return nil
+        }
+
+        guard let factory = BWIntegrationFactory.self as? any BWManagementFactory.Type else {
+            // BWIntegrationFactory is a shared namespace symbol that BWManagement implements in the
+            // concrete package target. This keeps app code decoupled from BWManager.
+            assertionFailure("Failed to instantiate Bitwarden manager factory")
+            return nil
+        }
+
+        return factory.makeManager(isBitwardenPasswordManagerProvider: {
+            AutofillPreferences().passwordManager == .bitwarden
+        }, showRestartBitwardenAlert: { restart in
+            BWNotRespondingAlert().present(restartBitwarden: restart)
+        })
+    }
+
+}
+
 protocol PasswordManagerCoordinating: BrowserServicesKit.PasswordManager {
 
     var displayName: String { get }
+    var username: String? { get }
+    var activeVaultEmail: String? { get }
+    var bitwardenManagement: BWManagement? { get }
 
+    func openPasswordManager()
+    func storeWebsiteCredentials(_ credentials: SecureVaultModels.WebsiteCredentials,
+                                 completion: @escaping (Error?) -> Void)
     func reportPasswordAutofill()
     func reportPasswordSave()
 
@@ -35,16 +65,14 @@ protocol PasswordManagerCoordinating: BrowserServicesKit.PasswordManager {
 // Encapsulation of third party password managers
 final class PasswordManagerCoordinator: PasswordManagerCoordinating {
 
-    static let shared = PasswordManagerCoordinator()
-
     enum PasswordManagerCoordinatorError: Error {
         case makingOfUrlFailed
     }
 
-    let bitwardenManagement: BWManagement = BWManager.shared
+    let bitwardenManagement: BWManagement?
 
     var isEnabled: Bool {
-        return bitwardenManagement.status != .disabled
+        return bitwardenManagement?.status != .disabled
     }
 
     var name: String {
@@ -56,13 +84,15 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
     }
 
     var username: String? {
-        if case let .connected(vault: vault) = bitwardenManagement.status {
-            return vault.email
+        guard let bitwardenManagement,
+              case let .connected(vault: vault) = bitwardenManagement.status else {
+            return nil
         }
-        return nil
+        return vault.email
     }
 
     var isLocked: Bool {
+        guard let bitwardenManagement else { return false }
         switch bitwardenManagement.status {
         case .connected(vault: let vault): return vault.status == .locked
         case .disabled: return false
@@ -71,6 +101,7 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
     }
 
     var activeVaultEmail: String? {
+        guard let bitwardenManagement else { return nil }
         switch bitwardenManagement.status {
         case .connected(vault: let vault): return vault.email
         default: return nil
@@ -79,19 +110,23 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
 
     var statusCancellable: AnyCancellable?
 
-#if !APPSTORE
+    init(bitwardenManagement: BWManagement?) {
+        self.bitwardenManagement = bitwardenManagement
+    }
 
     func setEnabled(_ enabled: Bool) {
+        guard let bitwardenManagement else { return }
         if enabled {
             if !bitwardenManagement.status.isConnected {
                 bitwardenManagement.initCommunication()
             }
         } else {
-            BWManager.shared.cancelCommunication()
+            bitwardenManagement.cancelCommunication()
         }
     }
 
     func askToUnlock(completionHandler: @escaping () -> Void) {
+        guard let bitwardenManagement else { return }
         switch bitwardenManagement.status {
         case .disabled, .notInstalled, .oldVersion, .incompatible, .missingHandshake, .handshakeNotApproved, .error, .accessToContainersNotApproved:
             Task {
@@ -123,10 +158,14 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
     }
 
     func openPasswordManager() {
-        bitwardenManagement.openBitwarden()
+        bitwardenManagement?.openBitwarden()
     }
 
     func accountsFor(domain: String, completion: @escaping ([BrowserServicesKit.SecureVaultModels.WebsiteAccount], Error?) -> Void) {
+        guard let bitwardenManagement else {
+            completion([], nil)
+            return
+        }
         guard !isLocked else {
             completion([], nil)
             return
@@ -182,6 +221,10 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
     }
 
     func websiteCredentialsFor(domain: String, completion: @escaping ([BrowserServicesKit.SecureVaultModels.WebsiteCredentials], Error?) -> Void) {
+        guard let bitwardenManagement else {
+            completion([], nil)
+            return
+        }
         guard !isLocked else {
             completion([], nil)
             return
@@ -206,10 +249,12 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
 
     func storeWebsiteCredentials(_ credentials: SecureVaultModels.WebsiteCredentials,
                                  completion: @escaping (Error?) -> Void) {
-        guard case let .connected(vault) = bitwardenManagement.status,
+        guard let bitwardenManagement,
+              case let .connected(vault) = bitwardenManagement.status,
               let bitwardenCredential = BWCredential(from: credentials, vault: vault) else {
             Logger.general.fault("Failed to store credentials: Bitwarden is not connected or bad credential")
             assertionFailure("Bitwarden is not connected or bad credential")
+            completion(nil)
             return
         }
 
@@ -228,34 +273,14 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
         }
     }
 
-#else
-
-    func setEnabled(_ enabled: Bool) {}
-    func askToUnlock(completionHandler: @escaping () -> Void) {}
-    func openPasswordManager() {}
-    func accountsFor(domain: String, completion: @escaping ([BrowserServicesKit.SecureVaultModels.WebsiteAccount], Error?) -> Void) {}
-    func cachedAccountsFor(domain: String) -> [BrowserServicesKit.SecureVaultModels.WebsiteAccount] { return [] }
-    func cachedWebsiteCredentialsFor(domain: String, username: String) -> BrowserServicesKit.SecureVaultModels.WebsiteCredentials? { return nil }
-    func websiteCredentialsFor(accountId: String, completion: @escaping (BrowserServicesKit.SecureVaultModels.WebsiteCredentials?, Error?) -> Void) {}
-    func websiteCredentialsFor(domain: String, completion: @escaping ([BrowserServicesKit.SecureVaultModels.WebsiteCredentials], Error?) -> Void) {}
-
-    func storeWebsiteCredentials(_ credentials: SecureVaultModels.WebsiteCredentials,
-                                 completion: @escaping (Error?) -> Void) {}
-
-#endif
-
     func reportPasswordAutofill() {
-        guard isEnabled else {
-            return
-        }
+        guard isEnabled else { return }
 
         PixelKit.fire(GeneralPixel.bitwardenPasswordAutofilled)
     }
 
     func reportPasswordSave() {
-        guard isEnabled else {
-            return
-        }
+        guard isEnabled else { return }
 
         PixelKit.fire(GeneralPixel.bitwardenPasswordSaved)
     }
@@ -283,9 +308,7 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
 extension BrowserServicesKit.SecureVaultModels.WebsiteAccount {
 
     init?(from bitwardenCredential: BWCredential) {
-        guard let credentialId = bitwardenCredential.credentialId else {
-            return nil
-        }
+        guard let credentialId = bitwardenCredential.credentialId else { return nil }
         self.init(id: credentialId,
                   username: bitwardenCredential.username ?? "",
                   domain: bitwardenCredential.domain,
@@ -317,9 +340,7 @@ extension BrowserServicesKit.SecureVaultModels.WebsiteCredentials {
 extension BWCredential {
 
     init?(from websiteCredentials: BrowserServicesKit.SecureVaultModels.WebsiteCredentials, vault: BWVault) {
-        guard let domain = websiteCredentials.account.domain else {
-            return nil
-        }
+        guard let domain = websiteCredentials.account.domain else { return nil }
 
         self.init(userId: vault.id,
                   credentialId: websiteCredentials.account.id,

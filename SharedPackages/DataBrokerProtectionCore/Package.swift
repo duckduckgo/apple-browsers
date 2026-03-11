@@ -76,6 +76,7 @@ let package = Package(
                 .product(name: "PixelKitTestingUtilities", package: "BrowserServicesKit"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "SecureStorageTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],

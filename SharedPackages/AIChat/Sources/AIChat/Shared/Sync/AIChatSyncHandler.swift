@@ -71,9 +71,12 @@ public class AIChatSyncHandler: AIChatSyncHandling {
     }
 
     private let sync: DDGSyncing
+    private let httpRequestErrorHandler: ((Error) -> Void)?
 
-    public init(sync: DDGSyncing) {
+    public init(sync: DDGSyncing,
+                httpRequestErrorHandler: ((Error) -> Void)? = nil) {
         self.sync = sync
+        self.httpRequestErrorHandler = httpRequestErrorHandler
     }
 
     private func validateSetup() throws {
@@ -119,12 +122,17 @@ public class AIChatSyncHandler: AIChatSyncHandling {
     public func getScopedToken() async throws -> SyncToken {
         try validateSetup()
 
-        guard let token = try await sync.mainTokenRescope(to: "ai_chats"),
-                token.isEmpty == false else {
-            throw Errors.emptyResponse
-        }
+        do {
+            guard let token = try await sync.mainTokenRescope(to: "ai_chats"),
+                  token.isEmpty == false else {
+                throw Errors.emptyResponse
+            }
 
-        return SyncToken(token: token)
+            return SyncToken(token: token)
+        } catch {
+            httpRequestErrorHandler?(error)
+            throw error
+        }
     }
 
     public func encrypt(_ string: String) throws -> EncryptedData {

@@ -19,6 +19,7 @@
 import Foundation
 import XCTest
 import WebKit
+import BrowserServicesKitTestsUtils
 @testable import UserScript
 
 class UserScriptMessagingTests: XCTestCase {
@@ -245,7 +246,7 @@ func setupWith(message: [String: Any]) -> (UserScriptMessageBroker, UserScriptMe
     testee.registerSubfeature(delegate: TestDelegate())
 
     // Mock the call from the webview.
-    let msg1 = MockMsg(name: testee.context, body: message)
+    let msg1 = WKScriptMessage.mock(name: testee.context, body: message)
 
     // get the handler action
     let action = testee.messageHandlerFor(msg1)
@@ -302,31 +303,5 @@ struct TestDelegate: Subfeature {
     func responseExample(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let person = Person(name: "Kittie")
         return person
-    }
-}
-
-class MockMsg: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    init(name: String, body: Any, webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        super.init()
     }
 }

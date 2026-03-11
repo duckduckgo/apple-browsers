@@ -22,6 +22,7 @@ import Common
 import Combine
 import Foundation
 import History
+import UserScript
 import WebKit
 
 final class FaviconManagerMock: FaviconManagement {

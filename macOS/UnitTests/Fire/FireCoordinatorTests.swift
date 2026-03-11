@@ -41,7 +41,8 @@ struct FireCoordinatorTests {
                         windowControllersManager: windowControllersManager,
                         faviconManagement: faviconManagement,
                         tld: tld,
-                        isAppActiveProvider: { true })
+                        isAppActiveProvider: { true },
+                        tabCleanupPreparer: MockTabCleanupPreparer())
 
         let fireViewModel = FireViewModel(fire: fire)
         return FireCoordinator(tld: tld,
@@ -59,7 +60,8 @@ struct FireCoordinatorTests {
                                fireDialogViewFactory: { _ in TestPresenter() })
     }
 
-    @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_IncludingChatHistory() async throws {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_IncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
         let currentTime = CACurrentMediaTime()
@@ -88,7 +90,8 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
-    @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_NotIncludingChatHistory() async throws {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
         let currentTime = CACurrentMediaTime()
@@ -116,7 +119,8 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
-    @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_IncludingChatHistory() async throws {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_IncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
         let currentTime = CACurrentMediaTime()
@@ -145,7 +149,8 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
-    @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_NotIncludingChatHistory() async throws {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
         let currentTime = CACurrentMediaTime()
@@ -173,7 +178,8 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
-    @Test func testHandleDialogResult_FiresExpectedPixels_ForAllData_IncludingChatHistory_WhenAllHistoryIsSelected() async throws {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForAllData_IncludingChatHistory_WhenAllHistoryIsSelected() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
         let currentTime = CACurrentMediaTime()
@@ -202,7 +208,8 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
-    @Test func testHandleDialogResult_FiresExpectedPixels_ForAllData_NotIncludingChatHistory() async throws {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForAllData_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
         let currentTime = CACurrentMediaTime()
@@ -230,6 +237,10 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
+}
+
+private final class MockTabCleanupPreparer: TabCleanupPreparing {
+    func prepareTabsForCleanup(_ tabs: [TabViewModel]) async {}
 }
 
 private final class TestPresenter: FireDialogViewPresenting {

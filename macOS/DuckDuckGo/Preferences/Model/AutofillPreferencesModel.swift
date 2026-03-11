@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BWManagementShared
 import BrowserServicesKit
 import Foundation
 import PixelKit
@@ -63,6 +64,13 @@ final class AutofillPreferencesModel: ObservableObject {
         }
     }
 
+    @Published var showInMenuBar: Bool {
+        didSet {
+            persistor.showInMenuBar = showInMenuBar
+            PixelKit.fire(showInMenuBar ? GeneralPixel.autofillPasswordsStatusBarSettingEnabled : GeneralPixel.autofillPasswordsStatusBarSettingDisabled)
+        }
+    }
+
     @MainActor
     @Published private(set) var passwordManager: PasswordManager {
         didSet {
@@ -72,7 +80,7 @@ final class AutofillPreferencesModel: ObservableObject {
 
             // Original logic (preserved ad-verbatim)
             let enabled = passwordManager == .bitwarden
-            PasswordManagerCoordinator.shared.setEnabled(enabled)
+            Application.appDelegate.passwordManagerCoordinator.setEnabled(enabled)
             if enabled {
                 presentBitwardenSetupFlow()
                 showSyncPromo = false
@@ -148,12 +156,12 @@ final class AutofillPreferencesModel: ObservableObject {
     init(
         persistor: AutofillPreferencesPersistor = AutofillPreferences(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
-        bitwardenInstallationService: BWInstallationService = LocalBitwardenInstallationService(),
+        bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
         neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared
     ) {
         self.persistor = persistor
         self.userAuthenticator = userAuthenticator
-        self.bitwardenInstallationService = bitwardenInstallationService
+        self.bitwardenManager = bitwardenManager
         self.neverPromptWebsitesManager = neverPromptWebsitesManager
 
         isAutoLockEnabled = persistor.isAutoLockEnabled
@@ -163,6 +171,7 @@ final class AutofillPreferencesModel: ObservableObject {
         askToSaveAddresses = persistor.askToSaveAddresses
         askToSavePaymentMethods = persistor.askToSavePaymentMethods
         autolockLocksFormFilling = persistor.autolockLocksFormFilling
+        showInMenuBar = persistor.showInMenuBar
         passwordManager = persistor.passwordManager
         hasNeverPromptWebsites = !neverPromptWebsitesManager.neverPromptWebsites.isEmpty
         setShouldShowSyncPromo()
@@ -172,7 +181,7 @@ final class AutofillPreferencesModel: ObservableObject {
 
     private var persistor: AutofillPreferencesPersistor
     private var userAuthenticator: UserAuthenticating
-    private let bitwardenInstallationService: BWInstallationService
+    private let bitwardenManager: BWManagement?
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
     lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
@@ -210,7 +219,7 @@ final class AutofillPreferencesModel: ObservableObject {
     }
 
     func openBitwarden() {
-        PasswordManagerCoordinator.shared.openPasswordManager()
+        bitwardenManager?.installationService.openBitwarden()
     }
 
     func openSettings() {

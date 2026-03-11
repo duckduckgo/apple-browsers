@@ -21,7 +21,8 @@ import Testing
 
 struct FavoritesImportProcessorTests {
 
-    @Test("Check if mergeBookmarksAndFavorites returns the provided bookmarks when no favorites are provided")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if mergeBookmarksAndFavorites returns the provided bookmarks when no favorites are provided", .timeLimit(.minutes(1)))
     func mergeBookmarksAndFavorites_ReturnsBookmarks_WhenFavoritesEmpty() {
         let initialBookmarks = createMockImportedBookmarks()
         var bookmarks = initialBookmarks
@@ -31,7 +32,8 @@ struct FavoritesImportProcessorTests {
         #expect(initialBookmarks == bookmarks)
     }
 
-    @Test("Check if mergeBookmarksAndFavorites marks the expected bookmarks as favorites")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if mergeBookmarksAndFavorites marks the expected bookmarks as favorites", .timeLimit(.minutes(1)))
     func mergeBookmarksAndFavorites_MarksExpectedBookmarksAsFavorites() throws {
         var bookmarks = createMockImportedBookmarks()
         let favorite = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)
@@ -50,7 +52,8 @@ struct FavoritesImportProcessorTests {
         #expect(mergedOtherBookmarksBookmark.isDDGFavorite == false)
     }
 
-    @Test("Check if mergeBookmarksAndFavorites adds unique favorites to the bookmark bar")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if mergeBookmarksAndFavorites adds unique favorites to the bookmark bar", .timeLimit(.minutes(1)))
     func mergeBookmarksAndFavorites_AddsUniqueFavoritesToBookmarkBar() throws {
         var bookmarks = createMockImportedBookmarks()
         let exactDuplicateFavorite = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)

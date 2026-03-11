@@ -16,17 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
+import Bookmarks
 import BrowserServicesKit
+import Common
+import DataBrokerProtection_macOS
+import FeatureFlags
+import Foundation
+import Freemium
 import Persistence
 import PrivacyConfig
-import Bookmarks
 import RemoteMessaging
-import VPN
 import Subscription
-import Freemium
-import FeatureFlags
-import DataBrokerProtection_macOS
+import VPN
 
 extension DefaultWaitlistActivationDateStore: VPNActivationDateProviding {}
 
@@ -173,12 +174,6 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let dismissedMessageIds = store.fetchDismissedRemoteMessageIDs()
         let shownMessageIds = store.fetchShownRemoteMessageIDs()
 
-#if APPSTORE
-        let isInstalledMacAppStore = true
-#else
-        let isInstalledMacAppStore = false
-#endif
-
         let duckPlayerPreferencesPersistor = duckPlayerPreferencesPersistor()
 
         let deprecatedRemoteMessageStorage = DefaultSurveyRemoteMessagingStorage.surveys()
@@ -209,7 +204,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager(),
                                                      isInternalUser: internalUserDecider.isInternalUser,
-                                                     isInstalledMacAppStore: isInstalledMacAppStore),
+                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
                                                        featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager(),

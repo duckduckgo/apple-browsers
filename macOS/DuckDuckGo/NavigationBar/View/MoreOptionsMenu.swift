@@ -16,21 +16,22 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
-import BrowserServicesKit
-import History
-import PixelKit
-import PrivacyConfig
-import VPN
-import Subscription
-import os.log
-import Freemium
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
-import SwiftUI
 import DesignResourcesKitIcons
+import Freemium
+import History
+import os.log
+import PixelKit
+import PrivacyConfig
+import Subscription
+import SwiftUI
+import VPN
 
 protocol OptionsButtonMenuDelegate: AnyObject {
 
@@ -115,7 +116,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          emailManager: EmailManager = EmailManager(),
          fireproofDomains: FireproofDomains,
-         passwordManagerCoordinator: PasswordManagerCoordinator,
+         passwordManagerCoordinator: PasswordManagerCoordinating,
          vpnFeatureGatekeeper: VPNFeatureGatekeeper,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
          sharingMenu: NSMenu? = nil,
@@ -125,7 +126,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         dockCustomizer: DockCustomization? = nil,
+         dockCustomizer: DockCustomization?,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
@@ -186,7 +187,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             guard internalUserDecider.isInternalUser else {
                 return UserText.sendFeedback
             }
-            return "\(UserText.sendFeedback) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
+            return "\(UserText.sendFeedback) (version: \(AppVersionModel().versionLabelShort))"
         }()
         let feedbackMenuItem = NSMenuItem(title: feedbackString, action: nil, keyEquivalent: "")
             .withImage(moreOptionsMenuIconsProvider.sendFeedbackIcon)
@@ -198,30 +199,28 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-#if SPARKLE
-        if let dockCustomizer = self.dockCustomizer {
-            if dockCustomizer.isAddedToDock == false {
-                if dockCustomizer.shouldShowNotification {
-                    let addToDockMenuItem = NSMenuItem(action: #selector(addToDock(_:)))
-                        .targetting(self)
-                    addToDockMenuItem.view = createMenuItemWithFeatureIndicator(
-                        title: UserText.addDuckDuckGoToDock,
-                        image: moreOptionsMenuIconsProvider.addToDockIcon) {
-                            if let target = addToDockMenuItem.target {
-                                _ = target.perform(addToDockMenuItem.action, with: addToDockMenuItem)
-                            }
-                            self.cancelTracking()
+        if let dockCustomizer = self.dockCustomizer,
+           dockCustomizer.isAddedToDock == false {
+
+            if dockCustomizer.shouldShowNotification {
+                let addToDockMenuItem = NSMenuItem(action: #selector(addToDock(_:)))
+                    .targetting(self)
+                addToDockMenuItem.view = createMenuItemWithFeatureIndicator(
+                    title: UserText.addDuckDuckGoToDock,
+                    image: moreOptionsMenuIconsProvider.addToDockIcon) {
+                        if let target = addToDockMenuItem.target {
+                            _ = target.perform(addToDockMenuItem.action, with: addToDockMenuItem)
                         }
-                    addItem(addToDockMenuItem)
-                } else {
-                    let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(addToDock(_:)))
-                        .targetting(self)
-                        .withImage(moreOptionsMenuIconsProvider.addToDockIcon)
-                    addItem(addToDockMenuItem)
-                }
+                        self.cancelTracking()
+                    }
+                addItem(addToDockMenuItem)
+            } else {
+                let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(addToDock(_:)))
+                    .targetting(self)
+                    .withImage(moreOptionsMenuIconsProvider.addToDockIcon)
+                addItem(addToDockMenuItem)
             }
         }
-#endif
         if !defaultBrowserPreferences.isDefault {
             let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser, action: #selector(setAsDefault(_:)))
                 .targetting(self)
@@ -259,8 +258,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         helpItem.submenu = HelpSubMenu(targetting: self)
         addItem(helpItem)
 
-#if APPSTORE
-        if !featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
+        if StandardApplicationBuildType().isAppStoreBuild && !featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
             let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
                                                      action: #selector(checkForUpdates(_:)),
                                                      keyEquivalent: "")
@@ -268,7 +266,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 .targetting(self)
             addItem(checkForAppStoreUpdates)
         }
-#endif
 
         let preferencesItem = NSMenuItem(title: UserText.settings, action: #selector(openPreferences(_:)), keyEquivalent: "")
             .targetting(self)
@@ -479,42 +476,32 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return
         }
 
-        #if SPARKLE
-        guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return }
-
         // Log edge cases where menu item appears but doesn't function
         // To be removed in a future version
-        if !update.isInstalled, updateController.updateProgress.isDone {
-            updateController.log()
+        if let sparkleUpdateController = updateController as? any SparkleUpdateControlling,
+           !update.isInstalled, updateController.updateProgress.isDone {
+            sparkleUpdateController.log()
         }
-        #endif
 
         guard updateController.hasPendingUpdate && updateController.mustShowUpdateIndicators else {
             return
         }
 
-        let isMenuItemCreatedFromUpdateController = featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) || featureFlagger.isFeatureOn(.updatesSimplifiedFlow)
-
         let menuItem: NSMenuItem = {
-            #if SPARKLE
-            if isMenuItemCreatedFromUpdateController {
-                return SparkleUpdateMenuItemFactory.menuItem(for: updateController)
+            if let sparkleUpdateController = updateController as? any SparkleUpdateControlling {
+                return SparkleUpdateMenuItemFactory.menuItem(for: sparkleUpdateController)
             } else {
-                return SparkleUpdateMenuItemFactory.menuItem(for: update)
+                return AppStoreUpdateMenuItemFactory.menuItem(for: update)
             }
-            #else
-            return AppStoreUpdateMenuItemFactory.menuItem(for: update)
-            #endif
         }()
 
         updateMenuItem = menuItem
         addItem(menuItem)
 
-        #if SPARKLE
-        if let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
+        if StandardApplicationBuildType().isSparkleBuild,
+           let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
             addItem(releaseNotes)
         }
-        #endif
 
         addItem(NSMenuItem.separator())
     }
@@ -1222,13 +1209,14 @@ final class HelpSubMenu: NSMenu {
 
         let about = (NSApp.mainMenuTyped.aboutMenuItem.copy() as? NSMenuItem)!
         addItem(about)
-#if SPARKLE
-        let releaseNotes = (NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem)!
-        addItem(releaseNotes)
 
-        let whatIsNew = (NSApp.mainMenuTyped.whatIsNewMenuItem.copy() as? NSMenuItem)!
-        addItem(whatIsNew)
-#endif
+        if StandardApplicationBuildType().isSparkleBuild,
+           let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem,
+           let whatIsNew = (NSApp.mainMenuTyped.whatIsNewMenuItem.copy() as? NSMenuItem) {
+            addItem(releaseNotes)
+            addItem(whatIsNew)
+        }
+
         let feedback = (NSApp.mainMenuTyped.sendFeedbackMenuItem.copy() as? NSMenuItem)!
         addItem(feedback)
     }

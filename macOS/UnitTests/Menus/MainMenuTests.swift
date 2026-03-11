@@ -143,7 +143,6 @@ class MainMenuTests: XCTestCase {
         XCTAssertTrue(duckDuckGoMenu.items[3].isHidden)
     }
 
-#if SPARKLE
     @MainActor
     func testWhenBrowserIsNotInTheDockThenMenuItemIsVisible() throws {
         let dockCustomizer = DockCustomizerMock()
@@ -208,7 +207,6 @@ class MainMenuTests: XCTestCase {
         XCTAssertEqual(duckDuckGoMenu.items[3].isHidden, true)
         XCTAssertEqual(duckDuckGoMenu.items[3].title, UserText.addDuckDuckGoToDock)
     }
-#endif
 
     // MARK: - Default Browser Action
 

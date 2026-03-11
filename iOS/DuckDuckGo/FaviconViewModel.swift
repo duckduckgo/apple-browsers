@@ -20,7 +20,7 @@
 import SwiftUI
 import Core
 
-final class FaviconViewModel {
+final class FaviconViewModel: ObservableObject {
     @Published var image = UIImage(resource: .logo)
 
     private let domain: String

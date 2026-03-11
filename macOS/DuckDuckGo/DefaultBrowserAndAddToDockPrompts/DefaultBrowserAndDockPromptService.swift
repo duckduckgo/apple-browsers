@@ -28,25 +28,25 @@ final class DefaultBrowserAndDockPromptService {
     let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting
 
     init(
-        featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueStore: ThrowingKeyValueStoring,
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting,
         isOnboardingCompletedProvider: @escaping () -> Bool
     ) {
 
-#if DEBUG || REVIEW
-        let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate ?? Date() }
-        let defaultBrowserAndDockInstallDateProvider: () -> Date? = {
-            defaultBrowserAndDockPromptDebugStore.simulatedInstallDate ?? LocalStatisticsStore().installDate
+        var defaultBrowserAndDockPromptDebugStore: DefaultBrowserAndDockPromptDebugStore?
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild {
+            defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
         }
-#else
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
-        let defaultBrowserAndDockInstallDateProvider: () -> Date? = { LocalStatisticsStore().installDate }
-#endif
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = {
+            defaultBrowserAndDockPromptDebugStore?.simulatedTodayDate ?? Date()
+        }
+        let defaultBrowserAndDockInstallDateProvider: () -> Date? = {
+            defaultBrowserAndDockPromptDebugStore?.simulatedInstallDate ?? LocalStatisticsStore().installDate
+        }
 
-        self.featureFlagger = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManager, featureFlagger: featureFlagger)
+        self.featureFlagger = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManager)
         self.notificationPresenter = notificationPresenter
         let userActivityStore = DefaultBrowserAndDockPromptUserActivityStore(keyValueFilesStore: keyValueStore)
         userActivityManager = DefaultBrowserAndDockPromptUserActivityManager(store: userActivityStore, dateProvider: defaultBrowserAndDockPromptDateProvider)
@@ -78,15 +78,10 @@ final class DefaultBrowserAndDockPromptService {
     }
 
     func applicationDidBecomeActive() {
-        guard shouldRecordActivity() else { return }
         userActivityManager.recordActivity()
     }
 
     func handleNotificationResponse(_ response: DefaultBrowserAndDockPromptNotificationIdentifier) async {
         await notificationPresenter.handleNotificationResponse(for: response)
-    }
-
-    private func shouldRecordActivity() -> Bool {
-        featureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled
     }
 }

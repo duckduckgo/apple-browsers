@@ -64,10 +64,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
-        subscribeToThemesFlagChanges(featureFlagger: featureFlagger)
         subscribeToSystemAppearance()
-
-        resetThemeNameIfNeeded(featureFlagger: featureFlagger)
     }
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
@@ -76,15 +73,6 @@ final class ThemeManager: ObservableObject, ThemeManaging {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] themeName in
                 self?.switchToTheme(named: themeName)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToThemesFlagChanges(featureFlagger: FeatureFlagger) {
-        featureFlagger.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.resetThemeNameIfNeeded(featureFlagger: featureFlagger)
             }
             .store(in: &cancellables)
     }
@@ -112,12 +100,5 @@ private extension ThemeManager {
     func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
         DesignSystemPalette.current = palette
         designColorPalette = palette
-    }
-
-    /// Ensure the `.default` theme is set, whenever the `.themes` Feature Flag is disabled
-    func resetThemeNameIfNeeded(featureFlagger: FeatureFlagger) {
-        if featureFlagger.isFeatureOn(.themes) == false, appearancePreferences.themeName != .default {
-            appearancePreferences.themeName = .default
-        }
     }
 }

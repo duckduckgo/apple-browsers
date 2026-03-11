@@ -45,7 +45,7 @@
                 "key": "dismiss_type",
                 "description": "The type of dismissal. This value is optional",
                 "type": "string",
-                "enum": ["close_button", "pull_down", "primary_action"]
+                "enum": ["close_button", "pull_down", "primary_action", "item_action"]
             }
         ]
     },

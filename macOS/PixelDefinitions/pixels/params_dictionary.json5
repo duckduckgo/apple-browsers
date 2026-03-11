@@ -42,6 +42,12 @@
         "type": "number",
         "description": "NSError code"
     },
+    "fromExtension": {
+        "key": "fromExtension",
+        "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
+        "type": "integer",
+        "enum": [0, 1]
+    },
     "themeName": {
         "key": "themeName",
         "enum": ["default", "coolGray", "desert", "green", "orange", "rose", "slateBlue", "violet"],
@@ -72,6 +78,11 @@
         "key": "app.version",
         "type": "string",
         "description": "The version of the app sending the pixel"
+    },
+    "wideEventInternalUser": {
+        "key": "app.internal_user",
+        "type": "boolean",
+        "description": "Whether the event was sent by an internal user. Only included when true."
     },
     "wideEventPlatform": {
         "key": "global.platform",
@@ -197,6 +208,12 @@
         "description": "Whether the user is authenticated",
         "enum": ["true", "false"]
     },
+    "dbpIsFreeScan": {
+        "key": "free_scan",
+        "type": "string",
+        "description": "Whether this is a free (unauthenticated) scan",
+        "enum": ["true", "false"]
+    },
     "dbpStageDuration": {
         "key": "duration",
         "type": "integer",
@@ -254,14 +271,8 @@
         "type": "string",
         "description": "Version of the broker JSON file reported via wide pixels"
     },
-    "vpnAuthVersion": {
-        "key": "authVersion",
-        "type": "string",
-        "description": "Version of the VPN authentication flow",
-        "enum": ["v1", "v2"]
-    },
     "vpnSubscriptionActive": {
-        "key": "isSubscriptionActive",
+        "key": "vpnSubscriptionActive",
         "type": "string",
         "description": "Whether the VPN subscription is active",
         "enum": ["true", "false", "no_subscription"]

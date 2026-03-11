@@ -19,12 +19,21 @@
       }
     },
     {
+      "identity" : "combine-schedulers",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/combine-schedulers.git",
+      "state" : {
+        "revision" : "fd16d76fd8b9a976d88bfb6cacc05ca8d19c91b6",
+        "version" : "1.1.0"
+      }
+    },
+    {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "ac7d2b45a396c008942630ff16bd5e426880880c",
-        "version" : "12.38.0"
+        "revision" : "13976e04d81eefac5a9c718d886ce99460a9123b",
+        "version" : "13.29.0"
       }
     },
     {
@@ -86,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "196b8ccc659eb077cde0652007ecfe54216c7b7c",
-        "version" : "9.9.0"
+        "revision" : "a3adc679f86a3276dfb12ddf4a379b17c80dfc60",
+        "version" : "9.10.0"
       }
     },
     {

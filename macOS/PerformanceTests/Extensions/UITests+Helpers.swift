@@ -20,8 +20,14 @@ import XCTest
 
 extension UITests {
 
-    static func setupInitialStateForPerformanceTesting(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
-        let application = XCUIApplication.setUpForStartupPerformanceTesting()
+    /// Adjusts the `Session Restoration` setting as required, and disables the `warn before quitting` feature.
+    ///
+    /// - Parameters:
+    ///     - shouldRestoreSession: Indicates if Session Restoration should be enabled, or we should open a New Window after launch
+    ///     - configurationClosure: Optional closure to be executed, before the `XCUIApplication` instance is terminated
+    ///
+    static func setupInitialState(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
+        let application = XCUIApplication.setUp()
 
         /// Configure session restoration (enable/disable) based on shouldRestoreSession
         application.openPreferencesWindow()

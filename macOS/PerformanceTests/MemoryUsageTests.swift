@@ -30,7 +30,7 @@ final class MemoryUsageTests: XCTestCase {
         UITests.dismissNotificationCenterMessages()
 
         /// Disable Session Restoration
-        UITests.setupInitialStateForPerformanceTesting(shouldRestoreSession: false)
+        UITests.setupInitialState(shouldRestoreSession: false)
     }
 
     override func setUpWithError() throws {

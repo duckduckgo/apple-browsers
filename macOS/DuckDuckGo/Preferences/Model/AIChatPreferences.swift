@@ -198,8 +198,15 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                showDuckAIButtonInTabBar = !duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
-                showSidebarButtonInTabBar = !duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+                let shouldShowDuckAIButton = !duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+                let shouldShowSidebarButton = !duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+
+                if showDuckAIButtonInTabBar != shouldShowDuckAIButton {
+                    showDuckAIButtonInTabBar = shouldShowDuckAIButton
+                }
+                if showSidebarButtonInTabBar != shouldShowSidebarButton {
+                    showSidebarButtonInTabBar = shouldShowSidebarButton
+                }
             }
             .store(in: &cancellables)
     }

@@ -75,7 +75,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     var cancellables = Set<AnyCancellable>()
     let syncPausedStateManager: any SyncPausedStateManaging
-    var viewModel: SyncSettingsViewModel
+    let viewModel: SyncSettingsViewModel
 
     var source: String?
     var pairingInfo: PairingInfo?

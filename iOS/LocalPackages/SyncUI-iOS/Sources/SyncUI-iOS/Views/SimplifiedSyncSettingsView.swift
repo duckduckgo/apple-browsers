@@ -30,8 +30,11 @@ public struct SimplifiedSyncSettingsView: View {
     public var body: some View {
         List {
             Section {
-                Text(model.isSyncEnabled ? "Sync is enabled" : "Sync is not enabled")
-                    .daxBodyRegular()
+                if model.isSyncEnabled {
+                    Text(verbatim: "Sync is enabled")
+                } else {
+                    Text(verbatim: "Sync is not enabled")
+                }
             }
         }
         .navigationTitle(UserText.syncTitle)

@@ -23,7 +23,7 @@ import DuckUI
 import SwiftUI
 
 
-// Temporary, to enable the simplifiedSyncSettings experiment.
+// Temporary, to enable the simplifiedSyncSetup experiment.
 // https://app.asana.com/1/137249556945/project/1203822806345703/task/1213248575226817?focus=true
 public struct SyncSettingsRootView: View {
     @ObservedObject var model: SyncSettingsViewModel

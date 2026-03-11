@@ -216,7 +216,7 @@ extension NewTabPageActionsManager {
         )
         if let promoService {
             let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
-            promoService.setDelegate(for: "next-steps-cards", delegate: nextStepsDelegate)
+            promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)
         }
 
         self.init(scriptClients: [

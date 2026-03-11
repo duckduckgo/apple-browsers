@@ -154,7 +154,6 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire when status is .loading (update cycle active)")
     }
 
-
     /// The pixel MUST fire when `loadingError` persists past the 1-second debounce.
     @MainActor
     func testReleaseNotesEmptyPixelFiresWhenErrorPersists() throws {

@@ -28,4 +28,5 @@ struct UTIViewConfig: Equatable {
     var showsToggle: Bool
     var inactiveAppearance: Bool
     var inputMode: TextEntryMode
+    var isTopBarPosition: Bool
 }

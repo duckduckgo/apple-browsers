@@ -118,6 +118,7 @@ final class UnifiedToggleInputViewController: UIViewController {
         usesOmnibarMargins = config.usesOmnibarMargins
         showsDismissButton = config.showsDismissButton
         isToolbarSubmitHidden = config.isToolbarSubmitHidden
+        isTopBarPosition = config.isTopBarPosition
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         setExpanded(config.isExpanded, animated: animated)

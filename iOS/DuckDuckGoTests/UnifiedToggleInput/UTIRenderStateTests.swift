@@ -84,6 +84,23 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertEqual(state.headerDisplayMode, .hidden)
     }
 
+    func test_aiTabExpanded_search_onAITab_keyboardHidden_showsInactive() {
+        sut.showExpanded(inputMode: .search)
+        sut.updateOmnibarInputVisibility(false)
+        let state = sut.computeRenderState(isOnAITab: true)
+        XCTAssertTrue(state.inactiveAppearance)
+        XCTAssertEqual(state.headerDisplayMode, .inactive)
+    }
+
+    func test_aiTabExpanded_search_onAITab_keyboardShown_showsActive() {
+        sut.showExpanded(inputMode: .search)
+        sut.updateOmnibarInputVisibility(false)
+        sut.updateOmnibarInputVisibility(true)
+        let state = sut.computeRenderState(isOnAITab: true)
+        XCTAssertFalse(state.inactiveAppearance)
+        XCTAssertEqual(state.headerDisplayMode, .active)
+    }
+
     func test_aiTabExpanded_showsToggleWhenEnabled() {
         sut.showExpanded()
         let state = sut.computeRenderState()
@@ -189,6 +206,24 @@ final class UTIRenderStateTests: XCTestCase {
     }
 
     // MARK: - Content Input Mode
+
+    func test_viewConfig_isTopBarPosition_trueForOmnibarTop() {
+        sut.activateFromOmnibar(cardPosition: .top)
+        let config = sut.computeRenderState().viewConfig
+        XCTAssertTrue(config.isTopBarPosition)
+    }
+
+    func test_viewConfig_isTopBarPosition_falseForOmnibarBottom() {
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        let config = sut.computeRenderState().viewConfig
+        XCTAssertFalse(config.isTopBarPosition)
+    }
+
+    func test_viewConfig_isTopBarPosition_falseForAITab() {
+        sut.showExpanded()
+        let config = sut.computeRenderState().viewConfig
+        XCTAssertFalse(config.isTopBarPosition)
+    }
 
     func test_contentInputMode_matchesCoordinatorInputMode() {
         sut.activateFromOmnibar(inputMode: .aiChat)

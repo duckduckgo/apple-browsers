@@ -44,7 +44,8 @@ struct UTIRenderState: Equatable {
             isToolbarSubmitHidden: isToolbarSubmitHidden,
             showsToggle: showsToggle,
             inactiveAppearance: inactiveAppearance,
-            inputMode: inputMode
+            inputMode: inputMode,
+            isTopBarPosition: usesOmnibarMargins
         )
     }
 }

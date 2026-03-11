@@ -84,7 +84,7 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     // MARK: - DarkReader
 
-    case forceDarkModeOnWebsitesEnabled = "forceDarkModeOnWebsitesEnabled"
+    case forceDarkModeOnWebsites = "forceDarkModeOnWebsites"
 
     // MARK: - Add more app-wide keys here as they are migrated from UserDefaultsWrapper
 

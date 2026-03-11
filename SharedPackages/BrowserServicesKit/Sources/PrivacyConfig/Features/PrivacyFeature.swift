@@ -117,10 +117,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
     case unifiedURLPredictor
 
-    /// Enable WebKit page load timing performance reporting
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
-    case webKitPerformanceReporting
-
     // Gradual rollout for new Fire dialog replacing the legacy popover
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
     case fireDialog
@@ -395,6 +391,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
+
+    /// Enables page context feature on iPad
+    case iPadPageContext
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -603,7 +602,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
 
     case newSafariFilePicker
-    case dataImportWideEventMeasurement
     case newDataImportExperience
     case dataImportSummarySyncPromotion
 }

@@ -73,29 +73,6 @@
         ]
     },
 
-    "m_mac_fire_burn_web_cache_has_residue": {
-        "description": "Fired when residual web cache data is detected after clearing",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "step",
-                "type": "string",
-                "description": "The clearing step where residue was detected",
-                "enum": [
-                    "clear_file_cache",
-                    "clear_device_hash_salts",
-                    "clear_safely_removable_data_types",
-                    "clear_local_storage_and_indexed_db_for_non_fireproof_domains",
-                    "clear_cookies",
-                    "clear_resource_load_statistics_database"
-                ]
-            }
-        ]
-    },
-
     // ==================== History Metrics ====================
 
     "m_mac_fire_burn_history_error": {
@@ -194,13 +171,6 @@
         ]
     },
 
-    "m_mac_fire_burn_visits_has_residue": {
-        "description": "Fired when residual visits data is detected after clearing",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
-
     // ==================== Last Session State Metrics ====================
 
     "m_mac_fire_burn_last_session_state_error": {
@@ -224,13 +194,6 @@
                 "description": "Duration of last session state clearing in milliseconds"
             }
         ]
-    },
-
-    "m_mac_fire_burn_last_session_state_has_residue": {
-        "description": "Fired when residual last session state data is detected after clearing",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
     },
 
     // ==================== Tabs Metrics ====================
@@ -264,22 +227,6 @@
         ]
     },
 
-    "m_mac_fire_burn_tabs_has_residue": {
-        "description": "Fired when residual tab data is detected after clearing",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "entity",
-                "type": "string",
-                "description": "The tab entity type where residue was detected",
-                "enum": ["none", "tab", "window", "all_windows"]
-            }
-        ]
-    },
-
     // ==================== Downloads Metrics ====================
 
     "m_mac_fire_burn_downloads_error": {
@@ -305,13 +252,6 @@
         ]
     },
 
-    "m_mac_fire_burn_downloads_has_residue": {
-        "description": "Fired when residual downloads data is detected after clearing",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
-
     // ==================== Recently Closed Metrics ====================
 
     "m_mac_fire_burn_recently_closed_duration": {
@@ -327,12 +267,5 @@
                 "description": "Duration of recently closed tabs clearing in milliseconds"
             }
         ]
-    },
-
-    "m_mac_fire_burn_recently_closed_has_residue": {
-        "description": "Fired when residual recently closed data is detected after clearing",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
     }
 }

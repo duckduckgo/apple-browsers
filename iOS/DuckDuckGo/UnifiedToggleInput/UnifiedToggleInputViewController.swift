@@ -98,9 +98,9 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.cardPosition = newValue }
     }
 
-    var usesInlineEditingMargins: Bool {
-        get { inputBarView.usesInlineEditingMargins }
-        set { inputBarView.usesInlineEditingMargins = newValue }
+    var usesOmnibarMargins: Bool {
+        get { inputBarView.usesOmnibarMargins }
+        set { inputBarView.usesOmnibarMargins = newValue }
     }
 
     var isTopBarPosition: Bool {

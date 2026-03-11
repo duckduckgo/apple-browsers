@@ -102,6 +102,8 @@ class SwitchBarTextEntryView: UIView {
         URL(string: textView.text)?.navigationalScheme != nil
     }
 
+    var onTextInputActivated: (() -> Void)?
+
     var isExpandable: Bool = false {
         didSet {
             updateTextViewHeight()
@@ -135,6 +137,7 @@ class SwitchBarTextEntryView: UIView {
 
         setupView()
         setupSubscriptions()
+        updateButtonState()
     }
 
     required init?(coder: NSCoder) {
@@ -553,6 +556,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
+        onTextInputActivated?()
         fireTextAreaFocusedPixel()
     }
 

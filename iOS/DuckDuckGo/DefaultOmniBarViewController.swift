@@ -39,7 +39,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var animateNextEditingTransition = true
     private var isSuppressingKeyboardTransfer = false
 
-    weak var unifiedToggleInputInlineActivating: UnifiedToggleInputInlineActivating?
+    weak var unifiedToggleInputOmnibarActivating: UnifiedToggleInputOmnibarActivating?
 
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
@@ -102,7 +102,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return false
         }
 
-        if unifiedToggleInputInlineActivating?.activateInlineEditingIfNeeded(
+        if unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
             currentText: extractCurrentTextForEditing(textField)
         ) == .intercept {
             return false

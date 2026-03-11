@@ -19,8 +19,8 @@
 
 import Foundation
 
-protocol UnifiedToggleInputInlineActivating: AnyObject {
-    func activateInlineEditingIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
+protocol UnifiedToggleInputOmnibarActivating: AnyObject {
+    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
 }
 
 enum UnifiedToggleInputActivationDecision {

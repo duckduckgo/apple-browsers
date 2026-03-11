@@ -862,16 +862,23 @@ class MainViewController: UIViewController {
             Pixel.fire(pixel: .addressBarGestureDismiss)
             didSendGestureDismissPixel = true
         }
+        collapseExpandedUTIOnKeyboardDismiss()
+    }
+
+    private func collapseExpandedUTIOnKeyboardDismiss() {
+        guard unifiedToggleInputFeature.isAvailable,
+              currentTab?.isAITab == true,
+              let coordinator = unifiedToggleInputCoordinator,
+              case .aiTab(.expanded) = coordinator.displayState,
+              coordinator.inputMode == .aiChat,
+              currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
+        coordinator.showCollapsed()
     }
 
     @objc
     private func keyboardDidHide() {
         keyboardShowing = false
         didSendGestureDismissPixel = false
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.autoCollapseExpandedUTIIfNeeded()
-        }
 
         if #available(iOS 26, *) {
             latestKeyboardFrame = .zero
@@ -1118,17 +1125,17 @@ class MainViewController: UIViewController {
         guard isNavigationBarEffectivelyAtBottom else { return }
 
         let displayState = unifiedToggleInputCoordinator?.displayState
-        let isInlineActive = unifiedToggleInputCoordinator?.isInlineEditingSession == true
+        let isOmnibarActive = unifiedToggleInputCoordinator?.isOmnibarSession == true
 
         let baseInputHeight: CGFloat
         if case .aiTab(.expanded) = displayState, let coordinator = unifiedToggleInputCoordinator {
-            baseInputHeight = max(viewCoordinator.standardNavigationBarContainerHeight, coordinator.inlineEditingHeight())
+            baseInputHeight = coordinator.omnibarEditingHeight()
         } else {
             baseInputHeight = omniBarHeight
         }
 
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
-        if !isInlineActive, displayState != .aiTab(.collapsed) {
+        if !isOmnibarActive, displayState != .aiTab(.collapsed) {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
         }
 
@@ -1907,7 +1914,7 @@ class MainViewController: UIViewController {
             }
 
             ViewHighlighter.updatePositions()
-            self.recomputeInlineEditingHeightIfNeeded()
+            self.recomputeOmnibarEditingHeightIfNeeded()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()

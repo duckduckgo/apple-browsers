@@ -584,6 +584,20 @@ class MainViewController: UIViewController {
         startupOnboardingCoverView = nil
     }
 
+    private func finishDeferredStartupPresentationIfNeeded() {
+        guard startupOnboardingCoverView != nil else { return }
+        guard !needsToShowOnboardingIntro() else { return }
+
+        if !hasLoadedInitialView {
+            loadInitialViewIfNeeded()
+        }
+
+        guard hasLoadedInitialView else { return }
+
+        view.layoutIfNeeded()
+        removeStartupOnboardingCoverViewIfNeeded()
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
@@ -617,6 +631,7 @@ class MainViewController: UIViewController {
         }
 
         presentSyncRecoveryPromptIfNeeded()
+        finishDeferredStartupPresentationIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -4199,8 +4214,7 @@ extension MainViewController: OnboardingDelegate {
                 self.newTabPageViewController?.onboardingCompleted()
             }
 
-            self.view.layoutIfNeeded()
-            self.removeStartupOnboardingCoverViewIfNeeded()
+            self.finishDeferredStartupPresentationIfNeeded()
         }
     }
     

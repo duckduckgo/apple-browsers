@@ -149,7 +149,7 @@
         "description": "Fired when the AI Chat sidebar is closed",
         "owners": ["miasma13"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_standard"],
         "parameters": [
             "appVersion",
             "pixelSource",

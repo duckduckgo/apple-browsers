@@ -253,16 +253,21 @@ final class DDGSyncLifecycleTests: XCTestCase {
     func testWhenRemovePreservedSyncAccountAndPreservedAccountExistsThenAccountIsRemoved() throws {
         secureStorageStub.theAccount = .mock
         dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+        let dataProvider = DataProvidingMock(feature: .init(name: "bookmarks"))
+        try dataProvider.registerFeature(withState: .readyToSync)
+        dataProvidersSource.dataProviders = [dataProvider]
 
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         syncService.initializeIfNeeded()
         XCTAssertEqual(syncService.authState, .inactive)
         XCTAssertNotNil(secureStorageStub.theAccount)
+        XCTAssertTrue(dataProvider.isFeatureRegistered)
 
         try syncService.removePreservedSyncAccount()
 
         XCTAssertEqual(syncService.authState, .inactive)
         XCTAssertNil(secureStorageStub.theAccount)
+        XCTAssertFalse(dataProvider.isFeatureRegistered)
         XCTAssertEqual(mockErrorHandler.handledErrors, [.accountRemoved(.userStartedFreshSetup)])
     }
 

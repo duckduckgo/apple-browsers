@@ -542,7 +542,13 @@ public class DDGSync: DDGSyncing {
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
         isDataSyncingFeatureFlagEnabledCancellable?.cancel()
-        try syncQueue?.dataProviders.forEach { try $0.deregisterFeature() }
+        let providersToDeregister: [DataProviding]
+        if let activeProviders = syncQueue?.dataProviders, !activeProviders.isEmpty {
+            providersToDeregister = activeProviders
+        } else {
+            providersToDeregister = dataProvidersSource?.makeDataProviders() ?? []
+        }
+        try providersToDeregister.forEach { try $0.deregisterFeature() }
         syncQueue = nil
         authState = .inactive
         try dependencies.secureStore.removeAccount()

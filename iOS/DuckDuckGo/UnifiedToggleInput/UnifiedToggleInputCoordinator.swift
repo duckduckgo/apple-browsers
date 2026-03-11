@@ -91,6 +91,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
     private(set) var inputMode: TextEntryMode = .aiChat
+    private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
 
     var currentText: String { viewController.text }
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -208,6 +209,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let effectiveInputMode = isToggleEnabled ? inputMode : .search
         displayState = .omnibar(.active)
         self.inputMode = effectiveInputMode
+        self.cardPosition = cardPosition
         viewController.cardPosition = cardPosition
         viewController.usesOmnibarMargins = (cardPosition == .top)
         viewController.isTopBarPosition = (cardPosition == .top)
@@ -306,6 +308,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController.usesOmnibarMargins = false
         viewController.isTopBarPosition = false
         viewController.isToolbarSubmitHidden = false
+        cardPosition = .bottom
         viewController.cardPosition = .bottom
         viewController.setInactiveCardAppearance(false)
         viewController.text = ""
@@ -371,6 +374,88 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func syncContentInputMode(_ mode: TextEntryMode, animated: Bool = true) {
         contentViewController.setInputMode(mode, animated: animated)
+    }
+
+    // MARK: - Render State
+
+    func computeRenderState(isOnAITab: Bool = false) -> UTIRenderState {
+        let isExpanded: Bool
+        let isInputVisible: Bool
+        let isContentVisible: Bool
+        let headerDisplayMode: UnifiedInputContentContainerViewController.HeaderDisplayMode
+        let inactiveAppearance: Bool
+        let showsToggle: Bool
+        let showsToolbar: Bool
+
+        switch displayState {
+        case .hidden:
+            isExpanded = false
+            isInputVisible = false
+            isContentVisible = false
+            headerDisplayMode = .hidden
+            inactiveAppearance = false
+            showsToggle = false
+            showsToolbar = false
+
+        case .aiTab(.collapsed):
+            isExpanded = false
+            isInputVisible = true
+            isContentVisible = false
+            headerDisplayMode = .hidden
+            inactiveAppearance = false
+            showsToggle = false
+            showsToolbar = false
+
+        case .aiTab(.expanded):
+            isExpanded = true
+            isInputVisible = true
+            let isAIChatOnAITab = isOnAITab && inputMode == .aiChat
+            isContentVisible = !isAIChatOnAITab
+            let isSearchOnAITab = isOnAITab && inputMode == .search
+            headerDisplayMode = isSearchOnAITab && isContentVisible ? .active : .hidden
+            inactiveAppearance = false
+            showsToggle = isToggleEnabled
+            showsToolbar = inputMode == .aiChat
+
+        case .omnibar(.active):
+            isExpanded = true
+            isInputVisible = true
+            isContentVisible = true
+            headerDisplayMode = .active
+            inactiveAppearance = false
+            showsToggle = isToggleEnabled
+            showsToolbar = inputMode == .aiChat
+
+        case .omnibar(.inactive):
+            isExpanded = true
+            isInputVisible = true
+            isContentVisible = true
+            headerDisplayMode = .inactive
+            inactiveAppearance = (cardPosition == .bottom)
+            showsToggle = isToggleEnabled
+            showsToolbar = inputMode == .aiChat
+        }
+
+        let isFloatingSubmitVisible = displayState == .omnibar(.active)
+            && cardPosition == .top
+            && inputMode == .aiChat
+
+        return UTIRenderState(
+            isInputVisible: isInputVisible,
+            isContentVisible: isContentVisible,
+            isExpanded: isExpanded,
+            cardPosition: cardPosition,
+            usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
+            showsDismissButton: cardPosition == .top && isOmnibarSession,
+            showsToolbar: showsToolbar,
+            isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
+            showsToggle: showsToggle,
+            inactiveAppearance: inactiveAppearance,
+            isFloatingSubmitVisible: isFloatingSubmitVisible,
+            headerDisplayMode: headerDisplayMode,
+            contentInputMode: inputMode,
+            inputMode: inputMode
+        )
     }
 
     // MARK: - Private

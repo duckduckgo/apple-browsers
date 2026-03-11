@@ -66,17 +66,14 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
     }
 
     private func injectTrackerProtectionSettings(into features: [String: PrivacyConfigurationData.PrivacyFeature],
-                                                 from dataSource: TrackerProtectionDataSource) -> [String: PrivacyConfigurationData.PrivacyFeature] {
+                                                 from _: TrackerProtectionDataSource) -> [String: PrivacyConfigurationData.PrivacyFeature] {
         var mutableFeatures = features
 
         let existingFeature = mutableFeatures["trackerProtection"]
         var settings: [String: Any] = existingFeature?.settings ?? [:]
 
-        if let encodedData = dataSource.encodedTrackerData {
-            settings["trackerData"] = encodedData
-        } else {
-            Logger.contentBlocking.warning("TrackerProtection: No encodedTrackerData available")
-        }
+        // trackerData is now passed via ContentScopeProperties (args.trackerData),
+        // not via feature settings. See ContentScopeUserScript.swift.
 
         let privacyConfig = privacyConfigurationManager.privacyConfig
 

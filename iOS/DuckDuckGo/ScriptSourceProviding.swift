@@ -102,7 +102,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                         isInternalUser: dependencies.internalUserDecider.isInternalUser,
                                                         debug: AppUserDefaults().contentScopeDebugStateEnabled,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
-                                                        currentCohorts: currentCohorts)
+                                                        currentCohorts: currentCohorts,
+                                                        trackerData: trackerProtectionDataSource?.trackerData)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
     }

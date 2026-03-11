@@ -220,9 +220,9 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         XCTAssertEqual(settings?["contentBlockingExceptions"] as? [String], ["exception.com"])
     }
 
-    // MARK: - Surrogates removed (bundled in C-S-S at build time)
+    // MARK: - Surrogates and trackerData removed (bundled/passed via args)
 
-    func testSurrogatesNeverWrittenToSettings() {
+    func testSurrogatesAndTrackerDataNeverWrittenToSettings() {
         let (manager, _) = makeManager()
         let generator = ContentScopePrivacyConfigurationJSONGenerator(
             featureFlagger: MockFeatureFlagger(),
@@ -232,7 +232,7 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
 
         let settings = trackerProtectionSettings(from: generator)
         XCTAssertNil(settings?["surrogates"], "surrogates must not appear in trackerProtection settings")
-        XCTAssertNotNil(settings?["trackerData"], "trackerData should still be present")
+        XCTAssertNil(settings?["trackerData"], "trackerData must not appear in trackerProtection settings (passed via args)")
         XCTAssertNotNil(settings?["blockingEnabled"], "blockingEnabled should still be present")
         XCTAssertNotNil(settings?["ctlEnabled"], "ctlEnabled should still be present")
     }
@@ -290,8 +290,10 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
             trackerProtectionDataSource: makeDataSource()
         )
 
+        // trackerData is now passed via ContentScopeProperties (args.trackerData),
+        // not via feature settings
         let expectedKeys: Set<String> = [
-            "trackerData", "allowlist", "tempUnprotectedDomains",
+            "allowlist", "tempUnprotectedDomains",
             "userUnprotectedDomains", "contentBlockingExceptions",
             "blockingEnabled", "ctlEnabled"
         ]
@@ -306,6 +308,8 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
                        "trackerProtection settings keys should match expected set exactly")
         XCTAssertFalse(actualKeys.contains("surrogates"),
                        "surrogates must never appear in trackerProtection settings")
+        XCTAssertFalse(actualKeys.contains("trackerData"),
+                       "trackerData must never appear in trackerProtection settings (passed via args)")
     }
 
     // MARK: - CTL-disabled regression guard
@@ -325,8 +329,9 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         let settings = trackerProtectionSettings(from: generator)
         XCTAssertEqual(settings?["ctlEnabled"] as? Bool, false,
                        "ctlEnabled must be false even when CTL rules are in the payload")
-        XCTAssertEqual(settings?["trackerData"] as? String, ctlTrackerData,
-                       "CTL tracker data should be passed through unchanged")
+        // trackerData is now passed via ContentScopeProperties, not feature settings
+        XCTAssertNil(settings?["trackerData"],
+                     "trackerData must not appear in settings (passed via args.trackerData)")
     }
 
     // MARK: - No data source

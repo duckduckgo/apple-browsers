@@ -3955,7 +3955,7 @@ extension MainViewController: TabDelegate {
         allowContentUnderflow = false
 
         let previousTab = tabManager.current()
-        if let tab = tabManager.select(tab) {
+        if let tab = tabManager.select(tab, dismissCurrent: false)  {
             transitionTo(tab: tab, from: previousTab)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -4001,7 +4001,7 @@ extension MainViewController: TabSwitcherDelegate {
         
         if let tab {
             tab.viewed = true
-            tabManager.select(tab, forcingMode: true)
+            tabManager.select(tab, forcingMode: true, dismissCurrent: false)
         }
 
         guard let newTab = tabManager.current(createIfNeeded: true) else {

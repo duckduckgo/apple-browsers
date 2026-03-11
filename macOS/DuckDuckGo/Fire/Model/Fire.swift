@@ -858,12 +858,24 @@ final class Fire: FireProtocol {
 
         func closeFloatingAIChatWindows(for tabIDs: [TabIdentifier]) {
             let uniqueTabIDs = Set(tabIDs)
-            guard !uniqueTabIDs.isEmpty,
-                  let aiChatCoordinator = windowControllersManager.mainWindowControllers.first?.mainViewController.aiChatCoordinator else {
+            guard !uniqueTabIDs.isEmpty else {
                 return
             }
+
+            func coordinatorForTabID(_ tabID: TabIdentifier) -> AIChatCoordinating? {
+                for windowController in windowControllersManager.mainWindowControllers {
+                    let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
+                    let hasUnpinnedTab = tabCollectionViewModel.tabCollection.tabs.contains { $0.uuid == tabID }
+                    let hasPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs.contains { $0.uuid == tabID } ?? false
+                    if hasUnpinnedTab || hasPinnedTab {
+                        return windowController.mainViewController.aiChatCoordinator
+                    }
+                }
+                return windowControllersManager.mainWindowControllers.first?.mainViewController.aiChatCoordinator
+            }
+
             uniqueTabIDs.forEach { tabID in
-                aiChatCoordinator.closeFloatingWindow(for: tabID)
+                coordinatorForTabID(tabID)?.closeFloatingWindow(for: tabID)
             }
         }
 

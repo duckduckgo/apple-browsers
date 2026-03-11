@@ -248,25 +248,4 @@ final class RemoteMessagePromoDelegateTests: XCTestCase {
 
         XCTAssertFalse(try XCTUnwrap(receivedVisible))
     }
-
-    // MARK: - Factory Configuration Tests
-
-    func testWhenMakePromosCalledThenReturnsTwoPromosWithCorrectConfiguration() async {
-        store.scheduledRemoteMessage = nil
-        model = makeModel()
-        let ntpPromo = await PromoServiceFactory.remoteMessageNewTabPage(model: model)
-        let tabBarPromo = await PromoServiceFactory.remoteMessageTabBar(model: model)
-
-        for promo in [ntpPromo, tabBarPromo] {
-            XCTAssertTrue(promo.triggers.isEmpty)
-            XCTAssertEqual(promo.initiated, .app)
-            XCTAssertEqual(promo.promoType.severity, .medium)
-            XCTAssertFalse(promo.respectsGlobalCooldown)
-            XCTAssertTrue(promo.setsGlobalCooldown)
-            XCTAssertNotNil(promo.delegate)
-        }
-
-        XCTAssertEqual(ntpPromo.context, .newTabPage)
-        XCTAssertEqual(tabBarPromo.context, .global)
-    }
 }

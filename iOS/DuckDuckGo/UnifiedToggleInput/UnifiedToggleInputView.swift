@@ -307,7 +307,6 @@ final class UnifiedToggleInputView: UIView {
         let vMargin: CGFloat = (expanded && !usesOmnibarMargins) ? 0 : Constants.cardVerticalMargin
 
         textEntryView.isExpandable = expanded
-        updateToggleDisabledSearchPadding(for: handler.currentToggleState)
         updateCardTrailingConstraint()
 
         expandedShadow0.isHidden = !expanded
@@ -340,7 +339,9 @@ final class UnifiedToggleInputView: UIView {
             self.cardBottomConstraint.constant = -vMargin
             self.toggleTopConstraint.constant = (expanded && self.isToggleEnabled) ? Constants.toggleTopPadding : 0
             self.toggleHeightConstraint.constant = toggleHeight
-            self.inputTopConstraint.constant = (expanded && self.isToggleEnabled) ? Constants.toggleBottomPadding : 0
+            let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && self.handler.currentToggleState == .search && self.cardPosition == .bottom
+            self.inputTopConstraint.constant = expanded && self.isToggleEnabled ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
+            self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding ? -Constants.toggleDisabledSearchTopPadding : 0
             self.toggleView.alpha = (expanded && self.isToggleEnabled) ? 1 : 0
             self.toolbarHeightConstraint.constant = showToolbar ? 56 : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0

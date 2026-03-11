@@ -23,10 +23,22 @@ MINOR="🟡"
 PATCH="🟢"
 UPTODATE="✅"
 
-# Verbose logging helper
+# Verbose logging helpers
 verbose() {
     if [[ "$VERBOSE" == true ]]; then
         echo -e "${DIM}[verbose]${NC} $*" >&2
+    fi
+}
+
+verbose_warn() {
+    if [[ "$VERBOSE" == true ]]; then
+        echo -e "${BOLD}${YELLOW}[warning]${NC} $*" >&2
+    fi
+}
+
+verbose_error() {
+    if [[ "$VERBOSE" == true ]]; then
+        echo -e "${BOLD}${RED}[error]${NC}   $*" >&2
     fi
 }
 
@@ -64,8 +76,8 @@ while [[ $# -gt 0 ]]; do
         -l|--list) LIST_OUTPUT=true; shift ;;
         -v|--verbose) VERBOSE=true; shift ;;
         --no-color) NO_COLOR=true; shift ;;
-        -*) echo "Unknown option: $1"; show_help; exit 1 ;;
-        *) echo "Unknown argument: $1"; show_help; exit 1 ;;
+        -*) echo -e "${RED}Unknown option: $1${NC}" >&2; show_help; exit 1 ;;
+        *) echo -e "${RED}Unknown argument: $1${NC}" >&2; show_help; exit 1 ;;
     esac
 done
 
@@ -138,7 +150,7 @@ get_latest_github_release() {
     repo_path="${repo_path%.git}"
 
     if [[ -z "$repo_path" ]]; then
-        verbose "Could not extract repo path from URL: $repo_url"
+        verbose_error "Could not extract repo path from URL: $repo_url"
         echo ""
         return
     fi
@@ -158,7 +170,7 @@ get_latest_github_release() {
     fi
 
     # Fallback: git ls-remote
-    verbose "GitHub API returned no release for $repo_path, falling back to git ls-remote"
+    verbose_warn "GitHub API returned no release for $repo_path, falling back to git ls-remote"
     local tags
     tags=$(git ls-remote --tags --refs "https://github.com/${repo_path}.git" 2>/dev/null | \
            awk '{print $2}' | sed 's|refs/tags/||' | \
@@ -170,6 +182,12 @@ get_latest_github_release() {
                print version "\t" tag
            }' | \
            sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -f2) || true
+
+    if [[ -z "$tags" ]]; then
+        verbose_warn "No tags found for $repo_path via git ls-remote either"
+    else
+        verbose "git ls-remote returned tag: $tags for $repo_path"
+    fi
 
     echo "$tags"
 }
@@ -256,7 +274,7 @@ build_direct_deps_map() {
     done < <(get_search_roots "$path")
 
     if [[ ${#roots[@]} -eq 0 ]]; then
-        verbose "No search roots found"
+        verbose_warn "No search roots found"
         return
     fi
 
@@ -280,7 +298,7 @@ build_direct_deps_map() {
         unique_count=$(wc -l < "$DIRECT_DEPS_FILE" | tr -d ' ')
         verbose "Direct dependencies found: $unique_count unique (from $count total entries)"
     else
-        verbose "No direct dependencies found in project files"
+        verbose_warn "No direct dependencies found in project files"
     fi
 }
 
@@ -347,7 +365,7 @@ find_resolved_files() {
             verbose "Found resolved file: $f"
         done <<< "$results"
     else
-        verbose "No Package.resolved files found"
+        verbose_warn "No Package.resolved files found"
     fi
     echo "$results"
 }
@@ -549,6 +567,8 @@ main() {
 
         if [[ -n "$latest" ]]; then
             update_type=$(compare_versions "$current" "$latest")
+        else
+            verbose_warn "Could not fetch latest version for $name ($url)"
         fi
 
         verbose "  Result: $name $current → $latest_display ($update_type)"

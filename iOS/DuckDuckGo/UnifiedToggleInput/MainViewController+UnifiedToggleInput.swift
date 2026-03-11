@@ -218,56 +218,31 @@ extension MainViewController {
         }
     }
 
-    private func shouldShowUnifiedInputContent(for coordinator: UnifiedToggleInputCoordinator) -> Bool {
-        let isAITab = currentTab?.isAITab == true
-
-        switch coordinator.displayState {
-        case .hidden, .aiTab(.collapsed):
-            return false
-        case .omnibar:
-            return true
-        case .aiTab(.expanded):
-            return !(isAITab && coordinator.inputMode == .aiChat)
-        }
-    }
-
-    private func shouldOverlayAIChatHeader(for coordinator: UnifiedToggleInputCoordinator) -> Bool {
-        guard currentTab?.isAITab == true else { return false }
-        guard case .aiTab(.expanded) = coordinator.displayState else { return false }
-        return coordinator.inputMode == .search && shouldShowUnifiedInputContent(for: coordinator)
-    }
-
-    private func updateAITabHeaderVisibility(for coordinator: UnifiedToggleInputCoordinator) {
-        guard currentTab?.isAITab == true else { return }
-        if shouldOverlayAIChatHeader(for: coordinator) {
-            viewCoordinator.hideAIChatTabChatHeader()
-        } else {
-            viewCoordinator.showAIChatTabChatHeader()
-        }
-    }
-
-    private func updateStatusBarBackgroundForAITabOverlay(for coordinator: UnifiedToggleInputCoordinator) {
-        guard currentTab?.isAITab == true else { return }
-
-        if shouldOverlayAIChatHeader(for: coordinator) {
-            viewCoordinator.statusBackground.backgroundColor = UIColor(designSystemColor: .panel)
-        } else if viewCoordinator.isNavigationChromeHidden {
-            viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-        }
-    }
-
     private func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator) {
-        updateAITabHeaderVisibility(for: coordinator)
-        updateStatusBarBackgroundForAITabOverlay(for: coordinator)
+        let isOnAITab = currentTab?.isAITab == true
+        let renderState = coordinator.computeRenderState(isOnAITab: isOnAITab)
+        let isAITab = isOnAITab && renderState.isExpanded
 
-        let showContent = shouldShowUnifiedInputContent(for: coordinator)
+        if isOnAITab {
+            let overlaysHeader = renderState.headerDisplayMode == .active && isAITab
+            if overlaysHeader {
+                viewCoordinator.hideAIChatTabChatHeader()
+            } else {
+                viewCoordinator.showAIChatTabChatHeader()
+            }
 
-        if case .aiTab(let aiTabState) = coordinator.displayState {
+            if overlaysHeader {
+                viewCoordinator.statusBackground.backgroundColor = UIColor(designSystemColor: .panel)
+            } else if viewCoordinator.isNavigationChromeHidden {
+                viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            }
+        }
+
+        if case .aiTab = coordinator.displayState {
             coordinator.contentViewController.forceBottomBarLayout = true
-            let shouldShowInlineHeader = shouldOverlayAIChatHeader(for: coordinator)
-            coordinator.updateContentHeaderForAITab(shouldOverlay: shouldShowInlineHeader)
+            coordinator.updateContentHeaderForAITab(shouldOverlay: renderState.headerDisplayMode == .active && isAITab)
             viewCoordinator.updateUnifiedToggleInputColors(
-                isExpanded: aiTabState == .expanded,
+                isExpanded: renderState.isExpanded,
                 inputView: coordinator.viewController.view
             )
         } else {
@@ -278,8 +253,8 @@ extension MainViewController {
             )
         }
 
-        if showContent {
-            coordinator.syncContentInputMode(coordinator.inputMode, animated: false)
+        if renderState.isContentVisible {
+            coordinator.syncContentInputMode(renderState.contentInputMode, animated: false)
             viewCoordinator.showUnifiedInputContent()
         } else {
             viewCoordinator.hideUnifiedInputContent()

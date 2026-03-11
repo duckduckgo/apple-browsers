@@ -103,7 +103,7 @@ final class TabManagerTests: XCTestCase {
     
     func testWhenAllTabsRemoved_ThenTabHistoryIsCleared() async throws {
         let tabsModel = TabsModel(desktop: false)
-        let initialTab = tabsModel.tabs[0]
+        let initialTab = try XCTUnwrap(tabsModel.tabs.first)
         let tab1 = Tab(link: Link(title: "example1", url: URL(string: "https://example1.com")!))
         tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: true)
         let tabIDs = [initialTab.uid, tab1.uid]

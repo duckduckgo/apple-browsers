@@ -1023,8 +1023,8 @@ class MainViewController: UIViewController {
     }
 
     @objc func onAddressBarPositionChanged() {
-        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         if !isAnyAITabUTIState {
+            viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         }
         updateStatusBarBackgroundColor()

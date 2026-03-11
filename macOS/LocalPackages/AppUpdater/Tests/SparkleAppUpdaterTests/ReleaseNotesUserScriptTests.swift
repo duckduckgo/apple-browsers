@@ -20,8 +20,6 @@ import AppUpdaterShared
 import Combine
 import Common
 import Navigation
-import Persistence
-import PersistenceTestingUtils
 import PixelKit
 import UserScript
 import WebKit
@@ -33,6 +31,26 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
 
     private let releaseNotesURL = URL(string: "duck://release-notes")!
 
+    // MARK: - needsLatestReleaseNote tests
+
+    /// The controller should need a release note fetch when no update data exists yet.
+    @MainActor
+    func testNeedsLatestReleaseNoteIsTrueWhenLatestUpdateIsNil() {
+        let controller = StubSparkleUpdateController()
+        XCTAssertNil(controller.latestUpdate)
+        XCTAssertTrue(controller.needsLatestReleaseNote)
+    }
+
+    /// Once an update is available, no additional fetch is needed.
+    @MainActor
+    func testNeedsLatestReleaseNoteIsFalseWhenLatestUpdateIsSet() {
+        let controller = StubSparkleUpdateController()
+        controller.latestUpdate = Update.stub()
+        XCTAssertFalse(controller.needsLatestReleaseNote)
+    }
+
+    // MARK: - ReleaseNotesUserScript tests
+
     /// Regression test: `onUpdate()` must push state to the page even when the script
     /// has never received `initialSetup`. This simulates the race where
     /// `contentBlockingAssets` replaces the script instance after page init.
@@ -42,11 +60,9 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         try XCTSkipIf(AppVersion.runType == .uiTests, "onUpdate() is disabled in UI test environments")
 
         let controller = StubSparkleUpdateController()
-        let store = InMemoryThrowingKeyValueStore()
         let script = ReleaseNotesUserScript(
             updateController: controller,
             pixelFiring: nil,
-            keyValueStore: store,
             releaseNotesURL: releaseNotesURL
         )
 
@@ -76,11 +92,9 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
 
         let controller = StubSparkleUpdateController()
         let pixelMock = CapturingPixelFiring()
-        let store = InMemoryThrowingKeyValueStore()
         let script = ReleaseNotesUserScript(
             updateController: controller,
             pixelFiring: pixelMock,
-            keyValueStore: store,
             releaseNotesURL: releaseNotesURL
         )
 
@@ -90,7 +104,7 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         let mockWebView = MockURLWebView(url: releaseNotesURL)
         script.webView = mockWebView
 
-        // First call: no latestUpdate, no cache → loadingError, starts 1s timer
+        // First call: no latestUpdate → loadingError, starts 1s timer
         script.onUpdate()
         XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire immediately")
 
@@ -108,18 +122,19 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire when notes load within debounce window")
     }
 
-    /// The pixel MUST fire when `loadingError` persists past the 1-second debounce.
+    /// The pixel must NOT fire when status is `.loading` (update cycle active but no update yet).
     @MainActor
-    func testReleaseNotesEmptyPixelFiresWhenErrorPersists() throws {
+    func testReleaseNotesEmptyPixelDoesNotFireWhenUpdateCycleIsActive() throws {
         try XCTSkipIf(AppVersion.runType == .uiTests, "onUpdate() is disabled in UI test environments")
 
         let controller = StubSparkleUpdateController()
+        controller.updateProgress = .updateCycleDidStart
+        // latestUpdate remains nil → status will be .loading (not .loadingError)
+
         let pixelMock = CapturingPixelFiring()
-        let store = InMemoryThrowingKeyValueStore()
         let script = ReleaseNotesUserScript(
             updateController: controller,
             pixelFiring: pixelMock,
-            keyValueStore: store,
             releaseNotesURL: releaseNotesURL
         )
 
@@ -129,7 +144,36 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         let mockWebView = MockURLWebView(url: releaseNotesURL)
         script.webView = mockWebView
 
-        // Call with no latestUpdate, no cache → loadingError
+        // Wait past the 1s debounce window
+        let waitExpectation = expectation(description: "wait for debounce window to pass")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            waitExpectation.fulfill()
+        }
+        wait(for: [waitExpectation], timeout: 2.0)
+
+        XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire when status is .loading (update cycle active)")
+    }
+
+    /// The pixel MUST fire when `loadingError` persists past the 1-second debounce.
+    @MainActor
+    func testReleaseNotesEmptyPixelFiresWhenErrorPersists() throws {
+        try XCTSkipIf(AppVersion.runType == .uiTests, "onUpdate() is disabled in UI test environments")
+
+        let controller = StubSparkleUpdateController()
+        let pixelMock = CapturingPixelFiring()
+        let script = ReleaseNotesUserScript(
+            updateController: controller,
+            pixelFiring: pixelMock,
+            releaseNotesURL: releaseNotesURL
+        )
+
+        let broker = UserScriptMessageBroker(context: "releaseNotes", requiresRunInPageContentWorld: true)
+        script.with(broker: broker)
+
+        let mockWebView = MockURLWebView(url: releaseNotesURL)
+        script.webView = mockWebView
+
+        // Call with no latestUpdate → loadingError
         script.onUpdate()
         XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire immediately")
 
@@ -194,7 +238,6 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
 
     func makeReleaseNotesUserScript(
         pixelFiring: PixelFiring?,
-        keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
     ) -> Subfeature {
         fatalError("Not expected")
@@ -246,8 +289,7 @@ private extension Update {
                build: "100",
                date: Date(),
                releaseNotes: ["Some notes"],
-               releaseNotesSubscription: [],
-               needsLatestReleaseNote: false)
+               releaseNotesSubscription: [])
     }
 }
 

@@ -145,11 +145,12 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             let isDuckURLParameter = ["is_duck_url": String(isDuckURL)]
 
             Task.detached(priority: .utility) {
-#if APPSTORE
-                let additionalParameters: [String: String] = isDuckURLParameter
-#else
-                let additionalParameters = await SystemInfo.pixelParameters().merging(isDuckURLParameter, uniquingKeysWith: { $1 })
-#endif
+                let additionalParameters: [String: String]
+                if StandardApplicationBuildType().isAppStoreBuild {
+                    additionalParameters = isDuckURLParameter
+                } else {
+                    additionalParameters = await SystemInfo.pixelParameters().merging(isDuckURLParameter, uniquingKeysWith: { $1 })
+                }
                 self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
             }
         }

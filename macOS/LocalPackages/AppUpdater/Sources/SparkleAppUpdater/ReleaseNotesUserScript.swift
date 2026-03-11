@@ -20,7 +20,6 @@ import AppUpdaterShared
 import Combine
 import Common
 import Foundation
-import Persistence
 import PixelKit
 import UserScript
 import WebKit
@@ -33,7 +32,6 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
     private let updateController: any SparkleUpdateControlling
     private let pixelFiring: PixelFiring?
-    private let keyValueStore: ThrowingKeyValueStoring
     private let releaseNotesURL: URL
 
     public var messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "release-notes")])
@@ -59,11 +57,9 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
     public init(updateController: any SparkleUpdateControlling,
                 pixelFiring: PixelFiring?,
-                keyValueStore: ThrowingKeyValueStoring,
                 releaseNotesURL: URL) {
         self.updateController = updateController
         self.pixelFiring = pixelFiring
-        self.keyValueStore = keyValueStore
         self.releaseNotesURL = releaseNotesURL
         super.init()
     }
@@ -99,7 +95,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
         guard let webView, webView.url == releaseNotesURL else { return }
 
-        let values = ReleaseNotesValues(from: updateController, keyValueStore: keyValueStore)
+        let values = ReleaseNotesValues(from: updateController)
         broker?.push(method: "onUpdate", params: values, for: self, into: webView)
 
         if values.status == ReleaseNotesValues.Status.loadingError.rawValue {

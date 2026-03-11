@@ -448,9 +448,6 @@ private struct NotesView: View {
             .padding(.bottom, itemSpacing)
 
         if model.isEditing || model.isNew {
-#if APPSTORE
-            FocusableTextEditor(text: $model.notes)
-#else
             if #available(macOS 12, *) {
                 FocusableTextEditor(text: $model.notes)
             } else {
@@ -473,7 +470,6 @@ private struct NotesView: View {
                         }
                     )
             }
-#endif
         } else {
             Text(model.notes)
                 .padding(.bottom, interItemSpacing)

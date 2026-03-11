@@ -144,9 +144,11 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
         }
     }
 
-#if APPSTORE
     var passwordManager: PasswordManager {
         get {
+            guard AppVersion.isAppStoreBuild else {
+                return PasswordManager(rawValue: selectedPasswordManager) ?? .duckduckgo
+            }
             guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
                 // Roll back to original behavior if web extensions are not supported
                 // (mostly as a safety measure for disabling the feature flag)
@@ -162,26 +164,17 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
             return passwordManager
         }
         set {
-            guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
-                // Roll back to original behavior if web extensions are not supported
-                // (mostly as a safety measure for disabling the feature flag)
-                return
+            if AppVersion.isAppStoreBuild {
+                guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
+                    // Roll back to original behavior if web extensions are not supported
+                    // (mostly as a safety measure for disabling the feature flag)
+                    return
+                }
             }
 
             selectedPasswordManager = newValue.rawValue
         }
     }
-#else
-    var passwordManager: PasswordManager {
-        get {
-            return PasswordManager(rawValue: selectedPasswordManager) ?? .duckduckgo
-        }
-
-        set {
-            selectedPasswordManager = newValue.rawValue
-        }
-    }
-#endif
 
     @UserDefaultsWrapper(key: .selectedPasswordManager, defaultValue: PasswordManager.duckduckgo.rawValue)
     private(set) var selectedPasswordManager: String

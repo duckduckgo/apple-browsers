@@ -65,7 +65,7 @@ public enum OnboardingRebrandingImages {
     }
 
     public enum AddToDock {
-        public static let promoBorder = Image("Rebranding/AddToDock.promo.border", bundle: .module)
-        public static let tutorialBorder = Image("Rebranding/AddToDock.tutorial.border", bundle: .module)
+        public static let promoBorder = Image("Rebranding/AddToDock-promo-border", bundle: .module)
+        public static let tutorialBorder = Image("Rebranding/AddToDock-tutorial-border", bundle: .module)
     }
 }

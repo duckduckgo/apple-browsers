@@ -59,6 +59,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             guard let self else { return }
             if activeSessions[promoId] != nil {
                 recordResultAndCleanup(promoId: promoId, result: result)
+            } else if externalVisiblePromoIds.contains(promoId) {
+                externalVisiblePromoIds.remove(promoId)
+                applyResult(result, toRecordFor: promoId)
             } else {
                 updateHistoryForDismissedPromo(promoId: promoId, result: result)
             }
@@ -94,14 +97,19 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
     /// Attaches a delegate to a promo by ID. Call when the delegate object is ready.
     /// If all delegates are ready and start() was already called, completes registration immediately.
-    func setDelegate(for promoId: String, delegate: any PromoDelegate) {
+    func setDelegate(for promoId: String, delegate: any AnyPromoDelegate) {
         stateQueue.async { [weak self] in
             guard let self else { return }
             guard let index = promos.firstIndex(where: { $0.id == promoId }) else {
                 Logger.general.warning("PromoService: unknown promo ID \(promoId)")
                 return
             }
+            let previousDelegate = promos[index].delegate
             promos[index].delegate = delegate
+            if let previousDelegate, (previousDelegate as AnyObject) !== (delegate as AnyObject) {
+                externalSubscriptions.removeValue(forKey: promoId)?.cancel()
+            }
+            subscribeToExternalDelegateIfNeeded(promoId: promoId, delegate: delegate)
 
             if isStarted && !isDelegateRegistrationComplete && allDelegatesReady {
                 completeRegistration()
@@ -119,10 +127,61 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         debugSimulatedDate ?? Date()
     }
 
-#if DEBUG
     /// Test-only accessor for draining the state queue. Use `drainStateQueue()` in tests.
     var testQueue: DispatchQueue { stateQueue }
-#endif
+
+    /// Debug: Set a simulated "now" for cooldown and eligibility checks. In-memory only; does not persist across app launches.
+    func setDebugSimulatedDate(_ date: Date?) {
+        stateQueue.async { [weak self] in
+            self?.debugSimulatedDate = date
+        }
+    }
+
+    /// Clears debug date override and all promo history. For debug reset.
+    func resetDebugState() {
+        stateQueue.async { [weak self] in
+            guard let self else { return }
+            debugSimulatedDate = nil
+            for (_, session) in activeSessions {
+                session.showTask?.cancel()
+                session.timeout?.cancel()
+                session.eligibilityCancellable?.cancel()
+                let delegate = session.delegate
+                Task { @MainActor in
+                    delegate.hide()
+                }
+            }
+            activeSessions.removeAll()
+            historyStore.resetAll()
+            recordsSubject.send([:])
+
+            for promo in promos {
+                guard let delegate = promo.delegate as? TestPromoDelegate else { continue }
+                delegate.resetEligibility()
+            }
+        }
+    }
+
+    /// Debug: Force-show a promo by ID, bypassing all evaluation rules. Does not affect history or cooldowns.
+    /// No-op for external promos (ExternalPromoDelegate); they control their own visibility.
+    func forceShow(promoId: String) {
+        stateQueue.async { [weak self] in
+            guard let self else { return }
+            guard let promo = promos.first(where: { $0.id == promoId }) else {
+                Logger.general.warning("PromoService: forceShow unknown promo ID \(promoId)")
+                return
+            }
+            guard let delegate = promo.delegate as? PromoDelegate else {
+                Logger.general.warning("PromoService: forceShow - external promos control their own visibility")
+                return
+            }
+            let record = historyStore.record(for: promoId)
+            Task { @MainActor in
+                _ = await delegate.show(history: record)
+                delegate.hide()
+            }
+        }
+    }
 
     // MARK: - Internal State
 
@@ -151,7 +210,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     // MARK: Promos
 
     /// Fixed list of promos (array order = priority order). Delegates attached via setDelegate(for:delegate:).
-    private var promos: [Promo]
+    private(set) var promos: [Promo]
 
     /// Whether `PromoService` has started evaluating promo triggers and showing eligible promos.
     private var isStarted = false
@@ -169,12 +228,24 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     private var activeSessions: [String: ActiveShowSession] = [:] {
         didSet {
             if activeSessions.keys != oldValue.keys {
-                visiblePromoIds.send(Set(activeSessions.keys))
+                publishVisiblePromoIds()
             }
         }
     }
 
-    /// Currently visible promos by ID. Kept in sync with `activeSessions` and persisted to `historyStore` on change.
+    /// External promos that are visible (driven by their delegates' isVisiblePublisher). Union with activeSessions for rules and visibility.
+    private var externalVisiblePromoIds: Set<String> = [] {
+        didSet {
+            if externalVisiblePromoIds != oldValue {
+                publishVisiblePromoIds()
+            }
+        }
+    }
+
+    /// Subscriptions to external delegates' isVisiblePublisher. Keyed by promoId.
+    private var externalSubscriptions: [String: AnyCancellable] = [:]
+
+    /// Currently visible promos by ID. Kept in sync with `activeSessions`, `externalVisiblePromoIds`, and persisted to `historyStore` on change.
     private let visiblePromoIds: CurrentValueSubject<Set<String>, Never>
 
     /// Snapshot of promo history records for PromoHistoryProviding. Updated on save/reset.
@@ -284,8 +355,42 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         isDelegateRegistrationComplete = true
         registrationTimeout.cancel()
 
+        for promo in promos {
+            subscribeToExternalDelegateIfNeeded(promoId: promo.id, delegate: promo.delegate)
+        }
+
         restoreVisiblePromos()
         processBufferedTriggersIfReady()
+    }
+
+    private func subscribeToExternalDelegateIfNeeded(promoId: String, delegate: (any AnyPromoDelegate)?) {
+        dispatchPrecondition(condition: .onQueue(stateQueue))
+        guard let externalDelegate = delegate as? ExternalPromoDelegate else { return }
+        guard externalSubscriptions[promoId] == nil else { return }
+
+        applyExternalVisibility(visible: externalDelegate.isVisible, promoId: promoId, delegate: externalDelegate)
+
+        let cancellable = externalDelegate.isVisiblePublisher
+            .dropFirst()
+            .receive(on: stateQueue)
+            .sink { [weak self] visible in
+                guard let self else { return }
+                applyExternalVisibility(visible: visible, promoId: promoId, delegate: externalDelegate)
+            }
+        externalSubscriptions[promoId] = cancellable
+    }
+
+    private func applyExternalVisibility(visible: Bool, promoId: String, delegate: ExternalPromoDelegate) {
+        dispatchPrecondition(condition: .onQueue(stateQueue))
+        if visible {
+            externalVisiblePromoIds.insert(promoId)
+            var record = historyStore.record(for: promoId)
+            record.lastShown = currentDate
+            historyStore.save(record)
+            notifyRecordChanged(for: promoId, record: record)
+        } else if externalVisiblePromoIds.remove(promoId) != nil {
+            applyResult(delegate.resultWhenHidden, toRecordFor: promoId)
+        }
     }
 
     /// Processes buffered triggers after all delegates are registered, if the deferral window has ended,
@@ -309,7 +414,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         guard !externalActivationSuppression.isSet else { return }
 
         for promo in promos {
-            guard let delegate = promo.delegate else { continue }
+            guard let delegate = promo.delegate as? PromoDelegate else { continue }
             let record = historyStore.record(for: promo.id)
 
             guard let lastShown = record.lastShown else { continue }
@@ -329,11 +434,13 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     private func evaluateTriggers(_ triggers: Set<PromoTrigger>) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         let matchingPromos = promos.filter { $0.triggers.contains(where: triggers.contains) }
-        matchingPromos.forEach { $0.delegate?.refreshEligibility() }
+        for promo in matchingPromos {
+            (promo.delegate as? PromoDelegate)?.refreshEligibility()
+        }
 
         for promo in matchingPromos {
             guard activeSessions[promo.id] == nil,
-                  let delegate = promo.delegate,
+                  let delegate = promo.delegate as? PromoDelegate,
                   checkRules(for: promo) else { continue }
 
             let record = historyStore.record(for: promo.id)
@@ -344,12 +451,17 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         }
     }
 
+    private func publishVisiblePromoIds() {
+        dispatchPrecondition(condition: .onQueue(stateQueue))
+        visiblePromoIds.send(Set(activeSessions.keys).union(externalVisiblePromoIds))
+    }
+
     private func checkRules(for promo: Promo) -> Bool {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         if promo.promoType.severity == .low { return true }
         if externalActivationSuppression.isSet { return false }
 
-        let visibleIds = Set(activeSessions.keys)
+        let visibleIds = Set(activeSessions.keys).union(externalVisiblePromoIds)
         let promoId = promo.id
         let severity = promo.promoType.severity
         let context = promo.context
@@ -384,7 +496,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
     // MARK: - Show / Session Management
 
-    private func performShow(promo: Promo, delegate: any PromoDelegate, record: PromoHistoryRecord, isRestore: Bool = false) {
+    private func performShow(promo: Promo, delegate: PromoDelegate, record: PromoHistoryRecord, isRestore: Bool = false) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         let promoId = promo.id
         var recordToUse = record
@@ -464,7 +576,6 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         activeSessions.removeValue(forKey: promoId)
 
         let delegate = session.delegate
-        // Fire-and-forget: delegate.hide() must run on main; no need to await completion.
         Task { @MainActor in
             delegate.hide()
         }

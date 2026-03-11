@@ -277,6 +277,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
+
+    /// Enables the promo service to coordinate promos/calls to action
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
+    case promoQueue
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -398,7 +402,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarFloating,
                 .startupMetrics,
                 .privateProcessName,
-                .webViewLookUpAction:
+                .webViewLookUpAction,
+                .promoQueue:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -572,6 +577,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .webViewLookUpAction:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
+        case .promoQueue:
+            return .disabled
         }
     }
 }

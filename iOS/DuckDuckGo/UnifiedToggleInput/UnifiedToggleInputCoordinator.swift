@@ -366,11 +366,11 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
             intentSubject.send(.showOmnibarActive)
         case (.aiTab(.expanded), false) where isAITabSearch:
-            let renderState = computeRenderState()
+            let renderState = computeRenderState(isOnAITab: true)
             viewController.apply(renderState.viewConfig, animated: false)
             contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         case (.aiTab(.expanded), true) where isAITabSearch:
-            let renderState = computeRenderState()
+            let renderState = computeRenderState(isOnAITab: true)
             viewController.apply(renderState.viewConfig, animated: false)
             contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         default:

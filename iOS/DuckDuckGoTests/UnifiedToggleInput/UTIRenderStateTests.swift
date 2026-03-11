@@ -101,6 +101,16 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertEqual(state.headerDisplayMode, .active)
     }
 
+    func test_aiTabExpanded_search_afterPriorKeyboardDismiss_startsActive() {
+        sut.showExpanded(inputMode: .search)
+        sut.updateOmnibarInputVisibility(false)
+        sut.showCollapsed()
+        sut.showExpanded(inputMode: .search)
+        let state = sut.computeRenderState(isOnAITab: true)
+        XCTAssertFalse(state.inactiveAppearance)
+        XCTAssertEqual(state.headerDisplayMode, .active)
+    }
+
     func test_aiTabExpanded_showsToggleWhenEnabled() {
         sut.showExpanded()
         let state = sut.computeRenderState()

@@ -223,7 +223,7 @@ extension MainViewController {
         let isAITab = isOnAITab && renderState.isExpanded
 
         if isOnAITab {
-            let overlaysHeader = renderState.headerDisplayMode == .active && isAITab
+            let overlaysHeader = isAITab && renderState.isContentVisible && renderState.headerDisplayMode != .hidden
             if overlaysHeader {
                 viewCoordinator.hideAIChatTabChatHeader()
             } else {

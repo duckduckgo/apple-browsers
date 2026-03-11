@@ -179,6 +179,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func showCollapsed() {
         displayState = .aiTab(.collapsed)
         inputMode = .aiChat
+        isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
@@ -189,6 +190,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
         displayState = .aiTab(.expanded)
         self.inputMode = inputMode
+        isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
@@ -216,6 +218,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func hide() {
         displayState = .hidden
+        isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
@@ -231,6 +234,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         displayState = .omnibar(.active)
         self.inputMode = effectiveInputMode
         self.cardPosition = cardPosition
+        isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
@@ -321,6 +325,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         guard isOmnibarSession else { return }
         displayState = .hidden
         cardPosition = .bottom
+        isInputVisibleForKeyboard = true
         viewController.text = ""
         textState = .empty
 

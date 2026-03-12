@@ -413,7 +413,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarFloating,
                 .startupMetrics,
                 .privateProcessName,
-                .webViewLookUpAction,
                 .aiChatChromeSidebar,
                 .webViewLookUpAction,
                 .promoQueue,

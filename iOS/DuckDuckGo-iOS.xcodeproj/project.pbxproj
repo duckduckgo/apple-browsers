@@ -625,6 +625,7 @@
 		805DF6B12F28E807004F1F41 /* GranularFireConfirmationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805DF6B02F28E807004F1F41 /* GranularFireConfirmationViewModelTests.swift */; };
 		8065741D2ED917410001497A /* FireExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8065741C2ED917350001497A /* FireExecutor.swift */; };
 		806DF4092F3B89BD00FBCA3F /* DataClearingCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */; };
+		8074DB772F591DB400C491FE /* FireModeEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8074DB762F591DB400C491FE /* FireModeEmptyStateView.swift */; };
 		808DA5012F230245001D5F76 /* TabViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DA5002F230245001D5F76 /* TabViewModelTests.swift */; };
 		809F9D152EE12CF600943E8A /* GranularFireConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D122EE12CF600943E8A /* GranularFireConfirmationView.swift */; };
 		809F9D162EE12CF600943E8A /* FireConfirmationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */; };
@@ -2962,6 +2963,7 @@
 		805DF6B02F28E807004F1F41 /* GranularFireConfirmationViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GranularFireConfirmationViewModelTests.swift; sourceTree = "<group>"; };
 		8065741C2ED917350001497A /* FireExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireExecutor.swift; sourceTree = "<group>"; };
 		806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingCapability.swift; sourceTree = "<group>"; };
+		8074DB762F591DB400C491FE /* FireModeEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireModeEmptyStateView.swift; sourceTree = "<group>"; };
 		808DA5002F230245001D5F76 /* TabViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModelTests.swift; sourceTree = "<group>"; };
 		809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationPresenter.swift; sourceTree = "<group>"; };
 		809F9D122EE12CF600943E8A /* GranularFireConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GranularFireConfirmationView.swift; sourceTree = "<group>"; };
@@ -9882,6 +9884,7 @@
 			isa = PBXGroup;
 			children = (
 				856C5F2D2E0467EB00D64AF1 /* Transitions */,
+				8074DB762F591DB400C491FE /* FireModeEmptyStateView.swift */,
 				80EB2C4A2F56980700C5AE20 /* TabCountBadge.swift */,
 				9872D204247DCAC100CEF398 /* TabPreviewsSource.swift */,
 				85DFEDF824CF3D0E00973FE7 /* TabsBarCell.swift */,
@@ -12279,6 +12282,7 @@
 				C159DF072A430B60007834BB /* EmailSignupViewController.swift in Sources */,
 				CBD79F4D2D130F6500DBB45A /* Simulated.swift in Sources */,
 				6F922EDF2D8C5AFA0062DFC1 /* DefaultOmniBarSearchView.swift in Sources */,
+				8074DB772F591DB400C491FE /* FireModeEmptyStateView.swift in Sources */,
 				37A6A8FE2AFD0208008580A3 /* FaviconsFetcherOnboarding.swift in Sources */,
 				CBD72E672E25254500DB0938 /* LaunchTaskManager.swift in Sources */,
 				F1CA3C3B1F045B65005FADB3 /* Authenticator.swift in Sources */,

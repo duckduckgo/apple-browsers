@@ -1251,8 +1251,11 @@ class MainViewController: UIViewController {
     }
 
     private func loadInitialView() {
-        // if let tab = currentTab, tab.link != nil {
-        // if let tab = tabManager.current(create: true), tab.link != nil {
+        if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
+            showTabSwitcher()
+            return
+        }
+
         if tabManager.currentTabsModel.currentTab?.link != nil {
             guard let tab = tabManager.current(createIfNeeded: true) else {
                 fatalError("Unable to create tab")
@@ -1326,6 +1329,11 @@ class MainViewController: UIViewController {
     fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil, openedAfterIdle: Bool = false) {
         guard !autoClearInProgress else { return }
         
+        if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
+            showTabSwitcher()
+            return
+        }
+
         viewCoordinator.logoContainer.isHidden = false
         findInPageView?.isHidden = true
         chromeManager.detach()
@@ -1626,12 +1634,15 @@ class MainViewController: UIViewController {
     ///   - autoSend: Whether to automatically send the query. Defaults to `false`.
     ///   - payload: Optional payload data for AI Chat. Defaults to `nil`.
     ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
-    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        guard let currentTab else { fatalError("no tab") }
-
+    private func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        guard let currentTab else {
+            assertionFailure("load called with no current tab")
+            return
+        }
         if currentTab.tabModel.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
+
 
         prepareTabForRequest {
             currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
@@ -1654,13 +1665,10 @@ class MainViewController: UIViewController {
         viewCoordinator.navigationBarContainer.alpha = 1
         allowContentUnderflow = false
 
-        if currentTab == nil {
-            if tabManager.current(createIfNeeded: true) == nil {
-                fatalError("failed to create tab")
-            }
+        guard let tab = tabManager.current(createIfNeeded: true) else {
+            assertionFailure("prepareTabForRequest: no current tab available")
+            return
         }
-
-        guard let tab = currentTab else { fatalError("no tab") }
 
         tab.tabModel.openedAfterIdle = false
         request()
@@ -1683,7 +1691,8 @@ class MainViewController: UIViewController {
         attachTab(tab: tab)
     }
 
-    private func transitionTo(tab: TabViewController, from previousTab: TabViewController?) {
+    private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
+        guard let tab else { return }
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
@@ -1744,8 +1753,10 @@ class MainViewController: UIViewController {
         if let currentTab = tabManager.current(createIfNeeded: true) {
             transitionTo(tab: currentTab, from: nil)
             viewCoordinator.omniBar.endEditing()
-        } else {
+        } else if !tabManager.currentTabsModel.allowsEmpty {
             attachHomeScreen()
+        } else {
+            showTabSwitcher()
         }
     }
 
@@ -2697,11 +2708,9 @@ class MainViewController: UIViewController {
     ///   - payload: Optional payload data for AI Chat
     ///   - tools: Optional RAG tools available in AI Chat
     private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        
-        if currentTab == nil {
-            if tabManager.current(createIfNeeded: true) == nil {
-                fatalError("failed to create tab")
-            }
+        guard tabManager.current(createIfNeeded: true) != nil else {
+            assertionFailure("openAIChatInTab: no current tab available")
+            return
         }
 
         load(query, autoSend: autoSend, payload: payload, tools: tools)
@@ -4099,7 +4108,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
         self.forgetAllWithAnimation(request: fireRequest) {
-            tabSwitcher.dismiss(animated: false, completion: nil)
+            tabSwitcher.dismissIfPossible(animated: false)
         }
     }
 
@@ -4107,12 +4116,13 @@ extension MainViewController: TabSwitcherDelegate {
         Task {
             let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all, source: .tabSwitcher)
             await fireExecutor.burn(request: request, applicationState: .unknown)
-            tabSwitcher.dismiss()
+            tabSwitcher.dismissIfPossible()
         }
     }
 
     func tabSwitcherDidReorderTabs(tabSwitcher: TabSwitcherViewController) {
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
@@ -4157,7 +4167,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
     }
 
     func showTabSwitcher() {
-        guard currentTab ?? tabManager.current(createIfNeeded: true) != nil else {
+        if !tabManager.currentTabsModel.allowsEmpty
+            && tabManager.current(createIfNeeded: true) == nil {
             fatalError("Unable to get current tab")
         }
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {

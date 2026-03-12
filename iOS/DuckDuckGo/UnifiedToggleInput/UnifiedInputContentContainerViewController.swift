@@ -36,7 +36,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity)
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion)
     func unifiedInputEditingStateDidSelectChatHistory(url: URL)
-    func unifiedInputEditingStateDidRequestSwitchTab(toIndex index: Int)
+    func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
 }
 
@@ -576,8 +576,8 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
         delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
     }
 
-    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchTabToIndex index: Int) {
-        delegate?.unifiedInputEditingStateDidRequestSwitchTab(toIndex: index)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
+        delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
     }
 }
 

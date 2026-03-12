@@ -314,9 +314,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
+        let isFireTab = omniDelegate?.isCurrentTabFireTab() ?? false
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
                                                 storage: UserDefaults.standard, aiChatSettings: dependencies.aiChatSettings,
-                                                sessionStateMetrics: sessionStateMetrics)
+                                                sessionStateMetrics: sessionStateMetrics,
+                                                isFireTab: isFireTab)
 
         guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty, omniBarView.isFullAIChatHidden else {
             return switchBarHandler
@@ -510,8 +512,8 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onExperimentalAddressBarCancelPressed()
     }
 
-    func onSwitchTabToIndex(_ index: Int) {
-        omniDelegate?.onSwitchTabToIndex(index)
+    func onSwitchToTab(_ tab: Tab) {
+        omniDelegate?.onSwitchToTab(tab)
     }
 
     func onToggleModeSwitched() {

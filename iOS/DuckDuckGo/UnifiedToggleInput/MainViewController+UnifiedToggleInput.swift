@@ -427,8 +427,8 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         onChatHistorySelected(url: url)
     }
 
-    func unifiedInputEditingStateDidRequestSwitchTab(toIndex index: Int) {
-        onSwitchTabToIndex(index)
+    func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {
+        onSwitchToTab(tab)
     }
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {

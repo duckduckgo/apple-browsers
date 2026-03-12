@@ -142,12 +142,16 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
+        if handler.isFireTab {
+            overrideUserInterfaceStyle = .dark
+        }
+        
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
-        textView.tintColor = UIColor(designSystemColor: .accent)
+        textView.tintColor = handler.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none

@@ -815,7 +815,7 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         } else {
             currentSelection = indexPath.row
             Pixel.fire(pixel: .tabSwitcherSwitchTabs)
-            markCurrentAsViewed(shouldDismiss: true)
+            markCurrentAsViewedAndDismiss()
         }
     }
 

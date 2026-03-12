@@ -229,15 +229,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func setBrowsingMode(_ mode: BrowsingMode) {
-        guard mode != currentBrowsingMode else {
-            return
-        }
-        _currentBrowsingMode = mode
-        // TODO: - Fire pixel
-    }
-
-    @MainActor
     private func buildController(forTab tab: Tab, inheritedAttribution: AdClickAttributionLogic.State?, interactionState: Data?) -> TabViewController {
         let url = tab.link?.url
         return buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: interactionState)

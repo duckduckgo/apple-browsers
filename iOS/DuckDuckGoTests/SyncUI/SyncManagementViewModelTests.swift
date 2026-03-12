@@ -92,7 +92,7 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
 
     func testWhenScanQRCodePressed_ThenSyncWithAnotherDeviceViewIsShown() {
-        model.scanQRCode()
+        model.beginPairingFlow()
         waitForInvocation()
 
         // You can either test one individual call was made x number of times or check for a whole number of calls
@@ -189,11 +189,15 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-    func isEligibleForAutoRestore() -> Bool {
+    func showAutoRestoreReady(for continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func isPreservedAccountPromptNeeded() -> Bool {
         false
     }
 
-    func showAutoRestoreReady() {
+    func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 

@@ -20,7 +20,6 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
-import LocalAuthentication
 import UIKit
 
 public struct AutoRestoreReadyView: View {
@@ -36,21 +35,6 @@ public struct AutoRestoreReadyView: View {
         self.onCancel = onCancel
     }
 
-    private var autoRestoreReadyDescriptionText: String {
-        UserText.autoRestoreReadyDescription(authenticationMethod: autoRestoreAuthenticationMethod)
-    }
-
-    private var autoRestoreAuthenticationMethod: String {
-        switch LAContext().biometryType {
-        case .faceID:
-            UserText.autoRestoreReadyDescriptionParameterFaceID
-        case .touchID:
-            UserText.autoRestoreReadyDescriptionParameterTouchID
-        default:
-            UserText.autoRestoreReadyDescriptionParameterPasscode
-        }
-    }
-
     public var body: some View {
         UnderflowContainer {
             VStack(spacing: 0) {
@@ -62,7 +46,7 @@ public struct AutoRestoreReadyView: View {
                 }
                 .frame(height: 56)
 
-                Image("Sync-Recover-128")
+                Image("Sync-Pending-128")
                     .padding(20)
 
                 Text(UserText.autoRestoreReadyTitle)
@@ -70,7 +54,7 @@ public struct AutoRestoreReadyView: View {
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 12)
 
-                Text(autoRestoreReadyDescriptionText)
+                Text(UserText.autoRestoreReadyDescription)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
             }
@@ -89,13 +73,18 @@ public struct AutoRestoreReadyView: View {
                 .padding(.bottom, 8)
 
                 Button {
-                    model.startRecoveryCodeEntry()
+                    model.startAutoRestoreSecondaryAction()
                 } label: {
                     Text(UserText.autoRestoreReadyScanCodeLink)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(GhostButtonStyle())
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(designSystemColor: .accent), lineWidth: 1)
+                        .padding(1)
+                )
+                .frame(maxWidth: 360)
+                .padding(.horizontal, 30)
                 .padding(.bottom, 8)
             }
         }

@@ -108,6 +108,9 @@ public struct UserText {
     static let saveRecoveryCodeSaveAsPdfButton = NSLocalizedString("save.recovery.code.save.as.pdf.button", bundle: Bundle.module, value: "Download as PDF", comment: "Save Recovery Code Sheet - Save as PDF Button")
     static let saveRecoveryCodeSaveCodeCopiedToast = NSLocalizedString("save.recovery.code.code.copied.button", bundle: Bundle.module, value: "Recovery code copied to clipboard", comment: "Save Recovery Code Sheet - Copy Code Toast")
 
+    // Recovery Section
+    static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
+
     // Auto-Restore
     static let autoRestoreSettingsRowLabel = NSLocalizedString("auto.restore.settings.row.label", bundle: Bundle.module, value: "Auto-Restore on This Device", comment: "Auto-Restore Settings Row - Label")
     static let autoRestoreStatusOn = NSLocalizedString("auto.restore.settings.row.on", bundle: Bundle.module, value: "On", comment: "Auto-Restore Settings Row - On")
@@ -132,21 +135,10 @@ public struct UserText {
     static let recoverSyncedDataTitle = NSLocalizedString("recover.synced.data.sheet.title", bundle: Bundle.module, value: "Recover your synced data", comment: "Recover Synced Data Sheet - Title")
     static let recoverSyncedDataDescription = NSLocalizedString("recover.synced.data.sheet.description", bundle: Bundle.module, value: "You’ll need the Recovery Code you got when you set up Sync & Backup. You may have saved it as a PDF on the device you used.", comment: "Recover Synced Data Sheet - Description")
     static let recoverSyncedDataButton = NSLocalizedString("recover.synced.data.sheet.button", bundle: Bundle.module, value: "Recover Synced Data", comment: "Recover Synced Data Sheet - Button")
-    static let autoRestoreReadyTitle = NSLocalizedString("auto.restore.ready.title", bundle: Bundle.module, value: "Your synced data is ready to restore", comment: "Auto-Restore Ready Sheet - Title")
-    static func autoRestoreReadyDescription(authenticationMethod: String) -> String {
-        let localized = NSLocalizedString(
-            "auto.restore.ready.description",
-            bundle: Bundle.module,
-            value: "Use %@ to Auto-Restore, or scan the Recovery Code you saved when you set up Sync & Backup.",
-            comment: "Auto-Restore Ready Sheet - Description with authentication method placeholder"
-        )
-        return String(format: localized, authenticationMethod)
-    }
-    static let autoRestoreReadyDescriptionParameterFaceID = NSLocalizedString("auto.restore.ready.description.parameter.face-id", bundle: Bundle.module, value: "Face ID", comment: "Auto-Restore Ready Sheet - Face ID authentication label")
-    static let autoRestoreReadyDescriptionParameterTouchID = NSLocalizedString("auto.restore.ready.description.parameter.touch-id", bundle: Bundle.module, value: "Touch ID", comment: "Auto-Restore Ready Sheet - Touch ID authentication label")
-    static let autoRestoreReadyDescriptionParameterPasscode = NSLocalizedString("auto.restore.ready.description.parameter.passcode", bundle: Bundle.module, value: "passcode", comment: "Auto-Restore Ready Sheet - passcode authentication label")
-    static let autoRestoreReadyRestoreButton = NSLocalizedString("auto.restore.ready.restore.button", bundle: Bundle.module, value: "Restore My Data", comment: "Auto-Restore Ready Sheet - Restore Button")
-    static let autoRestoreReadyScanCodeLink = NSLocalizedString("auto.restore.ready.scan.code.link", bundle: Bundle.module, value: "Scan Recovery Code", comment: "Auto-Restore Ready Sheet - Scan Code Link")
+    static let autoRestoreReadyTitle = NSLocalizedString("auto.restore.ready.title", bundle: Bundle.module, value: "Your previous Sync & Backup session is ready.", comment: "Auto-Restore Ready Sheet - Title")
+    static let autoRestoreReadyDescription = NSLocalizedString("auto.restore.ready.description", bundle: Bundle.module, value: "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or start fresh with a new setup.", comment: "Auto-Restore Ready Sheet - Description")
+    static let autoRestoreReadyRestoreButton = NSLocalizedString("auto.restore.ready.restore.button", bundle: Bundle.module, value: "Resume Sync & Backup", comment: "Auto-Restore Ready Sheet - Restore Button")
+    static let autoRestoreReadyScanCodeLink = NSLocalizedString("auto.restore.ready.scan.code.link", bundle: Bundle.module, value: "Continue Setup", comment: "Auto-Restore Ready Sheet - Scan Code Link")
     static let recoveringDataTitle = NSLocalizedString("recovering.data.title", bundle: Bundle.module, value: "Recovering Data", comment: "Recovering Data Sheet - Title")
     static let recoveringDataDescription = NSLocalizedString("recovering.data.description", bundle: Bundle.module, value: "Reconnecting to sync your bookmarks, saved logins, and other devices.", comment: "Recovering Data Sheet - Description")
     static let recoveringDataStatus = NSLocalizedString("recovering.data.status", bundle: Bundle.module, value: "Connecting...", comment: "Recovering Data Sheet - Status")

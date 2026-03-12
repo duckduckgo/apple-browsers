@@ -103,6 +103,15 @@ public extension UIFont {
         }
         return UIFont(descriptor: italicDescriptor, size: 0)
     }
+
+    static func daxCaptionBold() -> UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .caption2)
+        guard let boldDescriptor = descriptor.withSymbolicTraits(.traitBold) else {
+            return UIFont.preferredFont(forTextStyle: .caption2)
+        }
+        return UIFont(descriptor: boldDescriptor, size: 0)
+    }
+
 }
 
 #endif

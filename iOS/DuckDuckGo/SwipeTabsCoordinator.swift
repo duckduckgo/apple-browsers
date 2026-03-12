@@ -26,14 +26,14 @@ class SwipeTabsCoordinator: NSObject {
     static let tabGap: CGFloat = 10
     
     // Set by refresh function
-    weak var tabsModel: TabsModel!
+    weak var tabsModel: TabsModelManaging!
     
     weak var coordinator: MainViewCoordinator!
     weak var tabPreviewsSource: TabPreviewsSource!
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
 
-    let selectTab: (Int) -> Void
+    let selectTab: (Tab) -> Void
     let newTab: () -> Void
     let onSwipeStarted: () -> Void
     
@@ -57,7 +57,7 @@ class SwipeTabsCoordinator: NSObject {
          tabPreviewsSource: TabPreviewsSource,
          appSettings: AppSettings,
          omnibarDependencies: OmnibarDependencyProvider,
-         selectTab: @escaping (Int) -> Void,
+         selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
         
@@ -211,7 +211,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let targetSize = coordinator.contentContainer.frame.size
         var height = targetSize.height
 
-        let tab = tabsModel.safeGetTabAt(nextIndex)
+        let tab = tabsModel.get(tabAt: nextIndex)
         if let tab, let image = tabPreviewsSource.preview(for: tab) {
             createPreviewFromImage(image)
             if appSettings.currentAddressBarPosition.isBottom,
@@ -287,7 +287,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         if index >= tabsModel.count {
             newTab()
         } else {
-            selectTab(index)
+            if let tab = tabsModel.get(tabAt: index) {
+                selectTab(tab)
+            }
         }
     }
 
@@ -302,7 +304,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 // MARK: Public Interface
 extension SwipeTabsCoordinator {
 
-    func refresh(tabsModel: TabsModel, scrollToSelected: Bool = false) {
+    func refresh(tabsModel: TabsModelManaging, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
         coordinator.navigationBarCollectionView.reloadData()
         
@@ -349,7 +351,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let tab = tabsModel.safeGetTabAt(indexPath.row)
+            let tab = tabsModel.get(tabAt: indexPath.row)
             let url = tab?.link?.url
 
             let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
@@ -427,13 +429,4 @@ class OmniBarCell: UICollectionViewCell {
         controller?.removeFromParent()
         controller = nil
     }
-}
-
-extension TabsModel {
-    
-    func safeGetTabAt(_ index: Int) -> Tab? {
-        guard tabs.indices.contains(index) else { return nil }
-        return tabs[index]
-    }
-    
 }

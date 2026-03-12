@@ -108,7 +108,7 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
 
    let description: String = "Bulk Tab Generation"
     var footer: String? {
-        "%d tabs. Restart app after generation".format(arguments: tabManager.count)
+        "%d tabs. Restart app after generation".format(arguments: tabManager.currentTabsModel.count)
     }
     let options = ["Tab Count": [ "100", "500", "1000", "5000", "10000"]]
 
@@ -127,10 +127,11 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
     
     func generate(optionValues: [String: String]) async {
         let count = Int(optionValues["Tab Count"] ?? "0") ?? 0
+        let shouldCreateFireTabs = tabManager.currentTabsModel.shouldCreateFireTabs
         for index in 0 ..< count {
             let url = await urlFactory.generate(optionValues: ["index": "\(index)"])
-            let tab = Tab(uid: UUID().uuidString, link: .init(title: "Generated Tab \(index)", url: url))
-            tabManager.model.add(tab: tab)
+            let tab = Tab(uid: UUID().uuidString, link: .init(title: "Generated Tab \(index)", url: url), fireTab: shouldCreateFireTabs)
+            tabManager.currentTabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: false)
         }
         return
     }

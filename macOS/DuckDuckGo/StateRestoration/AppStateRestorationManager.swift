@@ -231,14 +231,9 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
 
     private func detectUnexpectedAppTermination(didRestoreRegularTabs: Bool) {
 #if DEBUG
-        guard AppVersion.runType != .normal else {
-            return
-        }
-#endif
-#if REVIEW
-        guard AppVersion.runType != .uiTests || ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") else {
-            return
-        }
+        guard AppVersion.runType != .normal else { return }
+#else
+        guard AppVersion.runType != .uiTests || ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") else { return }
 #endif
 
         let didCloseUnexpectedly = !appDidTerminateAsExpected

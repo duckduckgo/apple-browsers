@@ -43,8 +43,9 @@ final class GranularFireConfirmationViewModelTests: XCTestCase {
         super.tearDown()
     }
     
-    private struct MockTabsModel: TabsModelProtocol {
+    private struct MockTabsModel: TabsModelReading {
         let count: Int
+        let tabs: [Tab] = []
     }
     
     private class TestHistoryCoordinator: NullHistoryCoordinator {
@@ -83,7 +84,7 @@ final class GranularFireConfirmationViewModelTests: XCTestCase {
     }
     
     private func makeViewModel(
-        tabsModel: TabsModelProtocol = MockTabsModel(count: 0),
+        tabsModel: TabsModelReading = MockTabsModel(count: 0),
         historyManager: HistoryManaging = MockHistoryManager(
             historyCoordinator: NullHistoryCoordinator(),
             isEnabledByUser: false,

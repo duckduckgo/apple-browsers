@@ -71,7 +71,7 @@ jobs:
       DMG_URL: ${{ inputs.dmg-url || github.event.inputs.dmg-url }}
       DRY_RUN: ${{ inputs.dry-run || github.event.inputs.dry-run }}
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 15
 
     steps:

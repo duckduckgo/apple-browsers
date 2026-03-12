@@ -26,13 +26,13 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     // MARK: - SwitchBarHandling — Fixed Values
 
-    /// UnifiedToggleInput is always bottom-anchored; no top-position layout variants.
-    let isTopBarPosition: Bool = false
+    var isTopBarPosition: Bool = false
     let isUsingExpandedBottomBarHeight: Bool = false
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let isCurrentTextValidURL: Bool = false
     let modeParameters: [String: String] = [:]
+    var isFireTab: Bool = false // TODO: - Handle injecting and updating this. And customizing the new tinput view for fire tabs.
 
     // MARK: - SwitchBarHandling — Dynamic State
 
@@ -42,6 +42,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var hasUserInteractedWithText: Bool = false
 
     var isVoiceSearchEnabled: Bool {
+        didSet { updateButtonState() }
+    }
+
+    var isToggleEnabled: Bool {
         didSet { updateButtonState() }
     }
 
@@ -82,10 +86,16 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         clearButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let searchGoToButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> {
+        searchGoToButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
-    init(isVoiceSearchEnabled: Bool) {
+    init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
         self.isVoiceSearchEnabled = isVoiceSearchEnabled
+        self.isToggleEnabled = isToggleEnabled
         updateButtonState()
     }
 
@@ -104,6 +114,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     func setToggleState(_ state: TextEntryMode) {
         currentToggleState = state
+        updateButtonState()
     }
 
     func clearText() {
@@ -122,6 +133,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         clearButtonTappedSubject.send()
     }
 
+    func searchGoToButtonTapped() {
+        searchGoToButtonTappedSubject.send()
+    }
+
     func updateBarPosition(isTop: Bool) {}
 
     // MARK: - Private
@@ -129,6 +144,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     private func updateButtonState() {
         if !currentText.isEmpty {
             buttonState = .clearOnly
+        } else if !isToggleEnabled && currentToggleState == .aiChat {
+            buttonState = isVoiceSearchEnabled ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if isVoiceSearchEnabled {
             buttonState = .voiceOnly
         } else {

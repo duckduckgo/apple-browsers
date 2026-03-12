@@ -22,6 +22,7 @@ import Combine
 import XCTest
 @testable import DuckDuckGo
 
+@MainActor
 final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     private var sut: UnifiedToggleInputCoordinator!
@@ -30,7 +31,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputCoordinator()
+        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true)
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
     }
@@ -55,7 +56,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_showCollapsed_setsDisplayState() {
         sut.showCollapsed()
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     func test_showCollapsed_emitsIntent() {
@@ -72,7 +73,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_showExpanded_setsDisplayState() {
         sut.showExpanded()
-        XCTAssertEqual(sut.displayState, .expanded)
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
     }
 
     func test_showExpanded_emitsIntent() {
@@ -161,7 +162,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_collapsedTap_setsExpandedState() {
         sut.unifiedToggleInputVCDidTapWhileCollapsed(sut.viewController)
-        XCTAssertEqual(sut.displayState, .expanded)
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
     }
 
     func test_collapsedTap_usesAIChatMode() {
@@ -229,7 +230,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_submitAIChat_noBoundScript_collapses() {
         sut.showExpanded()
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     func test_submitAIChat_noBoundScript_clearsTextState() {
@@ -267,7 +268,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.showExpanded()
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     // MARK: - VC Delegate: Voice
@@ -276,10 +277,379 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVCDidTapVoice(sut.viewController)
         XCTAssertTrue(mockDelegate.didRequestVoiceSearch)
     }
+
+    // MARK: - VC Delegate: Dismiss
+
+    func test_dismissTap_deactivatesOmnibarEditing() {
+        sut.activateFromOmnibar()
+        XCTAssertTrue(sut.isOmnibarSession)
+
+        sut.unifiedToggleInputVCDidTapDismiss(sut.viewController)
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.isOmnibarSession)
+    }
+
+    // MARK: - Omnibar Editing Lifecycle
+
+    func test_activateFromOmnibar_setsDisplayState() {
+        sut.activateFromOmnibar()
+        XCTAssertEqual(sut.displayState, .omnibar(.active))
+        XCTAssertTrue(sut.isOmnibarSession)
+    }
+
+    func test_activateFromOmnibar_emitsIntent() {
+        let exp = expectation(description: "showOmnibarEditing intent emitted")
+        sut.intentPublisher
+            .sink { intent in
+                if case .showOmnibarEditing = intent { exp.fulfill() }
+            }
+            .store(in: &cancellables)
+
+        sut.activateFromOmnibar()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_activateFromOmnibar_defaultsToSearchMode() {
+        sut.activateFromOmnibar()
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_activateFromOmnibar_respectsRequestedMode() {
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    func test_activateFromOmnibar_withPrefilledText_setsPrefilledState() {
+        sut.activateFromOmnibar(prefilledText: "test query")
+        XCTAssertEqual(sut.textState, .prefilledSelected)
+    }
+
+    func test_activateFromOmnibar_toggleDisabled_forcesSearchMode() {
+        sut.updateToggleEnabled(false)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_deactivateToOmnibar_resetsState() {
+        sut.activateFromOmnibar(prefilledText: "test")
+        sut.deactivateToOmnibar()
+
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertEqual(sut.textState, .empty)
+        XCTAssertFalse(sut.isOmnibarSession)
+    }
+
+    func test_deactivateToOmnibar_emitsIntent() {
+        sut.activateFromOmnibar()
+
+        let exp = expectation(description: "hideOmnibarEditing intent emitted")
+        sut.intentPublisher
+            .sink { if $0 == .hideOmnibarEditing { exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.deactivateToOmnibar()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_deactivateToOmnibar_guardsWhenNotActive() {
+        let exp = expectation(description: "no intent emitted")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.deactivateToOmnibar()
+        waitForExpectations(timeout: 0.1)
+    }
+
+    // MARK: - Omnibar Editing Input Visibility
+
+    func test_updateOmnibarInputVisibility_activeToInactive() {
+        sut.activateFromOmnibar()
+
+        sut.updateOmnibarInputVisibility(false)
+
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+    }
+
+    func test_updateOmnibarInputVisibility_inactiveToActive() {
+        sut.activateFromOmnibar()
+        sut.updateOmnibarInputVisibility(false)
+
+        sut.updateOmnibarInputVisibility(true)
+
+        XCTAssertEqual(sut.displayState, .omnibar(.active))
+    }
+
+    func test_updateOmnibarInputVisibility_emitsInactiveIntent() {
+        sut.activateFromOmnibar()
+        let exp = expectation(description: "showOmnibarInactive intent emitted")
+        sut.intentPublisher
+            .sink { if $0 == .showOmnibarInactive { exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.updateOmnibarInputVisibility(false)
+
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_updateOmnibarInputVisibility_emitsActiveIntent() {
+        sut.activateFromOmnibar()
+        sut.updateOmnibarInputVisibility(false)
+        let exp = expectation(description: "showOmnibarActive intent emitted")
+        sut.intentPublisher
+            .sink { if $0 == .showOmnibarActive { exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.updateOmnibarInputVisibility(true)
+
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_updateOmnibarInputVisibility_ignoresWhenNotOmnibar() {
+        sut.showExpanded()
+        let exp = expectation(description: "no intent emitted")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.updateOmnibarInputVisibility(false)
+
+        waitForExpectations(timeout: 0.1)
+    }
+
+    func test_deactivateToOmnibar_fromInactive_hidesOmnibarEditing() {
+        sut.activateFromOmnibar()
+        sut.updateOmnibarInputVisibility(false)
+
+        sut.deactivateToOmnibar()
+
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_isOmnibarSession_trueForInactiveState() {
+        sut.activateFromOmnibar()
+        sut.updateOmnibarInputVisibility(false)
+
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        XCTAssertTrue(sut.isOmnibarSession)
+    }
+
+    func test_dismissOmnibarKeyboard_guardsWhenNotOmnibarActive() {
+        sut.showExpanded()
+        sut.dismissOmnibarKeyboard()
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+    }
+
+    func test_dismissOmnibarKeyboard_guardsWhenOmnibarInactive() {
+        sut.activateFromOmnibar()
+        sut.updateOmnibarInputVisibility(false)
+        sut.dismissOmnibarKeyboard()
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+    }
+
+    func test_submitSearch_fromOmnibarInactive_deactivates() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.updateOmnibarInputVisibility(false)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
+
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    // MARK: - Content View Controller Ownership
+
+    func test_contentViewController_createdOnInit() {
+        XCTAssertNotNil(sut.contentViewController)
+    }
+
+    // MARK: - Input Mode Management
+
+    func test_updateInputMode_setsMode() {
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_updateInputMode_emitsMode() {
+        let exp = expectation(description: "modeChangePublisher emits")
+        sut.modeChangePublisher
+            .sink { XCTAssertEqual($0, .search); exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.updateInputMode(.search, animated: false)
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_updateInputMode_toggleDisabled_forcesSearchInOmnibarSession() {
+        sut.activateFromOmnibar()
+        sut.updateToggleEnabled(false)
+        sut.updateInputMode(.aiChat, animated: false)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_syncInputModeFromExternalSource_setsMode() {
+        sut.syncInputModeFromExternalSource(.search)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_syncInputModeFromExternalSource_toggleDisabled_forcesSearchInOmnibarSession() {
+        sut.activateFromOmnibar()
+        sut.updateToggleEnabled(false)
+        sut.syncInputModeFromExternalSource(.aiChat)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    // MARK: - Toggle Enabled
+
+    func test_updateToggleEnabled_setsFlag() {
+        sut.updateToggleEnabled(false)
+        XCTAssertFalse(sut.isToggleEnabled)
+    }
+
+    func test_updateToggleEnabled_false_forcesSearchModeWhenOmnibar() {
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.updateToggleEnabled(false)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_updateToggleEnabled_noChangeIsNoOp() {
+        let exp = expectation(description: "no mode change emitted")
+        exp.isInverted = true
+        sut.modeChangePublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.updateToggleEnabled(true)
+        waitForExpectations(timeout: 0.1)
+    }
+
+    // MARK: - Submit From Omnibar Editing
+
+    func test_submitSearch_fromOmnibarEditing_deactivates() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.isOmnibarSession)
+    }
+
+    func test_submitAIChat_fromOmnibarEditing_deactivates() {
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.isOmnibarSession)
+    }
+
+    // MARK: - External Submission Handlers
+
+    func test_handleExternalQuerySubmission_deactivatesOmnibarEditing() {
+        sut.activateFromOmnibar()
+        sut.handleExternalQuerySubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_handleExternalQuerySubmission_hidesAITab() {
+        sut.showExpanded()
+        sut.handleExternalQuerySubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_handleExternalQuerySubmission_noOpWhenHidden() {
+        sut.handleExternalQuerySubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_handleExternalPromptSubmission_deactivatesOmnibarEditing() {
+        sut.activateFromOmnibar()
+        sut.handleExternalPromptSubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_handleExternalPromptSubmission_collapsesAITab() {
+        sut.showExpanded()
+        sut.handleExternalPromptSubmission()
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
+    }
+
+    func test_handleExternalPromptSubmission_noOpWhenHidden() {
+        sut.handleExternalPromptSubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    // MARK: - Clear Text
+
+    func test_clearText_resetsTextState() {
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
+        sut.clearText()
+        XCTAssertEqual(sut.textState, .empty)
+    }
+
+    // MARK: - showCollapsed Resets Input Mode
+
+    func test_showCollapsed_resetsInputModeToAIChat() {
+        sut.showExpanded(inputMode: .search)
+        XCTAssertEqual(sut.inputMode, .search)
+
+        sut.showCollapsed()
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    // MARK: - VC Delegate: SearchGoTo
+
+    func test_searchGoToTap_expandsInSearchMode() {
+        sut.showCollapsed()
+        sut.unifiedToggleInputVCDidTapSearchGoTo(sut.viewController)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    // MARK: - VC Delegate: Dismiss from AI Tab
+
+    func test_dismissTap_fromAITab_collapsesInsteadOfDeactivating() {
+        sut.showExpanded()
+        sut.unifiedToggleInputVCDidTapDismiss(sut.viewController)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    // MARK: - AI Tab Search Inactive State
+
+    func test_updateOmnibarInputVisibility_aiTabSearch_becomesInactiveOnHide() {
+        sut.showExpanded(inputMode: .search)
+
+        sut.updateOmnibarInputVisibility(false)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+    }
+
+    func test_updateOmnibarInputVisibility_aiTabSearch_becomesActiveOnShow() {
+        sut.showExpanded(inputMode: .search)
+        sut.updateOmnibarInputVisibility(false)
+
+        sut.updateOmnibarInputVisibility(true)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+    }
+
+    func test_updateOmnibarInputVisibility_aiTabAIChat_isIgnored() {
+        sut.showExpanded(inputMode: .aiChat)
+
+        let exp = expectation(description: "no intent emitted")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.updateOmnibarInputVisibility(false)
+        waitForExpectations(timeout: 0.1)
+    }
 }
 
 // MARK: - Mock Delegate
 
+@MainActor
 private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
     var submittedQuery: String?

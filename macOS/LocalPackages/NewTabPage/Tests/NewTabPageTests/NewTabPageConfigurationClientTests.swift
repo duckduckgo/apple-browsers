@@ -42,6 +42,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
         client = NewTabPageConfigurationClient(
+            environment: .development,
             sectionsAvailabilityProvider: sectionsAvailabilityProvider,
             sectionsVisibilityProvider: sectionsVisibilityProvider,
             omnibarConfigProvider: omnibarConfigProvider,

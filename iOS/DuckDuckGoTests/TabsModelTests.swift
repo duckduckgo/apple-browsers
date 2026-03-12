@@ -48,14 +48,15 @@ class TabsModelTests: XCTestCase {
 
     func testWhenBulkRemovingAllThenAllTabsAreRemoved() {
         let model = filledModel
-        model.remove(model.tabs.indices.map { IndexPath(row: $0, section: 0) })
+        model.removeTabs(model.tabs)
         XCTAssertEqual(model.tabs, [])
     }
 
     func testWhenBulkRemovingSubsetThenSetTabsAreRemovedAndIndexUpdated() {
         let model = filledModel
-        model.select(tabAt: 1)
-        model.remove([IndexPath(row: 0, section: 0)])
+        model.select(tab: model.tabs[1])
+        let tabToRemove = model.tabs[0]
+        model.removeTabs([tabToRemove])
         XCTAssertEqual(model.tabs.count, 2)
         XCTAssertEqual(model.currentIndex, 0)
     }
@@ -64,15 +65,15 @@ class TabsModelTests: XCTestCase {
         let tab = Tab(link: exampleLink, viewed: false)
         
         let model = filledModel
-        model.insert(tab: tab, at: 1)
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: false)
 
         XCTAssertTrue(model.hasUnread)
     }
     
-    func testWhenTabInsertedThenInsertedAtCorrectLocation() {
+    func testWhenTabInsertedAfterCurrentThenInsertedAtCorrectLocation() {
 
         let model = filledModel
-        model.insert(tab: Tab(link: exampleLink), at: 1)
+        model.insert(tab: Tab(link: exampleLink), placement: .afterCurrentTab, selectNewTab: false)
 
         XCTAssertNotNil(model.tabs[0].link)
         XCTAssertEqual("https://example.com", model.tabs[1].link?.url.absoluteString)
@@ -87,39 +88,42 @@ class TabsModelTests: XCTestCase {
 
     func testWhenModelIsNewThenContainsHomeTab() {
         XCTAssertEqual(TabsModel(desktop: false).count, 1)
-        XCTAssertNil(TabsModel(desktop: false).get(tabAt: 0).link)
+        XCTAssertNil(TabsModel(desktop: false).get(tabAt: 0)?.link)
         XCTAssertEqual(TabsModel(desktop: false).currentIndex, 0)
     }
 
     func testWhenTabMovedToInvalidPositionNoChangeMadeToCurrentIndex() {
         let testee = filledModel
-        testee.select(tabAt: 1)
-        testee.moveTab(from: 1, to: 3)
+        let tab = testee.tabs[1]
+        testee.select(tab: tab)
+        testee.move(tab: tab, to: 3)
         XCTAssertEqual(1, testee.currentIndex)
-        testee.moveTab(from: 1, to: -1)
+        testee.move(tab: tab, to: -1)
         XCTAssertEqual(1, testee.currentIndex)
     }
     
     func testWhenTabMovedToStartOfListThenCurrentIndexUpdatedCorrectly() {
         let testee = filledModel
-        testee.select(tabAt: 1)
+        let tab = testee.tabs[1]
+        testee.select(tab: tab)
         
-        testee.moveTab(from: 1, to: 0)
+        testee.move(tab: tab, to: 0)
         XCTAssertEqual(0, testee.currentIndex)
     }
 
     func testWhenTabMovedToEndOfListThenCurrentIndexUpdatedCorrectly() {
         let testee = filledModel
-        testee.select(tabAt: 1)
+        let tab = testee.tabs[1]
+        testee.select(tab: tab)
         
-        testee.moveTab(from: 1, to: 2)
+        testee.move(tab: tab, to: 2)
         XCTAssertEqual(2, testee.currentIndex)
     }
 
     func testWhenTabExistsThenIndexReturned() {
         let tab = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
         let testee = filledModel
-        testee.add(tab: tab)
+        testee.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         XCTAssertEqual(testee.indexOf(tab: tab), 3)
     }
 
@@ -131,7 +135,7 @@ class TabsModelTests: XCTestCase {
 
     func testWhenFirstItemAddedThenCountIsOneAndCurrentIndexIsZero() {
         let testee = emptyModel
-        testee.add(tab: Tab(link: exampleLink))
+        testee.insert(tab: Tab(link: exampleLink), placement: .atEnd, selectNewTab: true)
         XCTAssertEqual(testee.count, 2)
         XCTAssertEqual(testee.currentIndex, 1)
     }
@@ -140,7 +144,7 @@ class TabsModelTests: XCTestCase {
         let testee = filledModel
         XCTAssertEqual(testee.count, 3)
         XCTAssertEqual(testee.currentIndex, 0)
-        testee.add(tab: Tab(link: exampleLink))
+        testee.insert(tab: Tab(link: exampleLink), placement: .atEnd, selectNewTab: true)
         XCTAssertEqual(testee.count, 4)
         XCTAssertEqual(testee.currentIndex, 3)
     }
@@ -148,15 +152,17 @@ class TabsModelTests: XCTestCase {
     func testWhenItemRemovedThenCountDecrements() {
         let testee = filledModel
         XCTAssertEqual(testee.count, 3)
-        testee.remove(at: 0)
+        let tab = testee.tabs[0]
+        testee.remove(tab: tab)
         XCTAssertEqual(testee.count, 2)
     }
 
     func testWhenFinalItemRemovedThenHomeTabRemains() {
         let testee = singleModel
-        testee.remove(at: 0)
+        let tab = testee.tabs[0]
+        testee.remove(tab: tab)
         XCTAssertEqual(testee.count, 1)
-        XCTAssertNil(testee.get(tabAt: 0).link)
+        XCTAssertNil(testee.get(tabAt: 0)?.link)
     }
 
     func testWhenOnlyHomeTabThenNoActiveTabs() {
@@ -171,28 +177,32 @@ class TabsModelTests: XCTestCase {
 
     func testWhenPreviousItemRemovedThenCurrentIndexDecrements() {
         let testee = filledModel
-        testee.select(tabAt: 2)
-        testee.remove(at: 0)
+        testee.select(tab: testee.tabs[2])
+        let tabToRemove = testee.tabs[0]
+        testee.remove(tab: tabToRemove)
         XCTAssertEqual(testee.currentIndex, 1)
     }
 
     func testWhenLaterItemRemovedThenCurrentIndexStaysTheSame() {
         let testee = filledModel
-        testee.select(tabAt: 0)
-        testee.remove(at: 2)
+        testee.select(tab: testee.tabs[0])
+        let tabToRemove = testee.tabs[2]
+        testee.remove(tab: tabToRemove)
         XCTAssertEqual(testee.currentIndex, 0)
     }
 
     func testWhenCurrentIsFirstItemAndItIsRemovedThenCurrentIsZero() {
         let testee = filledModel
-        testee.select(tabAt: 0)
-        testee.remove(at: 0)
+        testee.select(tab: testee.tabs[0])
+        let tabToRemove = testee.tabs[0]
+        testee.remove(tab: tabToRemove)
         XCTAssertEqual(testee.currentIndex, 0)
     }
 
     func testWhenLastIsRemovedThenHomeTabCreated() {
         let testee = singleModel
-        testee.remove(at: 0)
+        let tab = testee.tabs[0]
+        testee.remove(tab: tab)
         XCTAssertEqual(1, testee.count)
         XCTAssertEqual(0, testee.currentIndex)
     }
@@ -201,6 +211,110 @@ class TabsModelTests: XCTestCase {
         let currentHost = try XCTUnwrap(filledModel.tabs[1].link?.url.host)
         XCTAssertTrue(filledModel.tabExists(withHost: currentHost))
         XCTAssertFalse(filledModel.tabExists(withHost: "domaindoesnotexist"))
+    }
+
+    func testWhenNormalModeClearAllThenHomeTabRemains() {
+        let model = filledModel
+        model.clearAll()
+        XCTAssertEqual(model.count, 1)
+        XCTAssertNil(model.get(tabAt: 0)?.link)
+    }
+
+    // MARK: - Insert afterCurrentTab
+
+    func testWhenCurrentIsLastThenAfterCurrentTabInsertsAtEnd() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[2])
+        let newTab = Tab(link: exampleLink)
+        testee.insert(tab: newTab, placement: .afterCurrentTab, selectNewTab: false)
+        XCTAssertTrue(testee.tabs[3] === newTab)
+        XCTAssertEqual(testee.count, 4)
+    }
+
+    func testWhenInsertAfterCurrentWithSelectThenCurrentIndexMovesToNewTab() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[0])
+        let newTab = Tab(link: exampleLink)
+        testee.insert(tab: newTab, placement: .afterCurrentTab, selectNewTab: true)
+        XCTAssertEqual(testee.currentIndex, 1)
+        XCTAssertTrue(testee.currentTab === newTab)
+    }
+
+    // MARK: - Insert replacing
+
+    func testWhenReplacingThenNewTabTakesOldTabIndex() {
+        let testee = filledModel
+        let oldTab = testee.tabs[1]
+        let newTab = Tab(link: exampleLink)
+        testee.insert(tab: newTab, placement: .replacing(oldTab), selectNewTab: false)
+        XCTAssertTrue(testee.tabs[1] === newTab)
+        XCTAssertEqual(testee.count, 3)
+        XCTAssertNil(testee.indexOf(tab: oldTab))
+    }
+
+    func testWhenReplacingNonCurrentTabThenSelectionIsPreserved() {
+        let testee = filledModel
+        let selectedTab = testee.tabs[0]
+        testee.select(tab: selectedTab)
+        let oldTab = testee.tabs[2]
+        let newTab = Tab(link: exampleLink)
+        testee.insert(tab: newTab, placement: .replacing(oldTab), selectNewTab: false)
+        XCTAssertTrue(testee.currentTab === selectedTab)
+        XCTAssertEqual(testee.currentIndex, 0)
+    }
+
+    func testWhenReplacingNonExistentTabThenNoChange() {
+        let testee = filledModel
+        let orphanTab = Tab(link: exampleLink)
+        let newTab = Tab(link: exampleLink)
+        let originalCount = testee.count
+        testee.insert(tab: newTab, placement: .replacing(orphanTab), selectNewTab: true)
+        XCTAssertEqual(testee.count, originalCount)
+        XCTAssertNil(testee.indexOf(tab: newTab))
+    }
+
+    // MARK: - nextTab / previousTab / tabBefore
+
+    func testWhenCurrentIsLastThenNextTabWrapsToFirst() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[2])
+        XCTAssertTrue(testee.nextTab === testee.tabs[0])
+    }
+
+    func testWhenCurrentIsFirstThenPreviousTabWrapsToLast() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[0])
+        XCTAssertTrue(testee.previousTab === testee.tabs[2])
+    }
+
+    func testWhenCurrentIsNotFirstThenTabBeforeReturnsPrevious() {
+        let testee = filledModel
+        let expectedTab = testee.tabs[1]
+        testee.select(tab: testee.tabs[2])
+        XCTAssertTrue(testee.tabBefore === expectedTab)
+    }
+
+    func testWhenCurrentIsFirstThenTabBeforeReturnsNil() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[0])
+        XCTAssertNil(testee.tabBefore)
+    }
+
+    // MARK: - select / tabExists
+
+    func testWhenSelectingNonExistentTabThenCurrentIndexUnchanged() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[1])
+        let orphanTab = Tab(link: exampleLink)
+        testee.select(tab: orphanTab)
+        XCTAssertEqual(testee.currentIndex, 1)
+    }
+
+    func testWhenTabExistsInModelThenTabExistsReturnsTrue() {
+        let testee = filledModel
+        let tab = testee.tabs[1]
+        XCTAssertTrue(testee.tabExists(tab: tab))
+        XCTAssertFalse(testee.tabExists(tab: Tab(link: exampleLink)))
     }
 
 }

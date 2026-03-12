@@ -885,6 +885,9 @@ extension AppDelegate {
         } else {
             Logger.config.log("New configuration URL reset to default")
         }
+        Task {
+            await configManager.refreshNow(isDebug: true)
+        }
     }
 
     private func readableErrorMessage(for error: Swift.Error) -> String {
@@ -943,12 +946,12 @@ extension AppDelegate {
     }
 
     @objc func resetPrivacyConfigurationToDefault(_ sender: Any?) {
-        let defaultURL = configurationURLProvider.url(for: .privacyConfiguration)
         Task { @MainActor in
             do {
                 try await setPrivacyConfigurationUrl(nil)
                 showConfigurationUpdateCompleteAlert(configurationUrl: nil)
             } catch {
+                let defaultURL = configurationURLProvider.url(for: .privacyConfiguration)
                 showConfigurationFetchErrorAlert(url: defaultURL, error: error)
             }
         }

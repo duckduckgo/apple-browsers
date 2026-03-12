@@ -165,8 +165,13 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
     /// Fetches and applies just the privacy configuration, throwing on failure.
     /// Use this for debug/override flows where the caller needs to know if the fetch succeeded.
+    /// A 304 (Not Modified) response is treated as success since the cached data is still valid.
     func fetchPrivacyConfiguration(isDebug: Bool = false) async throws {
-        try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+        do {
+            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+        } catch APIRequest.Error.invalidStatusCode(304) {
+            // Config unchanged on the server; cached data is still valid
+        }
         privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
                                            data: store.loadData(for: .privacyConfiguration))
         contentBlockingManager.scheduleCompilation()

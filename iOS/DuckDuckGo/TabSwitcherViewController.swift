@@ -727,6 +727,9 @@ extension TabSwitcherViewController: TabViewCellDelegate {
             isProcessingUpdates = true
             tabManager.bulkRemoveTabs(tabsToClose, in: tabsModel)
             collectionView.deleteItems(at: indexPaths)
+            if allTabsDeleted && !canDismissOnEmpty && isEditing {
+                self.transitionFromMultiSelect()
+            }
         } completion: { _ in
             self.isProcessingUpdates = false
             if self.tabsModel.tabs.isEmpty && !self.tabsModel.allowsEmpty {

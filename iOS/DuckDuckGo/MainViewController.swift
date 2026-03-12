@@ -1759,6 +1759,8 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.endEditing()
         } else if !tabManager.currentTabsModel.allowsEmpty {
             attachHomeScreen()
+        } else {
+            showTabSwitcher()
         }
     }
 

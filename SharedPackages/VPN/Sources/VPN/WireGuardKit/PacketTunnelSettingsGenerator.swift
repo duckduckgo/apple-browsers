@@ -119,7 +119,7 @@ final class PacketTunnelSettingsGenerator: PacketTunnelSettingsGenerating {
             networkSettings.mtu = NSNumber(value: mtu)
         }
 
-        let addresses = Self.routes(from: tunnelConfiguration.interface.addresses)
+        let addresses = Self.addresses(from: tunnelConfiguration.interface.addresses)
         let includedRoutes = Self.routes(from: tunnelConfiguration.interface.includedRoutes)
         let excludedRoutes = Self.routes(from: tunnelConfiguration.interface.excludedRoutes)
 
@@ -160,7 +160,7 @@ final class PacketTunnelSettingsGenerator: PacketTunnelSettingsGenerating {
         return networkSettings
     }
 
-    private static func routes(from addresses: [IPAddressRange]) -> (ipv4: [NEIPv4Route], ipv6: [NEIPv6Route]) {
+    private static func addresses(from addresses: [IPAddressRange]) -> (ipv4: [NEIPv4Route], ipv6: [NEIPv6Route]) {
         var ipv4Routes = [NEIPv4Route]()
         var ipv6Routes = [NEIPv6Route]()
         for addressRange in addresses {
@@ -174,6 +174,20 @@ final class PacketTunnelSettingsGenerator: PacketTunnelSettingsGenerating {
                  */
                 ipv6Routes.append(NEIPv6Route(destinationAddress: "\(addressRange.address)",
                                               networkPrefixLength: NSNumber(value: min(120, addressRange.networkPrefixLength))))
+            }
+        }
+        return (ipv4Routes, ipv6Routes)
+    }
+
+    private static func routes(from addresses: [IPAddressRange]) -> (ipv4: [NEIPv4Route], ipv6: [NEIPv6Route]) {
+        var ipv4Routes = [NEIPv4Route]()
+        var ipv6Routes = [NEIPv6Route]()
+        for addressRange in addresses {
+            if addressRange.address is IPv4Address {
+                ipv4Routes.append(NEIPv4Route(destinationAddress: "\(addressRange.address)", subnetMask: "\(addressRange.subnetMask())"))
+            } else if addressRange.address is IPv6Address {
+                ipv6Routes.append(NEIPv6Route(destinationAddress: "\(addressRange.address)",
+                                              networkPrefixLength: NSNumber(value: addressRange.networkPrefixLength)))
             }
         }
         return (ipv4Routes, ipv6Routes)

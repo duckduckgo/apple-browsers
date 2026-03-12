@@ -29,22 +29,19 @@ import BrowserServicesKit
 final class WideEventServiceTests: XCTestCase {
 
     private var wideEventMock: WideEventMock!
-    private var featureFlagger: MockFeatureFlagger!
     private var subscriptionManager: SubscriptionManagerMock!
     private var service: WideEventService!
 
     override func setUp() {
         super.setUp()
         wideEventMock = WideEventMock()
-        featureFlagger = MockFeatureFlagger()
         subscriptionManager = SubscriptionManagerMock()
-        service = WideEventService(wideEvent: wideEventMock, featureFlagger: featureFlagger, subscriptionManager: subscriptionManager)
+        service = WideEventService(wideEvent: wideEventMock, subscriptionManager: subscriptionManager)
     }
 
     override func tearDown() {
         service = nil
         subscriptionManager = nil
-        featureFlagger = nil
         wideEventMock = nil
         super.tearDown()
     }

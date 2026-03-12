@@ -22,7 +22,8 @@ import Foundation
 
 @MainActor
 class MockTabManager: TabManaging {
-    nonisolated(unsafe) var count: Int = 0
+    var currentTabsModel: TabsModelManaging = TabsModel(desktop: false)
+    
     private(set) var prepareAllTabsExceptCurrentCalled = false
     private(set) var prepareCurrentTabCalled = false
     nonisolated(unsafe) private(set) var removeAllCalled = false
@@ -90,5 +91,13 @@ class MockTabManager: TabManaging {
         closeTabAndNavigateToHomepageCalled = true
         closeTabAndNavigateToHomepageCalledWith = tab
         closeTabAndNavigateToHomepageClearTabHistory = clearTabHistory
+    }
+    
+    private(set) var setBrowsingModeCalled = false
+    private(set) var setBrowsingModeCalledWith: BrowsingMode?
+    
+    func setBrowsingMode(_ mode: BrowsingMode) {
+        setBrowsingModeCalled = true
+        setBrowsingModeCalledWith = mode
     }
 }

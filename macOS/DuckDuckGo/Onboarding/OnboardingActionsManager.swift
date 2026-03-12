@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Combine
-import PixelKit
-import Common
-import os.log
 import AIChat
+import Combine
+import Common
+import Foundation
+import os.log
+import PixelKit
 import PrivacyConfig
 
 enum OnboardingSteps: String, CaseIterable {
@@ -115,11 +115,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let preferredLocale = Bundle.main.preferredLocalizations.first ?? "en"
         var env: String
-#if DEBUG || REVIEW
-        env = "development"
-#else
-        env = "production"
-#endif
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild {
+            env = "development"
+        } else {
+            env = "production"
+        }
 
         let excludedSteps = buildExcludedSteps()
 

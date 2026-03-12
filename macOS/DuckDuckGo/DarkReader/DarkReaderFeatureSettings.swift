@@ -41,7 +41,7 @@ protocol DarkReaderFeatureSettings: DarkReaderExcludedDomainsProviding {
 }
 
 struct DarkReaderSettings: StoringKeys {
-    let forceDarkModeOnWebsitesEnabled = StorageKey<Bool>(.forceDarkModeOnWebsitesEnabled)
+    let forceDarkModeOnWebsitesEnabled = StorageKey<Bool>(.forceDarkModeOnWebsites)
 }
 
 final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
@@ -98,7 +98,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     var isForceDarkModeEnabled: Bool {
-        isFeatureEnabled && isSettingEnabled
+        isFeatureEnabled && ((try? storage.forceDarkModeOnWebsitesEnabled) ?? false)
     }
 
     var excludedDomains: [String] {
@@ -107,7 +107,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     func setForceDarkModeEnabled(_ enabled: Bool) {
         guard isFeatureEnabled else { return }
-        let previousValue = isSettingEnabled
+        let previousValue = (try? storage.forceDarkModeOnWebsitesEnabled) ?? false
         guard previousValue != enabled else { return }
         try? storage.set(enabled, for: \.forceDarkModeOnWebsitesEnabled)
         pixelFiring?.fire(enabled ? WebExtensionPixel.darkReaderEnabled : WebExtensionPixel.darkReaderDisabled, frequency: .dailyAndCount)
@@ -116,23 +116,6 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     func themeDidChange() {
         forceDarkModeChangedSubject.send(isForceDarkModeEnabled)
-    }
-
-    /// Read the setting from storage.
-    ///
-    /// Default to `false` if not present, or `true` for internal users.
-    ///
-    private var isSettingEnabled: Bool {
-        let storageSetting = try? storage.forceDarkModeOnWebsitesEnabled
-        guard let storageSetting else {
-            // If setting is not present in storage, for internal users set `true` as the initial value.
-            if featureFlagger.internalUserDecider.isInternalUser {
-                try? storage.set(true, for: \.forceDarkModeOnWebsitesEnabled)
-                return true
-            }
-            return false
-        }
-        return storageSetting
     }
 }
 

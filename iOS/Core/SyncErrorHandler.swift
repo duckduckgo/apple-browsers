@@ -263,6 +263,13 @@ extension SyncErrorHandler {
             default:
                 syncIsPaused(errorType: .invalidLoginCredentials)
             }
+        case .unauthenticatedWhileLoggedIn:
+            switch modelType {
+            case .aiChats:
+                syncIsPaused(errorType: .invalidLoginCredentials)
+            default:
+                break
+            }
         case .unexpectedStatusCode(418), .unexpectedStatusCode(429):
             syncIsPaused(errorType: .tooManyRequests)
             DailyPixel.fire(pixel: modelType.tooManyRequestsPixel)

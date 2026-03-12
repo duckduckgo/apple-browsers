@@ -69,5 +69,19 @@
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_terms_accepted_duplicate_sync_off": {
+        "description": "Fired when terms and conditions acceptance is received again while sync is off",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_terms_accepted_duplicate_sync_on": {
+        "description": "Fired when terms and conditions acceptance is received again while sync is on",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

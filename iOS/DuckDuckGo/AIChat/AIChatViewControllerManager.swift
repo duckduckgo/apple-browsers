@@ -64,7 +64,7 @@ final class AIChatViewControllerManager {
     private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private var productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
-    private lazy var statisticsLoader: StatisticsLoader = .shared
+    private let statisticsLoader: StatisticsLoader
 
     // MARK: - Initialization
 
@@ -78,7 +78,8 @@ final class AIChatViewControllerManager {
          aiChatSettings: AIChatSettingsProvider,
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService) {
+         freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
+         statisticsLoader: StatisticsLoader = .shared) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -91,6 +92,7 @@ final class AIChatViewControllerManager {
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
+        self.statisticsLoader = statisticsLoader
     }
 
     // MARK: - Public Methods
@@ -450,10 +452,7 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
         case .closeAIChat:
             chatViewController?.dismiss(animated: true)
         case .sendToSyncSettings, .sendToSetupSync:
-            chatViewController?.dismiss(animated: true) { [weak self] in
-                guard let self = self else { return }
-                self.delegate?.aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(self)
-            }
+            delegate?.aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(self)
         default:
             break
         }
@@ -469,14 +468,12 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
                 freeTrialConversionService.markDuckAIActivated()
             }
 
-            if featureFlagger.isFeatureOn(.aiChatAtb) {
-                DispatchQueue.main.async {
-                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
-                                                                        application: UIApplication.shared)
-                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
-                        DispatchQueue.main.async {
-                            backgroundAssertion.release()
-                        }
+            DispatchQueue.main.async {
+                let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                    application: UIApplication.shared)
+                self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                    DispatchQueue.main.async {
+                        backgroundAssertion.release()
                     }
                 }
             }

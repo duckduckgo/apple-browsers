@@ -18,9 +18,13 @@
 //
 
 import AIChat
+import Bookmarks
 import Combine
+import DesignResourcesKit
 import Subscription
+import Suggestions
 import UIKit
+
 
 // MARK: - Unified Toggle Input Setup
 
@@ -37,10 +41,12 @@ extension MainViewController {
         installUnifiedToggleInputViewController(coordinator.viewController)
 
         if let omniBarVC = viewCoordinator.omniBar as? DefaultOmniBarViewController {
-            omniBarVC.unifiedToggleInputInlineActivating = self
+            omniBarVC.unifiedToggleInputOmnibarActivating = self
         }
 
         setUpAIChatTabChatHeader()
+        installUnifiedInputContentViewController()
+        installFloatingSubmitViewController()
 
         subscribeToIntentPublisher(coordinator)
         subscribeToModeChanges(coordinator)
@@ -56,7 +62,6 @@ extension MainViewController {
             inputVC.view.topAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.topAnchor),
             inputVC.view.leadingAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.leadingAnchor),
             inputVC.view.trailingAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.trailingAnchor),
-            inputVC.view.bottomAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.bottomAnchor),
         ])
         inputVC.didMove(toParent: self)
     }
@@ -79,24 +84,39 @@ extension MainViewController {
 
     private func handleModeChange(_ mode: TextEntryMode) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        if coordinator.isInlineEditingActive {
-            handleInlineEditingModeChange(mode, coordinator: coordinator)
+        if coordinator.isOmnibarSession {
+            handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if case .aiTab(.expanded) = coordinator.displayState {
             handleAITabModeChange(mode, coordinator: coordinator)
         }
     }
 
-    private func handleInlineEditingModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        let height = coordinator.inlineEditingHeight()
+    private func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
+        let height = coordinator.omnibarEditingHeight()
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = height
             self.viewCoordinator.superview.layoutIfNeeded()
         }
+        unifiedToggleInputCoordinator?.syncContentInputMode(mode)
+        updateFloatingSubmitVisibility()
     }
 
-    private func handleAITabModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        let height = coordinator.inlineEditingHeight()
-        viewCoordinator.constraints.navigationBarContainerHeight.constant = max(height, viewCoordinator.standardNavigationBarContainerHeight)
+    private func handleAITabModeChange(_: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
+        updateUnifiedInputContentVisibility(for: coordinator)
+        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
+
+        if keyboardShowing,
+           !coordinator.viewController.isInputFirstResponder,
+           currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true {
+            DispatchQueue.main.async { [weak coordinator] in
+                guard let coordinator, case .aiTab(.expanded) = coordinator.displayState else { return }
+                coordinator.activateInput()
+            }
+        }
+    }
+
+    func updateUnifiedToggleInputKeyboardVisibility(_ keyboardVisible: Bool) {
+        unifiedToggleInputCoordinator?.updateOmnibarInputVisibility(keyboardVisible)
     }
 
     private func subscribeToSystemEvents() {
@@ -115,15 +135,6 @@ extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
-            .sink { [weak self] _ in
-                guard let self,
-                      let coordinator = self.unifiedToggleInputCoordinator,
-                      case .aiTab(.expanded) = coordinator.displayState,
-                      self.keyboardShowing else { return }
-                coordinator.showCollapsed()
-            }
-            .store(in: &unifiedToggleInputCancellables)
     }
 
     private func subscribeToToggleSettings() {
@@ -133,6 +144,7 @@ extension MainViewController {
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 let enabled = self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
                 coordinator.updateToggleEnabled(enabled)
+                coordinator.contentViewController.isSwipeEnabled = enabled
             }
             .store(in: &unifiedToggleInputCancellables)
     }
@@ -143,6 +155,9 @@ extension MainViewController {
 
         if !tab.isAITab && coordinator.displayState == .hidden &&
             viewCoordinator.aiChatTabChatHeaderContainer.isHidden {
+            coordinator.unbind()
+            viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+            refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
             tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
             return
         }
@@ -157,20 +172,23 @@ extension MainViewController {
                 showBars()
             }
             tab.webView.scrollView.contentInset = .zero
-            coordinator.deactivateInlineEditing()
+            coordinator.deactivateToOmnibar()
             switch coordinator.displayState {
             case .aiTab: break
             default: coordinator.showCollapsed()
             }
             viewCoordinator.showAITabChrome()
+            updateUnifiedInputContentVisibility(for: coordinator)
             refreshAIChatTabChatHeaderSubscriptionState()
             tab.borderView.isTopVisible = false
             tab.borderView.isBottomVisible = false
         } else {
-            coordinator.deactivateInlineEditing()
+            coordinator.deactivateToOmnibar()
             coordinator.hide()
             coordinator.unbind()
             viewCoordinator.hideAITabChrome()
+            viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+            refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
             refreshStatusBarBackgroundAfterAIChrome()
             tab.borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
             tab.borderView.isBottomVisible = true
@@ -200,49 +218,198 @@ extension MainViewController {
         }
     }
 
-    private func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
-        switch intent {
-        case .showCollapsed:
-            viewCoordinator.showUnifiedToggleInput(aboveKeyboard: false)
-            viewCoordinator.suggestionTrayContainer.isHidden = true
-        case .showExpanded:
-            viewCoordinator.anchorUnifiedToggleInputToKeyboardPreservingHeight()
-            if let coordinator = unifiedToggleInputCoordinator {
-                let height = coordinator.inlineEditingHeight()
-                viewCoordinator.constraints.navigationBarContainerHeight.constant = max(height, viewCoordinator.standardNavigationBarContainerHeight)
-            }
-        case .showInlineEditing(let height):
-            viewCoordinator.showUnifiedToggleInputInline(expandedHeight: height)
-            viewCoordinator.suggestionTrayContainer.isHidden = true
-        case .hideInlineEditing:
-            viewCoordinator.hideUnifiedToggleInputInline()
-            hideSuggestionTray()
-            viewCoordinator.suggestionTrayContainer.isHidden = false
-        case .hide:
-            viewCoordinator.hideUnifiedToggleInput()
-            viewCoordinator.suggestionTrayContainer.isHidden = false
+    private func shouldShowUnifiedInputContent(for coordinator: UnifiedToggleInputCoordinator) -> Bool {
+        let isAITab = currentTab?.isAITab == true
+
+        switch coordinator.displayState {
+        case .hidden, .aiTab(.collapsed):
+            return false
+        case .omnibar:
+            return true
+        case .aiTab(.expanded):
+            return !(isAITab && coordinator.inputMode == .aiChat)
         }
     }
 
-    func recomputeInlineEditingHeightIfNeeded() {
+    private func shouldOverlayAIChatHeader(for coordinator: UnifiedToggleInputCoordinator) -> Bool {
+        guard currentTab?.isAITab == true else { return false }
+        guard case .aiTab(.expanded) = coordinator.displayState else { return false }
+        return coordinator.inputMode == .search && shouldShowUnifiedInputContent(for: coordinator)
+    }
+
+    private func updateAITabHeaderVisibility(for coordinator: UnifiedToggleInputCoordinator) {
+        guard currentTab?.isAITab == true else { return }
+        if shouldOverlayAIChatHeader(for: coordinator) {
+            viewCoordinator.hideAIChatTabChatHeader()
+        } else {
+            viewCoordinator.showAIChatTabChatHeader()
+        }
+    }
+
+    private func updateStatusBarBackgroundForAITabOverlay(for coordinator: UnifiedToggleInputCoordinator) {
+        guard currentTab?.isAITab == true else { return }
+
+        if shouldOverlayAIChatHeader(for: coordinator) {
+            viewCoordinator.statusBackground.backgroundColor = UIColor(designSystemColor: .panel)
+        } else if viewCoordinator.isNavigationChromeHidden {
+            viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+        }
+    }
+
+    private func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator) {
+        updateAITabHeaderVisibility(for: coordinator)
+        updateStatusBarBackgroundForAITabOverlay(for: coordinator)
+
+        let showContent = shouldShowUnifiedInputContent(for: coordinator)
+
+        if case .aiTab(let aiTabState) = coordinator.displayState {
+            coordinator.contentViewController.forceBottomBarLayout = true
+            let shouldShowInlineHeader = shouldOverlayAIChatHeader(for: coordinator)
+            coordinator.updateContentHeaderForAITab(shouldOverlay: shouldShowInlineHeader)
+            viewCoordinator.updateUnifiedToggleInputColors(
+                isExpanded: aiTabState == .expanded,
+                inputView: coordinator.viewController.view
+            )
+        } else {
+            coordinator.contentViewController.forceBottomBarLayout = false
+            viewCoordinator.updateUnifiedToggleInputColors(
+                isExpanded: false,
+                inputView: coordinator.viewController.view
+            )
+        }
+
+        if showContent {
+            coordinator.syncContentInputMode(coordinator.inputMode, animated: false)
+            viewCoordinator.showUnifiedInputContent()
+        } else {
+            viewCoordinator.hideUnifiedInputContent()
+        }
+    }
+
+    private func installUnifiedInputContentViewController() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isInlineEditingActive else { return }
-        let height = coordinator.inlineEditingHeight()
+              let container = viewCoordinator.unifiedInputContentContainer else { return }
+
+        let contentVC = coordinator.contentViewController
+        contentVC.suggestionTrayDependencies = suggestionTrayDependencies
+        contentVC.delegate = self
+        contentVC.onDismissRequested = { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            switch coordinator.displayState {
+            case .omnibar:
+                coordinator.deactivateToOmnibar()
+            case .aiTab(.expanded):
+                coordinator.showCollapsed()
+            default:
+                break
+            }
+        }
+        contentVC.onSwipeDownRequested = { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            coordinator.dismissOmnibarKeyboard()
+        }
+        contentVC.isSwipeEnabled = coordinator.isToggleEnabled
+
+        addChild(contentVC)
+        contentVC.view.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(contentVC.view)
+        NSLayoutConstraint.activate([
+            contentVC.view.topAnchor.constraint(equalTo: container.topAnchor),
+            contentVC.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            contentVC.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            contentVC.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        contentVC.didMove(toParent: self)
+    }
+
+    private func installFloatingSubmitViewController() {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+
+        let floatingVC = coordinator.floatingSubmitViewController
+        floatingVC.delegate = self
+
+        addChild(floatingVC)
+        floatingVC.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(floatingVC.view)
+        NSLayoutConstraint.activate([
+            floatingVC.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -8),
+            floatingVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+        floatingVC.didMove(toParent: self)
+        floatingVC.subscribe(to: coordinator.textChangePublisher)
+        floatingVC.view.isHidden = true
+    }
+
+    private func updateFloatingSubmitVisibility() {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        let shouldShow = coordinator.displayState == .omnibar(.active)
+            && coordinator.viewController.cardPosition == .top
+            && coordinator.inputMode == .aiChat
+        coordinator.floatingSubmitViewController.view.isHidden = !shouldShow
+    }
+
+    private func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
+        switch intent {
+        case .showCollapsed:
+            viewCoordinator.showUnifiedToggleInput()
+            viewCoordinator.suggestionTrayContainer.isHidden = true
+            if let coordinator = unifiedToggleInputCoordinator {
+                updateUnifiedInputContentVisibility(for: coordinator)
+            } else {
+                viewCoordinator.hideUnifiedInputContent()
+            }
+        case .showExpanded:
+            viewCoordinator.showUnifiedToggleInput()
+            if let coordinator = unifiedToggleInputCoordinator {
+                updateUnifiedInputContentVisibility(for: coordinator)
+            }
+            adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
+        case .showOmnibarEditing(let height):
+            viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
+            viewCoordinator.suggestionTrayContainer.isHidden = true
+            if let coordinator = unifiedToggleInputCoordinator {
+                updateUnifiedInputContentVisibility(for: coordinator)
+            }
+        case .showOmnibarInactive:
+            viewCoordinator.restoreNavBarToToolbarForOmnibarInactive()
+            recomputeOmnibarEditingHeightIfNeeded()
+        case .showOmnibarActive:
+            viewCoordinator.restoreNavBarToKeyboardForOmnibarActive()
+            recomputeOmnibarEditingHeightIfNeeded()
+        case .hideOmnibarEditing:
+            viewCoordinator.hideUnifiedToggleInputOmnibar()
+            viewCoordinator.hideUnifiedInputContent()
+            hideSuggestionTray()
+            viewCoordinator.suggestionTrayContainer.isHidden = false
+        case .hide:
+            unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
+            viewCoordinator.hideUnifiedToggleInput()
+            viewCoordinator.hideUnifiedInputContent()
+            hideSuggestionTray()
+            viewCoordinator.suggestionTrayContainer.isHidden = false
+        }
+        updateFloatingSubmitVisibility()
+    }
+
+    func recomputeOmnibarEditingHeightIfNeeded() {
+        guard let coordinator = unifiedToggleInputCoordinator,
+              coordinator.isOmnibarSession else { return }
+        let height = coordinator.omnibarEditingHeight()
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
     }
 }
 
-// MARK: - UnifiedToggleInputInlineActivating
+// MARK: - UnifiedToggleInputOmnibarActivating
 
-extension MainViewController: UnifiedToggleInputInlineActivating {
+extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
-    func activateInlineEditingIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision {
+    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        coordinator.activateInlineEditing(prefilledText: currentText, inputMode: .search, cardPosition: position)
+        coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: .search, cardPosition: position)
         return .intercept
     }
 }
@@ -262,6 +429,47 @@ extension MainViewController: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidRequestVoiceSearch() {
         let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
         handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
+    }
+}
+
+// MARK: - UnifiedInputContentContainerViewControllerDelegate
+
+extension MainViewController: UnifiedInputContentContainerViewControllerDelegate {
+
+    func unifiedInputEditingStateDidSubmitQuery(_ query: String) {
+        unifiedToggleInputCoordinator?.clearText()
+        unifiedToggleInputCoordinator?.handleExternalQuerySubmission()
+        handleUnifiedToggleInputSearchSubmission(query)
+    }
+
+    func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?) {
+        unifiedToggleInputCoordinator?.clearText()
+        unifiedToggleInputCoordinator?.handleExternalPromptSubmission()
+        openAIChat(query, autoSend: true, tools: tools)
+    }
+
+    func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
+
+    func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity) {
+        segueToEditBookmark(favorite)
+    }
+
+    func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion) {
+        handleSuggestionSelected(suggestion)
+    }
+
+    func unifiedInputEditingStateDidSelectChatHistory(url: URL) {
+        onChatHistorySelected(url: url)
+    }
+
+    func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {
+        onSwitchToTab(tab)
+    }
+
+    func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {
+        unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(mode)
     }
 }
 
@@ -293,5 +501,21 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow()
         )
+    }
+}
+
+// MARK: - UnifiedToggleInputFloatingSubmitDelegate
+
+extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
+
+    func floatingSubmitDidTapSubmit() {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        let text = coordinator.currentText
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        coordinator.switchBarHandler.submitText(text)
+    }
+
+    func floatingSubmitDidTapVoice() {
+        // Voice search wiring deferred
     }
 }

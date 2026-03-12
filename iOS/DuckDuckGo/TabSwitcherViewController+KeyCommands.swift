@@ -55,8 +55,8 @@ extension TabSwitcherViewController {
     
     @objc func keyboardNewTab() {
         guard !isProcessingUpdates else { return }
+        markCurrentAsViewedAndDismiss()
         delegate?.tabSwitcherDidRequestNewTab(tabSwitcher: self)
-        dismiss()
     }
     
     @objc func keyboardCloseWindow() {
@@ -69,8 +69,8 @@ extension TabSwitcherViewController {
     }
     
     @objc func keyboardRemoveTab() {
-        guard let current = currentSelection else { return }
-        let tab = tabsModel.get(tabAt: current)
+        guard let current = currentSelection,
+              let tab = tabsModel.get(tabAt: current) else { return }
         
         deleteTab(tab: tab)
         if tabsModel.count > 0 {
@@ -78,7 +78,7 @@ extension TabSwitcherViewController {
         } else {
             currentSelection = nil
         }
-        refreshTitle()
+        refreshTitleViews()
         collectionView.reloadData()
     }
     

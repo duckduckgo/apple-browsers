@@ -60109,7 +60109,7 @@
     },
     "notification.manual.update.action" : {
       "comment" : "Action to take when a manual update is available.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -80168,6 +80168,42 @@
         }
       }
     },
+    "preferences.about.update-info.appstore" : {
+      "comment" : "Informational message shown on the About screen for App Store builds. The placeholder %@ is replaced by a clickable 'App Store' link text.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep DuckDuckGo up to date by enabling automatic updates in %@ > App Store menu > Settings."
+          }
+        }
+      }
+    },
+    "preferences.about.update-info.appstore.link" : {
+      "comment" : "The clickable 'App Store' text that appears within the App Store update info message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "App Store"
+          }
+        }
+      }
+    },
+    "preferences.about.update-info.sparkle" : {
+      "comment" : "Informational message shown on the About screen for Sparkle (non-App Store) builds explaining that the app updates automatically",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manual updates are no longer available — your app will now update automatically to ensure you always have the latest fixes and improvements."
+          }
+        }
+      }
+    },
     "preferences.about.will-soon-be-unsupported-device-info-alert-header" : {
       "comment" : "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported",
       "extractionState" : "extracted_with_value",
@@ -92674,7 +92710,7 @@
     },
     "settings.automatic.updates" : {
       "comment" : "Title of the checkbox item to set up automatic updates of the browser",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -92734,7 +92770,7 @@
     },
     "settings.browser.updates.title" : {
       "comment" : "Title of the section in Settings where people set up automatic vs manual updates",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -93094,7 +93130,7 @@
     },
     "settings.manual.updates" : {
       "comment" : "Title of the checkbox item to set up manual updates of the browser",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

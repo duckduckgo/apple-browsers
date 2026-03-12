@@ -57,6 +57,9 @@ extension Preferences {
 
                     AboutContentSection(model: model)
 
+                    UpdateInfoMessage()
+                        .padding(.top, 4)
+
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
                     Spacer(minLength: 20)
                     customFeedURLWarning
@@ -349,6 +352,62 @@ extension Preferences {
                 .buttonStyle(UpdateButtonStyle(enabled: true))
             }
         }
+    }
+
+    struct UpdateInfoMessage: View {
+        var body: some View {
+#if SPARKLE
+            TextMenuItemCaption(UserText.aboutUpdateInfoSparkle)
+#elseif APPSTORE
+            let linkText = UserText.aboutUpdateInfoAppStoreLink
+            let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText)
+            HStack(spacing: 0) {
+                if #available(macOS 12.0, *) {
+                    Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                } else {
+                    NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
+                }
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundColor(Color(.greyText))
+#endif
+        }
+
+#if APPSTORE
+        @available(macOS 12, *)
+        private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
+            var attributed = AttributedString(fullText)
+            if let range = attributed.range(of: linkText) {
+                attributed[range].link = .appStore
+            }
+            return attributed
+        }
+
+        private func appStoreLegacyAttributedText(fullText: String, linkText: String) -> NSAttributedString {
+            let attributedString = NSMutableAttributedString(string: fullText)
+
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineSpacing = 0
+            paragraphStyle.paragraphSpacing = 0
+
+            let defaultAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+                .foregroundColor: NSColor(Color(.greyText)),
+                .paragraphStyle: paragraphStyle
+            ]
+            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
+
+            if let range = fullText.range(of: linkText) {
+                let nsRange = NSRange(range, in: fullText)
+                attributedString.addAttribute(.link, value: URL.appStore, range: nsRange)
+                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
+                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
+            }
+
+            return attributedString
+        }
+#endif
     }
 
     struct UnsupportedDeviceInfoBox: View {

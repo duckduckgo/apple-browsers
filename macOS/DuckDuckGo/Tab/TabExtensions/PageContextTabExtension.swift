@@ -220,6 +220,11 @@ final class PageContextTabExtension {
         Logger.aiChat.debug("[PageContextExt] handle: pushing context title=\(pageContext?.title ?? "nil") to sidebar (hasChatVC=\(self.aiChatSessionStore.sessions[self.tabID]?.chatViewController != nil))")
         if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
             chatViewController.setPageContext(cachedPageContext)
+            if pageContext != nil {
+                // New context attached — reset the consumed flag so navigation
+                // won't clear it until the next prompt is submitted.
+                hasContextBeenConsumedByChat = false
+            }
         }
     }
 

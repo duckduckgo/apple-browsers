@@ -2087,7 +2087,11 @@ public struct UserText {
                     NSLocalizedString("onboarding.rebranding.intro.title", value: "Hi there.", comment: "The title of the onboarding intro")
                 }
                 public static var message: String {
-                    NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The message of the onboarding dialog popup")
+                    if Locale.current.isEnglishLanguage {
+                        NSLocalizedString("onboarding.rebranding.intro.message.english-only", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
+                    } else {
+                        NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The message of the onboarding dialog popup")
+                    }
                 }
             }
         }

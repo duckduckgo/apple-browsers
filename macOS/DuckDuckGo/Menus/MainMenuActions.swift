@@ -876,8 +876,9 @@ extension AppDelegate {
     }
 
     private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) async throws {
+        let configManager = Application.appDelegate.configurationManager
         try configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
-        await Application.appDelegate.configurationManager.refreshNow(isDebug: true)
+        try await configManager.fetchPrivacyConfiguration(isDebug: true)
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
         } else {
@@ -885,11 +886,11 @@ extension AppDelegate {
         }
     }
 
-    private func showErrorAlert(message: String) {
+    private func showConfigurationFetchErrorAlert(url: URL, error: Swift.Error) {
         let alert = NSAlert()
-        alert.messageText = "Error"
-        alert.informativeText = message
-        alert.alertStyle = .warning
+        alert.messageText = "Configuration Fetch Failed"
+        alert.informativeText = "Failed to fetch privacy configuration from:\n\(url.absoluteString)\n\nError: \(error.localizedDescription)"
+        alert.alertStyle = .critical
         alert.runModal()
     }
 
@@ -897,9 +898,9 @@ extension AppDelegate {
         let alert = NSAlert()
         alert.messageText = "Configuration Update Complete"
         if let configurationUrl {
-            alert.informativeText = "Privacy configuration URL has been set to:\n\(configurationUrl.absoluteString)\n\nThe configuration refresh operation has completed. Check the logs for any errors."
+            alert.informativeText = "Privacy configuration has been successfully fetched and applied from:\n\(configurationUrl.absoluteString)"
         } else {
-            alert.informativeText = "Privacy configuration has been reset to use the default settings.\n\nThe configuration refresh operation has completed. Check the logs for any errors."
+            alert.informativeText = "Privacy configuration has been reset to the default URL and successfully refreshed."
         }
         alert.alertStyle = .informational
         alert.runModal()
@@ -919,20 +920,21 @@ extension AppDelegate {
                 do {
                     try await setPrivacyConfigurationUrl(newConfigurationUrl)
                     showConfigurationUpdateCompleteAlert(configurationUrl: newConfigurationUrl)
-                } catch let error {
-                    showErrorAlert(message: error.localizedDescription)
+                } catch {
+                    showConfigurationFetchErrorAlert(url: newConfigurationUrl, error: error)
                 }
             }
         }
     }
 
     @objc func resetPrivacyConfigurationToDefault(_ sender: Any?) {
+        let defaultURL = configurationURLProvider.url(for: .privacyConfiguration)
         Task { @MainActor in
             do {
                 try await setPrivacyConfigurationUrl(nil)
                 showConfigurationUpdateCompleteAlert(configurationUrl: nil)
-            } catch let error {
-                showErrorAlert(message: error.localizedDescription)
+            } catch {
+                showConfigurationFetchErrorAlert(url: defaultURL, error: error)
             }
         }
     }

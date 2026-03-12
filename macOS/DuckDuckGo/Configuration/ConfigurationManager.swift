@@ -163,6 +163,15 @@ final class ConfigurationManager: DefaultConfigurationManager {
         return didFetchAnyTrackerBlockingDependencies
     }
 
+    /// Fetches and applies just the privacy configuration, throwing on failure.
+    /// Use this for debug/override flows where the caller needs to know if the fetch succeeded.
+    func fetchPrivacyConfiguration(isDebug: Bool = false) async throws {
+        try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+        privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
+                                           data: store.loadData(for: .privacyConfiguration))
+        contentBlockingManager.scheduleCompilation()
+    }
+
     private func handleRefreshError(_ error: Swift.Error) {
         // Avoid firing a configuration fetch error pixel when we received a 304 status code.
         // A 304 status code is expected when we request the config with an ETag that matches the current remote version.

@@ -1419,16 +1419,13 @@ final class NavigationBarViewController: NSViewController {
     @IBAction func optionsButtonAction(_ sender: NSButton) {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
-        var dockCustomization: DockCustomization?
-#if SPARKLE
-        dockCustomization = Application.appDelegate.dockCustomization
-#endif
+        let dockCustomization = Application.appDelegate.dockCustomization
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
                                    historyCoordinator: historyCoordinator,
                                    recentlyClosedCoordinator: recentlyClosedCoordinator,
                                    fireproofDomains: fireproofDomains,
-                                   passwordManagerCoordinator: PasswordManagerCoordinator.shared,
+                                   passwordManagerCoordinator: Application.appDelegate.passwordManagerCoordinator,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
                                    internalUserDecider: internalUserDecider,
                                    subscriptionManager: subscriptionManager,
@@ -2023,7 +2020,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedOpenExternalPasswordManager(_ menu: NSMenu) {
-        BWManager.shared.openBitwarden()
+        Application.appDelegate.passwordManagerCoordinator.openPasswordManager()
     }
 
     func optionsButtonMenuRequestedBookmarkThisPage(_ sender: NSMenuItem) {

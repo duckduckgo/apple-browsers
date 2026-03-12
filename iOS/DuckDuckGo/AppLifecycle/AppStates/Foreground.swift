@@ -80,9 +80,17 @@ struct Foreground: ForegroundHandling {
         launchAction = LaunchAction(actionToHandle: actionToHandle,
                                     lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
                                     isFirstForeground: isFirstForeground)
+        let daxDialogsManager = appDependencies.mainCoordinator.controller.daxDialogsManager
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: appDependencies.featureFlagger,
+            keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore,
+            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
+            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
+        )
         let idleReturnEvaluator = IdleReturnEvaluator(
             featureFlagger: appDependencies.featureFlagger,
-            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager
+            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
+            idleReturnEligibilityManager: idleReturnEligibilityManager
         )
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,

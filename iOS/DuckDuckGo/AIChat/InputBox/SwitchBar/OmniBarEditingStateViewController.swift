@@ -40,7 +40,8 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onVoiceSearchRequested(from mode: TextEntryMode)
     func onChatHistorySelected(url: URL)
     func onDismissRequested()
-    func onSwitchTabToIndex(_ index: Int)
+    func onSwitchToTab(_ tab: Tab)
+    func onToggleModeSwitched()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -349,7 +350,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         if let escapeHatchModel {
             manager.setEscapeHatch(escapeHatchModel, onTapped: { [weak self] in
-                self?.delegate?.onSwitchTabToIndex(escapeHatchModel.targetTabIndex)
+                self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
             })
         }
     }
@@ -373,7 +374,20 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         navigationActionBarManager = manager
     }
 
+    private var lastKnownToggleState: TextEntryMode?
+
     private func setupSubscriptions() {
+        lastKnownToggleState = switchBarHandler.currentToggleState
+
+        switchBarHandler.toggleStatePublisher
+            .dropFirst()
+            .sink { [weak self] newState in
+                guard let self, newState != self.lastKnownToggleState else { return }
+                self.lastKnownToggleState = newState
+                self.delegate?.onToggleModeSwitched()
+            }
+            .store(in: &cancellables)
+
         switchBarVC.textEntryViewController.textHeightChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -546,7 +560,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
+        let hasRemoteMessages = suggestionTrayManager?.hasRemoteMessages ?? false
+        let hasEscapeHatchWithoutFavoritesOrMessages = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false) && !hasRemoteMessages
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavoritesOrMessages) && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
@@ -556,14 +572,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
-
-        // When the escape hatch card is visible in the chat history list, offset the logo down so it sits below the escape hatch card
-        if escapeHatchModel != nil, isAIDaxVisible {
-            setLogoYOffset(Constants.escapeHatchLogoZoneHeight)
-        } else {
-            setLogoYOffset(0)
-        }
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchModel != nil ? Constants.escapeHatchLogoZoneHeight : 0)
     }
+
 }
 
 // MARK: - NavigationActionBarViewAnimationDelegate
@@ -635,8 +646,8 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
         delegate?.onEditFavorite(favorite)
     }
 
-    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchTabToIndex index: Int) {
-        delegate?.onSwitchTabToIndex(index)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
+        delegate?.onSwitchToTab(tab)
     }
 
 }

@@ -372,14 +372,13 @@ final class MainViewController: NSViewController {
     }
 
     override func viewDidAppear() {
+        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
         initPreloader()
 
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-
-        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -515,7 +514,8 @@ final class MainViewController: NSViewController {
         if visible {
             let desiredHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
             let suggestionsHeight = aiChatOmnibarContainerViewController.suggestionsHeight
-            let totalHeight = desiredHeight + suggestionsHeight
+            let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = desiredHeight + suggestionsHeight + additionalHeight
             mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
             // Allow clicks to pass through text container to reach suggestions and tool buttons
             let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
@@ -551,14 +551,16 @@ final class MainViewController: NSViewController {
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {
-        /// This enables TAB key navigation from AI Chat mode to the toggle
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
         }
 
-        /// This enables TAB key navigation from toggle back to AI Chat text view
+        aiChatOmnibarTextContainerViewController.containerViewController = aiChatOmnibarContainerViewController
+
+        /// Bridge the nav bar toggle's Tab press into the AI chat tab cycle.
+        /// MainVC is the only entity that knows about both the nav bar and the AI chat area.
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.onToggleTabPressedInAIChatMode = { [weak self] in
-            self?.aiChatOmnibarTextContainerViewController.focusTextViewWithCursorAtEnd()
+            self?.aiChatOmnibarTextContainerViewController.handleToggleTabPressed()
         }
     }
 
@@ -567,7 +569,8 @@ final class MainViewController: NSViewController {
             guard let self = self else { return }
 
             let suggestionsHeight = self.aiChatOmnibarContainerViewController.suggestionsHeight
-            let totalHeight = desiredHeight + suggestionsHeight
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = desiredHeight + suggestionsHeight + additionalHeight
 
             self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: true)
 
@@ -580,7 +583,8 @@ final class MainViewController: NSViewController {
             guard let self else { return }
 
             let textHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
-            let totalHeight = textHeight + suggestionsHeight
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = textHeight + suggestionsHeight + additionalHeight
 
             self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
 
@@ -593,9 +597,17 @@ final class MainViewController: NSViewController {
             self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         }
 
-        // Wire up passthrough height updates when tools visibility changes
+        // Wire up passthrough height updates when tools visibility or attachments change
         aiChatOmnibarContainerViewController.onPassthroughHeightNeedsUpdate = { [weak self] in
             guard let self, self.mainView.isAIChatOmnibarContainerShown else { return }
+
+            // Resize container to accommodate attachments
+            let textHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+            let suggestionsHeight = self.aiChatOmnibarContainerViewController.suggestionsHeight
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = textHeight + suggestionsHeight + additionalHeight
+            self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
+
             let passthroughHeight = self.aiChatOmnibarContainerViewController.totalPassthroughHeight
             self.mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
             self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
@@ -620,7 +632,8 @@ final class MainViewController: NSViewController {
 
         let textHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
         let suggestionsHeight = aiChatOmnibarContainerViewController.suggestionsHeight
-        let totalHeight = textHeight + suggestionsHeight
+        let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
+        let totalHeight = textHeight + suggestionsHeight + additionalHeight
 
         mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
 

@@ -44,22 +44,20 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
-#if APPSTORE
-        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
-        NSWorkspace.shared.open(.appStore)
-#elseif SPARKLE
-        if let warning = SupportedOSChecker().supportWarning,
-           case .unsupported = warning {
-
-            // Show not supported info
-            if NSAlert.osNotSupported(warning).runModal() != .cancel {
-                let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
-                NSWorkspace.shared.open(url)
+        if StandardApplicationBuildType().isAppStoreBuild {
+            PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
+            NSWorkspace.shared.open(.appStore)
+        } else if StandardApplicationBuildType().isSparkleBuild {
+            if let warning = SupportedOSChecker().supportWarning,
+               case .unsupported = warning {
+                // Show not supported info
+                if NSAlert.osNotSupported(warning).runModal() != .cancel {
+                    let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
+                    NSWorkspace.shared.open(url)
+                }
             }
+            showAbout(sender)
         }
-
-        showAbout(sender)
-#endif
     }
 
     // MARK: - File
@@ -386,7 +384,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func copyVersion(_ sender: Any?) {
-        NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
+        NSPasteboard.general.copy(AppVersionModel().versionLabelShort)
     }
 
     @objc func openBookmark(_ sender: Any?) {
@@ -537,6 +535,17 @@ extension AppDelegate {
             try exporter.exportSnapshotToTemporaryURL()
         } catch {
             Logger.general.error("Failed to export Memory Allocation Stats: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    @MainActor
+    @objc func exportStartupStats(_ sender: Any?) {
+        do {
+            let windowContext = WindowContext(windowControllersManager: windowControllersManager)
+            let exporter = StartupMetricsExporter(profiler: startupProfiler, previousSessionRestored: startupPreferences.restorePreviousSession, windowContext: windowContext)
+            try exporter.exportMetricsToTemporaryURL()
+        } catch {
+            Logger.general.error("Failed to export Startup Metrics: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -796,10 +805,7 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-#if SPARKLE
-        guard let dockCustomizer = Application.appDelegate.dockCustomization else { return }
-        dockCustomizer.resetData()
-#endif
+        Application.appDelegate.dockCustomization?.resetData()
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {
@@ -1119,9 +1125,7 @@ extension MainViewController {
                 }
             }
         )
-        presenter.bind(to: manager) {
-            onProceed()
-        }
+        runKeyboardWarnBeforeConfirmationFlow(manager: manager, presenter: presenter, onProceed: onProceed)
     }
 
     /// Shows the pinned tab close confirmation overlay
@@ -1156,8 +1160,35 @@ extension MainViewController {
                 self?.tabBarViewController.cell(forPinnedTabAt: pinnedIndex)
             }
         )
-        presenter.bind(to: manager) {
-            onProceed()
+        runKeyboardWarnBeforeConfirmationFlow(manager: manager, presenter: presenter, onProceed: onProceed)
+    }
+
+    /// Executes the keyboard-initiated WarnBefore flow using the legacy ordering
+    /// (subscribe -> shouldTerminate -> onProceed -> deciderSequenceCompleted),
+    /// which keeps Cmd+W key-repeat handling behavior stable.
+    private func runKeyboardWarnBeforeConfirmationFlow(
+        manager: WarnBeforeQuitManager,
+        presenter: WarnBeforeQuitOverlayPresenter,
+        onProceed: @escaping @MainActor () -> Void
+    ) {
+        presenter.subscribe(to: manager.stateStream)
+        switch manager.shouldTerminate(isAsync: false) {
+        case .sync(let decision):
+            let shouldProceed = decision == .next
+            if shouldProceed {
+                onProceed()
+            }
+            manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
+        case .async(let task):
+            Task { @MainActor in
+                let decision = await task.value
+                let shouldProceed = decision == .next
+                if shouldProceed {
+                    onProceed()
+                }
+                await Task.yield()
+                manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
+            }
         }
     }
 

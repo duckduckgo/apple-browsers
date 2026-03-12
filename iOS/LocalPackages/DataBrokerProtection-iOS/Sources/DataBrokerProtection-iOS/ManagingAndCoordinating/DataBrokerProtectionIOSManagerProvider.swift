@@ -95,7 +95,8 @@ public class DataBrokerProtectionIOSManagerProvider {
         let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: dbpSettings),
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
-                                                        runTypeProvider: dbpSettings)
+                                                        runTypeProvider: dbpSettings,
+                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated })
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 

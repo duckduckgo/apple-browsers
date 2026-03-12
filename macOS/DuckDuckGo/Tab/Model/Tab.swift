@@ -277,7 +277,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.fireproofDomains = fireproofDomains
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.featureFlagger = featureFlagger
-        self.navigationDelegate = DistributedNavigationDelegate(isPerformanceReportingEnabled: featureFlagger.isFeatureOn(.webKitPerformanceReporting))
+        self.navigationDelegate = DistributedNavigationDelegate()
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
         self.privacyFeatures = privacyFeatures
@@ -311,8 +311,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         webView = WebView(frame: CGRect(origin: .zero, size: webViewSize),
                           configuration: configuration,
+                          featureFlagger: featureFlagger,
                           privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
-        webView.allowsLinkPreview = false
+        // The feature flag enables private API based control over quick actions to allow all actions (e.g. lookup)
+        // other than link preview. To be on a safe side, disable quick actions here entirely if the feature flag is disabled.
+        webView.allowsLinkPreview = featureFlagger.isFeatureOn(.webViewLookUpAction)
         webView.addsVisitedLinks = true
         webView.setAccessibilityIdentifier("WebView")
 
@@ -954,12 +957,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func startOnboarding() {
         userInteractionDialog = nil
 
-#if DEBUG || REVIEW
         if AppVersion.runType == .uiTestsOnboarding {
             setContent(.onboarding)
             return
         }
-#endif
         if #available(macOS 12.0, *) {
             Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         }
@@ -1104,9 +1105,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         switch content.urlForWebView {
         case .some(let url) where url.isFileURL:
-#if APPSTORE
-            guard url.isWritableLocation() else { fallthrough }
-#endif
+            guard !NSApp.isSandboxed || url.isWritableLocation() else { fallthrough }
 
             // request file system access before restoration
             webView.navigator(distributedNavigationDelegate: navigationDelegate)

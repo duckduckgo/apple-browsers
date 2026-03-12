@@ -69,6 +69,10 @@ class MainViewController: UIViewController {
 
     var chromeManager: BrowserChromeManager!
 
+#if DEBUG || ALPHA
+    var automationServer: AutomationServer?
+#endif
+
     var allowContentUnderflow = false {
         didSet {
             viewCoordinator.constraints.contentContainerTop.constant = allowContentUnderflow ? contentUnderflow : 0
@@ -133,6 +137,8 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -241,10 +247,7 @@ class MainViewController: UIViewController {
         return manager
     }()
 
-    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(
-        using: featureFlagger,
-        keyValueStore: keyValueStore
-    )
+    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -266,6 +269,10 @@ class MainViewController: UIViewController {
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+    lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
+    var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    var unifiedToggleInputCancellables = Set<AnyCancellable>()
+    var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
     // MARK: - iPad Tab Mode Chat History
     private lazy var iPadTabChatHistoryCoordinator = IPadTabChatHistoryCoordinator(
@@ -308,6 +315,7 @@ class MainViewController: UIViewController {
         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
+        idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
@@ -372,6 +380,8 @@ class MainViewController: UIViewController {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.fireproofing = fireproofing
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
@@ -487,6 +497,7 @@ class MainViewController: UIViewController {
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+            viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
         }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -504,6 +515,7 @@ class MainViewController: UIViewController {
         chromeManager.delegate = self
         initTabButton()
         initBookmarksButton()
+        setUpUnifiedToggleInputIfNeeded()
         loadInitialView()
         previewsSource.prepare()
         addLaunchTabNotificationObserver()
@@ -523,6 +535,7 @@ class MainViewController: UIViewController {
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
         registerForWebExtensionNotifications()
+        registerForAppBackgroundNotification()
 
         decorate()
 
@@ -600,6 +613,13 @@ class MainViewController: UIViewController {
 
     }
 
+    private func fireIPadToggleStateOnAppOpenPixel() {
+        guard aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
+
+        let pixel: Pixel.Event = aiChatAddressBarExperience.shouldShowModeToggle ? .aiChatIPadToggleEnabledOnAppOpen : .aiChatIPadToggleDisabledOnAppOpen
+        DailyPixel.fireDailyAndCount(pixel: pixel)
+    }
+
     private func fireContextualAutoAttachPixel() {
         let isEnabled = "\(aiChatSettings.isAutomaticContextAttachmentEnabled)"
         DailyPixel.fireDaily(.aiChatContextualAutoAttachDAU,
@@ -636,11 +656,11 @@ class MainViewController: UIViewController {
                                                     appSettings: appSettings,
                                                     omnibarDependencies: omnibarDependencies) { [weak self] in
 
-            guard $0 != self?.tabManager.currentTabsModel.currentIndex else { return }
+            guard $0 !== self?.tabManager.currentTabsModel.currentTab else { return }
 
             DailyPixel.fire(pixel: .swipeTabsUsedDaily)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-            self?.select(tabAt: $0)
+            self?.selectTab($0)
 
         } newTab: { [weak self] in
             Pixel.fire(pixel: .swipeToOpenNewTab)
@@ -809,13 +829,12 @@ class MainViewController: UIViewController {
 
     var keyboardShowing = false
     private var didSendGestureDismissPixel: Bool = false
+    var latestKeyboardFrame: CGRect = .zero
 
     @objc
     private func keyboardDidShow() {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
-
-        // Dismiss contextual sheet if keyboard is for background web view
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
     }
 
@@ -850,13 +869,40 @@ class MainViewController: UIViewController {
         keyboardShowing = false
         didSendGestureDismissPixel = false
 
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.autoCollapseExpandedUTIIfNeeded()
+        }
+
         if #available(iOS 26, *) {
-            // Make sure the UI adjusts properly.
-            // Fix for a weird behavior on iOS 26, firing `keyboardWillChangeFrame` event
-            // with the same frame when keyboard is shown and hidden rapidly.
-            // https://app.asana.com/1/137249556945/project/414709148257752/task/1211140989378405
+            latestKeyboardFrame = .zero
             adjustUI(withKeyboardFrame: .zero)
         }
+    }
+
+    private var isAnyAITabUTIState: Bool {
+        guard unifiedToggleInputFeature.isAvailable,
+              currentTab?.isAITab == true,
+              let displayState = unifiedToggleInputCoordinator?.displayState,
+              case .aiTab = displayState else { return false }
+        return true
+    }
+
+    var isNavigationBarEffectivelyAtBottom: Bool {
+        if appSettings.currentAddressBarPosition.isBottom {
+            return true
+        }
+        return isAnyAITabUTIState
+    }
+
+    func autoCollapseExpandedUTIIfNeeded() {
+        guard unifiedToggleInputFeature.isAvailable,
+              currentTab?.isAITab == true,
+              let coordinator = unifiedToggleInputCoordinator,
+              case .aiTab(.expanded) = coordinator.displayState,
+              !keyboardShowing,
+              !coordinator.viewController.isInputFirstResponder,
+              currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
+        coordinator.showCollapsed()
     }
 
     private func setUpToolbarButtonsActions() {
@@ -956,9 +1002,24 @@ class MainViewController: UIViewController {
         currentTab?.privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
+    private func registerForAppBackgroundNotification() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAppDidEnterBackground),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
+    }
+
+    @objc private func onAppDidEnterBackground() {
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+    }
+
     @objc func onAddressBarPositionChanged() {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
-        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        if !isAnyAITabUTIState {
+            refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
     }
@@ -977,8 +1038,10 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
-                    
+            if shouldResetNavBarContainerBottomForTopPosition() {
+                viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
+            }
+
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
         }
@@ -986,6 +1049,12 @@ class MainViewController: UIViewController {
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
+    }
+
+    private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
+        guard let state = unifiedToggleInputCoordinator?.displayState else { return true }
+        if case .hidden = state { return true }
+        return false
     }
 
     private func updateChromeForDuckPlayer() {
@@ -1026,6 +1095,7 @@ class MainViewController: UIViewController {
             let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
             return
         }
+        latestKeyboardFrame = keyboardFrame
         let duration: TimeInterval = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
         let animationCurveRawNSN = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
         let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
@@ -1034,46 +1104,60 @@ class MainViewController: UIViewController {
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
-    private func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
+    func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
+        let keyboardVisible = intersection.height > 0
         keyboardHeight = keyboardFrameInView.height
+        updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
-        if self.appSettings.currentAddressBarPosition.isBottom {
-            let intersection = safeAreaFrame.intersection(keyboardFrameInView)
-            let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
+        guard isNavigationBarEffectivelyAtBottom else { return }
 
-            // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
-            if let currentTab {
-                let inset = intersection.height > 0 ? omniBarHeight : 0
-                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+        let displayState = unifiedToggleInputCoordinator?.displayState
+        let isInlineActive = unifiedToggleInputCoordinator?.isInlineEditingSession == true
 
-                let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
-                currentTab.borderView.bottomOffset = -bottomOffset
-            }
+        let baseInputHeight: CGFloat
+        if case .aiTab(.expanded) = displayState, let coordinator = unifiedToggleInputCoordinator {
+            baseInputHeight = max(viewCoordinator.standardNavigationBarContainerHeight, coordinator.inlineEditingHeight())
+        } else {
+            baseInputHeight = omniBarHeight
+        }
 
-            // This NTP stuff is to animate the bottom border divider, but also allow the logo to show.
-            //  If we hever have the bottom border and the logo visible at the same... we'll need to do something else.
-            if let ntp = self.newTabPageViewController, !ntp.isShowingLogo {
+        let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
+        if !isInlineActive, displayState != .aiTab(.collapsed) {
+            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
+        }
+
+        if appSettings.currentAddressBarPosition.isBottom, let currentTab {
+            let inset = intersection.height > 0 ? omniBarHeight : 0
+            currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+
+            let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
+            currentTab.borderView.bottomOffset = -bottomOffset
+        }
+
+        if appSettings.currentAddressBarPosition.isBottom,
+           let ntp = self.newTabPageViewController,
+           !ntp.isShowingLogo {
+            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+        }
+
+        UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
+            self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+
+            if self.appSettings.currentAddressBarPosition.isBottom,
+               !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+               let ntp = self.newTabPageViewController,
+               ntp.isShowingLogo {
                 self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+            } else {
+                self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
             }
-
-            UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
-                self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-
-                // In case `isAIChatSearchInputUserSettings` is enabled prevent adjusting the bottom containers along with the keyboard to prevent logo on NTP from transitioning too far
-                if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled, let ntp = self.newTabPageViewController, ntp.isShowingLogo {
-                    self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
-                } else {
-                    self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
-                }
-                self.currentTab?.borderView.layoutIfNeeded()
-            }
+            self.currentTab?.borderView.layoutIfNeeded()
         }
     }
 
@@ -1204,53 +1288,49 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.omniDelegate = self
     }
     
-    private func makeEscapeHatchModel(from tab: Tab, targetTabIndex: Int) -> EscapeHatchModel? {
-        if tab.isAITab {
+    private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
+        if targetTab.isAITab {
             return EscapeHatchModel(
                 title: UserText.omnibarFullAIChatModeDisplayTitle,
                 subtitle: "Duck.ai",
                 isAITab: true,
                 domain: nil,
-                targetTabIndex: targetTabIndex
+                targetTab: targetTab
             )
         }
-        if let link = tab.link {
+        if let link = targetTab.link {
             let subtitle = link.url.host?.droppingWwwPrefix() ?? link.url.absoluteString
             return EscapeHatchModel(
                 title: link.displayTitle,
                 subtitle: subtitle,
                 isAITab: false,
                 domain: link.url.host,
-                targetTabIndex: targetTabIndex
+                targetTab: targetTab
             )
         }
         return nil
     }
 
-    private func buildEscapeHatch(tabSwitchedFromIndex: Int? = nil) -> EscapeHatchModel? {
-        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) else {
+    // TODO: - Adjust this to support cross-mode hatches
+    private func buildEscapeHatch(sourceTabViewController: TabViewController? = nil) -> EscapeHatchModel? {
+        guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
             return nil
         }
-        let tabs = tabManager.currentTabsModel.tabs
-        guard let currentIndex = tabManager.currentTabsModel.currentIndex else {
-            return nil
-        }
-        let targetIndex: Int?
-        if let fromIndex = tabSwitchedFromIndex,
-           tabs.indices.contains(fromIndex),
-           fromIndex != currentIndex {
-            targetIndex = fromIndex
-        } else if tabs.count > 1, currentIndex > 0 {
-            targetIndex = currentIndex - 1
+        let currentTab = tabManager.currentTabsModel.currentTab
+        let targetTab: Tab?
+        if let sourceTab = sourceTabViewController?.tabModel,
+           sourceTab !== currentTab {
+            targetTab = sourceTab
+        } else if let previousTab = tabManager.currentTabsModel.tabBefore {
+            targetTab = previousTab
         } else {
-            targetIndex = nil
+            targetTab = nil
         }
-        guard let targetIndex else { return nil }
-        let tab = tabManager.currentTabsModel.get(tabAt: targetIndex)
-        return makeEscapeHatchModel(from: tab, targetTabIndex: targetIndex)
+        guard let targetTab else { return nil }
+        return makeEscapeHatchModel(targetTab: targetTab)
     }
 
-    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil) {
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil, openedAfterIdle: Bool = false) {
         guard !autoClearInProgress else { return }
         
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
@@ -1274,6 +1354,7 @@ class MainViewController: UIViewController {
         // Attaching HomeScreen means it's going to be displayed immediately.
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
+        tabModel.openedAfterIdle = openedAfterIdle
 
         let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
@@ -1300,7 +1381,7 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        let hatch = buildEscapeHatch(tabSwitchedFromIndex: tabSwitchedFromIndex)
+        let hatch = buildEscapeHatch(sourceTabViewController: previousTab)
         controller.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
 
@@ -1313,18 +1394,19 @@ class MainViewController: UIViewController {
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
 
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
-            omniBar.beginEditing(animated: true)
-        }
-
-        syncService.scheduler.requestSyncImmediately()
-
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
+            ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
         }
+
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
+            omniBar.beginEditing(animated: true)
+        }
+
+        syncService.scheduler.requestSyncImmediately()
     }
 
     func fireNewTabPixels() {
@@ -1341,6 +1423,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
+        currentNTPEscapeHatch = nil
     }
 
     @IBAction func onFirePressed() {
@@ -1420,6 +1503,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
@@ -1495,7 +1579,7 @@ class MainViewController: UIViewController {
                 if autoClearInProgress {
                     autoClearShouldRefreshUIAfterClear = false
                 }
-                tabManager.selectTab(existing)
+                tabManager.select(existing, dismissCurrent: false)
                 loadUrl(url, fromExternalLink: fromExternalLink)
             }
             // Add a new tab if no existing tab is reused.
@@ -1524,7 +1608,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    fileprivate func loadQuery(_ query: String) {
+    func loadQuery(_ query: String) {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)\"")
             return
@@ -1559,6 +1643,10 @@ class MainViewController: UIViewController {
             assertionFailure("load called with no current tab")
             return
         }
+        if currentTab.tabModel.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
+        }
+
 
         prepareTabForRequest {
             currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
@@ -1586,9 +1674,10 @@ class MainViewController: UIViewController {
             return
         }
 
+        tab.tabModel.openedAfterIdle = false
         request()
         dismissOmniBar()
-        select(tab: tab)
+        transitionTo(tab: tab, from: nil)
     }
 
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
@@ -1606,27 +1695,13 @@ class MainViewController: UIViewController {
         attachTab(tab: tab)
     }
 
-    func select(tabAt index: Int) {
-        viewCoordinator.navigationBarContainer.alpha = 1
-        allowContentUnderflow = false
-        
-        if tabManager.currentTabsModel.tabs.indices.contains(index) {
-            let tabSwitchedFromIndex = tabManager.currentTabsModel.currentIndex
-            let tab = tabManager.select(tabAt: index)
-            select(tab: tab, tabSwitchedFromIndex: tabSwitchedFromIndex)
-        } else {
-            assertionFailure("Invalid index selected")
-        }
-    }
-
-    fileprivate func select(tab: TabViewController?, tabSwitchedFromIndex passedFromIndex: Int? = nil) {
+    private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
         guard let tab else { return }
-        let previousTab = currentTab
-
+        previousTab?.tabModel.openedAfterIdle = false
+        previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
-            let tabSwitchedFromIndex = passedFromIndex ?? previousTab.flatMap { tabManager.currentTabsModel.indexOf(tab: $0.tabModel) }
-            attachHomeScreen(tabSwitchedFromIndex: tabSwitchedFromIndex)
+            attachHomeScreen(previousTab: previousTab)
         } else {
             attachTab(tab: tab)
         }
@@ -1680,7 +1755,7 @@ class MainViewController: UIViewController {
     fileprivate func updateCurrentTab() {
         // prepopulate VC for current tab if needed
         if let currentTab = tabManager.current(createIfNeeded: true) {
-            select(tab: currentTab)
+            transitionTo(tab: currentTab, from: nil)
             viewCoordinator.omniBar.endEditing()
         } else if !tabManager.currentTabsModel.allowsEmpty {
             attachHomeScreen()
@@ -1717,6 +1792,14 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             updateBrowsingMenuHeaderDataSource()
+            if let tab = currentTab {
+                refreshUnifiedToggleInput(for: tab)
+            } else if let coordinator = unifiedToggleInputCoordinator, coordinator.displayState != .hidden {
+                coordinator.hide()
+                coordinator.unbind()
+                viewCoordinator.hideAITabChrome()
+                refreshStatusBarBackgroundAfterAIChrome()
+            }
             return
         }
 
@@ -1739,6 +1822,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.startBrowsing()
         }
 
+        refreshUnifiedToggleInput(for: tab)
         updateBrowsingMenuHeaderDataSource()
     }
 
@@ -1752,7 +1836,6 @@ class MainViewController: UIViewController {
 
         browsingMenuHeaderStateProvider.update(
             dataSource: browsingMenuHeaderDataSource,
-            isFeatureEnabled: browsingMenuSheetCapability.isWebsiteHeaderEnabled,
             isNewTabPage: newTabPageViewController != nil,
             isAITab: currentTab?.isAITab ?? false,
             isError: currentTab?.isError ?? false,
@@ -1817,6 +1900,7 @@ class MainViewController: UIViewController {
             }
 
             ViewHighlighter.updatePositions()
+            self.recomputeInlineEditingHeightIfNeeded()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
@@ -2123,7 +2207,7 @@ class MainViewController: UIViewController {
         tabsBarController?.backgroundTabAdded()
     }
 
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
+    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, openedAfterIdle: Bool = false) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -2132,14 +2216,14 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
 
-        let tabSwitchedFromIndex = tabManager.currentTabsModel.currentIndex
+        let previousTab = tabManager.current()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.selectTab(existing)
+            tabManager.select(existing, dismissCurrent: false)
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, previousTab: previousTab, openedAfterIdle: openedAfterIdle)
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         themeColorManager.updateThemeColor()
@@ -2167,7 +2251,7 @@ class MainViewController: UIViewController {
         findInPageView?.updateConstraints()
     }
 
-    private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self = self else { return }
             if permission {
@@ -2768,7 +2852,9 @@ extension MainViewController: BrowserChromeDelegate {
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
 
-        if viewCoordinator.addressBarPosition.isBottom {
+        if viewCoordinator.addressBarPosition.isBottom,
+           !viewCoordinator.isNavigationBarContainerBottomKeyboardBased,
+           !isAnyAITabUTIState {
             // Push the navigation bar down independently so the content container
             // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
             let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
@@ -2787,7 +2873,7 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
-    private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
+    func handleFavoriteSelected(_ favorite: BookmarkEntity) {
         guard let url = favorite.urlObject else { return }
 
         // Handle shortcuts for internal testing
@@ -2808,7 +2894,10 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
 
-    private func handleSuggestionSelected(_ suggestion: Suggestion) {
+    func handleSuggestionSelected(_ suggestion: Suggestion) {
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
@@ -2989,25 +3078,14 @@ extension MainViewController: OmniBarDelegate {
         switch context {
         case .newTabPage:
             Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
-            if browsingMenuSheetCapability.isEnabled {
-                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
-            }
         case .aiChatTab:
             Pixel.fire(pixel: .browsingMenuOpened)
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)
-            if browsingMenuSheetCapability.isEnabled {
-                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedAIChat)
-            }
         case .website:
             Pixel.fire(pixel: .browsingMenuOpened)
 
             if tab.isError {
                 Pixel.fire(pixel: .browsingMenuOpenedError)
-                if browsingMenuSheetCapability.isEnabled {
-                    Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedError)
-                }
-            } else if browsingMenuSheetCapability.isEnabled {
-                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
             }
         }
     }
@@ -3083,7 +3161,7 @@ extension MainViewController: OmniBarDelegate {
                                              self.showMenuHighlighterIfNeeded()
                                              self.viewCoordinator.menuToolbarButton.isEnabled = true
                                              if !wasActionSelected {
-                                                 Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                                 Pixel.fire(pixel: .browsingMenuDismissed)
                                              }
                                          })
 
@@ -3125,8 +3203,6 @@ extension MainViewController: OmniBarDelegate {
         }
 
         self.present(controller, animated: true)
-
-        DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuUsed)
     }
 
     @objc func onBookmarksPressed() {
@@ -3206,6 +3282,9 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
                                  aiChat: .addressBarCancelPressedOnAIChat)
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
         performCancel()
     }
 
@@ -3419,6 +3498,9 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
                                  aiChat: .addressBarCancelPressedOnAIChat)
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
     }
 
     /// Delegate method called when the AI Chat left button is tapped
@@ -3434,7 +3516,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func escapeHatchForEditingState() -> EscapeHatchModel? {
-        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn),
+        guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle(),
               tabManager.currentTabsModel.currentTab?.link == nil else {
             return nil
         }
@@ -3442,19 +3524,31 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func useNewOmnibarTransitionBehaviour() -> Bool {
-        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+        escapeHatchForEditingState() != nil
     }
 
-    func onSwitchTabToIndex(_ index: Int) {
-        guard tabManager.currentTabsModel.tabs.indices.contains(index), index != tabManager.currentTabsModel.currentIndex else {
+    func onSwitchToTab(_ tab: Tab) {
+        guard tabManager.currentTabsModel.tabExists(tab: tab) else {
             viewCoordinator.omniBar.endEditing()
             return
         }
-        let tabToClose = tabManager.currentTabsModel.currentTab
-        select(tabAt: index)
+        let currentTab = tabManager.currentTabsModel.currentTab
+        guard tab !== currentTab else {
+            viewCoordinator.omniBar.endEditing()
+            return
+        }
+        let wasAfterIdle = currentTab?.openedAfterIdle ?? false
+        ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
+        selectTab(tab)
         viewCoordinator.omniBar.endEditing()
-        if let tabToClose {
-            closeTab(tabToClose)
+        if let currentTab {
+            closeTab(currentTab)
+        }
+    }
+
+    func onToggleModeSwitched() {
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
     }
     
@@ -3558,17 +3652,19 @@ extension MainViewController: NewTabPageControllerDelegate {
         faviconsFetcherOnboarding.presentOnboardingIfNeeded(from: self)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
-        guard tabManager.currentTabsModel.tabs.indices.contains(index) else {
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+        guard tabManager.currentTabsModel.tabExists(tab: tab) else {
             controller.setEscapeHatch(nil)
             currentNTPEscapeHatch = nil
             return
         }
-        guard index != tabManager.currentTabsModel.currentIndex else { return }
-        let tabToClose = tabManager.currentTabsModel.currentTab
-        select(tabAt: index)
-        if let tabToClose {
-            closeTab(tabToClose)
+        let currentTab = tabManager.currentTabsModel.currentTab
+        guard tab !== currentTab else { return }
+        let wasAfterIdle = currentTab?.openedAfterIdle ?? false
+        ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
+        selectTab(tab)
+        if let currentTab {
+            closeTab(currentTab)
         }
         currentNTPEscapeHatch = nil
     }
@@ -3654,7 +3750,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestActivate(_ tab: TabViewController) {
-        select(tab: tab)
+        transitionTo(tab: tab, from: nil)
     }
 
     func tab(_ tab: TabViewController,
@@ -3868,8 +3964,13 @@ extension MainViewController: TabDelegate {
     }
 
     func selectTab(_ tab: Tab) {
-        guard let index = tabManager.currentTabsModel.indexOf(tab: tab) else { return }
-        select(tabAt: index)
+        viewCoordinator.navigationBarContainer.alpha = 1
+        allowContentUnderflow = false
+
+        let previousTab = tabManager.current()
+        if let tab = tabManager.select(tab, dismissCurrent: false)  {
+            transitionTo(tab: tab, from: previousTab)
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             self.performCancel()
         }
@@ -3899,8 +4000,28 @@ extension MainViewController: TabDelegate {
 
 extension MainViewController: TabSwitcherDelegate {
 
-    func tabSwitcherDidDismiss(tabSwitcher: TabSwitcherViewController) {
-        showMenuHighlighterIfNeeded()
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
+        defer { showMenuHighlighterIfNeeded() }
+        let previousTab = currentTab
+        
+        guard tab !== previousTab?.tabModel else {
+            if daxDialogsManager.shouldShowFireButtonPulse {
+                showFireButtonPulse()
+            }
+            themeColorManager.updateThemeColor()
+            return
+        }
+        
+        if let tab {
+            tab.viewed = true
+            tabManager.select(tab, forcingMode: true, dismissCurrent: false)
+        }
+
+        guard let newTab = tabManager.current(createIfNeeded: true) else {
+            assertionFailure("Couldn't create new tab")
+            return
+        }
+        transitionTo(tab: newTab, from: previousTab)
     }
 
     private func animateLogoAppearance() {
@@ -3929,13 +4050,6 @@ extension MainViewController: TabSwitcherDelegate {
         themeColorManager.updateThemeColor()
     }
 
-    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab) {
-        selectTab(tab)
-        if daxDialogsManager.shouldShowFireButtonPulse {
-            showFireButtonPulse()
-        }
-        themeColorManager.updateThemeColor()
-    }
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
         guard let bookmark = self.menuBookmarksViewModel.bookmark(for: url) else { return }
@@ -3959,30 +4073,9 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
-    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
-        let isLastTabInNormalMode = tabManager.currentTabsModel.count == 1 && !tabManager.currentTabsModel.allowsEmpty
-        if isLastTabInNormalMode {
-            // Make sure UI updates finish before dimissing the view.
-            // However, as a result, viewDidAppear on the home controller thinks the tab 
-            //  switcher is still presented.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                tabSwitcher.dismiss(animated: true) {
-                    self.newTabPageViewController?.viewDidAppear(true)
-                }
-            }
-        }
-        closeTab(tab)
-        
-        if daxDialogsManager.shouldShowFireButtonPulse {
-            showFireButtonPulse()
-        }
-    }
-
     func closeTab(_ tab: Tab,
                   behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true) {
-        guard let index = tabManager.currentTabsModel.indexOf(tab: tab) else { return }
-
         if #available(iOS 18.4, *) {
             if let closingTabController = tabManager.controller(for: tab) {
                 webExtensionEventsCoordinator?.didCloseTab(closingTabController)
@@ -3996,19 +4089,19 @@ extension MainViewController: TabSwitcherDelegate {
         switch behavior {
         case .createEmptyTabAtSamePosition:
             let newTab = Tab(fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
-            tabManager.replaceTab(at: index, withNewTab: newTab, clearTabHistory: clearTabHistory)
-            tabManager.selectTab(newTab)
+            tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
+            tabManager.select(newTab, dismissCurrent: false)
             showBars() // In case the browser chrome bars are hidden when calling this method
         case .createOrReuseEmptyTab:
-            tabManager.remove(at: index, clearTabHistory: clearTabHistory)
+            tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
             if let existing = tabManager.firstHomeTab() {
-                tabManager.selectTab(existing)
+                tabManager.select(existing, dismissCurrent: false)
             } else {
                 tabManager.addHomeTab()
             }
             showBars() // In case the browser chrome bars are hidden when calling this method
         case .onlyClose:
-            tabManager.remove(at: index, clearTabHistory: clearTabHistory)
+            tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
         }
 
         updateCurrentTab()
@@ -4044,10 +4137,6 @@ extension MainViewController: TabSwitcherDelegate {
         openAIChat()
     }
     
-    func tabSwitcherDidUpdateBrowsingMode(tabSwitcher: TabSwitcherViewController) {
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-    }
 }
 
 extension MainViewController: BookmarksDelegate {
@@ -4083,6 +4172,10 @@ extension MainViewController: TabSwitcherButtonDelegate {
             && tabManager.current(createIfNeeded: true) == nil {
             fatalError("Unable to get current tab")
         }
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.tabSwitcherSelectedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        tabManager.currentTabsModel.currentTab?.openedAfterIdle = false
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
@@ -4354,7 +4447,15 @@ extension MainViewController {
         updateFindInPage()
     }
 
+    func refreshStatusBarBackgroundAfterAIChrome() {
+        if !themeColorManager.updateThemeColor() {
+            updateStatusBarBackgroundColor()
+        }
+    }
+
     private func updateStatusBarBackgroundColor() {
+        guard !viewCoordinator.isNavigationChromeHidden else { return }
+
         let theme = ThemeManager.shared.currentTheme
 
         if appSettings.currentAddressBarPosition == .bottom {

@@ -41,13 +41,15 @@ private enum BubbleBackedDialogMetrics {
 ///
 /// 2. **Child-level animations** (individual content views): Some views have internal state
 ///    transitions that don't change `state.type` (e.g., showing skip dialog, tutorial overlay).
-///    - Child views use `.onboardingViewVisibleAfterDelay()` modifier
-///    - Delay is tuned relative to the parent's bubble animation duration and may slightly exceed it for smoother transitions
+///    - Child views receive a `showContent` binding to control their visibility
+///    - They manage their own hide/show sequencing using the parent's animation timing constants
 enum OnboardingBubbleAnimationMetrics {
     /// How long the bubble takes to resize between steps
-    static let bubbleResizeAnimationDuration = 0.25
-    /// How long to wait before fading in new content (slightly exceeds bubble resize duration so content appears after resize visually completes)
-    static let contentFadeInDelay = 0.3
+    static let bubbleResizeAnimationDuration: TimeInterval = 0.25
+    /// How long to wait before triggering state change after content is hidden
+    static let contentFadeOutDelay: TimeInterval = 0.15
+    /// How long to wait before fading in new content (includes bubble resize duration plus buffer)
+    static let contentFadeInDelay: TimeInterval = 0.3
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -188,14 +190,23 @@ extension OnboardingRebranding {
 
         var body: some View {
             ZStack(alignment: .topTrailing) {
-                onboardingTheme.colorPalette.background
-                    .ignoresSafeArea()
-
                 switch model.state {
                 case .landing:
+                    onboardingTheme.colorPalette.background
+                        .ignoresSafeArea()
+
                     landingView
+                        .transition(AnyTransition.slideLeftAndFade.animation(.easeOut(duration: 1.0)))
                 case let .onboarding(viewState):
+                    onboardingTheme.colorPalette.background
+                        .ignoresSafeArea()
+
+                    ScrollableOnboardingBackground(viewState: viewState)
+
                     onboardingDialogView(state: viewState)
+                        .transition( // Scale content from 0.1 to 1.0 and fade in when appearing for the first time
+                            .scale.combined(with: .opacity)
+                        )
 #if DEBUG || ALPHA
                         .safeAreaInset(edge: .bottom) {
                             Button {
@@ -249,8 +260,7 @@ extension OnboardingRebranding {
 
         private var landingView: some View {
             LandingView(animationNamespace: animationNamespace) {
-                // Dismiss the landing screen 2s after all entrance animations finish
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation {
                     model.onAppear()
                 }
             }
@@ -264,7 +274,9 @@ extension OnboardingRebranding {
                     SkipOnboardingContent(
                         startBrowsingAction: model.confirmSkipOnboardingAction,
                         resumeOnboardingAction: {
-                            animateBrowserComparisonViewState(isResumingOnboarding: true)
+                            animateContentTransition {
+                                model.startOnboardingAction(isResumingOnboarding: true)
+                            }
                         }
                     )
                 )
@@ -275,8 +287,11 @@ extension OnboardingRebranding {
             return IntroDialogContent(
                 title: UserText.Onboarding.Intro.title,
                 skipOnboardingView: skipOnboardingView,
+                showContent: $showBubbleContent,
                 continueAction: {
-                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                    animateContentTransition {
+                        model.startOnboardingAction(isResumingOnboarding: false)
+                    }
                 },
                 skipAction: model.skipOnboardingAction
             )
@@ -284,9 +299,14 @@ extension OnboardingRebranding {
 
         private var browsersComparisonView: some View {
             BrowsersComparisonContent(
+                showContent: $showBubbleContent,
                 title: UserText.Onboarding.BrowsersComparison.title,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
-                cancelAction: model.cancelSetDefaultBrowserAction
+                cancelAction: {
+                    animateContentTransition {
+                        model.cancelSetDefaultBrowserAction()
+                    }
+                }
             )
         }
 
@@ -294,56 +314,37 @@ extension OnboardingRebranding {
             state: ViewState.Intro,
             configuration: BubbleBackedDialogConfiguration
         ) -> some View {
-            let stepInfo: ViewState.Intro.StepInfo? = if configuration.showsStepCounter {
+            let stepInfo: ViewState.Intro.StepInfo = if configuration.showsStepCounter {
                 .init(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
             } else {
-                nil
+                .hidden
             }
             return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
                 VStack {
                     bubbleBackedDialogContent(for: state.type)
-                        .visibility(showBubbleContent ? .visible : .invisible)
+                        .opacity(showBubbleContent ? 1 : 0)
                 }
             }
             .onAppear {
                 // Show content after initial bubble animation on first appearance
-                animateBubbleContentTransition()
-            }
-            .onChange(of: state.type) { _ in
-                animateBubbleContentTransition()
+                animateContentTransition()
             }
         }
 
         @ViewBuilder
         private func makeBubbleView<Content: View>(
             configuration: BubbleBackedDialogConfiguration,
-            stepInfo: ViewState.Intro.StepInfo?,
+            stepInfo: ViewState.Intro.StepInfo,
             @ViewBuilder content: @escaping () -> Content
         ) -> some View {
-            let tailPosition: OnboardingBubbleView<Content>.TailPosition = switch configuration.tailDirection {
-            case .leading:
-                .bottom(offset: configuration.tailOffset, direction: .leading)
-            case .trailing:
-                .bottom(offset: configuration.tailOffset, direction: .trailing)
-            }
-
-            if let stepInfo {
-                OnboardingBubbleView.withStepProgressIndicator(
-                    tailPosition: tailPosition,
-                    currentStep: stepInfo.currentStep,
-                    totalSteps: stepInfo.totalSteps
-                ) {
-                    content()
-                }
-            } else {
-                OnboardingBubbleView(
-                    tailPosition: tailPosition,
-                    contentInsets: onboardingTheme.linearBubbleMetrics.contentInsets,
-                    arrowLength: onboardingTheme.linearBubbleMetrics.arrowLength,
-                    arrowWidth: onboardingTheme.linearBubbleMetrics.arrowWidth
-                ) {
-                    content()
-                }
+            // Always use withStepProgressIndicator to maintain consistent view identity
+            // Use isVisible to control whether the counter is shown
+            OnboardingBubbleView.withStepProgressIndicator(
+                currentStep: stepInfo.currentStep,
+                totalSteps: stepInfo.totalSteps,
+                isVisible: configuration.showsStepCounter
+            ) {
+                content()
             }
         }
 
@@ -420,11 +421,15 @@ extension OnboardingRebranding {
 
         private var addToDockPromoView: some View {
             AddToDockPromoContent(
+                showContent: $showBubbleContent,
                 showTutorialAction: {
+                    // Don't use animateContentTransition here - the child handles it
                     model.addToDockShowTutorialAction()
                 },
                 dismissAction: { fromAddToDockTutorial in
-                    model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
+                    animateContentTransition {
+                        model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
+                    }
                 }
             )
         }
@@ -432,63 +437,68 @@ extension OnboardingRebranding {
         private var appIconPickerView: some View {
             AppIconPickerContent(
                 showContent: $model.appIconPickerContentState.showContent,
-                action: model.appIconPickerContinueAction
+                action: {
+                    animateContentTransition {
+                        model.appIconPickerContinueAction()
+                    }
+                }
             )
-            .onboardingDaxDialogStyle()
         }
 
         private var addressBarPositionView: some View {
             AddressBarPositionContent(
-                action: model.selectAddressBarPositionAction
+                action: {
+                    animateContentTransition {
+                        model.selectAddressBarPositionAction()
+                    }
+                }
             )
         }
 
         private var searchExperienceSelectionView: some View {
             SearchExperienceContent(
-                action: model.selectSearchExperienceAction
+                action: {
+                    animateContentTransition {
+                        model.selectSearchExperienceAction()
+                    }
+                }
             )
         }
 
-        /// Animates bubble content visibility with a hide → delay → show sequence.
-        /// Use this for content changes that don't trigger `.onChange(of: state.type)`.
-        private func animateBubbleContentTransition() {
-            // Hide content
+        /// Animates bubble content with a hide → optional action → show sequence.
+        ///
+        /// This three-phase sequence prevents cross-fading between old and new content:
+        /// 1. Hide current content immediately (no fade-out animation)
+        /// 2. Optionally execute action after brief delay (triggers state change and bubble resize)
+        /// 3. Show new content after bubble finishes resizing
+        ///
+        /// - Parameter action: Optional closure to execute between hiding and showing content.
+        ///                     If nil, content is shown immediately after fade-in delay (for initial appearance).
+        private func animateContentTransition(action: (() -> Void)? = nil) {
+            // Phase 1: Hide current content immediately
             showBubbleContent = false
 
-            // Show content after delay (matching bubble animation duration)
-            DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                withAnimation {
-                    showBubbleContent = true
+            if let action {
+                // Phase 2: After content is hidden, trigger the action
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeOutDelay) {
+                    // Call action without animation wrapper
+                    // The bubble resize animation is handled by .animation(..., value: state.type) modifier on the bubble view
+                    action()
                 }
-            }
-        }
 
-        private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
-            // Hide content of Intro dialog before animating
-            model.introState.showIntroViewContent = false
-
-            // Animation with small delay for a better effect when intro content disappear
-            let animationDuration = OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration
-            let contentFadeInDelay = OnboardingBubbleAnimationMetrics.contentFadeInDelay
-            let animation = Animation
-                .linear(duration: animationDuration)
-                .delay(contentFadeInDelay)
-
-            if #available(iOS 17, *) {
-                withAnimation(animation) {
-                    model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
-                } completion: {
-                    model.browserComparisonState.animateComparisonText = true
-                    model.browserComparisonState.showComparisonButton = true
+                // Phase 3: After bubble resize completes, show new content
+                let totalDelay = OnboardingBubbleAnimationMetrics.contentFadeOutDelay + OnboardingBubbleAnimationMetrics.contentFadeInDelay
+                DispatchQueue.main.asyncAfter(deadline: .now() + totalDelay) {
+                    withAnimation {
+                        showBubbleContent = true
+                    }
                 }
             } else {
-                withAnimation(animation) {
-                    model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
-                }
-                // iOS < 17 fallback: wait for total animation time (delay + duration)
-                DispatchQueue.main.asyncAfter(deadline: .now() + contentFadeInDelay + animationDuration) {
-                    model.browserComparisonState.animateComparisonText = true
-                    model.browserComparisonState.showComparisonButton = true
+                // First appearance of bubble. Show content after fade-in delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                    withAnimation {
+                        showBubbleContent = true
+                    }
                 }
             }
         }
@@ -518,5 +528,44 @@ private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+// MARK: - Custom Transitions
+
+extension AnyTransition {
+    /// Slides content to the left while fading out, matching the scrollable background exit animation.
+    ///
+    /// This transition mimics the behavior of `ExitingBackgroundView` in `ScrollableOnboardingBackground`,
+    /// sliding the view until its trailing edge aligns with the screen's leading edge while fading out
+    /// at twice the rate of the slide animation.
+    static var slideLeftAndFade: AnyTransition {
+        .asymmetric(
+            insertion: .identity,
+            removal: .modifier(
+                active: SlideLeftAndFadeModifier(progress: 1.0),
+                identity: SlideLeftAndFadeModifier(progress: 0.0)
+            )
+        )
+    }
+}
+
+private struct SlideLeftAndFadeModifier: ViewModifier, Animatable {
+    var progress: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        GeometryReader { geometry in
+            content
+                // Slide left: at progress=1.0, trailing edge reaches screen's leading edge
+                // Image is centered in frame, so: offset = -(screenWidth/2 + imageWidth/2)
+                .offset(x: -(geometry.size.width / 2 + geometry.size.width / 2) * progress)
+                // Fade out twice as fast as the slide, clamped to avoid negative opacity
+                .opacity(max(0, 1.0 - progress * 2))
+        }
     }
 }

@@ -250,11 +250,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
                       line: line)
 
         // Assert no other Subscription pixels were fired except the expected
-#if APPSTORE
-        let subscriptionPixelPrefix = "m_mac_store_privacy-pro"
-#else
-        let subscriptionPixelPrefix = "m_mac_direct_privacy-pro"
-#endif
+        let subscriptionPixelPrefix = NSApp.isSandboxed ? "m_mac_store_privacy-pro" : "m_mac_direct_privacy-pro"
         let otherPixels = pixelsFired.subtracting(expectedPixels)
         let otherSubscriptionPixels = otherPixels.filter { $0.hasPrefix(subscriptionPixelPrefix) }
         XCTAssertTrue(otherSubscriptionPixels.isEmpty,

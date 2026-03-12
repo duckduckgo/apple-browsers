@@ -75,7 +75,7 @@ jobs:
   # This job sets up the matrix strategy arguments for the ui-tests job
   setup-tests:
     name: Set up tests list
-    runs-on: macos-15
+    runs-on: macos-26
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
@@ -105,14 +105,15 @@ jobs:
           all_os_versions="${{ inputs.all_os_versions || 'true' }}"
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
-            runner='["macos-15-xlarge"]'
-            include='[{"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.4"}]'
+            runner='["macos-26-xlarge"]'
+            include='[{"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.2"}]'
           else
             all_os_versions='true'
-            runner='["macos-14-xlarge", "macos-15-xlarge"]'
+            runner='["macos-14-xlarge", "macos-15-xlarge", "macos-26-xlarge"]'
             include=$(jq -c <<< '[
               {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "15.4"},
-              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.4"}
+              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "26.2"},
+              {"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.2"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -189,11 +190,11 @@ jobs:
         ref: ${{ inputs.branch || github.sha }}
 
     - name: Install screenresolution
-      if: matrix.runner == 'macos-15-xlarge'
+      if: matrix.os-version != '14'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: matrix.runner == 'macos-15-xlarge'
+      if: matrix.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies
@@ -289,6 +290,30 @@ jobs:
       run: |
         log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
+
+    - name: Resolve package dependencies
+      working-directory: macOS
+      run: |
+        max_attempts=5
+        retry_delay=10
+
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Attempt $attempt of $max_attempts"
+          if xcodebuild -resolvePackageDependencies \
+            -scheme "macOS UI Tests CI" \
+            -derivedDataPath DerivedData \
+            2>&1 | tee resolve.log; then
+            echo "Package resolution succeeded"
+            exit 0
+          fi
+
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Package resolution failed (attempt $attempt), retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "Package resolution failed after $max_attempts attempts"
+        exit 1
 
     - name: Build for testing
       working-directory: macOS

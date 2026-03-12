@@ -40,19 +40,21 @@ protocol TabsModelManaging: AnyObject, TabsModelReading {
     var allowsEmpty: Bool { get }
     var tabsPublisher: AnyPublisher<[Tab], Never> { get }
     var currentTab: Tab? { get }
+    var nextTab: Tab? { get }
+    var previousTab: Tab? { get }
+    var tabBefore: Tab? { get }
     var currentIndex: Int? { get }
     var hasUnread: Bool { get }
     var hasActiveTabs: Bool { get }
-    func select(tabAt index: Int)
-    func get(tabAt index: Int) -> Tab
-    func add(tab: Tab)
-    func insert(tab: Tab, at index: Int)
-    func moveTab(from sourceIndex: Int, to destIndex: Int)
-    func remove(at index: Int)
+    func select(tab: Tab)
+    func get(tabAt index: Int?) -> Tab?
+    func insert(tab: Tab, placement: TabsModel.TabPlacement, selectNewTab: Bool)
+    func move(tab: Tab, to destIndex: Int)
     /// This *does not* add a new empty tab after removing the items.
-    func remove(_ indexPaths: [IndexPath])
+    func removeTabs(_ tabs: [Tab])
     func remove(tab: Tab)
     func clearAll()
+    func tabExists(tab: Tab) -> Bool
     func tabExists(withHost host: String) -> Bool
 }
 

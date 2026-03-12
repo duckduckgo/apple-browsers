@@ -23,6 +23,7 @@ import Persistence
 import Core
 import UIKit
 import AIChat
+import PrivacyConfig
 import enum Common.DevicePlatform
 
 // MARK: - TextEntryMode Enum
@@ -84,6 +85,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -104,7 +106,10 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var isUsingFadeOutAnimation: Bool {
-        devicePlatform.isIphone
+        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
+            return devicePlatform.isIphone
+        }
+        return false
     }
 
     var isVoiceSearchEnabled: Bool {
@@ -158,6 +163,7 @@ final class SwitchBarHandler: SwitchBarHandling {
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
@@ -165,6 +171,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
+        self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
         self.isFireTab = isFireTab
 

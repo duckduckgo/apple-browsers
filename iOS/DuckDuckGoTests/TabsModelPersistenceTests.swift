@@ -32,19 +32,27 @@ class TabsModelPersistenceTests: XCTestCase {
         static let secondUrl = "http://anotherurl.com"
     }
 
-    var mockStore: ThrowingKeyValueStoring!
+    var mockNormalStore: ThrowingKeyValueStoring!
+    var mockFireStore: ThrowingKeyValueStoring!
     var mockLegacyStore: KeyValueStoring!
     var persistence: TabsModelPersisting!
+    private var firstTab: Tab!
+    private var secondTab: Tab!
 
     override func setUp() async throws {
         try await super.setUp()
 
-        let store = try MockKeyValueFileStore(throwOnInit: nil)
+        let normalStore = try MockKeyValueFileStore(throwOnInit: nil)
+        let fireStore = try MockKeyValueFileStore(throwOnInit: nil)
         let legacyStore = MockKeyValueStore()
-        mockStore = store
+        mockNormalStore = normalStore
+        mockFireStore = fireStore
         mockLegacyStore = legacyStore
+        firstTab = tab(title: Constants.firstTitle, url: Constants.firstUrl)
+        secondTab = tab(title: Constants.firstTitle, url: Constants.firstUrl)
 
-        persistence = TabsModelPersistence(store: store,
+        persistence = TabsModelPersistence(normalStore: normalStore,
+                                           fireStore: fireStore,
                                            legacyStore: legacyStore)
 
         setupUserDefault(with: #file)
@@ -53,14 +61,6 @@ class TabsModelPersistenceTests: XCTestCase {
 
     private func tab(title: String, url: String) -> Tab {
         return Tab(link: Link(title: title, url: URL(string: url)!))
-    }
-
-    private var firstTab: Tab {
-        return tab(title: Constants.firstTitle, url: Constants.firstUrl)
-    }
-
-    private var secondTab: Tab {
-        return tab(title: Constants.firstTitle, url: Constants.firstUrl)
     }
 
     private var model: TabsModel {
@@ -94,7 +94,7 @@ class TabsModelPersistenceTests: XCTestCase {
 
     func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() throws {
         let model = self.model
-        model.select(tabAt: 1)
+        model.select(tab: model.tabs[1])
         persistence.save(model: model, for: .normal)
 
         let loaded = try persistence.getTabsModel(for: .normal)
@@ -122,7 +122,7 @@ class TabsModelPersistenceTests: XCTestCase {
         mockLegacyStore.set(data, forKey: "com.duckduckgo.opentabs")
 
         let newData = try NSKeyedArchiver.archivedData(withRootObject: TabsModel(desktop: false), requiringSecureCoding: false)
-        try mockStore.set(newData, forKey: "TabsModelKey")
+        try mockNormalStore.set(newData, forKey: "TabsModelKey")
 
         let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)

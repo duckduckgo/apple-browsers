@@ -40,6 +40,7 @@ public struct Step: Codable, Sendable {
     enum DecodingError: Error {
         case unsupportedStepType
         case unsupportedActionType
+        case invalidActionData
     }
 
     init(type: StepType, actions: [Action], optOutType: OptOutType? = nil) {
@@ -85,31 +86,31 @@ public struct Step: Codable, Sendable {
 
             switch actionType {
             case .click:
-                let action = try JSONDecoder().decode(ClickAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(ClickAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             case .extract:
-                let action = try JSONDecoder().decode(ExtractAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(ExtractAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             case .fillForm:
-                let action = try JSONDecoder().decode(FillFormAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(FillFormAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             case .navigate:
-                let action = try JSONDecoder().decode(NavigateAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(NavigateAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             case .expectation:
-                let action = try JSONDecoder().decode(ExpectationAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(ExpectationAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             case .getCaptchaInfo:
-                let action = try JSONDecoder().decode(GetCaptchaInfoAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(GetCaptchaInfoAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             case .solveCaptcha:
-                let action = try JSONDecoder().decode(SolveCaptchaAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(SolveCaptchaAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             case .emailConfirmation:
-                let action = try JSONDecoder().decode(EmailConfirmationAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(EmailConfirmationAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             case .condition:
-                let action = try JSONDecoder().decode(ConditionAction.self, from: jsonData)
+                let action = try JSONDecoder().decode(ConditionAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
             }
         }
@@ -119,8 +120,17 @@ public struct Step: Codable, Sendable {
 }
 
 extension Array where Element == Action {
+    // swiftlint:disable:next cyclomatic_complexity
     func encode(to container: inout any UnkeyedEncodingContainer) throws {
         for action in self {
+            if let json = action.json {
+                guard let rawActionObject = try JSONSerialization.jsonObject(with: json) as? [String: Any] else {
+                    throw Step.DecodingError.invalidActionData
+                }
+                try container.encodeIfPresent(rawActionObject)
+                continue
+            }
+
             if let navigateAction = action as? NavigateAction {
                 try container.encode(navigateAction)
             } else if let extractAction = action as? ExtractAction {

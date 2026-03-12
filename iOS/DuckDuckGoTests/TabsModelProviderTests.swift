@@ -43,9 +43,9 @@ final class TabsModelProviderTests: XCTestCase {
             Tab(link: exampleLink)
         ], desktop: false)
         let fireModel = TabsModel(tabs: [
-            Tab(link: exampleLink),
-            Tab(link: exampleLink),
-            Tab(link: exampleLink)
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true)
         ], desktop: false, mode: .fire)
 
         let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
@@ -62,21 +62,22 @@ final class TabsModelProviderTests: XCTestCase {
         let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
         let initialCount = sut.aggregateTabsModel.count
 
-        normalModel.add(tab: Tab(link: exampleLink))
+        normalModel.insert(tab: Tab(link: exampleLink), placement: .atEnd, selectNewTab: true)
 
         XCTAssertEqual(sut.aggregateTabsModel.count, initialCount + 1)
     }
 
     func testWhenTabRemovedThenAggregateCountUpdates() {
         let fireModel = TabsModel(tabs: [
-            Tab(link: exampleLink),
-            Tab(link: exampleLink)
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true)
         ], desktop: false, mode: .fire)
         let normalModel = TabsModel(desktop: false)
 
         let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
 
-        fireModel.remove(at: 0)
+        let tabToRemove = fireModel.tabs[0]
+        fireModel.remove(tab: tabToRemove)
 
         XCTAssertEqual(sut.aggregateTabsModel.count, normalModel.count + fireModel.count)
     }

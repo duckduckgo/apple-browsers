@@ -134,6 +134,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
+    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature(featureFlagger: featureFlagger)
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -162,6 +163,11 @@ class TabViewController: UIViewController {
     let adClickAttributionLogic = ContentBlocking.shared.makeAdClickAttributionLogic(tld: tld)
 
     private var httpsForced: Bool = false
+    private(set) lazy var safariRedirectHandler: SafariRedirectHandler = {
+        let handler = SafariRedirectHandler(tld: AppDependencyProvider.shared.storageCache.tld, featureFlagger: featureFlagger)
+        handler.delegate = self
+        return handler
+    }()
     private var lastUpgradedURL: URL?
     private var lastError: Error?
     private var lastHttpStatusCode: Int?
@@ -417,7 +423,8 @@ class TabViewController: UIViewController {
                                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                                    privacyStats: PrivacyStatsProviding,
-                                   voiceSearchHelper: VoiceSearchHelperProtocol) -> TabViewController {
+                                   voiceSearchHelper: VoiceSearchHelperProtocol,
+                                   darkReaderFeatureSettings: DarkReaderFeatureSettings) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -449,7 +456,8 @@ class TabViewController: UIViewController {
                               productSurfaceTelemetry: productSurfaceTelemetry,
                               sharedSecureVault: sharedSecureVault,
                               privacyStats: privacyStats,
-                              voiceSearchHelper: voiceSearchHelper
+                              voiceSearchHelper: voiceSearchHelper,
+                              darkReaderFeatureSettings: darkReaderFeatureSettings
             )
         })
         return controller
@@ -503,6 +511,7 @@ class TabViewController: UIViewController {
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
+    let darkReaderFeatureSettings: DarkReaderFeatureSettings
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -555,7 +564,8 @@ class TabViewController: UIViewController {
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                    privacyStats: PrivacyStatsProviding,
-                   voiceSearchHelper: VoiceSearchHelperProtocol) {
+                   voiceSearchHelper: VoiceSearchHelperProtocol,
+                   darkReaderFeatureSettings: DarkReaderFeatureSettings) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -593,10 +603,10 @@ class TabViewController: UIViewController {
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
-                                                         featureFlagger: featureFlagger,
                                                          productSurfaceTelemetry: productSurfaceTelemetry)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
@@ -711,8 +721,10 @@ class TabViewController: UIViewController {
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         let isLargeWidth = AppWidthObserver.shared.isLargeWidth
 
-        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth {
-            /// When address bar is at bottom on iPhone, offset webview to make room for the bars
+        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth && !(isAITab && unifiedToggleInputFeature.isAvailable) {
+            /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
+            /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
+            /// manages its own native bottom layout via the UnifiedToggleInput container.
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
             webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
         } else {
@@ -952,6 +964,7 @@ class TabViewController: UIViewController {
         wasLoadingStoppedExternally = false
         webView.stopLoading()
         dismissJSAlertIfNeeded()
+        safariRedirectHandler.reset()
 
         load(url: url, didUpgradeURL: false)
     }
@@ -1028,7 +1041,7 @@ class TabViewController: UIViewController {
         switch keyPath {
 
         case #keyPath(WKWebView.isLoading):
-            if webView.isLoading {
+            if webView.isLoading, isTabCurrentlyPresented() {
                 delegate?.showBars()
             }
             if #available(iOS 18.4, *) {
@@ -1036,7 +1049,9 @@ class TabViewController: UIViewController {
             }
 
         case #keyPath(WKWebView.estimatedProgress):
-            progressWorker.progressDidChange(webView.estimatedProgress)
+            if isTabCurrentlyPresented() {
+                progressWorker.progressDidChange(webView.estimatedProgress)
+            }
 
         case #keyPath(WKWebView.url):
             // A short delay is required here, because the URL takes some time
@@ -1411,11 +1426,13 @@ class TabViewController: UIViewController {
     }
     
     func presentOpenInExternalAppAlert(url: URL) {
+        if safariRedirectHandler.handleRedirect(to: url) { return }
+
         let title = UserText.customUrlSchemeTitle
         let message = UserText.customUrlSchemeMessage
         let open = UserText.customUrlSchemeOpen
         let dontOpen = UserText.customUrlSchemeDontOpen
-        
+
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: dontOpen, style: .cancel, handler: { _ in
             if self.webView.url == nil {
@@ -1466,7 +1483,8 @@ class TabViewController: UIViewController {
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
-                                                                     isForceDarkModeEnabled: nil)
+                                                                     isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
+                                                                     isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL))
     }
 
     public func print() {
@@ -2264,7 +2282,7 @@ extension TabViewController: WKNavigationDelegate {
                         NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     }
 
-                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL && featureFlagger.isFeatureOn(.aiChatAtb)
+                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL
                     if !shouldSkipSearchAtbForDuckAI {
                         let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
                                                                             application: UIApplication.shared)
@@ -2339,11 +2357,17 @@ extension TabViewController: WKNavigationDelegate {
 
         let schemeType = SchemeHandler.schemeType(for: url)
         self.blobDownloadTargetFrame = nil
+
+        if safariRedirectHandler.handleRedirect(to: url) {
+            completion(.cancel)
+            return
+        }
+
         switch schemeType {
         case .allow:
             completion(.allow)
             return
-            
+
         case .navigational:
             performNavigationFor(url: url,
                                  navigationAction: navigationAction,
@@ -2992,6 +3016,13 @@ extension TabViewController: UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer == showBarsTapGestureRecogniser else {
+            return false
+        }
+
+        // Don't delay tap gestures that are inside the onboarding dialog
+        if let daxContextualOnboardingController,
+           let otherView = otherRecognizer.view,
+           otherView.isDescendant(of: daxContextualOnboardingController.view) {
             return false
         }
 
@@ -4170,5 +4201,26 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
         PixelKit.fire(SERPSettingsPixel.openDuckAIButtonClick, frequency: .dailyAndStandard)
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
+    }
+}
+
+// MARK: - SafariRedirectHandlerDelegate
+
+extension TabViewController: SafariRedirectHandlerDelegate {
+
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL) {
+        load(url: url, didUpgradeURL: false)
+    }
+
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestOpenExternallyURL url: URL) {
+        openExternally(url: url)
+    }
+
+    func safariRedirectHandlerDidRequestGoBack(_ handler: SafariRedirectHandling) {
+        goBack()
+    }
+
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestPresentAlert alert: UIAlertController) {
+        delegate?.tab(self, didRequestPresentingAlert: alert)
     }
 }

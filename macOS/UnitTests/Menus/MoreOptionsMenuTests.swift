@@ -58,7 +58,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         super.setUp()
         tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
         fireproofDomains = MockFireproofDomains(domains: [])
-        passwordManagerCoordinator = PasswordManagerCoordinator()
+        passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: nil)
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)
         capturingActionDelegate = CapturingOptionsButtonMenuDelegate()
         internalUserDecider = MockInternalUserDecider()
@@ -100,6 +100,12 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
                                       freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
+        setupMoreOptionsMenu(isFireWindowDefault: isFireWindowDefault, dockCustomizer: self.dockCustomizer, freeTrialBadgePersistor: freeTrialBadgePersistor)
+    }
+    @MainActor
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
+                                      dockCustomizer: DockCustomization?,
+                                      freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
 
@@ -117,7 +123,7 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                           freemiumDBPFeature: mockFreemiumDBPFeature,
                                           freemiumDBPPresenter: mockFreemiumDBPPresenter,
-                                          dockCustomizer: dockCustomizer,
+                                          dockCustomizer: dockCustomizer ?? self.dockCustomizer,
                                           defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
                                           notificationCenter: mockNotificationCenter,
                                           featureFlagger: mockFeatureFlagger,
@@ -228,12 +234,12 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[24].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[25].title, UserText.mainMenuHelp)
 
-#if APPSTORE
-        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
-        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
-#else
-        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.settings)
-#endif
+        if NSApp.isSandboxed {
+            XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
+            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
+        } else {
+            XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.settings)
+        }
     }
 
     @MainActor
@@ -276,12 +282,12 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[25].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuHelp)
 
-#if APPSTORE
-        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
-        XCTAssertEqual(moreOptionsMenu.items[28].title, UserText.settings)
-#else
-        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
-#endif
+        if NSApp.isSandboxed {
+            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
+            XCTAssertEqual(moreOptionsMenu.items[28].title, UserText.settings)
+        } else {
+            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
+        }
     }
 
     @MainActor
@@ -472,7 +478,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     // MARK: - Default Browser Action and Add To Dock
 
-#if SPARKLE
     @MainActor
     func testWhenBrowserIsNotAddedToDockThenMenuItemIsVisible() {
         dockCustomizer.dockStatus = false
@@ -494,7 +499,17 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
         XCTAssertEqual(moreOptionsMenu.items[2].title, UserText.setAsDefaultBrowser)
     }
-#endif
+
+    @MainActor
+    func testWhenDockCustomizerIsNotAvailableThenAddToDockMenuItemIsNotVisible() {
+        defaultBrowserProvider.isDefault = false
+
+        setupMoreOptionsMenu(dockCustomizer: nil)
+        moreOptionsMenu.update()
+
+        XCTAssertNotEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
+        XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.setAsDefaultBrowser)
+    }
 
     @MainActor
     func testWhenBrowserIsAddedToDockThenMenuItemIsNotVisible() {

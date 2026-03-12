@@ -25,6 +25,9 @@ extension OnboardingRebranding.OnboardingView {
     struct OnboardingSearchExperiencePicker: View {
         @ObservedObject var viewModel: OnboardingSearchExperiencePickerViewModel
         @Environment(\.onboardingTheme) private var onboardingTheme
+        // Keep both option titles at the same measured height so indicators align
+        // whether one title wraps or both remain on a single line.
+        @State private var maxOptionTitleHeight: CGFloat = 0
 
         var body: some View {
             HStack(alignment: .top, spacing: PickerMetrics.optionsSpacing) {
@@ -32,8 +35,9 @@ extension OnboardingRebranding.OnboardingView {
                     isSelected: !viewModel.isSearchAndAIChatEnabled.wrappedValue,
                     selectedImage: OnboardingRebrandingImages.SearchExperience.searchOn,
                     unselectedImage: OnboardingRebrandingImages.SearchExperience.searchOff,
-                    title: UserText.settingsAIPickerSearchOnly,
-                    accentColor: onboardingTheme.colorPalette.optionsListIconColor
+                    title: UserText.Onboarding.SearchExperience.searchOnlyOption,
+                    accentColor: onboardingTheme.colorPalette.optionsListIconColor,
+                    titleMinHeight: maxOptionTitleHeight
                 ) {
                     viewModel.isSearchAndAIChatEnabled.wrappedValue = false
                 }
@@ -42,11 +46,16 @@ extension OnboardingRebranding.OnboardingView {
                     isSelected: viewModel.isSearchAndAIChatEnabled.wrappedValue,
                     selectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOn,
                     unselectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOff,
-                    title: UserText.settingsAIPickerSearchAndDuckAI,
-                    accentColor: onboardingTheme.colorPalette.optionsListIconColor
+                    title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
+                    accentColor: onboardingTheme.colorPalette.optionsListIconColor,
+                    titleMinHeight: maxOptionTitleHeight
                 ) {
                     viewModel.isSearchAndAIChatEnabled.wrappedValue = true
                 }
+            }
+            // Collect per-option measured title heights and apply the maximum to both.
+            .onPreferenceChange(RebrandedOptionTitleHeightPreferenceKey.self) { height in
+                maxOptionTitleHeight = height
             }
         }
     }
@@ -59,6 +68,7 @@ private struct PickerOption: View {
     let unselectedImage: Image
     let title: String
     let accentColor: Color
+    let titleMinHeight: CGFloat
     let action: () -> Void
 
     @Environment(\.onboardingTheme) private var onboardingTheme
@@ -70,20 +80,40 @@ private struct PickerOption: View {
                     .renderingMode(.original)
                     .resizable()
                     .scaledToFit()
-                    .frame(height: PickerMetrics.imageHeight)
+                    .frame(height: PickerMetrics.imageHeight, alignment: .top)
 
-                Text(title)
-                    .font(onboardingTheme.typography.small)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .multilineTextAlignment(.center)
+                measuredTitleBlock {
+                    Text(title)
+                        .font(onboardingTheme.typography.small)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                // Equalize title block height between the two options.
+                .frame(minHeight: titleMinHeight, alignment: .top)
 
                 RadioIndicator(isSelected: isSelected, accentColor: accentColor)
                     .frame(width: PickerMetrics.radioSize, height: PickerMetrics.radioSize)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .top)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func measuredTitleBlock<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: .infinity, alignment: .center)
+            .background(
+                GeometryReader { geometry in
+                    // Report measured title block height to parent for equalization.
+                    Color.clear.preference(
+                        key: RebrandedOptionTitleHeightPreferenceKey.self,
+                        value: geometry.size.height
+                    )
+                }
+            )
     }
 }
 
@@ -125,4 +155,12 @@ private enum PickerMetrics {
     static let radioStrokeOpacity: Double = 0.3
     static let radioStrokeWidth: CGFloat = 1.5
     static let radioCheckmarkColor: Color = .white
+}
+
+private struct RebrandedOptionTitleHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
 }

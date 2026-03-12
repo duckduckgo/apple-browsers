@@ -94,38 +94,6 @@ extension OnboardingRebranding.OnboardingView {
             )
         }
 
-        private var content: some View {
-            LinearDialogContentContainer(
-                metrics: .init(
-                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
-                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
-                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
-                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
-                ),
-                title: {
-                    Text(Copy.title)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.title)
-                        .multilineTextAlignment(.center)
-                },
-                actions: {
-                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
-                        Button(action: restoreAction) {
-                            Text(UserText.Onboarding.Intro.continueCTA)
-                        }
-                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
-
-                        if skipOnboardingView != nil {
-                            Button(action: showSkipOnboardingDialog) {
-                                Text(UserText.Onboarding.Intro.skipCTA)
-                            }
-                            .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
-                        }
-                    }
-                }
-            )
-        }
-
         /// Handles the transition from restore dialog to skip onboarding dialog with proper animation timing.
         ///
         /// This function orchestrates a three-phase animation sequence:

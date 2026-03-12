@@ -33,6 +33,7 @@ public final class DataBrokerProtectionSettings {
         static let mainConfigETagKey = "dbp.mainConfigETag"
         static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
+        static let preferredRunDateMigrationKey = "dbp.preferredRunDateMigration"
     }
 
     public enum SelectedEnvironment: String, Codable {
@@ -85,6 +86,17 @@ public final class DataBrokerProtectionSettings {
     public func resetBrokerDeliveryData() {
         mainConfigETag = nil
         updateLastSuccessfulBrokerJSONUpdateCheckTimestamp(Date.distantPast.timeIntervalSince1970)
+    }
+
+    // MARK: - Preferred run date migration
+
+    public var hasPerformedPreferredRunDateMigration: Bool {
+        get {
+            defaults.bool(forKey: Keys.preferredRunDateMigrationKey)
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.preferredRunDateMigrationKey)
+        }
     }
 
     // MARK: - Service root

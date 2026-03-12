@@ -285,7 +285,8 @@ extension OnboardingRebranding {
             }
 
             return IntroDialogContent(
-                title: UserText.Onboarding.Intro.title,
+                title: UserText.Onboarding.Rebranding.Intro.title,
+                message: UserText.Onboarding.Rebranding.Intro.message,
                 skipOnboardingView: skipOnboardingView,
                 showContent: $showBubbleContent,
                 continueAction: {

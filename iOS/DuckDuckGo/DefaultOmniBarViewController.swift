@@ -39,6 +39,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var animateNextEditingTransition = true
     private var isSuppressingKeyboardTransfer = false
 
+    weak var unifiedToggleInputOmnibarActivating: UnifiedToggleInputOmnibarActivating?
+
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
 
@@ -100,6 +102,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return false
         }
 
+        if unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
+            currentText: extractCurrentTextForEditing(textField)
+        ) == .intercept {
+            return false
+        }
+
         if dependencies.aiChatAddressBarExperience.shouldUseExperimentalEditingState {
             if textFieldTapped {
                 omniDelegate?.onExperimentalAddressBarTapped()
@@ -140,6 +148,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             self.omniBarView.isActiveState = false
             self.omniBarView.layoutIfNeeded()
         }
+    }
+
+    private func extractCurrentTextForEditing(_ textField: UITextField) -> String? {
+        guard let text = textField.text, !text.isEmpty else { return nil }
+        if let url = URL(string: text), url.host != nil {
+            return url.absoluteString
+        }
+        return text
     }
 
     // MARK: - Editing Lifecycle Overrides
@@ -298,9 +314,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
+        let isFireTab = omniDelegate?.isCurrentTabFireTab() ?? false
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
                                                 storage: UserDefaults.standard, aiChatSettings: dependencies.aiChatSettings,
-                                                sessionStateMetrics: sessionStateMetrics)
+                                                sessionStateMetrics: sessionStateMetrics,
+                                                isFireTab: isFireTab)
 
         guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty, omniBarView.isFullAIChatHidden else {
             return switchBarHandler
@@ -494,8 +512,12 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onExperimentalAddressBarCancelPressed()
     }
 
-    func onSwitchTabToIndex(_ index: Int) {
-        omniDelegate?.onSwitchTabToIndex(index)
+    func onSwitchToTab(_ tab: Tab) {
+        omniDelegate?.onSwitchToTab(tab)
+    }
+
+    func onToggleModeSwitched() {
+        omniDelegate?.onToggleModeSwitched()
     }
 }
 

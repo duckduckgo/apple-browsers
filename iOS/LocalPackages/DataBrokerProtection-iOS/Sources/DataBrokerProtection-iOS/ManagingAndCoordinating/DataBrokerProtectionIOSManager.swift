@@ -192,7 +192,8 @@ public final class DataBrokerProtectionIOSManager {
         let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: settings),
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
-                                                        runTypeProvider: settings)
+                                                        runTypeProvider: settings,
+                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated })
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: settings,
@@ -286,6 +287,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
             Logger.dataBrokerProtection.log("No profile, skipping foreground operations")
             return
         }
+
+        let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+        operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
 
         if featureFlagger.isForegroundRunningOnAppActiveFeatureOn {
             await startImmediateScanOperations()

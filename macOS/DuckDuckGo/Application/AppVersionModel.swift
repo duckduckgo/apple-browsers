@@ -31,40 +31,44 @@ final class AppVersionModel {
     /// If this class only needs to provide the app version, it can be `nil`.
     private let internalUserDecider: InternalUserDecider?
 
-    init(appVersion: AppVersion, internalUserDecider: InternalUserDecider?) {
+    private let buildType: ApplicationBuildType
+
+    init(appVersion: AppVersion = AppVersion(), internalUserDecider: InternalUserDecider? = nil, buildType: ApplicationBuildType = StandardApplicationBuildType()) {
         self.internalUserDecider = internalUserDecider
         self.appVersion = appVersion
+        self.buildType = buildType
     }
 
-#if ALPHA
-    let shouldDisplayPrereleaseLabel: Bool = true
-    let prereleaseLabel: String = "ALPHA"
+    var shouldDisplayPrereleaseLabel: Bool {
+        if buildType.isAlphaBuild {
+            return true
+        }
+        return internalUserDecider?.isInternalUser == true
+    }
+
+    var prereleaseLabel: String {
+        buildType.isAlphaBuild ? "ALPHA" : "BETA"
+    }
+
     var versionLabel: String {
         var versionText = UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
-        let commitSHA = appVersion.commitSHAShort
-        if !commitSHA.isEmpty {
-            versionText.append(" [\(commitSHA)]")
+        if buildType.isAlphaBuild {
+            let commitSHA = appVersion.commitSHAShort
+            if !commitSHA.isEmpty {
+                versionText.append(" [\(commitSHA)]")
+            }
         }
         return versionText
     }
+
     var versionLabelShort: String {
         var label = "\(appVersion.versionNumber).\(appVersion.buildNumber)"
-        let commitSHA = appVersion.commitSHAShort
-        if !commitSHA.isEmpty {
-            label.append("_\(commitSHA)")
+        if buildType.isAlphaBuild {
+            let commitSHA = appVersion.commitSHAShort
+            if !commitSHA.isEmpty {
+                label.append("_\(commitSHA)")
+            }
         }
         return label
     }
-#else
-    var shouldDisplayPrereleaseLabel: Bool {
-        internalUserDecider?.isInternalUser == true
-    }
-    let prereleaseLabel: String = "BETA"
-    var versionLabel: String {
-        UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
-    }
-    var versionLabelShort: String {
-        "\(appVersion.versionNumber).\(appVersion.buildNumber)"
-    }
-#endif
 }

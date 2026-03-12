@@ -89,7 +89,7 @@ enum AttributedMetricPixel: PixelKitEvent {
         static let origin = "origin"
         static let installDate = "install_date"
         static let bucketVersion = "version"
-        static let dayAverage = "day_average"
+        static let dayAverage = "dayAverage"
     }
 
     var parameters: [String: String]? {

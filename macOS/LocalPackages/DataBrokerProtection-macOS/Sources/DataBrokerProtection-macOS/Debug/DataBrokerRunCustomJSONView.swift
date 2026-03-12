@@ -140,6 +140,7 @@ struct DataBrokerRunCustomJSONView: View {
             (FeatureFlag.dbpRemoteBrokerDelivery.rawValue, viewModel.featureFlagger.isRemoteBrokerDeliveryFeatureOn.description),
             (FeatureFlag.dbpEmailConfirmationDecoupling.rawValue, viewModel.featureFlagger.isEmailConfirmationDecouplingFeatureOn.description),
             (FeatureFlag.dbpClickActionDelayReductionOptimization.rawValue, viewModel.featureFlagger.isClickActionDelayReductionOptimizationOn.description),
+            (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
         ]
     }
 
@@ -195,6 +196,7 @@ struct DataBrokerRunCustomJSONView: View {
 
             Text("macOS App version: \(viewModel.appVersion())")
             Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
+            Text("Web view applicationNameForUserAgent: \(viewModel.applicationNameForUserAgentDisplayValue)")
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(dbpFeatureFlagLines, id: \.name) { flag in

@@ -123,7 +123,7 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                           freemiumDBPFeature: mockFreemiumDBPFeature,
                                           freemiumDBPPresenter: mockFreemiumDBPPresenter,
-                                          dockCustomizer: dockCustomizer,
+                                          dockCustomizer: dockCustomizer ?? self.dockCustomizer,
                                           defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
                                           notificationCenter: mockNotificationCenter,
                                           featureFlagger: mockFeatureFlagger,
@@ -234,12 +234,12 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[24].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[25].title, UserText.mainMenuHelp)
 
-#if APPSTORE
-        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
-        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
-#else
-        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.settings)
-#endif
+        if NSApp.isSandboxed {
+            XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
+            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
+        } else {
+            XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.settings)
+        }
     }
 
     @MainActor
@@ -282,12 +282,12 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[25].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuHelp)
 
-#if APPSTORE
-        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
-        XCTAssertEqual(moreOptionsMenu.items[28].title, UserText.settings)
-#else
-        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
-#endif
+        if NSApp.isSandboxed {
+            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
+            XCTAssertEqual(moreOptionsMenu.items[28].title, UserText.settings)
+        } else {
+            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
+        }
     }
 
     @MainActor

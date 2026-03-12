@@ -100,6 +100,9 @@ public class Tab: NSObject, NSCoding {
     /// URL of the contextual AI chat session for this tab, used to restore chat state across app restarts.
     var contextualChatURL: String?
 
+    /// Whether this NTP was shown by the idle-return flow. One-shot: cleared when the user leaves the NTP.
+    var openedAfterIdle: Bool = false
+
     /// Indicates whether this tab was created after tab history tracking was implemented.
     /// Legacy tabs (created before this feature) will have incomplete history and should not support tab burning.
     /// - `true`: Tab was created with history tracking enabled (supports tab burning)
@@ -135,7 +138,7 @@ public class Tab: NSObject, NSCoding {
                 daxEasterEggLogoURL: String? = nil,
                 contextualChatURL: String? = nil,
                 supportsTabHistory: Bool = true,
-                fireTab: Bool = false,
+                fireTab: Bool,
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
@@ -191,7 +194,7 @@ public class Tab: NSObject, NSCoding {
 
     public override func isEqual(_ other: Any?) -> Bool {
         guard let other = other as? Tab else { return false }
-        return link == other.link && fireTab == other.fireTab
+        return uid == other.uid
     }
     
     func toggleDesktopMode() {

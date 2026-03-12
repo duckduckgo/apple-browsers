@@ -34,7 +34,7 @@ final class DataClientTests: XCTestCase {
         styleProvider = MockStyleProvider()
         actionsHandler = CapturingActionsHandler()
         errorHandler = CapturingErrorHandler()
-        client = DataClient(dataProvider: dataProvider, styleProvider: styleProvider, actionsHandler: actionsHandler, errorHandler: errorHandler)
+        client = DataClient(dataProvider: dataProvider, styleProvider: styleProvider, environment: .development, actionsHandler: actionsHandler, errorHandler: errorHandler)
 
         userScript = HistoryViewUserScript()
         messageHelper = .init(userScript: userScript)

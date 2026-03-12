@@ -53,9 +53,9 @@ extension WKWebViewConfiguration {
             preferences[.fullScreenEnabled] = true
         }
 
-#if !APPSTORE
-        preferences[.allowsPictureInPictureMediaPlayback] = true
-#endif
+        if !NSApp.isSandboxed {
+            preferences[.allowsPictureInPictureMediaPlayback] = true
+        }
 
         preferences[.developerExtrasEnabled] = true
         preferences[.backspaceKeyNavigationEnabled] = false

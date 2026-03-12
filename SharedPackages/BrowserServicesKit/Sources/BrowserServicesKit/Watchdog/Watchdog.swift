@@ -46,6 +46,7 @@ public final actor Watchdog {
     private let minimumHangDuration: TimeInterval
     private let maximumHangDuration: TimeInterval
     private let checkInterval: TimeInterval
+    private let timeoutRepeatCooldown: TimeInterval
 
     private static var logger = { Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection") }()
 
@@ -55,6 +56,7 @@ public final actor Watchdog {
     private var heartbeatUpdateTask: Task<Void, Never>?
 
     private var hangStartTime: DispatchTime?
+    private var lastTimeoutFireTime: DispatchTime?
     private var hangState: HangState = .responsive {
         didSet {
             if hangState != oldValue {
@@ -90,20 +92,24 @@ public final actor Watchdog {
     ///                          and will be reported as a timeout.
     ///   - checkInterval: The interval at which the main thread is checked for hangs.
     ///   - requiredRecoveryHeartbeats: The number of consecutive responsive heartbeats required to detect recovery.
+    ///   - timeoutRepeatCooldown: After firing a `uiHangNotRecovered` event, subsequent timeouts within this duration are suppressed
+    ///                            to avoid duplicate reporting for stuttery operations that repeatedly cross the timeout threshold.
     ///   - eventMapper: An event mapper that can map between watchdog events and pixels.
     ///   - crashOnTimeout: Whether the watchdog should kill the app once the maximum hang duration has been reached (used for debugging purposes)
     ///   - killAppFunction: A closure to be executed when the maximum hang duration has been reached (used for testing purposes)
     ///
-    public init(minimumHangDuration: TimeInterval = 2.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, requiredRecoveryHeartbeats: Int = 4, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
+    public init(minimumHangDuration: TimeInterval = 2.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, requiredRecoveryHeartbeats: Int = 4, timeoutRepeatCooldown: TimeInterval = 30.0, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
 
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
         assert(maximumHangDuration >= 0, "maximumHangDuration must be greater than or equal to 0")
         assert(minimumHangDuration <= maximumHangDuration, "minimumHangDuration must be less than maximumHangDuration")
+        assert(timeoutRepeatCooldown >= 0, "timeoutRepeatCooldown must be greater than or equal to 0")
 
         self.minimumHangDuration = minimumHangDuration
         self.maximumHangDuration = maximumHangDuration
         self.checkInterval = checkInterval
+        self.timeoutRepeatCooldown = timeoutRepeatCooldown
         self.recoveryState = RecoveryState(requiredHeartbeats: requiredRecoveryHeartbeats)
         self.eventMapper = eventMapper
         self.crashOnTimeout = crashOnTimeout
@@ -206,6 +212,10 @@ public final actor Watchdog {
 
             // Schedule heartbeat update on main thread (key: this might not execute if main thread is hung)
             heartbeatUpdateTask = Task { @MainActor [weak self] in
+                if Task.isCancelled {
+                    return
+                }
+
                 await self?.monitor.updateHeartbeat()
                 await self?.clearHeartbeatTask()
             }
@@ -290,7 +300,13 @@ public final actor Watchdog {
         case (.hanging, .timeout):
             hangState = .timeout
             logHangDuration(message: "Main thread hang timeout reached.", currentTime: time)
-            fireHangEvent(Watchdog.Event.uiHangNotRecovered, currentTime: time)
+
+            if isWithinTimeoutCooldown(currentTime: time) {
+                Self.logger.info("Suppressed uiHangNotRecovered event (within cooldown)")
+            } else {
+                fireHangEvent(Watchdog.Event.uiHangNotRecovered, currentTime: time)
+                lastTimeoutFireTime = time
+            }
         case (.timeout, .responsive):
             logHangDuration(message: "Main thread hang ended after timeout.", currentTime: time)
             resetHangState()
@@ -317,6 +333,18 @@ public final actor Watchdog {
         let nearestSecond = hangDurationToNearestSecond(duration: actualHangDuration)
         let reportedSecond = max(Int(minimumHangDuration), min(nearestSecond, Int(maximumHangDuration)))
         eventMapper?.fire(eventFactory(reportedSecond))
+    }
+
+    // MARK: Cooldown
+
+    private func isWithinTimeoutCooldown(currentTime: DispatchTime) -> Bool {
+        guard let lastTimeoutFireTime else {
+            return false
+        }
+
+        let elapsedNanoseconds = currentTime.uptimeNanoseconds - lastTimeoutFireTime.uptimeNanoseconds
+        let elapsed = TimeInterval(Double(elapsedNanoseconds) / .nanosecondsPerSecond)
+        return elapsed < timeoutRepeatCooldown
     }
 
     // MARK: Duration handling

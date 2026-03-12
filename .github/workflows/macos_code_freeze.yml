@@ -11,6 +11,8 @@ on:
         description: "New release version (calculated automatically if not provided)"
         required: false
         type: string
+  schedule:
+    - cron: '0 0 * * 1' # 12AM UTC on Monday
 
 concurrency:
   group: 'macos-release'
@@ -18,11 +20,20 @@ concurrency:
 
 jobs:
 
+  check_automatic_freeze:
+    name: Check Automatic Code Freeze
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || vars.MACOS_AUTOMATIC_CODE_FREEZE == '1'
+    steps:
+      - name: Code freeze is enabled
+        run: echo "Automatic code freeze is enabled or workflow was triggered manually"
+
   create_release_branch:
+    needs: check_automatic_freeze
 
     name: Create Release Branch
 
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 10
 
     outputs:
@@ -88,7 +99,7 @@ jobs:
     name: Increment Build Number
 
     needs: [ create_release_branch, run_tests ]
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 10
 
     outputs:

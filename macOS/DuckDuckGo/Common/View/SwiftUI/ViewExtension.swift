@@ -27,16 +27,6 @@ extension View {
         clipShape(RoundedCorner(radius: radius, corners: corners))
     }
 
-    @available(macOS, obsoleted: 12.3, message: "This needs to be removed as it‘s no longer necessary.")
-    @ViewBuilder
-    func keyboardShortcut(_ shortcut: KeyboardShortcut?) -> some View {
-        if let shortcut {
-            self.keyboardShortcut(shortcut)
-        } else {
-            self
-        }
-    }
-
 }
 
 extension View {
@@ -52,11 +42,13 @@ extension View {
             // here we downcast a (non-writable) \.presentationMode KeyPath to a WritableKeyPath
             self.environment(presentationModeKey, Binding<PresentationMode>(onDismiss: onDismiss))
         } else {
-#if !APPSTORE
-            // macOS 11 compatibility:
-            self.environment(\.legacyDismiss, onDismiss)
-#endif
+            legacyMacOS11OnDismiss(onDismiss)
         }
+    }
+
+    @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
+    private func legacyMacOS11OnDismiss(_ onDismiss: @escaping () -> Void) -> some View {
+        self.environment(\.legacyDismiss, onDismiss)
     }
 }
 
@@ -81,8 +73,7 @@ extension Binding where Value == PresentationMode {
 
 }
 
-#if !APPSTORE
-@available(macOS, obsoleted: 12.0, message: "This needs to be removed as it‘s no longer necessary.")
+@available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
 struct DismissAction {
     let dismiss: () -> Void
     public func callAsFunction() {
@@ -90,13 +81,13 @@ struct DismissAction {
     }
 }
 
-@available(macOS, obsoleted: 12.0, message: "This needs to be removed as it‘s no longer necessary.")
+@available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
 struct LegacyDismissAction: EnvironmentKey {
     static var defaultValue: () -> Void { { } }
 }
 
 extension EnvironmentValues {
-    @available(macOS, obsoleted: 12.0, message: "This extension needs to be removed as it‘s no longer necessary.")
+    @available(macOS, deprecated: 12.0, message: "This extension needs to be removed when macOS 11 support is dropped.")
     var dismiss: DismissAction {
         DismissAction {
             if \EnvironmentValues.presentationMode is WritableKeyPath {
@@ -106,7 +97,7 @@ extension EnvironmentValues {
             }
         }
     }
-    @available(macOS, obsoleted: 12.0, message: "This extension needs to be removed as it‘s no longer necessary.")
+    @available(macOS, deprecated: 12.0, message: "This extension needs to be removed when macOS 11 support is dropped.")
     fileprivate var legacyDismiss: () -> Void {
         get {
             self[LegacyDismissAction.self]
@@ -116,7 +107,6 @@ extension EnvironmentValues {
         }
     }
 }
-#endif
 
 private struct RoundedCorner: Shape {
 
@@ -131,7 +121,7 @@ private struct RoundedCorner: Shape {
 
 extension View {
 
-    @available(macOS, obsoleted: 12.0, message: "This extension needs to be removed as it‘s no longer necessary.")
+    @available(macOS, deprecated: 12.0, message: "This extension needs to be removed when macOS 11 support is dropped.")
     @_disfavoredOverload
     @inlinable func task(@_inheritActorContext _ action: @escaping @Sendable () async -> Void) -> some View {
         modifier(ViewAsyncTaskModifier(priority: .userInitiated, action: action))

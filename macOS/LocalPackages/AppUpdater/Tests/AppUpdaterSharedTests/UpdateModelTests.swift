@@ -42,7 +42,6 @@ final class UpdateModelTests: XCTestCase {
         XCTAssertFalse(update.isInstalled)
         XCTAssertEqual(update.releaseNotes, []) // App Store doesn't provide detailed release notes
         XCTAssertEqual(update.releaseNotesSubscription, [])
-        XCTAssertFalse(update.needsLatestReleaseNote)
     }
 
     func testUpdate_InitFromReleaseMetadata_CriticalUpdate() {
@@ -64,7 +63,6 @@ final class UpdateModelTests: XCTestCase {
         XCTAssertTrue(update.isInstalled)
         XCTAssertEqual(update.releaseNotes, []) // App Store doesn't provide detailed release notes
         XCTAssertEqual(update.releaseNotesSubscription, [])
-        XCTAssertFalse(update.needsLatestReleaseNote)
     }
 
     // MARK: - Update Type Classification Tests
@@ -78,8 +76,7 @@ final class UpdateModelTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Bug fixes"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
+            releaseNotesSubscription: []
         )
 
         // Then
@@ -95,8 +92,7 @@ final class UpdateModelTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Critical security fix"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
+            releaseNotesSubscription: []
         )
 
         // Then
@@ -122,7 +118,6 @@ final class UpdateModelTests: XCTestCase {
             date: specificDate,
             releaseNotes: ["Bug fixes"],
             releaseNotesSubscription: [],
-            needsLatestReleaseNote: false,
             dateFormatterProvider: formatter
         )
 

@@ -19,6 +19,7 @@
 import Navigation
 import Foundation
 import Combine
+import os.log
 import WebKit
 import AIChat
 import BrowserServicesKit
@@ -49,6 +50,7 @@ final class AIChatTabExtension {
         self.isLoadedInSidebar = isLoadedInSidebar
         self.featureDiscovery = featureDiscovery
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
+        pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
         chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
@@ -99,6 +101,13 @@ final class AIChatTabExtension {
             }
             .store(in: &userScriptCancellables)
 
+        aiChatUserScript.handler.pageContextConsumedPublisher
+            .sink { [weak self] _ in
+                Logger.aiChat.debug("[AIChatTabExt] pageContextConsumed received, forwarding")
+                self?.pageContextConsumedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
+
         aiChatUserScript.handler.chatRestorationDataPublisher
             .sink { [weak self] data in
                 self?.chatRestorationDataSubject.send(data)
@@ -108,6 +117,9 @@ final class AIChatTabExtension {
 
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     let pageContextRequestedPublisher: AnyPublisher<Void, Never>
+
+    private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
+    let pageContextConsumedPublisher: AnyPublisher<Void, Never>
 
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
@@ -213,6 +225,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
 }
 

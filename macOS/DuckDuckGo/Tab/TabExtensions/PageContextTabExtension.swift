@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import Foundation
 import Navigation
+import os.log
 import PrivacyConfig
 import WebKit
 
@@ -49,11 +50,17 @@ final class PageContextTabExtension {
     private let faviconManagement: FaviconManagement
     private var cachedPageContext: AIChatPageContextData?
 
+    /// Tracks whether the frontend has consumed page context into an active chat.
+    /// When true, navigating with auto-collect OFF will send a nil signal so the
+    /// frontend can show "Add page content" for the new page.
+    private var hasContextBeenConsumedByChat: Bool = false
+
     /// This flag is set when context collection was requested by the user from the sidebar.
     ///
     /// It allows to override the AI Features setting for automatic context collection.
     /// The flag is automatically cleared after receiving a `collectionResult` message.
     private var shouldForceContextCollection: Bool = false
+
 
     private weak var webView: WKWebView?
     private weak var pageContextUserScript: PageContextUserScript? {
@@ -104,6 +111,7 @@ final class PageContextTabExtension {
             .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
             .sink { [weak self] tabContent in
                 let previousContent = self?.content
+                Logger.aiChat.debug("[PageContextExt] contentPublisher: \(String(describing: previousContent)) -> \(String(describing: tabContent))")
                 self?.content = tabContent
                 self?.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
             }
@@ -123,6 +131,7 @@ final class PageContextTabExtension {
                 /// This closure is responsible for passing cached page context to the newly displayed sidebar.
                 /// It's only called when sidebar for tabID is non-nil.
                 /// Additionally, we're only calling `handle` if there's a cached page context.
+                Logger.aiChat.debug("[PageContextExt] sessionAppeared: hasCachedContext=\(self.cachedPageContext != nil), isCollectionEnabled=\(self.isContextCollectionEnabled)")
                 guard let cachedPageContext, isContextCollectionEnabled else {
                     return
                 }
@@ -158,10 +167,16 @@ final class PageContextTabExtension {
                 guard let self else {
                     return
                 }
-                /// This closure is responsible for handling page context received from the user script.
+                /// Only process the collection result when auto-collect is enabled or the user
+                /// explicitly requested context. Unsolicited results from the page script
+                /// should not overwrite previously attached context with nil.
                 let isEnabled = self.isContextCollectionEnabled
+                Logger.aiChat.debug("[PageContextExt] collectionResult: title=\(pageContext?.title ?? "nil"), isEnabled=\(isEnabled)")
+                guard isEnabled else {
+                    return
+                }
                 Task {
-                    await self.handle(isEnabled ? pageContext : nil)
+                    await self.handle(pageContext)
                 }
             }
             .store(in: &userScriptCancellables)
@@ -177,8 +192,17 @@ final class PageContextTabExtension {
         session.pageContextRequestedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
+                Logger.aiChat.debug("[PageContextExt] pageContextRequested (user action)")
                 self?.shouldForceContextCollection = true
                 self?.collectPageContextIfNeeded()
+            }
+            .store(in: &sidebarCancellables)
+
+        session.pageContextConsumedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                Logger.aiChat.debug("[PageContextExt] pageContextConsumed — chat has active context")
+                self?.hasContextBeenConsumedByChat = true
             }
             .store(in: &sidebarCancellables)
     }
@@ -193,6 +217,7 @@ final class PageContextTabExtension {
         }
         shouldForceContextCollection = false
         cachedPageContext = replaceFaviconURLWithEncodedData(pageContext)
+        Logger.aiChat.debug("[PageContextExt] handle: pushing context title=\(pageContext?.title ?? "nil") to sidebar (hasChatVC=\(self.aiChatSessionStore.sessions[self.tabID]?.chatViewController != nil))")
         if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
             chatViewController.setPageContext(cachedPageContext)
         }
@@ -218,10 +243,16 @@ final class PageContextTabExtension {
             return
         }
 
+        Logger.aiChat.debug("[PageContextExt] multiContextNav: \(oldURL.absoluteString) -> \(newURL.absoluteString), autoCollect=\(self.isContextCollectionEnabled), consumed=\(self.hasContextBeenConsumedByChat)")
         if isContextCollectionEnabled {
             collectPageContextIfNeeded()
-        } else {
+        } else if hasContextBeenConsumedByChat {
+            // Auto-collect OFF, but context was already consumed into an active chat.
+            // Send nil to signal the frontend that a new page is available.
+            Logger.aiChat.debug("[PageContextExt] multiContextNav: sending nil navigation signal (context was consumed by chat)")
             session.chatViewController?.setPageContext(nil)
+        } else {
+            Logger.aiChat.debug("[PageContextExt] multiContextNav: auto-collect OFF, context not yet consumed, keeping")
         }
     }
 

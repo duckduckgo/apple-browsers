@@ -689,12 +689,12 @@ class TabSwitcherViewController: UIViewController {
     /// - `forceDismissOnEmpty`: caller explicitly wants dismiss (e.g. after creating a new tab)
     /// - `canDismissOnEmpty`: normal mode — always safe to dismiss
     /// - `!tabsModel.isEmpty`: fire mode still has tabs, so the user picked one
-    func dismissIfPossible(forceDismissOnEmpty: Bool = false) {
+    func dismissIfPossible(animated: Bool = true, forceDismissOnEmpty: Bool = false) {
         guard forceDismissOnEmpty
                 || canDismissOnEmpty
                 || !tabsModel.isEmpty else { return }
         ViewHighlighter.hideAll()
-        dismiss(animated: true, completion: nil)
+        dismiss(animated: animated, completion: nil)
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {

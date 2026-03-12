@@ -4112,7 +4112,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
         self.forgetAllWithAnimation(request: fireRequest) {
-            tabSwitcher.dismissIfPossible()
+            tabSwitcher.dismissIfPossible(animated: false)
         }
     }
 

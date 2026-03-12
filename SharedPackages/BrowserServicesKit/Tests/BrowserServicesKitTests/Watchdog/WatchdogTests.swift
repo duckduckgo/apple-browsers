@@ -543,7 +543,7 @@ final class WatchdogTests: XCTestCase {
         try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
 
         // First hang: should fire
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+        try await blockMainThread(for: 0.5, andSleepFor: 1.0)
 
         XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "First timeout should fire")
 
@@ -551,7 +551,7 @@ final class WatchdogTests: XCTestCase {
         try await Task.sleep(nanoseconds: 2_000 * NSEC_PER_MSEC)
 
         // Second hang: cooldown expired, should fire again
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+        try await blockMainThread(for: 0.5, andSleepFor: 1.0)
 
         XCTAssertGreaterThanOrEqual(store.events.numberOfHangNotRecoveredEvents, 2, "Second timeout after cooldown should fire")
 

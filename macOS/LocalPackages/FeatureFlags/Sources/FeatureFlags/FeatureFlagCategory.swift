@@ -81,7 +81,8 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .vpn
         case .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
-                .dbpClickActionDelayReductionOptimization:
+                .dbpClickActionDelayReductionOptimization,
+                .dbpWebViewUserAgent:
             return .dbp
         case .paidAIChat,
                 .supportsAlternateStripePaymentFlow,

@@ -56,6 +56,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             experimentalAIChatManager: experimentalAIChatManager,
             syncHandler: mockAIChatSyncHandler,
             featureFlagger: mockFeatureFlagger,
+            keyValueStore: mockUserDefaults,
             aichatFullModeFeature: mockAIChatFullModeFeature,
             aichatContextualModeFeature: mockAIChatContextualModeFeature
         )
@@ -493,5 +494,46 @@ extension AIChatUserScriptHandlerTests {
 
         XCTAssertNotNil(response)
         XCTAssertNil(response?.pageContext)
+    }
+}
+
+// MARK: - handleTermsAcceptedIfNeeded Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    private var termsAcceptedKey: String { "aichat.hasAcceptedTermsAndConditions" }
+
+    func testWhenMetricIsNotTermsAcceptedThenKeyValueStoreIsNotUpdated() async {
+        // Given
+        let params: [String: Any] = ["metricName": "userDidSubmitPrompt"]
+
+        // When
+        _ = await aiChatUserScriptHandler.reportMetric(params: params, message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertNil(mockUserDefaults.object(forKey: termsAcceptedKey))
+    }
+
+    func testWhenTermsAcceptedFirstTimeThenKeyValueStoreIsSetToTrue() async {
+        // Given
+        let params: [String: Any] = ["metricName": "userDidAcceptTermsAndConditions"]
+
+        // When
+        _ = await aiChatUserScriptHandler.reportMetric(params: params, message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertEqual(mockUserDefaults.object(forKey: termsAcceptedKey) as? Bool, true)
+    }
+
+    func testWhenTermsAcceptedAgainThenKeyValueStoreRemainsTrue() async {
+        // Given
+        mockUserDefaults.set(true, forKey: termsAcceptedKey)
+        let params: [String: Any] = ["metricName": "userDidAcceptTermsAndConditions"]
+
+        // When
+        _ = await aiChatUserScriptHandler.reportMetric(params: params, message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertEqual(mockUserDefaults.object(forKey: termsAcceptedKey) as? Bool, true)
     }
 }

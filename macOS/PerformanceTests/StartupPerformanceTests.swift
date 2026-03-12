@@ -30,9 +30,9 @@ final class StartupPerformanceTests: XCTestCase {
     }
 
     func testStartupSequenceDurationWithoutStateRestoration() throws {
-        setupInitialState(shouldRestoreSession: false)
+        UITests.setupInitialState(shouldRestoreSession: false)
 
-        let application = buildApplicationForPerformanceTesting()
+        let application = XCUIApplication.setUpForStartupPerformanceTesting()
         defer {
             application.terminate()
         }
@@ -46,7 +46,7 @@ final class StartupPerformanceTests: XCTestCase {
     }
 
     func testStartupSequenceDurationWithStateRestoration() throws {
-        setupInitialState(shouldRestoreSession: true) { application in
+        UITests.setupInitialState(shouldRestoreSession: true) { application in
             application.openNewTab()
             application.openNewTab()
             application.openNewWindow()
@@ -54,7 +54,7 @@ final class StartupPerformanceTests: XCTestCase {
             application.openNewTab()
         }
 
-        let application = buildApplicationForPerformanceTesting()
+        let application = XCUIApplication.setUpForStartupPerformanceTesting()
         defer {
             application.terminate()
         }
@@ -65,32 +65,6 @@ final class StartupPerformanceTests: XCTestCase {
         XCTContext.runActivity(named: "Attaching Startup Metrics") { activity in
             activity.add(attachment)
         }
-    }
-}
-
-private extension StartupPerformanceTests {
-
-    func buildApplicationForPerformanceTesting() -> XCUIApplication {
-        XCUIApplication.setUp(environment: ["UITEST_MODE_STARTUP_PERFORMANCE": "1"])
-    }
-
-    func setupInitialState(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
-        let application = buildApplicationForPerformanceTesting()
-
-        /// Enable session restoration
-        application.openPreferencesWindow()
-        application.preferencesSetRestorePreviousSession(to: shouldRestoreSession ? .restoreLastSession : .newWindow)
-        application.closePreferencesWindow()
-
-        /// Disable warn before quit so Cmd+Q quits immediately
-        application.disableWarnBeforeQuitting()
-
-        /// Create state to restore: 2 windows with multiple tabs
-        configurationClosure?(application)
-
-        /// Quit properly to save state, then relaunch to trigger restoration
-        application.typeKey("q", modifierFlags: [.command])
-        application.terminate()
     }
 }
 

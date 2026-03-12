@@ -961,6 +961,9 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
             }
             if AppVersion.runType.requiresEnvironment {
+                NSMenuItem(title: "Promo Queue")
+                    .submenu(PromoDebugMenu())
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.promoQueueDebugMenu)
                 NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)")
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu)
                     .submenu(DefaultBrowserAndDockPromptDebugMenu())

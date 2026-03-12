@@ -46,7 +46,7 @@ class ImageCacheDebugViewController: UITableViewController {
         static let tabsCachePath = "com.onevcat.Kingfisher.ImageCache.tabs"
     }
 
-    private let tabsModel: TabsModel
+    private let tabsModel: TabsModelReading
 
     private let bookmarksContext: NSManagedObjectContext
     private let fireproofing: Fireproofing
@@ -61,7 +61,7 @@ class ImageCacheDebugViewController: UITableViewController {
 
     init?(coder: NSCoder,
           bookmarksDatabase: CoreDataDatabase,
-          tabsModel: TabsModel,
+          tabsModel: TabsModelReading,
           fireproofing: Fireproofing) {
 
         bookmarksContext = bookmarksDatabase.makeContext(concurrencyType: .mainQueueConcurrencyType)

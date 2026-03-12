@@ -30,7 +30,10 @@ extension UITests {
         let application = XCUIApplication.setUp()
 
         /// Ensure there's at least one window open
-        if application.windows.count == 0 {
+        let firstWindow = application.windows.firstMatch
+        let windowAppeared = firstWindow.waitForExistence(timeout: 0.5)
+
+        if !windowAppeared {
             application.openNewWindow()
         }
 

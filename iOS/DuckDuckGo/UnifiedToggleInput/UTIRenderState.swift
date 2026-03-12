@@ -19,10 +19,6 @@
 
 import Foundation
 
-func unifiedToggleInputDebug(_ message: @autoclosure () -> String) {
-    print("[UTI_DEBUG] \(message())")
-}
-
 struct UTIRenderState: Equatable {
     var isInputVisible: Bool
     var isContentVisible: Bool
@@ -50,7 +46,4 @@ struct UTIRenderState: Equatable {
         )
     }
 
-    var utiDebugDescription: String {
-        "inputVisible=\(isInputVisible) contentVisible=\(isContentVisible) expanded=\(isExpanded) cardPosition=\(String(describing: cardPosition)) usesMargins=\(usesOmnibarMargins) dismiss=\(showsDismissButton) toolbarHidden=\(isToolbarSubmitHidden) inactive=\(inactiveAppearance) floatingSubmit=\(isFloatingSubmitVisible) header=\(String(describing: headerDisplayMode)) contentMode=\(contentInputMode.rawValue) inputMode=\(inputMode.rawValue)"
-    }
 }

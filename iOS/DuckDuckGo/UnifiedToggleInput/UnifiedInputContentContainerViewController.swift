@@ -189,7 +189,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func setHeaderDisplayMode(_ mode: HeaderDisplayMode) {
         guard headerDisplayMode != mode else { return }
-        unifiedToggleInputDebug("ContentVC setHeaderDisplayMode from=\(String(describing: headerDisplayMode)) to=\(String(describing: mode)) title=\(self.currentSectionTitle ?? "<nil>") topBar=\(self.isUsingTopBarPosition)")
         headerDisplayMode = mode
         renderHeader()
     }
@@ -408,7 +407,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func renderHeader() {
-        unifiedToggleInputDebug("ContentVC renderHeader topBar=\(self.isUsingTopBarPosition) mode=\(String(describing: self.headerDisplayMode)) title=\(self.currentSectionTitle ?? "<nil>")")
         if isUsingTopBarPosition {
             if let currentSectionTitle, !currentSectionTitle.isEmpty {
                 inlineHeaderView.isHidden = false
@@ -442,7 +440,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             inlineHeaderView.setDismissButtonHidden(true)
             contentContainerViewTopConstraint?.constant = Metrics.inlineHeaderHeight
         }
-        unifiedToggleInputDebug("ContentVC renderHeader result hidden=\(self.inlineHeaderView.isHidden) topConstraint=\(self.contentContainerViewTopConstraint?.constant ?? -1)")
     }
 
     private func observeRemoteMessagesChanges() {

@@ -166,11 +166,11 @@ extension MainViewController {
 
         if tab.isAITab {
             viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-            if coordinator.isAITabState && viewCoordinator.isNavigationChromeHidden {
-                return
-            }
             if let userScript = tab.userScripts?.aiChatUserScript {
                 coordinator.bindToTab(userScript)
+            }
+            if coordinator.isAITabState && viewCoordinator.isNavigationChromeHidden {
+                return
             }
             if viewCoordinator.navigationBarContainer.alpha < 0.99 ||
                 viewCoordinator.toolbar.alpha < 0.99 ||

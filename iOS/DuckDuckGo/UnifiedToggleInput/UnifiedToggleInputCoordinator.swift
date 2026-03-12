@@ -182,7 +182,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
-        logTransition("showCollapsed", renderState: renderState)
+
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
         intentSubject.send(.showCollapsed)
@@ -194,7 +194,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
-        logTransition("showExpanded", renderState: renderState)
+
         viewController.apply(renderState.viewConfig, animated: false)
 
         if let prefilledText, !prefilledText.isEmpty {
@@ -223,7 +223,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
-        logTransition("hide", renderState: renderState)
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
         contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
@@ -240,7 +239,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
-        logTransition("activateFromOmnibar", renderState: renderState)
         viewController.apply(renderState.viewConfig, animated: false)
 
         if let text = prefilledText, !text.isEmpty {
@@ -274,7 +272,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
         let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
         inputMode = effectiveMode
-        unifiedToggleInputDebug("Coordinator updateInputMode requested=\(mode.rawValue) effective=\(effectiveMode.rawValue) animated=\(animated) state=\(self.debugDescription)")
         viewController.setInputMode(effectiveMode, animated: animated)
         modeChangeSubject.send(effectiveMode)
     }
@@ -291,7 +288,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
         let didModeChange = inputMode != effectiveMode
         inputMode = effectiveMode
-        unifiedToggleInputDebug("Coordinator syncInputModeFromExternalSource requested=\(mode.rawValue) effective=\(effectiveMode.rawValue) changed=\(didModeChange) state=\(self.debugDescription)")
         if didModeChange || effectiveMode != mode {
             viewController.setInputMode(effectiveMode, animated: false)
         }
@@ -336,7 +332,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         textState = .empty
 
         let renderState = computeRenderState()
-        logTransition("deactivateToOmnibar", renderState: renderState)
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
 
@@ -347,7 +342,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func updateToggleEnabled(_ enabled: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
-        unifiedToggleInputDebug("Coordinator updateToggleEnabled enabled=\(enabled) state=\(self.debugDescription)")
         viewController.updateToggleEnabled(enabled)
         if !enabled, isOmnibarSession {
             inputMode = .search
@@ -359,7 +353,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func updateOmnibarInputVisibility(_ isInputVisible: Bool) {
         isInputVisibleForKeyboard = isInputVisible
         let isAITabSearch = displayState == .aiTab(.expanded) && inputMode == .search
-        unifiedToggleInputDebug("Coordinator updateOmnibarInputVisibility visible=\(isInputVisible) isAITabSearch=\(isAITabSearch) state=\(self.debugDescription)")
 
         switch (displayState, isInputVisible) {
         case (.omnibar(.active), false):
@@ -491,14 +484,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     private func resetInputState() {
         resetSessionState()
-    }
-
-    private var debugDescription: String {
-        "displayState=\(String(describing: displayState)) inputMode=\(inputMode.rawValue) cardPosition=\(String(describing: cardPosition)) keyboardVisible=\(isInputVisibleForKeyboard) isToggleEnabled=\(isToggleEnabled)"
-    }
-
-    private func logTransition(_ label: String, renderState: UTIRenderState) {
-        unifiedToggleInputDebug("Coordinator \(label) \(self.debugDescription) render=\(renderState.utiDebugDescription)")
     }
 }
 

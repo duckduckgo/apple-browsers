@@ -481,8 +481,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             try syncService.removePreservedSyncAccount()
         } catch {
             Pixel.fire(pixel: .syncAutoRestorePreservedAccountClearFailed, error: error, withAdditionalParameters: autoRestorePromptSourceParameters)
-            await handleError(.unknownError, error: error, event: nil)
-            dismissPresentedViewController()
+            Logger.sync.error("Failed to clear preserved sync account before server operation: \(error.localizedDescription, privacy: .public)")
+            presentPreservedAccountCleanupFailureAlert()
             return false
         }
 
@@ -698,6 +698,16 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func codeEntryScreenShown() {
         Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
+    }
+
+    @MainActor
+    private func presentPreservedAccountCleanupFailureAlert() {
+        let alertController = UIAlertController(title: SyncErrorMessage.unknownError.title, message: SyncErrorMessage.unknownError.description, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: UserText.syncPausedAlertOkButton, style: .default))
+
+        dismissPresentedViewController { [weak self] in
+            self?.present(alertController, animated: true)
+        }
     }
 
     private var autoRestorePromptSourceParameters: [String: String] {

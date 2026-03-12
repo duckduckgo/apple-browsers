@@ -139,7 +139,7 @@ class TabSwitcherViewController: UIViewController {
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var _trackerInfoModel: InfoPanelView.Model?
     private var activeTrackerInfoModel: InfoPanelView.Model? {
-        guard tabManager.currentBrowsingMode == .normal else { return nil }
+        guard selectedBrowsingMode == .normal else { return nil }
         return _trackerInfoModel
     }
 

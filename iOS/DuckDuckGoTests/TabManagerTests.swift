@@ -200,7 +200,7 @@ final class TabManagerTests: XCTestCase {
 
         XCTAssertEqual(manager.currentTabsModel.count, 1)
 
-        manager.remove(at: 0)
+        manager.remove(tab: tab)
 
         XCTAssertEqual(manager.currentTabsModel.count, 0)
         XCTAssertNil(manager.currentTabsModel.currentTab)
@@ -216,7 +216,7 @@ final class TabManagerTests: XCTestCase {
         manager.setBrowsingMode(.fire)
 
         let newTab = Tab(fireTab: true)
-        manager.replaceTab(at: 0, withNewTab: newTab)
+        manager.replace(tab: oldTab, withNewTab: newTab)
 
         XCTAssertEqual(manager.currentTabsModel.count, 1)
         XCTAssertTrue(manager.currentTabsModel.tabs[0] === newTab)

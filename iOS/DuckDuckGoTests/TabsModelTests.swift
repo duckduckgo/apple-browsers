@@ -335,8 +335,9 @@ class TabsModelTests: XCTestCase {
     }
 
     func testWhenFireModeLastTabRemovedThenNoHomeTabInserted() throws {
-        let model = TabsModel(tabs: [Tab(link: exampleLink)], desktop: false, mode: .fire)
-        model.remove(at: 0)
+        let tab = Tab(link: exampleLink, fireTab: true)
+        let model = TabsModel(tabs: [tab], desktop: false, mode: .fire)
+        model.remove(tab: tab)
         XCTAssertEqual(model.count, 0)
         XCTAssertTrue(model.tabs.isEmpty)
         XCTAssertNil(model.currentIndex)

@@ -26,16 +26,18 @@ extension OnboardingView {
     struct IntroDialogContent: View {
 
         private let title: String
-        private let shouldShowSkipOnboardingButton: Bool
+        private let skipOnboardingView: AnyView?
         private var animateText: Binding<Bool>
         private var showCTA: Binding<Bool>
         private var isSkipped: Binding<Bool>
         private let continueAction: () -> Void
         private let skipAction: () -> Void
 
+        @State private var showSkipOnboarding = false
+
         init(
             title: String,
-            shouldShowSkipOnboardingButton: Bool,
+            skipOnboardingView: AnyView?,
             animateText: Binding<Bool> = .constant(true),
             showCTA: Binding<Bool> = .constant(false),
             isSkipped: Binding<Bool>,
@@ -43,7 +45,7 @@ extension OnboardingView {
             skipAction: @escaping () -> Void
         ) {
             self.title = title
-            self.shouldShowSkipOnboardingButton = shouldShowSkipOnboardingButton
+            self.skipOnboardingView = skipOnboardingView
             self.animateText = animateText
             self.showCTA = showCTA
             self.isSkipped = isSkipped
@@ -52,7 +54,11 @@ extension OnboardingView {
         }
 
         var body: some View {
-            introContent
+            if showSkipOnboarding {
+                skipOnboardingView
+            } else {
+                introContent
+            }
         }
 
         private var introContent: some View {
@@ -71,10 +77,12 @@ extension OnboardingView {
                     }
                     .buttonStyle(PrimaryButtonStyle())
 
-                    if shouldShowSkipOnboardingButton {
+                    if skipOnboardingView != nil {
                         OnboardingBorderedButton(maxHeight: 50.0, content: {
                             Text(UserText.Onboarding.Intro.skipCTA)
                         }, action: {
+                            isSkipped.wrappedValue = false
+                            showSkipOnboarding = true
                             skipAction()
                         })
                     }

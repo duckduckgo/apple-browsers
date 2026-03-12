@@ -239,7 +239,6 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     func restorePromptSkipAction() {
         pixelReporter.measureAutoRestoreOnboardingSkipCTAAction()
-        showSkipOnboardingDialog()
     }
 
 #if DEBUG || ALPHA
@@ -309,9 +308,9 @@ private extension OnboardingIntroViewModel {
     func measureScreenImpression() {
         guard let intro = state.intro else { return }
         switch intro.type {
-        case .startOnboardingDialog:
+        case .startOnboardingDialog(let dialogType):
             pixelReporter.measureOnboardingIntroImpression()
-            measureAutoRestorePromptImpressionIfNeeded()
+            measureAutoRestorePromptImpressionIfNeeded(dialogType: dialogType)
         case .browsersComparisonDialog:
             pixelReporter.measureBrowserComparisonImpression()
         case .addToDockPromoDialog:
@@ -332,8 +331,8 @@ private extension OnboardingIntroViewModel {
         return restorePromptHandler.isEligibleForRestorePrompt() ? .restoreData : .skipTutorial
     }
 
-    func measureAutoRestorePromptImpressionIfNeeded() {
-        guard shouldShowRestorePrompt else {
+    func measureAutoRestorePromptImpressionIfNeeded(dialogType: OnboardingView.ViewState.Intro.IntroDialogType) {
+        guard dialogType == .restoreData else {
             return
         }
         pixelReporter.measureAutoRestoreOnboardingPromptShown()

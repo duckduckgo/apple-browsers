@@ -156,7 +156,10 @@ struct OnboardingView: View {
                     model.restoreSyncAccountAction()
                     animateBrowserComparisonViewState(isResumingOnboarding: false)
                 },
-                skipAction: model.skipOnboardingAction
+                skipAction: {
+                    model.restorePromptSkipAction()
+                    model.skipOnboardingAction()
+                }
             )
             .onboardingDaxDialogStyle()
             .visibility(model.introState.showIntroViewContent ? .visible : .invisible)

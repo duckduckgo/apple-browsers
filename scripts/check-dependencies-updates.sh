@@ -442,7 +442,7 @@ parse_resolved_files() {
         [[ -z "$file" ]] && continue
 
         local version="2"
-        if head -5 "$file" 2>/dev/null | grep -q '"version"[[:space:]]*:[[:space:]]*1'; then
+        if tail -3 "$file" 2>/dev/null | grep -q '"version"[[:space:]]*:[[:space:]]*1'; then
             version="1"
         fi
         verbose "Parsing $file (format version: $version)"

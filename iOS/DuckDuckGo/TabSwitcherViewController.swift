@@ -349,7 +349,7 @@ class TabSwitcherViewController: UIViewController {
         activateLayoutConstraintsBasedOnBarPosition()
     }
     
-    private func reloadCollectionView() {
+    func reloadCollectionView() {
         collectionView.reloadData()
         updateFireModeEmptyStateVisibility()
     }
@@ -728,7 +728,7 @@ extension TabSwitcherViewController: TabViewCellDelegate {
             tabManager.bulkRemoveTabs(tabsToClose, in: tabsModel)
             collectionView.deleteItems(at: indexPaths)
             if allTabsDeleted && !canDismissOnEmpty && isEditing {
-                self.transitionFromMultiSelect()
+                self.transitionFromMultiSelect(reloadCollectionView: false)
             }
         } completion: { _ in
             self.isProcessingUpdates = false

@@ -81,7 +81,7 @@ extension TabSwitcherViewController {
             currentSelection = nil
         }
         refreshTitleViews()
-        collectionView.reloadData()
+        reloadCollectionView()
     }
     
     @objc func keyboardMoveSelectionUp() {

@@ -134,9 +134,11 @@ extension TabSwitcherViewController {
         updateUIForSelectionMode()
     }
 
-    func transitionFromMultiSelect() {
+    func transitionFromMultiSelect(reloadCollectionView: Bool = true) {
         self.isEditing = false
-        collectionView.reloadData()
+        if reloadCollectionView {
+            collectionView.reloadData()
+        }
         updateUIForSelectionMode()
         refreshTitleViews()
     }

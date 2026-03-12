@@ -482,6 +482,7 @@ public extension DesignSystemImages {
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
+            public static var searchFindGoTo: DesignSystemImage { .init(resource: .searchFindGoTo24) }
             public static var subItemRecolorable: DesignSystemImage { .init(resource: .subItemRecolorable24) }
             public static var subtraction: DesignSystemImage { .init(resource: .subtraction24) }
             public static var support: DesignSystemImage { .init(resource: .support24) }
@@ -502,6 +503,7 @@ public extension DesignSystemImages {
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }
             public static var viewList: DesignSystemImage { .init(resource: .viewList24) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid24) }
+            public static var voice: DesignSystemImage { .init(resource: .voice24) }
             public static var window: DesignSystemImage { .init(resource: .window24) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs24) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn24) }

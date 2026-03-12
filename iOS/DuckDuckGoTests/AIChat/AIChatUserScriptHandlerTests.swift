@@ -240,6 +240,19 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(tokenPayload.token, "scoped-token")
     }
 
+    func testGetScopedSyncAuthTokenReturnsSyncOffWhenRescopeReturnsUnauthenticatedWhileLoggedIn() async throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSync]
+        mockAIChatSyncHandler.scopedTokenError = SyncError.unauthenticatedWhileLoggedIn
+
+        // When
+        let response = await aiChatUserScriptHandler.getScopedSyncAuthToken(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
+        XCTAssertEqual(errorResponse.reason, "sync off")
+    }
+
     func testEncryptWithSyncMasterKeyReturnsSyncUnavailableWhenFeatureOff() throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
@@ -418,6 +431,7 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
 
     var syncStatus: AIChatSyncHandler.SyncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false)
     var scopedToken: AIChatSyncHandler.SyncToken = AIChatSyncHandler.SyncToken(token: "token")
+    var scopedTokenError: Error?
     var encryptValue: (String) throws -> String = { "encrypted_\($0)" }
     var decryptValue: (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
 
@@ -438,6 +452,9 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
 
     func getScopedToken() async throws -> AIChatSyncHandler.SyncToken {
         getScopedTokenCallCount += 1
+        if let scopedTokenError {
+            throw scopedTokenError
+        }
         return scopedToken
     }
 

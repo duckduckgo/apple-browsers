@@ -2575,8 +2575,8 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(keyboardWillHide),
-                                               name: UIResponder.keyboardWillHideNotification,
+                                               selector: #selector(keyboardDidHide),
+                                               name: UIResponder.keyboardDidHideNotification,
                                                object: nil)
     }
 
@@ -2587,7 +2587,7 @@ extension TabViewController: WKNavigationDelegate {
 
         NotificationCenter.default.removeObserver(
             self,
-            name: UIResponder.keyboardWillHideNotification,
+            name: UIResponder.keyboardDidHideNotification,
             object: nil
         )
     }
@@ -2613,7 +2613,7 @@ extension TabViewController: WKNavigationDelegate {
         ActionMessageView.present(message: UserText.autofillSettingsReportNotWorkingSentConfirmation)
     }
 
-    @objc private func keyboardWillHide(_ notification: Notification) {
+    @objc private func keyboardDidHide(_ notification: Notification) {
         if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
             autofillUserScript?.cancelAllPendingReplies()
             cleanupInputAccessoryView()

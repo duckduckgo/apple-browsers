@@ -387,6 +387,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             switch error {
             case SyncError.accountNotFound:
                 reason = "sync off"
+            case SyncError.unauthenticatedWhileLoggedIn:
+                reason = "sync off"
             case SyncError.noToken:
                 reason = "token unavailable"
             case SyncError.invalidDataInResponse:

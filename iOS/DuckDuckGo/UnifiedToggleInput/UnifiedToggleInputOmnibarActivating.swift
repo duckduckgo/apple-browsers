@@ -1,5 +1,5 @@
 //
-//  UnifiedToggleInputInlineActivating.swift
+//  UnifiedToggleInputOmnibarActivating.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -19,8 +19,8 @@
 
 import Foundation
 
-protocol UnifiedToggleInputInlineActivating: AnyObject {
-    func activateInlineEditingIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
+protocol UnifiedToggleInputOmnibarActivating: AnyObject {
+    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
 }
 
 enum UnifiedToggleInputActivationDecision {

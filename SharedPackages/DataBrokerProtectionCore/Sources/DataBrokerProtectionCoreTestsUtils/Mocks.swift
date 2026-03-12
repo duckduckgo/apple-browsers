@@ -2014,8 +2014,8 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
     public var featureFlagger: DBPFeatureFlagging
-    public var applicationNameForUserAgent: String? = nil
-    public var wideEvent: WideEventManaging? = nil
+    public var applicationNameForUserAgent: String?
+    public var wideEvent: WideEventManaging?
     public var isAuthenticatedUserProvider: () async -> Bool = { true }
 
     public var mockScanRunner = MockScanSubJobWebRunner()

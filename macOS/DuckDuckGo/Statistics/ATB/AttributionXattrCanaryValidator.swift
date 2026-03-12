@@ -44,8 +44,10 @@ final class AttributionXattrCanaryValidator {
     // MARK: - Private
 
     private func readFile(_ name: String, bundle: Bundle) -> String? {
-        guard let url = bundle.url(forResource: name, withExtension: "txt") else { return nil }
-        return try? String(contentsOf: url).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = bundle.url(forResource: name, withExtension: "txt"),
+              let value = try? String(contentsOf: url).trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty else { return nil }
+        return value
     }
 
     /// Returns a human-readable match result for the pixel parameters.

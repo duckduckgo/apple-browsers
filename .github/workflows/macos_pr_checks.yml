@@ -172,7 +172,7 @@ jobs:
       pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
-    - name: Register SSH keys for private packages
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: |
@@ -449,7 +449,7 @@ jobs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
 
     steps:
-    - name: Register SSH keys for private packages
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: |

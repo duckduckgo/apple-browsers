@@ -46,7 +46,7 @@ jobs:
     timeout-minutes: 60
 
     steps:
-    - name: Register SSH keys for private packages
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: |

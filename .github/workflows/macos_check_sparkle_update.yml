@@ -42,9 +42,30 @@ jobs:
             -workspace DuckDuckGo.xcworkspace \
             -scheme "macOS Browser"
 
+      - name: Create draft Pull Request
+        id: create-pr
+        if: steps.dedupe.outputs.should_create == 'true'
+        uses: peter-evans/create-pull-request@88bf0de51c7487d91e1abbb4899332e602c58bbf
+        with:
+          commit-message: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
+          committer: Dax the Duck <dax@duckduckgo.com>
+          author: Dax the Duck <dax@duckduckgo.com>
+          branch: automation/sparkle-update-${{ steps.check.outputs.latest_version }}
+          title: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
+          body: |
+            Updates Sparkle from `${{ steps.check.outputs.current_version }}` to `${{ steps.check.outputs.latest_version }}` (${{ steps.check.outputs.bump_type }} update).
+
+            [Compare changes on GitHub](https://github.com/sparkle-project/Sparkle/compare/${{ steps.check.outputs.current_version }}...${{ steps.check.outputs.latest_version }})
+
+            ---
+
+            ${{ steps.check.outputs.release_notes }}
+          labels: dependencies,macOS${{ steps.check.outputs.bump_type == 'major' && ',breaking' || '' }}
+          draft: true
+
       - name: Create Asana task
         id: create-asana-task
-        if: steps.dedupe.outputs.should_create == 'true'
+        if: steps.create-pr.outputs.pull-request-url
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
@@ -71,50 +92,26 @@ jobs:
               \"data\": {
                 ${assignee_field}
                 \"parent\": \"1212461351428211\",
-                \"name\": \"${task_name}\"
+                \"name\": \"${task_name}\",
+                \"notes\": \"PR: ${{ steps.create-pr.outputs.pull-request-url }}\"
               }
             }")
 
           task_id=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['gid'])")
           echo "task_url=https://app.asana.com/0/0/${task_id}/f" >> "$GITHUB_OUTPUT"
-          echo "task_id=${task_id}" >> "$GITHUB_OUTPUT"
 
-      - name: Create Pull Request
-        id: create-pr
-        if: steps.dedupe.outputs.should_create == 'true'
-        uses: peter-evans/create-pull-request@88bf0de51c7487d91e1abbb4899332e602c58bbf
-        with:
-          commit-message: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
-          committer: Dax the Duck <dax@duckduckgo.com>
-          author: Dax the Duck <dax@duckduckgo.com>
-          branch: automation/sparkle-update-${{ steps.check.outputs.latest_version }}
-          title: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
-          body: |
-            Task/Issue URL: ${{ steps.create-asana-task.outputs.task_url }}
-
-            Updates Sparkle from `${{ steps.check.outputs.current_version }}` to `${{ steps.check.outputs.latest_version }}` (${{ steps.check.outputs.bump_type }} update).
-
-            [Compare changes on GitHub](https://github.com/sparkle-project/Sparkle/compare/${{ steps.check.outputs.current_version }}...${{ steps.check.outputs.latest_version }})
-
-            ---
-
-            ${{ steps.check.outputs.release_notes }}
-          labels: dependencies,macOS${{ steps.check.outputs.bump_type == 'major' && ',breaking' || '' }}
-          reviewers: diegoreymendez,jotaemepereira
-          draft: false
-
-      - name: Update Asana task with PR link
-        if: steps.create-pr.outputs.pull-request-url
+      - name: Add Asana task URL to PR and mark ready for review
+        if: steps.create-asana-task.outputs.task_url
         env:
-          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          curl -fLSs "https://app.asana.com/api/1.0/tasks/${{ steps.create-asana-task.outputs.task_id }}" \
-            --request PUT \
-            --header "Accept: application/json" \
-            --header "Authorization: Bearer ${ASANA_ACCESS_TOKEN}" \
-            --header "Content-Type: application/json" \
-            --data "{
-              \"data\": {
-                \"notes\": \"PR: ${{ steps.create-pr.outputs.pull-request-url }}\"
-              }
-            }"
+          pr_number="${{ steps.create-pr.outputs.pull-request-number }}"
+          current_body=$(gh pr view "$pr_number" --json body --jq '.body')
+
+          gh pr edit "$pr_number" \
+            --body "Task/Issue URL: ${{ steps.create-asana-task.outputs.task_url }}
+
+          ${current_body}"
+
+          gh pr ready "$pr_number"
+          gh pr edit "$pr_number" --add-reviewer diegoreymendez,jotaemepereira

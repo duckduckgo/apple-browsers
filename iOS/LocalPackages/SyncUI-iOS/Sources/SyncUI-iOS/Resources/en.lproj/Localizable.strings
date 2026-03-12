@@ -1,6 +1,12 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automatically restore your data on this device if you reinstall the app.";
 
+/* Auto-Restore - Learn More Link */
+"auto.restore.learn.more" = "Learn More";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or continue with a new setup.";
 
@@ -30,9 +36,6 @@
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Restore on App Reinstall";
-
-/* Auto-Restore - footer */
-"auto.restore.toogle.footer" = "Restore your data automatically if you reinstall the app. Sync & Backup data can’t be recovered after 18 months of inactivity.";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Back";

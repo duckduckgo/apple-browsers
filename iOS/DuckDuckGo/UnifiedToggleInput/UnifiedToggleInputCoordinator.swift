@@ -389,10 +389,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         }
     }
 
-    func updateContentHeaderForAITab(shouldOverlay: Bool) {
-        contentViewController.setHeaderDisplayMode(shouldOverlay ? .active : .hidden)
-    }
-
     func applyContentHeaderFromRenderState(isOnAITab: Bool) {
         let renderState = computeRenderState(isOnAITab: isOnAITab)
         contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)

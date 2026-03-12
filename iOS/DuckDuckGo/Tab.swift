@@ -138,7 +138,7 @@ public class Tab: NSObject, NSCoding {
                 daxEasterEggLogoURL: String? = nil,
                 contextualChatURL: String? = nil,
                 supportsTabHistory: Bool = true,
-                fireTab: Bool = false,
+                fireTab: Bool,
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
@@ -194,7 +194,7 @@ public class Tab: NSObject, NSCoding {
 
     public override func isEqual(_ other: Any?) -> Bool {
         guard let other = other as? Tab else { return false }
-        return link == other.link && fireTab == other.fireTab
+        return uid == other.uid
     }
     
     func toggleDesktopMode() {

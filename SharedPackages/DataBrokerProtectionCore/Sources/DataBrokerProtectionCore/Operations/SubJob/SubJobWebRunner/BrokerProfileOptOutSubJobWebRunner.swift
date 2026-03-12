@@ -81,6 +81,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
+    public let applicationNameForUserAgent: String?
     private let actionsHandlerMode: ActionsHandlerMode
 
     public var retriesCountOnError: Int = 0
@@ -91,6 +92,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
+                applicationNameForUserAgent: String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 stageCalculator: StageDurationCalculator,
@@ -111,6 +113,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.executionConfig = executionConfig
         self.actionsHandlerMode = actionsHandlerMode
         self.featureFlagger = featureFlagger
+        self.applicationNameForUserAgent = applicationNameForUserAgent
     }
 
     public func optOut(profileQuery: BrokerProfileQueryData,

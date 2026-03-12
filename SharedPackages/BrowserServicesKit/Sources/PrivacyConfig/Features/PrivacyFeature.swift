@@ -294,6 +294,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case clickActionDelayReductionOptimization
     case pirRollout
     case goToMarket
+    case webViewUserAgent
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

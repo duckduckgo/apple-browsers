@@ -44,6 +44,7 @@ protocol SwitchBarHandling: AnyObject {
     var buttonState: SwitchBarButtonState { get }
     var isTopBarPosition: Bool { get }
     var isToggleEnabled: Bool { get }
+    var isFireTab: Bool { get }
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
@@ -101,6 +102,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static var hasUsedAIChatInSession = false
 
     private(set) var isTopBarPosition: Bool = true
+    let isFireTab: Bool
 
     var isToggleEnabled: Bool {
         return true
@@ -174,7 +176,8 @@ final class SwitchBarHandler: SwitchBarHandling {
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
@@ -182,6 +185,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.sessionStateMetrics = sessionStateMetrics
         self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
+        self.isFireTab = isFireTab
 
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(

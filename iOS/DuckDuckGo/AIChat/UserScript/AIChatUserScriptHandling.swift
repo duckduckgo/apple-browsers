@@ -28,6 +28,7 @@ import WebKit
 import Common
 import DDGSync
 import Core
+import Persistence
 
 /// The current display mode of the AI Chat interface.
 enum AIChatDisplayMode {
@@ -120,6 +121,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
     private var contextualModePixelHandler: AIChatContextualModePixelFiring?
+    private let keyValueStore: KeyValueStoring
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -131,11 +133,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
          featureFlagger: FeatureFlagger,
+         keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
         self.aichatFullModeFeature = aichatFullModeFeature
         self.aichatContextualModeFeature = aichatContextualModeFeature
         setUpSyncStatusObserver()
@@ -171,12 +175,32 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let decoder = JSONDecoder()
             do {
                 let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
+                handleTermsAcceptedIfNeeded(metric)
                 metricReportingHandler?.didReportMetric(metric)
             } catch {
                 Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             }
         }
         return nil
+    }
+
+    // MARK: - Terms and Conditions
+
+    private static let hasAcceptedTermsAndConditionsKey = "aichat.hasAcceptedTermsAndConditions"
+
+    private func handleTermsAcceptedIfNeeded(_ metric: AIChatMetric) {
+        guard metric.metricName == .userDidAcceptTermsAndConditions else { return }
+
+        let alreadyAccepted = keyValueStore.object(forKey: Self.hasAcceptedTermsAndConditionsKey) as? Bool == true
+
+        if alreadyAccepted {
+            let pixel: Pixel.Event = syncHandler.isSyncTurnedOn()
+                ? .aiChatTermsAcceptedDuplicateSyncOn
+                : .aiChatTermsAcceptedDuplicateSyncOff
+            DailyPixel.fireDailyAndCount(pixel: pixel)
+        }
+
+        keyValueStore.set(true, forKey: Self.hasAcceptedTermsAndConditionsKey)
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? {

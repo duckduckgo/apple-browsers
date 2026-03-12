@@ -62,7 +62,7 @@ final class IOSAutomationProvider: BrowserAutomationProvider {
     }
 
     func getAllTabHandles() -> [String] {
-        main.tabManager.model.tabs.compactMap { tab in
+        main.tabManager.currentTabsModel.tabs.compactMap { tab in
             main.tabManager.controller(for: tab)?.tabModel.uid
         }
     }
@@ -73,13 +73,13 @@ final class IOSAutomationProvider: BrowserAutomationProvider {
     }
 
     func switchToTab(handle: String) -> Bool {
-        if let tabIndex = main.tabManager.model.tabs.firstIndex(where: { tab in
+        if let tab = main.tabManager.currentTabsModel.tabs.first(where: { tab in
             guard let tabView = main.tabManager.controller(for: tab) else {
                 return false
             }
             return tabView.tabModel.uid == handle
         }) {
-            _ = main.tabManager.select(tabAt: tabIndex)
+            _ = main.tabManager.select(tab)
             return true
         }
         return false

@@ -23,9 +23,9 @@ protocol TabSwitcherDelegate: AnyObject {
 
     func tabSwitcherDidRequestNewTab(tabSwitcher: TabSwitcherViewController)
 
-    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab)
-
-    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab)
+    /// Called when the tab switcher is dismissed. Carries the final browsing mode
+    /// and selected tab index so MainViewController can apply the transition atomically.
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?)
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL)
 
@@ -43,7 +43,4 @@ protocol TabSwitcherDelegate: AnyObject {
     
     /// Called when the tab switcher requests to open a new tab in AI Chat mode
     func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController)
-
-    func tabSwitcherDidDismiss(tabSwitcher: TabSwitcherViewController)
-    
 }

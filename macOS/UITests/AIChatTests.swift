@@ -22,20 +22,21 @@ class AIChatTests: UITestCase {
     private var addressBarTextField: XCUIElement!
 
     private enum Identifiers {
-        static let duckAIControlContainer = "TabBarViewController.duckAIChromeControlContainer"
         static let duckAITitleButton = "TabBarViewController.duckAIChromeTitleButton"
         static let sidebarButton = "TabBarViewController.duckAIChromeSidebarButton"
-        static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
         static let showDuckAIButtonInTabBarToggle = "Preferences.AIChat.showDuckAIButtonInTabBarToggle"
         static let showSidebarButtonInTabBarToggle = "Preferences.AIChat.showSidebarButtonInTabBarToggle"
+        static let openInNewTabButton = "AIChatViewController.openInNewTabButton"
+        static let detachButton = "AIChatViewController.detachButton"
+        static let attachButton = "AIChatViewController.attachButton"
+        static let titleButton = "AIChatViewController.titleButton"
+        static let tabCloseButton = "TabBarViewItem.closeButton"
     }
 
     /// Context menu item identifiers (derived from @objc selector names)
     private enum ContextMenuIdentifiers {
         static let hideDuckAI = "hideDuckAITitleButtonAction"
-        static let showDuckAI = "showDuckAITitleButtonAction"
         static let hideSidebar = "hideDuckAISidebarButtonAction"
-        static let showSidebar = "showDuckAISidebarButtonAction"
         static let openSettings = "openAISettingsAction"
     }
 
@@ -43,11 +44,13 @@ class AIChatTests: UITestCase {
     private let sidebarOpenTitle = "Close Duck.ai sidebar"
     /// The sidebar button's accessibility title when the sidebar is closed.
     private let sidebarClosedTitle = "Open Duck.ai sidebar"
+    /// The sidebar button's accessibility title when the sidebar is floating (detached).
+    private let sidebarFloatingTitle = "Show Duck.ai"
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true])
+        app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true, "aiChatSidebarFloating": true])
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
@@ -61,11 +64,11 @@ class AIChatTests: UITestCase {
     // MARK: - Helpers
 
     private var duckAITitleButton: XCUIElement {
-        app.windows.firstMatch.buttons[Identifiers.duckAITitleButton]
+        app.buttons[Identifiers.duckAITitleButton].firstMatch
     }
 
     private var sidebarButton: XCUIElement {
-        app.windows.firstMatch.buttons[Identifiers.sidebarButton]
+        app.buttons[Identifiers.sidebarButton].firstMatch
     }
 
     /// Waits for the sidebar button's accessibility title to match the expected value.
@@ -76,9 +79,26 @@ class AIChatTests: UITestCase {
         return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
     }
 
+    /// Opens the sidebar on the current tab and detaches it into a floating window.
+    /// Asserts that the detach completes successfully.
+    private func openAndDetachSidebar() {
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        sidebarButton.click()
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarOpenTitle),
+                      "Sidebar should be open before detaching")
+
+        let detachButton = app.buttons[Identifiers.detachButton]
+        XCTAssertTrue(detachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Detach button should be visible in docked sidebar")
+        detachButton.click()
+
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarFloatingTitle),
+                      "Chrome bar button should show 'Show Duck.ai' after detaching")
+    }
+
     // MARK: - Split Button Existence
 
-    func test_duckAISplitButtonExists_byDefault() throws {
+    func test_duckAISplitButtonExists_byDefault() {
         XCTAssertTrue(duckAITitleButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Duck.ai title button should exist")
         XCTAssertTrue(sidebarButton.exists, "Sidebar button should exist")
@@ -86,7 +106,7 @@ class AIChatTests: UITestCase {
 
     // MARK: - Duck.ai Title Button Opens New Tab
 
-    func test_duckAITitleButton_opensNewTab_whenOnWebsite() throws {
+    func test_duckAITitleButton_opensNewTab_whenOnWebsite() {
         // Navigate to a website so we're not on NTP
         addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
 
@@ -103,7 +123,7 @@ class AIChatTests: UITestCase {
                        "Clicking Duck.ai title button on a website should open a new tab")
     }
 
-    func test_duckAITitleButton_loadsInCurrentTab_whenOnNewTabPage() throws {
+    func test_duckAITitleButton_loadsInCurrentTab_whenOnNewTabPage() {
         // We start on NTP after enforceSingleWindow
         XCTAssertTrue(duckAITitleButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
@@ -120,7 +140,7 @@ class AIChatTests: UITestCase {
 
     // MARK: - Sidebar Toggle Per Tab
 
-    func test_sidebarButton_togglesSidebarPerTab() throws {
+    func test_sidebarButton_togglesSidebarPerTab() {
         // Navigate tab A to a website
         addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
         XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -177,6 +197,30 @@ class AIChatTests: UITestCase {
         XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(waitForSidebarButtonTitle(sidebarClosedTitle),
                       "Sidebar should still be closed on tab A")
+    }
+
+    // MARK: - Sidebar: Expand Opens Duck.ai Tab
+
+    func test_sidebarExpandButton_opensDuckAITab() {
+        addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Open sidebar
+        sidebarButton.click()
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarOpenTitle),
+                      "Sidebar should be open")
+
+        let expandButton = app.buttons[Identifiers.openInNewTabButton]
+        XCTAssertTrue(expandButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Expand button should be visible in docked sidebar")
+
+        let tabsBefore = app.tabGroups.matching(identifier: "Tabs").radioButtons.count
+        expandButton.click()
+
+        // A new Duck.ai tab should have been opened
+        let tabsAfter = app.tabGroups.matching(identifier: "Tabs").radioButtons.count
+        XCTAssertEqual(tabsAfter, tabsBefore + 1,
+                       "Clicking expand button should open a new Duck.ai tab")
     }
 
     // MARK: - Tab Bar Context Menu: Hide/Show Buttons
@@ -249,7 +293,7 @@ class AIChatTests: UITestCase {
 
     // MARK: - View Menu: Hide/Show Buttons
 
-    func test_viewMenu_hideDuckAIButton() throws {
+    func test_viewMenu_hideDuckAIButton() {
         XCTAssertTrue(duckAITitleButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // Use View menu to hide Duck.ai button
@@ -272,7 +316,7 @@ class AIChatTests: UITestCase {
                       "Duck.ai button should reappear after View menu show action")
     }
 
-    func test_viewMenu_hideSidebarButton() throws {
+    func test_viewMenu_hideSidebarButton() {
         XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // Use View menu to hide sidebar button
@@ -295,4 +339,245 @@ class AIChatTests: UITestCase {
                       "Sidebar button should reappear after View menu show action")
     }
 
+    // MARK: - Floating Sidebar: Detach and Chrome Icon
+
+    func test_detachSidebar_createsFloatingWindow_andChromeIconChanges() {
+        addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        let windowsBefore = app.windows.count
+        openAndDetachSidebar()
+
+        // A new floating window should have appeared
+        let windowsAfter = app.windows.count
+        XCTAssertEqual(windowsAfter, windowsBefore + 1,
+                       "Detaching sidebar should create a new floating window")
+
+        // Attach button should be visible in the floating window
+        let attachButton = app.buttons[Identifiers.attachButton]
+        XCTAssertTrue(attachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Attach button should be visible in floating sidebar")
+
+        // Chrome bar icon should show floating state
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarFloatingTitle),
+                      "Chrome bar button should show 'Show Duck.ai' when sidebar is floating")
+
+        // Clicking chrome bar button when floating should bring floating window to front (not close it)
+        sidebarButton.click()
+        XCTAssertTrue(attachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Floating sidebar should still exist after clicking chrome bar icon")
+
+        // Window menu should list the floating Duck.ai window
+        let windowMenu = app.menuBars.menuBarItems["Window"]
+        windowMenu.click()
+        let floatingWindowItem = windowMenu.menuItems.matching(NSPredicate(format: "title BEGINSWITH %@", "Duck.ai")).firstMatch
+        XCTAssertTrue(floatingWindowItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Window menu should list the floating Duck.ai window")
+        windowMenu.typeKey(.escape, modifierFlags: [])
+    }
+
+    // MARK: - Floating Sidebar: Attach (Regular and Pinned Tab)
+
+    func test_floatingSidebar_attachButton_reattachesSidebar() {
+        addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // --- Regular tab: detach and reattach ---
+        openAndDetachSidebar()
+
+        let attachButton = app.buttons[Identifiers.attachButton]
+        XCTAssertTrue(attachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        let windowsBefore = app.windows.count
+        attachButton.click()
+
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarOpenTitle),
+                      "Chrome bar button should show 'Close' after reattaching sidebar")
+        XCTAssertEqual(app.windows.count, windowsBefore - 1,
+                       "Floating window should be closed after reattaching")
+        XCTAssertTrue(attachButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Attach button should not be visible in docked sidebar")
+
+        // --- Pinned tab: detach and reattach ---
+        sidebarButton.click()
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarClosedTitle),
+                      "Sidebar should be closed before pinning")
+
+        app.menuItems["Pin Tab"].click()
+
+        openAndDetachSidebar()
+        XCTAssertTrue(attachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Attach button should be visible for pinned tab's floating sidebar")
+
+        attachButton.click()
+
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarOpenTitle),
+                      "Chrome bar should show 'Close' after reattaching to pinned tab")
+        XCTAssertTrue(attachButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Attach button should not be visible after reattaching to pinned tab")
+
+        // Cleanup: unpin
+        app.menuItems["Unpin Tab"].click()
+    }
+
+    // MARK: - Floating Sidebar: Multi-Tab Switching
+
+    func test_floatingSidebar_titleButton_switchesToAssociatedTab() {
+        // Tab A: navigate to a page
+        addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Open tab B before detaching (avoids keyboard shortcuts going to floating window)
+        app.openNewTab()
+        addressBarTextField = app.addressBar
+        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
+
+        // Switch back to tab A and detach sidebar
+        let tabA = app.tabGroups.matching(identifier: "Tabs").radioButtons.element(boundBy: 0)
+        tabA.click()
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        openAndDetachSidebar()
+
+        // Switch to tab B
+        let tabB = app.tabGroups.matching(identifier: "Tabs").radioButtons.element(boundBy: 1)
+        tabB.click()
+
+        // We're now on tab B. Bring the floating sidebar to front via Window menu
+        // (clicking chrome bar button doesn't reliably bring floating window to front for XCUITest).
+        let windowMenu = app.menuBars.menuBarItems["Window"]
+        windowMenu.click()
+        let floatingWindowItem = windowMenu.menuItems.matching(NSPredicate(format: "title BEGINSWITH %@", "Duck.ai")).firstMatch
+        XCTAssertTrue(floatingWindowItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        floatingWindowItem.click()
+
+        let floatingTitleButton = app.buttons[Identifiers.titleButton]
+        XCTAssertTrue(floatingTitleButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        floatingTitleButton.click()
+
+        // After clicking title, tab A should be selected in the main browser
+        let selectedPredicate = NSPredicate(format: "isSelected == true")
+        let selectedExpectation = XCTNSPredicateExpectation(predicate: selectedPredicate, object: tabA)
+        XCTAssertEqual(XCTWaiter.wait(for: [selectedExpectation], timeout: UITests.Timeouts.elementExistence), .completed,
+                       "Tab A should be selected after clicking floating sidebar title button")
+    }
+
+    func test_floatingSidebar_attachButton_switchesToAssociatedTabAndReattaches() {
+        // Tab A: navigate to a page
+        addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Open tab B before detaching (avoids keyboard shortcuts going to floating window)
+        app.openNewTab()
+        addressBarTextField = app.addressBar
+        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
+
+        // Switch back to tab A and detach sidebar
+        let tabA = app.tabGroups.matching(identifier: "Tabs").radioButtons.element(boundBy: 0)
+        tabA.click()
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        openAndDetachSidebar()
+
+        // Switch to tab B
+        let tabB = app.tabGroups.matching(identifier: "Tabs").radioButtons.element(boundBy: 1)
+        tabB.click()
+
+        // We're now on tab B. Bring the floating sidebar to front via Window menu
+        // (clicking chrome bar button doesn't reliably bring floating window to front for XCUITest).
+        let windowMenu = app.menuBars.menuBarItems["Window"]
+        windowMenu.click()
+        let floatingWindowItem = windowMenu.menuItems.matching(NSPredicate(format: "title BEGINSWITH %@", "Duck.ai")).firstMatch
+        XCTAssertTrue(floatingWindowItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        floatingWindowItem.click()
+
+        let attachButton = app.buttons[Identifiers.attachButton]
+        XCTAssertTrue(attachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        attachButton.click()
+
+        // Tab A should be selected and sidebar should be docked
+        let selectedPredicate = NSPredicate(format: "isSelected == true")
+        let selectedExpectation = XCTNSPredicateExpectation(predicate: selectedPredicate, object: tabA)
+        XCTAssertEqual(XCTWaiter.wait(for: [selectedExpectation], timeout: UITests.Timeouts.elementExistence), .completed,
+                       "Tab A should be selected after attaching from tab B")
+
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarOpenTitle),
+                      "Chrome bar button should show sidebar is docked after attaching")
+    }
+
+    // MARK: - Floating Sidebar: Close Updates Chrome Bar
+
+    func test_closeFloatingSidebar_updatesChromeBarIcon() {
+        addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        openAndDetachSidebar()
+
+        // Floating window should be in front after detach — close it with Cmd+W
+        let attachButton = app.buttons[Identifiers.attachButton]
+        XCTAssertTrue(attachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        app.typeKey("w", modifierFlags: .command)
+
+        // Chrome bar icon should update to closed state
+        XCTAssertTrue(waitForSidebarButtonTitle(sidebarClosedTitle),
+                      "Chrome bar button should show 'Open' after closing floating sidebar")
+
+        // Attach button should no longer exist (floating window is gone)
+        XCTAssertTrue(attachButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Floating sidebar should be closed")
+    }
+
+    // MARK: - Floating Sidebar: Close Tab Warning
+
+    func test_closeTabWithDetachedSidebar_showsWarningPopover() {
+        addressBarTextField.typeURL(URL(string: "duck://settings/general")!)
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Open a second tab so closing tab A doesn't close the window
+        app.openNewTab()
+        addressBarTextField = app.addressBar
+        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
+
+        // Switch back to tab A and detach sidebar
+        let tabA = app.tabGroups.matching(identifier: "Tabs").radioButtons.element(boundBy: 0)
+        tabA.click()
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        openAndDetachSidebar()
+
+        // Focus main window by clicking on tab A (no keyboard shortcuts — they go to floating window)
+        tabA.click()
+        let tabCloseButton = tabA.buttons[Identifiers.tabCloseButton]
+        tabA.hover()
+        XCTAssertTrue(tabCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Tab close button should be visible")
+        tabCloseButton.click()
+
+        // Warning popover should appear
+        let warningTitle = app.staticTexts["Close tab and Duck.ai chat"]
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Warning popover should appear when closing tab with detached sidebar")
+
+        // Dismiss the warning — tab and sidebar should remain
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Tab should still exist
+        XCTAssertTrue(tabA.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Tab should still exist after dismissing the warning")
+
+        // Floating sidebar should still exist
+        let attachButton = app.buttons[Identifiers.attachButton]
+        XCTAssertTrue(attachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Floating sidebar should still exist after dismissing the warning")
+
+        // Now close for real: click the tab close button again and confirm
+        tabA.hover()
+        tabCloseButton.click()
+        // Find the popover's "Close Tab" button (not the tab bar close button which shares the same label)
+        let closeTabButton = app.buttons.matching(NSPredicate(format: "label == 'Close Tab' AND identifier != %@", Identifiers.tabCloseButton)).firstMatch
+        XCTAssertTrue(closeTabButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Close Tab button should appear in the warning popover")
+        closeTabButton.click()
+
+        // Both tab and floating sidebar should be gone
+        XCTAssertTrue(attachButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Floating sidebar should be closed after confirming tab close")
+    }
 }

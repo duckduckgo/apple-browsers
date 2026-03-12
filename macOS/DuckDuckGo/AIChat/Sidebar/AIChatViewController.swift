@@ -182,23 +182,28 @@ final class AIChatViewController: NSViewController {
 
         openInNewTabButton = makeBarButton(image: .expand, action: #selector(openInNewTabButtonClicked),
                                            toolTip: UserText.aiChatSidebarExpandButtonTooltip)
+        openInNewTabButton.setAccessibilityIdentifier("AIChatViewController.openInNewTabButton")
         topBar.addSubview(openInNewTabButton)
 
         attachButton = makeBarButton(image: .aiChatAttach, action: #selector(attachButtonClicked),
                                      toolTip: UserText.aiChatSidebarAttachButtonTooltip)
+        attachButton.setAccessibilityIdentifier("AIChatViewController.attachButton")
         attachButton.isHidden = true
         topBar.addSubview(attachButton)
 
         titleButton = makeTitleButton()
+        titleButton.setAccessibilityIdentifier("AIChatViewController.titleButton")
         titleButton.isHidden = true
         topBar.addSubview(titleButton)
 
         detachButton = makeBarButton(image: .aiChatDetach, action: #selector(detachButtonClicked),
                                      toolTip: UserText.aiChatSidebarDetachButtonTooltip)
+        detachButton.setAccessibilityIdentifier("AIChatViewController.detachButton")
         topBar.addSubview(detachButton)
 
         closeButton = makeBarButton(image: .closeLarge, action: #selector(closeButtonClicked),
                                     toolTip: UserText.aiChatSidebarCloseButtonTooltip)
+        closeButton.setAccessibilityIdentifier("AIChatViewController.closeButton")
         topBar.addSubview(closeButton)
 
         NSLayoutConstraint.activate([

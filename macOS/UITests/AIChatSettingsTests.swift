@@ -22,13 +22,11 @@ class AIChatSettingsTests: UITestCase {
     private var addressBarTextField: XCUIElement!
 
     private enum Identifiers {
-        static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
         static let searchModeToggleControl = "AddressBarButtonsViewController.searchModeToggleControl"
         static let aiFeaturesToggle = "Preferences.AIChat.aiFeaturesToggle"
         static let showSearchAndDuckAIToggleToggle = "Preferences.AIChat.showSearchAndDuckAIToggleToggle"
         static let showDuckAIButtonInTabBarToggle = "Preferences.AIChat.showDuckAIButtonInTabBarToggle"
         static let showSidebarButtonInTabBarToggle = "Preferences.AIChat.showSidebarButtonInTabBarToggle"
-        static let duckAIControlContainer = "TabBarViewController.duckAIChromeControlContainer"
         static let duckAITitleButton = "TabBarViewController.duckAIChromeTitleButton"
         static let sidebarButton = "TabBarViewController.duckAIChromeSidebarButton"
     }
@@ -36,7 +34,7 @@ class AIChatSettingsTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true, "aiChatChromeSidebar": true])
+        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true, "aiChatChromeSidebar": true, "aiChatSidebarFloating": true])
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
@@ -49,7 +47,7 @@ class AIChatSettingsTests: UITestCase {
 
     // MARK: - Search and Duck.ai Toggle
 
-    func test_whenShowSearchAndDuckAIToggleIsChanged_thenToggleVisibilityUpdatesOnFocus() throws {
+    func test_whenShowSearchAndDuckAIToggleIsChanged_thenToggleVisibilityUpdatesOnFocus() {
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
         let showToggleCheckbox = app.checkBoxes[Identifiers.showSearchAndDuckAIToggleToggle]
         XCTAssertTrue(showToggleCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -85,7 +83,7 @@ class AIChatSettingsTests: UITestCase {
 
     // MARK: - Tab Bar Button Visibility from Settings
 
-    func test_settingsToggleDuckAIButton_hidesAndShowsTitleButton() throws {
+    func test_settingsToggleDuckAIButton_hidesAndShowsTitleButton() {
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         let duckAIToggle = app.checkBoxes[Identifiers.showDuckAIButtonInTabBarToggle]
@@ -105,7 +103,7 @@ class AIChatSettingsTests: UITestCase {
                       "Duck.ai title button should reappear after re-enabling in settings")
     }
 
-    func test_settingsToggleSidebarButton_hidesAndShowsSidebarButton() throws {
+    func test_settingsToggleSidebarButton_hidesAndShowsSidebarButton() {
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         let sidebarToggle = app.checkBoxes[Identifiers.showSidebarButtonInTabBarToggle]
@@ -127,7 +125,7 @@ class AIChatSettingsTests: UITestCase {
 
     // MARK: - Main Duck.ai Toggle Disables Everything
 
-    func test_whenDuckAIIsDisabled_thenTabBarButtonsAndToggleAreNotVisible() throws {
+    func test_whenDuckAIIsDisabled_thenTabBarButtonsAndToggleAreNotVisible() {
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         // Ensure sub-settings are ON before disabling the main setting

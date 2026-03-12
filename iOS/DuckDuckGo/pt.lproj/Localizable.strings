@@ -2712,6 +2712,15 @@
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Vamos continuar onde paraste";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privado. Rápido. Menos anúncios.";
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "É o DuckDuckGo Search!";
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Pronto para um navegador mais rápido que te mantém protegido?";
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Olá!";
+
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Iniciar a navegação";
 

@@ -32,6 +32,11 @@ protocol TextZoomStoring {
 }
 
 class TextZoomStorage: TextZoomStoring {
+    
+    enum TextZoomStorageKey: String {
+        case domainTextZoomStorage = "com.duckduckgo.ios.domainTextZoomStorage"
+        case fireModeTextZoomStorage = "com.duckduckgo.ios.fireModeTextZoom"
+    }
 
     private let store: KeyValueStoring
     private let key: String

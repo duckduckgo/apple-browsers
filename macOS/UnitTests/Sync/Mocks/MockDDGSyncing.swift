@@ -36,9 +36,13 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     var mainTokenRescopeResult: String?
+    var mainTokenRescopeError: Error?
     private(set) var mainTokenRescopeScopes: [String] = []
     func mainTokenRescope(to scope: String) async throws -> String? {
         mainTokenRescopeScopes.append(scope)
+        if let mainTokenRescopeError {
+            throw mainTokenRescopeError
+        }
         return mainTokenRescopeResult
     }
 

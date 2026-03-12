@@ -26,12 +26,14 @@ import PrivacyConfig
 extension CrashReportingFactory: SparkleCrashReportingFactory {
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    keyValueStore: any ThrowingKeyValueStoring,
+                                   crashReportSender: CrashReportSending,
                                    crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
                                    fireCrashPixel: @escaping (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void,
                                    fireFailedToReadContentsPixel: @escaping () -> Void,
                                    promptForConsent: @escaping (CrashReportPresenting) async -> Bool) -> any CrashReporting {
         CrashReporter(internalUserDecider: internalUserDecider,
                       keyValueStore: keyValueStore,
+                      crashReportSender: crashReportSender,
                       crashSenderPixelEvents: crashSenderPixelEvents,
                       fireCrashPixel: fireCrashPixel,
                       fireFailedToReadContentsPixel: fireFailedToReadContentsPixel,
@@ -47,18 +49,19 @@ public final class CrashReporter: CrashReporting {
     private let settings: any ThrowingKeyedStoring<CrashReportingSettings>
 
     private let reader = CrashReportReader()
-    private let sender: CrashReportSender
+    private let sender: CrashReportSending
     private let crcidManager = CRCIDManager()
 
     public init(internalUserDecider: InternalUserDecider,
                 keyValueStore: any ThrowingKeyValueStoring,
+                crashReportSender: CrashReportSending,
                 crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
                 fireCrashPixel: @escaping (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void,
                 fireFailedToReadContentsPixel: @escaping () -> Void,
                 promptForConsent: @escaping (CrashReportPresenting) async -> Bool) {
         self.internalUserDecider = internalUserDecider
         self.settings = keyValueStore.throwingKeyedStoring()
-        self.sender = CrashReportSender(platform: .macOS, pixelEvents: crashSenderPixelEvents)
+        self.sender = crashReportSender
         self.fireCrashPixel = fireCrashPixel
         self.fireFailedToReadContentsPixel = fireFailedToReadContentsPixel
         self.promptForConsent = promptForConsent

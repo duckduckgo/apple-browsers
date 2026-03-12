@@ -2712,6 +2712,15 @@
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Pradėkime nuo ten, kur baigei";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privati. Sparti. Mažiau reklamų.";
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Tai – „DuckDuckGo Search“!";
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Pasiruošę greitesnei naršyklei, kuri jus apsaugo?";
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Sveiki.";
+
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Pradėti naršyti";
 

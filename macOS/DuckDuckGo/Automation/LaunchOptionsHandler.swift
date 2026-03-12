@@ -47,24 +47,22 @@ public final class LaunchOptionsHandler {
 
     /// Returns true only when WebDriver automation is active.
     public var isWebDriverAutomationSession: Bool {
-#if DEBUG || REVIEW
-        AutomationSession.isWebDriverActive(automationPort: automationPort)
-#else
-        false
-#endif
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild else { return false }
+        return AutomationSession.isWebDriverActive(automationPort: automationPort)
     }
 
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
     public var isAutomationSession: Bool {
-#if DEBUG || REVIEW
-        isWebDriverAutomationSession || isUITesting
-#else
-        isUITesting
-#endif
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild else { return isUITesting }
+        return isWebDriverAutomationSession || isUITesting
     }
 
     public var onboardingStatus: OnboardingStatus {
-        #if DEBUG || REVIEW
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild else { return .notOverridden }
+
         // Override onboarding settings permanently to keep state consistency across app launches.
         // This applies to both UI Tests and WebDriver automation sessions.
         // Launch Arguments can be read via userDefaults for easy value access.
@@ -76,7 +74,6 @@ public final class LaunchOptionsHandler {
         if let developerOnboardingOverride = ProcessInfo.processInfo.environment["ONBOARDING"] {
             return .overridden(.developer(completed: developerOnboardingOverride == "false"))
         }
-        #endif
 
         return .notOverridden
     }

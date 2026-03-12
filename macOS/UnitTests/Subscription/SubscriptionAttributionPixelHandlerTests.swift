@@ -51,11 +51,7 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
 
     func testWhenPixelFiresThenNameIsSetToM_Mac_DistributionType_Subscribe() {
         // GIVEN
-        #if APPSTORE
-        let expectedPixelName = "m_mac_store_subscribe"
-        #else
-        let expectedPixelName = "m_mac_direct_subscribe"
-        #endif
+        let expectedPixelName = NSApp.isSandboxed ? "m_mac_store_subscribe" : "m_mac_direct_subscribe"
         let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: .current)
         sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
 

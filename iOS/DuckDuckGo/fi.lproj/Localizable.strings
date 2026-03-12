@@ -2712,6 +2712,15 @@
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Jatketaan siitä, mihin jäit";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Yksityinen. Nopea. Vähemmän mainoksia.";
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Tämä on DuckDuckGo Search!";
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Oletko valmis käyttämään nopeampaa selainta, joka pitää sinut suojattuna?";
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Hei!";
+
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Aloita selailu";
 

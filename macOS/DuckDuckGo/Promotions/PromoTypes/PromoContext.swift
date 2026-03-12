@@ -1,6 +1,5 @@
 //
-//  UnifiedToggleInputInlineActivating.swift
-//  DuckDuckGo
+//  PromoContext.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,13 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-
-protocol UnifiedToggleInputInlineActivating: AnyObject {
-    func activateInlineEditingIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
-}
-
-enum UnifiedToggleInputActivationDecision {
-    case intercept
-    case allowDefault
+/// Where the promo appears or overlaps in the UI.
+enum PromoContext {
+    /// Global promo is mutually exclusive with all other contexts.
+    case global
+    case newTabPage
+    case webPage
 }

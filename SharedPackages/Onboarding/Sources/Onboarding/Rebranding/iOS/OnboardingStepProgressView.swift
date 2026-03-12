@@ -21,6 +21,13 @@ import SwiftUI
 import UIComponents
 
 public struct OnboardingStepProgressView: View {
+
+    enum Copy {
+        public static var of: String {
+            NSLocalizedString("onboarding.highlights.browsers.progress.of", bundle: Bundle.module, value: "of", comment: "Delimiter for step/total dots in the rebranded onboarding")
+        }
+    }
+
     @Environment(\.onboardingTheme) private var onboardingTheme
     @Environment(\.onboardingStepProgressTheme) private var stepProgressTheme
 
@@ -52,7 +59,7 @@ public struct OnboardingStepProgressView: View {
                     unselectedDotFillColor: stepProgressTheme.colors.unselectedDot
                 )
             )
-            Text(verbatim: "\(clampedStep) of \(clampedTotal)")
+            Text(verbatim: "\(clampedStep) \(Copy.of) \(clampedTotal)")
                 .font(onboardingTheme.typography.progressIndicator)
                 .multilineTextAlignment(stepProgressTheme.textAlignment)
                 .foregroundStyle(stepProgressTheme.colors.text)

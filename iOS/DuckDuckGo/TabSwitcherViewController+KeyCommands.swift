@@ -67,7 +67,7 @@ extension TabSwitcherViewController {
     
     @objc func keyboardSelectCurrent() {
         guard currentSelection != nil else { return }
-        markCurrentAsViewedAndDismiss()
+        dismissIfPossible()
     }
     
     @objc func keyboardRemoveTab() {

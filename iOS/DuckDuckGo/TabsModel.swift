@@ -126,21 +126,21 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     
     /// The tab after the current tab, wrapping from the last tab back to the first.
     var nextTab: Tab? {
-        guard !tabs.isEmpty else { return nil }
+        guard !tabs.isEmpty, let currentIndex else { return nil }
         let nextIndex = currentIndex + 1 >= tabs.count ? 0 : currentIndex + 1
         return get(tabAt: nextIndex)
     }
 
     /// The tab before the current tab, wrapping from the first tab to the last.
     var previousTab: Tab? {
-        guard !tabs.isEmpty else { return nil }
+        guard !tabs.isEmpty, let currentIndex else { return nil }
         let previousIndex = currentIndex - 1 < 0 ? tabs.count - 1 : currentIndex - 1
         return get(tabAt: previousIndex)
     }
 
     /// The tab immediately before the current tab without wrapping. Returns `nil` when the current tab is first.
     var tabBefore: Tab? {
-        guard currentIndex > 0 else { return nil }
+        guard let currentIndex, currentIndex > 0 else { return nil }
         return get(tabAt: currentIndex - 1)
     }
 
@@ -169,8 +169,14 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         var newTabIndex: Int?
         switch placement {
         case .afterCurrentTab:
-            insert(tab: tab, at: currentIndex + 1)
-            newTabIndex = currentIndex + 1
+            var newIndex: Int
+            if let currentIndex {
+                newIndex = currentIndex + 1
+            } else {
+                newIndex = 0
+            }
+            insert(tab: tab, at: newIndex)
+            newTabIndex = newIndex
         case .atEnd:
             tabs.append(tab)
             newTabIndex = tabs.count - 1

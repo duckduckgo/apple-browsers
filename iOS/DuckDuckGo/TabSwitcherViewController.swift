@@ -143,7 +143,7 @@ class TabSwitcherViewController: UIViewController {
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var _trackerInfoModel: InfoPanelView.Model?
     private var activeTrackerInfoModel: InfoPanelView.Model? {
-        guard tabManager.currentBrowsingMode == .normal else { return nil }
+        guard selectedBrowsingMode == .normal else { return nil }
         return _trackerInfoModel
     }
 
@@ -465,7 +465,7 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func updateFireModeEmptyStateVisibility() {
-        let shouldShowEmptyState = tabManager.currentBrowsingMode == .fire && tabsModel.tabs.isEmpty
+        let shouldShowEmptyState = selectedBrowsingMode == .fire && tabsModel.tabs.isEmpty
         fireModeEmptyStateHostingController?.view.isHidden = !shouldShowEmptyState
         collectionView.isHidden = shouldShowEmptyState
     }
@@ -702,9 +702,13 @@ class TabSwitcherViewController: UIViewController {
         tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
 
         let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
-        let selectedTab = tabsModel.get(tabAt: currentSelection)
 
-        delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
+        if selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty {
+            tabManager.setBrowsingMode(selectedBrowsingMode)
+        } else {
+            let selectedTab = tabsModel.get(tabAt: currentSelection)
+            delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
+        }
 
         super.dismiss(animated: animated) {
             completion?()
@@ -815,7 +819,7 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         } else {
             currentSelection = indexPath.row
             Pixel.fire(pixel: .tabSwitcherSwitchTabs)
-            markCurrentAsViewedAndDismiss()
+            dismissIfPossible()
         }
     }
 

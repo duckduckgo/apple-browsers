@@ -830,6 +830,7 @@ extension Pixel {
         case adAttributionLogicWrongVendorOnFailedCompilation
 
         case debugTabSwitcherDidChangeInvalidState
+        case debugTabsModelCrossModeMismatch
 
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksStructureLost
@@ -2331,6 +2332,7 @@ extension Pixel.Event {
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
 
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
+        case .debugTabsModelCrossModeMismatch: return "m_debug_tabs-model_cross-mode-mismatch"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             

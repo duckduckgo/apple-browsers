@@ -101,7 +101,7 @@ extension TabViewController {
     }
 
     fileprivate func buildOpenLinkPreview(for url: URL) -> UIViewController? {
-        let tab = Tab(link: Link(title: nil, url: url))
+        let tab = Tab(link: Link(title: nil, url: url), fireTab: self.tabModel.fireTab)
         let tabController = TabViewController.loadFromStoryboard(
             model: tab,
             privacyConfigurationManager: privacyConfigurationManager,

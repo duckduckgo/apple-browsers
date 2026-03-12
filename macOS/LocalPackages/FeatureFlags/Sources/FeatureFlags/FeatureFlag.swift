@@ -80,6 +80,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
     case dbpClickActionDelayReductionOptimization
 
+    /// https://app.asana.com/1/137249556945/project/1206873150423133/task/1213344522599586
+    case dbpWebViewUserAgent
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -273,6 +276,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
+    case aiChatChromeSidebar
+
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
@@ -280,6 +286,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Window Semaphore Fullscreen Behavior Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
     case semaphoreAlwaysVisible
+
+    /// Enables the promo service to coordinate promos/calls to action
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
+    case promoQueue
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -308,6 +318,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
+                .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics:
@@ -365,6 +376,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
                 .dbpClickActionDelayReductionOptimization,
+                .dbpWebViewUserAgent,
                 .syncFeatureLevel3,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
@@ -402,6 +414,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .startupMetrics,
                 .privateProcessName,
                 .webViewLookUpAction,
+                .aiChatChromeSidebar,
+                .webViewLookUpAction,
+                .promoQueue,
                 .semaphoreAlwaysVisible:
             return true
         case .freemiumDBP,
@@ -460,6 +475,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
         case .dbpClickActionDelayReductionOptimization:
             return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
+        case .dbpWebViewUserAgent:
+            return .remoteReleasable(.subfeature(DBPSubfeature.webViewUserAgent))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -574,10 +591,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
+        case .aiChatChromeSidebar:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .webViewLookUpAction:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .semaphoreAlwaysVisible:
             return .internalOnly()
+        case .promoQueue:
+            return .disabled
         }
     }
 }

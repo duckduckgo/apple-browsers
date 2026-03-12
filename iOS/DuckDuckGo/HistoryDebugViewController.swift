@@ -156,11 +156,11 @@ struct TabHistoryDetailView: View {
     @MainActor
     private func loadHistory() async {
         guard let tabManager = tabManager,
-              tabItem.tabIndex < tabManager.model.tabs.count else {
+              tabItem.tabIndex < tabManager.allTabsModel.tabs.count else {
             return
         }
 
-        let tab = tabManager.model.tabs[tabItem.tabIndex]
+        let tab = tabManager.allTabsModel.tabs[tabItem.tabIndex]
         let urls = await tabManager.viewModel(for: tab).tabHistory()
         historyItems = urls.enumerated().map { HistoryDisplayItem(url: $1, index: $0) }
     }
@@ -261,10 +261,10 @@ class HistoryDebugViewModel: ObservableObject {
             return
         }
 
-        let currentTab = tabManager.model.currentTab
+        let currentTab = tabManager.currentTabsModel.currentTab
         var items: [TabHistoryItem] = []
 
-        for (index, tab) in tabManager.model.tabs.enumerated() {
+        for (index, tab) in tabManager.allTabsModel.tabs.enumerated() {
             let historyCount = await tabManager.viewModel(for: tab).tabHistory().count
             let isCurrent = tab === currentTab
 

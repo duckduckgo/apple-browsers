@@ -66,19 +66,16 @@ final class SyncAutoRestoreDecisionManagerTests: XCTestCase {
         XCTAssertNil(sut.existingDecision())
     }
 
-    func testPersistDecisionWhenStoreWritesReturnsTrue() {
-        let didPersist = sut.persistDecision(true)
-
-        XCTAssertTrue(didPersist)
+    func testPersistDecisionWhenStoreWritesThenDecisionIsPersisted() throws {
+        try sut.persistDecision(true)
         XCTAssertEqual(mockDecisionStore.persistedDecisions, [true])
     }
 
-    func testPersistDecisionWhenStoreThrowsReturnsFalse() {
+    func testPersistDecisionWhenStoreThrowsThenErrorIsRethrown() {
         mockDecisionStore.setDecisionError = DecisionManagerTestError.expected
 
-        let didPersist = sut.persistDecision(true)
+        XCTAssertThrowsError(try sut.persistDecision(true))
 
-        XCTAssertFalse(didPersist)
         XCTAssertEqual(mockDecisionStore.persistedDecisions, [])
     }
 

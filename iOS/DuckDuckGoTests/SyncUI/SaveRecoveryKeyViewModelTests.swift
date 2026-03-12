@@ -17,152 +17,144 @@
 //  limitations under the License.
 //
 
-import Combine
 import XCTest
 @testable import SyncUI_iOS
 
 final class SaveRecoveryKeyViewModelTests: XCTestCase {
 
     func testWhenFeatureEnabledAndNoExistingDecisionThenPersistsDefaultEnabledDecision() {
-        let persistSpy = AutoRestoreDecisionPersistSpy()
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = nil
 
         _ = SaveRecoveryKeyViewModel(
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            isAutoRestoreFeatureEnabled: true,
-            existingAutoRestoreDecision: nil,
-            persistAutoRestoreDecision: persistSpy.persist(_:),
+            autoRestoreProvider: autoRestoreProvider,
             presentLearnMore: {}
         )
 
-        XCTAssertEqual(persistSpy.persistedDecisions, [true])
+        XCTAssertEqual(autoRestoreProvider.persistedDecisions, [true])
+    }
+
+    func testWhenFeatureEnabledAndNoExistingDecisionAndPersistFailsThenKeepsDisabledState() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = nil
+        autoRestoreProvider.persistError = AutoRestoreProviderTestError.expected
+
+        let sut = SaveRecoveryKeyViewModel(
+            key: "test-key",
+            showRecoveryPDFAction: {},
+            onDismiss: {},
+            autoRestoreProvider: autoRestoreProvider,
+            presentLearnMore: {}
+        )
+
+        XCTAssertFalse(sut.isAutoRestoreEnabled)
+        XCTAssertTrue(autoRestoreProvider.persistedDecisions.isEmpty)
     }
 
     func testWhenFeatureEnabledAndExistingDecisionProvidedThenUsesDecisionWithoutPersisting() {
-        let persistSpy = AutoRestoreDecisionPersistSpy()
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = false
 
         let sut = SaveRecoveryKeyViewModel(
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            isAutoRestoreFeatureEnabled: true,
-            existingAutoRestoreDecision: false,
-            persistAutoRestoreDecision: persistSpy.persist(_:),
+            autoRestoreProvider: autoRestoreProvider,
             presentLearnMore: {}
         )
 
         XCTAssertFalse(sut.isAutoRestoreEnabled)
-        XCTAssertTrue(persistSpy.persistedDecisions.isEmpty)
+        XCTAssertTrue(autoRestoreProvider.persistedDecisions.isEmpty)
     }
 
-    func testWhenFeatureDisabledAndNoExistingDecisionThenDoesNotPersistInitialDecision() {
-        let persistSpy = AutoRestoreDecisionPersistSpy()
+    func testWhenFeatureDisabledThenDoesNotPersistInitialDecision() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = false
+        autoRestoreProvider.existingAutoRestoreDecision = nil
 
-        _ = SaveRecoveryKeyViewModel(
-            key: "test-key",
-            showRecoveryPDFAction: {},
-            onDismiss: {},
-            isAutoRestoreFeatureEnabled: false,
-            existingAutoRestoreDecision: nil,
-            persistAutoRestoreDecision: persistSpy.persist(_:),
-            presentLearnMore: {}
-        )
-
-        XCTAssertTrue(persistSpy.persistedDecisions.isEmpty)
-    }
-
-    func testWhenAutoRestoreToggledAndPersistSucceedsThenReturnsTrueAndUpdatesState() {
-        let persistSpy = AutoRestoreDecisionPersistSpy()
         let sut = SaveRecoveryKeyViewModel(
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            isAutoRestoreFeatureEnabled: true,
-            existingAutoRestoreDecision: true,
-            persistAutoRestoreDecision: persistSpy.persist(_:),
+            autoRestoreProvider: autoRestoreProvider,
             presentLearnMore: {}
         )
 
-        let didPersist = sut.autoRestoreToggled(false)
-
-        XCTAssertTrue(didPersist)
+        XCTAssertFalse(sut.isAutoRestoreFeatureEnabled)
         XCTAssertFalse(sut.isAutoRestoreEnabled)
-        XCTAssertEqual(persistSpy.persistedDecisions, [false])
+        XCTAssertTrue(autoRestoreProvider.persistedDecisions.isEmpty)
     }
 
-    func testWhenAutoRestoreToggledAndPersistFailsThenReturnsFalseAndKeepsOriginalState() {
-        let persistSpy = AutoRestoreDecisionPersistSpy()
-        persistSpy.result = false
+    func testWhenAutoRestoreToggledAndValueUnchangedThenDoesNotPersist() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = true
         let sut = SaveRecoveryKeyViewModel(
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            isAutoRestoreFeatureEnabled: true,
-            existingAutoRestoreDecision: true,
-            persistAutoRestoreDecision: persistSpy.persist(_:),
+            autoRestoreProvider: autoRestoreProvider,
             presentLearnMore: {}
         )
 
-        let didPersist = sut.autoRestoreToggled(false)
+        sut.autoRestoreToggled(true)
 
-        XCTAssertFalse(didPersist)
+        XCTAssertTrue(autoRestoreProvider.persistedDecisions.isEmpty)
+    }
+
+    func testWhenAutoRestoreToggledAndPersistSucceedsThenUpdatesState() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = true
+        let sut = SaveRecoveryKeyViewModel(
+            key: "test-key",
+            showRecoveryPDFAction: {},
+            onDismiss: {},
+            autoRestoreProvider: autoRestoreProvider,
+            presentLearnMore: {}
+        )
+
+        sut.autoRestoreToggled(false)
+
+        XCTAssertFalse(sut.isAutoRestoreEnabled)
+        XCTAssertEqual(autoRestoreProvider.persistedDecisions, [false])
+    }
+
+    func testWhenAutoRestoreToggledAndPersistFailsThenKeepsOriginalState() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = true
+        autoRestoreProvider.persistError = AutoRestoreProviderTestError.expected
+        let sut = SaveRecoveryKeyViewModel(
+            key: "test-key",
+            showRecoveryPDFAction: {},
+            onDismiss: {},
+            autoRestoreProvider: autoRestoreProvider,
+            presentLearnMore: {}
+        )
+
+        sut.autoRestoreToggled(false)
+
         XCTAssertTrue(sut.isAutoRestoreEnabled)
-        XCTAssertEqual(persistSpy.persistedDecisions, [false])
-    }
-
-    func testWhenAutoRestoreToggledAndPersistFailsThenPublishesOptimisticValueAndRevertValue() {
-        let persistSpy = AutoRestoreDecisionPersistSpy()
-        persistSpy.result = false
-        let sut = SaveRecoveryKeyViewModel(
-            key: "test-key",
-            showRecoveryPDFAction: {},
-            onDismiss: {},
-            isAutoRestoreFeatureEnabled: true,
-            existingAutoRestoreDecision: true,
-            persistAutoRestoreDecision: persistSpy.persist(_:),
-            presentLearnMore: {}
-        )
-        var publishedValues: [Bool] = []
-        let cancellable = sut.$isAutoRestoreEnabled
-            .dropFirst()
-            .sink { value in
-                publishedValues.append(value)
-            }
-
-        _ = sut.autoRestoreToggled(false)
-
-        _ = cancellable
-        XCTAssertEqual(publishedValues, [false, true])
-    }
-
-    func testWhenAutoRestoreToggledAndFeatureDisabledThenReturnsTrueWithoutPersisting() {
-        let persistSpy = AutoRestoreDecisionPersistSpy()
-        let sut = SaveRecoveryKeyViewModel(
-            key: "test-key",
-            showRecoveryPDFAction: {},
-            onDismiss: {},
-            isAutoRestoreFeatureEnabled: false,
-            existingAutoRestoreDecision: true,
-            persistAutoRestoreDecision: persistSpy.persist(_:),
-            presentLearnMore: {}
-        )
-
-        let didPersist = sut.autoRestoreToggled(false)
-
-        XCTAssertTrue(didPersist)
-        XCTAssertTrue(persistSpy.persistedDecisions.isEmpty)
+        XCTAssertTrue(autoRestoreProvider.persistedDecisions.isEmpty)
     }
 
     func testWhenPresentLearnMoreCalledThenForwardsAction() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = true
         var presentLearnMoreCalled = false
         let sut = SaveRecoveryKeyViewModel(
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            isAutoRestoreFeatureEnabled: true,
-            existingAutoRestoreDecision: true,
-            persistAutoRestoreDecision: { _ in true },
+            autoRestoreProvider: autoRestoreProvider,
             presentLearnMore: {
                 presentLearnMoreCalled = true
             }
@@ -174,12 +166,6 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
     }
 }
 
-private final class AutoRestoreDecisionPersistSpy {
-    var persistedDecisions: [Bool] = []
-    var result = true
-
-    func persist(_ decision: Bool) -> Bool {
-        persistedDecisions.append(decision)
-        return result
-    }
+private enum AutoRestoreProviderTestError: Error {
+    case expected
 }

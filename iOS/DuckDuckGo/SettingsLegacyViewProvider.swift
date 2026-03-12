@@ -141,6 +141,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     private func instantiateDebugController() -> UIViewController {
         return DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
+            syncAutoRestoreHandler: self.syncAutoRestoreHandler,
             bookmarksDatabase: self.bookmarksDatabase,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,

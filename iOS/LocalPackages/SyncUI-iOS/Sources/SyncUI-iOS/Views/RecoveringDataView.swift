@@ -1,8 +1,8 @@
 //
-//  RecoverSyncedDataView.swift
+//  RecoveringDataView.swift
 //  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,49 +21,30 @@ import SwiftUI
 import DuckUI
 import DesignResourcesKit
 
-public struct RecoverSyncedDataView: View {
+public struct RecoveringDataView: View {
 
-    @ObservedObject public var model: SyncSettingsViewModel
-    var onCancel: () -> Void
-
-    public init(model: SyncSettingsViewModel, onCancel: @escaping () -> Void) {
-        self.model = model
-        self.onCancel = onCancel
-    }
+    public init() {}
 
     public var body: some View {
         UnderflowContainer {
             VStack(spacing: 0) {
-                HStack {
-                    Button(action: onCancel, label: {
-                        Text(UserText.cancelButton)
-                    })
-                    Spacer()
-                }
-                .frame(height: 56)
-                Image("Sync-Recover-128")
+                Image("Sync-128")
                     .padding(20)
+                    .padding(.top, 56)
 
-                Text(UserText.recoverSyncedDataTitle)
+                Text(UserText.recoveringDataTitle)
                     .daxTitle1()
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 24)
 
-                Text(UserText.recoverSyncedDataDescription)
-                        .multilineTextAlignment(.center)
+                Text(UserText.recoveringDataDescription)
+                    .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 20)
             .foregroundStyle(Color(designSystemColor: .textPrimary))
         } foregroundContent: {
-            Button {
-                model.continueRecoverFlow()
-            } label: {
-                Text(UserText.recoverSyncedDataButton)
-            }
-            .buttonStyle(PrimaryButtonStyle())
-            .frame(maxWidth: 360)
-            .padding(.horizontal, 30)
-            .padding(.bottom, 8)
+            Text(UserText.recoveringDataStatus)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         }
         .background(Color(designSystemColor: .backgroundSheets))
     }

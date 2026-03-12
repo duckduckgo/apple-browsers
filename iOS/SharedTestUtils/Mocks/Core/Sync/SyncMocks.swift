@@ -34,22 +34,30 @@ final class MockSyncAutoRestoreHandler: SyncAutoRestoreHandling {
     var isAutoRestoreFeatureEnabled = false
     var existingAutoRestoreDecision: Bool?
     var persistedDecisions: [Bool] = []
-    var persistResult = true
+    var persistError: Error?
+    var isEligibleForAutoRestoreValue = false
+    private(set) var restoreFromPreservedAccountCallCount = 0
+    var onRestoreFromPreservedAccount: (() -> Void)?
 
     func existingDecision() -> Bool? {
         existingAutoRestoreDecision
     }
 
-    func persistDecision(_ decision: Bool) -> Bool {
+    func persistDecision(_ decision: Bool) throws {
+        if let persistError {
+            throw persistError
+        }
         persistedDecisions.append(decision)
-        return persistResult
     }
 
     func clearDecision() {}
 
     func isEligibleForAutoRestore() -> Bool {
-        false
+        isEligibleForAutoRestoreValue
     }
 
-    func restoreFromPreservedAccount() async {}
+    func restoreFromPreservedAccount() async {
+        restoreFromPreservedAccountCallCount += 1
+        onRestoreFromPreservedAccount?()
+    }
 }

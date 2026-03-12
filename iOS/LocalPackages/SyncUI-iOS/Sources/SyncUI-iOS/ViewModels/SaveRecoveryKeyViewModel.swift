@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import Foundation
 import UIKit
 
@@ -28,31 +27,36 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
     let onDismiss: () -> Void
     let isAutoRestoreFeatureEnabled: Bool
 
-    @Published var isAutoRestoreEnabled: Bool
+    @Published var isAutoRestoreEnabled = false
 
     private let presentLearnMoreAction: () -> Void
-    private let persistAutoRestoreDecision: (Bool) -> Bool
+    private let autoRestoreProvider: SyncAutoRestoreProviding
 
     public init(
         key: String,
         showRecoveryPDFAction: @escaping () -> Void,
         onDismiss: @escaping () -> Void,
-        isAutoRestoreFeatureEnabled: Bool = false,
-        existingAutoRestoreDecision: Bool? = nil,
-        persistAutoRestoreDecision: @escaping (Bool) -> Bool = { _ in false },
+        autoRestoreProvider: SyncAutoRestoreProviding,
         presentLearnMore: @escaping () -> Void = {}
     ) {
         self.key = key
         self.showRecoveryPDFAction = showRecoveryPDFAction
         self.onDismiss = onDismiss
         self.presentLearnMoreAction = presentLearnMore
-        self.persistAutoRestoreDecision = persistAutoRestoreDecision
+        self.autoRestoreProvider = autoRestoreProvider
+        self.isAutoRestoreFeatureEnabled = autoRestoreProvider.isAutoRestoreFeatureEnabled
 
-        self.isAutoRestoreFeatureEnabled = isAutoRestoreFeatureEnabled
-
-        self.isAutoRestoreEnabled = existingAutoRestoreDecision ?? true
-        if isAutoRestoreFeatureEnabled, existingAutoRestoreDecision == nil {
-            _ = persistAutoRestoreDecision(isAutoRestoreEnabled)
+        if isAutoRestoreFeatureEnabled {
+            if let decision = autoRestoreProvider.existingDecision() {
+                self.isAutoRestoreEnabled = decision
+            } else {
+                do {
+                    try autoRestoreProvider.persistDecision(true)
+                    self.isAutoRestoreEnabled = true
+                } catch {
+                    self.isAutoRestoreEnabled = false
+                }
+            }
         }
     }
 
@@ -64,26 +68,19 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
         onDismiss()
     }
 
-    @discardableResult
-    func autoRestoreToggled(_ isEnabled: Bool) -> Bool {
-        guard isAutoRestoreFeatureEnabled else { return true }
-        let previousValue = isAutoRestoreEnabled
-        isAutoRestoreEnabled = isEnabled
+    func autoRestoreToggled(_ isEnabled: Bool) {
+        guard isEnabled != isAutoRestoreEnabled else { return }
 
-        guard persistDecision(isEnabled) else {
-            isAutoRestoreEnabled = previousValue
-            return false
+        do {
+            try autoRestoreProvider.persistDecision(isEnabled)
+            isAutoRestoreEnabled = isEnabled
+        } catch {
+            return
         }
-        return true
     }
 
     func presentLearnMore() {
         presentLearnMoreAction()
-    }
-
-    @discardableResult
-    private func persistDecision(_ decision: Bool) -> Bool {
-        persistAutoRestoreDecision(decision)
     }
 
 }

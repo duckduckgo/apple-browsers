@@ -24,7 +24,11 @@ import Combine
 public protocol SyncManagementViewModelDelegate: AnyObject {
 
     func authenticateUser() async throws
-    func showRecoverData()
+    func showAutoRestoreReady(for continuation: SyncSettingsViewModel.PreservedAccountContinuation)
+    func isPreservedAccountPromptNeeded() -> Bool
+    func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation)
+    func showRecoveringDataAutoRestore()
+    func showRecoveryCodeEntry()
     func showSyncWithAnotherDevice()
     func showRecoveryPDF()
     func shareRecoveryPDF()
@@ -100,6 +104,16 @@ public class SyncSettingsViewModel: ObservableObject {
         case activated
     }
 
+    public enum SyncSetupEntryPoint: Equatable {
+        case backup
+        case pairing
+    }
+
+    public enum PreservedAccountContinuation: Equatable {
+        case setup(SyncSetupEntryPoint)
+        case recover
+    }
+
     @Published public var isSyncEnabled = false {
         didSet {
             if !isSyncEnabled {
@@ -130,23 +144,42 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAIChatSyncEnabled: Bool = false
     @Published public var isAppVersionNotSupported: Bool = false
     @Published public var isSyncWithSetUpSheetVisible: Bool = false
+    @Published public var isRecoverSyncedDataSheetVisible: Bool = false
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
+
+    public let isAutoRestoreFeatureAvailable: Bool
+    @Published public var isAutoRestoreEnabled: Bool = false
+    @Published var isAutoRestoreUpdating: Bool = false
+
+    public var autoRestoreStatusText: String {
+        isAutoRestoreEnabled ? UserText.autoRestoreStatusOn : UserText.autoRestoreStatusOff
+    }
 
     public weak var delegate: SyncManagementViewModelDelegate?
     private(set) var isOnDevEnvironment: Bool
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
+    private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
+
+    private let autoRestoreProvider: SyncAutoRestoreProviding
 
     public init(
         isOnDevEnvironment: @escaping () -> Bool,
-        switchToProdEnvironment: @escaping () -> Void) {
-            self.isOnDevEnvironment = isOnDevEnvironment()
-            self.switchToProdEnvironment = { [weak self] in
-                switchToProdEnvironment()
-                self?.isOnDevEnvironment = isOnDevEnvironment()
-            }
+        switchToProdEnvironment: @escaping () -> Void,
+        autoRestoreProvider: SyncAutoRestoreProviding
+    ) {
+        self.isOnDevEnvironment = isOnDevEnvironment()
+        self.autoRestoreProvider = autoRestoreProvider
+        self.isAutoRestoreFeatureAvailable = autoRestoreProvider.isAutoRestoreFeatureEnabled
+        if isAutoRestoreFeatureAvailable {
+            self.isAutoRestoreEnabled = autoRestoreProvider.existingDecision() ?? false
         }
+        self.switchToProdEnvironment = { [weak self] in
+            switchToProdEnvironment()
+            self?.isOnDevEnvironment = isOnDevEnvironment()
+        }
+    }
 
     @MainActor
     func commonAuthenticate() async -> Bool {
@@ -164,6 +197,37 @@ public class SyncSettingsViewModel: ObservableObject {
             }
             return false
         }
+    }
+
+    @MainActor
+    func requestAutoRestoreUpdate(enabled: Bool) {
+        guard enabled != isAutoRestoreEnabled else { return }
+        guard !isAutoRestoreUpdating else { return }
+
+        isAutoRestoreUpdating = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.isAutoRestoreUpdating = false }
+
+            guard await self.commonAuthenticate() else { return }
+            do {
+                try self.autoRestoreProvider.persistDecision(enabled)
+            } catch {
+                return
+            }
+
+            self.isAutoRestoreEnabled = enabled
+        }
+    }
+
+    @MainActor
+    public func refreshAutoRestoreDecisionState() {
+        guard isAutoRestoreFeatureAvailable else {
+            isAutoRestoreEnabled = false
+            return
+        }
+
+        isAutoRestoreEnabled = autoRestoreProvider.existingDecision() == true
     }
 
     func disableSync() {
@@ -194,38 +258,58 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
-    func scanQRCode() {
+    public func scanQRCode() {
+        beginPairingFlow()
+    }
+
+    public func beginPairingFlow() {
+        guard isConnectingDevicesAvailable else { return }
+        guard isSyncEnabled || isAccountCreationAvailable else { return }
         Task { @MainActor in
-            if await commonAuthenticate() {
-                delegate?.showSyncWithAnotherDevice()
-            }
+            await beginFlow(for: .setup(.pairing))
         }
     }
 
-    func syncAndBackupThisDevice() {
+    public func beginBackupFlow() {
         Task { @MainActor in
-            if await commonAuthenticate() {
-                delegate?.showSyncWithAnotherDevice()
-            }
+            guard isAccountCreationAvailable else { return }
+            await beginFlow(for: .setup(.backup))
         }
     }
 
-    func recoverSyncedData() {
+    public func beginRecoverFlow() {
         Task { @MainActor in
-            if await commonAuthenticate() {
-                delegate?.showSyncWithAnotherDevice()
-            }
+            guard isAccountRecoveryAvailable else { return }
+            await beginFlow(for: .recover)
         }
     }
 
     @MainActor
-    public func presentSyncWithSetUpSheetIfNeeded() async {
-        guard isAccountCreationAvailable else {
+    private func beginFlow(for continuation: PreservedAccountContinuation) async {
+        guard await commonAuthenticate() else { return }
+
+        guard delegate?.isPreservedAccountPromptNeeded() != true else {
+            pendingPreservedAccountContinuation = continuation
+            delegate?.showAutoRestoreReady(for: continuation)
             return
         }
 
-        if await commonAuthenticate() {
-            isSyncWithSetUpSheetVisible = true
+        clearPendingPreservedAccountContinuation()
+        continueWithoutPreservedAccountPrompt(for: continuation)
+    }
+
+    @MainActor
+    private func continueWithoutPreservedAccountPrompt(for continuation: PreservedAccountContinuation) {
+        switch continuation {
+        case .setup(let entryPoint):
+            switch entryPoint {
+            case .backup:
+                isSyncWithSetUpSheetVisible = true
+            case .pairing:
+                delegate?.showSyncWithAnotherDevice()
+            }
+        case .recover:
+            isRecoverSyncedDataSheetVisible = true
         }
     }
 
@@ -276,12 +360,38 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.fireOtherPlatformLinksPixel(event: event, with: source)
     }
 
-    public func recoverSyncDataPressed() {
+    public func startRecoveryCodeEntry() {
         Task { @MainActor in
-            if await commonAuthenticate() {
-                delegate?.showRecoverData()
-            }
+            guard await commonAuthenticate() else { return }
+            delegate?.showRecoveryCodeEntry()
         }
+    }
+
+    /// Continue from the authenticated recover sheet without a second auth prompt.
+    @MainActor
+    public func continueRecoverFlow() {
+        delegate?.showRecoveryCodeEntry()
+    }
+
+    public func startAutoRestoreSecondaryAction() {
+        guard let continuation = pendingPreservedAccountContinuation else {
+            assertionFailure("Secondary action fired without pending continuation")
+            return
+        }
+        clearPendingPreservedAccountContinuation()
+        delegate?.continueAfterPreservedAccountRemoval(continuation)
+    }
+
+    public func startAutoRestore() {
+        Task { @MainActor in
+            guard await commonAuthenticate() else { return }
+            clearPendingPreservedAccountContinuation()
+            delegate?.showRecoveringDataAutoRestore()
+        }
+    }
+
+    public func clearPendingPreservedAccountContinuation() {
+        pendingPreservedAccountContinuation = nil
     }
 
     public var syncBookmarksPausedTitle: String? {

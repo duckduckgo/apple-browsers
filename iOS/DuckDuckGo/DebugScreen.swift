@@ -38,6 +38,7 @@ enum DebugScreen: Identifiable {
     struct Dependencies {
 
         let syncService: DDGSyncing
+        let syncAutoRestoreHandler: SyncAutoRestoreHandling
         let bookmarksDatabase: CoreDataDatabase
         let internalUserDecider: InternalUserDecider
         let tabManager: TabManager

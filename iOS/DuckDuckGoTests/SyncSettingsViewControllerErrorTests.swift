@@ -66,6 +66,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncErrorHandler: CapturingAdapterErrorHandler())
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
         syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
         vc = SyncSettingsViewController(
             syncService: ddgSyncing,
             syncBookmarksAdapter: bookmarksAdapter,
@@ -211,6 +212,151 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.showRecoveryPDF()
 
         XCTAssertTrue(syncAutoRestoreHandler.persistedDecisions.isEmpty)
+    }
+
+    @MainActor
+    func testWhenViewWillAppearThenAutoRestoreDecisionIsRefreshedFromHandler() {
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = false
+        vc.loadViewIfNeeded()
+
+        syncAutoRestoreHandler.existingAutoRestoreDecision = true
+        vc.viewWillAppear(false)
+
+        XCTAssertEqual(vc.viewModel?.isAutoRestoreEnabled, true)
+    }
+
+    @MainActor
+    func testWhenAutoRestoreIsEligibleThenHasPreservedSyncAccountConflictForSetupIsTrue() {
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = true
+
+        XCTAssertTrue(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenAutoRestoreIsNotEligibleThenHasPreservedSyncAccountConflictForSetupIsFalse() {
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = false
+
+        XCTAssertFalse(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenContinueSyncSetupAfterPreservedAccountRemovalThenLocalRemovalIsDeferredForBackupFlow() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, [])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 0)
+        XCTAssertEqual(vc.viewModel?.isSyncWithSetUpSheetVisible, true)
+    }
+
+    @MainActor
+    func testWhenContinueAfterPreservedAccountRemovalForRecoverThenLocalRemovalIsDeferred() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        vc.continueAfterPreservedAccountRemoval(.recover)
+
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, [])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 0)
+        XCTAssertEqual(vc.viewModel?.isSyncWithSetUpSheetVisible, false)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupIsPendingThenConnectionFlowTreatsAccountAsNotReadyForReuse() {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        XCTAssertTrue(vc.shouldUsePreservedAccountForConnectionFlow)
+
+        vc.continueAfterPreservedAccountRemoval(.recover)
+
+        XCTAssertFalse(vc.shouldUsePreservedAccountForConnectionFlow)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupIsPendingThenPreServerHookRunsCleanupOnlyOnce() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        let firstAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.connect, .qrCode))
+        let secondAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.connect, .qrCode))
+
+        XCTAssertTrue(firstAttemptAllowed)
+        XCTAssertTrue(secondAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupFailsThenPreServerHookBlocksAndRetriesOnNextAttempt() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+        ddgSyncing.removePreservedSyncAccountError = NSError(domain: "test.local-remove", code: 1)
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        let firstAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.recovery, .pastedCode))
+
+        XCTAssertFalse(firstAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+
+        ddgSyncing.removePreservedSyncAccountError = nil
+
+        let secondAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.recovery, .pastedCode))
+
+        XCTAssertTrue(secondAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id", "device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 2)
     }
 
     func x_test_syncCodeEntered_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {

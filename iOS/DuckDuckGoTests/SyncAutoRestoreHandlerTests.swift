@@ -47,13 +47,16 @@ final class SyncAutoRestoreHandlerTests: XCTestCase {
         XCTAssertEqual(sut.existingDecision(), true)
     }
 
-    func testPersistDecisionForwardsToDecisionManager() {
-        mockDecisionManager.persistDecisionResult = true
-
-        let didPersist = sut.persistDecision(true)
-
-        XCTAssertTrue(didPersist)
+    func testPersistDecisionForwardsToDecisionManager() throws {
+        try sut.persistDecision(true)
         XCTAssertEqual(mockDecisionManager.persistedDecisions, [true])
+    }
+
+    func testPersistDecisionWhenDecisionManagerThrowsThenRethrows() {
+        mockDecisionManager.persistDecisionError = HandlerTestError.expected
+
+        XCTAssertThrowsError(try sut.persistDecision(true))
+        XCTAssertTrue(mockDecisionManager.persistedDecisions.isEmpty)
     }
 
     func testClearDecisionForwardsToDecisionManager() {
@@ -143,7 +146,7 @@ private final class MockSyncAutoRestoreDecisionManager: SyncAutoRestoreDecisionM
 
     var isAutoRestoreFeatureEnabled = true
     var existingDecisionValue: Bool?
-    var persistDecisionResult = true
+    var persistDecisionError: Error?
     private(set) var persistedDecisions: [Bool] = []
     private(set) var clearDecisionCallCount = 0
 
@@ -151,9 +154,11 @@ private final class MockSyncAutoRestoreDecisionManager: SyncAutoRestoreDecisionM
         existingDecisionValue
     }
 
-    func persistDecision(_ decision: Bool) -> Bool {
+    func persistDecision(_ decision: Bool) throws {
+        if let persistDecisionError {
+            throw persistDecisionError
+        }
         persistedDecisions.append(decision)
-        return persistDecisionResult
     }
 
     func clearDecision() {

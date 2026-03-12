@@ -38,7 +38,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.broker = broker
     }
 
-    init(handler: AIChatUserScriptHandling, urlSettings: KeyedStoring<AIChatDebugURLSettings>) {
+    init(handler: AIChatUserScriptHandling, urlSettings: any KeyedStoring<AIChatDebugURLSettings>) {
         self.handler = handler
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()

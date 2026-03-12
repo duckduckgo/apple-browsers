@@ -112,9 +112,9 @@ final class MainCoordinator {
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
-        let tabsModel = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
-        let historyManager = try Self.makeHistoryManager(tabsModel: tabsModel)
-        reportingService.subscriptionDataReporter.injectTabsModel(tabsModel)
+        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
+        let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
+        reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
         let daxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: featureFlagger,
                                                          contextualOnboardingLogic: daxDialogs,
                                                          contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
@@ -131,8 +131,7 @@ final class MainCoordinator {
             onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
-        tabManager = TabManager(model: tabsModel,
-                                persistence: tabsPersistence,
+        tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
                                 privacyConfigurationManager: privacyConfigurationManager,
@@ -371,7 +370,7 @@ final class MainCoordinator {
         controller.setWebExtensionManager(nil)
     }
 
-    private static func makeHistoryManager(tabsModel: TabsModel) throws -> HistoryManaging {
+    private static func makeHistoryManager(tabsModel: TabsModelReading) throws -> HistoryManaging {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
                                    isRecentlyVisitedSitesEnabledByUser: provider.appSettings.recentlyVisitedSites,
@@ -386,22 +385,27 @@ final class MainCoordinator {
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
                                          tabsPersistence: TabsModelPersisting,
-                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModel {
+                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModelProviding {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
-        let tabsModel: TabsModel
+        let normalModel: TabsModel
+        let fireModel: TabsModel
+
         if AutoClearSettingsModel(settings: appSettings) != nil {
-            tabsModel = TabsModel(desktop: isPadDevice)
-            tabsPersistence.clear()
-            tabsPersistence.save(model: tabsModel)
+            normalModel = TabsModel(desktop: isPadDevice, mode: .normal)
+            fireModel = TabsModel(desktop: isPadDevice, mode: .fire)
+            tabsPersistence.clearAll()
+            tabsPersistence.save(model: normalModel, for: .normal)
+            tabsPersistence.save(model: fireModel, for: .fire)
             previewsSource.removeAllPreviews()
         } else {
-            if let storedModel = try tabsPersistence.getTabsModel() {
-                tabsModel = storedModel
-            } else {
-                tabsModel = TabsModel(desktop: isPadDevice)
-            }
+            normalModel = try tabsPersistence.getTabsModel(for: .normal)
+                ?? TabsModel(desktop: isPadDevice, mode: .normal)
+            fireModel = try tabsPersistence.getTabsModel(for: .fire)
+                ?? TabsModel(desktop: isPadDevice, mode: .fire)
         }
-        return tabsModel
+        return TabsModelProvider(normalTabsModel: normalModel,
+                                 fireModeTabsModel: fireModel,
+                                 persistence: tabsPersistence)
     }
 
     private static func makeTextZoomCoordinatorProvider() -> TextZoomCoordinatorProvider {

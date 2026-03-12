@@ -17,32 +17,45 @@
 //  limitations under the License.
 //
 
-import Lottie
 import Onboarding
 import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockPromoView: View {
-        @State private var isAnimating = false
+        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-promo", withExtension: "mov")
+
+        private enum Design {
+            static let borderWidth: CGFloat = 321
+            static let borderHeight: CGFloat = 128
+            static let videoWidth: CGFloat = 300
+            static let videoHeight: CGFloat = 120
+            static let borderHorizontalPadding: CGFloat = -6
+        }
 
         var body: some View {
-            ZStack(alignment: .center) {
-                OnboardingRebrandingImages.AddToDock.promoBorder
-                    .resizable()
-                    .scaledToFit()
-                    .padding(.horizontal, -11)
-                LottieView(
-                    lottieFile: "add-to-dock-promo",
-                    isAnimating: $isAnimating
-                )
-                .tempPlaceholder()
-                .onFirstAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        isAnimating = true
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let ratio = width / Design.borderWidth
+
+                ZStack(alignment: .top) {
+                    OnboardingRebrandingImages.AddToDock.promoBorder
+                        .resizable()
+                        .padding(EdgeInsets(top: 0,
+                                            leading: Design.borderHorizontalPadding * ratio,
+                                            bottom: 0,
+                                            trailing: Design.borderHorizontalPadding * ratio))
+                        .frame(width: width, height: Design.borderHeight * ratio)
+                    if let videoURL = Self.videoURL {
+                        AddToDockVideoPlayer(url: videoURL,
+                                             frameSize: CGSize(width: Design.videoWidth * ratio,
+                                                               height: Design.videoHeight * ratio),
+                                             shouldLoopVideo: false,
+                                             cornerRadiusRatio: ratio)
                     }
                 }
             }
+            .aspectRatio(Design.borderWidth / Design.borderHeight, contentMode: .fit)
         }
     }
 

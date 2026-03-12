@@ -35,8 +35,14 @@ public enum HistoryViewEvent: Equatable {
 
 public final class DataClient: HistoryViewUserScriptClient {
 
+    public enum Environment: String {
+        case development
+        case production
+    }
+
     private let dataProvider: DataProviding
     private let styleProvider: ScriptStyleProviding
+    private let environment: Environment
     private let actionsHandler: ActionsHandling
     private let contextMenuPresenterProvider: ContextMenuPresenterProvider
     private let errorHandler: EventMapping<HistoryViewEvent>?
@@ -44,12 +50,14 @@ public final class DataClient: HistoryViewUserScriptClient {
     public init(
         dataProvider: DataProviding,
         styleProvider: ScriptStyleProviding,
+        environment: Environment,
         actionsHandler: ActionsHandling,
         contextMenuPresenterProvider: @escaping ContextMenuPresenterProvider = DefaultContextMenuPresenterProvider(),
         errorHandler: EventMapping<HistoryViewEvent>?
     ) {
         self.dataProvider = dataProvider
         self.styleProvider = styleProvider
+        self.environment = environment
         self.actionsHandler = actionsHandler
         self.contextMenuPresenterProvider = contextMenuPresenterProvider
         self.errorHandler = errorHandler
@@ -88,16 +96,10 @@ public final class DataClient: HistoryViewUserScriptClient {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-#if DEBUG || REVIEW
-        let env = "development"
-#else
-        let env = "production"
-#endif
-
         await dataProvider.refreshData()
 
         return DataModel.Configuration(
-            env: env,
+            env: environment.rawValue,
             locale: Bundle.main.preferredLocalizations.first ?? "en",
             platform: .init(name: "macos"),
             theme: styleProvider.themeAppearance,

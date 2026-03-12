@@ -64,7 +64,7 @@ class SuggestionTrayViewController: UIViewController {
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesModel: FavoritesListInteracting
     private let historyManager: HistoryManaging
-    private let tabsModel: TabsModel
+    private let tabsModelProvider: () -> TabsModelManaging
     private let featureFlagger: FeatureFlagger
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
@@ -123,7 +123,7 @@ class SuggestionTrayViewController: UIViewController {
                    favoritesViewModel: FavoritesListInteracting,
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
-                   tabsModel: TabsModel,
+                   tabsModelProvider: @escaping () -> TabsModelManaging,
                    featureFlagger: FeatureFlagger,
                    appSettings: AppSettings,
                    aiChatSettings: AIChatSettingsProvider,
@@ -134,7 +134,7 @@ class SuggestionTrayViewController: UIViewController {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
-        self.tabsModel = tabsModel
+        self.tabsModelProvider = tabsModelProvider
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
@@ -292,7 +292,7 @@ class SuggestionTrayViewController: UIViewController {
         let controller = NewTabPageViewController(
             isFocussedState: true,
             dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-            tab: Tab(),
+            tab: Tab(fireTab: tabsModelProvider().shouldCreateFireTabs),
             interactionModel: dependencies.favoritesModel,
             homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,
             subscriptionDataReporting: dependencies.subscriptionDataReporting,
@@ -337,7 +337,7 @@ class SuggestionTrayViewController: UIViewController {
         let controller = AutocompleteViewController(historyManager: historyManager,
                                                     bookmarksDatabase: bookmarksDatabase,
                                                     appSettings: appSettings,
-                                                    tabsModel: tabsModel,
+                                                    tabsModel: tabsModelProvider(),
                                                     featureFlagger: featureFlagger,
                                                     aiChatSettings: aiChatSettings,
                                                     featureDiscovery: featureDiscovery,

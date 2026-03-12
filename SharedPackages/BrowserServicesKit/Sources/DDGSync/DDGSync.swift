@@ -181,7 +181,7 @@ public class DDGSync: DDGSyncing {
         do {
             return try await dependencies.createTokenRescope().rescope(scope: scope, token: token)
         } catch {
-            throw handleUnauthenticatedAndMap(error, policy: .doNotLogoutOn401)
+            throw handleUnauthenticatedAndMap(error)
         }
     }
 

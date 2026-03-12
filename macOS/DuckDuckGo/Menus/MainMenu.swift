@@ -84,6 +84,18 @@ final class MainMenu: NSMenu {
     let favoritesMenu = NSMenu(title: UserText.favorites)
 
     private var toggleBookmarksBarMenuItem = NSMenuItem(title: "BookmarksBarMenuPlaceholder", action: #selector(MainViewController.toggleBookmarksBarFromMenu), keyEquivalent: "B")
+    private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    private let duckAIChromeButtonsSeparatorMenuItem = NSMenuItem.separator()
+    private let toggleDuckAIChromeButtonMenuItem = NSMenuItem(
+        title: UserText.aiChatChromeHideDuckAIButton,
+        action: #selector(MainViewController.toggleDuckAIChromeButtonVisibility(_:)),
+        keyEquivalent: "Y"
+    )
+    private let toggleDuckAIChromeSidebarButtonMenuItem = NSMenuItem(
+        title: UserText.aiChatChromeHideSidebarButton,
+        action: #selector(MainViewController.toggleDuckAIChromeSidebarButtonVisibility(_:)),
+        keyEquivalent: "U"
+    )
 
     var homeButtonMenuItem = NSMenuItem(title: "HomeButtonPlaceholder")
     var showTabsAndBookmarksBarOnFullScreenMenuItem = NSMenuItem(title: "ShowTabsAndBookmarksBarOnFullScreenMenuItem")
@@ -158,7 +170,8 @@ final class MainMenu: NSMenu {
          contentScopePreferences: ContentScopePreferences,
          quitSurveyPersistor: QuitSurveyPersistor,
          pinningManager: PinningManager,
-         subscriptionManager: any SubscriptionManager) {
+         subscriptionManager: any SubscriptionManager,
+         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager()) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -174,6 +187,7 @@ final class MainMenu: NSMenu {
         self.quitSurveyPersistor = quitSurveyPersistor
         self.pinningManager = pinningManager
         self.subscriptionManager = subscriptionManager
+        self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -339,6 +353,10 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: UserText.mainMenuViewHome, action: #selector(MainViewController.home), keyEquivalent: "H")
             NSMenuItem.separator()
 
+            toggleDuckAIChromeButtonMenuItem
+            toggleDuckAIChromeSidebarButtonMenuItem
+            duckAIChromeButtonsSeparatorMenuItem
+
             showTabsAndBookmarksBarOnFullScreenMenuItem
 
             toggleBookmarksBarMenuItem
@@ -458,18 +476,11 @@ final class MainMenu: NSMenu {
 
     @MainActor
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
-#if DEBUG || REVIEW || ALPHA
-        NSMenuItem(title: "Debug")
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild || internalUserDecider.isInternalUser else { return nil }
+        return NSMenuItem(title: "Debug")
             .withAccessibilityIdentifier(AccessibilityIdentifiers.debugMenu)
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
-#else
-        if internalUserDecider.isInternalUser {
-            NSMenuItem(title: "Debug")
-                .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
-        } else {
-            nil
-        }
-#endif
     }
 
     func buildHelpMenu() -> NSMenuItem {
@@ -481,10 +492,10 @@ final class MainMenu: NSMenu {
                 NSMenuItem.separator()
 
                 aboutMenuItem
-#if SPARKLE
-                releaseNotesMenuItem
-                whatIsNewMenuItem
-#endif
+                if StandardApplicationBuildType().isSparkleBuild {
+                    releaseNotesMenuItem
+                    whatIsNewMenuItem
+                }
                 sendFeedbackMenuItem
             })
     }
@@ -518,6 +529,7 @@ final class MainMenu: NSMenu {
         updateWatchdogMenuItems()
         updateWebExtensionsMenuItem()
         updateAlwaysShowFirstTimeQuitSurvey()
+        updateDuckAIChromeButtonMenuItems()
     }
 
     private func updateAlwaysShowFirstTimeQuitSurvey() {
@@ -550,7 +562,7 @@ final class MainMenu: NSMenu {
 
     private func updateAppAboutDDGMenuItem() {
         if internalUserDecider.isInternalUser {
-            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel().versionLabelShort))"
         } else {
             appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
         }
@@ -716,6 +728,19 @@ final class MainMenu: NSMenu {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = true
             }
         }
+    }
+
+    private func updateDuckAIChromeButtonMenuItems() {
+        let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
+            && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
+        toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
+
+        let isDuckAIButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+        let isSidebarButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+        toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        toggleDuckAIChromeSidebarButtonMenuItem.title = isSidebarButtonHidden ? UserText.aiChatChromeShowSidebarButton : UserText.aiChatChromeHideSidebarButton
     }
 
     // MARK: - Debug
@@ -964,10 +989,13 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
-#if SPARKLE
-            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
-#endif
+            if StandardApplicationBuildType().isSparkleBuild {
+                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
+            }
             if AppVersion.runType.requiresEnvironment {
+                NSMenuItem(title: "Promo Queue")
+                    .submenu(PromoDebugMenu())
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.promoQueueDebugMenu)
                 NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)")
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu)
                     .submenu(DefaultBrowserAndDockPromptDebugMenu())
@@ -1010,10 +1038,9 @@ final class MainMenu: NSMenu {
         debugMenu.insertItem(separatorItem, at: 1)
 
         debugMenu.addItem(internalUserItem)
-#if !ALPHA
         debugMenu.addItem(.separator())
         debugMenu.addItem(NSMenuItem(title: "Download DuckDuckGo Alpha Build", action: #selector(downloadAlphaBuild), target: self))
-#endif
+
         debugMenu.autoenablesItems = false
         return debugMenu
     }

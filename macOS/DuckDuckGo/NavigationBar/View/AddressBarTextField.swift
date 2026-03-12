@@ -507,8 +507,8 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-#if APPSTORE
-        if providedUrl.isFileURL, !providedUrl.isWritableLocation(), // is sandbox extension available for the file?
+        if providedUrl.isFileURL,
+           NSApp.isSandboxed && !providedUrl.isWritableLocation(), // is sandbox extension available for the file?
            let window = self.window {
 
             NSAlert.cannotOpenFileAlert().beginSheetModal(for: window) { response in
@@ -523,7 +523,6 @@ final class AddressBarTextField: NSTextField {
             }
             return
         }
-#endif
 
         // Prevent typing in subscription URLs directly in the address bar
         let baseURL = Application.appDelegate.subscriptionManager.url(for: .baseURL)
@@ -1272,15 +1271,21 @@ extension AddressBarTextField: NSTextViewDelegate {
             sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField, delegate: self)
         }
 
-        let isAIChatOmnibarToggleEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let featureFlagger = Application.appDelegate.featureFlagger
+        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isChromeSidebarEnabled = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
+        let isGlobalAIEnabled = AIChatPreferences().isAIFeaturesEnabled
 
         var additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem(searchPreferences),
-            .toggleFullWebsiteAddressMenuItem,
-            .toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: isAIChatOmnibarToggleEnabled)
+            .toggleFullWebsiteAddressMenuItem
         ]
 
-        if isAIChatOmnibarToggleEnabled {
+        if isGlobalAIEnabled && !isChromeSidebarEnabled {
+            additionalMenuItems.append(.toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: isAIChatOmnibarToggleEnabled))
+        }
+
+        if isGlobalAIEnabled && isAIChatOmnibarToggleEnabled {
             additionalMenuItems.append(.toggleAIChatToggleMenuItem)
         }
 

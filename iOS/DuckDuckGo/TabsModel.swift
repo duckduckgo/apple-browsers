@@ -38,11 +38,23 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
 
     let mode: BrowsingMode
-    private(set) var currentIndex: Int
+    
+    var currentIndex: Int? {
+        if tabs.indices.contains(_currentIndex) {
+            return _currentIndex
+        }
+        return nil
+    }
+    
+    private var _currentIndex: Int
     @Published private(set) var tabs: [Tab]
     
     var shouldCreateFireTabs: Bool {
         mode == .fire
+    }
+
+    var allowsEmpty: Bool {
+        mode.allowsEmpty
     }
 
     var tabsPublisher: AnyPublisher<[Tab], Never> {
@@ -56,8 +68,12 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     public init(tabs: [Tab] = [], currentIndex: Int = 0, desktop: Bool, mode: BrowsingMode = .normal) {
         self.mode = mode
         let shouldCreateFireTabs = mode == .fire
-        self.tabs = tabs.isEmpty ? [Tab(desktop: desktop, fireTab: shouldCreateFireTabs)] : tabs
-        self.currentIndex = currentIndex
+        if tabs.isEmpty && !mode.allowsEmpty {
+            self.tabs = [Tab(desktop: desktop, fireTab: shouldCreateFireTabs)]
+        } else {
+            self.tabs = tabs
+        }
+        self._currentIndex = currentIndex
     }
 
     public convenience required init?(coder decoder: NSCoder) {
@@ -81,6 +97,8 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
             currentIndex = decoder.decodeInteger(forKey: NSCodingKeys.currentIndex)
         }
         
+        // When tabs is empty (e.g. fire mode), this resets to 0. The computed
+        // `currentIndex` property guards against out-of-bounds by returning nil.
         if currentIndex < 0 || currentIndex >= tabs.count {
             currentIndex = 0
         }
@@ -95,32 +113,34 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     public func encode(with coder: NSCoder) {
         coder.encode(tabs, forKey: NSCodingKeys.tabs)
-        coder.encode(currentIndex, forKey: NSCodingKeys.currentIndex)
+        coder.encode(_currentIndex, forKey: NSCodingKeys.currentIndex)
         coder.encode(mode.rawValue, forKey: NSCodingKeys.mode)
     }
 
     var currentTab: Tab? {
-        let index = currentIndex
+        guard let index = currentIndex else {
+            return nil
+        }
         return tabs.indices.contains(index) ? tabs[index] : nil
     }
     
     /// The tab after the current tab, wrapping from the last tab back to the first.
     var nextTab: Tab? {
-        guard !tabs.isEmpty else { return nil }
+        guard !tabs.isEmpty, let currentIndex else { return nil }
         let nextIndex = currentIndex + 1 >= tabs.count ? 0 : currentIndex + 1
         return get(tabAt: nextIndex)
     }
 
     /// The tab before the current tab, wrapping from the first tab to the last.
     var previousTab: Tab? {
-        guard !tabs.isEmpty else { return nil }
+        guard !tabs.isEmpty, let currentIndex else { return nil }
         let previousIndex = currentIndex - 1 < 0 ? tabs.count - 1 : currentIndex - 1
         return get(tabAt: previousIndex)
     }
 
     /// The tab immediately before the current tab without wrapping. Returns `nil` when the current tab is first.
     var tabBefore: Tab? {
-        guard currentIndex > 0 else { return nil }
+        guard let currentIndex, currentIndex > 0 else { return nil }
         return get(tabAt: currentIndex - 1)
     }
 
@@ -129,13 +149,14 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
 
     var hasActiveTabs: Bool {
+        guard !tabs.isEmpty else { return false }
         return tabs.count > 1 || tabs.last?.link != nil
     }
     
     func select(tab: Tab) {
         guard validateTabMode(tab, operation: .select) else { return }
         guard let index = indexOf(tab: tab) else { return }
-        currentIndex = index
+        _currentIndex = index
     }
 
     func get(tabAt index: Int?) -> Tab? {
@@ -148,8 +169,14 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         var newTabIndex: Int?
         switch placement {
         case .afterCurrentTab:
-            insert(tab: tab, at: currentIndex + 1)
-            newTabIndex = currentIndex + 1
+            var newIndex: Int
+            if let currentIndex {
+                newIndex = currentIndex + 1
+            } else {
+                newIndex = 0
+            }
+            insert(tab: tab, at: newIndex)
+            newTabIndex = newIndex
         case .atEnd:
             tabs.append(tab)
             newTabIndex = tabs.count - 1
@@ -157,7 +184,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
             newTabIndex = replace(oldTab: oldTab, with: tab)
         }
         if selectNewTab, let newTabIndex {
-            currentIndex = newTabIndex
+            _currentIndex = newTabIndex
         }
     }
 
@@ -199,14 +226,14 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         tabs.insert(tab, at: destIndex)
         
         if let reselectTab = previouslyCurrentTab {
-            currentIndex = indexOf(tab: reselectTab) ?? 0
+            _currentIndex = indexOf(tab: reselectTab) ?? 0
         }
     }
 
     private func remove(at index: Int) {
         let selectedTab = get(tabAt: currentIndex)
         tabs.remove(at: index)
-        if tabs.isEmpty {
+        if tabs.isEmpty && !allowsEmpty {
             tabs.append(Tab(fireTab: shouldCreateFireTabs))
         }
         setCurrentTab(selectedTab)
@@ -222,11 +249,13 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     private func setCurrentTab(_ tab: Tab?) {
         if let tab, let index = indexOf(tab: tab) {
-            currentIndex = index
-        } else if currentIndex >= tabs.count {
-            currentIndex = tabs.count - 1
-        } else if currentIndex > 0 {
-            currentIndex -= 1
+            _currentIndex = index
+        } else if tabs.isEmpty {
+            _currentIndex = 0
+        } else if _currentIndex >= tabs.count {
+            _currentIndex = tabs.count - 1
+        } else if _currentIndex > 0 {
+            _currentIndex -= 1
         }
         // Else: don't adjust the index as it'll be the 'next' tab
     }
@@ -240,8 +269,10 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     func clearAll() {
         tabs.removeAll()
-        tabs.append(Tab(fireTab: shouldCreateFireTabs))
-        currentIndex = 0
+        if !allowsEmpty {
+            tabs.append(Tab(fireTab: shouldCreateFireTabs))
+        }
+        _currentIndex = 0
     }
     
     func tabExists(withHost host: String) -> Bool {

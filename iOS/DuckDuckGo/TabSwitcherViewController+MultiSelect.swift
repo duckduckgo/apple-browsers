@@ -134,9 +134,11 @@ extension TabSwitcherViewController {
         updateUIForSelectionMode()
     }
 
-    func transitionFromMultiSelect() {
+    func transitionFromMultiSelect(reloadCollectionView: Bool = true) {
         self.isEditing = false
-        collectionView.reloadData()
+        if reloadCollectionView {
+            collectionView.reloadData()
+        }
         updateUIForSelectionMode()
         refreshTitleViews()
     }
@@ -268,9 +270,11 @@ extension TabSwitcherViewController {
         } else {
             state = AppWidthObserver.shared.isLargeWidth
                 ? .largeSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
-                             containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                             containsWebPages: containsWebPages, showAIChat: showAIChatButton,
+                             canDismissOnEmpty: canDismissOnEmpty)
                 : .regularSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
-                               containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                               containsWebPages: containsWebPages, showAIChat: showAIChatButton,
+                               canDismissOnEmpty: canDismissOnEmpty)
         }
 
         barsHandler.update(state)

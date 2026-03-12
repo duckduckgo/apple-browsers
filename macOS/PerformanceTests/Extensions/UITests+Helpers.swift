@@ -29,6 +29,14 @@ extension UITests {
     static func setupInitialState(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
         let application = XCUIApplication.setUp()
 
+        /// Ensure there's at least one window open
+        let firstWindow = application.windows.firstMatch
+        let windowAppeared = firstWindow.waitForExistence(timeout: 0.5)
+
+        if !windowAppeared {
+            application.openNewWindow()
+        }
+
         /// Configure session restoration (enable/disable) based on shouldRestoreSession
         application.openPreferencesWindow()
         application.preferencesSetRestorePreviousSession(to: shouldRestoreSession ? .restoreLastSession : .newWindow)

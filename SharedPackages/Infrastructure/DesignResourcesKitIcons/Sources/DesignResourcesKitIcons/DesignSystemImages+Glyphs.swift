@@ -193,6 +193,7 @@ public extension DesignSystemImages {
             public static var importLeft: DesignSystemImage { .init(resource: .importLeft16) }
             public static var info: DesignSystemImage { .init(resource: .info16) }
             public static var infoRecolorable: DesignSystemImage { .init(resource: .infoRecolorable16) }
+            public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid16) }
             public static var jump: DesignSystemImage { .init(resource: .jump16) }
             public static var jumpRecolorable: DesignSystemImage { .init(resource: .jumpRecolorable16) }
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin16) }
@@ -206,6 +207,7 @@ public extension DesignSystemImages {
             public static var permissionMicrophone: DesignSystemImage { .init(resource: .microphone16) }
             public static var permissionMicrophoneSolid: DesignSystemImage { .init(resource: .microphoneSolid16) }
             public static var microphoneBlocked: DesignSystemImage { .init(resource: .microphoneBlocked16) }
+            public static var multipleAccounts: DesignSystemImage { .init(resource: .multipleAccounts16) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn16) }
             public static var options: DesignSystemImage { .init(resource: .options16) }
             public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach16) }
@@ -229,6 +231,7 @@ public extension DesignSystemImages {
             public static var screenShare: DesignSystemImage { .init(resource: .screenShare16) }
             public static var screenShareBlocked: DesignSystemImage { .init(resource: .screenShareBlocked16) }
             public static var screenShareSolid: DesignSystemImage { .init(resource: .screenShareSolid16) }
+            public static var searchGlobe: DesignSystemImage { .init(resource: .searchGlobe16) }
             public static var searchSite: DesignSystemImage { .init(resource: .searchSite16) }
             public static var sendPlane: DesignSystemImage { .init(resource: .sendPlane16) }
             public static var setAsDefault: DesignSystemImage { .init(resource: .setAsDefault16) }

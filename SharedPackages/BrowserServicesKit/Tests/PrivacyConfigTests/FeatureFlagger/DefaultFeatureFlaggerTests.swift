@@ -304,38 +304,16 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         XCTAssertNil(cohort)
     }
 
-    func testWhenResolveCohort_andRemoteReleasable_subfeature_and_cohortAssigned_returnsAssignedCohort() {
-        let subfeature = AutofillSubfeature.credentialsAutofill
-        experimentManager.cohortToReturn = FakeExperimentFlagsCohort.control.rawValue
-        let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "enabled"))
-
-        let flag = FakeExperimentFlags.remoteDeveloperFlag
-        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
-        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
-        XCTAssertEqual(cohort?.rawValue, FakeExperimentFlagsCohort.control.rawValue)
-    }
-
     func testWhenResolveCohort_andRemoteReleasable_subfeature_andExternalUser_and_cohortAssigned_returnsAssignedCohort() {
         internalUserDeciderStore.isInternalUser = false
         let subfeature = AutofillSubfeature.credentialsAutofill
         experimentManager.cohortToReturn = FakeExperimentFlagsCohort.control.rawValue
         let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "enabled"))
 
-        let flag = FakeExperimentFlags.remoteDeveloperFlag
+        let flag = FakeExperimentFlags.remoteReleasableFlag
         let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
         let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
         XCTAssertEqual(cohort?.rawValue, FakeExperimentFlagsCohort.control.rawValue)
-    }
-
-    func testWhenResolveCohort_andRemoteReleasable_feature_and_cohortAssigned_returnsNil() {
-        let subfeature = AutofillSubfeature.credentialsAutofill
-        experimentManager.cohortToReturn = FakeExperimentFlagsCohort.control.rawValue
-        let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "enabled"))
-
-        let flag = FakeExperimentFlags.remoteDevelopmentFeature
-        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
-        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
-        XCTAssertNil(cohort)
     }
 
     func testWhenResolveCohort_andRemoteReleasable_subfeature_and_cohortNotAssigned_returnsNil() {
@@ -343,7 +321,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         experimentManager.cohortToReturn = nil
         let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "enabled"))
 
-        let flag = FakeExperimentFlags.remoteDeveloperFlag
+        let flag = FakeExperimentFlags.remoteReleasableFlag
         let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
         let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
         XCTAssertNil(cohort)
@@ -354,7 +332,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         experimentManager.cohortToReturn = "some"
         let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "enabled"))
 
-        let flag = FakeExperimentFlags.remoteDeveloperFlag
+        let flag = FakeExperimentFlags.remoteReleasableFlag
         let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
         let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
         XCTAssertNil(cohort)
@@ -625,8 +603,6 @@ class MockExperimentManager: ExperimentCohortsManaging {
 private enum FakeExperimentFlags: String, CaseIterable {
     case disabledFlag
     case internalFlag
-    case remoteDeveloperFlag
-    case remoteDevelopmentFeature
     case remoteReleasableFlag
     case remoteReleasableFeature
     case internalFlagWithRemoteSubfeature
@@ -653,10 +629,6 @@ extension FakeExperimentFlags: FeatureFlagDescribing {
                 .disabled
         case .internalFlag:
                 .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
-        case .remoteDeveloperFlag:
-                .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
-        case .remoteDevelopmentFeature:
-                .remoteReleasable(.feature(.autofill))
         case .remoteReleasableFlag:
                 .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
         case .remoteReleasableFeature:

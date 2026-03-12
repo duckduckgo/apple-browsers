@@ -21,6 +21,8 @@ import PrivacyConfig
 enum TestFeatureFlag: String, FeatureFlagDescribing {
     var defaultValue: FeatureFlagDefaultValue {
         switch self {
+        case .overridableFlagInternalByDefault:
+            .internalOnly
         case .overridableExperimentFlagWithCohortBByDefault:
             .internalOnlyWithCohort(FakeExperimentCohort.cohortB)
         default:
@@ -30,7 +32,7 @@ enum TestFeatureFlag: String, FeatureFlagDescribing {
 
     var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .nonOverridableFlag, .overridableFlagDisabledByDefault, .overridableFlagEnabledByDefault:
+        case .nonOverridableFlag, .overridableFlagDisabledByDefault, .overridableFlagInternalByDefault:
             nil
         case .overridableExperimentFlagWithCohortBByDefault:
             FakeExperimentCohort.self
@@ -39,14 +41,14 @@ enum TestFeatureFlag: String, FeatureFlagDescribing {
 
     case nonOverridableFlag
     case overridableFlagDisabledByDefault
-    case overridableFlagEnabledByDefault
+    case overridableFlagInternalByDefault
     case overridableExperimentFlagWithCohortBByDefault
 
     var supportsLocalOverriding: Bool {
         switch self {
         case .nonOverridableFlag:
             return false
-        case .overridableFlagDisabledByDefault, .overridableFlagEnabledByDefault, .overridableExperimentFlagWithCohortBByDefault:
+        case .overridableFlagDisabledByDefault, .overridableFlagInternalByDefault, .overridableExperimentFlagWithCohortBByDefault:
             return true
         }
     }
@@ -57,7 +59,7 @@ enum TestFeatureFlag: String, FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .overridableFlagDisabledByDefault:
             return .disabled
-        case .overridableFlagEnabledByDefault:
+        case .overridableFlagInternalByDefault:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .overridableExperimentFlagWithCohortBByDefault:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))

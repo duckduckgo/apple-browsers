@@ -36,7 +36,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let xFFFFFF = Color(0xFFFFFF)
     private static let xFAFAFA = Color(0xFAFAFA)
     private static let x3969EF = Color(0x3969EF)
-    private static let x3D3D3D = Color(0x3D3D3D)
 
     // New dark mode colors
     private static let x080808 = Color(0x080808)

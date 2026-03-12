@@ -186,12 +186,8 @@ class MainViewCoordinator {
     // MARK: - AI Tab Native Input Layout
 
     func showUnifiedToggleInput() {
-        navigationBarCollectionView.layer.removeAllAnimations()
-        unifiedToggleInputContainer.layer.removeAllAnimations()
-        constraints.navigationBarContainerTop.isActive = false
-        if !constraints.navigationBarContainerBottom.isActive {
-            constraints.navigationBarContainerBottom.isActive = true
-        }
+        setAddressBarTopActive(false)
+        setAddressBarBottomActive(true)
         setNavBarContainerBottomToToolbar()
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         unifiedToggleInputContainer.isHidden = false
@@ -201,6 +197,7 @@ class MainViewCoordinator {
     }
 
     func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
+        unifiedToggleInputDebug("ViewCoordinator updateUnifiedToggleInputColors expanded=\(isExpanded) statusBackground=\(String(describing: statusBackground.backgroundColor))")
         if isExpanded {
             inputView?.backgroundColor = statusBackground.backgroundColor
             unifiedToggleInputContainer.backgroundColor = .clear
@@ -231,12 +228,10 @@ class MainViewCoordinator {
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
         unifiedToggleInputContainer.backgroundColor = .clear
+        setNavBarContainerBottomToToolbar()
         if addressBarPosition == .top {
-            setNavBarContainerBottomToToolbar()
-            constraints.navigationBarContainerBottom.isActive = false
-            constraints.navigationBarContainerTop.isActive = true
-        } else {
-            setNavBarContainerBottomToToolbar()
+            setAddressBarBottomActive(false)
+            setAddressBarTopActive(true)
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
     }
@@ -310,19 +305,32 @@ class MainViewCoordinator {
 
     @MainActor
     func showUnifiedInputContent() {
+        unifiedToggleInputDebug("ViewCoordinator showUnifiedInputContent")
         unifiedInputContentContainer.isHidden = false
     }
 
     @MainActor
     func hideUnifiedInputContent() {
+        unifiedToggleInputDebug("ViewCoordinator hideUnifiedInputContent")
         unifiedInputContentContainer.isHidden = true
     }
 
     // MARK: - AI Tab Chrome
 
     func showAITabChrome() {
+        cancelInFlightLayoutAnimations()
         showAIChatTabChatHeader()
         setNavigationChromeHidden(true)
+        UIView.performWithoutAnimation {
+            superview.layoutIfNeeded()
+        }
+    }
+
+    private func cancelInFlightLayoutAnimations() {
+        contentContainer.layer.removeAllAnimations()
+        navigationBarContainer.layer.removeAllAnimations()
+        statusBackground.layer.removeAllAnimations()
+        superview.layer.removeAllAnimations()
     }
 
     func hideAITabChrome() {
@@ -331,6 +339,7 @@ class MainViewCoordinator {
     }
 
     func showAIChatTabChatHeader() {
+        unifiedToggleInputDebug("ViewCoordinator showAIChatTabChatHeader navChromeHidden=\(isNavigationChromeHidden) headerFrame=\(aiChatTabChatHeaderContainer.frame) headerIntrinsic=\(aiChatTabChatHeaderContainer.intrinsicContentSize) contentContainerFrame=\(contentContainer.frame)")
         aiChatTabChatHeaderContainer.isHidden = false
         guard isNavigationChromeHidden else { return }
         constraints.contentContainerTop.isActive = false
@@ -339,6 +348,7 @@ class MainViewCoordinator {
     }
 
     func hideAIChatTabChatHeader() {
+        unifiedToggleInputDebug("ViewCoordinator hideAIChatTabChatHeader navChromeHidden=\(isNavigationChromeHidden)")
         aiChatTabChatHeaderContainer.isHidden = true
         guard isNavigationChromeHidden else { return }
         constraints.contentContainerTop.isActive = false
@@ -350,6 +360,7 @@ class MainViewCoordinator {
     /// remains visible when the AI tab chrome is shown. Uses alpha + interaction instead of isHidden
     /// so the pan gesture for tab swiping stays intact.
     func setNavigationChromeHidden(_ hidden: Bool) {
+        unifiedToggleInputDebug("ViewCoordinator setNavigationChromeHidden hidden=\(hidden) addressBarPosition=\(String(describing: addressBarPosition))")
         if hidden {
             if !isNavigationChromeHidden {
                 savedStatusBackgroundColor = statusBackground.backgroundColor

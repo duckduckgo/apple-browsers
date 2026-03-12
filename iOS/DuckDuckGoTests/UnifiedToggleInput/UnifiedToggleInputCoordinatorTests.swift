@@ -531,6 +531,28 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func test_updateInputMode_onlyUpdatesInputMode_doesNotApplyFullConfig() {
+        sut.showExpanded(inputMode: .aiChat)
+        let expandedBefore = sut.viewController.isInputExpanded
+        let modeBefore = sut.viewController.inputMode
+
+        sut.updateInputMode(.search, animated: false)
+
+        XCTAssertEqual(sut.viewController.inputMode, .search, "inputMode should update")
+        XCTAssertNotEqual(modeBefore, .search, "precondition: mode was different before")
+        XCTAssertEqual(sut.viewController.isInputExpanded, expandedBefore, "expansion state should not change")
+    }
+
+    func test_syncInputModeFromExternalSource_onlyUpdatesInputMode_doesNotApplyFullConfig() {
+        sut.showExpanded(inputMode: .aiChat)
+        let expandedBefore = sut.viewController.isInputExpanded
+
+        sut.syncInputModeFromExternalSource(.search)
+
+        XCTAssertEqual(sut.viewController.inputMode, .search, "inputMode should update")
+        XCTAssertEqual(sut.viewController.isInputExpanded, expandedBefore, "expansion state should not change")
+    }
+
     func test_updateInputMode_emitsMode() {
         let exp = expectation(description: "modeChangePublisher emits")
         sut.modeChangePublisher

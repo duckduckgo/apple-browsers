@@ -2691,6 +2691,7 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        unifiedToggleInputDebug("MainVC openAIChat queryPresent=\(query != nil) autoSend=\(autoSend) currentTabIsAI=\(currentTab?.isAITab == true)")
 
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
             openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools)

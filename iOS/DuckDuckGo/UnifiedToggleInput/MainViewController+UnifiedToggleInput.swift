@@ -88,6 +88,8 @@ extension MainViewController {
             handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if coordinator.isAITabExpanded {
             handleAITabModeChange(mode, coordinator: coordinator)
+        } else if coordinator.isAITabState && mode == .aiChat {
+            coordinator.showExpanded(inputMode: .aiChat)
         }
     }
 
@@ -163,6 +165,10 @@ extension MainViewController {
         }
 
         if tab.isAITab {
+            viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            if coordinator.isAITabState && viewCoordinator.isNavigationChromeHidden {
+                return
+            }
             if let userScript = tab.userScripts?.aiChatUserScript {
                 coordinator.bindToTab(userScript)
             }
@@ -173,10 +179,10 @@ extension MainViewController {
             }
             tab.webView.scrollView.contentInset = .zero
             coordinator.deactivateToOmnibar()
+            viewCoordinator.showAITabChrome()
             if !coordinator.isAITabState {
                 coordinator.showCollapsed()
             }
-            viewCoordinator.showAITabChrome()
             updateUnifiedInputContentVisibility(for: coordinator)
             refreshAIChatTabChatHeaderSubscriptionState()
             tab.borderView.isTopVisible = false
@@ -220,32 +226,42 @@ extension MainViewController {
     private func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator) {
         let isOnAITab = currentTab?.isAITab == true
         let renderState = coordinator.computeRenderState(isOnAITab: isOnAITab)
-        let isAITab = isOnAITab && renderState.isExpanded
+        if coordinator.isAITabState {
+            coordinator.contentViewController.forceBottomBarLayout = true
+        } else {
+            coordinator.contentViewController.forceBottomBarLayout = false
+        }
 
-        if isOnAITab {
-            let overlaysHeader = isAITab && renderState.isContentVisible && renderState.headerDisplayMode != .hidden
-            if overlaysHeader {
-                viewCoordinator.hideAIChatTabChatHeader()
-            } else {
-                viewCoordinator.showAIChatTabChatHeader()
-            }
+        applyTopChromeState(renderState: renderState, isOnAITab: isOnAITab, coordinator: coordinator)
+    }
 
+    private func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
+        let overlaysHeader = isOnAITab
+            && renderState.isExpanded
+            && renderState.isContentVisible
+            && renderState.headerDisplayMode != .hidden
+        let targetStatusBackgroundColor: UIColor? = {
+            guard isOnAITab else { return nil }
             if overlaysHeader {
-                viewCoordinator.statusBackground.backgroundColor = UIColor(designSystemColor: .panel)
-            } else if viewCoordinator.isNavigationChromeHidden {
-                viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+                return UIColor(designSystemColor: .panel)
             }
+            if viewCoordinator.isNavigationChromeHidden {
+                return UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            }
+            return nil
+        }()
+
+        if let targetStatusBackgroundColor {
+            viewCoordinator.statusBackground.backgroundColor = targetStatusBackgroundColor
         }
 
         if coordinator.isAITabState {
-            coordinator.contentViewController.forceBottomBarLayout = true
             coordinator.applyContentHeaderFromRenderState(isOnAITab: isOnAITab)
             viewCoordinator.updateUnifiedToggleInputColors(
                 isExpanded: renderState.isExpanded,
                 inputView: coordinator.viewController.view
             )
         } else {
-            coordinator.contentViewController.forceBottomBarLayout = false
             viewCoordinator.updateUnifiedToggleInputColors(
                 isExpanded: false,
                 inputView: coordinator.viewController.view
@@ -258,6 +274,16 @@ extension MainViewController {
         } else {
             viewCoordinator.hideUnifiedInputContent()
         }
+
+        if isOnAITab {
+            if overlaysHeader {
+                viewCoordinator.hideAIChatTabChatHeader()
+            } else {
+                viewCoordinator.showAIChatTabChatHeader()
+            }
+        }
+
+        view.layoutIfNeeded()
     }
 
     private func installUnifiedInputContentViewController() {

@@ -30,8 +30,8 @@ func getXattr(named name: String, from path: String) -> String? {
     let result = data.withUnsafeMutableBytes {
         getxattr(path, name, $0.baseAddress, length, 0, 0)
     }
-    guard result >= 0 else { return nil }
-    return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard result > 0 else { return nil }
+    return String(data: data.prefix(Int(result)), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
 struct Variant: BrowserServicesKit.Variant {

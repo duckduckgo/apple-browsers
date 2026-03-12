@@ -659,10 +659,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func updateDuckAIChromeDividerState() {
-        let isInteracting = duckAIChromeTitleButton?.isMouseOver == true ||
+        let isInteractionEnabled = duckAIChromeTitleButton?.isEnabled == true &&
+            duckAIChromeSidebarButton?.isEnabled == true
+        let isInteracting = isInteractionEnabled && (
+            duckAIChromeTitleButton?.isMouseOver == true ||
                             duckAIChromeTitleButton?.isMouseDown == true ||
                             duckAIChromeSidebarButton?.isMouseOver == true ||
                             duckAIChromeSidebarButton?.isMouseDown == true
+        )
         let showFullHeight = isInteracting || currentAIChatPresentationMode != .hidden
 
         if showFullHeight {
@@ -801,10 +805,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
+    private var isDuckAIChromeButtonsEnabled: Bool {
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
+        return tab.content != .onboarding
+    }
+
     private func updateDuckAIChromeSegmentedControlState() {
-        guard let duckAIChromeSidebarButton else { return }
-        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+        guard let duckAIChromeTitleButton, let duckAIChromeSidebarButton else { return }
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab,
+              isDuckAIChromeButtonsEnabled else {
             currentAIChatPresentationMode = .hidden
+            duckAIChromeTitleButton.isEnabled = false
             duckAIChromeSidebarButton.isEnabled = false
             duckAIChromeSidebarButton.state = .off
             duckAIChromeSidebarButton.image = duckAISidebarIcon(for: .hidden)
@@ -832,6 +843,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         case .sidebar:  tooltip = UserText.aiChatCloseSidebarButton
         case .hidden:   tooltip = UserText.aiChatOpenSidebarButton
         }
+        duckAIChromeTitleButton.isEnabled = true
         duckAIChromeSidebarButton.image = duckAISidebarIcon(for: presentationMode)
         duckAIChromeSidebarButton.backgroundColor = presentationMode != .hidden ? theme.colorsProvider.buttonMouseDownColor : .clear
         duckAIChromeSidebarButton.isEnabled = canToggleSidebar

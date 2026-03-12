@@ -24,6 +24,7 @@ import SyncUI_iOS
 import DDGSync
 import AVFoundation
 import WebKit
+import os.log
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     var syncBookmarksPausedTitle: String? {
@@ -170,6 +171,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             guard error == nil, let self else { return }
             Task { @MainActor in
                 do {
+                    guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
+                        return
+                    }
                     self.dismissPresentedViewController()
                     self.showPreparingSync(nil)
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
@@ -282,17 +286,77 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
+    func isPreservedAccountPromptNeeded() -> Bool {
+        // Only route through the preserved-account prompt when auto-restore is eligible.
+        // If auto-restore is disabled, keep the existing setup behavior.
+        syncAutoRestoreHandler.isEligibleForAutoRestore()
+    }
+
+    @MainActor
+    func showAutoRestoreReady(for _: SyncSettingsViewModel.PreservedAccountContinuation) {
+        needsPreservedAccountCleanupBeforeServerOperation = false
+        dismissPresentedViewController { [weak self] in
+            guard let self else { return }
+            let readyView = AutoRestoreReadyView(model: self.rootView.model, onCancel: { [weak self] in
+                self?.rootView.model.clearPendingPreservedAccountContinuation()
+                self?.dismissPresentedViewController()
+            })
+            let controller = DismissibleHostingController(rootView: readyView, onDismiss: { [weak self] in
+                self?.rootView.model.clearPendingPreservedAccountContinuation()
+            })
+            self.navigationController?.present(controller, animated: true)
+        }
+    }
+
+    @MainActor
+    func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        needsPreservedAccountCleanupBeforeServerOperation = true
+        dismissPresentedViewController { [weak self] in
+            guard let self else { return }
+            switch continuation {
+            case .setup(let entryPoint):
+                self.continueSyncSetupFlow(entryPoint: entryPoint)
+            case .recover:
+                self.presentRecoveryCodeScan()
+            }
+        }
+    }
+
+    func showRecoveringDataAutoRestore() {
+        needsPreservedAccountCleanupBeforeServerOperation = false
+        dismissPresentedViewController { [weak self] in
+            self?.navigationController?.present(UIHostingController(rootView: RecoveringDataView()), animated: true) { [weak self] in
+                guard let self else { return }
+                Task {
+                    await self.performAutoRestore()
+                }
+            }
+        }
+    }
+
+    func performAutoRestore() async {
+        do {
+            try await syncService.enableSyncFromPreservedAccount()
+        } catch {
+            await handleError(.unableToSyncToServer, error: error, event: .syncLoginError)
+        }
+    }
+
+    func dismissRecoveringDataViewIfPresented() {
+        guard navigationController?.presentedViewController is UIHostingController<RecoveringDataView> else {
+            return
+        }
+        dismissPresentedViewController()
+    }
+
     @MainActor
     func showSyncWithAnotherDevice() {
         collectCode(showQRCode: true)
     }
 
-    func showRecoverData() {
-        authenticateUser { [weak self] error in
-            guard error == nil, let self else { return }
-
-            self.dismissPresentedViewController()
-            self.collectCode(showQRCode: false)
+    func showRecoveryCodeEntry() {
+        dismissPresentedViewController { [weak self] in
+            self?.presentRecoveryCodeScan()
         }
     }
 
@@ -382,6 +446,49 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         presenter.present(navigationController, animated: true)
     }
 
+    @MainActor
+    func performDeferredPreservedAccountCleanupIfNeeded() async -> Bool {
+        guard needsPreservedAccountCleanupBeforeServerOperation else {
+            return true
+        }
+
+        if let preservedDeviceId = syncService.account?.deviceId {
+            do {
+                try await syncService.disconnect(deviceId: preservedDeviceId)
+            } catch {
+                Logger.sync.error("Best-effort remote disconnect failed for preserved sync account: \(error.localizedDescription, privacy: .public)")
+                // Continue with local cleanup so setup can proceed even when remote logout fails.
+            }
+        }
+
+        do {
+            try syncService.removePreservedSyncAccount()
+        } catch {
+            Logger.sync.error("Failed to clear preserved sync account before server operation: \(error.localizedDescription, privacy: .public)")
+            dismissPresentedViewController()
+            return false
+        }
+
+        needsPreservedAccountCleanupBeforeServerOperation = false
+        return true
+    }
+
+    @MainActor
+    private func continueSyncSetupFlow(entryPoint: SyncSettingsViewModel.SyncSetupEntryPoint) {
+        switch entryPoint {
+        case .backup:
+            rootView.model.isSyncWithSetUpSheetVisible = true
+        case .pairing:
+            showSyncWithAnotherDevice()
+        }
+    }
+
+    @MainActor
+    private func presentRecoveryCodeScan() {
+        rootView.model.isRecoverSyncedDataSheetVisible = false
+        collectCode(showQRCode: false)
+    }
+
     private func collectCode(showQRCode: Bool) {
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyCollectCode(showQRCode: showQRCode)
@@ -390,7 +497,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Task { @MainActor in
             let pairingInfo: PairingInfo
             let source: SyncSetupSource
-            if isSyncEnabled {
+            if shouldUsePreservedAccountForConnectionFlow {
                 do {
                     pairingInfo = try await connectionController.startExchangeMode()
                     source = .exchange
@@ -417,7 +524,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
             let onPresentPixelInfo: SyncSetupPixelInfo?
-            if isSyncEnabled {
+            if shouldUsePreservedAccountForConnectionFlow {
                 stringForQRCode = recoveryCode
                 codeForDisplayOrPasting = recoveryCode
                 onPresentPixelInfo = nil

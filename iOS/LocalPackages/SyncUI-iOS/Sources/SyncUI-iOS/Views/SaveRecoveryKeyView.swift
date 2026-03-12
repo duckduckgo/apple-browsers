@@ -81,7 +81,7 @@ public struct SaveRecoveryKeyView: View {
             .foregroundColor(Color(designSystemColor: .accent))
             .daxBodyRegular()
         }
-        .background(RoundedRectangle(cornerRadius: 12).foregroundColor(.black.opacity(0.03)))
+        .background(RoundedRectangle(cornerRadius: 12).foregroundColor(Color(designSystemColor: .backgroundTertiary)))
     }
 
     func copyRecoveryCode() {
@@ -111,19 +111,14 @@ public struct SaveRecoveryKeyView: View {
         } label: {
             Text(UserText.nextButton)
         }
-        .buttonStyle(GhostButtonStyle())
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(designSystemColor: .accent), lineWidth: 1)
-                .padding(1)
-        )
+        .buttonStyle(PrimaryButtonStyle())
         .overlay(
             isCopied ?
             codeCopiedToast()
             : nil
         )
         .frame(maxWidth: 360)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 30)
         .padding(.bottom, 8)
     }
 
@@ -172,7 +167,7 @@ public struct SaveRecoveryKeyView: View {
             .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accent)))
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
-            .background(RoundedRectangle(cornerRadius: 12).foregroundColor(.black.opacity(0.03)))
+            .background(RoundedRectangle(cornerRadius: 12).foregroundColor(Color(designSystemColor: .backgroundTertiary)))
 
             Text(autoRestoreLearnMoreText)
                 .daxCaption()

@@ -58,6 +58,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         syncService.account != nil
     }
 
+    var shouldUsePreservedAccountForConnectionFlow: Bool {
+        isSyncEnabled && !needsPreservedAccountCleanupBeforeServerOperation
+    }
+
     var recoveryCode: String {
         guard let code = syncService.account?.recoveryCode else {
             return ""
@@ -80,6 +84,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     var source: String?
     var pairingInfo: PairingInfo?
+    var needsPreservedAccountCleanupBeforeServerOperation = false
 
     var onConfirmSyncDisable: (() -> Void)?
     var onConfirmAndDeleteAllData: (() -> Void)?
@@ -311,6 +316,9 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     func refreshForState(_ authState: SyncAuthState) {
         rootView.model.isSyncEnabled = authState != .inactive
         if authState != .inactive {
+            // Sync auto restore completion is inferred when auth transitions away from `.inactive`,
+            // so dismiss the recovering sheet if it is still visible at that point.
+            dismissRecoveringDataViewIfPresented()
             rootView.model.syncEnabled(recoveryCode: recoveryCode)
             refreshDevices()
         }
@@ -318,6 +326,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     func dismissPresentedViewController(completion: (() -> Void)? = nil) {
         rootView.model.isSyncWithSetUpSheetVisible = false
+        rootView.model.isRecoverSyncedDataSheetVisible = false
         guard let presentedViewController = navigationController?.presentedViewController,
               !(presentedViewController is UIHostingController<SyncSettingsView>) else {
             completion?()
@@ -362,28 +371,19 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     private func startSyncWithAnotherDeviceIfNecessary() {
         guard source == SourceConstants.startSyncFlow,
-              syncService.account == nil else {
+              syncService.authState == .inactive else {
             return
         }
-
-        Task { @MainActor in
-            do {
-                try await authenticateUser()
-                showSyncWithAnotherDevice()
-            }
-        }
+        rootView.model.beginPairingFlow()
     }
 
     private func startSyncBackupIfNecessary() {
         let autoShowSources = [SourceConstants.startBackupFlow, SourceConstants.dataImportSummarySyncPromotion]
         guard let source = source, autoShowSources.contains(source),
-              syncService.account == nil else {
+              syncService.authState == .inactive else {
             return
         }
-
-        Task { @MainActor in
-            await rootView.model.presentSyncWithSetUpSheetIfNeeded()
-        }
+        rootView.model.beginBackupFlow()
     }
 
     private func askForAuthThenStartPairing() {
@@ -490,6 +490,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 
     func codeCollectionCancelled() {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
+        needsPreservedAccountCleanupBeforeServerOperation = false
         dismissPresentedViewController()
         Pixel.fire(pixel: .syncSetupEndedAbandoned)
     }
@@ -542,6 +543,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
         dismissPresentedViewController()
         await showPreparingSync()
+    }
+
+    func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
+        await performDeferredPreservedAccountCleanupIfNeeded()
     }
     
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {

@@ -65,6 +65,7 @@ class SyncDebugViewController: UITableViewController {
 
         case decisionToggle
         case recoverAccount
+        case simulateAppReinstallForAutoRestore
 
     }
 
@@ -76,15 +77,18 @@ class SyncDebugViewController: UITableViewController {
 
     private let bookmarksDatabase: CoreDataDatabase
     private let sync: DDGSyncing
+    private let keyValueStore: ThrowingKeyValueStoring
     private let autoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager
 
     var syncCancellable: Cancellable?
 
     init?(coder: NSCoder,
           sync: DDGSyncing,
+          keyValueStore: ThrowingKeyValueStoring,
           bookmarksDatabase: CoreDataDatabase) {
 
         self.sync = sync
+        self.keyValueStore = keyValueStore
         self.bookmarksDatabase = bookmarksDatabase
 
         super.init(coder: coder)
@@ -146,6 +150,9 @@ class SyncDebugViewController: UITableViewController {
             case .recoverAccount:
                 cell.textLabel?.text = "Recover account"
                 cell.detailTextLabel?.text = "Enable Sync from preserved account"
+            case .simulateAppReinstallForAutoRestore:
+                cell.textLabel?.text = "Simulate app reinstall"
+                cell.detailTextLabel?.text = "Clears sync enabled state, keeps keychain account"
             case .none:
                 break
             }
@@ -258,6 +265,8 @@ class SyncDebugViewController: UITableViewController {
                         await self.presentAutoRestoreErrorAlert(message: error.localizedDescription)
                     }
                 }
+            case .simulateAppReinstallForAutoRestore:
+                presentSimulateReinstallConfirmationAlert()
             case .decisionToggle, .none:
                 break
             }
@@ -346,6 +355,41 @@ class SyncDebugViewController: UITableViewController {
 
         // Present the alert
         present(alertController, animated: true, completion: nil)
+    }
+
+    private func presentSimulateReinstallConfirmationAlert() {
+        let alertController = UIAlertController(
+            title: "Simulate App Reinstall?",
+            message: "This clears local Sync state while keeping keychain account data for Auto-Restore testing.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alertController.addAction(UIAlertAction(title: "Reset", style: .destructive) { [weak self] _ in
+            self?.simulateAppReinstallForAutoRestore()
+        })
+        present(alertController, animated: true)
+    }
+
+    private func simulateAppReinstallForAutoRestore() {
+        do {
+            try keyValueStore.removeObject(forKey: DDGSync.Constants.syncEnabledKey)
+            try keyValueStore.removeObject(forKey: DDGSync.Constants.keychainAttrMigratedKey)
+        } catch {
+            presentAutoRestoreErrorAlert(message: "Failed to reset Sync state: \(error.localizedDescription)")
+            return
+        }
+
+        // Clear legacy fallback values so migration logic does not re-enable Sync state.
+        UserDefaults.standard.removeObject(forKey: DDGSync.Constants.syncEnabledKey)
+        UserDefaults.standard.removeObject(forKey: DDGSync.Constants.keychainAttrMigratedKey)
+
+        let alertController = UIAlertController(
+            title: "Sync State Reset",
+            message: "Force quit and relaunch the app to apply reinstall-like Sync initialization behavior.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
     }
 
 }

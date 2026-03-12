@@ -42,6 +42,7 @@ struct AutoRestoreSettingsView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .disabled(model.isAutoRestoreUpdating)
             }
+            .listRowBackground(Color(designSystemColor: .surface))
         }
         .navigationTitle(UserText.autoRestoreScreenTitle)
         .navigationBarTitleDisplayMode(.inline)

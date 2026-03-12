@@ -35,6 +35,9 @@ final class MockSyncAutoRestoreHandler: SyncAutoRestoreHandling {
     var existingAutoRestoreDecision: Bool?
     var persistedDecisions: [Bool] = []
     var persistError: Error?
+    var isEligibleForAutoRestoreValue = false
+    private(set) var restoreFromPreservedAccountCallCount = 0
+    var onRestoreFromPreservedAccount: (() -> Void)?
 
     func existingDecision() -> Bool? {
         existingAutoRestoreDecision
@@ -50,8 +53,11 @@ final class MockSyncAutoRestoreHandler: SyncAutoRestoreHandling {
     func clearDecision() {}
 
     func isEligibleForAutoRestore() -> Bool {
-        false
+        isEligibleForAutoRestoreValue
     }
 
-    func restoreFromPreservedAccount() async {}
+    func restoreFromPreservedAccount() async {
+        restoreFromPreservedAccountCallCount += 1
+        onRestoreFromPreservedAccount?()
+    }
 }

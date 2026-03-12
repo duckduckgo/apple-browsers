@@ -24,6 +24,7 @@ import Networking
 import Configuration
 import Persistence
 import WebKit
+import DuckSansFont
 
 struct AppConfiguration {
 
@@ -37,6 +38,9 @@ struct AppConfiguration {
     }
 
     func start(isBookmarksDBFilePresent: Bool?) throws {
+        // Register DuckSans custom font
+        DuckSansFont.registerFonts()
+
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
 
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)

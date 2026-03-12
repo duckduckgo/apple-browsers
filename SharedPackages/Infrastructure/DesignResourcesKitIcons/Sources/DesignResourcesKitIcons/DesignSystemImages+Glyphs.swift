@@ -207,6 +207,7 @@ public extension DesignSystemImages {
             public static var permissionMicrophone: DesignSystemImage { .init(resource: .microphone16) }
             public static var permissionMicrophoneSolid: DesignSystemImage { .init(resource: .microphoneSolid16) }
             public static var microphoneBlocked: DesignSystemImage { .init(resource: .microphoneBlocked16) }
+            public static var multipleAccounts: DesignSystemImage { .init(resource: .multipleAccounts16) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn16) }
             public static var options: DesignSystemImage { .init(resource: .options16) }
             public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach16) }

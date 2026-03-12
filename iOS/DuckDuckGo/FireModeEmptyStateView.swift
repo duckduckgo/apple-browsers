@@ -71,7 +71,7 @@ struct FireModeEmptyStateView: View {
             VStack(alignment: .leading, spacing: Constants.bulletSpacing) {
                 bulletRow(icon: DesignSystemImages.Glyphs.Size16.history,
                           text: UserText.fireModeEmptyStateBulletHistory)
-                bulletRow(icon: DesignSystemImages.Glyphs.Size16.profile, // TODO: - Use correct icon
+                bulletRow(icon: DesignSystemImages.Glyphs.Size16.multipleAccounts,
                           text: UserText.fireModeEmptyStateBulletAccount)
                 bulletRow(icon: DesignSystemImages.Glyphs.Size16.searchGlobe,
                           text: UserText.fireModeEmptyStateBulletTroubleshoot)

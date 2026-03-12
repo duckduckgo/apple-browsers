@@ -596,7 +596,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dbpClickActionDelayReductionOptimization:
             return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
         case .crashReportOptInStatusResetting:
-            return .remoteReleasable(.feature(.crashReportOptInStatusResetting))
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .maliciousSiteProtection:

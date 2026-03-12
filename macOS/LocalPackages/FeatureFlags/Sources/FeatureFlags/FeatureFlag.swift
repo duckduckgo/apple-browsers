@@ -547,7 +547,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .autofillPasswordsStatusBar:
-            return .remoteReleasable(.feature(.autofillPasswordsStatusBar))
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordsStatusBar))
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .memoryUsageMonitor:

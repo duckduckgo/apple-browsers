@@ -89,8 +89,6 @@ public enum PrivacyFeature: String {
     case pageContext
     case webExtensions
     case forceDarkModeOnWebsites
-    case crashReportOptInStatusResetting
-    case autofillPasswordsStatusBar
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -240,6 +238,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case suppressTrackerAnimationOnColdStart
 
     case customXSafariRedirectHandling
+
+    case crashReportOptInStatusResetting
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -279,6 +279,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
     case onboardingExperiment
+
+    case autofillPasswordsStatusBar
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

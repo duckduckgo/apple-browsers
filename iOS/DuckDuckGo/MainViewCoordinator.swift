@@ -54,7 +54,7 @@ class MainViewCoordinator {
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
     private var savedStatusBackgroundColor: UIColor?
-    private var inlineEditingStatusBackgroundColor: UIColor?
+    private var omnibarStatusBackgroundColor: UIColor?
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
 
@@ -201,14 +201,9 @@ class MainViewCoordinator {
     }
 
     func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
-        guard isNavigationChromeHidden else {
-            unifiedToggleInputContainer.backgroundColor = .clear
-            inputView?.backgroundColor = .clear
-            return
-        }
         if isExpanded {
-            inputView?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-            unifiedToggleInputContainer.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+            inputView?.backgroundColor = statusBackground.backgroundColor
+            unifiedToggleInputContainer.backgroundColor = .clear
         } else {
             inputView?.backgroundColor = .clear
             unifiedToggleInputContainer.backgroundColor = .clear
@@ -216,7 +211,7 @@ class MainViewCoordinator {
     }
 
     @MainActor
-    func restoreNavBarToToolbarForInlineInactive() {
+    func restoreNavBarToToolbarForOmnibarInactive() {
         guard addressBarPosition.isBottom else { return }
         if !constraints.navigationBarContainerBottom.isActive {
             constraints.navigationBarContainerBottom.isActive = true
@@ -225,7 +220,7 @@ class MainViewCoordinator {
     }
 
     @MainActor
-    func restoreNavBarToKeyboardForInlineActive() {
+    func restoreNavBarToKeyboardForOmnibarActive() {
         guard addressBarPosition.isBottom else { return }
         if !constraints.navigationBarContainerBottom.isActive {
             constraints.navigationBarContainerBottom.isActive = true
@@ -246,10 +241,10 @@ class MainViewCoordinator {
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
     }
 
-    // MARK: - Inline Editing Layout
+    // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func showUnifiedToggleInputInline(expandedHeight: CGFloat) {
+    func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.layer.removeAllAnimations()
@@ -257,8 +252,8 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.alpha = 0
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.backgroundColor = .clear
-        if inlineEditingStatusBackgroundColor == nil {
-            inlineEditingStatusBackgroundColor = statusBackground.backgroundColor
+        if omnibarStatusBackgroundColor == nil {
+            omnibarStatusBackgroundColor = statusBackground.backgroundColor
         }
         let inlineBackground = UIColor(designSystemColor: .panel)
         statusBackground.backgroundColor = inlineBackground
@@ -279,13 +274,13 @@ class MainViewCoordinator {
     }
 
     @MainActor
-    func hideUnifiedToggleInputInline() {
+    func hideUnifiedToggleInputOmnibar() {
         if addressBarPosition.isBottom {
             setNavBarContainerBottomToToolbar()
         }
 
-        let savedColor = inlineEditingStatusBackgroundColor
-        inlineEditingStatusBackgroundColor = nil
+        let savedColor = omnibarStatusBackgroundColor
+        omnibarStatusBackgroundColor = nil
 
         UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
             self.navigationBarCollectionView.alpha = 1

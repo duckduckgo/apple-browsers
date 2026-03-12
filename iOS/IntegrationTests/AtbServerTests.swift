@@ -34,8 +34,8 @@ class AtbServerTests: XCTestCase {
     var original: Method!
     var new: Method!
     
-    override func setUpWithError() throws {
-        try super.setUpWithError()
+    override func setUp() {
+        super.setUp()
         PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger())
         store = MockStatisticsStore()
         loader = StatisticsLoader(statisticsStore: store)

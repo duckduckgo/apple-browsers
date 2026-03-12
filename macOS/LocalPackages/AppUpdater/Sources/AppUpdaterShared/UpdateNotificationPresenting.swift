@@ -24,7 +24,7 @@ public enum AppUpdateStatus: Equatable {
 
 public protocol UpdateNotificationPresenting {
     func showUpdateNotification(for status: AppUpdateStatus)
-    func showUpdateNotification(for status: Update.UpdateType)
+    func showUpdateNotification(for status: Update.UpdateType, areAutomaticUpdatesEnabled: Bool)
 
     /// Dismisses the update notification popover if currently presented.
     /// Safe no-op if no notification is currently shown.

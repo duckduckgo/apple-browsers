@@ -49,13 +49,16 @@ public final class SparkleUpdateWideEvent {
     private let wideEventManager: WideEventManaging
     private let internalUserDecider: InternalUserDecider
     private var currentFlowID: String?
+    public var areAutomaticUpdatesEnabled: Bool
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     public init(wideEventManager: WideEventManaging,
                 internalUserDecider: InternalUserDecider,
+                areAutomaticUpdatesEnabled: Bool,
                 settings: any ThrowingKeyedStoring<UpdateControllerSettings>) {
         self.wideEventManager = wideEventManager
         self.internalUserDecider = internalUserDecider
+        self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         self.settings = settings
     }
 
@@ -87,6 +90,7 @@ public final class SparkleUpdateWideEvent {
             fromVersion: AppVersion.shared.versionNumber,
             fromBuild: AppVersion.shared.buildNumber,
             initiationType: initiationType,
+            updateConfiguration: areAutomaticUpdatesEnabled ? .automatic : .manual,
             contextData: WideEventContextData(name: "sparkle_update"),
             appData: WideEventAppData(internalUser: internalUserDecider.isInternalUser),
             globalData: WideEventGlobalData(id: globalID)

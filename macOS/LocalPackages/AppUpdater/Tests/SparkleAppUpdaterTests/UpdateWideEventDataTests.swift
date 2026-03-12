@@ -33,7 +33,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             toBuild: "110",
             updateType: .regular,
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
             lastKnownStep: .restartingToUpdate,
 
             osVersion: "macOS 14.0",
@@ -56,7 +56,7 @@ final class UpdateWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.to_build"], "110")
         XCTAssertEqual(params["feature.data.ext.update_type"], "regular")
         XCTAssertEqual(params["feature.data.ext.initiation_type"], "automatic")
-
+        XCTAssertEqual(params["feature.data.ext.update_configuration"], "automatic")
         XCTAssertEqual(params["feature.data.ext.last_known_step"], "restartingToUpdate")
         XCTAssertEqual(params["feature.data.ext.os_version"], "macOS 14.0")
         XCTAssertEqual(params["feature.data.ext.time_since_last_update"], "<1M")
@@ -76,7 +76,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
 
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
@@ -89,7 +89,7 @@ final class UpdateWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.from_version"], "1.0.0")
         XCTAssertEqual(params["feature.data.ext.from_build"], "100")
         XCTAssertEqual(params["feature.data.ext.initiation_type"], "automatic")
-
+        XCTAssertEqual(params["feature.data.ext.update_configuration"], "automatic")
         XCTAssertNotNil(params["feature.data.ext.os_version"])
 
         // Verify optional fields excluded
@@ -117,7 +117,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             toBuild: "110",
             updateType: .critical,
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
 
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
@@ -137,7 +137,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             updateType: .regular,
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
 
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
@@ -157,6 +157,7 @@ final class UpdateWideEventDataTests: XCTestCase {
     func test_pixelParameters_cancelledUpdate_includesAllCancellationReasons() {
         let cancellationReasons: [UpdateWideEventData.CancellationReason] = [
             .appQuit,
+            .settingsChanged,
             .buildExpired,
             .newCheckStarted
         ]
@@ -167,7 +168,7 @@ final class UpdateWideEventDataTests: XCTestCase {
                 fromVersion: "1.0.0",
                 fromBuild: "100",
                 initiationType: .automatic,
-    
+                updateConfiguration: .automatic,
 
                 cancellationReason: reason,
                 contextData: WideEventContextData(name: "sparkle_update"),
@@ -190,7 +191,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
 
             diskSpaceRemainingBytes: diskSpace,
             contextData: WideEventContextData(name: "sparkle_update"),
@@ -210,7 +211,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
 
             timeSinceLastUpdateBucket: .lessThan1Month,
             contextData: WideEventContextData(name: "sparkle_update"),
@@ -232,7 +233,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
 
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
@@ -266,7 +267,7 @@ final class UpdateWideEventDataTests: XCTestCase {
                 fromVersion: "1.0.0",
                 fromBuild: "100",
                 initiationType: .automatic,
-    
+                updateConfiguration: .automatic,
                 lastKnownStep: step,
 
                 contextData: WideEventContextData(name: "sparkle_update"),
@@ -288,7 +289,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
             contextData: WideEventContextData(name: "sparkle_update"),
             appData: WideEventAppData(internalUser: true),
             globalData: WideEventGlobalData()
@@ -305,7 +306,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
             contextData: WideEventContextData(name: "sparkle_update"),
             appData: WideEventAppData(internalUser: false),
             globalData: WideEventGlobalData()
@@ -324,6 +325,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .manual,
+            updateConfiguration: .manual,
 
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
@@ -334,6 +336,7 @@ final class UpdateWideEventDataTests: XCTestCase {
 
         // Then
         XCTAssertEqual(params["feature.data.ext.initiation_type"], "manual")
+        XCTAssertEqual(params["feature.data.ext.update_configuration"], "manual")
     }
 
     // MARK: - Helper Methods
@@ -408,7 +411,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
-
+            updateConfiguration: .automatic,
 
             timeSinceLastUpdateBucket: .lessThan1Week,
             contextData: contextData

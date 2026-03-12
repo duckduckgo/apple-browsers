@@ -27,6 +27,7 @@ import Sparkle
 
 public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
     private var internalUserDecider: InternalUserDecider
+    public var areAutomaticUpdatesEnabled: Bool
 
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
@@ -42,10 +43,12 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
     // MARK: - Initializers
 
     public init(internalUserDecider: InternalUserDecider,
+                areAutomaticUpdatesEnabled: Bool,
                 settings: (any ThrowingKeyedStoring<UpdateControllerSettings>),
                 onProgressChange: @escaping (UpdateCycleProgress, (() -> Void)?) -> Void) {
 
         self.internalUserDecider = internalUserDecider
+        self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         self.settings = settings
         self.onProgressChange = onProgressChange
     }
@@ -93,8 +96,13 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
             reply(.dismiss)
         }
 
-        Logger.updates.log("Updater proceeded to installation at download checkpoint")
-        reply(.install)
+        if !areAutomaticUpdatesEnabled {
+            onProgressChange(.updateCycleDone(.pausedAtDownloadCheckpoint), { reply(.install) })
+            Logger.updates.log("Updater paused at download checkpoint (manual update pending user decision)")
+        } else {
+            Logger.updates.log("Updater proceeded to installation at download checkpoint")
+            reply(.install)
+        }
     }
 
     public func showUpdateReleaseNotes(with downloadData: SPUDownloadData) {

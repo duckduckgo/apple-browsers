@@ -39,6 +39,7 @@ public protocol UpdateProgressManaging: AnyObject {
 
     // Computed convenience properties
     var isAtRestartCheckpoint: Bool { get }
+    var isAtDownloadCheckpoint: Bool { get }
     var isResumable: Bool { get }
     var resumeCallback: (() -> Void)? { get }
 
@@ -65,7 +66,7 @@ public final class UpdateProgressState: UpdateProgressManaging {
             switch reason {
             case .finishedWithNoError, .finishedWithNoUpdateFound, .dismissedWithNoError, .dismissingObsoleteUpdate:
                 return true
-            case .pausedAtRestartCheckpoint:
+            case .pausedAtDownloadCheckpoint, .pausedAtRestartCheckpoint:
                 return false
             }
         case .updateCycleDidStart, .downloadDidStart, .downloading, .extractionDidStart, .extracting,
@@ -116,6 +117,14 @@ public final class UpdateProgressState: UpdateProgressManaging {
         default:
             return false
         }
+    }
+
+    public var isAtDownloadCheckpoint: Bool {
+        if case .updateCycleDone(let reason) = updateProgress,
+           reason == .pausedAtDownloadCheckpoint {
+            return true
+        }
+        return false
     }
 
     public func handleProgressChange(_ progress: UpdateCycleProgress, _ resume: (() -> Void)?) {

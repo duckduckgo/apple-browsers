@@ -57,6 +57,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         XCTAssertNil(controller.latestUpdate)
         XCTAssertFalse(controller.hasPendingUpdate)
         XCTAssertFalse(controller.needsNotificationDot)
+        XCTAssertFalse(controller.areAutomaticUpdatesEnabled) // App Store cannot enable automatic updates
         // UpdateProgress default value varies, so we just check it's not nil
         XCTAssertNotNil(controller.updateProgress)
     }

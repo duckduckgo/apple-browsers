@@ -62,6 +62,39 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
 
     // MARK: - Validation Tests
 
+    func testWhenUpdateStatusIsUpdatedAndMetadataExistsThenPixelIsFired() {
+        // Given: Stored metadata
+        validator.storePendingUpdateMetadata(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            expectedVersion: "1.101.0",
+            expectedBuild: "123457",
+            initiationType: "manual",
+            updateConfiguration: "automatic"
+        )
+
+        let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            targetVersion: "1.101.0",
+            targetBuild: "123457",
+            initiationType: "manual",
+            updateConfiguration: "automatic",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
+
+        // When: Check with .updated status
+        validator.validateExpectations(
+            updateStatus: .updated,
+            currentVersion: "1.101.0",
+            currentBuild: "123457",
+            pixelFiring: mockPixelFiring
+        )
+
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
     func testWhenUpdateStatusIsNoChangeWithMetadataThenFailurePixelIsFired() throws {
         // Given: Stored metadata
         validator.storePendingUpdateMetadata(
@@ -69,7 +102,8 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             sourceBuild: "123456",
             expectedVersion: "1.101.0",
             expectedBuild: "123457",
-            initiationType: "manual"
+            initiationType: "manual",
+            updateConfiguration: "automatic"
         )
 
         let expectedPixel = UpdateFlowPixels.updateApplicationFailure(
@@ -81,6 +115,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             actualBuild: "123456",
             failureStatus: "noChange",
             initiationType: "manual",
+            updateConfiguration: "automatic",
             osVersion: osVersionString()
         )
         mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
@@ -101,6 +136,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         XCTAssertNil(try testSettings.pendingUpdateExpectedVersion)
         XCTAssertNil(try testSettings.pendingUpdateExpectedBuild)
         XCTAssertNil(try testSettings.pendingUpdateInitiationType)
+        XCTAssertNil(try testSettings.pendingUpdateConfiguration)
     }
 
     func testWhenUpdateStatusIsDowngradedWithMetadataThenFailurePixelIsFired() throws {
@@ -110,7 +146,8 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             sourceBuild: "123456",
             expectedVersion: "1.101.0",
             expectedBuild: "123457",
-            initiationType: "manual"
+            initiationType: "manual",
+            updateConfiguration: "automatic"
         )
 
         let expectedPixel = UpdateFlowPixels.updateApplicationFailure(
@@ -122,6 +159,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             actualBuild: "123455",
             failureStatus: "downgraded",
             initiationType: "manual",
+            updateConfiguration: "automatic",
             osVersion: osVersionString()
         )
         mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
@@ -142,6 +180,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         XCTAssertNil(try testSettings.pendingUpdateExpectedVersion)
         XCTAssertNil(try testSettings.pendingUpdateExpectedBuild)
         XCTAssertNil(try testSettings.pendingUpdateInitiationType)
+        XCTAssertNil(try testSettings.pendingUpdateConfiguration)
     }
 
     func testWhenUpdateStatusIsUpdatedWithNoMetadataThenPixelIsFiredWithNonSparkleFlag() {
@@ -171,7 +210,8 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             sourceBuild: "123456",
             expectedVersion: "1.101.0",
             expectedBuild: "123457",
-            initiationType: "automatic"
+            initiationType: "automatic",
+            updateConfiguration: "automatic"
         )
 
         let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
@@ -180,6 +220,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             targetVersion: "1.101.0",
             targetBuild: "123457",
             initiationType: "automatic",
+            updateConfiguration: "automatic",
             osVersion: osVersionString()
         )
         mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
@@ -195,14 +236,15 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
-    func testWhenPixelIsFiredWithManualInitiationThenParametersAreCorrect() {
-        // Given: Stored metadata with manual initiation
+    func testWhenPixelIsFiredWithManualConfigurationThenParametersAreCorrect() {
+        // Given: Stored metadata with manual configuration
         validator.storePendingUpdateMetadata(
             sourceVersion: "1.100.0",
             sourceBuild: "123456",
             expectedVersion: "1.101.0",
             expectedBuild: "123457",
-            initiationType: "manual"
+            initiationType: "manual",
+            updateConfiguration: "manual"
         )
 
         let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
@@ -211,6 +253,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             targetVersion: "1.101.0",
             targetBuild: "123457",
             initiationType: "manual",
+            updateConfiguration: "manual",
             osVersion: osVersionString()
         )
         mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
@@ -233,7 +276,8 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             sourceBuild: "123456",
             expectedVersion: "1.101.0",
             expectedBuild: "123457",
-            initiationType: "manual"
+            initiationType: "manual",
+            updateConfiguration: "automatic"
         )
         let expectedSuccess = UpdateFlowPixels.updateApplicationSuccess(
             sourceVersion: "1.100.0",
@@ -241,6 +285,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             targetVersion: "1.101.0",
             targetBuild: "123457",
             initiationType: "manual",
+            updateConfiguration: "automatic",
             osVersion: osVersionString()
         )
         mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedSuccess, frequency: .dailyAndCount)])
@@ -280,7 +325,8 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             sourceBuild: "123456",
             expectedVersion: "1.101.0",
             expectedBuild: "123457",
-            initiationType: "manual"
+            initiationType: "manual",
+            updateConfiguration: "automatic"
         )
         let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
             sourceVersion: "1.100.0",
@@ -288,6 +334,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             targetVersion: "1.101.0",
             targetBuild: "123457",
             initiationType: "manual",
+            updateConfiguration: "automatic",
             osVersion: osVersionString()
         )
         mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
@@ -311,7 +358,8 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             sourceBuild: "123456",
             expectedVersion: "1.101.0",
             expectedBuild: "123457",
-            initiationType: "manual"
+            initiationType: "manual",
+            updateConfiguration: "automatic"
         )
         let expectedPixel = UpdateFlowPixels.updateApplicationFailure(
             sourceVersion: "1.100.0",
@@ -322,6 +370,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             actualBuild: "123456",
             failureStatus: "noChange",
             initiationType: "manual",
+            updateConfiguration: "automatic",
             osVersion: osVersionString()
         )
         mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
@@ -341,5 +390,6 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         XCTAssertNil(try testSettings.pendingUpdateExpectedVersion)
         XCTAssertNil(try testSettings.pendingUpdateExpectedBuild)
         XCTAssertNil(try testSettings.pendingUpdateInitiationType)
+        XCTAssertNil(try testSettings.pendingUpdateConfiguration)
     }
 }

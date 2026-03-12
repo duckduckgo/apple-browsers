@@ -42,6 +42,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         sut = SparkleUpdateWideEvent(
             wideEventManager: mockWideEventManager,
             internalUserDecider: mockInternalUserDecider,
+            areAutomaticUpdatesEnabled: true,
             settings: settings
         )
     }
@@ -66,6 +67,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         let startedData = mockWideEventManager.started.first as? UpdateWideEventData
         XCTAssertNotNil(startedData)
         XCTAssertEqual(startedData?.initiationType, .automatic)
+        XCTAssertEqual(startedData?.updateConfiguration, .automatic)
         XCTAssertEqual(startedData?.lastKnownStep, .updateCheckStarted)
         XCTAssertNotNil(startedData?.updateCheckDuration)
         XCTAssertNotNil(startedData?.totalDuration)
@@ -276,6 +278,18 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         }
     }
 
+    func test_cancelFlow_settingsChanged_recordsCancellationReason() {
+        // Given
+        sut.startFlow(initiationType: .automatic)
+
+        // When
+        sut.cancelFlow(reason: .settingsChanged)
+
+        // Then
+        let (completedData, _) = mockWideEventManager.completions[0]
+        XCTAssertEqual((completedData as? UpdateWideEventData)?.cancellationReason, .settingsChanged)
+    }
+
     func test_cancelFlow_buildExpired_recordsCancellationReason() {
         // Given
         sut.startFlow(initiationType: .automatic)
@@ -308,7 +322,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         sut.didStartExtraction()
 
         // When
-        sut.cancelFlow(reason: .appQuit)
+        sut.cancelFlow(reason: .settingsChanged)
 
         // Then - verify all durations are present (completed by cancelFlow)
         let (completedData, _) = mockWideEventManager.completions[0]
@@ -351,12 +365,41 @@ final class SparkleUpdateWideEventTests: XCTestCase {
 
     // MARK: - E. Data Integrity Tests
 
+    func test_startFlow_withAutomaticUpdatesEnabled_setsAutomaticConfiguration() {
+        // Given - sut initialized with automatic updates enabled
+
+        // When
+        sut.startFlow(initiationType: .automatic)
+
+        // Then
+        let startedData = mockWideEventManager.started.first as? UpdateWideEventData
+        XCTAssertEqual(startedData?.updateConfiguration, .automatic)
+    }
+
+    func test_startFlow_withManualUpdatesEnabled_setsManualConfiguration() {
+        // Given
+        let manualSut = SparkleUpdateWideEvent(
+            wideEventManager: mockWideEventManager,
+            internalUserDecider: mockInternalUserDecider,
+            areAutomaticUpdatesEnabled: false,
+            settings: settings
+        )
+
+        // When
+        manualSut.startFlow(initiationType: UpdateWideEventData.InitiationType.manual)
+
+        // Then
+        let startedData = mockWideEventManager.started.first as? UpdateWideEventData
+        XCTAssertEqual(startedData?.updateConfiguration, .manual)
+    }
+
     func test_startFlow_internalUser_setsInternalUserFlag() {
         // Given
         mockInternalUserDecider.isInternalUser = true
         let internalSut = SparkleUpdateWideEvent(
             wideEventManager: mockWideEventManager,
             internalUserDecider: mockInternalUserDecider,
+            areAutomaticUpdatesEnabled: true,
             settings: settings
         )
 
@@ -463,6 +506,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
+            updateConfiguration: .automatic,
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData(id: "abandoned-flow-1")
         )
@@ -488,6 +532,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
                 fromVersion: "1.0.0",
                 fromBuild: "100",
                 initiationType: .automatic,
+                updateConfiguration: .automatic,
                 contextData: WideEventContextData(name: "sparkle_update"),
                 globalData: WideEventGlobalData(id: "abandoned-flow-\(i)")
             )
@@ -619,4 +664,28 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         XCTAssertEqual(mockWideEventManager.completions.count, 0)
     }
 
+    // MARK: - H. Configuration Updates
+
+    func test_updateConfiguration_automaticToManual_updatesProperty() {
+        // Given
+        XCTAssertTrue(sut.areAutomaticUpdatesEnabled)
+
+        // When
+        sut.areAutomaticUpdatesEnabled = false
+
+        // Then
+        XCTAssertFalse(sut.areAutomaticUpdatesEnabled)
+    }
+
+    func test_startFlow_afterConfigurationChange_usesNewConfiguration() {
+        // Given
+        sut.areAutomaticUpdatesEnabled = false
+
+        // When
+        sut.startFlow(initiationType: .manual)
+
+        // Then
+        let startedData = mockWideEventManager.started.first as? UpdateWideEventData
+        XCTAssertEqual(startedData?.updateConfiguration, .manual)
+    }
 }

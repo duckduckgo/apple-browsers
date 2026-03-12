@@ -30,6 +30,7 @@ extension Preferences {
 
     struct AboutView: View {
         @ObservedObject var model: AboutPreferences
+        @State private var areAutomaticUpdatesEnabled: Bool = true
 
         var autoUpdatesEnabled: Bool {
 #if SPARKLE
@@ -57,8 +58,9 @@ extension Preferences {
 
                     AboutContentSection(model: model)
 
-                    UpdateInfoMessage()
-                        .padding(.top, 4)
+                    #if SPARKLE
+                    UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
+                    #endif
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
                     Spacer(minLength: 20)
@@ -410,6 +412,35 @@ extension Preferences {
         }
 #endif
     }
+
+#if SPARKLE
+    struct UpdatesSection: View {
+        @Binding var areAutomaticUpdatesEnabled: Bool
+        @ObservedObject var model: AboutPreferences
+
+        var body: some View {
+            PreferencePaneSection(UserText.browserUpdatesTitle) {
+                PreferencePaneSubSection {
+                    Picker(selection: $areAutomaticUpdatesEnabled, content: {
+                        Text(UserText.automaticUpdates).tag(true)
+                            .padding(.bottom, 4).accessibilityIdentifier("PreferencesAboutView.automaticUpdatesPicker.automatically")
+                        Text(UserText.manualUpdates).tag(false)
+                            .accessibilityIdentifier("PreferencesAboutView.automaticUpdatesPicker.manually")
+                    }, label: {})
+                    .pickerStyle(.radioGroup)
+                    .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+                    .accessibilityIdentifier("PreferencesAboutView.automaticUpdatesPicker")
+                    .onChange(of: areAutomaticUpdatesEnabled) { newValue in
+                        model.areAutomaticUpdatesEnabled = newValue
+                    }
+                    .onAppear {
+                        areAutomaticUpdatesEnabled = model.areAutomaticUpdatesEnabled
+                    }
+                }
+            }
+        }
+    }
+#endif
 
     struct UnsupportedDeviceInfoBox: View {
 

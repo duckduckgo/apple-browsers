@@ -137,6 +137,7 @@ private final class MockSparkleUpdateController: NSObject, SparkleUpdateControll
     @Published var updateProgress: UpdateCycleProgress = .updateCycleNotStarted
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
 
+    var areAutomaticUpdatesEnabled = false
     var notificationPresenter: any UpdateNotificationPresenting = MockUpdateNotificationPresenter()
 
     func runUpdate() { fatalError("Not expected") }
@@ -150,7 +151,7 @@ private final class MockSparkleUpdateController: NSObject, SparkleUpdateControll
 
 private final class MockUpdateNotificationPresenter: UpdateNotificationPresenting {
     func showUpdateNotification(for status: AppUpdateStatus) {}
-    func showUpdateNotification(for type: Update.UpdateType) {}
+    func showUpdateNotification(for type: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {}
     func dismissIfPresented() {}
     func openUpdatesPage() {}
 }

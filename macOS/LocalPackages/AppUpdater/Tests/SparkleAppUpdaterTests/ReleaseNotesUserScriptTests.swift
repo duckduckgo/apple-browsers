@@ -141,6 +141,7 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
     @Published var updateProgress: UpdateCycleProgress = .updateCycleNotStarted
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
 
+    var areAutomaticUpdatesEnabled = false
     var notificationPresenter: any UpdateNotificationPresenting = StubUpdateNotificationPresenter()
 
     func runUpdate() {}
@@ -151,7 +152,7 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
 
 private final class StubUpdateNotificationPresenter: UpdateNotificationPresenting {
     func showUpdateNotification(for status: AppUpdateStatus) {}
-    func showUpdateNotification(for type: Update.UpdateType) {}
+    func showUpdateNotification(for type: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {}
     func dismissIfPresented() {}
     func openUpdatesPage() {}
 }

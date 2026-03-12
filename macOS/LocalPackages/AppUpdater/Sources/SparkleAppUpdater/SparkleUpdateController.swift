@@ -160,13 +160,38 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         }
     }
 
-    public var isAtRestartCheckpoint: Bool { progressState.isAtRestartCheckpoint }
+    public var areAutomaticUpdatesEnabled: Bool {
+        get {
+            (try? settings.automaticUpdates) ?? true
+        }
+        set {
+            let oldValue = areAutomaticUpdatesEnabled
+            guard newValue != oldValue else { return }
 
-    /// Updates Sparkle auto-download settings based on current feature flags.
+            pendingNotificationTask?.cancel()
+            pendingNotificationTask = nil
+
+            try? settings.set(newValue, for: \.automaticUpdates)
+
+            updateWideEvent.areAutomaticUpdatesEnabled = newValue
+            updateAutoDownloadSettings()
+            // If switching to automatic while at download checkpoint, trigger download
+            let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: newValue)
+            if shouldAutoDownload && isAtDownloadCheckpoint {
+                progressState.resumeCallback?()
+            }
+        }
+    }
+
+    public var isAtRestartCheckpoint: Bool { progressState.isAtRestartCheckpoint }
+    public var isAtDownloadCheckpoint: Bool { progressState.isAtDownloadCheckpoint }
+
+    /// Updates Sparkle auto-download settings based on current feature flags and user preference.
     private func updateAutoDownloadSettings() {
-        let shouldAutoDownload = resolveAutoDownloadEnabled()
+        let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
         updater?.automaticallyChecksForUpdates = true
         updater?.automaticallyDownloadsUpdates = shouldAutoDownload
+        userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
     }
 
     public var needsNotificationDot: Bool {
@@ -208,29 +233,28 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     /// Computes whether automatic downloads should be enabled.
     /// Static for testability - no controller state needed.
-    ///
-    /// For production builds, always returns `true`.
-    /// For DEBUG/REVIEW builds (which allow custom update feeds), returns whether the
-    /// auto-update feature flag is enabled.
     public static func resolveAutoDownloadEnabled(allowCustomUpdateFeed: Bool,
-                                                  featureFlagger: FeatureFlagger) -> Bool {
+                                                  featureFlagger: FeatureFlagger,
+                                                  userPreference: Bool) -> Bool {
         // Custom update feed is only allowed in DEBUG/REVIEW builds.
         guard allowCustomUpdateFeed else {
-            return true
+            return userPreference
         }
 
 #if DEBUG
-        return featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+        let isUnsignedAutoUpdateEnabled = featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
 #else // REVIEW
-        return featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+        let isUnsignedAutoUpdateEnabled = featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
 #endif
+        return isUnsignedAutoUpdateEnabled && userPreference
     }
 
     /// Instance wrapper for the static method - convenience for non-static contexts.
-    private func resolveAutoDownloadEnabled() -> Bool {
+    private func resolveAutoDownloadEnabled(userPreference: Bool) -> Bool {
         Self.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: allowCustomUpdateFeed,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            userPreference: userPreference
         )
     }
 
@@ -258,14 +282,25 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
+        // Capture the current value before initializing updateWideEvent
+        let currentAutomaticUpdatesEnabled = (try? settings.automaticUpdates) ?? true
         self.updateWideEvent = SparkleUpdateWideEvent(
             wideEventManager: wideEvent,
             internalUserDecider: internalUserDecider,
+            areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled,
             settings: self.settings
+        )
+
+        // Compute effective auto-download state before super.init() using static method
+        let shouldAutoDownload = Self.resolveAutoDownloadEnabled(
+            allowCustomUpdateFeed: allowCustomUpdateFeed,
+            featureFlagger: featureFlagger,
+            userPreference: currentAutomaticUpdatesEnabled
         )
 
         self.userDriver = SparkleUpdateUserDriver(
             internalUserDecider: internalUserDecider,
+            areAutomaticUpdatesEnabled: shouldAutoDownload,
             settings: self.settings,
             onProgressChange: progressState.handleProgressChange
         )
@@ -315,11 +350,20 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     public func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress) {
         guard shouldCheckNewApplicationVersion else { return }
 
-        // Show "browser updated" immediately.
-        // The "update available" notification is delayed for automatic updates,
-        // so there's no risk of overlapping notifications.
-        checkNewApplicationVersion()
-        shouldCheckNewApplicationVersion = false
+        if areAutomaticUpdatesEnabled {
+            // Automatic updates: show "browser updated" immediately.
+            // The "update available" notification is delayed for automatic updates,
+            // so there's no risk of overlapping notifications.
+            checkNewApplicationVersion()
+            shouldCheckNewApplicationVersion = false
+        } else if updateProgress.isDone,
+                  case .updateCycleDone(.finishedWithNoUpdateFound) = updateProgress {
+            // Manual updates: only show if no newer update is available.
+            // Manual mode shows "update available" immediately, so showing
+            // "browser updated" at the same time would cause overlapping notifications.
+            checkNewApplicationVersion()
+            shouldCheckNewApplicationVersion = false
+        }
     }
 
     private func checkNewApplicationVersion() {
@@ -351,11 +395,11 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         needsNotificationDot = false
     }
 
-    /// Handles update notification and blue dot logic with delays.
+    /// Handles update notification and blue dot logic with delays for automatic updates.
     ///
-    /// Regular notifications and the blue dot are delayed to reduce noise -
-    /// users who quit within that time get the update silently.
-    /// Critical updates show immediately.
+    /// For automatic updates, regular notifications and the blue dot are delayed.
+    /// to reduce noise - users who quit within that time get the update silently.
+    /// Critical updates show immediately. Manual updates show immediately (unchanged behavior).
     private func handleUpdateNotification() {
         guard let latestUpdate, hasPendingUpdate else {
             hideUpdateIndicators()
@@ -365,7 +409,13 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         // Already scheduled - don't restart the timer
         guard pendingNotificationTask == nil else { return }
 
-        // Delay based on criticality and internal/external user status.
+        // Manual updates: show immediately (unchanged behavior)
+        guard areAutomaticUpdatesEnabled else {
+            showUpdateIndicators()
+            return
+        }
+
+        // Automatic updates: delay based on criticality and internal/external user status.
         let delay = NotificationDelay.delay(for: latestUpdate.type, isInternalUser: internalUserDecider.isInternalUser)
 
         if delay == 0 {
@@ -442,11 +492,14 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
-        let shouldAutoDownload = resolveAutoDownloadEnabled()
+        let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
 
         updater.updateCheckInterval = UpdateCheckInterval.interval(isInternalUser: internalUserDecider.isInternalUser)
+        // Always check for updates (so user sees update available even in manual mode)
+        // Only auto-download based on build-type feature flag AND automatic updates preference
         updater.automaticallyChecksForUpdates = true
         updater.automaticallyDownloadsUpdates = shouldAutoDownload
+        userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
 
         try updater.start()
         self.updater = updater
@@ -481,6 +534,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     public func log() {
+        Logger.updates.log("areAutomaticUpdatesEnabled: \(self.areAutomaticUpdatesEnabled, privacy: .public)")
         Logger.updates.log("updateProgress: \(self.updateProgress, privacy: .public)")
         if let cachedUpdateResult {
             Logger.updates.log("cachedUpdateResult: \(cachedUpdateResult.item.displayVersionString, privacy: .public)(\(cachedUpdateResult.item.versionString, privacy: .public))")
@@ -535,7 +589,8 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
                 sourceBuild: flowData.fromBuild,
                 expectedVersion: flowData.toVersion ?? "unknown",
                 expectedBuild: flowData.toBuild ?? "unknown",
-                initiationType: flowData.initiationType.rawValue
+                initiationType: flowData.initiationType.rawValue,
+                updateConfiguration: flowData.updateConfiguration.rawValue
             )
         }
 

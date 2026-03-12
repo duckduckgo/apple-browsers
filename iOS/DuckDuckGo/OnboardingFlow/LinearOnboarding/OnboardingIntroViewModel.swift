@@ -87,7 +87,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     @Published var browserComparisonState = BrowserComparisonState()
     @Published var introState = IntroState()
     @Published var restorePromptState = RestorePromptState()
-    @Published private(set) var shouldShowSkipOnboardingDialog = false
 
     /// Set to true when the view controller is tapped
     @Published var isSkipped = false
@@ -98,7 +97,6 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingManager.onboardingSteps
     }
     private var currentIntroStep: OnboardingIntroStep
-    @Published private(set) var shouldShowRestorePrompt = false
 
     private let defaultBrowserManager: DefaultBrowserManaging
     private let contextualDaxDialogs: ContextualDaxDialogDisabling
@@ -172,13 +170,6 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     func skipOnboardingAction() {
         pixelReporter.measureSkipOnboardingCTAAction()
-    }
-
-    func showSkipOnboardingDialog() {
-        isSkipped = false
-        skipOnboardingState = .init()
-        skipOnboardingAction()
-        shouldShowSkipOnboardingDialog = true
     }
 
     func confirmSkipOnboardingAction() {
@@ -275,27 +266,19 @@ private extension OnboardingIntroViewModel {
             return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: introSteps.count - 1)
         }
 
-        shouldShowSkipOnboardingDialog = false
-        let viewState: OnboardingView.ViewState
-        switch introStep {
+        let viewState = switch introStep {
         case .introDialog(let isReturningUser):
-            shouldShowRestorePrompt = isReturningUser && restorePromptHandler.isEligibleForRestorePrompt()
-            viewState = .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: isReturningUser), step: .hidden))
+            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(type: introDialogType(isReturningUser: isReturningUser)), step: .hidden))
         case .browserComparison:
-            shouldShowRestorePrompt = false
-            viewState = .onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
         case .addToDockPromo:
-            shouldShowRestorePrompt = false
-            viewState = .onboarding(.init(type: .addToDockPromoDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog, step: stepInfo()))
         case .appIconSelection:
-            shouldShowRestorePrompt = false
-            viewState = .onboarding(.init(type: .chooseAppIconDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .chooseAppIconDialog, step: stepInfo()))
         case .addressBarPositionSelection:
-            shouldShowRestorePrompt = false
-            viewState = .onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
         case .searchExperienceSelection:
-            shouldShowRestorePrompt = false
-            viewState = .onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
         }
 
         state = viewState
@@ -340,6 +323,13 @@ private extension OnboardingIntroViewModel {
         case .chooseSearchExperienceDialog:
             pixelReporter.measureSearchExperienceSelectionImpression()
         }
+    }
+
+    func introDialogType(isReturningUser: Bool) -> OnboardingView.ViewState.Intro.IntroDialogType {
+        guard isReturningUser else {
+            return .default
+        }
+        return restorePromptHandler.isEligibleForRestorePrompt() ? .restoreData : .skipTutorial
     }
 
     func measureAutoRestorePromptImpressionIfNeeded() {

@@ -27,6 +27,7 @@ extension OnboardingView {
 
         typealias Copy = UserText.Onboarding.RestorePrompt
 
+        private let skipOnboardingView: AnyView?
         private var animateText: Binding<Bool>
         private var animateBody: Binding<Bool>
         private var showCTA: Binding<Bool>
@@ -34,7 +35,10 @@ extension OnboardingView {
         private let restoreAction: () -> Void
         private let skipAction: () -> Void
 
+        @State private var showSkipOnboarding = false
+
         init(
+            skipOnboardingView: AnyView? = nil,
             animateText: Binding<Bool> = .constant(true),
             animateBody: Binding<Bool> = .constant(false),
             showCTA: Binding<Bool> = .constant(false),
@@ -42,6 +46,7 @@ extension OnboardingView {
             restoreAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
+            self.skipOnboardingView = skipOnboardingView
             self.animateText = animateText
             self.animateBody = animateBody
             self.showCTA = showCTA
@@ -51,7 +56,11 @@ extension OnboardingView {
         }
 
         var body: some View {
-            restorePromptContent
+            if showSkipOnboarding {
+                skipOnboardingView
+            } else {
+                restorePromptContent
+            }
         }
 
         private var restorePromptContent: some View {
@@ -81,7 +90,10 @@ extension OnboardingView {
                     ),
                     primaryAction: restoreAction,
                     secondaryAction: {
-                        isSkipped.wrappedValue = false
+                        if skipOnboardingView != nil {
+                            isSkipped.wrappedValue = false
+                            showSkipOnboarding = true
+                        }
                         skipAction()
                     }
                 )

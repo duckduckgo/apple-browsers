@@ -556,7 +556,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
         await performDeferredPreservedAccountCleanupIfNeeded()
     }
-    
+
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {
         if rootView.model.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)

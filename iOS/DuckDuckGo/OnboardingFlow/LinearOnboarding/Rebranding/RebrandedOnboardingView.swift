@@ -352,8 +352,16 @@ extension OnboardingRebranding {
         @ViewBuilder
         private func bubbleBackedDialogContent(for type: ViewState.Intro.IntroType) -> some View {
             switch type {
-            case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
-                introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
+            case .startOnboardingDialog(let dialogType):
+                switch dialogType {
+                case .default:
+                    introView(shouldShowSkipOnboardingButton: false)
+                case .skipTutorial:
+                    introView(shouldShowSkipOnboardingButton: true)
+                case .restoreData:
+                    // Rebranded onboarding currently only supports default intro content.
+                    introView(shouldShowSkipOnboardingButton: false)
+                }
             case .browsersComparisonDialog:
                 browsersComparisonView
             case .addToDockPromoDialog:

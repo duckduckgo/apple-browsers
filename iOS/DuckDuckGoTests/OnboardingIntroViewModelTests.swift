@@ -77,7 +77,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: false), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .default), step: .hidden)))
     }
 
     func testWhenSetDefaultBrowserActionIsCalled_ThenAskPiPManagerToPlayPipForSetDefault_AndMakeNextViewState() {
@@ -140,7 +140,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertTrue(sut.shouldShowRestorePrompt)
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .restoreData), step: .hidden)))
     }
 
     func testWhenReturningUserAndRestorePromptEligibilityIsFalseThenDoesNotShowRestorePrompt() {
@@ -157,7 +157,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertFalse(sut.shouldShowRestorePrompt)
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .skipTutorial), step: .hidden)))
     }
 
     func testWhenUserIsNotReturningAndRestorePromptEligibilityIsTrueThenDoesNotShowRestorePrompt() {
@@ -174,7 +174,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertFalse(sut.shouldShowRestorePrompt)
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .default), step: .hidden)))
     }
 
     func testWhenOnAppearIsCalled_AndIsNewUser_AndAndIsIphoneFlow_ThenViewStateChangesToStartOnboardingDialogAndProgressIsHidden() throws {
@@ -188,7 +188,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: false), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .default), step: .hidden)))
     }
 
     func testWhenOnAppearIsCalled_AndIsReturningUser_AndAndIsIphoneFlow_ThenViewStateChangesToStartOnboardingDialogAndProgressIsHidden() throws {
@@ -202,7 +202,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: true), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .skipTutorial), step: .hidden)))
     }
 
     func testWhenStartOnboardingActionResumingTrueIsCalled_AndIsIphoneFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs2of4() throws {
@@ -327,7 +327,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: false), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .default), step: .hidden)))
     }
 
     func testWhenOnAppearIsCalled_AndIsReturningUser_AndAndIsIpadFlow_ThenViewStateChangesToStartOnboardingDialogAndProgressIsHidden() throws {
@@ -341,7 +341,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: true), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .skipTutorial), step: .hidden)))
     }
 
     func testWhenStartOnboardingActionResumingTrueIsCalled_AndIsIpadFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs2of4() throws {
@@ -558,29 +558,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.skipOnboardingAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
-    }
-
-    func testWhenShowSkipOnboardingDialogIsCalledThenShowsSkipDialogAndResetsAnimationState() {
-        // GIVEN
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
-        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
-        sut.onAppear()
-        sut.isSkipped = true
-        sut.skipOnboardingState = .init(animateTitle: false, animateMessage: true, showContent: true)
-        XCTAssertFalse(sut.shouldShowSkipOnboardingDialog)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
-
-        // WHEN
-        sut.showSkipOnboardingDialog()
-
-        // THEN
-        XCTAssertFalse(sut.isSkipped)
-        XCTAssertEqual(sut.skipOnboardingState.animateTitle, true)
-        XCTAssertEqual(sut.skipOnboardingState.animateMessage, false)
-        XCTAssertEqual(sut.skipOnboardingState.showContent, false)
-        XCTAssertTrue(sut.shouldShowSkipOnboardingDialog)
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: true), step: .hidden)))
         XCTAssertTrue(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
     }
 

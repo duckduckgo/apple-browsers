@@ -145,7 +145,6 @@ final class AIChatContextualWebViewController: UIViewController {
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
-            featureFlagger: featureFlagger,
             productSurfaceTelemetry: productSurfaceTelemetry,
             getPageContext: getPageContext
         )

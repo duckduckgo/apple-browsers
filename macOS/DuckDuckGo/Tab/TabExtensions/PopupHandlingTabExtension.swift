@@ -333,13 +333,11 @@ final class PopupHandlingTabExtension {
     func isNavigationActionUserInitiated(_ navigationAction: WKNavigationAction) -> UserInitiatedReason? {
         var threshold = popupBlockingConfig.userInitiatedPopupThreshold
 
-#if DEBUG || REVIEW
         // Allow debug override for faster UI testing (e.g., from environment variable in UI tests)
         if let envValue = ProcessInfo.processInfo.environment["POPUP_TIMEOUT_OVERRIDE"],
            let overrideValue = TimeInterval(envValue) {
             threshold = overrideValue
         }
-#endif
 
         // Check if enhanced popup blocking is enabled and configured properly
         guard featureFlagger.isFeatureOn(.popupBlocking),

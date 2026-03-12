@@ -392,11 +392,11 @@ extension TabViewController {
 
     private func onNewTabAction() {
         Pixel.fire(pixel: .browsingMenuNewTab)
-        delegate?.tabDidRequestNewTab(self, fireTab: false)
+        delegate?.tabDidRequestNewTab(self)
     }
     
     private func onNewFireTabAction() {
-        delegate?.tabDidRequestNewTab(self, fireTab: true)
+        delegate?.tabDidRequestNewTab(self)
     }
 
     private func buildFindInPageEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {

@@ -240,12 +240,6 @@ class TabTests: XCTestCase {
         XCTAssertEqual(tab, tab)
     }
 
-    func testWhenSameDataThenEqualsPasses() {
-        let lhs = Tab(link: Link(title: Constants.title, url: Constants.url))
-        let rhs = Tab(link: Link(title: Constants.title, url: Constants.url))
-        XCTAssertEqual(lhs, rhs)
-    }
-
     func testWhenLinksDifferentThenEqualsFails() {
         let lhs = Tab(link: Link(title: Constants.title, url: Constants.url))
         let rhs = Tab(link: Link(title: Constants.title, url: Constants.differentUrl))

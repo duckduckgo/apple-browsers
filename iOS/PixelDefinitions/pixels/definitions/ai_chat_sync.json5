@@ -65,5 +65,19 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_aichat_terms_accepted_duplicate_sync_off": {
+        "description": "Fired when terms and conditions acceptance is received again while sync is off",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_terms_accepted_duplicate_sync_on": {
+        "description": "Fired when terms and conditions acceptance is received again while sync is on",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

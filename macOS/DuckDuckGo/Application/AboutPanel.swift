@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import AppKit
 import PrivacyConfig
 import Common
+import SwiftUI
 
 // SwiftUI view for the About panel
 struct AboutPanelView: View {
@@ -27,11 +27,7 @@ struct AboutPanelView: View {
     let model: AppVersionModel
 
     private var appName: String {
-#if APPSTORE
-        UserText.duckDuckGoForMacAppStore
-#else
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
-#endif
+        NSApp.isSandboxed ? UserText.duckDuckGoForMacAppStore : Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
     }
     private var copyright: String {
         Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""
@@ -100,7 +96,7 @@ final class AboutPanelController {
         panel.isReleasedWhenClosed = false
         panel.center()
 
-        let appVersionModel = AppVersionModel(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
+        let appVersionModel = AppVersionModel(internalUserDecider: internalUserDecider)
         let hosting = NSHostingController(rootView: AboutPanelView(model: appVersionModel))
         panel.contentView = hosting.view
     }

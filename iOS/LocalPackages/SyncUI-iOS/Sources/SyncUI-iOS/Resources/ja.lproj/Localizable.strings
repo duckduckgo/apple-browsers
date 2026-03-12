@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "アプリを再インストールすると、このデバイスのデータが自動的に復元されます。";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "DuckDuckGoアプリを再インストールすると、このデバイスでデータを復元するかどうかを尋ねられます。";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Sync & Backupセッションを再開してブックマークやパスワードなどを復元するか、新しいセットアップを続行します。";
 

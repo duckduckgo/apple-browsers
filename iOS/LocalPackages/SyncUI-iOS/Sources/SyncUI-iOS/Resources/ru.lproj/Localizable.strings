@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Автоматическое восстановление данных на устройстве в случае переустановки приложения.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "В случае переустановки приложение DuckDuckGo предложит вам восстановить свои данные на этом устройстве.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Восстановите закладки, пароли и другие данные из резервной копии либо начните с нуля.";
 

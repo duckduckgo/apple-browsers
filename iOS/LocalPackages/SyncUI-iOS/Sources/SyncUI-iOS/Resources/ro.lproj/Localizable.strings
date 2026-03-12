@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Restaurează automat datele pe acest dispozitiv, dacă reinstalezi aplicația.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Dacă reinstalezi aplicația DuckDuckGo, te vom întreba dacă dorești să restaurezi datele pe acest dispozitiv.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Reia sesiunea Sync & Backup pentru a restaura marcajele, parolele și multe altele sau continuă cu o nouă configurare.";
 

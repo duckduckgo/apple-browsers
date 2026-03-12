@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Αυτόματη επαναφορά των δεδομένων σας σε αυτήν τη συσκευή εάν εγκαταστήσετε ξανά την εφαρμογή.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Εάν εγκαταστήσετε ξανά την εφαρμογή DuckDuckGo, θα σας ρωτήσουμε εάν θέλετε να επαναφέρετε τα δεδομένα σας σε αυτήν τη συσκευή.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Συνεχίστε τη συνεδρία του Sync & Backup για να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία ή συνεχίστε με μια νέα ρύθμιση.";
 

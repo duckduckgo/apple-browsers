@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Restaura automáticamente tus datos en este dispositivo si vuelves a instalar la aplicación.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Si vuelves a instalar la aplicación DuckDuckGo, te preguntaremos si quieres restaurar los datos en este dispositivo.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Reanuda tu sesión de Sync & Backup para restaurar tus marcadores, contraseñas y más o continúa con una nueva configuración.";
 

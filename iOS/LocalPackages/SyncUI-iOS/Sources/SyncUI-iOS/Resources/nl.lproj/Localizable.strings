@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Herstel automatisch je gegevens op dit apparaat als je de app opnieuw installeert.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Als je de DuckDuckGo-app opnieuw installeert, vragen we of je je gegevens op dit apparaat wilt herstellen.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Hervat je Sync & Backup-sessie om je bladwijzers, wachtwoorden en meer te herstellen, of ga verder met een nieuwe configuratie.";
 

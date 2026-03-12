@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Återställ automatiskt dina data på den här enheten om du installerar om appen.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Om du installerar om DuckDuckGo-appen frågar vi dig om du vill återställa dina data på den här enheten.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Återuppta din Sync & Backup-session för att återställa dina bokmärken, lösenord med mera, eller fortsätt med en ny installation.";
 

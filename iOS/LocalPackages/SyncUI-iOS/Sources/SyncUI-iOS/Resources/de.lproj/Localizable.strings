@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Deine Daten auf diesem Gerät werden automatisch wiederhergestellt, wenn du die App neu installierst.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Wenn du die DuckDuckGo-App neu installierst, werden wir dich fragen, ob du deine Daten auf diesem Gerät wiederherstellen möchtest.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Setze deine Sync & Backup-Sitzung fort, um deine Lesezeichen, Passwörter und mehr wiederherzustellen, oder fahre mit einer neuen Einrichtung fort.";
 

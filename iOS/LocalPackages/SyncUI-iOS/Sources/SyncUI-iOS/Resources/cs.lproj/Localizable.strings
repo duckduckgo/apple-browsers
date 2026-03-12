@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automaticky obnovit data v tomto zařízení, když aplikaci přeinstaluješ.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Pokud přeinstaluješ aplikaci DuckDuckGo, zeptáme se tě, jestli chceš obnovit data na tomto zařízení.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Obnov svou relaci Sync & Backup a obnovíš si záložky, hesla a další položky, anebo pokračuj v nastavování od nuly.";
 

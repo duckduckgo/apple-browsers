@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automatski vrati svoje podatke na ovom uređaju ako ponovno instaliraš aplikaciju.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Ako ponovno instaliraš aplikaciju DuckDuckGo, pitat ćemo te želiš li vratiti podatke na ovom uređaju.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Nastavi sesiju Sync & Backup kako bi vratio oznake, lozinke i još mnogo toga ili nastavi s novim postavljanjem.";
 

@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Gjenopprett dataene dine automatisk på denne enheten hvis du installerer appen på nytt.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Hvis du installerer DuckDuckGo-appen på nytt, spør vi deg om du vil gjenopprette dataene dine på denne enheten.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Gjenoppta Sync & Backup-økten for å gjenopprette bokmerker, passord og lignende, eller fortsett med et nytt oppsett.";
 

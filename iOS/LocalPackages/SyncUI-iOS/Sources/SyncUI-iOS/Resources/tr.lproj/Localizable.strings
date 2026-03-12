@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Uygulama yeniden yüklendiğinde bu cihazdaki veriler de otomatik olarak geri yüklenir.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "DuckDuckGo uygulamasını yeniden yüklerseniz, verilerinizi bu cihazda geri yüklemek isteyip istemediğinizi sorarız.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Yer işaretleri, şifreler ve daha fazlasını geri yüklemek için Sync & Backup oturumuna devam edin veya yeni bir kurulum yapın.";
 

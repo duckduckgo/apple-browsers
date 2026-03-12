@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Ако преинсталирате приложението, ще възстановите автоматично данните на това устройство.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Ако преинсталирате приложението DuckDuckGo, ще Ви попитаме дали искате да възстановите данните на това устройство.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Възобновете сесията на Sync & Backup, за да възстановите отметките, паролите и други данни, или продължете с нови настройки.";
 

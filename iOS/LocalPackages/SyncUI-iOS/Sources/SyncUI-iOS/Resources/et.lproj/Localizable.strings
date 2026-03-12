@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Rakenduse uuesti installimisel taastatakse selle seadme andmed automaatselt.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Kui installid DuckDuckGo rakenduse uuesti, küsime, kas soovid oma andmed selles seadmes taastada.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Jätka funktsiooni Sync & Backup seanssi, et taastada järjehoidjad, paroolid ja muu või jätka uue seadistusega.";
 

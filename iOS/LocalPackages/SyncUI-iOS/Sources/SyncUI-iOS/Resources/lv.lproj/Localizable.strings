@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automātiski atjauno datus šajā ierīcē, ja atkārtoti instalē lietotni.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Ja atkārtoti instalēsi lietotni DuckDuckGo, mēs jautāsim, vai vēlies atjaunot datus šajā ierīcē.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Atsāc Sync & Backup sesiju, lai atjaunotu grāmatzīmes, paroles un citus datus, vai turpini ar jaunu iestatīšanu.";
 

@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Az alkalmazás újratelepítésekor az adataid automatikusan visszaállításra kerülnek ezen az eszközön.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Ha újratelepíted a DuckDuckGo-alkalmazást, megkérdezzük, hogy szeretnéd-e visszaállítani az adataidat ezen az eszközön.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Folytasd a Sync & Backup munkamenetedet a könyvjelzőid, a jelszavaid és az egyéb dolgaid visszaállításához, vagy hozz létre egy új beállítást.";
 

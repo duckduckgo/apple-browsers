@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Ripristina automaticamente i tuoi dati su questo dispositivo se reinstalli l'app.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Se reinstalli l'app DuckDuckGo, ti chiederemo se desideri ripristinare i tuoi dati su questo dispositivo.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Riprendi la tua sessione di Sync & Backup per ripristinare segnalibri, password e altro, oppure continua con una nuova configurazione.";
 

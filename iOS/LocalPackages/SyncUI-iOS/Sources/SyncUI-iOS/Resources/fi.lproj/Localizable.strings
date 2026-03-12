@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Palauta laitteen tiedot automaattisesti, jos asennat sovelluksen uudelleen.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Jos asennat DuckDuckGo-sovelluksen uudelleen, kysymme, haluatko palauttaa laitteen tiedot.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Jatka Sync & Backup -istuntoa, niin voit palauttaa kirjanmerkit, salasanat ja muut tiedot, tai jatka uudella määrityksellä.";
 

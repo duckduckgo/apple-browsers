@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automatically restore your data on this device if you reinstall the app.";
 
-/* Auto-Restore - Learn More Link */
-"auto.restore.learn.more" = "Learn More";
-
 /* Auto-Restore - Description */
 "auto.restore.learn.more.full" = "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.";
 

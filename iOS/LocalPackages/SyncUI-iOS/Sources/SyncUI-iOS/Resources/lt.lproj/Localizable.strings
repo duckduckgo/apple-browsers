@@ -1,6 +1,9 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automatiškai atkuriami duomenys šiame įrenginyje iš naujo įdiegus programą.";
 
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Jei iš naujo įdiegsi programą „DuckDuckGo“, paklausime, ar nori atkurti duomenis šiame įrenginyje.";
+
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Tęsk „Sync & Backup“ seansą, kad atkurtum savo žymes, slaptažodžius ir kt., arba tęsk ir atlik naują sąranką.";
 

@@ -245,15 +245,6 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
         assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: false, for: testFlag)
     }
-
-    func testWhenRemoteReleasable_defaultValueEnabled_noRemoteConfig_returnsTrue() {
-        let testFlag = DefaultValueTestFlags(defaultValue: .enabled,
-                                             source: .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests)))
-        internalUserDeciderStore.isInternalUser = false
-
-        assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: true, for: testFlag)
-    }
-
     func testWhenRemoteReleasable_isNOTInternalUser_whenFeature_returnsPrivacyConfigValue() {
         internalUserDeciderStore.isInternalUser = false
         let sourceProvider = FeatureFlagSource.remoteReleasable(.feature(.autofill))

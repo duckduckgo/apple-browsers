@@ -251,7 +251,7 @@ public protocol FeatureFlagger: AnyObject {
     /// - **For `.remoteReleasable` flags**:
     ///   - If the feature is a subfeature, resolves its cohort using `resolveCohort(_ subfeature:)`.
     ///   - If no cohort is assigned yet, attempts to assign one from the available cohorts.
-    ///   - Falls back to `defaultValue` cohort for `.internalOnly` defaults when feature is missing from config.
+    ///   - Falls back to the cohort specified in `.internalOnlyWithCohort(...)` `defaultValue` when the feature is missing from remote config.
     ///
     /// > **Note**: If `allowOverride` is `false`, local overrides are ignored.
     ///

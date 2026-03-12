@@ -144,13 +144,18 @@ final class PageContextTabExtension {
         aiChatMenuConfiguration.valuesChangedPublisher
             .map { aiChatMenuConfiguration.shouldAutomaticallySendPageContext }
             .removeDuplicates()
-            .filter { $0 }
-            .sink { [weak self] _ in
+            .sink { [weak self] isEnabled in
                 guard let self else {
                     return
                 }
-                /// Proactively collect page context when page context setting was enabled
-                collectPageContextIfNeeded()
+                if isEnabled {
+                    /// Proactively collect page context when page context setting was enabled
+                    if let cachedPageContext {
+                        Task { await self.handle(cachedPageContext) }
+                    } else {
+                        collectPageContextIfNeeded()
+                    }
+                }
             }
             .store(in: &cancellables)
     }

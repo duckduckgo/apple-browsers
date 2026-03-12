@@ -11,6 +11,8 @@ on:
         description: "New release version (calculated automatically if not provided)"
         required: false
         type: string
+  schedule:
+    - cron: '0 0 * * 1' # 12AM UTC on Monday
 
 concurrency:
   group: 'macos-release'

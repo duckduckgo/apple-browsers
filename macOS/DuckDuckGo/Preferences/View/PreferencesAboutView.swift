@@ -364,6 +364,7 @@ extension Preferences {
             HStack(spacing: 0) {
                 if #available(macOS 12.0, *) {
                     Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
                     NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
                 }

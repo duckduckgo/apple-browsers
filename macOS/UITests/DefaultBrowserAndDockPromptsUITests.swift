@@ -65,37 +65,10 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
     }
 }
 
-// MARK: - Test helpers
-
-private extension DefaultBrowserAndDockPromptsUITests {
-
-    /// Trigger the provided prompt by simulating window focus changes, and check its existence before and after.
-    func triggerPrompt(_ prompt: XCUIElement) {
-        XCTAssertTrue(prompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Prompt \(prompt.identifier) should not be shown until window regains focus")
-
-        app.closeWindow()
-        app.openNewWindow()
-
-        XCTAssertTrue(prompt.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Prompt \(prompt.identifier) should be shown when window regains focus")
-    }
-}
-
 // MARK: - Helper Identifiers
 
 private extension XCUIApplication {
     private typealias Identifiers = Utilities.AccessibilityIdentifiers
-
-    var promptsDebugMenu: XCUIElement {
-        debugMenu.menuItems[Identifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu]
-    }
-
-    var simulateFreshAppInstallMenuItem: XCUIElement {
-        promptsDebugMenu.menuItems[Identifiers.DefaultBrowserAndDockPrompts.simulateFreshAppInstallMenuItem]
-    }
-
-    var advanceBy14DaysMenuItem: XCUIElement {
-        promptsDebugMenu.menuItems[Identifiers.DefaultBrowserAndDockPrompts.advanceBy14DaysMenuItem]
-    }
 
     var inactiveUserPrompt: XCUIElement {
         sheets[Identifiers.DefaultBrowserAndDockPrompts.inactiveUserPrompt]
@@ -117,15 +90,6 @@ private extension XCUIApplication {
 // MARK: - Helper Methods
 
 private extension XCUIApplication {
-
-    /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Simulate Fresh App Install
-    func simulateFreshAppInstall() {
-        simulateFreshAppInstallMenuItem.clickAfterExistenceTestSucceeds()
-    }
-
-    func advanceBy14Days() {
-        advanceBy14DaysMenuItem.clickAfterExistenceTestSucceeds()
-    }
 
     func showInactiveUserModal() {
         openPromoQueueMenu()

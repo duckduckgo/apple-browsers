@@ -126,7 +126,7 @@ extension OnboardingRebranding.OnboardingView {
             )
         }
 
-        /// Handles the transition from intro to skip onboarding dialog with proper animation timing.
+        /// Handles the transition from restore dialog to skip onboarding dialog with proper animation timing.
         ///
         /// This function orchestrates a three-phase animation sequence:
         /// 1. Hide current content immediately (no fade-out animation)

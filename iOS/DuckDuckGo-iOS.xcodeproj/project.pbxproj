@@ -17052,8 +17052,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "git@github.com:duckduckgo/native-apps-ducksans.git";
 			requirement = {
-				branch = "alessandro/apple-integration";
-				kind = branch;
+				kind = exactVersion;
+				version = 1.0.0;
 			};
 		};
 		9FDD72032D895D8C0016246B /* XCRemoteSwiftPackageReference "combine-schedulers" */ = {

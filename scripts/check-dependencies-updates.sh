@@ -231,7 +231,7 @@ extract_from_package_swift() {
                     echo "${repo_id}|${project_name}"
                 fi
             done || true
-    done < <(find "$search_path" -name "Package.swift" -not -path "*/.build/*" -not -path "*/Packages/*" 2>/dev/null)
+    done < <(find "$search_path" -name "Package.swift" -not -path "*/.build/*" -not -path "*/DerivedData/*" -not -path "*/Packages/*" 2>/dev/null)
 }
 
 # Find direct dependencies from Xcode project files
@@ -257,7 +257,7 @@ extract_from_xcode_project() {
                     echo "${repo_id}|${project_name}"
                 fi
             done || true
-    done < <(find "$search_path" -name "project.pbxproj" 2>/dev/null)
+    done < <(find "$search_path" -name "project.pbxproj" -not -path "*/.build/*" -not -path "*/DerivedData/*" 2>/dev/null)
 }
 
 # Build direct dependencies map (repo_id -> project names)
@@ -359,7 +359,7 @@ find_resolved_files() {
     verbose "Searching for Package.resolved files in: ${roots[*]}"
     local results
     results=$(find "${roots[@]}" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
-        -not -path "*/.build/*" 2>/dev/null)
+        -not -path "*/.build/*" -not -path "*/DerivedData/*" 2>/dev/null)
     if [[ -n "$results" ]]; then
         while IFS= read -r f; do
             verbose "Found resolved file: $f"

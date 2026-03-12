@@ -44,10 +44,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// Enable WebKit page load timing performance reporting
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615625098
-    case webKitPerformanceReporting
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -370,7 +366,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncFeatureLevel3,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
-                .webKitPerformanceReporting,
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
@@ -510,8 +505,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .webKitPerformanceReporting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .blackFridayCampaign:

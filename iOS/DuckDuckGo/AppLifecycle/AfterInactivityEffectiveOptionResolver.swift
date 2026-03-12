@@ -19,6 +19,7 @@
 
 import Foundation
 import Persistence
+import UIKit
 
 protocol AfterInactivityEffectiveOptionResolving {
     /// Returns the user selected or default option for page to open after idle time.
@@ -28,18 +29,22 @@ protocol AfterInactivityEffectiveOptionResolving {
 final class AfterInactivityEffectiveOptionResolver: AfterInactivityEffectiveOptionResolving {
 
     private let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>
+    private let isPad: Bool
 
-    init(storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>) {
+    init(storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>,
+         isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.storage = storage
+        self.isPad = isPad
     }
 
     /// Returns the effective option and, when it is .newTab for a new user with no stored value,
     /// persists that choice and clears `idleReturnNewUser`.
+    /// iPad always defaults to `.lastUsedTab` when no preference is stored.
     func resolveEffectiveOption() -> AfterInactivityOption {
         if let raw = try? storage.afterInactivityOption,
            let option = AfterInactivityOption(rawValue: raw) {
             return option
-        } else if (try? storage.idleReturnNewUser) == true {
+        } else if !isPad, (try? storage.idleReturnNewUser) == true {
             try? storage.set(AfterInactivityOption.newTab.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
             try? storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
             return .newTab

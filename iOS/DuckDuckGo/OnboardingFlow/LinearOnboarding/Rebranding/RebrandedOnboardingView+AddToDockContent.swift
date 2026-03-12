@@ -20,7 +20,6 @@
 import DuckUI
 import Onboarding
 import SwiftUI
-import UIKit
 
 private enum AddToDockContentMetrics {
     static let messageFont = Font.system(size: 16)
@@ -98,7 +97,6 @@ extension OnboardingRebranding.OnboardingView {
 
         private var addToDockPromoView: some View {
             RebrandedOnboardingView.AddToDockPromoView()
-                .aspectRatio(contentMode: .fit)
                 .padding(.vertical)
         }
 

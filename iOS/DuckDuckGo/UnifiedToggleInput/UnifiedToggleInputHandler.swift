@@ -26,13 +26,13 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     // MARK: - SwitchBarHandling — Fixed Values
 
-    /// UnifiedToggleInput is always bottom-anchored; no top-position layout variants.
-    let isTopBarPosition: Bool = false
+    var isTopBarPosition: Bool = false
     let isUsingExpandedBottomBarHeight: Bool = false
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let isCurrentTextValidURL: Bool = false
     let modeParameters: [String: String] = [:]
+    var isFireTab: Bool = false // TODO: - Handle injecting and updating this. And customizing the new tinput view for fire tabs.
 
     // MARK: - SwitchBarHandling — Dynamic State
 

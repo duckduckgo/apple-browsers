@@ -105,7 +105,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         assert(input.windows.count == 1, "iOS only supports 1 window")
         for tab in input.windows[0].tabs {
-            tabsModel.add(tab: Tab(uid: tab.tabId.uuidString, link: Link(title: tab.title, url: tab.url)))
+            tabsModel.insert(tab: Tab(uid: tab.tabId.uuidString, link: Link(title: tab.title, url: tab.url)), placement: .atEnd, selectNewTab: true)
         }
         
         // Set up feature flagger

@@ -118,7 +118,7 @@ final class WebExtensionEventsCoordinator {
         // before the extension is ready to receive them.
         let tabManager = mainViewController.tabManager
         tabManager.cacheDelegate = self
-        for tab in tabManager.model.tabs {
+        for tab in tabManager.allTabsModel.tabs {
             if let tabController = tabManager.controller(for: tab) {
                 didOpenTab(tabController)
             }

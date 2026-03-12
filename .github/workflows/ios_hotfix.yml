@@ -17,7 +17,7 @@ jobs:
 
     name: Create Release Branch
 
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 10
 
     steps:

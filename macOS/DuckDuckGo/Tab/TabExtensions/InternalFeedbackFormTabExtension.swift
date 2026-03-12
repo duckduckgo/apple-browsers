@@ -43,17 +43,12 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
 
     override init() {
-        let appVersionModel = AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil)
-
-#if APPSTORE
-        var distributionType = "App Store"
-#else
-        var distributionType = "DMG"
-#endif
-
-#if ALPHA
-        distributionType.append(" Alpha")
-#endif
+        let buildType = StandardApplicationBuildType()
+        let appVersionModel = AppVersionModel()
+        var distributionType = NSApp.isSandboxed ? "App Store" : "DMG"
+        if buildType.isAlphaBuild {
+            distributionType.append(" Alpha")
+        }
 
         do {
             source = try Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [

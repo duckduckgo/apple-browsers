@@ -368,7 +368,7 @@ struct LegacyDataImportView: ModalView {
                     Text(model.buttons[idx].title(dataType: model.screen.fileImportDataType))
                         .frame(minWidth: 80 - 16 - 1)
                 }
-                .keyboardShortcut(model.buttons[idx].shortcut)
+                .ifLet(model.buttons[idx].shortcut) { $0.keyboardShortcut($1) }
                 .disabled(model.buttons[idx].isDisabled)
             }
         }

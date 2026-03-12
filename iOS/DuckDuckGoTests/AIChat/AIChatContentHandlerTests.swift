@@ -25,6 +25,7 @@ import XCTest
 import WebKit
 import Subscription
 @testable import DuckDuckGo
+@testable import Core
 
 final class AIChatContentHandlerTests: XCTestCase {
 
@@ -32,7 +33,6 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockSettings: MockAIChatSettingsProvider!
     var mockPayloadHandler: AIChatPayloadHandler!
     var mockMetricHandler: MockAIChatPixelMetricHandler!
-    var mockFeatureFlagger: MockFeatureFlagger!
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
 
@@ -40,7 +40,6 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockSettings = MockAIChatSettingsProvider()
         mockPayloadHandler = AIChatPayloadHandler()
         mockMetricHandler = MockAIChatPixelMetricHandler()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
 
@@ -49,9 +48,9 @@ final class AIChatContentHandlerTests: XCTestCase {
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: mockFeatureFlagger,
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
-            freeTrialConversionService: mockFreeTrialConversionService
+            freeTrialConversionService: mockFreeTrialConversionService,
+            statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {})
         )
     }
 
@@ -297,9 +296,9 @@ final class AIChatContentHandlerTests: XCTestCase {
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: mockFeatureFlagger,
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in pageContext }
         )
 
@@ -325,9 +324,9 @@ final class AIChatContentHandlerTests: XCTestCase {
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: mockFeatureFlagger,
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in nil }
         )
 
@@ -427,6 +426,38 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertNil(mockUserScript.lastSubmittedPageContext)
     }
     
+    // MARK: - Delegate Notifications
+
+    func testDidReceiveMessageGetAIChatPageContextNotifiesDelegate() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+        let mockDelegate = MockAIChatContentHandlingDelegate()
+        handler.delegate = mockDelegate
+
+        // When
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .getAIChatPageContext)
+
+        // Then
+        XCTAssertEqual(mockDelegate.didReceivePageContextRequestCallCount, 1)
+    }
+
+    func testDidReceiveMessageOtherThanGetAIChatPageContextDoesNotNotifyPageContextDelegate() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+        let mockDelegate = MockAIChatContentHandlingDelegate()
+        handler.delegate = mockDelegate
+
+        // When
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .closeAIChat)
+
+        // Then
+        XCTAssertEqual(mockDelegate.didReceivePageContextRequestCallCount, 0)
+    }
+
     // MARK: - fireAIChatTelemetry
 
     func testFireAIChatTelemetryCallsProductSurfaceTelemetry() throws {

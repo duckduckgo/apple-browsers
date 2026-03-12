@@ -23,6 +23,7 @@ import Persistence
 import Core
 import UIKit
 import AIChat
+import PrivacyConfig
 import enum Common.DevicePlatform
 
 // MARK: - TextEntryMode Enum
@@ -42,6 +43,7 @@ protocol SwitchBarHandling: AnyObject {
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
     var isTopBarPosition: Bool { get }
+    var isFireTab: Bool { get }
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
@@ -83,6 +85,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -96,13 +99,17 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static var hasUsedAIChatInSession = false
 
     private(set) var isTopBarPosition: Bool = true
+    let isFireTab: Bool
 
     var isUsingExpandedBottomBarHeight: Bool {
         isUsingFadeOutAnimation && !isTopBarPosition
     }
 
     var isUsingFadeOutAnimation: Bool {
-        devicePlatform.isIphone
+        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
+            return devicePlatform.isIphone
+        }
+        return false
     }
 
     var isVoiceSearchEnabled: Bool {
@@ -156,13 +163,17 @@ final class SwitchBarHandler: SwitchBarHandling {
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
+        self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
+        self.isFireTab = isFireTab
 
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(

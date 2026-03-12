@@ -29,7 +29,7 @@ extension MainViewController: WKWebExtensionWindow {
     }
 
     func tabs(for context: WKWebExtensionContext) -> [any WKWebExtensionTab] {
-        return tabManager.model.tabs.compactMap { tab in
+        return tabManager.allTabsModel.tabs.compactMap { tab in
             tabManager.controller(for: tab)
         }
     }

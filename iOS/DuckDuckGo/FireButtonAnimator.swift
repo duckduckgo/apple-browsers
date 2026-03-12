@@ -101,19 +101,7 @@ enum FireButtonAnimationType: String, CaseIterable, Identifiable, CustomStringCo
             return nil
         }
     }
-    
-    var endFrame: NSNumber {
-        switch self {
-        case .fireRising:
-            return 34
-        case .waterSwirl:
-            return 24
-        case .airstream:
-            return 18
-        case .none:
-            return 0
-        }
-    }
+
 }
 
 class FireButtonAnimator {

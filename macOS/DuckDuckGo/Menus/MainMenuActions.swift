@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Cocoa
 import Common
 import Configuration
+import Networking
 import Crashes
 import FeatureFlags
 import History
@@ -886,10 +887,24 @@ extension AppDelegate {
         }
     }
 
+    private func readableErrorMessage(for error: Swift.Error) -> String {
+        if case APIRequest.Error.urlSession(let urlError) = error {
+            return urlError.localizedDescription
+        }
+        if case ConfigurationFetcher.Error.apiRequest(let apiError) = error,
+           case APIRequest.Error.urlSession(let urlError) = apiError {
+            return urlError.localizedDescription
+        }
+        if case ConfigurationFetcher.Error.invalidPayload = error {
+            return "The server returned data that is not a valid privacy configuration."
+        }
+        return error.localizedDescription
+    }
+
     private func showConfigurationFetchErrorAlert(url: URL, error: Swift.Error) {
         let alert = NSAlert()
         alert.messageText = "Configuration Fetch Failed"
-        alert.informativeText = "Failed to fetch privacy configuration from:\n\(url.absoluteString)\n\nError: \(error.localizedDescription)"
+        alert.informativeText = "Failed to fetch privacy configuration from:\n\(url.absoluteString)\n\nError: \(readableErrorMessage(for: error))"
         alert.alertStyle = .critical
         alert.runModal()
     }

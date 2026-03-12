@@ -90,6 +90,10 @@ public extension DesignSystemImages {
             public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatGradientColor16) }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory16) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings16) }
+            public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude16) }
+            public static var aiModelLlama: DesignSystemImage { .init(resource: .aiModelLlama16) }
+            public static var aiModelMistral: DesignSystemImage { .init(resource: .aiModelMistral16) }
+            public static var aiModelOpenAI: DesignSystemImage { .init(resource: .aiModelOpenAi16) }
             public static var alert: DesignSystemImage { .init(resource: .alert16) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable16) }
             public static var arrowCircleRight: DesignSystemImage { .init(resource: .arrowCircleRight16) }
@@ -115,8 +119,10 @@ public extension DesignSystemImages {
             public static var calendarWeek: DesignSystemImage { .init(resource: .calendarWeek16) }
             public static var check: DesignSystemImage { .init(resource: .check16) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
+            public static var chat: DesignSystemImage { .init(resource: .chat16) }
             public static var checkGray: DesignSystemImage { .init(resource: .checkGray16) }
             public static var chevronDoubleRight: DesignSystemImage { .init(resource: .chevronDoubleRight16) }
+            public static var chevronDownMedium: DesignSystemImage { .init(resource: .chevronDownMedium16) }
             public static var chevronRight: DesignSystemImage { .init(resource: .chevronRight16) }
             public static var chevronMediumRight: DesignSystemImage { .init(resource: .chevronMediumRight16) }
             public static var clear: DesignSystemImage { .init(resource: .clear16) }
@@ -379,6 +385,7 @@ public extension DesignSystemImages {
             public static var clear: DesignSystemImage { .init(resource: .clear24) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie24) }
             public static var cookieWhole: DesignSystemImage { .init(resource: .cookieWhole24) }
+            public static var compose: DesignSystemImage { .init(resource: .compose24) }
             public static var copy: DesignSystemImage { .init(resource: .copy24) }
             public static var covid: DesignSystemImage { .init(resource: .covid24) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCard24) }

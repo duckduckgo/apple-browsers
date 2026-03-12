@@ -20,6 +20,10 @@ import Foundation
 import PixelKit
 import WebKit
 
+protocol TabCleanupPreparing {
+    @MainActor func prepareTabsForCleanup(_ tabs: [TabViewModel]) async
+}
+
 protocol TabDataClearing {
     @MainActor func prepareForDataClearing(caller: TabCleanupPreparer)
 }
@@ -31,7 +35,7 @@ protocol TabDataClearing {
 
  Once done, remove Tab objects.
  */
-final class TabCleanupPreparer: NSObject, WKNavigationDelegate {
+final class TabCleanupPreparer: NSObject, WKNavigationDelegate, TabCleanupPreparing {
 
     private var numberOfTabs = 0
     private var processedTabs = 0

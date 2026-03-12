@@ -29,11 +29,12 @@ extension OnboardingRebranding {
 
         var body: some View {
             ScrollView(.vertical) {
-                DaxDialogView(logoPosition: .top) {
+                OnboardingBubbleView(tailPosition: nil) {
                     OnboardingRebranding.ContextualDaxDialogContent<EmptyView>(message: message)
                 }
                 .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
+            .scrollIfNeeded()
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }
     }

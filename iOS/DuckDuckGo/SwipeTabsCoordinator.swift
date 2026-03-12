@@ -33,7 +33,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
 
-    let selectTab: (Int) -> Void
+    let selectTab: (Tab) -> Void
     let newTab: () -> Void
     let onSwipeStarted: () -> Void
     
@@ -57,7 +57,7 @@ class SwipeTabsCoordinator: NSObject {
          tabPreviewsSource: TabPreviewsSource,
          appSettings: AppSettings,
          omnibarDependencies: OmnibarDependencyProvider,
-         selectTab: @escaping (Int) -> Void,
+         selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
         
@@ -211,7 +211,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let targetSize = coordinator.contentContainer.frame.size
         var height = targetSize.height
 
-        let tab = tabsModel.safeGetTabAt(nextIndex)
+        let tab = tabsModel.get(tabAt: nextIndex)
         if let tab, let image = tabPreviewsSource.preview(for: tab) {
             createPreviewFromImage(image)
             if appSettings.currentAddressBarPosition.isBottom,
@@ -287,7 +287,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         if index >= tabsModel.count {
             newTab()
         } else {
-            selectTab(index)
+            if let tab = tabsModel.get(tabAt: index) {
+                selectTab(tab)
+            }
         }
     }
 
@@ -349,7 +351,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let tab = tabsModel.safeGetTabAt(indexPath.row)
+            let tab = tabsModel.get(tabAt: indexPath.row)
             let url = tab?.link?.url
 
             let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
@@ -407,17 +409,24 @@ class OmniBarCell: UICollectionViewCell {
         }
     }
 
+    /// Forwards an overflow point to the omnibar view for hit testing.
+    /// Supports the iPad expanded search area which extends below the cell's bounds.
+    private func omniBarOverflowHitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard point.y >= bounds.maxY, let omniBarView = omniBar?.barView else { return nil }
+        let localPoint = omniBarView.convert(point, from: self)
+        return omniBarView.hitTest(localPoint, with: event)
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        super.point(inside: point, with: event) || omniBarOverflowHitTest(point, with: event) != nil
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        super.hitTest(point, with: event) ?? omniBarOverflowHitTest(point, with: event)
+    }
+
     deinit {
         controller?.removeFromParent()
         controller = nil
     }
-}
-
-extension TabsModelManaging {
-    
-    func safeGetTabAt(_ index: Int) -> Tab? {
-        guard tabs.indices.contains(index) else { return nil }
-        return tabs[index]
-    }
-    
 }

@@ -65,10 +65,10 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
         Logger.addressBarPicker.info("Checking picker display conditions...")
 
-        /// Do not display during automated UI runs
+        /// Do not display during automated UI runs or WebDriver automation
         /// https://app.asana.com/1/137249556945/project/414709148257752/task/1211474728965506?focus=true
-        guard !isRunningUITests else { return false }
-        Logger.addressBarPicker.info("✓ Not running UI Tests")
+        guard !isRunningUITests && !isRunningAutomation else { return false }
+        Logger.addressBarPicker.info("✓ Not running UI Tests or automation")
 
         guard isMainDuckAIEnabled else { return false }
         Logger.addressBarPicker.info("✓ Main DuckAI is enabled")
@@ -124,6 +124,10 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
     private var isRunningUITests: Bool {
         ProcessInfo.isRunningUITests
+    }
+
+    private var isRunningAutomation: Bool {
+        LaunchOptionsHandler().isAutomationSession
     }
 }
 

@@ -127,7 +127,7 @@ private final class StorageTestWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    func pixelParameters() -> [String: String] {
+    func jsonParameters() -> [String: Encodable] {
         return [:]
     }
 }

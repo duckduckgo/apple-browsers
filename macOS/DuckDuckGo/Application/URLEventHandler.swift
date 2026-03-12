@@ -108,7 +108,10 @@ final class URLEventHandler {
     }
 
     private func handleURLs(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+
         if didFinishLaunching {
+            NotificationCenter.default.post(name: .externalURLHandled, object: nil)
             urls.forEach {
                 self.handler($0)
             }
@@ -163,6 +166,10 @@ final class URLEventHandler {
             return
         }
     }
+}
+
+extension Notification.Name {
+    static let externalURLHandled = Notification.Name("com.duckduckgo.externalURLHandled")
 }
 
 extension String {

@@ -127,7 +127,7 @@ class TabSwitcherViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     var tabsModel: TabsModelManaging {
-        tabManager.currentTabsModel
+        tabManager.tabsModel(for: selectedBrowsingMode)
     }
 
     var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
@@ -153,6 +153,7 @@ class TabSwitcherViewController: UIViewController {
     private var pickerViewModel: ImageSegmentedPickerViewModel
     private let pickerItems: [ImageSegmentedPickerItem]
     private let tabCountModel: TabCountModel
+    private(set) var selectedBrowsingMode: BrowsingMode
     private(set) var segmentedPickerHostingController: UIHostingController<TabSwitcherPickerWrapper>?
     private var pickerSelectionCancellable: AnyCancellable?
     private var fireModeCapability: FireModeCapable {
@@ -197,6 +198,7 @@ class TabSwitcherViewController: UIViewController {
         let tabCountModel = TabCountModel()
         self.tabCountModel = tabCountModel
         self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }
+        self.selectedBrowsingMode = tabManager.currentBrowsingMode
         self.pickerViewModel = ImageSegmentedPickerViewModel(
                 items: pickerItems,
                 selectedItem: pickerItems[tabManager.currentBrowsingMode.rawValue],
@@ -241,13 +243,13 @@ class TabSwitcherViewController: UIViewController {
 
     private func modeToggleSelectionChanged(_ selectedItem: ImageSegmentedPickerItem) {
         let newMode: BrowsingMode = pickerItems.first == selectedItem ? .fire : .normal
-        guard newMode != tabManager.currentBrowsingMode else {
+        guard newMode != selectedBrowsingMode else {
             return
         }
         tabsModel.tabs.forEach { $0.removeObserver(self) }
         let progress: CGFloat = newMode == .fire ? 0 : 1
         pickerViewModel.updateScrollProgress(progress)
-        tabManager.setBrowsingMode(newMode)
+        selectedBrowsingMode = newMode
         subscribeToTabChanges()
         currentSelection = tabsModel.currentIndex
         UIView.performWithoutAnimation {
@@ -255,8 +257,6 @@ class TabSwitcherViewController: UIViewController {
             collectionView.layoutIfNeeded()
         }
         updateUIForSelectionMode()
-        markCurrentAsViewed(shouldDismiss: false)
-        delegate.tabSwitcherDidUpdateBrowsingMode(tabSwitcher: self)
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
@@ -608,7 +608,7 @@ class TabSwitcherViewController: UIViewController {
         var urls = [URL]()
 
         indexPaths.compactMap {
-            tabsModel.safeGetTabAt($0.row)
+            tabsModel.get(tabAt: $0.row)
         }.forEach { tab in
             guard let link = tab.link else { return }
             if viewModel.bookmark(for: link.url) == nil {
@@ -633,18 +633,9 @@ class TabSwitcherViewController: UIViewController {
         }
     }
     
-    func markCurrentAsViewed(shouldDismiss: Bool) {
-        if shouldDismiss {
-            // Will be dismissed, so no need to process incoming updates
-            canUpdateCollection = false
-            dismiss()
-        }
-        if let current = currentSelection {
-            let tab = tabsModel.get(tabAt: current)
-            tab.viewed = true
-            tabManager.save()
-            delegate?.tabSwitcher(self, didSelectTab: tab)
-        }
+    func markCurrentAsViewedAndDismiss() {
+        canUpdateCollection = false
+        dismiss()
     }
 
     @IBAction func onFirePressed(sender: AnyObject) {
@@ -663,9 +654,14 @@ class TabSwitcherViewController: UIViewController {
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         canUpdateCollection = false
         tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
+
+        let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
+        let selectedTab = tabsModel.get(tabAt: currentSelection)
+
+        delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
+
         super.dismiss(animated: animated) {
             completion?()
-            self.delegate?.tabSwitcherDidDismiss(tabSwitcher: self)
         }
     }
 }
@@ -674,19 +670,20 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
         let shouldDismiss = tabsModel.count == indexPaths.count // TODO: - Handle fire mode
-        let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
+        let tabsToClose = indexPaths.compactMap { tabsModel.get(tabAt: $0.row) }
         delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
         collectionView.performBatchUpdates {
             isProcessingUpdates = true
-            tabManager.bulkRemoveTabs(indexPaths)
+            tabManager.bulkRemoveTabs(tabsToClose, in: tabsModel)
             collectionView.deleteItems(at: indexPaths)
         } completion: { _ in
-            self.currentSelection = self.tabsModel.currentIndex
             self.isProcessingUpdates = false
             if self.tabsModel.tabs.isEmpty {
-                self.tabsModel.add(tab: Tab(fireTab: self.tabsModel.shouldCreateFireTabs)) // TODO: - Only in normal mode
+                let newTab = Tab(fireTab: self.tabsModel.shouldCreateFireTabs)
+                self.tabsModel.insert(tab: newTab, placement: .atEnd, selectNewTab: true) // TODO: - Only in normal mode
             }
+            self.currentSelection = self.tabsModel.currentIndex
             self.delegate?.tabSwitcherDidBulkCloseTabs(tabSwitcher: self)
             self.refreshTitleViews()
             self.updateUIForSelectionMode()
@@ -727,8 +724,9 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
         cell.delegate = self
         cell.isDeleting = false
         
-        if indexPath.row < tabsModel.count {
-            let tab = tabsModel.get(tabAt: indexPath.row)
+        if indexPath.row < tabsModel.count,
+           let tab = tabsModel.get(tabAt: indexPath.row) {
+            tab.removeObserver(self)
             tab.addObserver(self)
             cell.update(withTab: tab,
                         isSelectionModeEnabled: self.isEditing,
@@ -940,7 +938,10 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
         }
 
         collectionView.performBatchUpdates {
-            tabsModel.moveTab(from: source.row, to: destination.row)
+            guard let tab = tabsModel.get(tabAt: source.row) else {
+                return
+            }
+            tabsModel.move(tab: tab, to: destination.row)
             currentSelection = tabsModel.currentIndex
             collectionView.deleteItems(at: [source])
             collectionView.insertItems(at: [destination])

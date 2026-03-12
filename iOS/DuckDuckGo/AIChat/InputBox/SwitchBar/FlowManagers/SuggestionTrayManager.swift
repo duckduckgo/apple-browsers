@@ -49,7 +49,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
-    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchTabToIndex index: Int)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
 }
 
 /// Manages the suggestion tray functionality including favorites and autocomplete
@@ -74,6 +74,14 @@ final class SuggestionTrayManager: NSObject {
         let hasRemoteMessages = suggestionTrayViewController?.hasRemoteMessages ?? false
 
         return !shouldDisplaySuggestionTray && (canDisplayFavorites || hasRemoteMessages)
+    }
+
+    var hasFavorites: Bool {
+        suggestionTrayViewController?.hasFavorites ?? false
+    }
+
+    var hasRemoteMessages: Bool {
+        suggestionTrayViewController?.hasRemoteMessages ?? false
     }
 
     var shouldDisplaySuggestionTray: Bool {
@@ -289,7 +297,7 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
         // no-op this is handled by the main view controller on a real new tab page
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
-        delegate?.suggestionTrayManager(self, requestsSwitchTabToIndex: index)
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+        delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
     }
 }

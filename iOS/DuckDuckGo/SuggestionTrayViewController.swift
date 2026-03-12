@@ -212,7 +212,7 @@ class SuggestionTrayViewController: UIViewController {
 
         containerView.layer.cornerRadius = 24
         containerView.layer.masksToBounds = true
- 
+
         backgroundView.layer.cornerRadius = 24
         backgroundView.backgroundColor = UIColor(designSystemColor: .background)
         backgroundView.clipsToBounds = false
@@ -264,6 +264,10 @@ class SuggestionTrayViewController: UIViewController {
     
     private var canDisplayFavorites: Bool {
         favoritesModel.favorites.count > 0
+    }
+
+    var hasFavorites: Bool {
+        canDisplayFavorites
     }
 
     var hasRemoteMessages: Bool {
@@ -412,7 +416,7 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
     
     func autocompleteDidChangeContentHeight(height: CGFloat) {
         guard !fullHeightConstraint.isActive else { return }
-        
+
         if height > Constant.suggestionTrayInitialHeight {
             variableHeightConstraint.constant = height
         }

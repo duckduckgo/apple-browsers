@@ -522,3 +522,12 @@ struct _WKFindOptions: OptionSet {
     static let noIndexChange = Self(rawValue: 1 << 8)
     static let determineMatchIndex = Self(rawValue: 1 << 9)
 }
+
+enum _WKImmediateActionType: UInt {
+    case `none` = 0
+    case linkPreview = 1
+    case dataDetectedItem = 2
+    case lookupText = 3
+    case mailtoLink = 4
+    case telLink = 5
+}

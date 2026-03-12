@@ -66,12 +66,6 @@ final class WarnBeforeQuitOverlayPresenter {
         }
     }
 
-    /// Binds this presenter to a manager and executes `onProceed` when confirmed.
-    func bind(to manager: WarnBeforeQuitManager, onProceed: @escaping @MainActor () -> Void) {
-        subscribe(to: manager.stateStream)
-        manager.performOnProceed(onProceed)
-    }
-
     /// Binds this presenter to a manager for manually presented warning flows.
     func bindForManualPresentation(to manager: WarnBeforeQuitManager, onProceed: @escaping @MainActor () -> Void) {
         subscribe(to: manager.stateStream)

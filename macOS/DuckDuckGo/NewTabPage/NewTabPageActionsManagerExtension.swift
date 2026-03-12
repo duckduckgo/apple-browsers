@@ -64,7 +64,8 @@ extension NewTabPageActionsManager {
         subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
         syncService: DDGSyncing?,
-        pinningManager: PinningManager
+        pinningManager: PinningManager,
+        promoService: PromoService?
     ) {
         self.init(
             appearancePreferences: appearancePreferences,
@@ -95,7 +96,8 @@ extension NewTabPageActionsManager {
             subscriptionCardPersistor: subscriptionCardPersistor,
             duckPlayerPreferences: duckPlayerPreferences,
             syncService: syncService,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            promoService: promoService
         )
     }
 
@@ -129,7 +131,8 @@ extension NewTabPageActionsManager {
         subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
         syncService: DDGSyncing?,
-        pinningManager: PinningManager
+        pinningManager: PinningManager,
+        promoService: PromoService?
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -181,7 +184,19 @@ extension NewTabPageActionsManager {
         )
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,
-            aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
+            aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
+            featureFlagger: featureFlagger
+        )
+        let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
+            featureFlagger: featureFlagger,
+            configProvider: omnibarConfigProvider,
+            suggestionsReader: AIChatSuggestionsReader(
+                suggestionsReader: SuggestionsReader(
+                    featureFlagger: featureFlagger,
+                    privacyConfig: contentBlocking.privacyConfigurationManager
+                ),
+                historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
+            )
         )
         let stateProvider = NewTabPageStateProvider(
             windowControllersManager: windowControllersManager,
@@ -189,9 +204,39 @@ extension NewTabPageActionsManager {
         )
         let dataImportProvider = BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager)
         let nextStepsPixelHandler = NewTabPageNextStepsCardsPixelHandler()
+        let nextStepsCardsFacade = NewTabPageNextStepsCardsProviderFacade(
+            featureFlagger: featureFlagger,
+            dataImportProvider: dataImportProvider,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            legacyPersistor: homePageContinueSetUpModelPersistor,
+            pixelHandler: nextStepsPixelHandler,
+            cardActionsHandler: NewTabPageNextStepsCardsActionHandler(
+                defaultBrowserProvider: SystemDefaultBrowserProvider(),
+                dockCustomizer: DockCustomizer(),
+                dataImportProvider: dataImportProvider,
+                tabOpener: NewTabPageTabOpener(),
+                privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                pixelHandler: nextStepsPixelHandler,
+                newTabPageNavigator: DefaultNewTabPageNavigator(),
+                featureFlagger: featureFlagger
+            ),
+            appearancePreferences: appearancePreferences,
+            legacySubscriptionCardPersistor: subscriptionCardPersistor,
+            persistor: nextStepsCardsPersistor,
+            duckPlayerPreferences: duckPlayerPreferences,
+            syncService: syncService
+        )
+        if let promoService {
+            let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
+            promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)
+        }
+
+        let buildType = StandardApplicationBuildType()
+        let environment: NewTabPageConfigurationClient.Environment = (buildType.isDebugBuild || buildType.isReviewBuild) ? .development : .production
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
+                environment: environment,
                 sectionsAvailabilityProvider: availabilityProvider,
                 sectionsVisibilityProvider: appearancePreferences,
                 omnibarConfigProvider: omnibarConfigProvider,
@@ -203,36 +248,14 @@ extension NewTabPageActionsManager {
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),
             NewTabPageFreemiumDBPClient(provider: freemiumDBPBannerProvider),
-            NewTabPageNextStepsCardsClient(
-                model: NewTabPageNextStepsCardsProviderFacade(
-                    featureFlagger: featureFlagger,
-                    dataImportProvider: dataImportProvider,
-                    subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                    legacyPersistor: homePageContinueSetUpModelPersistor,
-                    pixelHandler: nextStepsPixelHandler,
-                    cardActionsHandler: NewTabPageNextStepsCardsActionHandler(
-                        defaultBrowserProvider: SystemDefaultBrowserProvider(),
-                        dockCustomizer: DockCustomizer(),
-                        dataImportProvider: dataImportProvider,
-                        tabOpener: NewTabPageTabOpener(),
-                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                        pixelHandler: nextStepsPixelHandler,
-                        newTabPageNavigator: DefaultNewTabPageNavigator(),
-                        featureFlagger: featureFlagger
-                    ),
-                    appearancePreferences: appearancePreferences,
-                    legacySubscriptionCardPersistor: subscriptionCardPersistor,
-                    persistor: nextStepsCardsPersistor,
-                    duckPlayerPreferences: duckPlayerPreferences,
-                    syncService: syncService
-                )
-            ),
+            NewTabPageNextStepsCardsClient(model: nextStepsCardsFacade),
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
             NewTabPageRecentActivityClient(model: recentActivityModel),
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
+                                    aiChatsProvider: aiChatsProvider,
                                     actionHandler: omnibarActionHandler),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])

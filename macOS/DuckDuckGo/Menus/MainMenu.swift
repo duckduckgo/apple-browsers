@@ -123,7 +123,7 @@ final class MainMenu: NSMenu {
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
 
     private let featureFlagger: FeatureFlagger
-    private let dockCustomizer: DockCustomization
+    private let dockCustomizer: DockCustomization?
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let internalUserDecider: InternalUserDecider
@@ -146,7 +146,7 @@ final class MainMenu: NSMenu {
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
-         dockCustomizer: DockCustomization = DockCustomizer(),
+         dockCustomizer: DockCustomization? = nil,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
@@ -458,18 +458,11 @@ final class MainMenu: NSMenu {
 
     @MainActor
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
-#if DEBUG || REVIEW || ALPHA
-        NSMenuItem(title: "Debug")
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild || internalUserDecider.isInternalUser else { return nil }
+        return NSMenuItem(title: "Debug")
             .withAccessibilityIdentifier(AccessibilityIdentifiers.debugMenu)
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
-#else
-        if internalUserDecider.isInternalUser {
-            NSMenuItem(title: "Debug")
-                .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
-        } else {
-            nil
-        }
-#endif
     }
 
     func buildHelpMenu() -> NSMenuItem {
@@ -481,10 +474,10 @@ final class MainMenu: NSMenu {
                 NSMenuItem.separator()
 
                 aboutMenuItem
-#if SPARKLE
-                releaseNotesMenuItem
-                whatIsNewMenuItem
-#endif
+                if StandardApplicationBuildType().isSparkleBuild {
+                    releaseNotesMenuItem
+                    whatIsNewMenuItem
+                }
                 sendFeedbackMenuItem
             })
     }
@@ -499,11 +492,7 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
-#if SPARKLE
-        addToDockMenuItem.isHidden = dockCustomizer.isAddedToDock
-#else
-        addToDockMenuItem.isHidden = true
-#endif
+        addToDockMenuItem.isHidden = dockCustomizer?.isAddedToDock ?? true // always hidden in sandboxed build
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.
@@ -554,7 +543,7 @@ final class MainMenu: NSMenu {
 
     private func updateAppAboutDDGMenuItem() {
         if internalUserDecider.isInternalUser {
-            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel().versionLabelShort))"
         } else {
             appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
         }
@@ -740,8 +729,9 @@ final class MainMenu: NSMenu {
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
-            NSMenuItem(title: "Memory Debugging") {
+            NSMenuItem(title: "Performance Debugging") {
                 NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])
+                NSMenuItem(title: "Export Startup Stats", action: #selector(AppDelegate.exportStartupStats), keyEquivalent: [.control, .command, .shift, .option, "s"])
             }
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
@@ -967,10 +957,13 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
-#if SPARKLE
-            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
-#endif
+            if StandardApplicationBuildType().isSparkleBuild {
+                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
+            }
             if AppVersion.runType.requiresEnvironment {
+                NSMenuItem(title: "Promo Queue")
+                    .submenu(PromoDebugMenu())
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.promoQueueDebugMenu)
                 NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)")
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu)
                     .submenu(DefaultBrowserAndDockPromptDebugMenu())
@@ -1013,10 +1006,9 @@ final class MainMenu: NSMenu {
         debugMenu.insertItem(separatorItem, at: 1)
 
         debugMenu.addItem(internalUserItem)
-#if !ALPHA
         debugMenu.addItem(.separator())
         debugMenu.addItem(NSMenuItem(title: "Download DuckDuckGo Alpha Build", action: #selector(downloadAlphaBuild), target: self))
-#endif
+
         debugMenu.autoenablesItems = false
         return debugMenu
     }

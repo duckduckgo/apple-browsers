@@ -33,5 +33,20 @@
         "triggers": ["other"],
         "suffixes": [["platform", "form_factor"]],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_debug_tabs-model_cross-mode-mismatch": {
+        "description": "Fires when a tab operation is attempted on a TabsModel with a different browsing mode than the tab. Indicates a cross-mode invariant violation. Expecting minimumal numbers of these pixels - ideally zero.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [["platform", "form_factor"]],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "operation",
+                "type": "string",
+                "description": "The TabsModel method that detected the mismatch",
+                "enum": ["select", "insert", "move", "remove", "removeTabs"]
+            }
+        ]
     }
 }

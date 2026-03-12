@@ -46,11 +46,11 @@ public protocol SparkleUpdateControllerFactory {
                             allowCustomUpdateFeed: Bool,
                             wideEvent: WideEventManaging,
                             isOnboardingFinished: @escaping () -> Bool,
-                            openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController
+                            openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateControlling
 }
 
 /// Marker type extended by updater packages with concrete `instantiate(...)` implementations.
-/// See AppStoreUpdateController.swift and SimplifiedSparkleUpdateController.swift for concrete implementations.
+/// See AppStoreUpdateController.swift and SparkleUpdateController.swift for concrete implementations.
 public struct UpdateControllerFactory {}
 
 public protocol UpdateController: UpdateControllerObjC {
@@ -213,7 +213,7 @@ public protocol UpdateController: UpdateControllerObjC {
 }
 
 /// Sparkle-specific updater contract that extends the shared `UpdateController`.
-public protocol SparkleUpdateController: UpdateController, SparkleUpdateControllerObjC {
+public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControllerObjC {
     /// Indicates whether the app is paused at a restart checkpoint waiting for user action.
     ///
     /// **Sparkle Behavior**: Returns `true` when update is downloaded and ready to install,
@@ -258,7 +258,6 @@ public protocol SparkleUpdateController: UpdateController, SparkleUpdateControll
 
     func makeReleaseNotesUserScript(
         pixelFiring: PixelFiring?,
-        keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
     ) -> Subfeature
 }
@@ -282,6 +281,14 @@ public protocol SparkleUpdateController: UpdateController, SparkleUpdateControll
 }
 
 extension UpdateController {
+
+    /// Whether release notes need a fresh update check to populate data.
+    ///
+    /// After removing cached release notes, this is true when no update data
+    /// has been fetched yet (e.g. release notes opened before startup check completes).
+    public var needsLatestReleaseNote: Bool {
+        latestUpdate == nil
+    }
 
     private var isUpdateNotificationAllowed: Bool {
         Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)

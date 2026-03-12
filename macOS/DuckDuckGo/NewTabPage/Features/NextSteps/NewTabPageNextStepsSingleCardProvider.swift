@@ -52,6 +52,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
+    private let isAppStoreBuild: Bool
 
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
@@ -175,6 +176,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
          syncService: DDGSyncing?,
+         applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
@@ -190,6 +192,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
+        self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
         self.scheduler = scheduler
         self.shouldUseAdvancedCardOrdering = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering)
         self.standardCards = defaultStandardCards
@@ -287,11 +290,12 @@ private extension NewTabPageNextStepsSingleCardProvider {
 
         let orderedVisibleCards = orderedCards.filter(shouldShowCard)
 
-#if DEBUG || REVIEW || ALPHA
-        // Persist visible cards for debug menu actions
-        // Otherwise, we don't need to persist this because we want to check card visibility each time cards are shown
-        debugPersistor.debugVisibleCards = orderedVisibleCards
-#endif
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
+            // Persist visible cards for debug menu actions
+            // Otherwise, we don't need to persist this because we want to check card visibility each time cards are shown
+            debugPersistor.debugVisibleCards = orderedVisibleCards
+        }
 
         // Return only the visible cards
         return orderedVisibleCards
@@ -310,11 +314,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .bringStuff:
             return !dataImportProvider.didImport
         case .addAppToDockMac:
-#if !APPSTORE
-            return !dockCustomizer.isAddedToDock
-#else
-            return false
-#endif
+            return !isAppStoreBuild && !dockCustomizer.isAddedToDock
         case .duckplayer:
             return duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
         case .emailProtection:
@@ -387,13 +387,14 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-#if DEBUG || REVIEW || ALPHA
-                // Reset standard card list and mark first session as complete for debug menu reset action, if needed
-                if persistor.isFirstSession {
-                    persistor.isFirstSession = false
-                    standardCards = defaultStandardCards
+                let buildType = StandardApplicationBuildType()
+                if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
+                    // Reset standard card list and mark first session as complete for debug menu reset action, if needed
+                    if persistor.isFirstSession {
+                        persistor.isFirstSession = false
+                        standardCards = defaultStandardCards
+                    }
                 }
-#endif
                 refreshCardList()
             }
             .store(in: &cancellables)
@@ -411,10 +412,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
                 shuffleStandardCardsIfNeeded()
                 // Mark first session as complete when cards are shown after onboarding is finished
                 if persistor.isFirstSession {
-        #if DEBUG || REVIEW || ALPHA
-                    persistor.isFirstSession = false
-        #endif
-                    if OnboardingActionsManager.isOnboardingFinished {
+                    let buildType = StandardApplicationBuildType()
+                    if OnboardingActionsManager.isOnboardingFinished || buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
                         persistor.isFirstSession = false
                     }
                 }

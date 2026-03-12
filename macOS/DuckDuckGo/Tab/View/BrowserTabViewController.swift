@@ -765,6 +765,7 @@ final class BrowserTabViewController: NSViewController {
                 // Create web view with extension's configuration
                 let webView = WebView(frame: .zero,
                                       configuration: configuration,
+                                      featureFlagger: featureFlagger,
                                       privacyConfig: privacyConfigurationManager.privacyConfig)
                 let request = URLRequest(url: url)
                 webView.load(request)
@@ -1362,9 +1363,7 @@ extension BrowserTabViewController: TabDelegate {
     }
 
     func tabPageDOMLoaded(_ tab: Tab) {
-        if tabViewModel?.tab === tab {
-            tabViewModel?.isLoading = false
-        }
+        // NO-OP
     }
 
     func tabDidStartNavigation(_ tab: Tab) {

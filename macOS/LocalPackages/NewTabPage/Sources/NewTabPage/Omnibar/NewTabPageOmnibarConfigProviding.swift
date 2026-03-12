@@ -22,6 +22,7 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     @MainActor
     var mode: NewTabPageDataModel.OmnibarMode { get set }
+    var modePublisher: AnyPublisher<NewTabPageDataModel.OmnibarMode, Never> { get }
 
     var isAIChatShortcutEnabled: Bool { get set }
     var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
@@ -30,4 +31,6 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { get }
 
     var showCustomizePopover: Bool { get set }
+
+    var isAIChatRecentChatsEnabled: Bool { get }
 }

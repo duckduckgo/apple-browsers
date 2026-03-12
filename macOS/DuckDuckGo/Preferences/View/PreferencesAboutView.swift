@@ -58,9 +58,14 @@ extension Preferences {
 
                     AboutContentSection(model: model)
 
-                    #if SPARKLE
-                    UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
-                    #endif
+                    if model.shouldHideManualUpdateOption {
+                        UpdateInfoMessage()
+                            .padding(.top, 4)
+                    } else {
+                        #if SPARKLE
+                        UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
+                        #endif
+                    }
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
                     Spacer(minLength: 20)

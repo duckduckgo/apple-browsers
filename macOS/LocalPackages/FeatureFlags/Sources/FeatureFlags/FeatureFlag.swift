@@ -156,6 +156,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
     case appStoreUpdateFlow
 
+    /// Hide manual update option — always use automatic updates
+    case automaticUpdatesOnly
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
@@ -371,6 +374,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpClickActionDelayReductionOptimization,
                 .syncFeatureLevel3,
                 .appStoreUpdateFlow,
+                .automaticUpdatesOnly,
                 .unifiedURLPredictor,
                 .webKitPerformanceReporting,
                 .winBackOffer,
@@ -511,6 +515,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .appStoreUpdateFlow:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
+        case .automaticUpdatesOnly:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.automaticUpdatesOnly))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .webKitPerformanceReporting:

@@ -67,6 +67,10 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
+    var shouldHideManualUpdateOption: Bool {
+        featureFlagger.isFeatureOn(.automaticUpdatesOnly)
+    }
+
     var shouldShowUpdateStatus: Bool {
         #if SPARKLE
         // For Sparkle builds: always show update status regardless of feature flag

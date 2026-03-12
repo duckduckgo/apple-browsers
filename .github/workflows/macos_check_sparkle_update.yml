@@ -23,8 +23,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/sparkle/check_sparkle_update.sh
 
-      - name: Resolve SPM packages
+      - name: Check for existing update PR
+        id: dedupe
         if: steps.check.outputs.update_available == 'true'
+        run: |
+          branch="automation/sparkle-update-${{ steps.check.outputs.latest_version }}"
+          if git ls-remote --exit-code --heads origin "${branch}" >/dev/null 2>&1; then
+            echo "Branch ${branch} already exists — skipping task and PR creation."
+            echo "should_create=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_create=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve SPM packages
+        if: steps.dedupe.outputs.should_create == 'true'
         run: |
           xcodebuild -resolvePackageDependencies \
             -workspace DuckDuckGo.xcworkspace \
@@ -32,7 +44,7 @@ jobs:
 
       - name: Create Asana task
         id: create-asana-task
-        if: steps.check.outputs.update_available == 'true'
+        if: steps.dedupe.outputs.should_create == 'true'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
@@ -69,7 +81,7 @@ jobs:
 
       - name: Create Pull Request
         id: create-pr
-        if: steps.check.outputs.update_available == 'true'
+        if: steps.dedupe.outputs.should_create == 'true'
         uses: peter-evans/create-pull-request@88bf0de51c7487d91e1abbb4899332e602c58bbf
         with:
           commit-message: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"

@@ -68,7 +68,11 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     var shouldHideManualUpdateOption: Bool {
-        featureFlagger.isFeatureOn(.automaticUpdatesOnly)
+        // New installs never had the manual update option — don't show it even on rollback
+        if (try? settings.installBuild) != nil {
+            return true
+        }
+        return featureFlagger.isFeatureOn(.automaticUpdatesOnly)
     }
 
     var shouldShowUpdateStatus: Bool {

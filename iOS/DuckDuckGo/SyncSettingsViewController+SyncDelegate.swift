@@ -298,14 +298,14 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         needsPreservedAccountCleanupBeforeServerOperation = false
         dismissPresentedViewController { [weak self] in
             guard let self else { return }
-            let readyView = AutoRestoreReadyView(model: self.rootView.model, onCancel: { [weak self] in
+            let readyView = AutoRestoreReadyView(model: self.viewModel, onCancel: { [weak self] in
                 Pixel.fire(pixel: .syncAutoRestoreSettingsCancelled, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
-                self?.rootView.model.clearPendingPreservedAccountContinuation()
+                self?.viewModel.clearPendingPreservedAccountContinuation()
                 self?.autoRestorePromptSource = nil
                 self?.dismissPresentedViewController()
             })
             let controller = DismissibleHostingController(rootView: readyView, onDismiss: { [weak self] in
-                self?.rootView.model.clearPendingPreservedAccountContinuation()
+                self?.viewModel.clearPendingPreservedAccountContinuation()
                 if self?.needsPreservedAccountCleanupBeforeServerOperation == false {
                     self?.autoRestorePromptSource = nil
                 }
@@ -489,7 +489,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     private func continueSyncSetupFlow(entryPoint: SyncSettingsViewModel.SyncSetupEntryPoint) {
         switch entryPoint {
         case .backup:
-            rootView.model.isSyncWithSetUpSheetVisible = true
+            viewModel.isSyncWithSetUpSheetVisible = true
         case .pairing:
             showSyncWithAnotherDevice()
         }
@@ -497,13 +497,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     @MainActor
     private func presentRecoveryCodeScan() {
-        rootView.model.isRecoverSyncedDataSheetVisible = false
+        viewModel.isRecoverSyncedDataSheetVisible = false
         collectCode(showQRCode: false)
     }
 
     @MainActor
     private func dismissRecoverSyncedDataSheetIfNeeded(completion: @escaping () -> Void) {
-        rootView.model.isRecoverSyncedDataSheetVisible = false
+        viewModel.isRecoverSyncedDataSheetVisible = false
         if let presentedViewController = presentedViewController,
            presentedViewController is UIHostingController<RecoverSyncedDataView> {
             presentedViewController.dismiss(animated: true, completion: completion)

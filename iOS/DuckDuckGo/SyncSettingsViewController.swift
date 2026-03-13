@@ -320,7 +320,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     }
 
     func refreshAutoRestoreDecisionState() {
-        rootView.model.refreshAutoRestoreDecisionState()
+        viewModel.refreshAutoRestoreDecisionState()
     }
 
     func refreshForState(_ authState: SyncAuthState) {
@@ -384,7 +384,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
               syncService.authState == .inactive else {
             return
         }
-        rootView.model.beginPairingFlow()
+        viewModel.beginPairingFlow()
     }
 
     private func startSyncBackupIfNecessary() {

@@ -42,7 +42,7 @@ final class TabBackgroundShapeView: NSView {
         }
     }
 
-    var rampSize: CGSize = NSSize(width: 10, height: 10) {
+    var rampSize: NSSize? {
         didSet {
             guard oldValue != rampSize else {
                 return
@@ -52,7 +52,7 @@ final class TabBackgroundShapeView: NSView {
         }
     }
 
-    var tabCornerRadius: CGFloat = 8 {
+    var tabCornerRadius: CGFloat = .zero {
         didSet {
             guard oldValue != tabCornerRadius else {
                 return
@@ -87,7 +87,7 @@ final class TabBackgroundShapeView: NSView {
         let backgroundPath = NSBezierPath(roundedRect: bounds, forCorners: backgroundRoundedCorners, cornerRadius: tabCornerRadius)
         backgroundPath.fill()
 
-        guard shouldDisplayRamps else {
+        guard shouldDisplayRamps, let rampSize else {
             return
         }
 

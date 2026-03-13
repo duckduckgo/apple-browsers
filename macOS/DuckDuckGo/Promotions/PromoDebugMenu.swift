@@ -104,12 +104,14 @@ final class PromoDebugMenu: NSMenu {
         for promo in promos {
             let status = statusString(for: promo)
             let parentItem = NSMenuItem(title: "\(promo.id)  \(status)", action: nil)
+            parentItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.promoMenuItem(promo.id))
 
             let submenu = NSMenu()
             if promo.delegate is PromoDelegate {
                 let forceShowItem = NSMenuItem(title: "Force Show", action: #selector(forceShowPromo(_:)), keyEquivalent: "")
                 forceShowItem.representedObject = promo.id
                 forceShowItem.target = self
+                forceShowItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.forceShowPromo)
                 submenu.addItem(forceShowItem)
             }
 

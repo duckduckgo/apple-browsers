@@ -236,9 +236,9 @@ public class AdClickAttributionLogic {
         if case .allowed(reason: .adClickAttribution) = request.state {
             isAttributionMatch = true
         } else if case .activeAttribution(let vendor, _, _) = state,
-                  !request.isBlocked,
-                  let host = request.domain,
-                  tld.eTLDplus1(host) == vendor {
+                  case .allowed(reason: .ruleException) = request.state,
+                  let pageHost = URL(string: request.pageUrl)?.host?.droppingWwwPrefix(),
+                  tld.eTLDplus1(pageHost)?.lowercased() == vendor {
             isAttributionMatch = true
         } else {
             isAttributionMatch = false

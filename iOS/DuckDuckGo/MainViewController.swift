@@ -67,6 +67,73 @@ struct StartupOnboardingDecision {
     }
 }
 
+private final class StartupOnboardingCover {
+
+    private weak var parentViewController: UIViewController?
+    private let fallbackBackgroundColor: UIColor
+
+    private var coverViewController: UIViewController?
+    private var coverView: UIView?
+
+    var isAttached: Bool {
+        coverView != nil
+    }
+
+    init(parentViewController: UIViewController, fallbackBackgroundColor: UIColor) {
+        self.parentViewController = parentViewController
+        self.fallbackBackgroundColor = fallbackBackgroundColor
+    }
+
+    func attach() {
+        guard !isAttached, let parentViewController else { return }
+
+        let coverView = makeCoverView(parentViewController: parentViewController)
+        coverView.translatesAutoresizingMaskIntoConstraints = false
+        parentViewController.view.addSubview(coverView)
+
+        NSLayoutConstraint.activate([
+            coverView.topAnchor.constraint(equalTo: parentViewController.view.topAnchor),
+            coverView.leadingAnchor.constraint(equalTo: parentViewController.view.leadingAnchor),
+            coverView.trailingAnchor.constraint(equalTo: parentViewController.view.trailingAnchor),
+            coverView.bottomAnchor.constraint(equalTo: parentViewController.view.bottomAnchor)
+        ])
+
+        parentViewController.view.bringSubviewToFront(coverView)
+        coverViewController?.didMove(toParent: parentViewController)
+        self.coverView = coverView
+    }
+
+    func bringToFront() {
+        guard let parentViewController, let coverView else { return }
+        parentViewController.view.bringSubviewToFront(coverView)
+    }
+
+    func detach() {
+        coverViewController?.willMove(toParent: nil)
+        coverViewController?.view.removeFromSuperview()
+        coverViewController?.removeFromParent()
+        coverViewController = nil
+
+        coverView?.removeFromSuperview()
+        coverView = nil
+    }
+
+    private func makeCoverView(parentViewController: UIViewController) -> UIView {
+        if let coverViewController = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController() {
+            self.coverViewController = coverViewController
+            parentViewController.addChild(coverViewController)
+            coverViewController.loadViewIfNeeded()
+            return coverViewController.view
+        }
+
+        assertionFailure("Unable to instantiate LaunchScreen storyboard")
+
+        let fallbackView = UIView()
+        fallbackView.backgroundColor = fallbackBackgroundColor
+        return fallbackView
+    }
+}
+
 class MainViewController: UIViewController {
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -138,8 +205,10 @@ class MainViewController: UIViewController {
     private var hasLoadedInitialView = false
     private var isStartupOnboardingPending = false
     private var hasPresentedStartupOnboarding = false
-    private var startupOnboardingCoverViewController: UIViewController?
-    private var startupOnboardingCoverView: UIView?
+    private lazy var startupOnboardingCover = StartupOnboardingCover(
+        parentViewController: self,
+        fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
+    )
 
     let privacyConfigurationManager: PrivacyConfigurationManaging
 
@@ -587,51 +656,10 @@ class MainViewController: UIViewController {
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
 
         if isStartupOnboardingPending {
-            installStartupOnboardingCoverViewIfNeeded()
+            startupOnboardingCover.attach()
         }
 
         loadInitialViewIfNeeded()
-    }
-
-    private func installStartupOnboardingCoverViewIfNeeded() {
-        guard startupOnboardingCoverView == nil else { return }
-
-        let coverView: UIView
-
-        if let coverViewController = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController() {
-            startupOnboardingCoverViewController = coverViewController
-            addChild(coverViewController)
-            coverViewController.loadViewIfNeeded()
-            coverView = coverViewController.view
-        } else {
-            assertionFailure("Unable to instantiate LaunchScreen storyboard")
-            let fallbackView = UIView()
-            fallbackView.backgroundColor = themeManager.currentTheme.onboardingBackgroundColor
-            coverView = fallbackView
-        }
-
-        coverView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(coverView)
-
-        NSLayoutConstraint.activate([
-            coverView.topAnchor.constraint(equalTo: view.topAnchor),
-            coverView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            coverView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            coverView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        view.bringSubviewToFront(coverView)
-        startupOnboardingCoverViewController?.didMove(toParent: self)
-        startupOnboardingCoverView = coverView
-    }
-
-    private func removeStartupOnboardingCoverViewIfNeeded() {
-        startupOnboardingCoverViewController?.willMove(toParent: nil)
-        startupOnboardingCoverViewController?.view.removeFromSuperview()
-        startupOnboardingCoverViewController?.removeFromParent()
-        startupOnboardingCoverViewController = nil
-        startupOnboardingCoverView?.removeFromSuperview()
-        startupOnboardingCoverView = nil
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -840,11 +868,9 @@ class MainViewController: UIViewController {
     func startOnboardingFlowIfNotSeenBefore() {
         guard isStartupOnboardingPending, !hasPresentedStartupOnboarding else { return }
         hasPresentedStartupOnboarding = true
-        if let startupOnboardingCoverView {
-            view.bringSubviewToFront(startupOnboardingCoverView)
-        }
+        startupOnboardingCover.bringToFront()
         segueToDaxOnboarding { [weak self] in
-            self?.removeStartupOnboardingCoverViewIfNeeded()
+            self?.startupOnboardingCover.detach()
         }
     }
 

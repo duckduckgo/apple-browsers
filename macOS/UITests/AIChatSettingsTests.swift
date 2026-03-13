@@ -32,7 +32,7 @@ class AIChatSettingsTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true])
+        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true, "aiChatChromeSidebar": false])
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()

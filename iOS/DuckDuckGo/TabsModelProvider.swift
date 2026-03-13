@@ -29,16 +29,21 @@ extension TabsModelReading {
     func indexOf(tab: Tab) -> Int? {
         return tabs.firstIndex { $0 === tab }
     }
+    
+    var isEmpty: Bool {
+        tabs.isEmpty
+    }
 }
 
 protocol TabsModelManaging: AnyObject, TabsModelReading {
     var shouldCreateFireTabs: Bool { get }
+    var allowsEmpty: Bool { get }
     var tabsPublisher: AnyPublisher<[Tab], Never> { get }
     var currentTab: Tab? { get }
     var nextTab: Tab? { get }
     var previousTab: Tab? { get }
     var tabBefore: Tab? { get }
-    var currentIndex: Int { get }
+    var currentIndex: Int? { get }
     var hasUnread: Bool { get }
     var hasActiveTabs: Bool { get }
     func select(tab: Tab)

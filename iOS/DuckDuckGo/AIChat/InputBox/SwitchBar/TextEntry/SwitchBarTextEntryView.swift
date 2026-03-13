@@ -102,6 +102,8 @@ class SwitchBarTextEntryView: UIView {
         URL(string: textView.text)?.navigationalScheme != nil
     }
 
+    var onTextInputActivated: (() -> Void)?
+
     var isExpandable: Bool = false {
         didSet {
             updateTextViewHeight()
@@ -135,6 +137,7 @@ class SwitchBarTextEntryView: UIView {
 
         setupView()
         setupSubscriptions()
+        updateButtonState()
     }
 
     required init?(coder: NSCoder) {
@@ -218,6 +221,10 @@ class SwitchBarTextEntryView: UIView {
         buttonsView.onVoiceTapped = { [weak self] in
             self?.handler.microphoneButtonTapped()
         }
+
+        buttonsView.onSearchGoToTapped = { [weak self] in
+            self?.handler.searchGoToButtonTapped()
+        }
     }
 
     private func updateButtonsPadding() {
@@ -256,10 +263,13 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
 
-            /// Auto-focus the text field when switching to duck.ai mode
+            /// Auto-focus the text field when switching to duck.ai mode (OmniBar toggle only)
             /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975209610640?focus=true
-            DispatchQueue.main.async { [weak self] in
-                self?.textView.becomeFirstResponder()
+            if handler.isUsingFadeOutAnimation {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.window != nil else { return }
+                    self.textView.becomeFirstResponder()
+                }
             }
         }
         updateKeyboardConfiguration()
@@ -275,24 +285,16 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            if handler.isUsingFadeOutAnimation {
-                textView.keyboardType = .webSearch
-                textView.returnKeyType = .go
-                if textView.text.isEmpty {
-                    disableAutoCorrectionAndSpellChecking()
-                } else {
-                    enableAutoCorrectionAndSpellChecking()
-                }
+            textView.keyboardType = .default
+            textView.returnKeyType = .default
+            if handler.isUsingFadeOutAnimation && textView.text.isEmpty {
+                disableAutoCorrectionAndSpellChecking()
             } else {
-                textView.keyboardType = .webSearch
-                textView.returnKeyType = .go
                 enableAutoCorrectionAndSpellChecking()
             }
         }
 
-        if handler.isUsingFadeOutAnimation {
-            textView.reloadInputViews()
-        }
+        textView.reloadInputViews()
     }
 
     private func updatePlaceholderVisibility() {
@@ -507,8 +509,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = .webSearch
-            textView.returnKeyType = .go
+            textView.keyboardType = .default
+            textView.returnKeyType = .default
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -558,6 +560,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
+        onTextInputActivated?()
         fireTextAreaFocusedPixel()
     }
 
@@ -581,14 +584,14 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            if currentMode == .aiChat && handler.isToggleEnabled {
+                return true
+            }
             fireKeyboardGoPressedPixel()
-            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 handler.submitText(currentText)
             }
-            /// Prevent adding newline when there's no content or just whitespace
-            /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210989002857245?focus=true
             return false
         }
         return true

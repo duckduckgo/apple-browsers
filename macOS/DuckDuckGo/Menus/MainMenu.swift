@@ -84,6 +84,18 @@ final class MainMenu: NSMenu {
     let favoritesMenu = NSMenu(title: UserText.favorites)
 
     private var toggleBookmarksBarMenuItem = NSMenuItem(title: "BookmarksBarMenuPlaceholder", action: #selector(MainViewController.toggleBookmarksBarFromMenu), keyEquivalent: "B")
+    private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    private let duckAIChromeButtonsSeparatorMenuItem = NSMenuItem.separator()
+    private let toggleDuckAIChromeButtonMenuItem = NSMenuItem(
+        title: UserText.aiChatChromeHideDuckAIButton,
+        action: #selector(MainViewController.toggleDuckAIChromeButtonVisibility(_:)),
+        keyEquivalent: "Y"
+    )
+    private let toggleDuckAIChromeSidebarButtonMenuItem = NSMenuItem(
+        title: UserText.aiChatChromeHideSidebarButton,
+        action: #selector(MainViewController.toggleDuckAIChromeSidebarButtonVisibility(_:)),
+        keyEquivalent: "U"
+    )
 
     var homeButtonMenuItem = NSMenuItem(title: "HomeButtonPlaceholder")
     var showTabsAndBookmarksBarOnFullScreenMenuItem = NSMenuItem(title: "ShowTabsAndBookmarksBarOnFullScreenMenuItem")
@@ -158,7 +170,8 @@ final class MainMenu: NSMenu {
          contentScopePreferences: ContentScopePreferences,
          quitSurveyPersistor: QuitSurveyPersistor,
          pinningManager: PinningManager,
-         subscriptionManager: any SubscriptionManager) {
+         subscriptionManager: any SubscriptionManager,
+         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager()) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -174,6 +187,7 @@ final class MainMenu: NSMenu {
         self.quitSurveyPersistor = quitSurveyPersistor
         self.pinningManager = pinningManager
         self.subscriptionManager = subscriptionManager
+        self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -338,6 +352,10 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: UserText.mainMenuViewHome, action: #selector(MainViewController.home), keyEquivalent: "H")
             NSMenuItem.separator()
+
+            toggleDuckAIChromeButtonMenuItem
+            toggleDuckAIChromeSidebarButtonMenuItem
+            duckAIChromeButtonsSeparatorMenuItem
 
             showTabsAndBookmarksBarOnFullScreenMenuItem
 
@@ -511,6 +529,7 @@ final class MainMenu: NSMenu {
         updateWatchdogMenuItems()
         updateWebExtensionsMenuItem()
         updateAlwaysShowFirstTimeQuitSurvey()
+        updateDuckAIChromeButtonMenuItems()
     }
 
     private func updateAlwaysShowFirstTimeQuitSurvey() {
@@ -709,6 +728,19 @@ final class MainMenu: NSMenu {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = true
             }
         }
+    }
+
+    private func updateDuckAIChromeButtonMenuItems() {
+        let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
+            && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
+        toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
+
+        let isDuckAIButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+        let isSidebarButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+        toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        toggleDuckAIChromeSidebarButtonMenuItem.title = isSidebarButtonHidden ? UserText.aiChatChromeShowSidebarButton : UserText.aiChatChromeHideSidebarButton
     }
 
     // MARK: - Debug

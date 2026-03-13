@@ -156,6 +156,93 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(manager.currentBrowsingMode, .normal)
     }
 
+    // MARK: - Fire Mode Zero Tabs
+
+    func testWhenFireModeRemoveAllThenTabsIsEmpty() throws {
+        let fireModel = TabsModel(tabs: [
+            Tab(link: Link(title: "url1", url: URL(string: "https://url1.com")!), fireTab: true),
+            Tab(link: Link(title: "url2", url: URL(string: "https://url2.com")!), fireTab: true)
+        ], desktop: false, mode: .fire)
+        let normalModel = TabsModel(desktop: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
+        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
+        manager.setBrowsingMode(.fire)
+
+        XCTAssertEqual(manager.currentTabsModel.count, 2)
+
+        manager.removeAll()
+
+        XCTAssertEqual(manager.currentTabsModel.count, 0)
+        XCTAssertNil(manager.currentTabsModel.currentTab)
+    }
+
+    func testWhenFireModeCurrentWithCreateIfNeededFalseAndNoTabsThenReturnsNil() throws {
+        let fireModel = TabsModel(desktop: false, mode: .fire)
+        let normalModel = TabsModel(desktop: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
+        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
+        manager.setBrowsingMode(.fire)
+
+        XCTAssertEqual(manager.currentTabsModel.count, 0)
+        XCTAssertNil(manager.current(createIfNeeded: false))
+    }
+
+    func testWhenFireModeRemoveOnlyTabThenTabsIsEmpty() throws {
+        let tab = Tab(link: Link(title: "url1", url: URL(string: "https://url1.com")!), fireTab: true)
+        let fireModel = TabsModel(tabs: [tab], desktop: false, mode: .fire)
+        let normalModel = TabsModel(desktop: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
+        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
+        manager.setBrowsingMode(.fire)
+
+        XCTAssertEqual(manager.currentTabsModel.count, 1)
+
+        manager.remove(tab: tab)
+
+        XCTAssertEqual(manager.currentTabsModel.count, 0)
+        XCTAssertNil(manager.currentTabsModel.currentTab)
+    }
+
+    func testWhenFireModeReplaceOnlyTabThenNewTabIsInserted() throws {
+        let oldTab = Tab(link: Link(title: "old", url: URL(string: "https://old.com")!), fireTab: true)
+        let fireModel = TabsModel(tabs: [oldTab], desktop: false, mode: .fire)
+        let normalModel = TabsModel(desktop: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
+        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
+        manager.setBrowsingMode(.fire)
+
+        let newTab = Tab(fireTab: true)
+        manager.replace(tab: oldTab, withNewTab: newTab)
+
+        XCTAssertEqual(manager.currentTabsModel.count, 1)
+        XCTAssertTrue(manager.currentTabsModel.tabs[0] === newTab)
+    }
+
+    func testWhenFireModeRemoveAllDoesNotAffectNormalMode() throws {
+        let fireModel = TabsModel(tabs: [
+            Tab(link: Link(title: "fire", url: URL(string: "https://fire.com")!), fireTab: true)
+        ], desktop: false, mode: .fire)
+        let normalModel = TabsModel(tabs: [
+            Tab(link: Link(title: "normal", url: URL(string: "https://normal.com")!))
+        ], desktop: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
+        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
+        manager.setBrowsingMode(.fire)
+
+        manager.removeAll()
+
+        XCTAssertEqual(manager.currentTabsModel.count, 0)
+
+        manager.setBrowsingMode(.normal)
+        XCTAssertEqual(manager.currentTabsModel.count, 1)
+        XCTAssertEqual(manager.currentTabsModel.tabs[0].link?.url.absoluteString, "https://normal.com")
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),

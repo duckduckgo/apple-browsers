@@ -64,14 +64,35 @@ enum FireButtonAnimationType: String, CaseIterable, Identifiable, CustomStringCo
         }
     }
     
+    /// Animation playback speed multiplier.
+    /// Each animation has different base characteristics (frame rate, frame count, duration),
+    /// so speed is tuned per-animation to achieve consistent perceived timing.
+    ///
+    /// Animation Timing Reference:
+    /// | Animation   | FPS | Frames | Base Duration | Speed | Actual Duration |
+    /// |-------------|-----|--------|---------------|-------|-----------------|
+    /// | Fire        | 30  | 35     | 1.17s         | 1.0   | 1.17s           |
+    /// | Water Swirl | 12  | 24     | 2.00s         | 1.3   | 1.54s           |
+    /// | Airstream   | 12  | 18     | 1.50s         | 1.3   | 1.15s           |
+    ///
+    /// Note: Fire uses a lower speed multiplier (1.0 vs 1.3) because it already has
+    /// a higher frame rate (30fps vs 12fps) and shorter base duration (1.17s vs 2.0s).
+    /// Using 1.3 would make it run at 0.90s, which feels too fast compared to other animations.
     var speed: Double {
-        return 1.3
+        switch self {
+        case .fireRising:
+            return 1.0
+        case .waterSwirl, .airstream:
+            return 1.3
+        case .none:
+            return 0
+        }
     }
     
     private var fileName: String? {
         switch self {
         case .fireRising:
-            return "01_Fire_really_small"
+            return "01_Fire_rebranded"
         case .waterSwirl:
             return "02_Water_swirl_really_small"
         case .airstream:
@@ -80,19 +101,7 @@ enum FireButtonAnimationType: String, CaseIterable, Identifiable, CustomStringCo
             return nil
         }
     }
-    
-    var endFrame: NSNumber {
-        switch self {
-        case .fireRising:
-            return 21
-        case .waterSwirl:
-            return 24
-        case .airstream:
-            return 18
-        case .none:
-            return 0
-        }
-    }
+
 }
 
 class FireButtonAnimator {

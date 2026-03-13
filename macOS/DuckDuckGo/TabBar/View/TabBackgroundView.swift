@@ -178,8 +178,9 @@ extension TabBackgroundView {
         }
 
         let duration = Animations.duration
+        let fromAlpha = layer.presentation()?.opacity ?? layer.opacity
         let toAlpha = visible ? Animations.overlayOpacityVisible : Animations.overlayOpacityHidden
-        let animation = CASpringAnimation.buildFadeAnimation(duration: duration, fromAlpha: layer.opacity, toAlpha: toAlpha)
+        let animation = CASpringAnimation.buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
 
         layer.add(animation, forKey: "overlayAnimation")
         layer.opacity = toAlpha
@@ -214,7 +215,7 @@ extension TabBackgroundView {
 
 // MARK: - Rendering State
 
-private enum TabBackgroundState: String {
+private enum TabBackgroundState {
     case idle
     case highlighted
     case selected

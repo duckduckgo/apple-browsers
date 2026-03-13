@@ -460,9 +460,9 @@ final class AIChatCoordinator: AIChatCoordinating {
             return
         }
 
-        // Manual detach should always originate from the current sidebar location/size.
-        // Persisted floating frame is used only during app/window restoration.
-        let screenFrame = sidebarHost.sidebarContainerScreenFrame ?? Constants.fallbackFloatingFrame
+        // Manual detach should always originate from the current sidebar location/size,
+        // clamped to the visible screen area so the window is always reachable.
+        let screenFrame = normalizedFloatingFrame(sidebarHost.sidebarContainerScreenFrame ?? Constants.fallbackFloatingFrame)
         session.state.floatingWindowFrame = screenFrame
 
         collapseSidebarPreservingWebView(chatViewController, for: tabID)

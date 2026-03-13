@@ -59,6 +59,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
+    func test_showCollapsed_setsInputModeToAIChat() {
+        sut.showExpanded(inputMode: .search)
+        sut.showCollapsed()
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    func test_showCollapsed_deactivatesInput() {
+        sut.showExpanded()
+        sut.showCollapsed()
+        XCTAssertFalse(sut.viewController.isInputExpanded)
+    }
+
     func test_showCollapsed_emitsIntent() {
         let exp = expectation(description: "showCollapsed intent emitted")
         sut.intentPublisher
@@ -91,6 +103,16 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func test_showExpanded_setsExpandedOnVC() {
+        sut.showExpanded()
+        XCTAssertTrue(sut.viewController.isInputExpanded)
+    }
+
+    func test_showExpanded_setsInputModeOnVC() {
+        sut.showExpanded(inputMode: .search)
+        XCTAssertEqual(sut.viewController.inputMode, .search)
+    }
+
     func test_showExpanded_withPrefilledText_setsTextStateToPrefilledSelected() {
         sut.showExpanded(prefilledText: "hello")
         XCTAssertEqual(sut.textState, .prefilledSelected)
@@ -112,6 +134,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.showExpanded()
         sut.hide()
         XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_hide_collapsesVC() {
+        sut.showExpanded()
+        sut.hide()
+        XCTAssertFalse(sut.viewController.isInputExpanded)
     }
 
     func test_hide_emitsIntent() {
@@ -330,6 +358,38 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func test_activateFromOmnibar_topPosition_setsVCProperties() {
+        sut.activateFromOmnibar(cardPosition: .top)
+        XCTAssertEqual(sut.viewController.cardPosition, .top)
+        XCTAssertTrue(sut.viewController.usesOmnibarMargins)
+        XCTAssertTrue(sut.viewController.showsDismissButton)
+        XCTAssertTrue(sut.viewController.isToolbarSubmitHidden)
+    }
+
+    func test_activateFromOmnibar_bottomPosition_setsVCProperties() {
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        XCTAssertEqual(sut.viewController.cardPosition, .bottom)
+        XCTAssertFalse(sut.viewController.usesOmnibarMargins)
+        XCTAssertFalse(sut.viewController.showsDismissButton)
+        XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
+    }
+
+    func test_activateFromOmnibar_setsExpandedTrue() {
+        sut.activateFromOmnibar()
+        XCTAssertTrue(sut.viewController.isInputExpanded)
+    }
+
+    func test_deactivateToOmnibar_resetsVCProperties() {
+        sut.activateFromOmnibar(cardPosition: .top)
+        sut.deactivateToOmnibar()
+
+        XCTAssertEqual(sut.viewController.cardPosition, .bottom)
+        XCTAssertFalse(sut.viewController.usesOmnibarMargins)
+        XCTAssertFalse(sut.viewController.showsDismissButton)
+        XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
+        XCTAssertFalse(sut.viewController.isInputExpanded)
+    }
+
     func test_deactivateToOmnibar_resetsState() {
         sut.activateFromOmnibar(prefilledText: "test")
         sut.deactivateToOmnibar()
@@ -469,6 +529,28 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_updateInputMode_setsMode() {
         sut.updateInputMode(.search, animated: false)
         XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_updateInputMode_onlyUpdatesInputMode_doesNotApplyFullConfig() {
+        sut.showExpanded(inputMode: .aiChat)
+        let expandedBefore = sut.viewController.isInputExpanded
+        let modeBefore = sut.viewController.inputMode
+
+        sut.updateInputMode(.search, animated: false)
+
+        XCTAssertEqual(sut.viewController.inputMode, .search, "inputMode should update")
+        XCTAssertNotEqual(modeBefore, .search, "precondition: mode was different before")
+        XCTAssertEqual(sut.viewController.isInputExpanded, expandedBefore, "expansion state should not change")
+    }
+
+    func test_syncInputModeFromExternalSource_onlyUpdatesInputMode_doesNotApplyFullConfig() {
+        sut.showExpanded(inputMode: .aiChat)
+        let expandedBefore = sut.viewController.isInputExpanded
+
+        sut.syncInputModeFromExternalSource(.search)
+
+        XCTAssertEqual(sut.viewController.inputMode, .search, "inputMode should update")
+        XCTAssertEqual(sut.viewController.isInputExpanded, expandedBefore, "expansion state should not change")
     }
 
     func test_updateInputMode_emitsMode() {

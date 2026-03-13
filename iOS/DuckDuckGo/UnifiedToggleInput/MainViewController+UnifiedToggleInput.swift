@@ -86,8 +86,10 @@ extension MainViewController {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
-        } else if case .aiTab(.expanded) = coordinator.displayState {
+        } else if coordinator.isAITabExpanded {
             handleAITabModeChange(mode, coordinator: coordinator)
+        } else if coordinator.isAITabState && mode == .aiChat {
+            coordinator.showExpanded(inputMode: .aiChat)
         }
     }
 
@@ -109,7 +111,7 @@ extension MainViewController {
            !coordinator.viewController.isInputFirstResponder,
            currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true {
             DispatchQueue.main.async { [weak coordinator] in
-                guard let coordinator, case .aiTab(.expanded) = coordinator.displayState else { return }
+                guard let coordinator, coordinator.isAITabExpanded else { return }
                 coordinator.activateInput()
             }
         }
@@ -153,7 +155,7 @@ extension MainViewController {
         guard unifiedToggleInputFeature.isAvailable,
               let coordinator = unifiedToggleInputCoordinator else { return }
 
-        if !tab.isAITab && coordinator.displayState == .hidden &&
+        if !tab.isAITab && !coordinator.isActive &&
             viewCoordinator.aiChatTabChatHeaderContainer.isHidden {
             coordinator.unbind()
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -163,8 +165,12 @@ extension MainViewController {
         }
 
         if tab.isAITab {
+            viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             if let userScript = tab.userScripts?.aiChatUserScript {
                 coordinator.bindToTab(userScript)
+            }
+            if coordinator.isAITabState && viewCoordinator.isNavigationChromeHidden {
+                return
             }
             if viewCoordinator.navigationBarContainer.alpha < 0.99 ||
                 viewCoordinator.toolbar.alpha < 0.99 ||
@@ -173,11 +179,10 @@ extension MainViewController {
             }
             tab.webView.scrollView.contentInset = .zero
             coordinator.deactivateToOmnibar()
-            switch coordinator.displayState {
-            case .aiTab: break
-            default: coordinator.showCollapsed()
-            }
             viewCoordinator.showAITabChrome()
+            if !coordinator.isAITabState {
+                coordinator.showCollapsed()
+            }
             updateUnifiedInputContentVisibility(for: coordinator)
             refreshAIChatTabChatHeaderSubscriptionState()
             tab.borderView.isTopVisible = false
@@ -218,72 +223,67 @@ extension MainViewController {
         }
     }
 
-    private func shouldShowUnifiedInputContent(for coordinator: UnifiedToggleInputCoordinator) -> Bool {
-        let isAITab = currentTab?.isAITab == true
-
-        switch coordinator.displayState {
-        case .hidden, .aiTab(.collapsed):
-            return false
-        case .omnibar:
-            return true
-        case .aiTab(.expanded):
-            return !(isAITab && coordinator.inputMode == .aiChat)
-        }
-    }
-
-    private func shouldOverlayAIChatHeader(for coordinator: UnifiedToggleInputCoordinator) -> Bool {
-        guard currentTab?.isAITab == true else { return false }
-        guard case .aiTab(.expanded) = coordinator.displayState else { return false }
-        return coordinator.inputMode == .search && shouldShowUnifiedInputContent(for: coordinator)
-    }
-
-    private func updateAITabHeaderVisibility(for coordinator: UnifiedToggleInputCoordinator) {
-        guard currentTab?.isAITab == true else { return }
-        if shouldOverlayAIChatHeader(for: coordinator) {
-            viewCoordinator.hideAIChatTabChatHeader()
-        } else {
-            viewCoordinator.showAIChatTabChatHeader()
-        }
-    }
-
-    private func updateStatusBarBackgroundForAITabOverlay(for coordinator: UnifiedToggleInputCoordinator) {
-        guard currentTab?.isAITab == true else { return }
-
-        if shouldOverlayAIChatHeader(for: coordinator) {
-            viewCoordinator.statusBackground.backgroundColor = UIColor(designSystemColor: .panel)
-        } else if viewCoordinator.isNavigationChromeHidden {
-            viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-        }
-    }
-
     private func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator) {
-        updateAITabHeaderVisibility(for: coordinator)
-        updateStatusBarBackgroundForAITabOverlay(for: coordinator)
-
-        let showContent = shouldShowUnifiedInputContent(for: coordinator)
-
-        if case .aiTab(let aiTabState) = coordinator.displayState {
+        let isOnAITab = currentTab?.isAITab == true
+        let renderState = coordinator.computeRenderState(isOnAITab: isOnAITab)
+        if coordinator.isAITabState {
             coordinator.contentViewController.forceBottomBarLayout = true
-            let shouldShowInlineHeader = shouldOverlayAIChatHeader(for: coordinator)
-            coordinator.updateContentHeaderForAITab(shouldOverlay: shouldShowInlineHeader)
+        } else {
+            coordinator.contentViewController.forceBottomBarLayout = false
+        }
+
+        applyTopChromeState(renderState: renderState, isOnAITab: isOnAITab, coordinator: coordinator)
+    }
+
+    private func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
+        let overlaysHeader = isOnAITab
+            && renderState.isExpanded
+            && renderState.isContentVisible
+            && renderState.headerDisplayMode != .hidden
+        let targetStatusBackgroundColor: UIColor? = {
+            guard isOnAITab else { return nil }
+            if overlaysHeader {
+                return UIColor(designSystemColor: .panel)
+            }
+            if viewCoordinator.isNavigationChromeHidden {
+                return UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            }
+            return nil
+        }()
+
+        if let targetStatusBackgroundColor {
+            viewCoordinator.statusBackground.backgroundColor = targetStatusBackgroundColor
+        }
+
+        if coordinator.isAITabState {
+            coordinator.applyContentHeaderFromRenderState(isOnAITab: isOnAITab)
             viewCoordinator.updateUnifiedToggleInputColors(
-                isExpanded: aiTabState == .expanded,
+                isExpanded: renderState.isExpanded,
                 inputView: coordinator.viewController.view
             )
         } else {
-            coordinator.contentViewController.forceBottomBarLayout = false
             viewCoordinator.updateUnifiedToggleInputColors(
                 isExpanded: false,
                 inputView: coordinator.viewController.view
             )
         }
 
-        if showContent {
-            coordinator.syncContentInputMode(coordinator.inputMode, animated: false)
+        if renderState.isContentVisible {
+            coordinator.syncContentInputMode(renderState.contentInputMode, animated: false)
             viewCoordinator.showUnifiedInputContent()
         } else {
             viewCoordinator.hideUnifiedInputContent()
         }
+
+        if isOnAITab {
+            if overlaysHeader {
+                viewCoordinator.hideAIChatTabChatHeader()
+            } else {
+                viewCoordinator.showAIChatTabChatHeader()
+            }
+        }
+
+        view.layoutIfNeeded()
     }
 
     private func installUnifiedInputContentViewController() {
@@ -295,13 +295,10 @@ extension MainViewController {
         contentVC.delegate = self
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-            switch coordinator.displayState {
-            case .omnibar:
+            if coordinator.isOmnibarSession {
                 coordinator.deactivateToOmnibar()
-            case .aiTab(.expanded):
+            } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
-            default:
-                break
             }
         }
         contentVC.onSwipeDownRequested = { [weak self] in
@@ -342,10 +339,8 @@ extension MainViewController {
 
     private func updateFloatingSubmitVisibility() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        let shouldShow = coordinator.displayState == .omnibar(.active)
-            && coordinator.viewController.cardPosition == .top
-            && coordinator.inputMode == .aiChat
-        coordinator.floatingSubmitViewController.view.isHidden = !shouldShow
+        let renderState = coordinator.computeRenderState()
+        coordinator.floatingSubmitViewController.view.isHidden = !renderState.isFloatingSubmitVisible
     }
 
     private func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {

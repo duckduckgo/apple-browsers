@@ -872,8 +872,7 @@ class MainViewController: UIViewController {
         guard unifiedToggleInputFeature.isAvailable,
               currentTab?.isAITab == true,
               let coordinator = unifiedToggleInputCoordinator,
-              case .aiTab(.expanded) = coordinator.displayState,
-              coordinator.inputMode == .aiChat,
+              coordinator.shouldCollapseOnKeyboardDismiss,
               currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
         coordinator.showCollapsed()
     }
@@ -891,10 +890,8 @@ class MainViewController: UIViewController {
 
     private var isAnyAITabUTIState: Bool {
         guard unifiedToggleInputFeature.isAvailable,
-              currentTab?.isAITab == true,
-              let displayState = unifiedToggleInputCoordinator?.displayState,
-              case .aiTab = displayState else { return false }
-        return true
+              currentTab?.isAITab == true else { return false }
+        return unifiedToggleInputCoordinator?.isAITabState == true
     }
 
     var isNavigationBarEffectivelyAtBottom: Bool {
@@ -1051,9 +1048,7 @@ class MainViewController: UIViewController {
     }
 
     private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
-        guard let state = unifiedToggleInputCoordinator?.displayState else { return true }
-        if case .hidden = state { return true }
-        return false
+        return unifiedToggleInputCoordinator?.isActive != true
     }
 
     private func updateChromeForDuckPlayer() {
@@ -1116,18 +1111,19 @@ class MainViewController: UIViewController {
 
         guard isNavigationBarEffectivelyAtBottom else { return }
 
-        let displayState = unifiedToggleInputCoordinator?.displayState
-        let isOmnibarActive = unifiedToggleInputCoordinator?.isOmnibarSession == true
+        let coordinator = unifiedToggleInputCoordinator
+        let isOmnibarActive = coordinator?.isOmnibarSession == true
+        let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
 
         let baseInputHeight: CGFloat
-        if case .aiTab(.expanded) = displayState, let coordinator = unifiedToggleInputCoordinator {
+        if coordinator?.isAITabExpanded == true, let coordinator {
             baseInputHeight = coordinator.omnibarEditingHeight()
         } else {
             baseInputHeight = omniBarHeight
         }
 
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
-        if !isOmnibarActive, displayState != .aiTab(.collapsed) {
+        if !isOmnibarActive, !isAITabCollapsed {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
         }
 
@@ -1795,7 +1791,7 @@ class MainViewController: UIViewController {
             updateBrowsingMenuHeaderDataSource()
             if let tab = currentTab {
                 refreshUnifiedToggleInput(for: tab)
-            } else if let coordinator = unifiedToggleInputCoordinator, coordinator.displayState != .hidden {
+            } else if let coordinator = unifiedToggleInputCoordinator, coordinator.isActive {
                 coordinator.hide()
                 coordinator.unbind()
                 viewCoordinator.hideAITabChrome()
@@ -2695,7 +2691,6 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
             openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools)
         } else {

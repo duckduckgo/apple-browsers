@@ -539,15 +539,7 @@ final class WatchdogTests: XCTestCase {
 
         let cooldownWatchdog = Watchdog(minimumHangDuration: 0.2, maximumHangDuration: 0.3, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 1.2, eventMapper: eventMapper)
 
-        await cooldownWatchdog.start()
-        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-
-        // First hang: should fire
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
-
-        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "First timeout should fire")
-
-        // Wait for the watchdog to actually recover to .responsive
+        // Subscribe before the first hang so we don't miss the recovery transition
         let recoveryStateExpectation = XCTestExpectation(description: "Recovery state reached")
         recoveryStateExpectation.assertForOverFulfill = false
 
@@ -558,6 +550,16 @@ final class WatchdogTests: XCTestCase {
                 }
             }
 
+        // Initialize the Watchdog
+        await cooldownWatchdog.start()
+        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+
+        // First hang: should fire
+        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+
+        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "First timeout should fire")
+
+        // Wait for the watchdog to actually recover to .responsive
         await fulfillment(of: [recoveryStateExpectation], timeout: 5.0)
 
         // Wait for cooldown to expire (from now, since recovery just happened)

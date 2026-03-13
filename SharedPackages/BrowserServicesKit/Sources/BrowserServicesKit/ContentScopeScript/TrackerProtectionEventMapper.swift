@@ -55,12 +55,13 @@ public struct TrackerProtectionEventMapper {
     public func detectedRequest(from surrogate: TrackerProtectionSubfeature.SurrogateInjection) -> DetectedRequest {
         let eTLDplus1 = tld.eTLDplus1(forStringURL: surrogate.url)
         let surrogateHost = URL(string: surrogate.url)?.host ?? ""
+        let entityName = surrogate.entityName ?? surrogateHost
 
         return DetectedRequest(
             url: surrogate.url,
             eTLDplus1: eTLDplus1,
-            ownerName: nil,
-            entityName: surrogateHost,
+            ownerName: surrogate.ownerName,
+            entityName: entityName,
             category: nil,
             prevalence: nil,
             state: .blocked,

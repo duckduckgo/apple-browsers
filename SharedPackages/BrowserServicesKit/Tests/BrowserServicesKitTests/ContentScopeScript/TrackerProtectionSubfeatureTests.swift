@@ -123,7 +123,9 @@ final class TrackerProtectionSubfeatureTests: XCTestCase {
             "blocked": true,
             "reason": "matched rule - surrogate",
             "isSurrogate": true,
-            "pageUrl": "https://example.com"
+            "pageUrl": "https://example.com",
+            "entityName": "Tracker Inc",
+            "ownerName": "Tracker Inc"
         ]
 
         let data = try JSONSerialization.data(withJSONObject: params)
@@ -134,6 +136,8 @@ final class TrackerProtectionSubfeatureTests: XCTestCase {
         XCTAssertEqual(injection.reason, "matched rule - surrogate")
         XCTAssertTrue(injection.isSurrogate)
         XCTAssertEqual(injection.pageUrl, "https://example.com")
+        XCTAssertEqual(injection.entityName, "Tracker Inc")
+        XCTAssertEqual(injection.ownerName, "Tracker Inc")
     }
 
     // MARK: - Message Origin Policy

@@ -59,16 +59,21 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
 
     private func makeSurrogate(
         url: String = "https://tracker.example/analytics.js",
-        pageUrl: String = "https://example.com"
+        pageUrl: String = "https://example.com",
+        entityName: String? = nil,
+        ownerName: String? = nil
     ) -> TrackerProtectionSubfeature.SurrogateInjection {
-        let params: [String: Any] = [
+        let params: [String: Any?] = [
             "url": url,
             "blocked": true,
             "reason": "matched rule - surrogate",
             "isSurrogate": true,
-            "pageUrl": pageUrl
+            "pageUrl": pageUrl,
+            "entityName": entityName,
+            "ownerName": ownerName
         ]
-        let data = try! JSONSerialization.data(withJSONObject: params)
+        let filtered = params.compactMapValues { $0 }
+        let data = try! JSONSerialization.data(withJSONObject: filtered)
         return try! JSONDecoder().decode(TrackerProtectionSubfeature.SurrogateInjection.self, from: data)
     }
 
@@ -279,6 +284,24 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         let request = mapper.detectedRequest(from: surrogate)
         XCTAssertTrue(request.isBlocked)
         XCTAssertEqual(request.state, .blocked)
+    }
+
+    func testSurrogateDetection_withMetadata_prefersSurrogateEntityAndOwner() {
+        let surrogate = makeSurrogate(
+            url: "https://doubleclick.net/instream/ad_status.js",
+            entityName: "Google Ads (Google)",
+            ownerName: "Google LLC"
+        )
+        let request = mapper.detectedRequest(from: surrogate)
+        XCTAssertEqual(request.entityName, "Google Ads (Google)")
+        XCTAssertEqual(request.ownerName, "Google LLC")
+    }
+
+    func testSurrogateDetection_withoutMetadata_fallsBackToHostEntity() {
+        let surrogate = makeSurrogate(url: "https://doubleclick.net/instream/ad_status.js")
+        let request = mapper.detectedRequest(from: surrogate)
+        XCTAssertEqual(request.entityName, "doubleclick.net")
+        XCTAssertNil(request.ownerName)
     }
 
     func testSurrogateHost_extracted() {

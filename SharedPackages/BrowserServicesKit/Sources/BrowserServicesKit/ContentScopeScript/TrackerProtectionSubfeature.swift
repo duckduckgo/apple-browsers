@@ -82,6 +82,8 @@ public final class TrackerProtectionSubfeature: NSObject, Subfeature {
         public let reason: String?
         public let isSurrogate: Bool
         public let pageUrl: String
+        public let entityName: String?
+        public let ownerName: String?
     }
 
     // MARK: - Properties

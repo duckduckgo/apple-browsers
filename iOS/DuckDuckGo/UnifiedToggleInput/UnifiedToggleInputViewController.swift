@@ -113,6 +113,13 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitHidden = newValue }
     }
 
+    var isGenerating: Bool = false {
+        didSet {
+            handler.isGenerating = isGenerating
+            inputBarView.isGenerating = isGenerating
+        }
+    }
+
     func setExpanded(_ expanded: Bool, animated: Bool) {
         inputBarView.setExpanded(expanded, animated: animated)
     }

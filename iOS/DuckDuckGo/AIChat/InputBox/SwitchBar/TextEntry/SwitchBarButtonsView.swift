@@ -26,12 +26,15 @@ enum SwitchBarButtonState {
     case voiceOnly
     case searchGoToOnly
     case voiceAndSearchGoTo
+    case stopGeneratingOnly
+    case stopGeneratingAndSearchGoTo
 
     var showsClearButton: Bool {
         switch self {
         case .clearOnly:
             return true
-        case .noButtons, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo:
+        case .noButtons, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
+             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
             return false
         }
     }
@@ -40,25 +43,35 @@ enum SwitchBarButtonState {
         switch self {
         case .voiceOnly, .voiceAndSearchGoTo:
             return true
-        case .noButtons, .clearOnly, .searchGoToOnly:
+        case .noButtons, .clearOnly, .searchGoToOnly,
+             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
             return false
         }
     }
 
     var showsSearchGoToButton: Bool {
         switch self {
-        case .searchGoToOnly, .voiceAndSearchGoTo:
+        case .searchGoToOnly, .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo:
             return true
-        case .noButtons, .clearOnly, .voiceOnly:
+        case .noButtons, .clearOnly, .voiceOnly, .stopGeneratingOnly:
             return false
         }
     }
 
     var showsSeparator: Bool {
         switch self {
-        case .voiceAndSearchGoTo:
+        case .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo:
             return true
-        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly:
+        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .stopGeneratingOnly:
+            return false
+        }
+    }
+
+    var showsStopGeneratingButton: Bool {
+        switch self {
+        case .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
+            return true
+        case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo:
             return false
         }
     }
@@ -67,7 +80,8 @@ enum SwitchBarButtonState {
         switch self {
         case .noButtons:
             return false
-        case .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo:
+        case .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
+             .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
             return true
         }
     }
@@ -83,9 +97,37 @@ class SwitchBarButtonsView: UIView {
     var onClearTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
     var onSearchGoToTapped: (() -> Void)?
+    var onStopGeneratingTapped: (() -> Void)?
 
     private let stack = UIStackView()
     private let clearButton = BrowserChromeButton(.secondary)
+    private let stopGeneratingButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.baseForegroundColor = .white
+        config.image = DesignSystemImages.Glyphs.Size16.stopSquare
+        config.contentInsets = .zero
+
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+
+        let backdrop = UIView()
+        backdrop.translatesAutoresizingMaskIntoConstraints = false
+        backdrop.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
+        backdrop.layer.cornerRadius = 14
+        backdrop.clipsToBounds = true
+        backdrop.isUserInteractionEnabled = false
+        button.insertSubview(backdrop, at: 0)
+
+        let inset: CGFloat = 2
+        NSLayoutConstraint.activate([
+            backdrop.topAnchor.constraint(equalTo: button.topAnchor, constant: inset),
+            backdrop.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: inset),
+            backdrop.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -inset),
+            backdrop.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: -inset),
+        ])
+
+        return button
+    }()
     private let voiceButton = BrowserChromeButton(.primary)
     private let separatorView = UIView()
     private let searchGoToButton = BrowserChromeButton(.primary)
@@ -124,6 +166,7 @@ class SwitchBarButtonsView: UIView {
         addSubview(stack)
 
         stack.addArrangedSubview(clearButton)
+        stack.addArrangedSubview(stopGeneratingButton)
         stack.addArrangedSubview(voiceButton)
         stack.addArrangedSubview(separatorView)
         stack.addArrangedSubview(searchGoToButton)
@@ -138,6 +181,9 @@ class SwitchBarButtonsView: UIView {
 
             clearButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             clearButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            stopGeneratingButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            stopGeneratingButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
             voiceButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             voiceButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
@@ -154,6 +200,8 @@ class SwitchBarButtonsView: UIView {
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
         clearButton.addAction(UIAction { [weak self] _ in self?.onClearTapped?() }, for: .touchUpInside)
 
+        stopGeneratingButton.addAction(UIAction { [weak self] _ in self?.onStopGeneratingTapped?() }, for: .touchUpInside)
+
         voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
         voiceButton.addAction(UIAction { [weak self] _ in self?.onVoiceTapped?() }, for: .touchUpInside)
 
@@ -168,6 +216,10 @@ class SwitchBarButtonsView: UIView {
         clearButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.ClearText"
         clearButton.accessibilityTraits = .button
 
+        stopGeneratingButton.accessibilityLabel = "Stop generating"
+        stopGeneratingButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.StopGenerating"
+        stopGeneratingButton.accessibilityTraits = .button
+
         voiceButton.accessibilityLabel = "Voice search"
         voiceButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.VoiceSearch"
         voiceButton.accessibilityTraits = .button
@@ -179,6 +231,7 @@ class SwitchBarButtonsView: UIView {
 
     private func updateButtonsVisibility() {
         clearButton.isHidden = !buttonState.showsClearButton
+        stopGeneratingButton.isHidden = !buttonState.showsStopGeneratingButton
         voiceButton.isHidden = !buttonState.showsVoiceButton
         separatorView.isHidden = !buttonState.showsSeparator
         searchGoToButton.isHidden = !buttonState.showsSearchGoToButton

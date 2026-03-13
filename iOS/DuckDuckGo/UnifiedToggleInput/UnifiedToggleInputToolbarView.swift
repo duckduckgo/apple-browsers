@@ -46,6 +46,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onAttachTapped: (() -> Void)?
     var onModelPickerTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
+    var onStopGeneratingTapped: (() -> Void)?
 
     // MARK: - State
 
@@ -54,7 +55,11 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isSubmitButtonHidden: Bool = false {
-        didSet { submitButton.isHidden = isSubmitButtonHidden }
+        didSet { updateGeneratingVisibility() }
+    }
+
+    var isGenerating: Bool = false {
+        didSet { updateGeneratingVisibility() }
     }
 
     var modelName: String = "4o-mini" {
@@ -139,6 +144,25 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    private lazy var stopButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(DesignSystemImages.Glyphs.Size16.stopSquare, for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
+        button.layer.cornerRadius = 14
+        button.clipsToBounds = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityLabel = "Stop generating"
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
+        button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
+        button.isHidden = true
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+        ])
+        return button
+    }()
+
     // MARK: - Initialization
 
     override init(frame: CGRect) {
@@ -171,7 +195,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton])
+        let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -218,8 +242,19 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Actions
 
+    private func updateGeneratingVisibility() {
+        if isGenerating {
+            submitButton.isHidden = true
+            stopButton.isHidden = false
+        } else {
+            stopButton.isHidden = true
+            submitButton.isHidden = isSubmitButtonHidden
+        }
+    }
+
     @objc private func searchTapped() { onSearchTapped?() }
     @objc private func attachTapped() { onAttachTapped?() }
     @objc private func modelPickerTapped() { onModelPickerTapped?() }
     @objc private func submitTapped() { onSubmitTapped?() }
+    @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
 }

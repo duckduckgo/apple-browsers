@@ -645,6 +645,50 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.updateOmnibarInputVisibility(false)
         waitForExpectations(timeout: 0.1)
     }
+    // MARK: - Stop Generating State
+
+    func test_aiChatStatus_loading_setsIsGenerating() {
+        sut.aiChatStatus = .loading
+        let handler = sut.viewController.handler
+        XCTAssertTrue(handler.isGenerating)
+    }
+
+    func test_aiChatStatus_streaming_setsIsGenerating() {
+        sut.aiChatStatus = .streaming
+        let handler = sut.viewController.handler
+        XCTAssertTrue(handler.isGenerating)
+    }
+
+    func test_aiChatStatus_startStreamNewPrompt_setsIsGenerating() {
+        sut.aiChatStatus = .startStreamNewPrompt
+        let handler = sut.viewController.handler
+        XCTAssertTrue(handler.isGenerating)
+    }
+
+    func test_aiChatStatus_ready_clearsIsGenerating() {
+        sut.aiChatStatus = .streaming
+        sut.aiChatStatus = .ready
+        let handler = sut.viewController.handler
+        XCTAssertFalse(handler.isGenerating)
+    }
+
+    func test_unbind_whileGenerating_clearsIsGenerating() {
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript)
+        sut.aiChatStatus = .streaming
+        sut.unbind()
+        XCTAssertEqual(sut.aiChatStatus, .unknown)
+    }
+
+    func test_stopGeneratingTap_forwardsToDidPressStopGeneratingButton() {
+        let exp = expectation(description: "didPressStopGeneratingButton fires")
+        sut.didPressStopGeneratingButton
+            .sink { exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.viewController.handler.stopGeneratingButtonTapped()
+        waitForExpectations(timeout: 1)
+    }
 }
 
 // MARK: - Mock Delegate

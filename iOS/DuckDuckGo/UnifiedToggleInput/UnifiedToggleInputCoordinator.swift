@@ -103,6 +103,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    private var cancellables = Set<AnyCancellable>()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -127,6 +128,8 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
         viewController.delegate = self
+        subscribeToGeneratingState()
+        subscribeToStopGeneratingTap()
     }
 
     // MARK: - Tab Binding
@@ -260,6 +263,10 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController.activateInput()
     }
 
+    func stopGeneratingButtonTapped() {
+        viewController.handler.stopGeneratingButtonTapped()
+    }
+
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
         let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
         let didModeChange = inputMode != effectiveMode
@@ -374,6 +381,28 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     // MARK: - Private
+
+    private func subscribeToGeneratingState() {
+        $aiChatStatus
+            .map { status in
+                status == .loading || status == .streaming || status == .startStreamNewPrompt
+            }
+            .removeDuplicates()
+            .sink { [weak self] isGenerating in
+                guard let self else { return }
+                self.viewController.isGenerating = isGenerating
+                self.floatingSubmitViewController.isGenerating = isGenerating
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToStopGeneratingTap() {
+        viewController.handler.stopGeneratingButtonTappedPublisher
+            .sink { [weak self] in
+                self?.didPressStopGeneratingButton.send()
+            }
+            .store(in: &cancellables)
+    }
 
     private func resetSessionState() {
         viewController.text = ""

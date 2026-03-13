@@ -518,4 +518,8 @@ extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
     func floatingSubmitDidTapVoice() {
         // Voice search wiring deferred
     }
+
+    func floatingSubmitDidTapStopGenerating() {
+        unifiedToggleInputCoordinator?.stopGeneratingButtonTapped()
+    }
 }

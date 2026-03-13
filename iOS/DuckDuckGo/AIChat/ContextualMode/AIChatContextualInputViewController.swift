@@ -92,6 +92,10 @@ final class AIChatContextualInputViewController: UIViewController {
         configureNativeInput()
         configureQuickActions()
         setupKeyboardObservers()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         updateBottomPaddingForOrientation()
     }
 

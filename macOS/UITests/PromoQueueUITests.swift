@@ -143,17 +143,17 @@ private extension XCUIApplication {
 
     func resetPromoState() {
         closePromoIfNeeded()
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.resetAllPromoState].clickAfterExistenceTestSucceeds()
     }
 
     func advanceSimulatedDateByHour() {
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.advanceSimulatedDate1Hour].clickAfterExistenceTestSucceeds()
     }
 
     func advanceSimulatedDateByDay() {
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.advanceSimulatedDate1Day].clickAfterExistenceTestSucceeds()
     }
 

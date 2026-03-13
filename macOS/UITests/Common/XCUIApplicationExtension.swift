@@ -935,9 +935,4 @@ extension XCUIApplication {
         debugMenu.menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoQueueDebugMenu]
     }
 
-    func openPromoQueueMenu() {
-        debugMenu.click()
-        promoQueueMenu.hover()
-    }
-
 }

@@ -85,6 +85,11 @@ private extension XCUIApplication {
     var reportAProblemForm: XCUIElement {
         sheets[Identifiers.Feedback.reportAProblem]
     }
+
+    var inactiveUserPromptDebugMenuItem: XCUIElement {
+        promoQueueMenu
+            .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoMenuItem("default-browser-and-dock-inactive-modal")]
+    }
 }
 
 // MARK: - Helper Methods
@@ -92,10 +97,8 @@ private extension XCUIApplication {
 private extension XCUIApplication {
 
     func showInactiveUserModal() {
-        openPromoQueueMenu()
-        let promoMenuItem = promoQueueMenu.menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoMenuItem("default-browser-and-dock-inactive-modal")]
-        promoMenuItem.hover()
-        promoMenuItem.menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.forceShowPromo].click()
+        debugMenu.click()
+        inactiveUserPromptDebugMenuItem.menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.forceShowPromo].click()
     }
 
 }

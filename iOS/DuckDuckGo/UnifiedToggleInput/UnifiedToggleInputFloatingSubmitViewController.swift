@@ -25,7 +25,6 @@ import Combine
 protocol UnifiedToggleInputFloatingSubmitDelegate: AnyObject {
     func floatingSubmitDidTapSubmit()
     func floatingSubmitDidTapVoice()
-    func floatingSubmitDidTapStopGenerating()
 }
 
 final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
@@ -41,10 +40,6 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
         button.clipsToBounds = true
         return button
     }()
-
-    var isGenerating = false {
-        didSet { updateIcon() }
-    }
 
     private var hasText = false
     private var cancellables = Set<AnyCancellable>()
@@ -81,26 +76,14 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
     }
 
     private func updateIcon() {
-        if isGenerating {
-            button.setImage(DesignSystemImages.Glyphs.Size16.stopSquare, for: .normal)
-            button.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
-            button.tintColor = .white
-            button.layer.cornerRadius = 14
-        } else {
-            let icon: UIImage? = hasText
-                ? DesignSystemImages.Glyphs.Size24.arrowUp
-                : DesignSystemImages.Glyphs.Size24.voice
-            button.setImage(icon, for: .normal)
-            button.backgroundColor = UIColor(designSystemColor: .accent)
-            button.tintColor = UIColor(designSystemColor: .accentContentPrimary)
-            button.layer.cornerRadius = Metrics.buttonSize / 2
-        }
+        let icon: UIImage? = hasText
+            ? DesignSystemImages.Glyphs.Size24.arrowUp
+            : DesignSystemImages.Glyphs.Size24.voice
+        button.setImage(icon, for: .normal)
     }
 
     @objc private func buttonTapped() {
-        if isGenerating {
-            delegate?.floatingSubmitDidTapStopGenerating()
-        } else if hasText {
+        if hasText {
             delegate?.floatingSubmitDidTapSubmit()
         } else {
             delegate?.floatingSubmitDidTapVoice()

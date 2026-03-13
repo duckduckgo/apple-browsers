@@ -391,7 +391,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             .sink { [weak self] isGenerating in
                 guard let self else { return }
                 self.viewController.isGenerating = isGenerating
-                self.floatingSubmitViewController.isGenerating = isGenerating
             }
             .store(in: &cancellables)
     }

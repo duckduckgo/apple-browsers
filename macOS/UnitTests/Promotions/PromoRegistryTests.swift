@@ -17,6 +17,7 @@
 //
 
 import PersistenceTestingUtils
+import PrivacyConfig
 import RemoteMessaging
 import RemoteMessagingTestsUtils
 import XCTest
@@ -27,7 +28,7 @@ final class PromoRegistryTests: XCTestCase {
 
     func testWhenPromoServiceCreated_ThenAllStringsAreUnique() async {
         let store = MockRemoteMessagingStore()
-        let model = ActiveRemoteMessageModel(
+        let activeRemoteMessageModel = ActiveRemoteMessageModel(
             remoteMessagingStore: store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
@@ -35,10 +36,20 @@ final class PromoRegistryTests: XCTestCase {
             navigateToPIRHandler: { },
             navigateToSoftwareUpdateHandler: { }
         )
+        let defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(
+            privacyConfigManager: MockPrivacyConfigurationManaging(),
+            keyValueStore: InMemoryThrowingKeyValueStore(),
+            notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
+            uiHosting: { nil },
+            isOnboardingCompletedProvider: { true }
+        )
         let dependencies = PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
-            activeRemoteMessageModel: model)
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock()
+        )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

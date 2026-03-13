@@ -74,7 +74,7 @@ final class MockPromoDelegate: PromoDelegate {
 
     private(set) var showCallCount = 0
     @MainActor
-    func show(history: PromoHistoryRecord) async -> PromoResult {
+    func show(history: PromoHistoryRecord, force: Bool = false) async -> PromoResult {
         showCallCount += 1
         if let result = pendingShowResult {
             pendingShowResult = nil

@@ -415,9 +415,7 @@ final class MainViewController: NSViewController {
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
-        if !isInPopUpWindow {
-            // Evaluate and potentially show default browser/dock prompt
-            // See showSetAsDefaultAndAddToDockIfNeeded() for full flow documentation
+        if !featureFlagger.isFeatureOn(.promoQueue) {
             showSetAsDefaultAndAddToDockIfNeeded()
         }
         showWinBackOfferIfNeeded()
@@ -954,7 +952,7 @@ final class MainViewController: NSViewController {
         )
     }
 
-    private func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
+    func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
         guard isViewLoaded && view.window?.isKeyWindow == true else {
             return nil
         }
@@ -966,7 +964,7 @@ final class MainViewController: NSViewController {
         }
     }
 
-    private func getSourceWindowToShowInactiveUserModal() -> NSWindow? {
+    func getSourceWindowToShowInactiveUserModal() -> NSWindow? {
         guard isViewLoaded && view.window?.isKeyWindow == true else {
             return nil
         }
@@ -987,7 +985,7 @@ final class MainViewController: NSViewController {
     /// **See also:**
     /// - `DefaultBrowserAndDockPromptPresenter.getBanner()` - creates the banner view controller
     /// - `hideBanner()` - removes the banner from view
-    private func showMessageBanner(banner: BannerMessageViewController) {
+    func showMessageBanner(banner: BannerMessageViewController) {
         if mainView.isBannerViewShown { return } // If view is being shown already we do not want to show it.
 
         addAndLayoutChild(banner, into: mainView.bannerContainerView)
@@ -1351,6 +1349,22 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion) {
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
+    }
+}
+
+// MARK: - DefaultBrowserAndDockPromptUIHosting
+
+extension MainViewController: DefaultBrowserAndDockPromptUIHosting {
+    func providePopoverAnchor() -> NSView? {
+        getSourceViewToShowSetAsDefaultAndAddToDockPopover()
+    }
+
+    func addSetAsDefaultBanner(_ banner: BannerMessageViewController) {
+        showMessageBanner(banner: banner)
+    }
+
+    func provideModalAnchor() -> NSWindow? {
+        getSourceWindowToShowInactiveUserModal()
     }
 }
 

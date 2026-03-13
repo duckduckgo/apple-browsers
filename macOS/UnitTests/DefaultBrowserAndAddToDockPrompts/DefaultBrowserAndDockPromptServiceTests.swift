@@ -36,6 +36,7 @@ final class DefaultBrowserAndDockPromptServiceTests: XCTestCase {
         sut = DefaultBrowserAndDockPromptService(privacyConfigManager: privacyConfigManagerMock,
                                                  keyValueStore: storeMock,
                                                  notificationPresenter: notificationPresenterMock,
+                                                 uiHosting: { nil },
                                                  isOnboardingCompletedProvider: { true })
     }
 

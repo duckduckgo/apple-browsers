@@ -94,6 +94,7 @@ final class AIChatViewController: NSViewController {
 
     private lazy var aiTab: Tab = Tab(content: .url(currentAIChatURL, source: .ui), burnerMode: burnerMode, isLoadedInSidebar: true)
 
+    private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private var cancellables = Set<AnyCancellable>()
 
     init(currentAIChatURL: URL,
@@ -159,6 +160,7 @@ final class AIChatViewController: NSViewController {
         updateWebViewMask()
         subscribeToURLChanges()
         subscribeToUserInteractionDialogChanges()
+        subscribeToPermissionAuthorizationQueries()
         subscribeToThemeChanges()
     }
 
@@ -182,23 +184,28 @@ final class AIChatViewController: NSViewController {
 
         openInNewTabButton = makeBarButton(image: .expand, action: #selector(openInNewTabButtonClicked),
                                            toolTip: UserText.aiChatSidebarExpandButtonTooltip)
+        openInNewTabButton.setAccessibilityIdentifier("AIChatViewController.openInNewTabButton")
         topBar.addSubview(openInNewTabButton)
 
         attachButton = makeBarButton(image: .aiChatAttach, action: #selector(attachButtonClicked),
                                      toolTip: UserText.aiChatSidebarAttachButtonTooltip)
+        attachButton.setAccessibilityIdentifier("AIChatViewController.attachButton")
         attachButton.isHidden = true
         topBar.addSubview(attachButton)
 
         titleButton = makeTitleButton()
+        titleButton.setAccessibilityIdentifier("AIChatViewController.titleButton")
         titleButton.isHidden = true
         topBar.addSubview(titleButton)
 
         detachButton = makeBarButton(image: .aiChatDetach, action: #selector(detachButtonClicked),
                                      toolTip: UserText.aiChatSidebarDetachButtonTooltip)
+        detachButton.setAccessibilityIdentifier("AIChatViewController.detachButton")
         topBar.addSubview(detachButton)
 
         closeButton = makeBarButton(image: .closeLarge, action: #selector(closeButtonClicked),
                                     toolTip: UserText.aiChatSidebarCloseButtonTooltip)
+        closeButton.setAccessibilityIdentifier("AIChatViewController.closeButton")
         topBar.addSubview(closeButton)
 
         NSLayoutConstraint.activate([
@@ -427,6 +434,40 @@ final class AIChatViewController: NSViewController {
             .store(in: &cancellables)
     }
 
+    private func subscribeToPermissionAuthorizationQueries() {
+        aiTab.permissions.$authorizationQuery
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] query in
+                guard let self else { return }
+                if let query {
+                    showPermissionAuthorizationPopover(for: query)
+                } else if let popover = permissionAuthorizationPopover, popover.isShown,
+                          !popover.viewController.isAuthorizationInProgress {
+                    popover.close()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func showPermissionAuthorizationPopover(for query: PermissionAuthorizationQuery) {
+        let popover = permissionAuthorizationPopover ?? {
+            let popover = PermissionAuthorizationPopover(featureFlagger: NSApp.delegateTyped.featureFlagger)
+            self.permissionAuthorizationPopover = popover
+            return popover
+        }()
+
+        if popover.isShown {
+            guard popover.viewController.query !== query else { return }
+            if popover.viewController.isAuthorizationInProgress { return }
+            popover.close()
+        }
+
+        popover.viewController.query = query
+        query.wasShownOnce = true
+
+        popover.show(positionedBelow: topBar)
+    }
+
     @objc private func openInNewTabButtonClicked() {
         delegate?.didClickOpenInNewTabButton()
     }
@@ -454,6 +495,8 @@ final class AIChatViewController: NSViewController {
     }
 
     func stopLoading() {
+        permissionAuthorizationPopover?.close()
+
         aiTab.webView.navigationDelegate = nil
         aiTab.webView.uiDelegate = nil
 

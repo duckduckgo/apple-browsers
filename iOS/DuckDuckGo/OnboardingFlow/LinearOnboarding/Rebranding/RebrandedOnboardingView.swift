@@ -296,7 +296,10 @@ extension OnboardingRebranding {
                             model.startOnboardingAction(isResumingOnboarding: false)
                         }
                     },
-                    skipAction: model.skipOnboardingAction
+                    skipAction: {
+                        model.restorePromptSkipAction()
+                        model.skipOnboardingAction()
+                    }
                 )
             case .skipTutorial, .default:
                 IntroDialogContent(

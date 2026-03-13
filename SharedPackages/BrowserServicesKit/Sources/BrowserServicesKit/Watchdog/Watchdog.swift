@@ -272,9 +272,7 @@ public final actor Watchdog {
             } else if currentHangDuration(currentTime: now) > maximumHangDuration && crashOnTimeout {
                 logHangDuration(message: "Main thread hang timeout reached. Crashing app.", currentTime: now)
                 killAppFunction?(maximumHangDuration) ?? killApp(timeout: maximumHangDuration)
-            } else if timeSinceLastHeartbeat > minimumHangDuration + checkInterval {
-                // Only reset recovery when clearly still hung — the extra checkInterval
-                // margin prevents scheduling jitter from wiping out recovery progress.
+            } else {
                 recoveryState.reset()
             }
         }

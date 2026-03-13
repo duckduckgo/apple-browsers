@@ -92,6 +92,19 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertEqual(inactiveModalPromo.promoType.severity, .high)
     }
 
+    func testFactoryCreatesSessionRestorePromoWithCorrectConfiguration() {
+        let promo = PromoServiceFactory.sessionRestore(coordinator: dependencies.sessionRestoreCoordinator)
+
+        XCTAssertEqual(promo.id, "session-restore")
+        XCTAssertTrue(promo.triggers.isEmpty)
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertFalse(promo.respectsGlobalCooldown)
+        XCTAssertFalse(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
 }
 
 extension PromoServiceFactoryTests {
@@ -115,7 +128,8 @@ extension PromoServiceFactoryTests {
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
             activeRemoteMessageModel: activeRemoteMessageModel,
-            defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService
+            defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock()
         )
     }
 }

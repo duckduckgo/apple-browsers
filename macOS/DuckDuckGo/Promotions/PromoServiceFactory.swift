@@ -58,6 +58,7 @@ struct PromoServiceFactory {
     @MainActor
     private static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
         var promos: [Promo] = [
+            sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
             nextSteps,

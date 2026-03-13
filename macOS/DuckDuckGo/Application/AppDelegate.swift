@@ -1284,7 +1284,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 keyValueStore: keyValueStore,
                 isExternallyActivated: urlEventHandlerResult.willOpenWindows,
                 activeRemoteMessageModel: activeRemoteMessageModel,
-                defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService)
+                defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+                sessionRestoreCoordinator: sessionRestorePromptCoordinator
+            )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
         }

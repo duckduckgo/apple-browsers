@@ -28,4 +28,5 @@ struct PromoDependencies {
     let isExternallyActivated: Bool
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
+    let sessionRestoreCoordinator: SessionRestorePromptCoordinating
 }

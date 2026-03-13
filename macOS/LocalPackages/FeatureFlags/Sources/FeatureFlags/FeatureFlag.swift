@@ -310,7 +310,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarFloating,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
-                .startupMetrics:
+                .startupMetrics,
+                .promoQueue:
             true
         default:
             false
@@ -577,7 +578,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webViewLookUpAction:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .promoQueue:
-            return .disabled
+            return .remoteReleasable(.feature(.promoQueue))
         }
     }
 }

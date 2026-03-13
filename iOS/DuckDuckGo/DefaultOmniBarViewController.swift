@@ -519,6 +519,13 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onToggleModeSwitched() {
         omniDelegate?.onToggleModeSwitched()
     }
+
+    func onVoiceModeRequested() {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+            self.omniDelegate?.onDuckAIVoiceModeRequested()
+        }
+    }
 }
 
 // MARK: - UITextViewDelegate (iPad Duck.ai Expanded Text View)

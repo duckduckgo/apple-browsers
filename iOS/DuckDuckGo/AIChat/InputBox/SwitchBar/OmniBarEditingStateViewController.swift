@@ -42,6 +42,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onDismissRequested()
     func onSwitchToTab(_ tab: Tab)
     func onToggleModeSwitched()
+    func onVoiceModeRequested()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -362,7 +363,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installNavigationActionBar() {
-        let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
+        let manager = NavigationActionBarManager(
+            switchBarHandler: switchBarHandler,
+            isVoiceModeFeatureEnabled: featureFlagger.isFeatureOn(.duckAIVoiceShortcut)
+        )
         if isUsingTopBarPosition {
             // Note this is not installed in contentContainerView - this is floating over content.
             manager.installInViewController(self)
@@ -673,6 +677,10 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)
         }
+    }
+
+    func navigationActionBarManagerDidTapVoiceMode(_ manager: NavigationActionBarManager) {
+        delegate?.onVoiceModeRequested()
     }
 }
 

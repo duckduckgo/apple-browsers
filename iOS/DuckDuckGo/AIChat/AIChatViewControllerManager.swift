@@ -144,6 +144,12 @@ final class AIChatViewControllerManager {
              viewController: parentViewController, completion: completion)
     }
 
+    /// Opens AI Chat in voice mode.
+    @MainActor
+    func openAIChatVoiceMode(on viewController: UIViewController) {
+        open(presentationMode: .modal, viewController: viewController, voiceMode: true)
+    }
+
     // MARK: - Private Setup Methods
 
     /// Unified internal method handling both modal and container presentations.
@@ -165,7 +171,8 @@ final class AIChatViewControllerManager {
                       presentationMode: AIChatPresentationMode,
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
-                      completion: (() -> Void)? = nil) {
+                      completion: (() -> Void)? = nil,
+                      voiceMode: Bool = false) {
 
         productSurfaceTelemetry.duckAIUsed()
 
@@ -188,12 +195,14 @@ final class AIChatViewControllerManager {
                 await cleanUpSession()
                 self.performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
                                   presentationMode: presentationMode, containerView: containerView,
-                                  viewController: viewController, completion: completion)
+                                  viewController: viewController, completion: completion,
+                                  voiceMode: voiceMode)
             }
         } else {
             performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
                          presentationMode: presentationMode, containerView: containerView,
-                         viewController: viewController, completion: completion)
+                         viewController: viewController, completion: completion,
+                         voiceMode: voiceMode)
         }
     }
 
@@ -206,12 +215,13 @@ final class AIChatViewControllerManager {
                               presentationMode: AIChatPresentationMode,
                               containerView: UIView?,
                               viewController: UIViewController?,
-                              completion: (() -> Void)?) {
+                              completion: (() -> Void)?,
+                              voiceMode: Bool = false) {
         switch presentationMode {
         case .modal:
             guard let viewController = viewController else { return }
             setupAndPresentAIChat(query, payload: payload, autoSend: autoSend,
-                                  tools: tools, on: viewController)
+                                  tools: tools, on: viewController, voiceMode: voiceMode)
         case .container:
             guard let containerView = containerView, let viewController = viewController else { return }
             setupAndAddToContainer(query, payload: payload, autoSend: autoSend,
@@ -229,12 +239,14 @@ final class AIChatViewControllerManager {
                                        payload: Any?,
                                        autoSend: Bool,
                                        tools: [AIChatRAGTool]?,
-                                       on viewController: UIViewController) {
+                                       on viewController: UIViewController,
+                                       voiceMode: Bool = false) {
         let aiChatViewController = createAIChatViewController(presentationMode: .modal)
         setupChatViewController(aiChatViewController, query: query,
                                 payload: payload,
                                 autoSend: autoSend,
-                                tools: tools)
+                                tools: tools,
+                                voiceMode: voiceMode)
 
         let roundedPageSheet = RoundedPageSheetContainerViewController(
             contentViewController: aiChatViewController,
@@ -347,7 +359,13 @@ final class AIChatViewControllerManager {
                                          query: String?,
                                          payload: Any?,
                                          autoSend: Bool,
-                                         tools: [AIChatRAGTool]?) {
+                                         tools: [AIChatRAGTool]?,
+                                         voiceMode: Bool = false) {
+        if voiceMode {
+            aiChatViewController.loadVoiceMode()
+            return
+        }
+
         if let query = query {
             aiChatViewController.loadQuery(query,
                                            autoSend: autoSend,

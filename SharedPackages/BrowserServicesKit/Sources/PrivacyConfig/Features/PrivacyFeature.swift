@@ -393,6 +393,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables page context feature on iPad
     case iPadPageContext
+
+    /// Enables voice chat shortcut in the focused address bar
+    case voiceShortcut
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

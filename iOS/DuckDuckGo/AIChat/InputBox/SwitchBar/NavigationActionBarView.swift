@@ -241,7 +241,11 @@ final class NavigationActionBarView: UIView {
     }
     
     @objc private func searchTapped() {
-        viewModel.onSearchTapped()
+        if viewModel.shouldShowVoiceModeButton {
+            viewModel.onVoiceModeTapped()
+        } else {
+            viewModel.onSearchTapped()
+        }
     }
 
     // MARK: - UI Updates
@@ -292,6 +296,19 @@ final class NavigationActionBarView: UIView {
         let isValidURL = viewModel.isCurrentTextValidURL
         let isSearchMode = viewModel.isSearchMode
         let isUsingFadeOutAnimation = viewModel.isUsingFadeOutAnimation
+        let isVoiceMode = viewModel.shouldShowVoiceModeButton
+
+        if isVoiceMode {
+            searchButton.isShadowHidden = !isFloating
+            searchButton.setIcon(DesignSystemImages.Glyphs.Size24.microphone)
+            searchButton.setColors(foreground: UIColor(designSystemColor: .icons),
+                                   background: UIColor(designSystemColor: .surfaceTertiary),
+                                   pressedForeground: UIColor(designSystemColor: .icons),
+                                   pressedBackground: UIColor(designSystemColor: .surface))
+            searchButton.isEnabled = true
+            searchButton.alpha = 1.0
+            return
+        }
 
         let icon: UIImage? = {
             if isSearchMode && !isValidURL {
@@ -328,8 +345,9 @@ final class NavigationActionBarView: UIView {
     private func updateButtonVisibility() {
         let hasText = viewModel.hasText
         let isUsingFadeOutAnimation = viewModel.isUsingFadeOutAnimation
+        let isVoiceMode = viewModel.shouldShowVoiceModeButton
 
-        let shouldShowMicButton = viewModel.shouldShowMicButton
+        let shouldShowMicButton = viewModel.shouldShowMicButton && !isVoiceMode
         microphoneButton.isHidden = !shouldShowMicButton
         microphoneButton.alpha = shouldShowMicButton ? 1.0 : 0.0
 
@@ -338,7 +356,9 @@ final class NavigationActionBarView: UIView {
         newLineButton.alpha = shouldShowNewLineButton ? 1.0 : 0.0
 
         let shouldShowSearchButton: Bool
-        if isUsingFadeOutAnimation {
+        if isVoiceMode {
+            shouldShowSearchButton = true
+        } else if isUsingFadeOutAnimation {
             if viewModel.isSearchMode && !isFloating {
                 shouldShowSearchButton = false
             } else if viewModel.isSearchMode && viewModel.isTopBarPosition {
@@ -351,8 +371,12 @@ final class NavigationActionBarView: UIView {
         }
         searchButton.isHidden = !shouldShowSearchButton
 
-        let useInactiveStyle = isUsingFadeOutAnimation && !hasText
-        searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : (useInactiveStyle ? 1.0 : 0.5)) : 0.0
+        if isVoiceMode {
+            searchButton.alpha = 1.0
+        } else {
+            let useInactiveStyle = isUsingFadeOutAnimation && !hasText
+            searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : (useInactiveStyle ? 1.0 : 0.5)) : 0.0
+        }
     }
 
     // MARK: - Touch Handling

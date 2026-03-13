@@ -2697,6 +2697,31 @@ class MainViewController: UIViewController {
             aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
         }
     }
+
+    func onDuckAIVoiceModeRequested() {
+        openAIChatInVoiceMode()
+    }
+
+    private func openAIChatInVoiceMode() {
+        if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
+            openAIChatVoiceModeInTab()
+        } else {
+            aiChatViewControllerManager.openAIChatVoiceMode(on: self)
+        }
+    }
+
+    private func openAIChatVoiceModeInTab() {
+        if currentTab == nil {
+            if tabManager.current(createIfNeeded: true) == nil {
+                fatalError("failed to create tab")
+            }
+        }
+
+        guard let currentTab else { return }
+        prepareTabForRequest {
+            currentTab.loadVoiceMode()
+        }
+    }
     
     /// Loads AI Chat into the current tab, creating one if needed. Selects the tab when done.
     ///

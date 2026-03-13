@@ -326,11 +326,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics,
-<<<<<<< HEAD
+                .promoQueue,
                 .tabAnimations:
-=======
-                .promoQueue:
->>>>>>> origin/main
             true
         default:
             false

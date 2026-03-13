@@ -572,6 +572,8 @@ enum GeneralPixel: PixelKitEvent {
      */
     case userScriptLoadJSFailed(jsFile: String, error: Error)
 
+    case attributionXattrCanary(variantMatch: String, originMatch: String)
+
     var name: String {
         switch self {
         case .crash(let appIdentifier):
@@ -1311,6 +1313,8 @@ enum GeneralPixel: PixelKitEvent {
 
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
+
+        case .attributionXattrCanary: return "m_mac_attribution-xattr-canary_u"
         }
     }
 
@@ -1475,6 +1479,9 @@ enum GeneralPixel: PixelKitEvent {
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
             return params
+
+        case .attributionXattrCanary(let variantMatch, let originMatch):
+            return ["variant_match": variantMatch, "origin_match": originMatch]
 
         default: return nil
         }
@@ -1853,7 +1860,8 @@ enum GeneralPixel: PixelKitEvent {
                 .siteNotWorkingShown,
                 .siteNotWorkingWebsiteIsBroken,
                 .usageSegments,
-                .userScriptLoadJSFailed:
+                .userScriptLoadJSFailed,
+                .attributionXattrCanary:
             return [.pixelSource]
         }
     }

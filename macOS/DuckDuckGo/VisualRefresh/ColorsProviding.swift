@@ -30,6 +30,9 @@ protocol ColorsProviding {
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
     var buttonMouseDownColor: NSColor { get }
+    var buttonMouseDownPressedColor: NSColor { get }
+    var separatorColor: NSColor { get }
+    var separatorActiveColor: NSColor { get }
     var fillButtonBackgroundColor: NSColor { get }
     var fillButtonMouseOverColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
@@ -63,6 +66,9 @@ final class NewColorsProviding: ColorsProviding {
     var iconsColor: NSColor { palette.iconsPrimary }
     var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
     var buttonMouseDownColor: NSColor { palette.controlsFillSecondary }
+    var buttonMouseDownPressedColor: NSColor { palette.controlsFillTertiary }
+    var separatorColor: NSColor { palette.surfaceDecorationPrimary }
+    var separatorActiveColor: NSColor { palette.surfaceDecorationSecondary }
     var fillButtonBackgroundColor: NSColor { palette.controlsFillPrimary }
     var fillButtonMouseOverColor: NSColor { palette.controlsFillSecondary }
     var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }

@@ -21,11 +21,17 @@ import UIKit
 import Persistence
 import Core
 
+enum TabsModelStorageKey {
+    case normal
+    case fire
+}
+
 protocol TabsModelPersisting {
 
-    func getTabsModel() throws -> TabsModel?
-    func clear()
-    func save(model: TabsModel)
+    func getTabsModel(for key: TabsModelStorageKey) throws -> TabsModel?
+    func save(model: TabsModel, for key: TabsModelStorageKey)
+    func clear(for key: TabsModelStorageKey)
+    func clearAll()
 }
 
 enum TabsPersistenceError: Error {
@@ -36,12 +42,14 @@ enum TabsPersistenceError: Error {
 class TabsModelPersistence: TabsModelPersisting {
 
     private struct Constants {
-        static let storageName = "TabsModel"
+        static let normalStorageName = "TabsModel"
+        static let fireStorageName = "FireTabsModel"
         static let storageKey = "TabsModelKey"
         static let legacyUDKey = "com.duckduckgo.opentabs"
     }
 
-    private let store: ThrowingKeyValueStoring
+    private let normalStore: ThrowingKeyValueStoring
+    private let fireStore: ThrowingKeyValueStoring
     private let legacyStore: KeyValueStoring
 
     convenience init() throws {
@@ -52,8 +60,10 @@ class TabsModelPersistence: TabsModelPersisting {
         }
 
         do {
-            let store = try KeyValueFileStore(location: appSupportDir, name: Constants.storageName)
-            self.init(store: store,
+            let normalStore = try KeyValueFileStore(location: appSupportDir, name: Constants.normalStorageName)
+            let fireStore = try KeyValueFileStore(location: appSupportDir, name: Constants.fireStorageName)
+            self.init(normalStore: normalStore,
+                      fireStore: fireStore,
                       legacyStore: UserDefaults.app)
         } catch {
             // Move app to Terminating state
@@ -61,10 +71,19 @@ class TabsModelPersistence: TabsModelPersisting {
         }
     }
 
-    init(store: ThrowingKeyValueStoring,
+    init(normalStore: ThrowingKeyValueStoring,
+         fireStore: ThrowingKeyValueStoring,
          legacyStore: KeyValueStoring) {
-        self.store = store
+        self.normalStore = normalStore
+        self.fireStore = fireStore
         self.legacyStore = legacyStore
+    }
+
+    private func store(for key: TabsModelStorageKey) -> ThrowingKeyValueStoring {
+        switch key {
+        case .normal: return normalStore
+        case .fire: return fireStore
+        }
     }
 
     private func unarchive(data: Data) -> TabsModel? {
@@ -85,39 +104,45 @@ class TabsModelPersistence: TabsModelPersisting {
         return nil
     }
 
-    public func getTabsModel() throws -> TabsModel? {
-
-        let data = try store.object(forKey: Constants.storageKey) as? Data
+    public func getTabsModel(for key: TabsModelStorageKey) throws -> TabsModel? {
+        let targetStore = store(for: key)
+        let data = try targetStore.object(forKey: Constants.storageKey) as? Data
         if let data {
-            guard let model = unarchive(data: data) else {
-                return nil
+            return unarchive(data: data)
+        }
+
+        guard key == .normal else { return nil }
+
+        if let legacyData = legacyStore.object(forKey: Constants.legacyUDKey) as? Data,
+           let model = unarchive(data: legacyData) {
+            do {
+                try targetStore.set(legacyData, forKey: Constants.storageKey)
+                legacyStore.removeObject(forKey: Constants.legacyUDKey)
+            } catch {
+                Logger.general.error("Could not migrate Tabs Model \(error.localizedDescription, privacy: .public)")
             }
             return model
-        } else {
-            // Attempt to migrate
-            if let legacyData = legacyStore.object(forKey: Constants.legacyUDKey) as? Data,
-               let model = unarchive(data: legacyData) {
-                do {
-                    try store.set(legacyData, forKey: Constants.storageKey)
-                    legacyStore.removeObject(forKey: Constants.legacyUDKey)
-                } catch {
-                    Logger.general.error("Could not migrate Tabs Model \(error.localizedDescription, privacy: .public)")
-                }
-                return model
-            }
-            return nil
+        }
+        return nil
+    }
+
+    public func clear(for key: TabsModelStorageKey) {
+        try? store(for: key).removeObject(forKey: Constants.storageKey)
+        if key == .normal {
+            legacyStore.removeObject(forKey: Constants.legacyUDKey)
         }
     }
 
-    public func clear() {
-        try? store.removeObject(forKey: Constants.storageKey)
+    public func clearAll() {
+        try? normalStore.removeObject(forKey: Constants.storageKey)
+        try? fireStore.removeObject(forKey: Constants.storageKey)
         legacyStore.removeObject(forKey: Constants.legacyUDKey)
     }
 
-    public func save(model: TabsModel) {
+    public func save(model: TabsModel, for key: TabsModelStorageKey) {
         do {
             let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
-            try store.set(data, forKey: Constants.storageKey)
+            try store(for: key).set(data, forKey: Constants.storageKey)
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,

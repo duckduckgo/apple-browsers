@@ -35,6 +35,9 @@ public struct UserText {
     static let syncAndBackUpThisDeviceLink = NSLocalizedString("sync.and.backup.this.device.link", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Link label for syncing and backing up the device")
     static let recoverSyncedDataLink = NSLocalizedString("recover.synced.data.link", bundle: Bundle.module, value: "Recover Synced Data", comment: "Link label for recovering synced data")
     static let otherOptionsSectionHeader = NSLocalizedString("other.options.section.header", bundle: Bundle.module, value: "Other Options", comment: "Section header for other syncing options")
+    static let syncPasscodeRequiredAlertTitle = NSLocalizedString("sync.passcode.required.alert.title", bundle: Bundle.module, value: "Secure Your Device to Use Sync & Backup", comment: "Sync passcode required alert - title")
+    static let syncPasscodeRequiredAlertMessage = NSLocalizedString("sync.passcode.required.alert.message", bundle: Bundle.module, value: "A device password is required to use Sync & Backup.", comment: "Sync passcode required alert - message")
+    static let syncPasscodeRequiredAlertGoToSettingsButton = NSLocalizedString("sync.passcode.required.alert.go.to.settings.button", bundle: Bundle.module, value: "Go to Settings", comment: "Sync passcode required alert - button")
     // Other Platforms
     static let syncGetOnOtherDevices = NSLocalizedString("sync.get.other.devices", bundle: Bundle.module, value: "Get DuckDuckGo on Other Devices", comment: "Button to get DuckDuckGo on other devices")
 
@@ -97,21 +100,42 @@ public struct UserText {
     static let preparingToSyncSheetFooter = NSLocalizedString("preparing.to.sync.sheet.footer", bundle: Bundle.module, value: "Connecting…", comment: "Preparing To Sync Sheet - Footer")
 
     // Save Recovery Code Sheet
-    static let saveRecoveryCodeSheetTitle = NSLocalizedString("save.recovery.code.sheet.title", bundle: Bundle.module, value: "Save Recovery Code", comment: "Save Recovery Code Sheet - Title")
-    static let saveRecoveryCodeSheetDescription = NSLocalizedString("save.recovery.code.sheet.description", bundle: Bundle.module, value: "If you lose access to your devices, you will need this code to recover your synced data.", comment: "Save Recovery Code Sheet - Description")
+    static let saveRecoveryCodeSheetTitle = NSLocalizedString("save.recovery.key.title", bundle: Bundle.module, value: "Recover Your Data Easily", comment: "Recovery Code Sheet - Title")
+    static let saveRecoveryCodeSheetDescription = NSLocalizedString("save.recovery.key.body", bundle: Bundle.module, value: "Save this code so you can recover your data if you lose access to this device — keep it safe.", comment: "Recovery Code Sheet - Description")
     static let saveRecoveryCodeSheetFooter = NSLocalizedString("save.recovery.code.sheet.footer", bundle: Bundle.module, value: "Anyone with access to this code can access your synced data, so please keep it in a safe place.", comment: "Save Recovery Code Sheet - Footer")
+    static let saveRecoveryCodeCardTitle = NSLocalizedString("save.recovery.code.card.title", bundle: Bundle.module, value: "Recovery Code", comment: "Save Recovery Code Sheet - Card Title")
     static let saveRecoveryCodeCopyCodeButton = NSLocalizedString("save.recovery.code.copy.code.button", bundle: Bundle.module, value: "Copy Code", comment: "Save Recovery Code Sheet - Copy Code Button")
-    static let saveRecoveryCodeSaveAsPdfButton = NSLocalizedString("save.recovery.code.save.as.pdf.button", bundle: Bundle.module, value: "Save as PDF", comment: "Save Recovery Code Sheet - Save as PDF Button")
+    static let saveRecoveryCodeSaveAsPdfButton = NSLocalizedString("save.recovery.code.save.as.pdf.button", bundle: Bundle.module, value: "Download as PDF", comment: "Save Recovery Code Sheet - Save as PDF Button")
     static let saveRecoveryCodeSaveCodeCopiedToast = NSLocalizedString("save.recovery.code.code.copied.button", bundle: Bundle.module, value: "Recovery code copied to clipboard", comment: "Save Recovery Code Sheet - Copy Code Toast")
+
+    // Recovery Section
+    static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
+
+    // Auto-Restore
+    static let autoRestoreSettingsRowLabel = NSLocalizedString("auto.restore.settings.row.label", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore Settings Row - Label")
+    static let autoRestoreStatusOn = NSLocalizedString("auto.restore.settings.row.on", bundle: Bundle.module, value: "On", comment: "Auto-Restore Settings Row - On")
+    static let autoRestoreStatusOff = NSLocalizedString("auto.restore.settings.row.off", bundle: Bundle.module, value: "Off", comment: "Auto-Restore Settings Row - Off")
+    static let autoRestoreScreenTitle = NSLocalizedString("auto.restore.screen.title", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore Screen - Title")
+    static let autoRestoreScreenDescription = NSLocalizedString("auto.restore.screen.description", bundle: Bundle.module, value: "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.", comment: "Auto-Restore Screen - Description")
+    static let autoRestoreToggleLabel = NSLocalizedString("auto.restore.toggle.label", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore - Toggle Label")
+    static let autoRestoreDescription = NSLocalizedString("auto.restore.description", bundle: Bundle.module, value: "Automatically restore your data on this device if you reinstall the app.", comment: "Auto-Restore - Description")
+    static let autoRestoreFooter = NSLocalizedString("auto.restore.learn.more.full", bundle: Bundle.module, value: "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.", comment: "Auto-Restore - Description")
 
     // Device Synced Sheet
     static let deviceSyncedSheetTitle = NSLocalizedString("device.synced.sheet.title", bundle: Bundle.module, value: "Your data is synced!", comment: "Device SyncedSheet - Title")
     static let deviceSyncedSheetGetOnOtherDevicesButton = NSLocalizedString("device.synced.sheet.button.get.other.devices", bundle: Bundle.module, value: "Get DuckDuckGo on Other Devices", comment: "Device SyncedSheet Button to go get DuckDuckGo on other devices")
 
     // Recover Synced Data Sheet
-    static let recoverSyncedDataTitle = NSLocalizedString("recover.synced.data.sheet.title", bundle: Bundle.module, value: "Recover Synced Data", comment: "Recover Synced Data Sheet - Title")
-    static let recoverSyncedDataDescription = NSLocalizedString("recover.synced.data.sheet.description", bundle: Bundle.module, value: "To restore your synced data, you'll need the Recovery Code you saved when you first set up Sync. This code may have been saved as a PDF on the device you originally used to set up Sync.", comment: "Recover Synced Data Sheet - Description")
-    static let recoverSyncedDataButton = NSLocalizedString("recover.synced.data.sheet.button", bundle: Bundle.module, value: "Get Started", comment: "Recover Synced Data Sheet - Button")
+    static let recoverSyncedDataTitle = NSLocalizedString("recover.synced.data.sheet.title", bundle: Bundle.module, value: "Recover your synced data", comment: "Recover Synced Data Sheet - Title")
+    static let recoverSyncedDataDescription = NSLocalizedString("recover.synced.data.sheet.description", bundle: Bundle.module, value: "You’ll need the Recovery Code you got when you set up Sync & Backup. You may have saved it as a PDF on the device you used.", comment: "Recover Synced Data Sheet - Description")
+    static let recoverSyncedDataButton = NSLocalizedString("recover.synced.data.sheet.button", bundle: Bundle.module, value: "Recover Synced Data", comment: "Recover Synced Data Sheet - Button")
+    static let autoRestoreReadyTitle = NSLocalizedString("auto.restore.ready.title", bundle: Bundle.module, value: "Your previous Sync & Backup session is ready.", comment: "Auto-Restore Ready Sheet - Title")
+    static let autoRestoreReadyDescription = NSLocalizedString("auto.restore.ready.description", bundle: Bundle.module, value: "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or continue with a new setup.", comment: "Auto-Restore Ready Sheet - Description")
+    static let autoRestoreReadyRestoreButton = NSLocalizedString("auto.restore.ready.restore.button", bundle: Bundle.module, value: "Resume Sync & Backup", comment: "Auto-Restore Ready Sheet - Restore Button")
+    static let autoRestoreReadyScanCodeLink = NSLocalizedString("auto.restore.ready.scan.code.link", bundle: Bundle.module, value: "Continue Setup", comment: "Auto-Restore Ready Sheet - Scan Code Link")
+    static let recoveringDataTitle = NSLocalizedString("recovering.data.title", bundle: Bundle.module, value: "Recovering Data", comment: "Recovering Data Sheet - Title")
+    static let recoveringDataDescription = NSLocalizedString("recovering.data.description", bundle: Bundle.module, value: "Reconnecting to sync your bookmarks, saved logins, and other devices.", comment: "Recovering Data Sheet - Description")
+    static let recoveringDataStatus = NSLocalizedString("recovering.data.status", bundle: Bundle.module, value: "Connecting...", comment: "Recovering Data Sheet - Status")
 
     // Scan Or Enter Code To Recover Synced Data View
     static let scanCodeToRecoverSyncedDataTitle = NSLocalizedString("scan.code.to.recover.synced.data.title", bundle: Bundle.module, value: "Recover Synced Data", comment: "Scan Or Enter Code To Recover Synced Data View - Title")

@@ -339,7 +339,7 @@ class FireExecutor: FireExecuting {
         //  this is the same as `WKWebsiteDataStore.default()`
         let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
         await websiteDataManager.clear(dataStore: storeToUse)
-        pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
+        pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.currentTabsModel.count)"]) // TODO: - Customize based on browsing mode
 
         autoconsentManagementProvider.management(for: .normal).clearCache()
         daxDialogsManager.clearHeldURLData()

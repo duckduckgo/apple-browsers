@@ -247,7 +247,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if isEnabled {
             imageUploadButton.isHidden = !omnibarController.selectedModelSupportsImageUpload
             imageUploadButton.isEnabled = !attachmentsContainerView.isFull
-            modelPickerButton.isHidden = omnibarController.models.isEmpty
+            let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
+            modelPickerButton.isHidden = !hasContent
         } else {
             modelPickerButton.isHidden = true
         }
@@ -494,7 +495,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.jpeg, .png, .webP]
+        panel.allowedContentTypes = allowedContentTypes(for: omnibarController.selectedModelImageFormats)
 
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
@@ -504,6 +505,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 self.addImageAttachment(from: url)
             }
         }
+    }
+
+    private func allowedContentTypes(for formats: [String]) -> [UTType] {
+        let types = formats.compactMap { UTType(filenameExtension: $0.lowercased()) }
+        return types.isEmpty ? [.jpeg, .png, .webP] : types
     }
 
     private func addImageAttachment(from url: URL) {
@@ -601,8 +607,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     /// Short display name for the currently persisted model.
+    /// Falls back to the cached short name when models haven't been fetched yet.
     private var persistedModelShortName: String {
-        omnibarController.models.first(where: { $0.id == omnibarController.persistedModelId })?.name ?? ""
+        omnibarController.models.first(where: { $0.id == omnibarController.persistedModelId })?.shortName
+            ?? omnibarController.cachedModelShortName
+            ?? ""
     }
 
     private func subscribeToModelUpdates() {
@@ -612,7 +621,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 guard let self else { return }
                 // Show or hide the picker depending on whether models are available
                 if omnibarController.isOmnibarToolsEnabled {
-                    modelPickerButton.isHidden = models.isEmpty
+                    let hasContent = !models.isEmpty || omnibarController.cachedModelShortName != nil
+                    modelPickerButton.isHidden = !hasContent
                 }
                 // Refresh button label once models arrive
                 modelPickerButton.modelName = persistedModelShortName
@@ -625,6 +635,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
+        if omnibarController.hasActiveSubscription {
+            populateSubscribedModelPickerMenu(menu)
+        } else {
+            populateFreeModelPickerMenu(menu)
+        }
+
+        return menu
+    }
+
+    /// Free user layout: accessible models first, then "Advanced Models" section with disabled premium models.
+    private func populateFreeModelPickerMenu(_ menu: NSMenu) {
         let accessible = omnibarController.models.filter { $0.entityHasAccess }
         let premium = omnibarController.models.filter { !$0.entityHasAccess }
 
@@ -643,8 +664,34 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 menu.addItem(menuItem(for: model))
             }
         }
+    }
 
-        return menu
+    /// Subscribed user layout: "Advanced Models" section first, then "Basic Models" section with free-tier models.
+    private func populateSubscribedModelPickerMenu(_ menu: NSMenu) {
+        let basic = omnibarController.models.filter { $0.accessTier.contains(AIChatUserTier.free.rawValue) }
+        let advanced = omnibarController.models.filter { !$0.accessTier.contains(AIChatUserTier.free.rawValue) }
+
+        if !advanced.isEmpty {
+            let header = NSMenuItem(title: UserText.aiChatModelPickerAdvancedModelsSectionHeader, action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            menu.addItem(header)
+
+            for model in advanced {
+                menu.addItem(menuItem(for: model))
+            }
+        }
+
+        if !basic.isEmpty {
+            menu.addItem(.separator())
+
+            let header = NSMenuItem(title: UserText.aiChatModelPickerBasicModelsSectionHeader, action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            menu.addItem(header)
+
+            for model in basic {
+                menu.addItem(menuItem(for: model))
+            }
+        }
     }
 
     private func menuItem(for model: AIChatModel) -> NSMenuItem {
@@ -662,7 +709,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     @objc private func modelSelected(_ sender: NSMenuItem) {
         guard let model = sender.representedObject as? AIChatModel else { return }
         omnibarController.updateSelectedModel(model.id)
-        modelPickerButton.modelName = model.name
+        modelPickerButton.modelName = model.shortName
         updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
         PixelKit.fire(AIChatPixel.aiChatAddressBarModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }

@@ -1,3 +1,39 @@
+/* Auto-Restore - Description */
+"auto.restore.description" = "Automatically restore your data on this device if you reinstall the app.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or continue with a new setup.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Resume Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Continue Setup";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Your previous Sync & Backup session is ready.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Restore on App Reinstall";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Restore on App Reinstall";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Off";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "On";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Restore on App Reinstall";
+
 /* Standard Buttons - Back Button */
 "back.button" = "Back";
 
@@ -143,13 +179,22 @@
 "recover.synced.data.link" = "Recover Synced Data";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Get Started";
+"recover.synced.data.sheet.button" = "Recover Synced Data";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "To restore your synced data, you'll need the Recovery Code you saved when you first set up Sync. This code may have been saved as a PDF on the device you originally used to set up Sync.";
+"recover.synced.data.sheet.description" = "You’ll need the Recovery Code you got when you set up Sync & Backup. You may have saved it as a PDF on the device you used.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Recover Synced Data";
+"recover.synced.data.sheet.title" = "Recover your synced data";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Reconnecting to sync your bookmarks, saved logins, and other devices.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Connecting...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Recovering Data";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Remove Device";
@@ -160,6 +205,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Remove Device?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Recovery Code";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Recovery code copied to clipboard";
 
@@ -167,16 +215,16 @@
 "save.recovery.code.copy.code.button" = "Copy Code";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Save as PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "If you lose access to your devices, you will need this code to recover your synced data.";
+"save.recovery.code.save.as.pdf.button" = "Download as PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Anyone with access to this code can access your synced data, so please keep it in a safe place.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Save Recovery Code";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Save this code so you can recover your data if you lose access to this device — keep it safe.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Recover Your Data Easily";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Save Recovery PDF";
@@ -252,6 +300,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Settings > Sync & Backup > Sync With Another Device";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Go to Settings";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "A device password is required to use Sync & Backup.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Secure Your Device to Use Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Recovery";
 
 /* Sync & Backup Title */
 "sync.title" = "Sync & Backup";

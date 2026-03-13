@@ -294,6 +294,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case clickActionDelayReductionOptimization
     case pirRollout
     case goToMarket
+    case webViewUserAgent
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -458,9 +459,11 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case refactorOfSyncPreferences
     case newSyncEntryPoints
     case newDeviceSyncPrompt
+    case syncAutoRestore
     case syncCreditCards
     case syncIdentities
     case aiChatSync
+    case simplifiedSyncSetupExperiment
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

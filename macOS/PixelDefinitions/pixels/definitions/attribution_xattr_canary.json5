@@ -1,0 +1,25 @@
+{
+    "m_mac_attribution-xattr-canary_u": {
+        "description": "Reports whether file-based and xattr-based attribution values match for variant and origin.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "variant_match",
+                "description": "Comparison result between variant file and xattr values.",
+                "type": "string",
+                "enum": ["match", "mismatch", "file_only", "xattr_only", "both_nil"]
+            },
+            {
+                "key": "origin_match",
+                "description": "Comparison result between origin file and xattr values.",
+                "type": "string",
+                "enum": ["match", "mismatch", "file_only", "xattr_only", "both_nil"]
+            }
+        ],
+        "expires": "2026-05-01"
+    }
+}

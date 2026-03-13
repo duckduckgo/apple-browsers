@@ -1,7 +1,7 @@
 //
-//  AppVersionExtension.swift
+//  PromoContext.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,17 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
-
-extension AppVersion {
-
-    var buildType: String {
-#if APPSTORE
-        return "appstore"
-#else
-        return "dmg"
-#endif
-    }
-
+/// Where the promo appears or overlaps in the UI.
+enum PromoContext {
+    /// Global promo is mutually exclusive with all other contexts.
+    case global
+    case newTabPage
+    case webPage
 }

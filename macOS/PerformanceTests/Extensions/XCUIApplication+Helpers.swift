@@ -1,6 +1,5 @@
 //
-//  UnifiedToggleInputInlineActivating.swift
-//  DuckDuckGo
+//  XCUIApplication+Helpers.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,13 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
+import XCTest
 
-protocol UnifiedToggleInputInlineActivating: AnyObject {
-    func activateInlineEditingIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
-}
+extension XCUIApplication {
 
-enum UnifiedToggleInputActivationDecision {
-    case intercept
-    case allowDefault
+    static func setUpForStartupPerformanceTesting() -> XCUIApplication {
+        XCUIApplication.setUp(environment: ["UITEST_MODE_STARTUP_PERFORMANCE": "1"])
+    }
 }

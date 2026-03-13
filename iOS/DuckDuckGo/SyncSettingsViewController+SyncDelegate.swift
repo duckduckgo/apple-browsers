@@ -153,7 +153,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func updateDeviceName(_ name: String) {
         Task { @MainActor in
-            rootView.model.devices = []
+            viewModel.devices = []
             syncService.scheduler.cancelSyncAndSuspendSyncQueue()
             do {
                 let devices = try await syncService.updateDeviceName(name)
@@ -179,7 +179,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
                     AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-                    self.rootView.model.syncEnabled(recoveryCode: self.recoveryCode)
+                    self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
                     self.refreshDevices()
                     self.dismissVCAndShowRecoveryPDF()
                 } catch {
@@ -371,22 +371,15 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showDeviceConnected() {
-        guard let viewModel = viewModel else {
-            return
-        }
-
         let controller = UIHostingController(
             rootView: DeviceConnectedView(model: viewModel))
         navigationController?.present(controller, animated: true) { [weak self] in
-            self?.rootView.model.syncEnabled(recoveryCode: self!.recoveryCode)
+            guard let self else { return }
+            self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
         }
     }
 
     func showOtherPlatformLinks() {
-        guard let viewModel = viewModel else {
-            return
-        }
-
         let controller = UIHostingController(rootView: PlatformLinksView(model: viewModel, source: .activating))
         navigationController?.pushViewController(controller, animated: true)
     }
@@ -432,7 +425,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(_ completion: (() -> Void)?) {
-        let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: rootView.model.isAIChatSyncEnabled))
+        let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
         navigationController?.present(controller, animated: true, completion: completion)
     }
 
@@ -458,7 +451,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         let controller = UIHostingController(rootView: SaveRecoveryKeyView(model: model))
         navigationController?.present(controller, animated: true) { [weak self] in
             guard let self else { return }
-            self.rootView.model.syncEnabled(recoveryCode: self.recoveryCode)
+            self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
         }
     }
 
@@ -637,7 +630,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
-                        self.rootView.model.isSyncEnabled = false
+                        self.viewModel.isSyncEnabled = false
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
                     } catch {
@@ -659,7 +652,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func confirmAndDeleteAllData() async -> Bool {
-        let deviceCount = viewModel?.devices.count ?? 0
+        let deviceCount = viewModel.devices.count
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncDeleteAllConfirmTitle,
                                           message: UserText.syncDeleteAllConfirmMessage,
@@ -673,7 +666,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         try await self?.syncService.deleteAccount()
                         Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
-                        self?.rootView.model.isSyncEnabled = false
+                        self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
                     } catch {

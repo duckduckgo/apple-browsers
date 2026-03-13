@@ -90,7 +90,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     func test_WhenSyncPausedIsTrue_andChangePublished_isSyncPausedIsUpdated() async {
         let expectation2 = XCTestExpectation(description: "isSyncPaused received the update")
         let expectation1 = XCTestExpectation(description: "isSyncPaused published")
-        vc.viewModel?.$isSyncPaused
+        vc.viewModel.$isSyncPaused
             .dropFirst()
             .sink { isPaused in
                 XCTAssertTrue(isPaused)
@@ -111,7 +111,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     func test_WhenSyncBookmarksPausedIsTrue_andChangePublished_isSyncBookmarksPausedIsUpdated() async {
         let expectation2 = XCTestExpectation(description: "isSyncBookmarksPaused received the update")
         let expectation1 = XCTestExpectation(description: "isSyncBookmarksPaused published")
-        vc.viewModel?.$isSyncBookmarksPaused
+        vc.viewModel.$isSyncBookmarksPaused
             .dropFirst()
             .sink { isPaused in
                 XCTAssertTrue(isPaused)
@@ -132,7 +132,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     func test_WhenSyncCredentialsPausedIsTrue_andChangePublished_isSyncCredentialsPausedIsUpdated() async {
         let expectation2 = XCTestExpectation(description: "isSyncCredentialsPaused received the update")
         let expectation1 = XCTestExpectation(description: "isSyncCredentialsPaused published")
-        vc.viewModel?.$isSyncCredentialsPaused
+        vc.viewModel.$isSyncCredentialsPaused
             .dropFirst()
             .sink { isPaused in
                 XCTAssertTrue(isPaused)
@@ -153,7 +153,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     func test_WhenSyncCreditCardsPausedIsTrue_andChangePublished_isSyncCreditCardsPausedIsUpdated() async {
         let expectation2 = XCTestExpectation(description: "isSyncCreditCardsPaused received the update")
         let expectation1 = XCTestExpectation(description: "isSyncCreditCardsPaused published")
-        vc.viewModel?.$isSyncCreditCardsPaused
+        vc.viewModel.$isSyncCreditCardsPaused
             .dropFirst()
             .sink { isPaused in
                 XCTAssertTrue(isPaused)
@@ -393,7 +393,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         _ = await vc.syncCodeEntered(code: testRecoveryCode, source: .qrCode)
 
-        let deviceIDs = await vc.viewModel?.devices.flatMap(\.id)
+        let deviceIDs = await vc.viewModel.devices.flatMap(\.id)
         XCTAssertEqual(deviceIDs, ["1", "2"])
     }
 
@@ -435,7 +435,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         await vc.switchAccounts(recoveryKey: recoveryKey)
 
-        let deviceIDs = await vc.viewModel?.devices.flatMap(\.id)
+        let deviceIDs = await vc.viewModel.devices.flatMap(\.id)
         XCTAssertEqual(deviceIDs, ["1", "2"])
     }
 
@@ -443,6 +443,6 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     private func setUpWithSingleDevice(id: String) {
         ddgSyncing.account = SyncAccount(deviceId: id, deviceName: "iPhone", deviceType: "iPhone", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.registeredDevices = [RegisteredDevice(id: id, name: "iPhone", type: "iPhone")]
-        vc.viewModel?.devices = [SyncSettingsViewModel.Device(id: id, name: "iPhone", type: "iPhone", isThisDevice: true)]
+        vc.viewModel.devices = [SyncSettingsViewModel.Device(id: id, name: "iPhone", type: "iPhone", isThisDevice: true)]
     }
 }

@@ -463,6 +463,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
+    case simplifiedSyncSetupExperiment
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

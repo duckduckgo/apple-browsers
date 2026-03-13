@@ -22,6 +22,29 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
+
+// Temporary, to enable the simplifiedSyncSetup experiment.
+// https://app.asana.com/1/137249556945/project/1203822806345703/task/1213248575226817?focus=true
+public struct SyncSettingsRootView: View {
+    @ObservedObject var model: SyncSettingsViewModel
+
+    private let useSimplifiedLayout: Bool
+
+    public init(model: SyncSettingsViewModel, useSimplifiedLayout: Bool) {
+        self.model = model
+        self.useSimplifiedLayout = useSimplifiedLayout
+    }
+
+    public var body: some View {
+        if useSimplifiedLayout {
+            SimplifiedSyncSettingsView(model: model)
+        } else {
+            SyncSettingsView(model: model)
+        }
+    }
+}
+
+
 public struct SyncSettingsView: View {
 
     @ObservedObject public var model: SyncSettingsViewModel

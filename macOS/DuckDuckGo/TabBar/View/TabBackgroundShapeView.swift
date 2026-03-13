@@ -24,40 +24,28 @@ final class TabBackgroundShapeView: NSView {
 
     var backgroundColor: NSColor = .clear {
         didSet {
-            guard oldValue != backgroundColor else {
-                return
-            }
-
+            guard oldValue != backgroundColor else { return }
             needsDisplay = true
         }
     }
 
     var isDragged: Bool = false {
         didSet {
-            guard oldValue != isDragged else {
-                return
-            }
-
+            guard oldValue != isDragged else { return }
             needsDisplay = true
         }
     }
 
     var rampSize: NSSize? {
         didSet {
-            guard oldValue != rampSize else {
-                return
-            }
-
+            guard oldValue != rampSize else { return }
             needsDisplay = true
         }
     }
 
     var tabCornerRadius: CGFloat = .zero {
         didSet {
-            guard oldValue != tabCornerRadius else {
-                return
-            }
-
+            guard oldValue != tabCornerRadius else { return }
             needsDisplay = true
         }
     }

@@ -14,7 +14,7 @@
         },
         "app": {
             "type": "object",
-            "required": ["name", "version", "form_factor"],
+            "required": ["name", "version"],
             "additionalProperties": false,
             "properties": {
                 "name": {
@@ -28,7 +28,7 @@
         },
         "global": {
             "type": "object",
-            "required": ["platform", "type", "sample_rate", "is_first_daily_occurrence"],
+            "required": ["platform", "type", "sample_rate"],
             "additionalProperties": false,
             "properties": {
                 "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },

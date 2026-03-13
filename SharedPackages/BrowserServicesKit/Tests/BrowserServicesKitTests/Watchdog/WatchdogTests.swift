@@ -547,7 +547,20 @@ final class WatchdogTests: XCTestCase {
 
         XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "First timeout should fire")
 
-        // Wait for recovery + cooldown expiry (1.0s cooldown)
+        // Wait for the watchdog to actually recover to .responsive
+        let recoveryStateExpectation = XCTestExpectation(description: "Recovery state reached")
+        recoveryStateExpectation.assertForOverFulfill = false
+
+        let cancellable = await cooldownWatchdog.hangStatePublisher
+            .sink { state, _ in
+                if state == .responsive {
+                    recoveryStateExpectation.fulfill()
+                }
+            }
+
+        await fulfillment(of: [recoveryStateExpectation], timeout: 5.0)
+
+        // Wait for cooldown to expire (from now, since recovery just happened)
         try await Task.sleep(nanoseconds: 2_000 * NSEC_PER_MSEC)
 
         // Second hang: cooldown expired, should fire again
@@ -555,6 +568,7 @@ final class WatchdogTests: XCTestCase {
 
         XCTAssertGreaterThanOrEqual(store.events.numberOfHangNotRecoveredEvents, 2, "Second timeout after cooldown should fire")
 
+        cancellable.cancel()
         await cooldownWatchdog.stop()
     }
 

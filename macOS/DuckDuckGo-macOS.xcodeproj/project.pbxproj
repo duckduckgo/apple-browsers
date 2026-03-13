@@ -3008,6 +3008,8 @@
 		B5C980FF2F229F5C00655B21 /* XCTOptions+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980FE2F229F5C00655B21 /* XCTOptions+Helpers.swift */; };
 		B5CBB60B2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5CBB60C2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
+		B5CCC0702F649BB9003EB0A2 /* TabBackgroundShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */; };
+		B5CCC0712F649BB9003EB0A2 /* TabBackgroundShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */; };
 		B5D62C802F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */; };
 		B5D62C812F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */; };
 		B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
@@ -5968,6 +5970,7 @@
 		B5C980F92F229EB800655B21 /* XCUIApplication+AllocationStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+AllocationStats.swift"; sourceTree = "<group>"; };
 		B5C980FE2F229F5C00655B21 /* XCTOptions+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCTOptions+Helpers.swift"; sourceTree = "<group>"; };
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
+		B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBackgroundShapeView.swift; sourceTree = "<group>"; };
 		B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsExporter.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5DFC5372F608D45001AB6AA /* UITests+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITests+Helpers.swift"; sourceTree = "<group>"; };
@@ -10730,6 +10733,7 @@
 				40E090D60EAB41E8BB22CA88 /* DuckAIChromeButtonsPreferences.swift */,
 				F0A1D3C5B7E94AA1A2B3C4D5 /* DuckAIChromeButtonsVisibilityManager.swift */,
 				AA7412B024D0B3AC00D22FE0 /* TabBarViewItem.swift */,
+				B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */,
 				AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */,
 				B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */,
 				311B262628E73E0A00FD181A /* TabShadowConfig.swift */,
@@ -14899,6 +14903,7 @@
 				37E477902EF006E6006369D6 /* MemoryUsageMonitor.swift in Sources */,
 				CC951AEB2EB528490047E245 /* DefaultBrowserAndDockPromptService.swift in Sources */,
 				3706FB83293F65D500E42796 /* NSApplicationExtension.swift in Sources */,
+				B5CCC0712F649BB9003EB0A2 /* TabBackgroundShapeView.swift in Sources */,
 				E274EFF72E1D55D500373C41 /* NewTabPageOmnibarSuggestionsProvider.swift in Sources */,
 				CCC87D6D2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */,
 				37197EA42942441D00394917 /* NewWindowPolicy.swift in Sources */,
@@ -17078,6 +17083,7 @@
 				B6BCC53B2AFD15DF002C5499 /* DataImportProfilePicker.swift in Sources */,
 				3158B1562B0BF75D00AF130C /* DataBrokerProtectionFeatureGatekeeper.swift in Sources */,
 				B6B5F5842B03580A008DB58A /* RequestFilePermissionView.swift in Sources */,
+				B5CCC0702F649BB9003EB0A2 /* TabBackgroundShapeView.swift in Sources */,
 				B55D8E5E2EE77688009083D9 /* BundleExtension.swift in Sources */,
 				37E307AB2D0745DB00599500 /* PrivacyStatsErrorHandler.swift in Sources */,
 				4B1E6EEE27AB5E5100F51793 /* PasswordManagementListSection.swift in Sources */,

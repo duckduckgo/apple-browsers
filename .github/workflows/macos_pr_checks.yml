@@ -177,7 +177,7 @@ jobs:
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }} 
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
@@ -454,7 +454,7 @@ jobs:
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }} 
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
       uses: actions/checkout@v4

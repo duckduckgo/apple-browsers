@@ -58,8 +58,8 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         coordinator.markUIReady()
 
         XCTAssertTrue(receivedNotifications.isEmpty)
-        guard case .uiReady = coordinator.stateSubject.value else {
-            return XCTFail("Coordinator state subject was \(coordinator.stateSubject.value) but should be uiReady")
+        guard case .uiReady = coordinator.state else {
+            return XCTFail("Coordinator state subject was \(coordinator.state) but should be uiReady")
         }
     }
 
@@ -67,8 +67,8 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
 
         XCTAssertTrue(receivedNotifications.isEmpty)
-        guard case .restoreNeeded = coordinator.stateSubject.value else {
-            return XCTFail("Coordinator state subject was \(coordinator.stateSubject.value) but should be restoreNeeded")
+        guard case .restoreNeeded = coordinator.state else {
+            return XCTFail("Coordinator state subject was \(coordinator.state) but should be restoreNeeded")
         }
     }
 
@@ -81,8 +81,8 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(receivedNotifications.count, 1)
         XCTAssertEqual(receivedNotifications.first?.name, .sessionRestorePromptShouldBeShown)
-        guard case .promptShown = coordinator.stateSubject.value else {
-            return XCTFail("Coordinator state subject was \(coordinator.stateSubject.value) but should be promptShown")
+        guard case .promptShown = coordinator.state else {
+            return XCTFail("Coordinator state subject was \(coordinator.state) but should be promptShown")
         }
     }
 
@@ -93,8 +93,8 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(receivedNotifications.count, 1)
         XCTAssertEqual(receivedNotifications.first?.name, .sessionRestorePromptShouldBeShown)
-        guard case .promptShown = coordinator.stateSubject.value else {
-            return XCTFail("Coordinator state subject was \(coordinator.stateSubject.value) but should be promptShown")
+        guard case .promptShown = coordinator.state else {
+            return XCTFail("Coordinator state subject was \(coordinator.state) but should be promptShown")
         }
     }
 
@@ -104,7 +104,7 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         var receivedState: SessionRestorePromptCoordinator.State?
         let restoreAction: (Bool) -> Void = { _ in
             restoreSession = true
-            receivedState = self.coordinator.stateSubject.value
+            receivedState = self.coordinator.state
         }
 
         coordinator.showRestoreSessionPrompt(restoreAction: restoreAction)
@@ -114,7 +114,7 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
             notificationAction(true)
             XCTAssertTrue(restoreSession)
             guard case .promptDismissed = receivedState else {
-                return XCTFail("Coordinator state subject was \(coordinator.stateSubject.value) but should be promptDismissed")
+                return XCTFail("Coordinator state subject was \(coordinator.state) but should be promptDismissed")
             }
         } else {
             XCTFail("Notification action is not of expected type")

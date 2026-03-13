@@ -20,14 +20,11 @@ import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SessionRestorePromptCoordinatorMock: SessionRestorePromptCoordinating {
-    let stateSubject: CurrentValueSubject<SessionRestorePromptCoordinator.State, Never>
+    @Published var state: SessionRestorePromptCoordinator.State = .initial
+    var statePublisher: AnyPublisher<SessionRestorePromptCoordinator.State, Never> { $state.eraseToAnyPublisher() }
     var uiReady: Bool = false
     var sessionPromptShown: Bool = false
     var applicationWillTerminateCalled: Bool = false
-
-    init(initialState: SessionRestorePromptCoordinator.State = .initial) {
-        stateSubject = CurrentValueSubject(initialState)
-    }
 
     func markUIReady() {
         uiReady = true

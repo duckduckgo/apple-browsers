@@ -22,7 +22,7 @@ import XCTest
 
 final class SessionRestorePromoDelegateTests: XCTestCase {
 
-    private var coordinator: SessionRestorePromptCoordinating!
+    private var coordinator: SessionRestorePromptCoordinatorMock!
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
@@ -41,7 +41,7 @@ final class SessionRestorePromoDelegateTests: XCTestCase {
     func testWhenSessionRestorePromptShownThenDelegateIsVisible() {
         let delegate = SessionRestorePromoDelegate(coordinator: coordinator)
 
-        coordinator.stateSubject.send(.promptShown)
+        coordinator.state = .promptShown
 
         XCTAssertTrue(delegate.isVisible)
     }
@@ -49,7 +49,7 @@ final class SessionRestorePromoDelegateTests: XCTestCase {
     func testWhenSessionRestorePromptNotShownThenDelegateIsNotVisible() {
         let delegate = SessionRestorePromoDelegate(coordinator: coordinator)
 
-        coordinator.stateSubject.send(.promptDismissed)
+        coordinator.state = .promptDismissed
 
         XCTAssertFalse(delegate.isVisible)
     }
@@ -67,14 +67,15 @@ final class SessionRestorePromoDelegateTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        coordinator.stateSubject.send(.promptShown)
+        coordinator.state = .promptShown
         wait(for: [expectation], timeout: 1.0)
 
         XCTAssertTrue(try XCTUnwrap(receivedVisible))
     }
 
     func testWhenSessionRestorePromptDismissedThenDelegatePublisherEmitsNotVisible() {
-        let coordinator = SessionRestorePromptCoordinatorMock(initialState: .promptShown)
+        let coordinator = SessionRestorePromptCoordinatorMock()
+        coordinator.state = .promptShown
         let delegate = SessionRestorePromoDelegate(coordinator: coordinator)
 
         let expectation = expectation(description: "Visibility is emitted")
@@ -87,7 +88,7 @@ final class SessionRestorePromoDelegateTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        coordinator.stateSubject.send(.promptDismissed)
+        coordinator.state = .promptDismissed
         wait(for: [expectation], timeout: 1.0)
 
         XCTAssertFalse(try XCTUnwrap(receivedVisible))
@@ -96,7 +97,7 @@ final class SessionRestorePromoDelegateTests: XCTestCase {
     func testWhenSessionRestorePromptDismissedThenDelegateResultIsIgnoredWithNoCooldown() {
         let delegate = SessionRestorePromoDelegate(coordinator: coordinator)
 
-        coordinator.stateSubject.send(.promptDismissed)
+        coordinator.state = .promptDismissed
 
         XCTAssertEqual(delegate.resultWhenHidden, .ignored(cooldown: 0))
 
@@ -105,7 +106,7 @@ final class SessionRestorePromoDelegateTests: XCTestCase {
     func testWhenSessionRestorePromptRetractedThenDelegateResultIsNoChange() {
         let delegate = SessionRestorePromoDelegate(coordinator: coordinator)
 
-        coordinator.stateSubject.send(.uiReady)
+        coordinator.state = .uiReady
 
         XCTAssertEqual(delegate.resultWhenHidden, .noChange)
 

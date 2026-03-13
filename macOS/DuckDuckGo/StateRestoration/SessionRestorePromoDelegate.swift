@@ -32,7 +32,7 @@ final class SessionRestorePromoDelegate: ExternalPromoDelegate {
 
     /// When the session restore prompt is dismissed, treat as temporarily dismissed (eligible again when the coordinator shows the prompt).
     var resultWhenHidden: PromoResult {
-        switch coordinator.stateSubject.value {
+        switch coordinator.state {
         case .promptDismissed:
             return .ignored(cooldown: 0)
         default:
@@ -42,9 +42,9 @@ final class SessionRestorePromoDelegate: ExternalPromoDelegate {
 
     init(coordinator: SessionRestorePromptCoordinating) {
         self.coordinator = coordinator
-        self.visibilitySubject = CurrentValueSubject(coordinator.stateSubject.value.isVisible)
+        self.visibilitySubject = CurrentValueSubject(coordinator.state.isVisible)
 
-        coordinator.stateSubject
+        coordinator.statePublisher
             .map { $0.isVisible }
             .removeDuplicates()
             .sink { [weak self] visible in

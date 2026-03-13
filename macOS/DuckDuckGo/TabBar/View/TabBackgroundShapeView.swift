@@ -69,26 +69,21 @@ final class TabBackgroundShapeView: NSView {
             return
         }
 
-        backgroundColor.setFill()
-
-        /// # Central Background
         let backgroundPath = NSBezierPath(roundedRect: bounds, forCorners: backgroundRoundedCorners, cornerRadius: tabCornerRadius)
+
+        backgroundColor.setFill()
         backgroundPath.fill()
 
         guard shouldDisplayRamps, let rampSize else {
             return
         }
 
-        /// # Leading Ramp
         context.translateBy(x: rampSize.width * -1, y: 0)
-
         NSBezierPath
             .leadingRampPath(size: rampSize)
             .fill()
 
-        /// # Trailing Ramp
         context.translateBy(x: bounds.width + rampSize.width, y: 0)
-
         NSBezierPath
             .trailingRampPath(size: rampSize)
             .fill()

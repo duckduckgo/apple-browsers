@@ -24,11 +24,10 @@ final class TabBackgroundView: NSView {
     // MARK: - Constants
 
     private enum Animations {
-        static let overlayOpacityVisible: Float = 0.8
-        static let overlayOpacityHidden: Float = 0
-        static let tabOpacityVisible: Float = 1
-        static let tabOpacityHidden: Float = 0
         static let duration: TimeInterval = 0.25
+        static let opacityVisible: Float = 1
+        static let opacityHidden: Float = 0
+        static let overlayOpacityVisible: Float = 0.8
         static let slideScaleDown: CGFloat = 0.92
         static let slideScaleFull: CGFloat = 1
         static let slideOffsetY: CGFloat = -8
@@ -50,9 +49,7 @@ final class TabBackgroundView: NSView {
 
     private var state: TabBackgroundState = .idle {
         didSet {
-            guard state != oldValue else {
-                return
-            }
+            guard state != oldValue else { return }
 
             applyStateChange(oldValue, entering: false)
             applyStateChange(state, entering: true)
@@ -179,7 +176,7 @@ extension TabBackgroundView {
 
         let duration = Animations.duration
         let fromAlpha = layer.presentation()?.opacity ?? layer.opacity
-        let toAlpha = visible ? Animations.overlayOpacityVisible : Animations.overlayOpacityHidden
+        let toAlpha = visible ? Animations.overlayOpacityVisible : Animations.opacityHidden
         let animation = CASpringAnimation.buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
 
         layer.add(animation, forKey: "overlayAnimation")
@@ -192,7 +189,7 @@ extension TabBackgroundView {
         }
 
         let duration = Animations.duration
-        let toAlpha = visible ? Animations.tabOpacityVisible : Animations.tabOpacityHidden
+        let toAlpha = visible ? Animations.opacityVisible : Animations.opacityHidden
 
         let fadeAnimation: CASpringAnimation = .buildFadeAnimation(duration: duration, fromAlpha: layer.opacity, toAlpha: toAlpha)
 

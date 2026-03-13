@@ -1,7 +1,8 @@
 //
-//  AppVersionExtension.swift
+//  UTIViewConfig.swift
+//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,16 +18,14 @@
 //
 
 import Foundation
-import Common
 
-extension AppVersion {
-
-    var buildType: String {
-#if APPSTORE
-        return "appstore"
-#else
-        return "dmg"
-#endif
-    }
-
+struct UTIViewConfig: Equatable {
+    var isExpanded: Bool
+    var cardPosition: UnifiedToggleInputCardPosition
+    var usesOmnibarMargins: Bool
+    var showsDismissButton: Bool
+    var isToolbarSubmitHidden: Bool
+    var inactiveAppearance: Bool
+    var inputMode: TextEntryMode
+    var isTopBarPosition: Bool
 }

@@ -169,7 +169,16 @@ final class AppDependencyProvider: DependencyProvider {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
 
-        self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
+        self.wideEvent = WideEvent(
+            useMockRequests: {
+#if DEBUG || REVIEW || ALPHA
+                true
+#else
+                false
+#endif
+            }(),
+            featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
+        )
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 

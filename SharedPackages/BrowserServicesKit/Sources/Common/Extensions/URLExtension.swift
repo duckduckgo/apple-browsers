@@ -173,6 +173,17 @@ extension URL {
         return Self.makeUsingUnifiedLogic(trimmedAddressBarString: absoluteString) != nil
     }
 
+    /// Check if location pointed by the URL is writable
+    /// - Note: if there‘s no file at the URL, it will try to create a file and then remove it
+    public func isWritableLocation() -> Bool {
+        do {
+            try FileManager.default.checkWritability(self)
+            return true
+        } catch {
+            return false
+        }
+    }
+
     static func makeUsingUnifiedLogic(trimmedAddressBarString: String) -> Self? {
         try? Classifier.classify(input: trimmedAddressBarString).url
     }

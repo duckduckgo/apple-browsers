@@ -18,13 +18,14 @@
 
 import AppKit
 import Combine
+import Common
 import Foundation
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import PixelKit
 import PrivacyConfig
+import VPN
 import VPNAppState
 
 final class VPNPreferencesModel: ObservableObject {
@@ -72,11 +73,7 @@ final class VPNPreferencesModel: ObservableObject {
     /// Whether new app exclusions should be shown
     ///
     var showExclusionsFeature: Bool {
-#if APPSTORE
-        vpnAppState.isUsingSystemExtension
-#else
-        true
-#endif
+        AppVersion.isAppStoreBuild ? vpnAppState.isUsingSystemExtension : true
     }
 
     @Published

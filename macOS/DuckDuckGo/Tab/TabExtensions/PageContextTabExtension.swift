@@ -61,6 +61,10 @@ final class PageContextTabExtension {
     /// The flag is automatically cleared after receiving a `collectionResult` message.
     private var shouldForceContextCollection: Bool = false
 
+    /// Set when the user explicitly removes page context from the chat.
+    /// Suppresses auto-collection on the current page until the next navigation.
+    private var userRemovedContext: Bool = false
+
 
     private weak var webView: WKWebView?
     private weak var pageContextUserScript: PageContextUserScript? {
@@ -112,7 +116,7 @@ final class PageContextTabExtension {
             .sink { [weak self] tabContent in
                 guard let self else { return }
 
-                let previousContent = self?.content
+                let previousContent = self.content
                 Logger.aiChat.debug("[PageContextExt] contentPublisher: \(String(describing: previousContent)) -> \(String(describing: tabContent))")
                 self.content = tabContent
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
@@ -160,6 +164,14 @@ final class PageContextTabExtension {
                         collectPageContextIfNeeded()
                     }
                 }
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatPageContextRemovedByUser)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Logger.aiChat.debug("[PageContextExt] user removed context — suppressing auto-collection until next navigation")
+                self?.userRemovedContext = true
             }
             .store(in: &cancellables)
     }
@@ -229,8 +241,8 @@ final class PageContextTabExtension {
         Logger.aiChat.debug("[PageContextExt] handle: pushing context title=\(pageContext?.title ?? "nil") to sidebar (hasChatVC=\(self.aiChatSessionStore.sessions[self.tabID]?.chatViewController != nil))")
         if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
             chatViewController.setPageContext(cachedPageContext)
-            if pageContext != nil {
-                // New context attached — reset the consumed flag so navigation
+            if pageContext != nil, pageContext?.attachable != false {
+                // New attachable context pushed — reset the consumed flag so navigation
                 // won't clear it until the next prompt is submitted.
                 hasContextBeenConsumedByChat = false
             }
@@ -256,6 +268,8 @@ final class PageContextTabExtension {
               session.chatViewController != nil else {
             return
         }
+
+        userRemovedContext = false
 
         Logger.aiChat.debug("[PageContextExt] multiContextNav: \(oldURL.absoluteString) -> \(newURL.absoluteString), autoCollect=\(self.isContextCollectionEnabled), consumed=\(self.hasContextBeenConsumedByChat)")
         if isContextCollectionEnabled {
@@ -293,8 +307,11 @@ final class PageContextTabExtension {
 
     /// Context collection is allowed when it's set to automatic in AI Features Settings
     /// or when we allow one-time collection requested by the user.
+    /// Suppressed when the user explicitly removed context on the current page.
     private var isContextCollectionEnabled: Bool {
-        aiChatMenuConfiguration.shouldAutomaticallySendPageContext || shouldForceContextCollection
+        if shouldForceContextCollection { return true }
+        if userRemovedContext { return false }
+        return aiChatMenuConfiguration.shouldAutomaticallySendPageContext
     }
 
     @MainActor private func replaceFaviconURLWithEncodedData(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {

@@ -20,4 +20,5 @@ import Foundation
 
 public extension NSNotification.Name {
     static let aiChatUserDidSubmitPrompt: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.userDidSubmitPrompt")
+    static let aiChatPageContextRemovedByUser: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.pageContextRemovedByUser")
 }

@@ -304,6 +304,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: storage.shouldAutomaticallySendPageContext)
         }()
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
+
+        if !payload.enabled {
+            notificationCenter.post(name: .aiChatPageContextRemovedByUser, object: nil)
+        }
+
         return nil
     }
 

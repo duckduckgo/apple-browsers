@@ -21,8 +21,7 @@ import QuartzCore
 extension CABasicAnimation {
 
     static func buildColorsAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: [CGColor], toValue: [CGColor]) -> CABasicAnimation {
-        let keyPath = "colors"
-        let animation = CABasicAnimation(keyPath: keyPath)
+        let animation = CABasicAnimation(keyPath: "colors")
         animation.fromValue = fromValue
         animation.toValue = toValue
         animation.duration = duration
@@ -31,13 +30,32 @@ extension CABasicAnimation {
     }
 
     static func buildRotationAnimation(duration: TimeInterval) -> CABasicAnimation {
-        let keyPath = "transform.rotation.z"
-        let animation = CABasicAnimation(keyPath: keyPath)
+        let animation = CABasicAnimation(keyPath: "transform.rotation.z")
         animation.fromValue = 0
         animation.toValue = -2 * CGFloat.pi
         animation.duration = duration
         animation.repeatCount = .infinity
         animation.isRemovedOnCompletion = false
+        return animation
+    }
+
+    static func buildTranslationYAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: CGFloat? = nil, toValue: CGFloat) -> CABasicAnimation {
+        let animation = CABasicAnimation(keyPath: "transform.translation.y")
+        if let fromValue {
+            animation.fromValue = fromValue
+        }
+        animation.toValue = toValue
+        animation.duration = duration
+        animation.timingFunction = CAMediaTimingFunction(name: timingFunctionName)
+        return animation
+    }
+
+    static func buildScaleAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: CGFloat, toValue: CGFloat) -> CABasicAnimation {
+        let animation = CABasicAnimation(keyPath: "transform.scale")
+        animation.fromValue = fromValue
+        animation.toValue = toValue
+        animation.duration = duration
+        animation.timingFunction = CAMediaTimingFunction(name: timingFunctionName)
         return animation
     }
 }

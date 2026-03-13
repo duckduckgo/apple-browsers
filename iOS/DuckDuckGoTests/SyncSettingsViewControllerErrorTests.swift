@@ -223,7 +223,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         syncAutoRestoreHandler.existingAutoRestoreDecision = true
         vc.viewWillAppear(false)
 
-        XCTAssertEqual(vc.viewModel?.isAutoRestoreEnabled, true)
+        XCTAssertEqual(vc.viewModel.isAutoRestoreEnabled, true)
     }
 
     @MainActor
@@ -259,7 +259,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, [])
         XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 0)
-        XCTAssertEqual(vc.viewModel?.isSyncWithSetUpSheetVisible, true)
+        XCTAssertEqual(vc.viewModel.isSyncWithSetUpSheetVisible, true)
     }
 
     @MainActor
@@ -281,7 +281,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, [])
         XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 0)
-        XCTAssertEqual(vc.viewModel?.isSyncWithSetUpSheetVisible, false)
+        XCTAssertEqual(vc.viewModel.isSyncWithSetUpSheetVisible, false)
     }
 
     @MainActor

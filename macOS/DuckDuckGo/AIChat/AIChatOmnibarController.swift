@@ -23,6 +23,7 @@ import FeatureFlags
 import os.log
 import PixelKit
 import PrivacyConfig
+import Subscription
 import URLPredictor
 
 protocol AIChatOmnibarControllerDelegate: AnyObject {
@@ -45,6 +46,7 @@ final class AIChatOmnibarController {
     private let searchPreferencesPersistor: SearchPreferencesPersistor
     private let suggestionsReader: AIChatSuggestionsReading?
     private let modelsService: AIChatModelsProviding
+    private let subscriptionManager: any SubscriptionManager
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var sharedTextStateCancellable: AnyCancellable?
@@ -55,6 +57,9 @@ final class AIChatOmnibarController {
 
     /// Available AI models. Empty until successfully fetched from the API.
     @Published private(set) var models: [AIChatModel] = []
+
+    /// Whether the user has an active paid subscription (plus or pro).
+    private(set) var hasActiveSubscription = false
 
     /// Provides the current image attachments from the container VC.
     var attachmentsProvider: (() -> [AIChatImageAttachment])?
@@ -105,7 +110,8 @@ final class AIChatOmnibarController {
         searchPreferencesPersistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
         suggestionsReader: AIChatSuggestionsReading? = nil,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-        modelsService: AIChatModelsProviding = AIChatModelsService()
+        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -115,6 +121,7 @@ final class AIChatOmnibarController {
         self.suggestionsReader = suggestionsReader
         self.preferences = preferences
         self.modelsService = modelsService
+        self.subscriptionManager = subscriptionManager
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -158,11 +165,33 @@ final class AIChatOmnibarController {
             do {
                 let remoteModels = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
-                self.models = remoteModels.map { AIChatModel(remoteModel: $0) }
+                let userTier = try await self.resolveUserTier()
+                guard !Task.isCancelled else { return }
+                self.hasActiveSubscription = userTier != .free
+                self.models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+                self.clearStaleModelSelectionIfNeeded()
+            } catch is CancellationError {
+                return
             } catch {
                 Logger.aiChat.error("Failed to fetch models: \(error.localizedDescription)")
                 PixelKit.fire(AIChatPixel.aiChatModelsFetchFailed, frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
+        }
+    }
+
+    private func resolveUserTier() async throws -> AIChatUserTier {
+        do {
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+            guard subscription.isActive else { return .free }
+            switch subscription.tier {
+            case .plus: return .plus
+            case .pro: return .pro
+            case .none: return .free
+            }
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            return .free
         }
     }
 
@@ -186,15 +215,34 @@ final class AIChatOmnibarController {
 
     // MARK: - Public Methods
 
-    /// The persisted model ID. Only valid when models have been loaded.
+    /// The persisted model ID. Falls back to the first accessible model if the
+    /// persisted selection is no longer available or no longer accessible for the user's tier.
     var persistedModelId: String {
-        preferences.selectedModelId ?? models.first(where: { $0.entityHasAccess })?.id ?? ""
+        if let selectedId = preferences.selectedModelId,
+           models.contains(where: { $0.id == selectedId && $0.entityHasAccess }) {
+            return selectedId
+        }
+        return models.first(where: { $0.entityHasAccess })?.id ?? ""
+    }
+
+    /// Clears the persisted model selection if it's no longer available or accessible.
+    private func clearStaleModelSelectionIfNeeded() {
+        guard let selectedId = preferences.selectedModelId else { return }
+        if !models.contains(where: { $0.id == selectedId && $0.entityHasAccess }) {
+            preferences.selectedModelId = nil
+            preferences.selectedModelShortName = nil
+        }
     }
 
     /// The model ID to include in the prompt. Returns nil if the user has never
     /// explicitly selected a model, so the backend uses its default.
     var currentModelId: String? {
         preferences.selectedModelId
+    }
+
+    /// The cached short name of the last selected model, available before models are fetched.
+    var cachedModelShortName: String? {
+        preferences.selectedModelShortName
     }
 
     /// Whether the currently selected model supports image upload.
@@ -204,9 +252,17 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? true
     }
 
-    /// Updates the selected model ID and persists it for future sessions.
+    /// Image formats supported by the currently selected model (e.g. ["png", "jpeg", "webp"]).
+    /// Returns a default set when models are unavailable.
+    var selectedModelImageFormats: [String] {
+        guard !models.isEmpty else { return ["png", "jpeg", "webp"] }
+        return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
+    }
+
+    /// Updates the selected model ID and persists it (along with its short name) for future sessions.
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
+        preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
     }
 
     /// Updates the current text being typed by the user
@@ -323,7 +379,7 @@ final class AIChatOmnibarController {
 
             // Get attachments after resizes are complete
             let attachments = attachmentsProvider?() ?? []
-            let images = Self.nativePromptImages(from: attachments)
+            let images = Self.nativePromptImages(from: attachments, supportedFormats: self.selectedModelImageFormats)
 
             if !attachments.isEmpty {
                 PixelKit.fire(AIChatPixel.aiChatAddressBarSubmitWithImage(imageCount: attachments.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -346,10 +402,12 @@ final class AIChatOmnibarController {
     }
 
     /// Converts image attachments to base64-encoded `NativePromptImage` values for the JS bridge.
-    /// Preserves JPEG encoding for `.jpg`/`.jpeg` sources to avoid payload bloat;
-    /// uses PNG for all other formats (including resized WebP).
-    private static func nativePromptImages(from attachments: [AIChatImageAttachment]) -> [AIChatNativePrompt.NativePromptImage]? {
+    /// Encodes each image in a format the model supports. Prefers the source format when supported;
+    /// otherwise falls back to the first supported format (typically PNG).
+    private static func nativePromptImages(from attachments: [AIChatImageAttachment], supportedFormats: [String]) -> [AIChatNativePrompt.NativePromptImage]? {
         guard !attachments.isEmpty else { return nil }
+        let lowercasedFormats = Set(supportedFormats.map { $0.lowercased() })
+
         let images = attachments.compactMap { attachment -> AIChatNativePrompt.NativePromptImage? in
             guard let tiffData = attachment.image.tiffRepresentation,
                   let bitmap = NSBitmapImageRep(data: tiffData) else {
@@ -357,17 +415,58 @@ final class AIChatOmnibarController {
             }
 
             let ext = (attachment.fileName as NSString).pathExtension.lowercased()
-            let isJPEG = ext == "jpg" || ext == "jpeg"
-            let fileType: NSBitmapImageRep.FileType = isJPEG ? .jpeg : .png
-            let format = isJPEG ? "jpeg" : "png"
+            let resolvedFormat = resolveImageFormat(sourceExtension: ext, supportedFormats: lowercasedFormats)
 
-            guard let data = bitmap.representation(using: fileType, properties: [:]) else {
+            guard let data = bitmap.representation(using: resolvedFormat.fileType, properties: [:]) else {
                 return nil
             }
 
-            return AIChatNativePrompt.NativePromptImage(data: data.base64EncodedString(), format: format)
+            return AIChatNativePrompt.NativePromptImage(data: data.base64EncodedString(), format: resolvedFormat.formatString)
         }
         return images.isEmpty ? nil : images
+    }
+
+    private static func resolveImageFormat(sourceExtension: String, supportedFormats: Set<String>) -> (fileType: NSBitmapImageRep.FileType, formatString: String) {
+        // Normalize extension aliases (e.g. "jpg" → "jpeg")
+        let sourceFormat = canonicalFormatName(for: sourceExtension)
+
+        // Use source format if the model supports it and we can encode it
+        if supportedFormats.contains(sourceFormat), let fileType = bitmapFileType(for: sourceFormat) {
+            return (fileType, sourceFormat)
+        }
+
+        // Fall back to the first supported format we can encode, in preference order
+        let preferred = ["png", "jpeg", "gif", "bmp", "tiff"]
+        for format in preferred where supportedFormats.contains(format) {
+            if let fileType = bitmapFileType(for: format) {
+                return (fileType, format)
+            }
+        }
+
+        // Ultimate fallback
+        return (.png, "png")
+    }
+
+    /// Normalizes file extensions to canonical format names used by the API.
+    private static func canonicalFormatName(for extension: String) -> String {
+        switch `extension` {
+        case "jpg": return "jpeg"
+        case "tif": return "tiff"
+        default: return `extension`
+        }
+    }
+
+    /// Maps a format name to NSBitmapImageRep.FileType, returning nil for formats
+    /// that NSBitmapImageRep cannot encode (e.g. WebP).
+    private static func bitmapFileType(for format: String) -> NSBitmapImageRep.FileType? {
+        switch format {
+        case "png": return .png
+        case "jpeg": return .jpeg
+        case "gif": return .gif
+        case "bmp": return .bmp
+        case "tiff": return .tiff
+        default: return nil
+        }
     }
 
     /// Checks if the input text is a navigable URL (not a search query).

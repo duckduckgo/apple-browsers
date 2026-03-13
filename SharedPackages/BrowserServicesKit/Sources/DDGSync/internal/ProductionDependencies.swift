@@ -35,12 +35,14 @@ struct ProductionDependencies: SyncDependencies {
     let scheduler: SchedulingInternal
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let errorEvents: EventMapping<SyncError>
+    let shouldPreserveAccountWhenSyncDisabled: () -> Bool
 
     init(
         serverEnvironment: ServerEnvironment,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         keyValueStore: ThrowingKeyValueStoring,
-        errorEvents: EventMapping<SyncError>
+        errorEvents: EventMapping<SyncError>,
+        shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool = { false }
     ) {
         self.init(fileStorageUrl: FileManager.default.applicationSupportDirectoryForComponent(named: "Sync"),
                   serverEnvironment: serverEnvironment,
@@ -48,7 +50,8 @@ struct ProductionDependencies: SyncDependencies {
                   legacyKeyValueStore: UserDefaults(),
                   secureStore: SecureStorage(),
                   privacyConfigurationManager: privacyConfigurationManager,
-                  errorEvents: errorEvents)
+                  errorEvents: errorEvents,
+                  shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled)
     }
 
     init(
@@ -58,7 +61,8 @@ struct ProductionDependencies: SyncDependencies {
         legacyKeyValueStore: KeyValueStoring,
         secureStore: SecureStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
-        errorEvents: EventMapping<SyncError>
+        errorEvents: EventMapping<SyncError>,
+        shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool
     ) {
         self.fileStorageUrl = fileStorageUrl
         self.endpoints = Endpoints(serverEnvironment: serverEnvironment)
@@ -67,6 +71,7 @@ struct ProductionDependencies: SyncDependencies {
         self.secureStore = secureStore
         self.privacyConfigurationManager = privacyConfigurationManager
         self.errorEvents = errorEvents
+        self.shouldPreserveAccountWhenSyncDisabled = shouldPreserveAccountWhenSyncDisabled
 
         api = RemoteAPIRequestCreator()
         payloadCompressor = SyncGzipPayloadCompressor()

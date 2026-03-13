@@ -2700,6 +2700,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Πριν το ξεχάσω...";
 
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Θέλετε να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία από τον προηγούμενο συγχρονισμό σας με το DuckDuckGo;";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Επαναφορά των στοιχείων μου";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Παράλειψη";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Ας συνεχίσουμε από εκεί που μείνατε";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Ιδιωτικά. Γρήγορα. Λιγότερες διαφημίσεις.";
 /* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */

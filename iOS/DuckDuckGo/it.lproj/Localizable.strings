@@ -2700,6 +2700,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oh, prima che me ne dimentichi...";
 
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Vuoi ripristinare i tuoi segnalibri, le password e altro ancora dalla precedente sincronizzazione con DuckDuckGo?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Ripristina i miei contenuti";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Salta";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Riprendiamo da dove abbiamo lasciato";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Privato. Veloce. Meno annunci.";
 /* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */

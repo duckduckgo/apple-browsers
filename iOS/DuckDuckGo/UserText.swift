@@ -2124,6 +2124,13 @@ public struct UserText {
             }
         }
 
+        public enum RestorePrompt {
+            public static let title = NSLocalizedString("onboarding.restore.prompt.title", value: "Let’s pick up where you left off", comment: "Title for the returning-user restore prompt")
+            public static let body = NSLocalizedString("onboarding.restore.prompt.body", value: "Want to restore your bookmarks, passwords, and more from your previous DuckDuckGo sync?", comment: "Body copy for the returning-user restore prompt")
+            public static let restoreCTA = NSLocalizedString("onboarding.restore.prompt.restore.cta", value: "Restore My Stuff", comment: "Primary CTA to start restoring data on returning-user restore prompt")
+            public static let skipCTA = NSLocalizedString("onboarding.restore.prompt.skip.cta", value: "Skip", comment: "Secondary CTA to skip restore on returning-user restore prompt")
+        }
+
         public enum Skip {
             public static let title = NSLocalizedString("onboarding.skip.title", value: "Got it! I’ll skip the other tips.", comment: "The title of the skip onboarding dialog popup")
             public static let message = NSLocalizedString("onboarding.skip.message", value: "Remember: you can delete all your tabs, history, and browsing data in two taps with the Fire Button 🔥", comment: "The message of the skip onboarding dialog popup.")

@@ -33,6 +33,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     var vc: SyncSettingsViewController!
     var errorHandler: CapturingSyncPausedStateManager!
     var ddgSyncing: MockDDGSyncing!
+    var syncAutoRestoreHandler: MockSyncAutoRestoreHandler!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
 
     @MainActor
@@ -64,13 +65,16 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             secureVaultErrorReporter: MockSecureVaultReporting(),
             syncErrorHandler: CapturingAdapterErrorHandler())
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
+        syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
         vc = SyncSettingsViewController(
             syncService: ddgSyncing,
             syncBookmarksAdapter: bookmarksAdapter,
             syncCredentialsAdapter: credentialsAdapter,
             syncCreditCardsAdapter: creditCardsAdapter,
             syncPausedStateManager: errorHandler,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
         )
     }
 
@@ -78,6 +82,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         cancellables = nil
         errorHandler = nil
         vc = nil
+        syncAutoRestoreHandler = nil
         super.tearDown()
     }
 
@@ -187,6 +192,171 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         XCTAssertTrue(didDelete)
         XCTAssertTrue(errorHandler.syncDidTurnOffCalled)
+    }
+
+    @MainActor
+    func testWhenShowRecoveryPDFAndAutoRestoreFeatureEnabledAndNoExistingDecisionThenPersistsDefaultEnabledDecision() {
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = nil
+
+        vc.showRecoveryPDF()
+
+        XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
+    }
+
+    @MainActor
+    func testWhenShowRecoveryPDFAndExistingAutoRestoreDecisionThenDoesNotPersistDefaultDecision() {
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = false
+
+        vc.showRecoveryPDF()
+
+        XCTAssertTrue(syncAutoRestoreHandler.persistedDecisions.isEmpty)
+    }
+
+    @MainActor
+    func testWhenViewWillAppearThenAutoRestoreDecisionIsRefreshedFromHandler() {
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = false
+        vc.loadViewIfNeeded()
+
+        syncAutoRestoreHandler.existingAutoRestoreDecision = true
+        vc.viewWillAppear(false)
+
+        XCTAssertEqual(vc.viewModel.isAutoRestoreEnabled, true)
+    }
+
+    @MainActor
+    func testWhenAutoRestoreIsEligibleThenHasPreservedSyncAccountConflictForSetupIsTrue() {
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = true
+
+        XCTAssertTrue(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenAutoRestoreIsNotEligibleThenHasPreservedSyncAccountConflictForSetupIsFalse() {
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = false
+
+        XCTAssertFalse(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenContinueSyncSetupAfterPreservedAccountRemovalThenLocalRemovalIsDeferredForBackupFlow() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, [])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 0)
+        XCTAssertEqual(vc.viewModel.isSyncWithSetUpSheetVisible, true)
+    }
+
+    @MainActor
+    func testWhenContinueAfterPreservedAccountRemovalForRecoverThenLocalRemovalIsDeferred() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        vc.continueAfterPreservedAccountRemoval(.recover)
+
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, [])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 0)
+        XCTAssertEqual(vc.viewModel.isSyncWithSetUpSheetVisible, false)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupIsPendingThenConnectionFlowTreatsAccountAsNotReadyForReuse() {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        XCTAssertTrue(vc.shouldUsePreservedAccountForConnectionFlow)
+
+        vc.continueAfterPreservedAccountRemoval(.recover)
+
+        XCTAssertFalse(vc.shouldUsePreservedAccountForConnectionFlow)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupIsPendingThenPreServerHookRunsCleanupOnlyOnce() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        let firstAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.connect, .qrCode))
+        let secondAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.connect, .qrCode))
+
+        XCTAssertTrue(firstAttemptAllowed)
+        XCTAssertTrue(secondAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupFailsThenPreServerHookBlocksAndRetriesOnNextAttempt() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+        ddgSyncing.removePreservedSyncAccountError = NSError(domain: "test.local-remove", code: 1)
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        let firstAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.recovery, .pastedCode))
+
+        XCTAssertFalse(firstAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+
+        ddgSyncing.removePreservedSyncAccountError = nil
+
+        let secondAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.recovery, .pastedCode))
+
+        XCTAssertTrue(secondAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id", "device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 2)
     }
 
     func x_test_syncCodeEntered_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {

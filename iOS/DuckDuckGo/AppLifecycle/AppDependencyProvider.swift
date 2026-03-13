@@ -62,6 +62,7 @@ protocol DependencyProvider {
     var subscriptionManager: any SubscriptionManager { get }
     var tokenHandlerProvider: any SubscriptionTokenHandling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
+    var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -103,6 +104,7 @@ final class AppDependencyProvider: DependencyProvider {
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
     private init() {
 

@@ -94,6 +94,7 @@ public extension DesignSystemImages {
             public static var aiModelLlama: DesignSystemImage { .init(resource: .aiModelLlama16) }
             public static var aiModelMistral: DesignSystemImage { .init(resource: .aiModelMistral16) }
             public static var aiModelOpenAI: DesignSystemImage { .init(resource: .aiModelOpenAi16) }
+            public static var aiModelOSS: DesignSystemImage { .init(resource: .aiModelOSS16) }
             public static var alert: DesignSystemImage { .init(resource: .alert16) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable16) }
             public static var arrowCircleRight: DesignSystemImage { .init(resource: .arrowCircleRight16) }

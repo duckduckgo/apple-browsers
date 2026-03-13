@@ -57,13 +57,15 @@ extension MainViewController {
             OnboardingIntroViewController.rebranded(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                daxDialogsManager: daxDialogsManager
+                daxDialogsManager: daxDialogsManager,
+                syncAutoRestoreHandler: syncAutoRestoreHandler
             )
         } else {
             OnboardingIntroViewController.legacy(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                daxDialogsManager: daxDialogsManager
+                daxDialogsManager: daxDialogsManager,
+                syncAutoRestoreHandler: syncAutoRestoreHandler
             )
         }
         controller.delegate = self
@@ -421,7 +423,8 @@ extension MainViewController {
                                                             subscriptionDataReporter: subscriptionDataReporter,
                                                             remoteMessagingDebugHandler: remoteMessagingDebugHandler,
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
-                                                            webExtensionManager: webExtensionManager)
+                                                            webExtensionManager: webExtensionManager,
+                                                            syncAutoRestoreHandler: syncAutoRestoreHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -504,6 +507,7 @@ extension MainViewController {
 
         let debug = DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
+            syncAutoRestoreHandler: self.syncAutoRestoreHandler,
             bookmarksDatabase: self.bookmarksDatabase,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,

@@ -161,6 +161,7 @@ extension DebugScreensViewModel {
                 return self.debugStoryboard.instantiateViewController(identifier: "SyncDebugViewController") { coder in
                     SyncDebugViewController(coder: coder,
                                             sync: d.syncService,
+                                            keyValueStore: d.keyValueStore,
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
@@ -241,13 +242,15 @@ extension DebugScreensViewModel {
                         OnboardingIntroViewController.rebranded(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager
+                            daxDialogsManager: d.daxDialogManager,
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
                         )
                     } else {
                         OnboardingIntroViewController.legacy(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager
+                            daxDialogsManager: d.daxDialogManager,
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
                         )
                     }
                     controller.delegate = capturedController

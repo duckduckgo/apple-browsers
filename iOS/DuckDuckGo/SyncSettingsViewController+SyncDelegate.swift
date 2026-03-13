@@ -23,6 +23,7 @@ import SwiftUI
 import SyncUI_iOS
 import DDGSync
 import AVFoundation
+import os.log
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     var syncBookmarksPausedTitle: String? {
@@ -169,6 +170,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             guard error == nil, let self else { return }
             Task { @MainActor in
                 do {
+                    guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
+                        return
+                    }
                     self.dismissPresentedViewController()
                     self.showPreparingSync(nil)
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
@@ -177,7 +181,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                     self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
                     self.refreshDevices()
-                    self.navigationController?.topViewController?.dismiss(animated: true, completion: self.showRecoveryPDF)
+                    self.dismissVCAndShowRecoveryPDF()
                 } catch {
                     await self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncSignupError)
                 }
@@ -281,17 +285,88 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
+    func isPreservedAccountPromptNeeded() -> Bool {
+        // Only route through the preserved-account prompt when auto-restore is eligible.
+        // If auto-restore is disabled, keep the existing setup behavior.
+        syncAutoRestoreHandler.isEligibleForAutoRestore()
+    }
+
+    @MainActor
+    func showAutoRestoreReady(for continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        let promptSource = autoRestorePromptSource(for: continuation)
+        autoRestorePromptSource = promptSource
+        needsPreservedAccountCleanupBeforeServerOperation = false
+        dismissPresentedViewController { [weak self] in
+            guard let self else { return }
+            let readyView = AutoRestoreReadyView(model: self.viewModel, onCancel: { [weak self] in
+                Pixel.fire(pixel: .syncAutoRestoreSettingsCancelled, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
+                self?.viewModel.clearPendingPreservedAccountContinuation()
+                self?.autoRestorePromptSource = nil
+                self?.dismissPresentedViewController()
+            })
+            let controller = DismissibleHostingController(rootView: readyView, onDismiss: { [weak self] in
+                self?.viewModel.clearPendingPreservedAccountContinuation()
+                if self?.needsPreservedAccountCleanupBeforeServerOperation == false {
+                    self?.autoRestorePromptSource = nil
+                }
+            })
+            self.navigationController?.present(controller, animated: true) {
+                Pixel.fire(pixel: .syncAutoRestoreSettingsReadyShown, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
+            }
+        }
+    }
+
+    @MainActor
+    func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        autoRestorePromptSource = autoRestorePromptSource(for: continuation)
+        needsPreservedAccountCleanupBeforeServerOperation = true
+        dismissPresentedViewController { [weak self] in
+            guard let self else { return }
+            switch continuation {
+            case .setup(let entryPoint):
+                self.continueSyncSetupFlow(entryPoint: entryPoint)
+            case .recover:
+                self.presentRecoveryCodeScan()
+            }
+        }
+    }
+
+    func showRecoveringDataAutoRestore() {
+        autoRestorePromptSource = nil
+        needsPreservedAccountCleanupBeforeServerOperation = false
+        dismissPresentedViewController { [weak self] in
+            self?.navigationController?.present(UIHostingController(rootView: RecoveringDataView()), animated: true) { [weak self] in
+                guard let self else { return }
+                Task {
+                    await self.performAutoRestore()
+                }
+            }
+        }
+    }
+
+    func performAutoRestore() async {
+        do {
+            try await syncAutoRestoreHandler.restoreFromPreservedAccount(source: .settings)
+        } catch {
+            await handleError(.unableToSyncToServer, error: error, event: .syncLoginError)
+        }
+    }
+
+    func dismissRecoveringDataViewIfPresented() {
+        guard navigationController?.presentedViewController is UIHostingController<RecoveringDataView> else {
+            return
+        }
+        dismissPresentedViewController()
+    }
+
     @MainActor
     func showSyncWithAnotherDevice() {
         collectCode(showQRCode: true)
     }
 
-    func showRecoverData() {
-        authenticateUser { [weak self] error in
-            guard error == nil, let self else { return }
-
-            self.dismissPresentedViewController()
-            self.collectCode(showQRCode: false)
+    func showRecoveryCodeEntry() {
+        dismissRecoverSyncedDataSheetIfNeeded { [weak self] in
+            self?.presentRecoveryCodeScan()
         }
     }
 
@@ -322,6 +397,25 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
+    func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent) {
+        switch event {
+        case .settingsPageShown:
+            Pixel.fire(pixel: .syncAutoRestoreSettingsPageShown)
+        case .settingsPageToggleChanged(let enabled):
+            if enabled {
+                Pixel.fire(pixel: .syncAutoRestoreSettingsPageToggleEnabled)
+            } else {
+                Pixel.fire(pixel: .syncAutoRestoreSettingsPageToggleDisabled)
+            }
+        case .manualRecoveryShown:
+            Pixel.fire(pixel: .syncAutoRestoreSettingsManualRecoveryShown)
+        case .readyRestoreTapped:
+            Pixel.fire(pixel: .syncAutoRestoreSettingsRestoreTapped, withAdditionalParameters: autoRestorePromptSourceParameters)
+        case .readySkipRestoreTapped:
+            Pixel.fire(pixel: .syncAutoRestoreSettingsSkipRestoreTapped, withAdditionalParameters: autoRestorePromptSourceParameters)
+        }
+    }
+
     func showPreparingSync() async {
         await withCheckedContinuation { continuation in
             showPreparingSync {
@@ -337,16 +431,93 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     @MainActor
     func showRecoveryPDF() {
-        let model = SaveRecoveryKeyViewModel(key: recoveryCode) { [weak self] in
-            self?.shareRecoveryPDF()
-        } onDismiss: {
-            self.showDeviceConnected()
-        }
+        let model = SaveRecoveryKeyViewModel(
+            key: recoveryCode,
+            showRecoveryPDFAction: { [weak self] in
+                self?.shareRecoveryPDF()
+            },
+            onDismiss: { [weak self] in
+                self?.refreshAutoRestoreDecisionState()
+                self?.showDeviceConnected()
+            },
+            autoRestoreProvider: syncAutoRestoreHandler,
+            onAutoRestoreToggleShown: {
+                Pixel.fire(pixel: .syncAutoRestoreToggleShown)
+            },
+            onAutoRestoreToggleOptedOut: {
+                Pixel.fire(pixel: .syncAutoRestoreToggleOptedOut)
+            }
+        )
         let controller = UIHostingController(rootView: SaveRecoveryKeyView(model: model))
         navigationController?.present(controller, animated: true) { [weak self] in
             guard let self else { return }
             self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
         }
+    }
+
+    @MainActor
+    func performDeferredPreservedAccountCleanupIfNeeded() async -> Bool {
+        guard needsPreservedAccountCleanupBeforeServerOperation else {
+            return true
+        }
+
+        if let preservedDeviceId = syncService.account?.deviceId {
+            do {
+                try await syncService.disconnect(deviceId: preservedDeviceId)
+            } catch {
+                Logger.sync.error("Best-effort remote disconnect failed for preserved sync account: \(error.localizedDescription, privacy: .public)")
+                // Continue with local cleanup so setup can proceed even when remote logout fails.
+            }
+        }
+
+        do {
+            try syncService.removePreservedSyncAccount()
+        } catch {
+            Pixel.fire(pixel: .syncAutoRestorePreservedAccountClearFailed, error: error, withAdditionalParameters: autoRestorePromptSourceParameters)
+            Logger.sync.error("Failed to clear preserved sync account before server operation: \(error.localizedDescription, privacy: .public)")
+            presentPreservedAccountCleanupFailureAlert()
+            return false
+        }
+
+        Pixel.fire(pixel: .syncAutoRestorePreservedAccountCleared, withAdditionalParameters: autoRestorePromptSourceParameters)
+        needsPreservedAccountCleanupBeforeServerOperation = false
+        autoRestorePromptSource = nil
+        return true
+    }
+
+    @MainActor
+    private func continueSyncSetupFlow(entryPoint: SyncSettingsViewModel.SyncSetupEntryPoint) {
+        switch entryPoint {
+        case .backup:
+            viewModel.isSyncWithSetUpSheetVisible = true
+        case .pairing:
+            showSyncWithAnotherDevice()
+        }
+    }
+
+    @MainActor
+    private func presentRecoveryCodeScan() {
+        viewModel.isRecoverSyncedDataSheetVisible = false
+        collectCode(showQRCode: false)
+    }
+
+    @MainActor
+    private func dismissRecoverSyncedDataSheetIfNeeded(completion: @escaping () -> Void) {
+        viewModel.isRecoverSyncedDataSheetVisible = false
+        if let presentedViewController = presentedViewController,
+           presentedViewController is UIHostingController<RecoverSyncedDataView> {
+            presentedViewController.dismiss(animated: true, completion: completion)
+            return
+        }
+
+        if let presentedViewController = navigationController?.presentedViewController,
+           presentedViewController is UIHostingController<RecoverSyncedDataView> {
+            presentedViewController.dismiss(animated: true, completion: completion)
+            return
+        }
+
+        // Nothing to dismiss in this flow, continue immediately.
+        completion()
     }
 
     private func collectCode(showQRCode: Bool) {
@@ -357,7 +528,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Task { @MainActor in
             let pairingInfo: PairingInfo
             let source: SyncSetupSource
-            if isSyncEnabled {
+            if shouldUsePreservedAccountForConnectionFlow {
                 do {
                     pairingInfo = try await connectionController.startExchangeMode()
                     source = .exchange
@@ -384,7 +555,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
             let onPresentPixelInfo: SyncSetupPixelInfo?
-            if isSyncEnabled {
+            if shouldUsePreservedAccountForConnectionFlow {
                 stringForQRCode = recoveryCode
                 codeForDisplayOrPasting = recoveryCode
                 onPresentPixelInfo = nil
@@ -539,6 +710,37 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func codeEntryScreenShown() {
         Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
+    }
+
+    @MainActor
+    private func presentPreservedAccountCleanupFailureAlert() {
+        let alertController = UIAlertController(title: SyncErrorMessage.unknownError.title, message: SyncErrorMessage.unknownError.description, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: UserText.syncPausedAlertOkButton, style: .default))
+
+        dismissPresentedViewController { [weak self] in
+            self?.present(alertController, animated: true)
+        }
+    }
+
+    private var autoRestorePromptSourceParameters: [String: String] {
+        guard let autoRestorePromptSource else {
+            return [:]
+        }
+        return [PixelParameters.source: autoRestorePromptSource.rawValue]
+    }
+
+    private func autoRestorePromptSource(for continuation: SyncSettingsViewModel.PreservedAccountContinuation) -> AutoRestorePromptSource {
+        switch continuation {
+        case .setup(let entryPoint):
+            switch entryPoint {
+            case .backup:
+                return .syncBackup
+            case .pairing:
+                return .syncPairing
+            }
+        case .recover:
+            return .syncRecover
+        }
     }
 }
 

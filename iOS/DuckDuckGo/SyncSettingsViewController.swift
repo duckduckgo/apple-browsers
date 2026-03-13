@@ -39,6 +39,12 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         static let passwordsPromotion = "promotion_passwords"
     }
 
+    enum AutoRestorePromptSource: String {
+        case syncPairing = "sync_pairing"
+        case syncBackup = "sync_backup"
+        case syncRecover = "sync_recover"
+    }
+
     lazy var authenticator = Authenticator()
     lazy var connectionController: SyncConnectionControlling = syncService.createConnectionController(deviceName: deviceName, deviceType: deviceType, delegate: self)
 
@@ -52,9 +58,14 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
                                               cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)
     let userSession = UserSession()
     let featureFlagger: FeatureFlagger
-    
+    let syncAutoRestoreHandler: SyncAutoRestoreHandling
+
     var isSyncEnabled: Bool {
         syncService.account != nil
+    }
+
+    var shouldUsePreservedAccountForConnectionFlow: Bool {
+        isSyncEnabled && !needsPreservedAccountCleanupBeforeServerOperation
     }
 
     var recoveryCode: String {
@@ -79,6 +90,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     var source: String?
     var pairingInfo: PairingInfo?
+    var needsPreservedAccountCleanupBeforeServerOperation = false
+    var autoRestorePromptSource: AutoRestorePromptSource?
 
     var onConfirmSyncDisable: (() -> Void)?
     var onConfirmAndDeleteAllData: (() -> Void)?
@@ -93,7 +106,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         syncPausedStateManager: any SyncPausedStateManaging,
         source: String? = nil,
         pairingInfo: PairingInfo? = nil,
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        syncAutoRestoreHandler: SyncAutoRestoreHandling
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -103,13 +117,15 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         self.source = source
         self.pairingInfo = pairingInfo
         self.featureFlagger = featureFlagger
+        self.syncAutoRestoreHandler = syncAutoRestoreHandler
 
         let viewModel = SyncSettingsViewModel(
             isOnDevEnvironment: { syncService.serverEnvironment == .development },
             switchToProdEnvironment: {
                 syncService.updateServerEnvironment(.production)
                 UserDefaults.standard.set(ServerEnvironment.production.description, forKey: UserDefaultsWrapper<String>.Key.syncEnvironment.rawValue)
-            }
+            },
+            autoRestoreProvider: syncAutoRestoreHandler
         )
         self.viewModel = viewModel
 
@@ -287,6 +303,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         connector = nil
+        refreshAutoRestoreDecisionState()
         syncService.scheduler.requestSyncImmediately()
     }
 
@@ -302,9 +319,16 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         syncService.scheduler.requestSyncImmediately()
     }
 
+    func refreshAutoRestoreDecisionState() {
+        viewModel.refreshAutoRestoreDecisionState()
+    }
+
     func refreshForState(_ authState: SyncAuthState) {
         viewModel.isSyncEnabled = authState != .inactive
         if authState != .inactive {
+            // Sync auto restore completion is inferred when auth transitions away from `.inactive`,
+            // so dismiss the recovering sheet if it is still visible at that point.
+            dismissRecoveringDataViewIfPresented()
             viewModel.syncEnabled(recoveryCode: recoveryCode)
             refreshDevices()
         }
@@ -312,6 +336,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     func dismissPresentedViewController(completion: (() -> Void)? = nil) {
         viewModel.isSyncWithSetUpSheetVisible = false
+        viewModel.isRecoverSyncedDataSheetVisible = false
         guard let presentedViewController = navigationController?.presentedViewController,
               !(presentedViewController is SyncSettingsViewController) else {
             completion?()
@@ -356,28 +381,19 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     private func startSyncWithAnotherDeviceIfNecessary() {
         guard source == SourceConstants.startSyncFlow,
-              syncService.account == nil else {
+              syncService.authState == .inactive else {
             return
         }
-
-        Task { @MainActor in
-            do {
-                try await authenticateUser()
-                showSyncWithAnotherDevice()
-            }
-        }
+        viewModel.beginPairingFlow()
     }
 
     private func startSyncBackupIfNecessary() {
         let autoShowSources = [SourceConstants.startBackupFlow, SourceConstants.dataImportSummarySyncPromotion]
         guard let source = source, autoShowSources.contains(source),
-              syncService.account == nil else {
+              syncService.authState == .inactive else {
             return
         }
-
-        Task { @MainActor in
-            await viewModel.presentSyncWithSetUpSheetIfNeeded()
-        }
+        viewModel.beginBackupFlow()
     }
 
     private func askForAuthThenStartPairing() {
@@ -484,6 +500,8 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 
     func codeCollectionCancelled() {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
+        needsPreservedAccountCleanupBeforeServerOperation = false
+        autoRestorePromptSource = nil
         dismissPresentedViewController()
         Pixel.fire(pixel: .syncSetupEndedAbandoned)
     }
@@ -537,7 +555,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         dismissPresentedViewController()
         await showPreparingSync()
     }
-    
+
+    func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
+        await performDeferredPreservedAccountCleanupIfNeeded()
+    }
+
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {
         if viewModel.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)

@@ -139,6 +139,7 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
+    let syncAutoRestoreHandler: SyncAutoRestoreHandling
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -316,6 +317,7 @@ class MainViewController: UIViewController {
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+        syncAutoRestoreHandler: SyncAutoRestoreHandling,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
@@ -382,6 +384,7 @@ class MainViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
+        self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
@@ -3169,6 +3172,11 @@ extension MainViewController: OmniBarDelegate {
             verticalSizeClass: traitCollection.verticalSizeClass
         )
 
+        let initialDetentHeight = model.estimatedInitialDetentHeight(
+            headerDataSource: browsingMenuHeaderDataSource,
+            verticalSizeClass: traitCollection.verticalSizeClass
+        )
+
         func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
             if context == .newTabPage {
                 if #available(iOS 16.0, *) {
@@ -3176,6 +3184,8 @@ extension MainViewController: OmniBarDelegate {
                 } else {
                     sheet.detents = [.medium()]
                 }
+            } else if let initialDetentHeight, #available(iOS 16.0, *) {
+                sheet.detents = [.custom { _ in initialDetentHeight }, .large()]
             } else {
                 sheet.detents = [.medium(), .large()]
             }

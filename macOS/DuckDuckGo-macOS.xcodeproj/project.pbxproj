@@ -2137,6 +2137,8 @@
 		7B7F5D252C52725A00826256 /* AddExcludedDomainButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B7F5D232C52725A00826256 /* AddExcludedDomainButtonsView.swift */; };
 		7B8594192B5B26230007EB3E /* UDSHelper in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8594182B5B26230007EB3E /* UDSHelper */; };
 		7B874BD62CBD7E8D009C6C63 /* VPNProxyExtension.appex in Embed Network Extensions */ = {isa = PBXBuildFile; fileRef = 7BDA36E52B7E037100AD5388 /* VPNProxyExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7B874DE52F509D31004C8F90 /* AttributionXattrCanaryValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B874DE42F509D31004C8F90 /* AttributionXattrCanaryValidator.swift */; };
+		7B874DE62F509D31004C8F90 /* AttributionXattrCanaryValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B874DE42F509D31004C8F90 /* AttributionXattrCanaryValidator.swift */; };
 		7B8DB31A2B504D7500EC16DA /* VPNAppEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8DB3192B504D7500EC16DA /* VPNAppEventsHandler.swift */; };
 		7B8FDD202CDD88C500720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD1F2CDD88C500720907 /* FeatureFlags */; };
 		7B8FDD222CDD88CB00720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD212CDD88CB00720907 /* FeatureFlags */; };
@@ -5431,6 +5433,7 @@
 		7B7F5D202C526CE600826256 /* AddExcludedDomainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExcludedDomainView.swift; sourceTree = "<group>"; };
 		7B7F5D232C52725A00826256 /* AddExcludedDomainButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExcludedDomainButtonsView.swift; sourceTree = "<group>"; };
 		7B8594172B5B25FB0007EB3E /* UDSHelper */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UDSHelper; sourceTree = "<group>"; };
+		7B874DE42F509D31004C8F90 /* AttributionXattrCanaryValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributionXattrCanaryValidator.swift; sourceTree = "<group>"; };
 		7B8DB3192B504D7500EC16DA /* VPNAppEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAppEventsHandler.swift; sourceTree = "<group>"; };
 		7B8FDD1E2CDD877000720907 /* FeatureFlags */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = FeatureFlags; sourceTree = "<group>"; };
 		7B9167A82C09E88800322310 /* AppLauncher */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppLauncher; sourceTree = "<group>"; };
@@ -11623,6 +11626,7 @@
 		B69B50332726A10700758A2B /* ATB */ = {
 			isa = PBXGroup;
 			children = (
+				7B874DE42F509D31004C8F90 /* AttributionXattrCanaryValidator.swift */,
 				BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */,
 				BB33643E2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift */,
 				B69B50382726A12400758A2B /* AtbParser.swift */,
@@ -15471,6 +15475,7 @@
 				B6A22B632B1E29D000ECD2BA /* DataImportSummaryViewModel.swift in Sources */,
 				1E15F6952DF08E920061395E /* AIChatCoordinator.swift in Sources */,
 				7BD5049F2E5FA42F008A0646 /* Tab+WKWebExtensionTab.swift in Sources */,
+				7B874DE62F509D31004C8F90 /* AttributionXattrCanaryValidator.swift in Sources */,
 				56DB9FED2CD2515F001BEC23 /* OnboardingPixelReporter.swift in Sources */,
 				3702DC5E2D75ECD4007BF609 /* HistoryViewDeleteDialog.swift in Sources */,
 				1D645EB12F4CA839009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift in Sources */,
@@ -17217,6 +17222,7 @@
 				84A72AA82DB276A20092A4B4 /* LinkOpenBehavior.swift in Sources */,
 				3145BF5B2DC109DF00A9B8D4 /* ShortcutTooltip.swift in Sources */,
 				379E4D612D4383D200A901B1 /* NewTabPageCoordinator.swift in Sources */,
+				7B874DE52F509D31004C8F90 /* AttributionXattrCanaryValidator.swift in Sources */,
 				8400DC4E2C6E2770006509D2 /* SteppedScrollView.swift in Sources */,
 				BB5789722B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift in Sources */,
 				B693954F26F04BEB0015B914 /* PaddedImageButton.swift in Sources */,

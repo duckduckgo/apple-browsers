@@ -2700,6 +2700,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ach, skôr ako zabudnem…";
 
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Chceš obnoviť záložky, heslá a ďalšie údaje z predchádzajúcej synchronizácie DuckDuckGo?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Obnoviť moje veci";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Preskočiť";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Pokračujme tam, kde si skončil/a";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Súkromne. Rýchlo. Menej reklám.";
 /* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */

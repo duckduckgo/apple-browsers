@@ -191,6 +191,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
     case newDeviceSyncPrompt
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212887107244162?focus=true
+    case syncAutoRestore
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468857577
     case winBackOffer
 
@@ -380,7 +383,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tabSwitcherTrackerCount,
              .iPadDuckaiOnTab,
              .suppressTrackerAnimationOnColdStart,
-             .customXSafariRedirectHandling:
+             .customXSafariRedirectHandling,
+             .syncAutoRestore:
             true
         default:
             false
@@ -482,6 +486,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .genericBackgroundTask,
              .tabSwitcherTrackerCount,
              .burnSingleTab,
+             .syncAutoRestore,
              .uiTestFeatureFlag,
              .freeTrialConversionWideEvent,
              .uiTestExperiment,
@@ -652,6 +657,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
+        case .syncAutoRestore:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncAutoRestore))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .blackFridayCampaign:

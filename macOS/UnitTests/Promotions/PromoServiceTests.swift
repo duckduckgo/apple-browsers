@@ -52,6 +52,7 @@ final class PromoServiceTests: XCTestCase {
     private func makeService(
         promos: [Promo],
         initialExternalActivation: Bool = false,
+        isOnboardingCompletedProvider: @escaping () -> Bool = { true },
         evaluationDeferralWindow: TimeInterval = 0,
         registrationFallbackTimeout: TimeInterval = 0,
         externalActivationWindow: TimeInterval = 0
@@ -61,6 +62,7 @@ final class PromoServiceTests: XCTestCase {
             historyStore: historyStore,
             triggerPublisher: triggerSubject.eraseToAnyPublisher(),
             initialExternalActivation: initialExternalActivation,
+            isOnboardingCompletedProvider: isOnboardingCompletedProvider,
             stateQueue: testQueue,
             evaluationDeferralWindow: evaluationDeferralWindow,
             registrationFallbackTimeout: registrationFallbackTimeout,
@@ -176,6 +178,74 @@ final class PromoServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(delegate.hideCallCount, 1)
+    }
+
+    func testWhenOnboardingIncomplete_ThenInternalPromoIsSuppressedUntilOnboardingCompletes() async {
+        // Given
+        var isOnboardingCompleted = false
+        let delegate = MockPromoDelegate(isEligible: true)
+        delegate.setShowResult(.actioned)
+        let promo = PromoTestHelpers.makePromo(id: "onboarding-gated-internal", delegate: delegate)
+        let promoService = makeService(
+            promos: [promo],
+            isOnboardingCompletedProvider: { isOnboardingCompleted }
+        )
+        let expectation = XCTestExpectation(description: "promo hidden after onboarding completes")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.isEmpty, delegate.showCallCount == 1 {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When: onboarding is incomplete
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        drainStateQueue()
+
+        // Then: internal promo is suppressed
+        XCTAssertEqual(delegate.showCallCount, 0)
+        XCTAssertEqual(delegate.hideCallCount, 0)
+
+        // When: onboarding completes and a new trigger arrives
+        isOnboardingCompleted = true
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [expectation], timeout: timeout)
+
+        // Then: promo can now be shown and dismissed
+        XCTAssertEqual(delegate.showCallCount, 1)
+        XCTAssertEqual(delegate.hideCallCount, 1)
+    }
+
+    func testWhenOnboardingIncomplete_ThenExternalPromoVisibilityStillObserved() async {
+        // Given
+        let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
+        let promo = PromoTestHelpers.makePromo(id: "onboarding-gated-external", delegate: externalDelegate)
+        let promoService = makeService(
+            promos: [promo],
+            isOnboardingCompletedProvider: { false }
+        )
+        let expectation = XCTestExpectation(description: "external promo visible while onboarding incomplete")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.contains(where: { $0.id == "onboarding-gated-external" }) {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        drainStateQueue()
+        externalDelegate.setVisible(true)
+        drainStateQueue()
+        await fulfillment(of: [expectation], timeout: timeout)
+
+        // Then
+        XCTAssertTrue(externalDelegate.isVisible)
     }
 
     func testWhenGlobalPromoVisible_ThenOtherContextPromoBlocked() async {

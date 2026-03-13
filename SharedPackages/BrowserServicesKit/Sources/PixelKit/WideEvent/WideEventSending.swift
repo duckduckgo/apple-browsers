@@ -50,13 +50,13 @@ public final class DefaultWideEventSender: WideEventSending {
     }
 
     public convenience init(
-        skipPOSTRequests: Bool,
+        useMockRequests: Bool,
         pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
         storage: WideEventStoring = WideEventUserDefaultsStorage()
     ) {
         self.init(
             pixelKitProvider: pixelKitProvider,
-            postRequestHandler: skipPOSTRequests ? Self.mockPOSTRequestHandler : Self.defaultPOSTRequestHandler,
+            postRequestHandler: useMockRequests ? Self.mockPOSTRequestHandler : Self.defaultPOSTRequestHandler,
             storage: storage
         )
     }

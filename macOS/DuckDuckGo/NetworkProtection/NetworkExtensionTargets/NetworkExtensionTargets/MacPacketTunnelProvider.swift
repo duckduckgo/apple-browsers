@@ -501,7 +501,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let settings = VPNSettings(defaults: defaults) // Note, settings here is not yet populated with the startup options
         let buildType = StandardApplicationBuildType()
         self.wideEvent = WideEvent(
-            skipPOSTRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
             featureFlagProvider: WideEventFeatureFlagProvider(settings: settings)
         )
 

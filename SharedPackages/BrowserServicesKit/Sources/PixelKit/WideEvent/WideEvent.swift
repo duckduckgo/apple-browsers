@@ -77,14 +77,14 @@ public final class WideEvent: WideEventManaging {
     }
 
     public convenience init(
-        skipPOSTRequests: Bool = false,
+        useMockRequests: Bool = false,
         storage: WideEventStoring = WideEventUserDefaultsStorage(),
         failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,
         featureFlagProvider: WideEventFeatureFlagProviding
     ) {
         self.init(
             storage: storage,
-            sender: DefaultWideEventSender(skipPOSTRequests: skipPOSTRequests),
+            sender: DefaultWideEventSender(useMockRequests: useMockRequests),
             sampler: DefaultWideEventSampler(),
             failureEventMapping: failureEventMapping,
             featureFlagProvider: featureFlagProvider

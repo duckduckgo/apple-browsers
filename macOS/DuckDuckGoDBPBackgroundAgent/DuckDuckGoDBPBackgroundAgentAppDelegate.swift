@@ -114,7 +114,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
                                                   privacyConfigurationManager: privacyConfigurationManager)
         let buildType = StandardApplicationBuildType()
         let wideEvent = WideEvent(
-            skipPOSTRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
             featureFlagProvider: dbpFeatureFlagger
         )
 

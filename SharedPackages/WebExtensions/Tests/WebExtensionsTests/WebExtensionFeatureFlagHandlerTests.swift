@@ -355,6 +355,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
                 if disabledCallbackExecuted {
                     enabledCallbackExecutedAfterDisabled = true
                 }
@@ -384,6 +385,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: {
                 try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
                 if disabledCallbackExecuted {
                     enabledCallbackExecutedAfterDisabled = true
                 }
@@ -404,7 +406,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenWebExtensionsFlagToggledEnabledDisabledEnabledThenOnlyLastEnableRuns() async throws {
-        throw XCTSkip("Flaky test - disabled")
         var enabledCallCount = 0
         let enabledExpectation = expectation(description: "onFeatureFlagEnabled called once")
 
@@ -413,6 +414,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
                 enabledCallCount += 1
                 enabledExpectation.fulfill()
             },
@@ -430,8 +432,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenEmbeddedFlagToggledEnabledDisabledEnabledThenOnlyLastEnableRuns() async throws {
-        throw XCTSkip("Flaky test - disabled")
-
         var enabledCallCount = 0
         let enabledExpectation = expectation(description: "onEmbeddedExtensionFlagEnabled called once")
 
@@ -442,6 +442,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: {
                 try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
                 enabledCallCount += 1
                 enabledExpectation.fulfill()
             }

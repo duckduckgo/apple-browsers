@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Avada teises rakenduses?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Mine tagasi";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Kas soovid selle lehe Safaris avada?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Kahjuks ei õnnestunud lehte laadida.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Avatud Safaris";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Jää DuckDuckGo juurde";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Mõned veebisaidi funktsioonid ei pruugi selle brauseriga ühilduda.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "See sait soovib avaneda Safaris.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "ÜMBER BRÄNDITUD";
 

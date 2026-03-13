@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Başka Bir Uygulamada Açılsın mı?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Geri dön";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Bu sayfayı Safari'de açmak ister misiniz?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Maalesef sayfa yüklenemedi.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Safari'de aç";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "DuckDuckGo'da kal";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Bazı web sitesi özellikleri bu tarayıcıda uyumlu olmayabilir.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Bu site Safari'de açılmak istiyor.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "YENİDEN MARKALANDI";
 

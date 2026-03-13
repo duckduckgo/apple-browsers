@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Megnyitás másik alkalmazásban?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Visszalépés";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Szeretnéd megnyitni ezt az oldalt a Safariban?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Sajnos nem sikerült betölteni az oldalt.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Megnyitás Safariban";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Maradok a DuckDuckGónál";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Előfordulhat, hogy a webhely egyes funkciói nem kompatibilisek ezzel a böngészővel.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Az oldal a Safariban próbál megnyílni.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "ÚJRAMÁRKÁZVA";
 

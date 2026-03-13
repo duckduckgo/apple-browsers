@@ -283,7 +283,6 @@ extension MainViewController {
             }
         }
 
-        view.layoutIfNeeded()
     }
 
     private func installUnifiedInputContentViewController() {

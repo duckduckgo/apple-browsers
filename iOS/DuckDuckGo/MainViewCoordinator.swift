@@ -318,9 +318,6 @@ class MainViewCoordinator {
         cancelInFlightLayoutAnimations()
         showAIChatTabChatHeader()
         setNavigationChromeHidden(true)
-        UIView.performWithoutAnimation {
-            superview.layoutIfNeeded()
-        }
     }
 
     private func cancelInFlightLayoutAnimations() {

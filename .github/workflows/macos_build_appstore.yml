@@ -65,6 +65,8 @@ on:
         required: true
       MM_WEBHOOK_URL:
         required: true
+      SSH_PRIVATE_KEY_DUCKSANS_FONT:
+        required: true
 
 jobs:
   build:

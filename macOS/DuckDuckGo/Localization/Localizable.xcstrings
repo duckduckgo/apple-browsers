@@ -75273,6 +75273,42 @@
         }
       }
     },
+    "pm.menu-bar.hide" : {
+      "comment" : "Context menu option to hide passwords icon from system menu bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't Show in Menu Bar"
+          }
+        }
+      }
+    },
+    "pm.menu-bar.section" : {
+      "comment" : "Section header for menu bar settings in passwords preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Menu Bar"
+          }
+        }
+      }
+    },
+    "pm.menu-bar.show-passwords" : {
+      "comment" : "Toggle to show passwords icon in system menu bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show passwords in menu bar"
+          }
+        }
+      }
+    },
     "pm.month" : {
       "comment" : "Label for Month title",
       "extractionState" : "extracted_with_value",

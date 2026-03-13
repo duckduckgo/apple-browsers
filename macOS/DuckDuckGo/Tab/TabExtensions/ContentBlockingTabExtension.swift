@@ -55,8 +55,32 @@ final class ContentBlockingTabExtension: NSObject {
     private let fbBlockingEnabledProvider: FbBlockingEnabledProvider
     private let tld: TLD
     private var trackersSubject = PassthroughSubject<DetectedTracker, Never>()
+    
+    private struct SurrogateDedupKey: Hashable {
+            let pageUrl: String
+            let requestUrl: String
+        }
+    
+        // Dedup only surrogate-injected events to prevent accidental double emission
+        // for the same request on the same page; keep normal tracker path unchanged.
+        private static let surrogateDedupWindow: TimeInterval = 1.0
+        private var recentSurrogateEvents: [SurrogateDedupKey: Date] = [:]
 
     private var cancellables = Set<AnyCancellable>()
+    
+        @MainActor
+        private func shouldEmitSurrogate(for surrogate: TrackerProtectionSubfeature.SurrogateInjection) -> Bool {
+                    let now = Date()
+                    recentSurrogateEvents = recentSurrogateEvents.filter { now.timeIntervalSince($0.value) < Self.surrogateDedupWindow }
+            
+                    let key = SurrogateDedupKey(pageUrl: surrogate.pageUrl, requestUrl: surrogate.url)
+                    if let seenAt = recentSurrogateEvents[key], now.timeIntervalSince(seenAt) < Self.surrogateDedupWindow {
+                        return false
+                    }
+            
+                    recentSurrogateEvents[key] = now
+                    return true
+                }
 
 #if DEBUG
     /// set this to true when Navigation-related decision making is expected to take significant time to avoid assertions
@@ -169,6 +193,9 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
     func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
                            didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
+        guard shouldEmitSurrogate(for: surrogate) else {
+                    return
+                }
         guard let surrogateHost = trackerProtectionMapper.surrogateHost(from: surrogate), !surrogateHost.isEmpty else {
             return
         }

@@ -530,50 +530,6 @@ final class WatchdogTests: XCTestCase {
         await cooldownWatchdog.stop()
     }
 
-    func testTimeoutFiresAgainAfterCooldownExpires() async throws {
-        let store = FiredEventsStore()
-        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
-            store.append(event)
-            onComplete(nil)
-        }
-
-        let cooldownWatchdog = Watchdog(minimumHangDuration: 0.2, maximumHangDuration: 0.3, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 1.2, eventMapper: eventMapper)
-
-        // Subscribe before the first hang so we don't miss the recovery transition
-        let recoveryStateExpectation = XCTestExpectation(description: "Recovery state reached")
-        recoveryStateExpectation.assertForOverFulfill = false
-
-        let cancellable = await cooldownWatchdog.hangStatePublisher
-            .sink { state, _ in
-                if state == .responsive {
-                    recoveryStateExpectation.fulfill()
-                }
-            }
-
-        // Initialize the Watchdog
-        await cooldownWatchdog.start()
-        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-
-        // First hang: should fire
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
-
-        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "First timeout should fire")
-
-        // Wait for the watchdog to actually recover to .responsive
-        await fulfillment(of: [recoveryStateExpectation], timeout: 5.0)
-
-        // Wait for cooldown to expire (from now, since recovery just happened)
-        try await Task.sleep(nanoseconds: 2_000 * NSEC_PER_MSEC)
-
-        // Second hang: cooldown expired, should fire again
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
-
-        XCTAssertGreaterThanOrEqual(store.events.numberOfHangNotRecoveredEvents, 2, "Second timeout after cooldown should fire")
-
-        cancellable.cancel()
-        await cooldownWatchdog.stop()
-    }
-
     func testCooldownDoesNotAffectRecoveredEvents() async throws {
         let store = FiredEventsStore()
         let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in

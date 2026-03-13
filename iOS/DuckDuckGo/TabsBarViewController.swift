@@ -67,7 +67,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var aiChatSettings: AIChatSettingsProvider?
     var keyValueStore: ThrowingKeyValueStoring?
     var daxDialogsManager: DaxDialogsManaging?
-    private weak var tabsModel: TabsModel?
+    private weak var tabsModel: TabsModelManaging?
 
     private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
 
@@ -79,8 +79,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         return tabsModel?.count ?? 0
     }
     
-    var currentIndex: Int {
-        return tabsModel?.currentIndex ?? 0
+    var currentIndex: Int? {
+        return tabsModel?.currentIndex
     }
 
     var maxItems: Int {
@@ -171,7 +171,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         requestNewTab()
     }
 
-    func refresh(tabsModel: TabsModel?, scrollToSelected: Bool = false) {
+    func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
         
         tabSwitcherButton.isAccessibilityElement = true
@@ -193,7 +193,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         if scrollToSelected {
             DispatchQueue.main.async {
-                self.collectionView.scrollToItem(at: IndexPath(row: self.currentIndex, section: 0), at: .right, animated: true)
+                if let currentIndex = self.currentIndex {
+                    self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
+                }
             }
         }
 
@@ -274,7 +276,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private func requestNewTab() {
         delegate?.tabsBarDidRequestNewTab(self)
         DispatchQueue.main.async {
-            self.collectionView.scrollToItem(at: IndexPath(row: self.currentIndex, section: 0), at: .right, animated: true)
+            if let currentIndex = self.currentIndex {
+                self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
+            }
         }
     }
 
@@ -372,24 +376,33 @@ extension TabsBarViewController {
 extension MainViewController: TabsBarDelegate {
   
     func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int) {
+        guard let tab = tabManager.currentTabsModel.get(tabAt: index) else {
+            return
+        }
+
         dismissOmniBar()
 
         // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.
-        if index != self.tabManager.model.currentIndex {
+        if tab !== self.tabManager.currentTabsModel.currentTab {
             chromeManager.preventNextScrollToTop()
         }
         
-        select(tabAt: index)
+        selectTab(tab)
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
-        let tab = tabManager.model.get(tabAt: index)
-        closeTab(tab)
+        if let tab = tabManager.currentTabsModel.get(tabAt: index) {
+            closeTab(tab)
+        }
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int) {
-        tabManager.model.moveTab(from: fromIndex, to: toIndex)
-        select(tabAt: toIndex)
+        let tabsModel = tabManager.currentTabsModel
+        guard let tab = tabsModel.get(tabAt: fromIndex) else {
+            return
+        }
+        tabsModel.move(tab: tab, to: toIndex)
+        selectTab(tab)
     }
     
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController) {

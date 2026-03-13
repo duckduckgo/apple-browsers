@@ -1061,7 +1061,8 @@ final class NavigationBarViewController: NSViewController {
     private func setupNavigationButtonColors() {
         let allButtons: [MouseOverButton] = [
             goBackButton, goForwardButton, refreshOrStopButton, homeButton,
-            downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton]
+            downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton
+        ]
 
         let colorsProvider = theme.colorsProvider
 

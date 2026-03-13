@@ -64,10 +64,10 @@
         ]
     },
     "m_mac_release_notes_loading_error": {
-        "description": "Fires when the release notes page shows a loading error. Used to measure how often users encounter this anomaly case.",
+        "description": "Fires when the release notes page shows a loading error (no update info available after update cycle completes or hasn't started). Debounced by 1 second.",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_mac_wide_sparkle_update_cycle": {

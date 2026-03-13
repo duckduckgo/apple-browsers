@@ -254,29 +254,90 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
     ///
     /// Returns `nil` if the private API is unavailable or fails, so callers can
     /// distinguish "0 bytes used" from "unable to measure."
-    private static func getWebContentProcessMemory() -> (totalBytes: UInt64, processCount: Int)? {
-        let selector = Selector(("_webContentProcessInfo"))
-        guard WKProcessPool.responds(to: selector),
-              let processInfoList = WKProcessPool.perform(selector)?
-                .takeUnretainedValue() as? [NSObject] else {
-            return nil
+    ///
+    /// - Parameters:
+    ///   - pidProvider: Override for PID collection. When `nil` (default), uses the real
+    ///     `WKProcessPool._webContentProcessInfo` API. Provided for testing only.
+    ///   - memoryProvider: Override for per-PID resident size lookup. When `nil` (default),
+    ///     uses `proc_pidinfo`. Returns `nil` for a given PID if memory is unreadable
+    ///     (e.g. the process has exited). Provided for testing only.
+    static func getWebContentProcessMemory(
+        pidProvider: (() -> [pid_t]?)? = nil,
+        memoryProvider: ((pid_t) -> UInt64?)? = nil
+    ) -> (totalBytes: UInt64, processCount: Int)? {
+        // _webContentProcessInfo must be called on the main thread. WebKit's
+        // AuxiliaryProcessProxy objects are owned and destroyed on the main thread;
+        // calling this API off the main thread races with WebContent process termination,
+        // causing a use-after-free crash inside AuxiliaryProcessProxy::taskInfo.
+        // We extract the PIDs (plain integers) on the main thread, then query
+        // proc_pidinfo with those values — proc_pidinfo is a syscall with no WebKit
+        // involvement and handles dead processes safely via its return value.
+        //
+        // Callers and their thread context:
+        //   - MemoryUsageThresholdReporter.checkThresholdAndFire — Task.detached(priority: .utility) [background] ← crash path
+        //   - MemoryUsageMonitor internal polling loop            — Task {} [background]
+        //   - MemoryPressureReporter.handleMemoryPressureEvent   — @MainActor [main thread]
+        //   - MemoryUsageIntervalReporter                        — await MainActor.run { } [main thread]
+        //   - MemoryUsageDisplayer.present(in:)                  — @MainActor [main thread]
+        //
+        // DispatchQueue.main.sync from the main thread deadlocks, so we skip the dispatch
+        // when already on the main thread. Thread.isMainThread is the right guard here: all
+        // main-thread callers use @MainActor or await MainActor.run, and Swift's MainActor
+        // is backed by DispatchQueue.main, so Thread.isMainThread is equivalent to holding
+        // the main queue's serial token for these callers. If that backing ever changed, the
+        // guard would need to be revisited.
+        let collectPIDs: () -> [pid_t]?
+        if let pidProvider {
+            collectPIDs = pidProvider
+        } else {
+            let selector = Selector(("_webContentProcessInfo"))
+            guard WKProcessPool.responds(to: selector) else { return nil }
+            // autoreleasepool ensures the objects returned by the private API are kept alive
+            // for the duration of the call. takeUnretainedValue() does not retain, and
+            // _webContentProcessInfo's memory management convention is unknown — if it returns
+            // an autoreleased value, the array and its AuxiliaryProcessProxy-derived elements
+            // could be freed before compactMap finishes without an explicit pool scope.
+            collectPIDs = {
+                autoreleasepool {
+                    guard let processInfoList = WKProcessPool.perform(selector)?
+                        .takeUnretainedValue() as? [NSObject] else { return nil }
+                    let pidSelector = Selector(("pid"))
+                    return processInfoList.compactMap { processInfo in
+                        guard processInfo.responds(to: pidSelector),
+                              let pid = processInfo.value(forKey: "pid") as? pid_t,
+                              pid > 0 else { return nil }
+                        return pid
+                    }
+                }
+            }
         }
+
+        let pids: [pid_t]? = Thread.isMainThread
+            ? collectPIDs()
+            : DispatchQueue.main.sync { collectPIDs() }
+
+        guard let pids else { return nil }
 
         var totalBytes: UInt64 = 0
         var processCount = 0
 
-        let pidSelector = Selector(("pid"))
-        for processInfo in processInfoList {
-            guard processInfo.responds(to: pidSelector),
-                  let pid = processInfo.value(forKey: "pid") as? pid_t,
-                  pid > 0 else { continue }
+        for pid in pids {
+            guard pid > 0 else { continue }
+            let residentSize: UInt64?
+            if let memoryProvider {
+                residentSize = memoryProvider(pid)
+            } else {
+                var taskInfo = proc_taskinfo()
+                let size = Int32(MemoryLayout<proc_taskinfo>.size)
+                let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, size)
+                // A reused PID between collectPIDs() and proc_pidinfo() could attribute another
+                // process's memory to WebContent, slightly inflating the total. The window is
+                // vanishingly small and the over-count is acceptable for telemetry purposes.
+                residentSize = result == size ? taskInfo.pti_resident_size : nil
+            }
 
-            var taskInfo = proc_taskinfo()
-            let size = Int32(MemoryLayout<proc_taskinfo>.size)
-            let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, size)
-
-            if result == size {
-                totalBytes += taskInfo.pti_resident_size
+            if let residentSize {
+                totalBytes += residentSize
                 processCount += 1
             }
         }

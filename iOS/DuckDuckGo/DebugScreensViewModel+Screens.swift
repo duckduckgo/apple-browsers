@@ -117,7 +117,7 @@ extension DebugScreensViewModel {
                 configuration.processPool = WKProcessPool()
 
                 let ddgURL = URL(string: "https://duckduckgo.com/")!
-                let tab = d.tabManager.model.safeGetTabAt(d.tabManager.model.currentIndex)
+                let tab = d.tabManager.currentTabsModel.currentTab
                 let url = tab?.link?.url ?? ddgURL
                 return BareBonesBrowserView(initialURL: url,
                                             homeURL: ddgURL,
@@ -153,7 +153,7 @@ extension DebugScreensViewModel {
                 return self.debugStoryboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
                     ImageCacheDebugViewController(coder: coder,
                                                   bookmarksDatabase: d.bookmarksDatabase,
-                                                  tabsModel: d.tabManager.model,
+                                                  tabsModel: d.tabManager.allTabsModel,
                                                   fireproofing: d.fireproofing)
                 }
             }),

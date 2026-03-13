@@ -77,13 +77,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     struct UpdateCheckResult {
         let item: SUAppcastItem
         let isInstalled: Bool
-        let needsLatestReleaseNote: Bool
-
-        init(item: SUAppcastItem, isInstalled: Bool, needsLatestReleaseNote: Bool = false) {
-            self.item = item
-            self.isInstalled = isInstalled
-            self.needsLatestReleaseNote = needsLatestReleaseNote
-        }
     }
 
     private var cachedUpdateResult: UpdateCheckResult? {
@@ -99,7 +92,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult, progress: UpdateCycleProgress? = nil) {
-        latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled, needsLatestReleaseNote: cachedUpdateResult.needsLatestReleaseNote)
+        latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled)
         let isInstalled = latestUpdate?.isInstalled == false
         // Use passed progress if available (avoids @Published willSet timing issue)
         let currentProgress = progress ?? progressState.updateProgress
@@ -136,15 +129,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     public let clearsNotificationDotOnMenuOpen = false
 
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
-
-    private var pendingUpdateInfo: PendingUpdateInfo? {
-        get {
-            try? settings.pendingUpdateInfo
-        }
-        set {
-            try? settings.set(newValue, for: \.pendingUpdateInfo)
-        }
-    }
 
     public var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     public var lastUpdateNotificationShownDate: Date = .distantPast
@@ -476,12 +460,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     // MARK: - Private
 
-    private func cachePendingUpdate(from item: SUAppcastItem) {
-        let info = PendingUpdateInfo(from: item)
-        pendingUpdateInfo = info
-        Logger.updates.log("Cached pending update info for version \(info.version) build \(info.build)")
-    }
-
     @discardableResult
     private func configureUpdater() throws -> SPUUpdater? {
         guard updater == nil else {
@@ -651,8 +629,6 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
         pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
 
-        cachePendingUpdate(from: item)
-
         updateWideEvent.didFindUpdate(
             version: item.displayVersionString,
             build: item.versionString,
@@ -669,13 +645,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
         Logger.updates.log("Already up to date: \(item.displayVersionString, privacy: .public) (\(item.versionString, privacy: .public))")
 
-        let needsLatestReleaseNote = {
-            guard let reason = nsError.userInfo[SPUNoUpdateFoundReasonKey] as? Int else { return false }
-            return reason == Int(Sparkle.SPUNoUpdateFoundReason.onNewerThanLatestVersion.rawValue)
-        }()
-        cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true, needsLatestReleaseNote: needsLatestReleaseNote)
-
-        cachePendingUpdate(from: item)
+        cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true)
 
         updateWideEvent.didFindNoUpdate()
     }

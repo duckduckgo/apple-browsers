@@ -82,7 +82,7 @@ extension AuthV2TokenRefreshWideEventData {
         ])
     }
 
-    private static func bucket(_ ms: Double) -> Int {
+    private static func bucket(_ ms: Int) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000

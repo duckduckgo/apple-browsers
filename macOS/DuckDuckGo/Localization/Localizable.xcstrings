@@ -1766,55 +1766,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai-Seitenleiste schließen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Close Duck.ai Sidebar"
+            "value" : "Close Duck.ai sidebar"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Cerrar la barra lateral de Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Fermer la barre latérale Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Chiudi la barra laterale di Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "De zijbalk van Duck.ai sluiten"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zamknij pasek boczny Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Fechar a barra lateral Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Закрыть боковую панель Duck.ai"
           }
         }
@@ -1946,55 +1946,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Neuen Duck.ai-Tab öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open New Duck.ai Tab"
+            "value" : "Open new Duck.ai tab"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir una nueva pestaña de Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ouvrir un nouvel onglet Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Apri una nuova scheda Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nieuw Duck.ai-tabblad openen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Otwórz nową kartę Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abre um novo separador Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Открыть новую вкладку Duck.ai"
           }
         }
@@ -2066,55 +2066,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai-Seitenleiste öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Duck.ai Sidebar"
+            "value" : "Open Duck.ai sidebar"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir la barra lateral de Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ouvrir la barre latérale Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Apri la barra laterale di Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai-zijbalk openen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Otwórz pasek boczny Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir a barra lateral Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Открыть боковую панель Duck.ai"
           }
         }
@@ -2356,6 +2356,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задать вопрос (конфиденциально)"
+          }
+        }
+      }
+    },
+    "aichat.chrome.hide-duckai-button" : {
+      "comment" : "Context menu item to hide the Duck.ai title button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Duck.ai Shortcut"
+          }
+        }
+      }
+    },
+    "aichat.chrome.hide-sidebar-button" : {
+      "comment" : "Context menu item to hide the Duck.ai sidebar toggle button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Sidebar Button"
+          }
+        }
+      }
+    },
+    "aichat.chrome.open-ai-settings" : {
+      "comment" : "Context menu item to open AI Features settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open AI Settings"
+          }
+        }
+      }
+    },
+    "aichat.chrome.show-duckai-button" : {
+      "comment" : "Context menu item to show the Duck.ai title button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai Shortcut"
+          }
+        }
+      }
+    },
+    "aichat.chrome.show-sidebar-button" : {
+      "comment" : "Context menu item to show the Duck.ai sidebar toggle button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Sidebar Button"
           }
         }
       }
@@ -3266,55 +3326,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "In Fenster verschieben"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Move to window"
+            "value" : "Move to separate window"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mover a la ventana"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Déplacer vers une fenêtre"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vai alla finestra"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Verplaatsen naar venster"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Przejdź do okna"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mover para a janela"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Открепить и вынести в окно"
           }
         }
@@ -26251,6 +26311,18 @@
         }
       }
     },
+    "duckai.show-duckai-button-in-tab-bar.label" : {
+      "comment" : "Label for showing Duck.ai shortcut in tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai shortcut in the tab bar"
+          }
+        }
+      }
+    },
     "duckai.show-in-address-bar-when-typing.label" : {
       "comment" : "Label for showing 'Ask Duck.ai' option when typing in address bar",
       "extractionState" : "extracted_with_value",
@@ -26787,6 +26859,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать ярлык Duck.ai в адресной строке"
+          }
+        }
+      }
+    },
+    "duckai.show-sidebar-button-in-tab-bar.label" : {
+      "comment" : "Label for showing Duck.ai sidebar button in tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show sidebar button in the tab bar"
           }
         }
       }

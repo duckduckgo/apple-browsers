@@ -227,5 +227,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     func onEditFavorite(_ favorite: Bookmarks.BookmarkEntity) {}
 
     func shouldAutoSelectTextForSERPQuery() -> Bool { false }
+    
+    func isCurrentTabFireTab() -> Bool { false }
 
 }

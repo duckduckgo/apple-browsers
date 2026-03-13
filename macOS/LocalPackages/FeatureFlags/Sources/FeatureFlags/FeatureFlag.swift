@@ -421,7 +421,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatChromeSidebar,
                 .webViewLookUpAction,
                 .promoQueue,
-                .semaphoreAlwaysVisible:
+                .semaphoreAlwaysVisible,
+                .tabAnimations:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,

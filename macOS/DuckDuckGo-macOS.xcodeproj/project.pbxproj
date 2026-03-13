@@ -19435,46 +19435,6 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		3706FA72293F65D500E42796 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/duckduckgo/BrowserServicesKit";
-			requirement = {
-				kind = revision;
-				revision = 4f3695b5b598593ce3c44fe810637e3406206c19;
-			};
-		};
-		3706FDD7293F661700E42796 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/AliSoftware/OHHTTPStubs.git";
-			requirement = {
-				kind = exactVersion;
-				version = 9.1.0;
-			};
-		};
-		37C320BA2F1E80A1008F4604 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
-			requirement = {
-				kind = exactVersion;
-				version = 1.18.7;
-			};
-		};
-		3FFD51CF7C19ACBDB9687474 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/duckduckgo/BrowserServicesKit";
-			requirement = {
-				kind = revision;
-				revision = a968dd3d8d5ff95b6eae65889c1a365174a53a69;
-			};
-		};
-		4311906792B7676CE9535D76 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/duckduckgo/BrowserServicesKit";
-			requirement = {
-				kind = revision;
-				revision = c06709ba8a586f6a40190bacaaaaa96b2d55e540;
-			};
-		};
 		4B5235432C7BB14D00AFAF64 /* XCRemoteSwiftPackageReference "wireguard-apple" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/wireguard-apple";
@@ -19547,20 +19507,11 @@
 				version = 0.1.0;
 			};
 		};
-		FAE06B199CA1F209B55B34E9 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/duckduckgo/BrowserServicesKit";
-			requirement = {
-				kind = revision;
-				revision = a968dd3d8d5ff95b6eae65889c1a365174a53a69;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		08D4923DC968236E22E373E2 /* Crashes */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FAE06B199CA1F209B55B34E9 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = Crashes;
 		};
 		1E54E8E72EB3A33F00EB24CD /* AutoconsentStats */ = {
@@ -19617,7 +19568,6 @@
 		};
 		3706FA71293F65D500E42796 /* BrowserServicesKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3706FA72293F65D500E42796 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = BrowserServicesKit;
 		};
 		7B11B3092EF304B6005F0687 /* AutomationServer */ = {
@@ -19632,27 +19582,22 @@
 		};
 		3706FA76293F65D500E42796 /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3706FA72293F65D500E42796 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = ContentBlocking;
 		};
 		3706FA77293F65D500E42796 /* PrivacyDashboard */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3706FA72293F65D500E42796 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = PrivacyDashboard;
 		};
 		3706FA78293F65D500E42796 /* UserScript */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3706FA72293F65D500E42796 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = UserScript;
 		};
 		3706FDD6293F661700E42796 /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3706FDD7293F661700E42796 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
 			productName = OHHTTPStubs;
 		};
 		3706FDD8293F661700E42796 /* OHHTTPStubsSwift */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3706FDD7293F661700E42796 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
 			productName = OHHTTPStubsSwift;
 		};
 		371BBC562D00C891008FA0C7 /* NewTabPage */ = {
@@ -19705,7 +19650,6 @@
 		};
 		37C320B92F1E80A1008F4604 /* SnapshotTesting */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 37C320BA2F1E80A1008F4604 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
 			productName = SnapshotTesting;
 		};
 		37C320BB2F1E80A1008F4604 /* AppKitExtensions */ = {
@@ -20156,7 +20100,6 @@
 		};
 		537FC71EA5115A983FAF3170 /* Crashes */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4311906792B7676CE9535D76 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = Crashes;
 		};
 		5641734A2CFE168700F4B716 /* PixelExperimentKit */ = {
@@ -20864,7 +20807,6 @@
 		};
 		DC3F73D49B2D44464AFEFCD8 /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3FFD51CF7C19ACBDB9687474 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		F124E0DC2D6E12190035C7BA /* NetworkingTestingUtils */ = {

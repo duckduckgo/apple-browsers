@@ -17064,22 +17064,6 @@
 				version = 0.9.20;
 			};
 		};
-		984249C12CED4F430071C7DB /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/AliSoftware/OHHTTPStubs.git";
-			requirement = {
-				kind = exactVersion;
-				version = 9.1.0;
-			};
-		};
-		984249C42CED4F430071C7DB /* XCRemoteSwiftPackageReference "BrowserServicesKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/DuckDuckGo/BrowserServicesKit";
-			requirement = {
-				kind = revision;
-				revision = 6a5642a07acc85af9e1b165066e5b9d9716b7a09;
-			};
-		};
 		9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/airbnb/lottie-spm.git";
@@ -17150,14 +17134,6 @@
 			requirement = {
 				kind = exactVersion;
 				version = 1.5.0;
-			};
-		};
-		F4D7F632298C00C3006C3AE9 /* XCRemoteSwiftPackageReference "ios-js-support" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/duckduckgo/ios-js-support";
-			requirement = {
-				kind = exactVersion;
-				version = 2.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -17460,32 +17436,26 @@
 		};
 		984249C02CED4F430071C7DB /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 984249C12CED4F430071C7DB /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
 			productName = OHHTTPStubs;
 		};
 		984249C22CED4F430071C7DB /* OHHTTPStubsSwift */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 984249C12CED4F430071C7DB /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
 			productName = OHHTTPStubsSwift;
 		};
 		984249C62CED4F430071C7DB /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 984249C42CED4F430071C7DB /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = ContentBlocking;
 		};
 		984249C72CED4F430071C7DB /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 984249C42CED4F430071C7DB /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = Common;
 		};
 		984249C82CED4F430071C7DB /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 984249C42CED4F430071C7DB /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		984249C92CED4F430071C7DB /* SubscriptionTestingUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 984249C42CED4F430071C7DB /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = SubscriptionTestingUtilities;
 		};
 		986CD5342DE8F4FA00AFA98A /* RemoteMessaging */ = {
@@ -17726,7 +17696,6 @@
 		};
 		F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F4D7F632298C00C3006C3AE9 /* XCRemoteSwiftPackageReference "ios-js-support" */;
 			productName = FindInPageIOSJSSupport;
 		};
 /* End XCSwiftPackageProductDependency section */

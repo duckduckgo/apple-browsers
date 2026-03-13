@@ -70,6 +70,10 @@ public final class DefaultWideEventSender: WideEventSending {
             return
         }
 
+#if DEBUG
+        writeToValidationLog(data: data, status: status, isFirstDailyOccurrence: isFirstDailyOccurrence)
+#endif
+
         firePixels(pixelName: pixelName, parameters: parameters, onComplete: onComplete)
         storage.recordSentTimestamp(for: T.metadata.type, date: Date())
 
@@ -153,7 +157,7 @@ public final class DefaultWideEventSender: WideEventSending {
                 if success {
                     Self.logger.info("Daily wide event pixel sent successfully: \(pixelName, privacy: .public)")
                 } else {
-                    Self.logger.error("Daily wide event failed to send: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
+                    Self.logger.error("Daily wide event pixel failed to send: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
                 }
             }
         )
@@ -167,9 +171,9 @@ public final class DefaultWideEventSender: WideEventSending {
             includeAppVersionParameter: true,
             onComplete: { success, error in
                 if success {
-                    Self.logger.info("Wide event sent successfully: \(pixelName, privacy: .public)")
+                    Self.logger.info("Wide event pixel sent successfully: \(pixelName, privacy: .public)")
                 } else {
-                    Self.logger.error("Wide event failed to fire: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
+                    Self.logger.error("Wide event pixel failed to fire: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
                 }
                 onComplete(success, error)
             }
@@ -294,3 +298,52 @@ public final class DefaultWideEventSender: WideEventSending {
 #endif
     }
 }
+
+#if DEBUG
+extension DefaultWideEventSender {
+
+    private static let validationLogQueue = DispatchQueue(label: "Debug WideEvent Validation")
+    private static var validationLogCleared = false
+
+    private static var validationLogURL: URL {
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        return cacheDir.appendingPathComponent("wide-event-validation-log.jsonl")
+    }
+
+    private func writeToValidationLog<T: WideEventData>(data: T, status: WideEventStatus, isFirstDailyOccurrence: Bool) {
+        let parameters = generateJSONParameters(from: data, status: status, isFirstDailyOccurrence: isFirstDailyOccurrence)
+        let nested = nestedDictionary(from: parameters)
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: nested, options: [.sortedKeys]) else {
+            Self.logger.error("Failed to serialize wide event for validation log")
+            return
+        }
+
+        guard let line = String(data: jsonData, encoding: .utf8) else {
+            return
+        }
+
+        Self.validationLogQueue.async {
+            let fileURL = Self.validationLogURL
+
+            if !Self.validationLogCleared {
+                try? FileManager.default.removeItem(at: fileURL)
+                Self.validationLogCleared = true
+            }
+
+            let entry = line + "\n"
+            if let entryData = entry.data(using: .utf8) {
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    if let handle = try? FileHandle(forWritingTo: fileURL) {
+                        handle.seekToEndOfFile()
+                        handle.write(entryData)
+                        handle.closeFile()
+                    }
+                } else {
+                    try? entryData.write(to: fileURL)
+                }
+            }
+        }
+    }
+}
+#endif

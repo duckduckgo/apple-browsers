@@ -218,6 +218,7 @@ public extension DesignSystemImages {
 
         public enum Size96 {
             public static var announcement: DesignSystemImage { .init(resource: .announcement96) }
+            public static var fireTab: DesignSystemImage { .init(resource: .fireTabColor96) }
         }
 
         public enum Size128 {

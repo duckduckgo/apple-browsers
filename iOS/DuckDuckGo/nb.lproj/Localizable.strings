@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Åpne i en annen app?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Gå tilbake";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Vil du åpne denne siden i Safari?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Dessverre kunne ikke siden lastes inn.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Åpne i Safari";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Bruk DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Enkelte nettstedsfunksjoner er kanskje ikke kompatible med denne nettleseren.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Dette nettstedet ønsker å åpnes i Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "REBRANDED";
 

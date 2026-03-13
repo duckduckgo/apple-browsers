@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Odpri v drugi aplikaciji?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Pojdi nazaj";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Želite to stran odpreti v Safariju?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Žal se stran ni mogla naložiti.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Odpri v Safariju";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Ostani v DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Nekatere funkcije spletnega mesta morda niso združljive s tem brskalnikom.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "To spletno mesto se želi odpreti v brskalniku Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "PREIMENOVANO";
 

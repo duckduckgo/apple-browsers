@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "別のアプリで開きますか？";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "戻る";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "このページをSafariで開きますか？";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "残念ながら、ページを読み込めませんでした。";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Safariで開く";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "DuckDuckGoを使用し続ける";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "一部のウェブサイト機能はこのブラウザと互換性がない場合があります。";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "このサイトはSafariで開こうとしています。";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "ブランド刷新";
 

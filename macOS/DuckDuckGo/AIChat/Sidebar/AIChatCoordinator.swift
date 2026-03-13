@@ -605,14 +605,16 @@ extension AIChatCoordinator: AIChatViewControllerDelegate {
 
         let restorationData = session.state.restorationData
         let currentAIChatURL = session.currentAIChatURL.removingAIChatPlacementParameter()
+        let isCurrentTabNewTab = tabViewModel(for: currentTabID)?.tab.content == .newtab
 
         toggleSidebar()
 
         Task { @MainActor in
+            let behavior: LinkOpenBehavior = isCurrentTabNewTab ? .currentTab : .newTab(selected: true)
             if let data = restorationData {
-                aiChatTabOpener.openAIChatTab(with: .restoration(data), behavior: .newTab(selected: true))
+                aiChatTabOpener.openAIChatTab(with: .restoration(data), behavior: behavior)
             } else {
-                aiChatTabOpener.openAIChatTab(with: .url(currentAIChatURL), behavior: .newTab(selected: true))
+                aiChatTabOpener.openAIChatTab(with: .url(currentAIChatURL), behavior: behavior)
             }
         }
     }

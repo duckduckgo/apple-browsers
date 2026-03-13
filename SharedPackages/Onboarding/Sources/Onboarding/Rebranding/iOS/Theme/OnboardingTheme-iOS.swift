@@ -40,7 +40,7 @@ public extension OnboardingTheme {
             }
         })
 
-        let typography: OnboardingTheme.Typography = .system
+        let typography: OnboardingTheme.Typography = .duckSans
         let colorPalette = ColorPalette(
             background: Color(singleUseColor: .rebranding(.backdrop)),
             bubbleBorder: bubbleBorderColor,

@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Avataanko toisessa sovelluksessa?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Edellinen";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Haluatko avata tämän sivun Safarissa?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Valitettavasti sivu ei latautunut.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Avaa Safarissa";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Pysy DuckDuckGossa";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Jotkin verkkosivuston ominaisuudet eivät välttämättä ole yhteensopivia tämän selaimen kanssa.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Tämä sivusto haluaa avata Safarin.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "UUDELLEENBRÄNDÄTTY";
 

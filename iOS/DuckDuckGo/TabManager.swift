@@ -497,7 +497,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     func replace(tab: Tab, withNewTab newTab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        if model.tabs.count == 1 { // TODO: - Remove this for fire tabs
+        // In normal mode, removing the last tab auto-inserts a blank tab, so we skip
+        // inserting newTab (the auto-created tab serves the same purpose).
+        // In fire mode (allowsEmpty), no auto-insert happens, so we must always insert newTab.
+        if model.tabs.count == 1 && !model.allowsEmpty {
+            // Since we're not re-inserting we should use the proper removal to ensure
+            //  things are cleaned up properly.
             remove(tab: tab, clearTabHistory: clearTabHistory, in: model)
         } else {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)

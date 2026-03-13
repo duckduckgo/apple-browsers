@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Atidaryti kitoje programoje?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Grįžti atgal";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Ar nori atverti šį puslapį „Safari“?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Deja, puslapio nepavyko įkelti.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Atverti „Safari“ naršyklėje";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Likti „DuckDuckGo“";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Kai kurios interneto svetainės funkcijos šioje naršyklėje gali būti nesuderinamos.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Ši svetainė nori atsidaryti naršyklėje „Safari“.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "PERVADINTAS";
 

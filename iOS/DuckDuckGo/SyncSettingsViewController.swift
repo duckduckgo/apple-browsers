@@ -28,7 +28,7 @@ import PrivacyConfig
 import AttributedMetric
 
 @MainActor
-class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
+class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     struct SourceConstants {
         static let startSyncFlow = "sync-start"
@@ -75,7 +75,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     var cancellables = Set<AnyCancellable>()
     let syncPausedStateManager: any SyncPausedStateManaging
-    var viewModel: SyncSettingsViewModel?
+    let viewModel: SyncSettingsViewModel
 
     var source: String?
     var pairingInfo: PairingInfo?
@@ -113,7 +113,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         )
         self.viewModel = viewModel
 
-        super.init(rootView: SyncSettingsView(model: viewModel))
+        let useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
+        let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayout: useSimplifiedLayout)
+
+        super.init(rootView: rootView)
 
         setUpFaviconsFetcherSwitch(viewModel)
         setUpFavoritesDisplayModeSwitch(viewModel, appSettings)
@@ -131,7 +134,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
             }
             .store(in: &cancellables)
 
-        rootView.model.delegate = self
+        viewModel.delegate = self
         navigationItem.title = SyncUI_iOS.UserText.syncTitle
     }
     
@@ -300,17 +303,17 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     }
 
     func refreshForState(_ authState: SyncAuthState) {
-        rootView.model.isSyncEnabled = authState != .inactive
+        viewModel.isSyncEnabled = authState != .inactive
         if authState != .inactive {
-            rootView.model.syncEnabled(recoveryCode: recoveryCode)
+            viewModel.syncEnabled(recoveryCode: recoveryCode)
             refreshDevices()
         }
     }
 
     func dismissPresentedViewController(completion: (() -> Void)? = nil) {
-        rootView.model.isSyncWithSetUpSheetVisible = false
+        viewModel.isSyncWithSetUpSheetVisible = false
         guard let presentedViewController = navigationController?.presentedViewController,
-              !(presentedViewController is UIHostingController<SyncSettingsView>) else {
+              !(presentedViewController is SyncSettingsViewController) else {
             completion?()
             return
         }
@@ -323,7 +326,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
         Task { @MainActor in
             if clearDevices {
-                rootView.model.devices = []
+                viewModel.devices = []
             }
 
             do {
@@ -337,7 +340,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     }
 
     func mapDevices(_ devices: [RegisteredDevice]) {
-        rootView.model.devices = devices.map {
+        viewModel.devices = devices.map {
             .init(id: $0.id, name: $0.name, type: $0.type, isThisDevice: $0.id == syncService.account?.deviceId)
         }.sorted(by: { lhs, _ in
             lhs.isThisDevice
@@ -373,7 +376,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         }
 
         Task { @MainActor in
-            await rootView.model.presentSyncWithSetUpSheetIfNeeded()
+            await viewModel.presentSyncWithSetUpSheetIfNeeded()
         }
     }
 
@@ -497,7 +500,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
         guard shouldShowSyncEnabled else { return }
-        self.rootView.model.$devices
+        self.viewModel.$devices
             .removeDuplicates()
             .dropFirst()
             .prefix(1)
@@ -512,7 +515,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         self.dismissVCAndShowRecoveryPDF()
-        rootView.model.syncEnabled(recoveryCode: recoveryCode)
+        viewModel.syncEnabled(recoveryCode: recoveryCode)
     }
     
     func controllerWillBeginTransmittingRecoveryKey() async {
@@ -536,7 +539,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {
-        if rootView.model.devices.count > 1 {
+        if viewModel.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)
         } else {
             await switchAccounts(recoveryKey: recoveryKey)

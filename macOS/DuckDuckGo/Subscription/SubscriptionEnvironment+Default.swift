@@ -25,7 +25,7 @@ extension SubscriptionEnvironment {
     public static var `default`: SubscriptionEnvironment {
         let buildType = StandardApplicationBuildType()
         let environment: SubscriptionEnvironment.ServiceEnvironment
-        if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
+        if buildType.isDebugBuild || buildType.isAlphaBuild {
             environment = .staging
         } else {
             environment = .production

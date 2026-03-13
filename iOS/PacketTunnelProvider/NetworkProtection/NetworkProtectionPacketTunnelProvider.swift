@@ -519,7 +519,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             experimentManager: nil
         )
 
-        self.wideEvent = WideEvent(skipPOSTRequests: {
+        self.wideEvent = WideEvent(useMockRequests: {
 #if DEBUG || REVIEW || ALPHA
             true
 #else

@@ -168,7 +168,7 @@ final class AppDependencyProvider: DependencyProvider {
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
 
         self.wideEvent = WideEvent(
-            skipPOSTRequests: {
+            useMockRequests: {
 #if DEBUG || REVIEW || ALPHA
                 true
 #else

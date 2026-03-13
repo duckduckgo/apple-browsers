@@ -272,6 +272,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var trackerAnimationTriggerCancellable: AnyCancellable?
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
     private var tabRemovalCancellables = Set<AnyCancellable>()
+    private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
 
     private struct TrackerAnimationDomainState {
         var lastVisitedDomain: String?
@@ -303,6 +304,9 @@ final class AddressBarButtonsViewController: NSViewController {
         AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
                                       hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }()
+    private var isChromeSidebarFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeSidebar)
+    }
 
     private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
         AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
@@ -372,6 +376,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToButtonsVisibility()
         subscribeToAIChatPreferences()
         subscribeToAIChatCoordinator()
+        subscribeToChromeSidebarFeatureFlag()
         subscribeToThemeChanges()
         subscribeToTabRemovals()
 
@@ -440,6 +445,19 @@ final class AddressBarButtonsViewController: NSViewController {
         setupButtonsSize()
         setupButtonIcons()
         setupButtonPaddings()
+    }
+
+    private func subscribeToChromeSidebarFeatureFlag() {
+        aiChatChromeSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
+            .map { [weak self] in
+                self?.isChromeSidebarFeatureEnabled ?? false
+            }
+            .prepend(isChromeSidebarFeatureEnabled)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateButtons()
+            }
     }
 
     func setupButtonPaddings(isFocused: Bool = false) {
@@ -1308,11 +1326,6 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateAIChatButtonVisibility() {
         aiChatButton.isHidden = !shouldShowAIChatButton()
         updateAIChatDividerVisibility()
-
-        // Hide the AI chat button during onboarding
-        if let tabViewModel, tabViewModel.tab.content == .onboarding {
-            aiChatButton.isHidden = true
-        }
     }
 
     private var isAskAIChatButtonExpanded: Bool = false
@@ -1355,7 +1368,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func shouldShowAIChatButton() -> Bool {
-        aiChatMenuConfig.shouldDisplayAddressBarShortcut && !shouldSkipShowingAnyAIChatButton()
+        aiChatMenuConfig.shouldDisplayAddressBarShortcut
+        && !isChromeSidebarFeatureEnabled
+        && !shouldSkipShowingAnyAIChatButton()
+        && tabViewModel?.tab.content != .onboarding
     }
 
     private func shouldShowAskAIChatButton() -> Bool {

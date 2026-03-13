@@ -22,8 +22,8 @@ import BrowserServicesKit
 import DesignResourcesKitIcons
 
 enum TabSwitcherToolbarState: Equatable {
-    case regularSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool)
-    case largeSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool)
+    case regularSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool, canDismissOnEmpty: Bool)
+    case largeSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool, canDismissOnEmpty: Bool)
     case editingRegularSize(selectedCount: Int, totalCount: Int)
     case editingLargeSize(selectedCount: Int, totalCount: Int)
 
@@ -120,11 +120,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     private(set) var topBarLeftButtonItems = [UIBarButtonItem]()
     private(set) var topBarRightButtonItems = [UIBarButtonItem]()
 
-    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
-    private(set) var selectedTabsCount: Int = 0
-    private(set) var totalTabsCount: Int = 0
-    private(set) var containsWebPages = false
-    private(set) var showAIChatButton = false
+    private var params = StateParameters()
 
     private(set) var isFirstUpdate = true
 
@@ -147,32 +143,12 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         guard currentState != state else { return }
         currentState = state
 
-        // Extract parameters from state
-        let (selectedCount, totalCount, containsWebPages, showAIChatButton) = extractParameters(from: state)
+        self.params = StateParameters(from: state)
 
-        self.interfaceMode = state.interfaceMode
-        self.selectedTabsCount = selectedCount
-        self.totalTabsCount = totalCount
-        self.containsWebPages = containsWebPages
-        self.showAIChatButton = showAIChatButton
-
-        configureButtons(for: state)
+        configureButtons()
         updateBottomBar()
         updateTopLeftButtons()
         updateTopRightButtons()
-    }
-
-    private func extractParameters(from state: TabSwitcherToolbarState) -> (Int, Int, Bool, Bool) {
-        switch state {
-        case .regularSize(let selectedCount, let totalCount, let containsWebPages, let showAIChat):
-            return (selectedCount, totalCount, containsWebPages, showAIChat)
-        case .largeSize(let selectedCount, let totalCount, let containsWebPages, let showAIChat):
-            return (selectedCount, totalCount, containsWebPages, showAIChat)
-        case .editingRegularSize(let selectedCount, let totalCount):
-            return (selectedCount, totalCount, false, false)
-        case .editingLargeSize(let selectedCount, let totalCount):
-            return (selectedCount, totalCount, false, false)
-        }
     }
 
     func configureButtonActions(tabsStyle: TabSwitcherViewController.TabsStyle,
@@ -198,7 +174,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     }
 
-    private func configureButtons(for state: TabSwitcherToolbarState) {
+    private func configureButtons() {
         // Configure accessibility labels
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.fireButton.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
@@ -210,13 +186,11 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         self.deselectAllButton.accessibilityLabel = UserText.deselectAllTabs
         self.menuButton.accessibilityLabel = "More Menu"
 
-        // Configure enabled states
-        let (selectedCount, totalCount, containsWebPages, _) = extractParameters(from: state)
-        self.editButton.isEnabled = totalCount > 1 || containsWebPages
-        self.closeTabsButton.isEnabled = selectedCount > 0
+        self.editButton.isEnabled = params.totalCount > 1 || params.containsWebPages
+        self.closeTabsButton.isEnabled = params.selectedCount > 0
+        self.doneButton.isEnabled = params.canDismissOnEmpty || params.totalCount > 0
 
-        // Configure button titles based on state
-        if case .largeSize = state.interfaceMode {
+        if params.interfaceMode.isLarge {
             configureDoneButtonAsText()
         } else {
             configureDoneButtonAsBackArrow()
@@ -240,7 +214,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     func updateBottomBar() {
         var newItems: [UIBarButtonItem]
 
-        switch interfaceMode {
+        switch params.interfaceMode {
         case .regularSize:
 
             newItems = [
@@ -312,7 +286,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     func updateTopLeftButtons() {
 
-        switch interfaceMode {
+        switch params.interfaceMode {
 
         case .regularSize:
             topBarLeftButtonItems = [
@@ -340,24 +314,24 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     func updateTopRightButtons() {
 
-        switch interfaceMode {
+        switch params.interfaceMode {
 
         case .largeSize:
             topBarRightButtonItems = [
                 doneButton,
                 fireButton,
                 plusButton,
-                showAIChatButton ? duckChatButton : nil,
+                params.showAIChat ? duckChatButton : nil,
             ].compactMap { $0 }
 
         case .regularSize:
             topBarRightButtonItems = [
-                showAIChatButton ? duckChatButton : nil,
+                params.showAIChat ? duckChatButton : nil,
             ].compactMap { $0 }
 
         case .editingRegularSize:
             topBarRightButtonItems = [
-                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
+                params.selectedCount == params.totalCount ? deselectAllButton : selectAllButton,
             ]
 
         case .editingLargeSize:
@@ -365,6 +339,36 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
                 menuButton,
             ]
 
+        }
+    }
+}
+
+extension DefaultTabSwitcherBarsStateHandler {
+    private struct StateParameters {
+        var selectedCount: Int = 0
+        var totalCount: Int = 0
+        var containsWebPages: Bool = false
+        var showAIChat: Bool = false
+        var canDismissOnEmpty: Bool = true
+        var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
+
+        init() { }
+
+        init(from state: TabSwitcherToolbarState) {
+            switch state {
+            case .regularSize(let selectedCount, let totalCount, let containsWebPages, let showAIChat, let canDismissOnEmpty),
+                 .largeSize(let selectedCount, let totalCount, let containsWebPages, let showAIChat, let canDismissOnEmpty):
+                self.selectedCount = selectedCount
+                self.totalCount = totalCount
+                self.containsWebPages = containsWebPages
+                self.showAIChat = showAIChat
+                self.canDismissOnEmpty = canDismissOnEmpty
+            case .editingRegularSize(let selectedCount, let totalCount),
+                 .editingLargeSize(let selectedCount, let totalCount):
+                self.selectedCount = selectedCount
+                self.totalCount = totalCount
+            }
+            self.interfaceMode = state.interfaceMode
         }
     }
 }

@@ -175,4 +175,56 @@ final class DDGSyncLifecycleTests: XCTestCase {
         XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToMigrateToFileStore])
     }
 
+    func testWhenMainTokenRescopeReturns401ThenSyncLogsOut() async throws {
+        secureStorageStub.theAccount = .mock
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+
+        let tokenRescope = MockTokenRescoping()
+        tokenRescope.rescopeError = SyncError.unexpectedStatusCode(401)
+        dependencies.createTokenRescopeStub = tokenRescope
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        XCTAssertEqual(syncService.authState, .active)
+
+        do {
+            _ = try await syncService.mainTokenRescope(to: "ai_chats")
+            XCTFail("Expected mainTokenRescope(to:) to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .unauthenticatedWhileLoggedIn)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNil(secureStorageStub.theAccount)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.accountRemoved(.unauthenticatedRequest)])
+    }
+
+    func testWhenMainTokenRescopeReturnsNon401ThenSyncRemainsActive() async throws {
+        secureStorageStub.theAccount = .mock
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+
+        let tokenRescope = MockTokenRescoping()
+        tokenRescope.rescopeError = SyncError.unexpectedStatusCode(400)
+        dependencies.createTokenRescopeStub = tokenRescope
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        XCTAssertEqual(syncService.authState, .active)
+
+        do {
+            _ = try await syncService.mainTokenRescope(to: "ai_chats")
+            XCTFail("Expected mainTokenRescope(to:) to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .unexpectedStatusCode(400))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(syncService.authState, .active)
+        XCTAssertNotNil(secureStorageStub.theAccount)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [])
+    }
+
 }

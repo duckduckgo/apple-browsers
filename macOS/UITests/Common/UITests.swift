@@ -106,12 +106,16 @@ enum UITests {
         app.typeKey("w", modifierFlags: [.command, .option])
     }
 
-    /// Avoid some first-run states that we aren't testing.
-    static func firstRun(_ callback: (XCUIApplication) -> Void = { _ in }) {
+    static func dismissNotificationCenterMessages() {
         let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
         if notificationCenter.exists { // If tests-server is asking for network permissions, deny them.
             notificationCenter.typeKey(.escape, modifierFlags: [])
         }
+    }
+
+    /// Avoid some first-run states that we aren't testing.
+    static func firstRun(_ callback: (XCUIApplication) -> Void = { _ in }) {
+        dismissNotificationCenterMessages()
         let app = XCUIApplication.setUp()
         app.typeKey("n", modifierFlags: .command)
         callback(app)

@@ -58,10 +58,12 @@ jobs:
     timeout-minutes: 60
 
     steps:
-    - name: Register SSH key for certificates repository access
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
       uses: actions/checkout@v4

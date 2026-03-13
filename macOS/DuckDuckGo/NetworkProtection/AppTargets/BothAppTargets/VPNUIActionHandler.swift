@@ -17,13 +17,14 @@
 //
 
 import AppLauncher
+import Common
 import Foundation
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import Subscription
 import SwiftUI
+import VPN
 import VPNAppLauncher
 import VPNAppState
 
@@ -68,6 +69,7 @@ extension VPNUIActionHandler: VPNUIActionHandling {
 
     func moveAppToApplications() async {
 #if !DEBUG
+        guard !AppVersion.isAppStoreBuild else { return }
         await vpnURLEventHandler.moveAppToApplicationsFolder()
 #endif
     }

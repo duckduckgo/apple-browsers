@@ -114,7 +114,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
                                                   privacyConfigurationManager: privacyConfigurationManager)
         let buildType = StandardApplicationBuildType()
         let wideEvent = WideEvent(
-            skipPOSTRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
             featureFlagProvider: dbpFeatureFlagger
         )
 
@@ -124,7 +124,8 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             privacyConfigurationManager: privacyConfigurationManager,
             featureFlagger: dbpFeatureFlagger,
             wideEvent: wideEvent,
-            vpnBypassService: VPNBypassService()
+            vpnBypassService: VPNBypassService(),
+            applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent
         )
         manager?.agentFinishedLaunching()
 

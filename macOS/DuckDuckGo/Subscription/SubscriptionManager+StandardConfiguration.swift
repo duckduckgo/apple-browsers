@@ -52,7 +52,7 @@ extension DefaultSubscriptionManager {
         } ?? StaticWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
 
         let buildType = StandardApplicationBuildType()
-        let wideEvent: WideEventManaging = WideEvent(skipPOSTRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+        let wideEvent: WideEventManaging = WideEvent(useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
                                                      featureFlagProvider: featureFlagProvider)
         let authRefreshEventMapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
 #if DEBUG

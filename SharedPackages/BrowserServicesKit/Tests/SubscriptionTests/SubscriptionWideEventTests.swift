@@ -34,7 +34,7 @@ final class SubscriptionWideEventTests: XCTestCase {
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
         setupMockPixelKit()
         wideEvent = WideEvent(
-            skipPOSTRequests: true,
+            useMockRequests: true,
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
             featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
         )

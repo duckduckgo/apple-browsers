@@ -147,7 +147,7 @@ final class WideEventTests: XCTestCase {
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
         wideEvent = WideEvent(
-            skipPOSTRequests: true,
+            useMockRequests: true,
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
             featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
         )

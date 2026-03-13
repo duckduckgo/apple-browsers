@@ -55,17 +55,19 @@ extension TabSwitcherViewController {
     
     @objc func keyboardNewTab() {
         guard !isProcessingUpdates else { return }
-        markCurrentAsViewedAndDismiss()
+        // Dismiss before requesting the new tab so OmniBarEditingStateViewController
+        // presents on MainVC rather than being dismissed with the tab switcher.
+        dismissIfPossible(forceDismissOnEmpty: true)
         delegate?.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
     
     @objc func keyboardCloseWindow() {
-        dismiss()
+        dismissIfPossible()
     }
     
     @objc func keyboardSelectCurrent() {
         guard currentSelection != nil else { return }
-        markCurrentAsViewedAndDismiss()
+        dismissIfPossible()
     }
     
     @objc func keyboardRemoveTab() {
@@ -79,7 +81,7 @@ extension TabSwitcherViewController {
             currentSelection = nil
         }
         refreshTitleViews()
-        collectionView.reloadData()
+        reloadCollectionView()
     }
     
     @objc func keyboardMoveSelectionUp() {

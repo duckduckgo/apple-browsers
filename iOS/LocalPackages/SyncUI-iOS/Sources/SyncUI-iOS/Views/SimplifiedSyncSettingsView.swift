@@ -1,5 +1,5 @@
 //
-//  UnifiedToggleInputInlineActivating.swift
+//  SimplifiedSyncSettingsView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,13 +17,28 @@
 //  limitations under the License.
 //
 
-import Foundation
+import SwiftUI
 
-protocol UnifiedToggleInputInlineActivating: AnyObject {
-    func activateInlineEditingIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
-}
+public struct SimplifiedSyncSettingsView: View {
 
-enum UnifiedToggleInputActivationDecision {
-    case intercept
-    case allowDefault
+    @ObservedObject public var model: SyncSettingsViewModel
+
+    public init(model: SyncSettingsViewModel) {
+        self.model = model
+    }
+
+    public var body: some View {
+        List {
+            Section {
+                if model.isSyncEnabled {
+                    Text(verbatim: "Sync is enabled")
+                } else {
+                    Text(verbatim: "Sync is not enabled")
+                }
+            }
+        }
+        .navigationTitle(UserText.syncTitle)
+        .applyListStyle()
+        .environmentObject(model)
+    }
 }

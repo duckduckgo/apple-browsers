@@ -20,6 +20,7 @@
 import Foundation
 
 enum SyncErrorMessage {
+    case unknownError
     case unableToSyncToServer
     case unableToSyncWithDevice
     case unableToMergeTwoAccounts
@@ -36,6 +37,8 @@ enum SyncErrorMessage {
 
     var description: String {
         switch self {
+        case .unknownError:
+            return UserText.unknownErrorTryAgainMessage
         case .unableToSyncToServer:
             return UserText.unableToSyncToServerDescription
         case .unableToSyncWithDevice:

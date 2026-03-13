@@ -139,6 +139,7 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
+    let syncAutoRestoreHandler: SyncAutoRestoreHandling
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -316,6 +317,7 @@ class MainViewController: UIViewController {
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+        syncAutoRestoreHandler: SyncAutoRestoreHandling,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
@@ -382,6 +384,7 @@ class MainViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
+        self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
@@ -862,16 +865,23 @@ class MainViewController: UIViewController {
             Pixel.fire(pixel: .addressBarGestureDismiss)
             didSendGestureDismissPixel = true
         }
+        collapseExpandedUTIOnKeyboardDismiss()
+    }
+
+    private func collapseExpandedUTIOnKeyboardDismiss() {
+        guard unifiedToggleInputFeature.isAvailable,
+              currentTab?.isAITab == true,
+              let coordinator = unifiedToggleInputCoordinator,
+              case .aiTab(.expanded) = coordinator.displayState,
+              coordinator.inputMode == .aiChat,
+              currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
+        coordinator.showCollapsed()
     }
 
     @objc
     private func keyboardDidHide() {
         keyboardShowing = false
         didSendGestureDismissPixel = false
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.autoCollapseExpandedUTIIfNeeded()
-        }
 
         if #available(iOS 26, *) {
             latestKeyboardFrame = .zero
@@ -892,17 +902,6 @@ class MainViewController: UIViewController {
             return true
         }
         return isAnyAITabUTIState
-    }
-
-    func autoCollapseExpandedUTIIfNeeded() {
-        guard unifiedToggleInputFeature.isAvailable,
-              currentTab?.isAITab == true,
-              let coordinator = unifiedToggleInputCoordinator,
-              case .aiTab(.expanded) = coordinator.displayState,
-              !keyboardShowing,
-              !coordinator.viewController.isInputFirstResponder,
-              currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
-        coordinator.showCollapsed()
     }
 
     private func setUpToolbarButtonsActions() {
@@ -1016,8 +1015,8 @@ class MainViewController: UIViewController {
     }
 
     @objc func onAddressBarPositionChanged() {
-        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         if !isAnyAITabUTIState {
+            viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         }
         updateStatusBarBackgroundColor()
@@ -1118,17 +1117,17 @@ class MainViewController: UIViewController {
         guard isNavigationBarEffectivelyAtBottom else { return }
 
         let displayState = unifiedToggleInputCoordinator?.displayState
-        let isInlineActive = unifiedToggleInputCoordinator?.isInlineEditingSession == true
+        let isOmnibarActive = unifiedToggleInputCoordinator?.isOmnibarSession == true
 
         let baseInputHeight: CGFloat
         if case .aiTab(.expanded) = displayState, let coordinator = unifiedToggleInputCoordinator {
-            baseInputHeight = max(viewCoordinator.standardNavigationBarContainerHeight, coordinator.inlineEditingHeight())
+            baseInputHeight = coordinator.omnibarEditingHeight()
         } else {
             baseInputHeight = omniBarHeight
         }
 
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
-        if !isInlineActive, displayState != .aiTab(.collapsed) {
+        if !isOmnibarActive, displayState != .aiTab(.collapsed) {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
         }
 
@@ -1255,8 +1254,11 @@ class MainViewController: UIViewController {
     }
 
     private func loadInitialView() {
-        // if let tab = currentTab, tab.link != nil {
-        // if let tab = tabManager.current(create: true), tab.link != nil {
+        if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
+            showTabSwitcher()
+            return
+        }
+
         if tabManager.currentTabsModel.currentTab?.link != nil {
             guard let tab = tabManager.current(createIfNeeded: true) else {
                 fatalError("Unable to create tab")
@@ -1330,6 +1332,11 @@ class MainViewController: UIViewController {
     fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil, openedAfterIdle: Bool = false) {
         guard !autoClearInProgress else { return }
         
+        if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
+            showTabSwitcher()
+            return
+        }
+
         viewCoordinator.logoContainer.isHidden = false
         findInPageView?.isHidden = true
         chromeManager.detach()
@@ -1630,12 +1637,15 @@ class MainViewController: UIViewController {
     ///   - autoSend: Whether to automatically send the query. Defaults to `false`.
     ///   - payload: Optional payload data for AI Chat. Defaults to `nil`.
     ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
-    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        guard let currentTab else { fatalError("no tab") }
-
+    private func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        guard let currentTab else {
+            assertionFailure("load called with no current tab")
+            return
+        }
         if currentTab.tabModel.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
+
 
         prepareTabForRequest {
             currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
@@ -1658,13 +1668,10 @@ class MainViewController: UIViewController {
         viewCoordinator.navigationBarContainer.alpha = 1
         allowContentUnderflow = false
 
-        if currentTab == nil {
-            if tabManager.current(createIfNeeded: true) == nil {
-                fatalError("failed to create tab")
-            }
+        guard let tab = tabManager.current(createIfNeeded: true) else {
+            assertionFailure("prepareTabForRequest: no current tab available")
+            return
         }
-
-        guard let tab = currentTab else { fatalError("no tab") }
 
         tab.tabModel.openedAfterIdle = false
         request()
@@ -1687,7 +1694,8 @@ class MainViewController: UIViewController {
         attachTab(tab: tab)
     }
 
-    private func transitionTo(tab: TabViewController, from previousTab: TabViewController?) {
+    private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
+        guard let tab else { return }
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
@@ -1748,8 +1756,10 @@ class MainViewController: UIViewController {
         if let currentTab = tabManager.current(createIfNeeded: true) {
             transitionTo(tab: currentTab, from: nil)
             viewCoordinator.omniBar.endEditing()
-        } else {
+        } else if !tabManager.currentTabsModel.allowsEmpty {
             attachHomeScreen()
+        } else {
+            showTabSwitcher()
         }
     }
 
@@ -1891,7 +1901,7 @@ class MainViewController: UIViewController {
             }
 
             ViewHighlighter.updatePositions()
-            self.recomputeInlineEditingHeightIfNeeded()
+            self.recomputeOmnibarEditingHeightIfNeeded()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
@@ -2701,11 +2711,9 @@ class MainViewController: UIViewController {
     ///   - payload: Optional payload data for AI Chat
     ///   - tools: Optional RAG tools available in AI Chat
     private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        
-        if currentTab == nil {
-            if tabManager.current(createIfNeeded: true) == nil {
-                fatalError("failed to create tab")
-            }
+        guard tabManager.current(createIfNeeded: true) != nil else {
+            assertionFailure("openAIChatInTab: no current tab available")
+            return
         }
 
         load(query, autoSend: autoSend, payload: payload, tools: tools)
@@ -3164,6 +3172,11 @@ extension MainViewController: OmniBarDelegate {
             verticalSizeClass: traitCollection.verticalSizeClass
         )
 
+        let initialDetentHeight = model.estimatedInitialDetentHeight(
+            headerDataSource: browsingMenuHeaderDataSource,
+            verticalSizeClass: traitCollection.verticalSizeClass
+        )
+
         func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
             if context == .newTabPage {
                 if #available(iOS 16.0, *) {
@@ -3171,6 +3184,8 @@ extension MainViewController: OmniBarDelegate {
                 } else {
                     sheet.detents = [.medium()]
                 }
+            } else if let initialDetentHeight, #available(iOS 16.0, *) {
+                sheet.detents = [.custom { _ in initialDetentHeight }, .large()]
             } else {
                 sheet.detents = [.medium(), .large()]
             }
@@ -4103,7 +4118,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
         self.forgetAllWithAnimation(request: fireRequest) {
-            tabSwitcher.dismiss(animated: false, completion: nil)
+            tabSwitcher.dismissIfPossible(animated: false)
         }
     }
 
@@ -4111,12 +4126,13 @@ extension MainViewController: TabSwitcherDelegate {
         Task {
             let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all, source: .tabSwitcher)
             await fireExecutor.burn(request: request, applicationState: .unknown)
-            tabSwitcher.dismiss()
+            tabSwitcher.dismissIfPossible()
         }
     }
 
     func tabSwitcherDidReorderTabs(tabSwitcher: TabSwitcherViewController) {
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
@@ -4161,7 +4177,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
     }
 
     func showTabSwitcher() {
-        guard currentTab ?? tabManager.current(createIfNeeded: true) != nil else {
+        if !tabManager.currentTabsModel.allowsEmpty
+            && tabManager.current(createIfNeeded: true) == nil {
             fatalError("Unable to get current tab")
         }
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
@@ -4640,13 +4657,7 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 
     func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
-        if let controller = tabSwitcherController {
-            controller.dismiss(animated: true) {
-                self.segueToSettingsSync()
-            }
-        } else {
-            segueToSettingsSync()
-        }
+        segueToSettingsSync()
     }
 }
 
@@ -4665,13 +4676,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: any AIChatContentHandling) {
-        if let controller = tabSwitcherController {
-            controller.dismiss(animated: true) {
-                self.segueToSettingsSync()
-            }
-        } else {
-            self.segueToSettingsSync()
-        }
+        segueToSettingsSync()
     }
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:

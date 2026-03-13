@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "En adgangskode til enheden er påkrævet for at bruge Sync & Backup.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Gendan automatisk dine data på denne enhed, hvis du geninstallerer appen.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Hvis du geninstallerer DuckDuckGo-appen, spørger vi, om du vil gendanne dine data på denne enhed.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Genoptag din Sync & Backup-session for at gendanne dine bogmærker, adgangskoder og andet, eller fortsæt med en ny opsætning.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Genoptag Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Fortsæt opsætning";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Din forrige Sync & Backup-session er klar.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Hvis du geninstallerer DuckDuckGo-appen, spørger vi, om du vil gendanne dine data på denne enhed.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Gendan ved geninstallation af appen";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Gendan ved geninstallation af appen";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Fra";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Til";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Gendan ved geninstallation af appen";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Tilbage";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Gendan synkroniserede data";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Kom igang";
+"recover.synced.data.sheet.button" = "Gendan synkroniserede data";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "For at gendanne dine synkroniserede data skal du bruge den gendannelseskode, du gemte, da du opsatte synkronisering første gang. Denne kode kan være blevet gemt som en PDF-fil på den enhed, du oprindeligt brugte til at konfigurere synkronisering.";
+"recover.synced.data.sheet.description" = "Du skal bruge den gendannelseskode, du fik, da du konfigurerede Sync & Backup. Du har muligvis gemt den som en PDF-fil på den enhed, du brugte.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Gendan synkroniserede data";
+"recover.synced.data.sheet.title" = "Gendan dine synkroniserede data";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Genopretter forbindelsen for at synkronisere dine bogmærker, gemte logins og andre enheder.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Forbinder...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Gendanner data";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Fjern enhed";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Fjern enhed?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Gendannelseskode";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Gendannelseskode kopieret til udklipsholder";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kopier kode";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Gem som PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Hvis du mister adgang til dine enheder, skal du bruge denne kode til at gendanne dine synkroniserede data.";
+"save.recovery.code.save.as.pdf.button" = "Download som PDF-fil";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Alle, der har adgang til denne kode, kan få adgang til dine synkroniserede data, så opbevar den på et sikkert sted.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Gem gendannelseskode";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Gem denne kode, så du kan gendanne dine data, hvis du mister adgang til denne enhed – opbevar den sikkert.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Gendan nemt dine data";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Gem gendannelses-PDF";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Indstillinger > Synkronisering og sikkerhedskopiering > Synkroniser med en anden enhed";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Gå til Indstillinger";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "En adgangskode til enheden er påkrævet for at bruge Sync & Backup.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Beskyt din enhed for at bruge synkronisering og sikkerhedskopiering";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Gendannelse";
 
 /* Sync & Backup Title */
 "sync.title" = "Synkronisering og sikkerhedskopiering";

@@ -110,10 +110,13 @@ final class PageContextTabExtension {
         contentPublisher.removeDuplicates()
             .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
             .sink { [weak self] tabContent in
+                guard let self else { return }
+
                 let previousContent = self?.content
                 Logger.aiChat.debug("[PageContextExt] contentPublisher: \(String(describing: previousContent)) -> \(String(describing: tabContent))")
-                self?.content = tabContent
-                self?.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
+                self.content = tabContent
+                self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
+                self.sendNonAttachableContextIfNeeded()
             }
             .store(in: &cancellables)
 
@@ -132,11 +135,12 @@ final class PageContextTabExtension {
                 /// It's only called when sidebar for tabID is non-nil.
                 /// Additionally, we're only calling `handle` if there's a cached page context.
                 Logger.aiChat.debug("[PageContextExt] sessionAppeared: hasCachedContext=\(self.cachedPageContext != nil), isCollectionEnabled=\(self.isContextCollectionEnabled)")
-                guard let cachedPageContext, isContextCollectionEnabled else {
-                    return
-                }
-                Task {
-                    await self.handle(cachedPageContext)
+                if let cachedPageContext, isContextCollectionEnabled {
+                    Task {
+                        await self.handle(cachedPageContext)
+                    }
+                } else {
+                    sendNonAttachableContextIfNeeded()
                 }
             }
             .store(in: &cancellables)
@@ -266,6 +270,27 @@ final class PageContextTabExtension {
         }
     }
 
+    /// Sends a non-attachable page context to the sidebar when on a non-content page (NTP, settings, bookmarks, etc.).
+    /// This tells the FE to hide the page context chip since there's nothing useful to attach.
+    private func sendNonAttachableContextIfNeeded() {
+        if case .url = content { return }
+        guard aiChatSessionStore.sessions[tabID] != nil else { return }
+
+        cachedPageContext = nil
+        let nonAttachableContext = AIChatPageContextData(
+            title: content.title ?? "",
+            favicon: [],
+            url: content.urlForWebView?.absoluteString ?? "",
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: false
+        )
+        Task {
+            await handle(nonAttachableContext)
+        }
+    }
+
     /// Context collection is allowed when it's set to automatic in AI Features Settings
     /// or when we allow one-time collection requested by the user.
     private var isContextCollectionEnabled: Bool {
@@ -288,7 +313,8 @@ final class PageContextTabExtension {
             url: pageContext.url,
             content: pageContext.content,
             truncated: pageContext.truncated,
-            fullContentLength: pageContext.fullContentLength
+            fullContentLength: pageContext.fullContentLength,
+            attachable: pageContext.attachable
         )
     }
 

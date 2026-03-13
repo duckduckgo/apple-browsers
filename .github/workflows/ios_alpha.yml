@@ -49,10 +49,12 @@ jobs:
           exit 1
         fi
 
-    - name: Register SSH keys for access to certificates
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check for active upload job
       env:

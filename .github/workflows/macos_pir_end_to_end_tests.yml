@@ -49,12 +49,13 @@ jobs:
 
     timeout-minutes: 32
     steps:
-    - name: Register SSH keys for certificates repository and PIR fake broker repository access
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: |
-                        ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-                        ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
       uses: actions/checkout@v4

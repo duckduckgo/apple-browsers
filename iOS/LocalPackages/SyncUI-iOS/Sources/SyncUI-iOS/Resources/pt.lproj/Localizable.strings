@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "É necessária uma palavra-passe do dispositivo para usar o Sync & Backup.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Restaura automaticamente os teus dados neste dispositivo se reinstalares a aplicação.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Se reinstalares a aplicação DuckDuckGo, perguntaremos se queres restaurar os teus dados neste dispositivo.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Retoma a tua sessão do Sync & Backup para restaurar os teus marcadores, palavras-passe e mais, ou continua com uma nova configuração.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Retomar Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Continuar configuração";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "A tua sessão anterior do Sync & Backup está pronta.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Se reinstalares a aplicação DuckDuckGo, perguntaremos se queres restaurar os teus dados neste dispositivo.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Restaurar na reinstalação da aplicação";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Restaurar na reinstalação da aplicação";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Desligado";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Ligado";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Restaurar na reinstalação da aplicação";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Retroceder";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Recuperar dados sincronizados";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Comece";
+"recover.synced.data.sheet.button" = "Recuperar dados sincronizados";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Para restaurares os teus dados sincronizados, precisas do código de recuperação que guardaste quando configuraste a sincronização. Este código pode ter sido guardado como um PDF no dispositivo usado para configurar a sincronização.";
+"recover.synced.data.sheet.description" = "Vais precisar do código de recuperação que recebeste quando configuraste o Sync & Backup. Podes ter guardado como um PDF no dispositivo que utilizaste.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Recuperar dados sincronizados";
+"recover.synced.data.sheet.title" = "Recuperar os teus dados sincronizados";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "A voltar a ligar para sincronizares os teus marcadores, inícios de sessão guardados e outros dispositivos.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "A ligar…";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Recuperar dados";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Remover dispositivo";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Remover dispositivo?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Código de recuperação";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Código de recuperação copiado para a área de transferência";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Copiar código";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Guardar como PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Se perderes o acesso aos teus dispositivos, precisas deste código para recuperar os dados sincronizados.";
+"save.recovery.code.save.as.pdf.button" = "Descarregar como PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Qualquer pessoa com acesso a este código pode aceder aos teus dados sincronizados, por isso, guarda o código num local seguro.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Guardar código de recuperação";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Guarda este código para poderes recuperar os teus dados caso percas o acesso a este dispositivo. Mantém-no seguro.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Recuperar os teus dados facilmente";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Guardar PDF de recuperação";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Definições > Sincronização e cópia de segurança > Sincronizar com outro dispositivo";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Aceder às Definições";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "É necessária uma palavra-passe do dispositivo para usar o Sync & Backup.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Protege o teu dispositivo para usares o Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Recuperação";
 
 /* Sync & Backup Title */
 "sync.title" = "Sincronização e cópia de segurança";

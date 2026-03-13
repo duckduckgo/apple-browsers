@@ -100,6 +100,15 @@
       }
     },
     {
+      "identity" : "native-apps-ducksans",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:duckduckgo/native-apps-ducksans.git",
+      "state" : {
+        "revision" : "2f3e0ec3f028ff0cf4aca459def313607f385c1f",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "ohhttpstubs",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/AliSoftware/OHHTTPStubs.git",

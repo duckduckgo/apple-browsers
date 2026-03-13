@@ -288,6 +288,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
             return
         }
 
+        let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+        operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
+
         if featureFlagger.isForegroundRunningOnAppActiveFeatureOn {
             await startImmediateScanOperations()
         } else {
@@ -297,7 +300,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     func fireMonitoringPixels() async {
         let isAuthenticated = await authenticationManager.isUserAuthenticated
-        tryToFireEngagementPixels(isAuthenticated: isAuthenticated)
+        
+        /*
+         Engagement pixels disabled for now as checking for the profile on the main thread was causing an increase in hang rates
+         */
+        // tryToFireEngagementPixels(isAuthenticated: isAuthenticated)
+
         tryToFireWeeklyPixels(isAuthenticated: isAuthenticated)
 
         // Stats pixels only fire for authenticated users (they relate to opt-outs)

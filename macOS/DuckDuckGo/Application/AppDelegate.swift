@@ -583,7 +583,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
+        wideEvent = WideEvent(
+            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
+        )
 
         aiChatSessionStore = AIChatSessionStore(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
@@ -1262,6 +1265,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
+        AttributionXattrCanaryValidator().validateAndReport()
 
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()

@@ -295,6 +295,8 @@ public final class DataBrokerProtectionAgentManager {
             await fireMonitoringPixels()
             Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
             sweepWideEvents()
+            let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+            operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
             await checkForEmailConfirmationData()
 
             startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)

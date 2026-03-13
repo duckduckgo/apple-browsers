@@ -56,6 +56,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let subscriptionDataReporter: SubscriptionDataReporting
     let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
     let webExtensionManager: WebExtensionManaging?
+    let syncAutoRestoreHandler: SyncAutoRestoreHandling
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -73,7 +74,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         webExtensionManager: WebExtensionManaging?) {
+         webExtensionManager: WebExtensionManaging?,
+         syncAutoRestoreHandler: SyncAutoRestoreHandling) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -91,6 +93,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.webExtensionManager = webExtensionManager
+        self.syncAutoRestoreHandler = syncAutoRestoreHandler
     }
     
     enum LegacyView {
@@ -138,6 +141,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     private func instantiateDebugController() -> UIViewController {
         return DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
+            syncAutoRestoreHandler: self.syncAutoRestoreHandler,
             bookmarksDatabase: self.bookmarksDatabase,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
@@ -179,7 +183,8 @@ class SettingsLegacyViewProvider: ObservableObject {
                                           appSettings: self.appSettings,
                                           syncPausedStateManager: self.syncPausedStateManager,
                                           source: source,
-                                          pairingInfo: pairingInfo)
+                                          pairingInfo: pairingInfo,
+                                          syncAutoRestoreHandler: syncAutoRestoreHandler)
     }
 
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,

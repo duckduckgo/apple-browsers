@@ -79,8 +79,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         return tabsModel?.count ?? 0
     }
     
-    var currentIndex: Int {
-        return tabsModel?.currentIndex ?? 0
+    var currentIndex: Int? {
+        return tabsModel?.currentIndex
     }
 
     var maxItems: Int {
@@ -193,7 +193,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         if scrollToSelected {
             DispatchQueue.main.async {
-                self.collectionView.scrollToItem(at: IndexPath(row: self.currentIndex, section: 0), at: .right, animated: true)
+                if let currentIndex = self.currentIndex {
+                    self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
+                }
             }
         }
 
@@ -274,7 +276,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private func requestNewTab() {
         delegate?.tabsBarDidRequestNewTab(self)
         DispatchQueue.main.async {
-            self.collectionView.scrollToItem(at: IndexPath(row: self.currentIndex, section: 0), at: .right, animated: true)
+            if let currentIndex = self.currentIndex {
+                self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
+            }
         }
     }
 

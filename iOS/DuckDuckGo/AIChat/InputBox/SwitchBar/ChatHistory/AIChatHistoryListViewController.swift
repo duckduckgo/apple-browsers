@@ -258,6 +258,10 @@ extension AIChatHistoryListViewController: UITableViewDataSource {
 
 extension AIChatHistoryListViewController: UITableViewDelegate {
 
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        view.window?.endEditing(true)
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 

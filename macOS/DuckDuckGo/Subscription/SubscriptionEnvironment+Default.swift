@@ -16,23 +16,21 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Subscription
 
 extension SubscriptionEnvironment {
 
     public static var `default`: SubscriptionEnvironment {
-#if APPSTORE || !STRIPE
-        let platform: SubscriptionEnvironment.PurchasePlatform = .appStore
-#else
-        let platform: SubscriptionEnvironment.PurchasePlatform = .stripe
-#endif
-
-#if ALPHA || DEBUG
-        let environment: SubscriptionEnvironment.ServiceEnvironment = .staging
-#else
-        let environment: SubscriptionEnvironment.ServiceEnvironment = .production
-#endif
+        let buildType = StandardApplicationBuildType()
+        let environment: SubscriptionEnvironment.ServiceEnvironment
+        if buildType.isDebugBuild || buildType.isAlphaBuild {
+            environment = .staging
+        } else {
+            environment = .production
+        }
+        let platform: SubscriptionEnvironment.PurchasePlatform = AppVersion.isAppStoreBuild ? .appStore : .stripe
         return SubscriptionEnvironment(serviceEnvironment: environment, purchasePlatform: platform)
     }
 }

@@ -21,18 +21,20 @@ import XCTest
 class AIChatSettingsTests: UITestCase {
     private var addressBarTextField: XCUIElement!
 
-    private enum AccessibilityIdentifiers {
-        static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
+    private enum Identifiers {
         static let searchModeToggleControl = "AddressBarButtonsViewController.searchModeToggleControl"
         static let aiFeaturesToggle = "Preferences.AIChat.aiFeaturesToggle"
-        static let showInAddressBarToggle = "Preferences.AIChat.showInAddressBarToggle"
         static let showSearchAndDuckAIToggleToggle = "Preferences.AIChat.showSearchAndDuckAIToggleToggle"
+        static let showDuckAIButtonInTabBarToggle = "Preferences.AIChat.showDuckAIButtonInTabBarToggle"
+        static let showSidebarButtonInTabBarToggle = "Preferences.AIChat.showSidebarButtonInTabBarToggle"
+        static let duckAITitleButton = "TabBarViewController.duckAIChromeTitleButton"
+        static let sidebarButton = "TabBarViewController.duckAIChromeSidebarButton"
     }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true, "aiChatChromeSidebar": false])
+        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true, "aiChatChromeSidebar": true, "aiChatSidebarFloating": true])
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
@@ -43,37 +45,11 @@ class AIChatSettingsTests: UITestCase {
         app.terminate()
     }
 
-    // MARK: - Test 1: Show Duck.ai shortcut in address bar
+    // MARK: - Search and Duck.ai Toggle
 
-    func test_whenShowDuckAIShortcutInAddressBarIsToggled_thenDuckAIButtonVisibilityUpdates() throws {
-        // Navigate to AI Chat settings first; this unfocuses the address bar so
-        // the AI chat button becomes visible (it is hidden while the address bar
-        // is focused when the omnibar toggle feature flag is on).
+    func test_whenShowSearchAndDuckAIToggleIsChanged_thenToggleVisibilityUpdatesOnFocus() {
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
-        let showInAddressBarToggle = app.checkBoxes[AccessibilityIdentifiers.showInAddressBarToggle]
-        XCTAssertTrue(showInAddressBarToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
-        let aiChatButton = app.windows.buttons[AccessibilityIdentifiers.aiChatButton]
-        XCTAssertTrue(aiChatButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "AIChat button should be visible by default")
-
-        // Disable the shortcut in address bar
-        showInAddressBarToggle.click()
-        XCTAssertFalse(aiChatButton.exists,
-                       "AIChat button should not be visible when show in address bar is disabled")
-
-        // Re-enable the shortcut in address bar
-        showInAddressBarToggle.click()
-        XCTAssertTrue(aiChatButton.exists,
-                      "AIChat button should be visible after re-enabling show in address bar")
-    }
-
-    // MARK: - Test 2: Show Search and Duck.ai toggle when address bar is focused
-
-    func test_whenShowSearchAndDuckAIToggleIsChanged_thenToggleVisibilityUpdatesOnFocus() throws {
-        // Navigate to AI Chat settings
-        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
-        let showToggleCheckbox = app.checkBoxes[AccessibilityIdentifiers.showSearchAndDuckAIToggleToggle]
+        let showToggleCheckbox = app.checkBoxes[Identifiers.showSearchAndDuckAIToggleToggle]
         XCTAssertTrue(showToggleCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Show Search and Duck.ai toggle setting should be visible")
 
@@ -86,7 +62,7 @@ class AIChatSettingsTests: UITestCase {
         app.openNewTab()
         app.activateAddressBar()
 
-        let searchModeToggle = app.radioGroups[AccessibilityIdentifiers.searchModeToggleControl]
+        let searchModeToggle = app.radioGroups[Identifiers.searchModeToggleControl]
         XCTAssertTrue(searchModeToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Search/Duck.ai toggle should be visible when address bar is focused and setting is on")
 
@@ -105,26 +81,62 @@ class AIChatSettingsTests: UITestCase {
         showToggleCheckbox.click()
     }
 
-    // MARK: - Test 3: Main Duck.ai setting disables all features
+    // MARK: - Tab Bar Button Visibility from Settings
 
-    func test_whenDuckAIIsDisabled_thenAddressBarButtonAndToggleAreNotVisible() throws {
-        // Navigate to AI Chat settings
+    func test_settingsToggleDuckAIButton_hidesAndShowsTitleButton() {
+        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
+
+        let duckAIToggle = app.checkBoxes[Identifiers.showDuckAIButtonInTabBarToggle]
+        XCTAssertTrue(duckAIToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        let titleButton = app.windows.firstMatch.buttons[Identifiers.duckAITitleButton]
+        XCTAssertTrue(titleButton.exists, "Duck.ai title button should be visible by default")
+
+        // Disable via settings
+        duckAIToggle.click()
+        XCTAssertTrue(titleButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Duck.ai title button should be hidden after disabling in settings")
+
+        // Re-enable via settings
+        duckAIToggle.click()
+        XCTAssertTrue(titleButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Duck.ai title button should reappear after re-enabling in settings")
+    }
+
+    func test_settingsToggleSidebarButton_hidesAndShowsSidebarButton() {
+        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
+
+        let sidebarToggle = app.checkBoxes[Identifiers.showSidebarButtonInTabBarToggle]
+        XCTAssertTrue(sidebarToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        let sidebarButton = app.windows.firstMatch.buttons[Identifiers.sidebarButton]
+        XCTAssertTrue(sidebarButton.exists, "Sidebar button should be visible by default")
+
+        // Disable via settings
+        sidebarToggle.click()
+        XCTAssertTrue(sidebarButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Sidebar button should be hidden after disabling in settings")
+
+        // Re-enable via settings
+        sidebarToggle.click()
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Sidebar button should reappear after re-enabling in settings")
+    }
+
+    // MARK: - Main Duck.ai Toggle Disables Everything
+
+    func test_whenDuckAIIsDisabled_thenTabBarButtonsAndToggleAreNotVisible() {
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         // Ensure sub-settings are ON before disabling the main setting
-        let showToggleCheckbox = app.checkBoxes[AccessibilityIdentifiers.showSearchAndDuckAIToggleToggle]
+        let showToggleCheckbox = app.checkBoxes[Identifiers.showSearchAndDuckAIToggleToggle]
         XCTAssertTrue(showToggleCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         if !showToggleCheckbox.isOn {
             showToggleCheckbox.click()
         }
 
-        let showInAddressBarToggle = app.checkBoxes[AccessibilityIdentifiers.showInAddressBarToggle]
-        if !showInAddressBarToggle.isOn {
-            showInAddressBarToggle.click()
-        }
-
         // Disable the main Duck.ai setting
-        let disableButton = app.buttons[AccessibilityIdentifiers.aiFeaturesToggle]
+        let disableButton = app.buttons[Identifiers.aiFeaturesToggle]
         XCTAssertTrue(disableButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         disableButton.click()
 
@@ -133,23 +145,52 @@ class AIChatSettingsTests: UITestCase {
         XCTAssertTrue(confirmButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         confirmButton.click()
 
-        // Verify AI chat button is not visible
-        let aiChatButton = app.windows.buttons[AccessibilityIdentifiers.aiChatButton]
-        XCTAssertFalse(aiChatButton.waitForExistence(timeout: 2),
-                       "AIChat button should not be visible when Duck.ai is disabled")
+        // Tab bar buttons should be hidden
+        let titleButton = app.windows.firstMatch.buttons[Identifiers.duckAITitleButton]
+        XCTAssertTrue(titleButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Duck.ai title button should be hidden when Duck.ai is disabled")
+        let sidebarButton = app.windows.firstMatch.buttons[Identifiers.sidebarButton]
+        XCTAssertFalse(sidebarButton.exists,
+                       "Sidebar button should be hidden when Duck.ai is disabled")
 
         // Verify toggle is not visible when address bar is focused
         app.openNewTab()
         app.activateAddressBar()
-        let searchModeToggle = app.radioGroups[AccessibilityIdentifiers.searchModeToggleControl]
+        let searchModeToggle = app.radioGroups[Identifiers.searchModeToggleControl]
         XCTAssertFalse(searchModeToggle.waitForExistence(timeout: 2),
                        "Search/Duck.ai toggle should not be visible when Duck.ai is disabled")
+
+        // Right-click on a tab — Duck.ai context menu items should not appear
+        let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons.firstMatch
+        tab.rightClick()
+        let contextMenu = tab.children(matching: .menu).firstMatch
+        if contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            XCTAssertFalse(contextMenu.menuItems["hideDuckAITitleButtonAction"].exists,
+                           "Duck.ai context menu items should not appear when Duck.ai is disabled")
+            XCTAssertFalse(contextMenu.menuItems["openAISettingsAction"].exists,
+                           "Open AI Settings context menu item should not appear when Duck.ai is disabled")
+            // Dismiss the context menu
+            app.typeKey(.escape, modifierFlags: [])
+        }
+
+        // View menu should not show Duck.ai items
+        let viewMenu = app.menuBars.menuBarItems["View"]
+        viewMenu.click()
+        XCTAssertFalse(viewMenu.menuItems["Hide Duck.ai Shortcut"].waitForExistence(timeout: 2),
+                       "Hide Duck.ai Shortcut should not be in View menu when Duck.ai is disabled")
+        XCTAssertFalse(viewMenu.menuItems["Show Duck.ai Shortcut"].exists,
+                       "Show Duck.ai Shortcut should not be in View menu when Duck.ai is disabled")
+        XCTAssertFalse(viewMenu.menuItems["Hide Sidebar Button"].exists,
+                       "Hide Sidebar Button should not be in View menu when Duck.ai is disabled")
+        XCTAssertFalse(viewMenu.menuItems["Show Sidebar Button"].exists,
+                       "Show Sidebar Button should not be in View menu when Duck.ai is disabled")
+        app.typeKey(.escape, modifierFlags: [])
 
         // Restore: re-enable Duck.ai
         app.activateAddressBar()
         addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
-        let enableButton = app.buttons[AccessibilityIdentifiers.aiFeaturesToggle]
+        let enableButton = app.buttons[Identifiers.aiFeaturesToggle]
         XCTAssertTrue(enableButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         enableButton.click()
     }

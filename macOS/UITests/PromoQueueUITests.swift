@@ -132,10 +132,6 @@ final class PromoQueueUITests: UITestCase {
 private extension XCUIApplication {
     private typealias Identifiers = Utilities.AccessibilityIdentifiers.PromoQueue
 
-    var promoQueueMenu: XCUIElement {
-        debugMenu.menuItems[Identifiers.promoQueueDebugMenu]
-    }
-
     func fireTestTrigger() {
         typeKey("t", modifierFlags: [.command, .shift, .option, .control])
     }
@@ -147,17 +143,17 @@ private extension XCUIApplication {
 
     func resetPromoState() {
         closePromoIfNeeded()
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.resetAllPromoState].clickAfterExistenceTestSucceeds()
     }
 
     func advanceSimulatedDateByHour() {
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.advanceSimulatedDate1Hour].clickAfterExistenceTestSucceeds()
     }
 
     func advanceSimulatedDateByDay() {
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.advanceSimulatedDate1Day].clickAfterExistenceTestSucceeds()
     }
 
@@ -170,11 +166,6 @@ private extension XCUIApplication {
             .menuItems[Utilities.AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem]
             .clickAfterExistenceTestSucceeds()
         advanceSimulatedDateByDay()
-    }
-
-    private func openPromoQueueMenu() {
-        debugMenu.click()
-        promoQueueMenu.hover()
     }
 
     var alertA: XCUIElement {

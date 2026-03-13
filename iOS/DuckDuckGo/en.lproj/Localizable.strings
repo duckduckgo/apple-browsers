@@ -2494,6 +2494,9 @@ https://duckduckgo.com/mac";
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Learn More";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "No Thanks";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Skip";
 
@@ -2508,6 +2511,9 @@ https://duckduckgo.com/mac";
 
 /* The message of the onboarding dialog popup */
 "onboarding.rebranding.intro.message" = "Ready for a faster browser that keeps you protected?";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message.english-only" = "Ready for a faster browser that protects you and lets you decide when and how to use AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hi there.";

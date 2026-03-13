@@ -29,6 +29,7 @@ struct RebrandedBrowsersComparisonModel {
 
         enum FeatureType: Equatable {
             case privateSearch
+            case privateAIChat
             case blockTrackers
             case blockCookies
             case blockAds
@@ -38,6 +39,8 @@ struct RebrandedBrowsersComparisonModel {
                 switch self {
                 case .privateSearch:
                     return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch
+                case .privateAIChat:
+                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateAIChatEnglish
                 case .blockTrackers:
                     return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.trackerBlockers
                 case .blockCookies:
@@ -53,6 +56,8 @@ struct RebrandedBrowsersComparisonModel {
                 switch self {
                 case .privateSearch:
                     return OnboardingRebrandingImages.Comparison.privateSearchIcon
+                case .privateAIChat:
+                    return OnboardingRebrandingImages.Comparison.privateAIChatIcon
                 case .blockTrackers:
                     return OnboardingRebrandingImages.Comparison.blockTrackersIcon
                 case .blockCookies:
@@ -83,31 +88,29 @@ struct RebrandedBrowsersComparisonModel {
         }
     }
 
-    static let features: [Feature] = [
-        Feature(
-            type: .privateSearch,
-            safariAvailability: .unavailable,
-            ddgAvailability: .available
-        ),
-        Feature(
-            type: .blockTrackers,
-            safariAvailability: .partial,
-            ddgAvailability: .available
-        ),
-        Feature(
-            type: .blockCookies,
-            safariAvailability: .unavailable,
-            ddgAvailability: .available
-        ),
-        Feature(
-            type: .blockAds,
-            safariAvailability: .unavailable,
-            ddgAvailability: .available
-        ),
-        Feature(
-            type: .eraseData,
-            safariAvailability: .unavailable,
-            ddgAvailability: .available
-        )
-    ]
+    static var features: [Feature] {
+        features(locale: .current)
+    }
+
+    // English users see an AI chat row in position 2 and the erase-data row removed,
+    // matching the logic in BrowsersComparisonModel.
+    static func features(locale: Locale) -> [Feature] {
+        if locale.languageCode?.lowercased() == "en" {
+            return [
+                Feature(type: .privateSearch, safariAvailability: .unavailable, ddgAvailability: .available),
+                Feature(type: .privateAIChat, safariAvailability: .unavailable, ddgAvailability: .available),
+                Feature(type: .blockTrackers, safariAvailability: .partial, ddgAvailability: .available),
+                Feature(type: .blockCookies, safariAvailability: .unavailable, ddgAvailability: .available),
+                Feature(type: .blockAds, safariAvailability: .unavailable, ddgAvailability: .available),
+            ]
+        }
+
+        return [
+            Feature(type: .privateSearch, safariAvailability: .unavailable, ddgAvailability: .available),
+            Feature(type: .blockTrackers, safariAvailability: .partial, ddgAvailability: .available),
+            Feature(type: .blockCookies, safariAvailability: .unavailable, ddgAvailability: .available),
+            Feature(type: .blockAds, safariAvailability: .unavailable, ddgAvailability: .available),
+            Feature(type: .eraseData, safariAvailability: .unavailable, ddgAvailability: .available),
+        ]
+    }
 }

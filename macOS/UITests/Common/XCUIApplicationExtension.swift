@@ -929,4 +929,10 @@ extension XCUIApplication {
         }
     }
 
+    // MARK: - Promos
+
+    var promoQueueMenu: XCUIElement {
+        debugMenu.menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoQueueDebugMenu]
+    }
+
 }

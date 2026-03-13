@@ -326,7 +326,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics,
+<<<<<<< HEAD
                 .tabAnimations:
+=======
+                .promoQueue:
+>>>>>>> origin/main
             true
         default:
             false
@@ -603,7 +607,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .semaphoreAlwaysVisible:
             return .internalOnly()
         case .promoQueue:
-            return .disabled
+            return .remoteReleasable(.feature(.promoQueue))
         case .tabAnimations:
             return .internalOnly()
         }

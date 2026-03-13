@@ -42,8 +42,11 @@ final class PromoDebugMenu: NSMenu {
 
     private var cancellables = Set<AnyCancellable>()
     private var cachedHistory: [String: PromoHistoryRecord] = [:]
-    private var simulatedDate: Date?
     private var promos: [Promo] = []
+
+    private var debugSimulatedDateStore: DebugSimulatedDateStore {
+        DebugSimulatedDateStore(keyValueStore: Application.appDelegate.keyValueStore)
+    }
 
     private static let dateFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
@@ -101,12 +104,14 @@ final class PromoDebugMenu: NSMenu {
         for promo in promos {
             let status = statusString(for: promo)
             let parentItem = NSMenuItem(title: "\(promo.id)  \(status)", action: nil)
+            parentItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.promoMenuItem(promo.id))
 
             let submenu = NSMenu()
             if promo.delegate is PromoDelegate {
                 let forceShowItem = NSMenuItem(title: "Force Show", action: #selector(forceShowPromo(_:)), keyEquivalent: "")
                 forceShowItem.representedObject = promo.id
                 forceShowItem.target = self
+                forceShowItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.forceShowPromo)
                 submenu.addItem(forceShowItem)
             }
 
@@ -138,7 +143,7 @@ final class PromoDebugMenu: NSMenu {
 
         let resetDateItem = NSMenuItem(title: "Reset Simulated Date", action: #selector(resetSimulatedDate), keyEquivalent: "")
         resetDateItem.target = self
-        resetDateItem.isEnabled = simulatedDate != nil
+        resetDateItem.isEnabled = debugSimulatedDateStore.simulatedDate != nil
         resetDateItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.resetSimulatedDate)
         addItem(resetDateItem)
 
@@ -151,7 +156,7 @@ final class PromoDebugMenu: NSMenu {
     }
 
     private func statusString(for promo: Promo) -> String {
-        let now = simulatedDate ?? Date()
+        let now = debugSimulatedDateStore.simulatedDate ?? Date()
         let record = cachedHistory[promo.id]
 
         if let rec = record, rec.isPermanentlyDismissed { return "dismissed" }
@@ -228,17 +233,16 @@ final class PromoDebugMenu: NSMenu {
     }
 
     private func advanceSimulatedDate(by interval: TimeInterval) {
-        simulatedDate = (simulatedDate ?? Date()).addingTimeInterval(interval)
-        NSApp.delegateTyped.promoService?.setDebugSimulatedDate(simulatedDate)
+        debugSimulatedDateStore.advance(by: interval)
     }
 
     @objc private func resetSimulatedDate() {
-        simulatedDate = nil
-        NSApp.delegateTyped.promoService?.setDebugSimulatedDate(nil)
+        debugSimulatedDateStore.reset()
     }
 
     @objc private func resetAllPromoState() {
-        simulatedDate = nil
+        debugSimulatedDateStore.reset()
         NSApp.delegateTyped.promoService?.resetDebugState()
+        NSApp.delegateTyped.defaultBrowserAndDockPromptService.resetDebugState()
     }
 }

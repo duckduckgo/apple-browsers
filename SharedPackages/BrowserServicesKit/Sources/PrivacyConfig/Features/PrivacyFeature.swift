@@ -176,6 +176,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Startup Metrics Reporting
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
     case startupMetrics
+
+    case semaphoreAlwaysVisible
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

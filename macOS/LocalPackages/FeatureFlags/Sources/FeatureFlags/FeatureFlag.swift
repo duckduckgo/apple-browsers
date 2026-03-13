@@ -598,7 +598,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webViewLookUpAction:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .semaphoreAlwaysVisible:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
             return .disabled
         }

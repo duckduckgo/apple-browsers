@@ -24,7 +24,7 @@ import Combine
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatViewControllerDelegate: AnyObject {
-    /// Called when the user clicks the "Expand" button
+    /// Called when the user clicks the "Open Duck.ai in Tab" button.
     func didClickOpenInNewTabButton()
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
@@ -34,6 +34,8 @@ protocol AIChatViewControllerDelegate: AnyObject {
     func didClickAttachButton(for tabID: TabIdentifier)
     /// Called when the user clicks the title button to bring the associated tab to front.
     func didClickTitleButton(for tabID: TabIdentifier)
+    /// Returns whether the chat is in floating (detached) presentation mode for the given tab.
+    func isChatFloating(for tabID: TabIdentifier) -> Bool
 }
 
 /// A view controller that manages the AI Chat sidebar interface.
@@ -49,7 +51,6 @@ final class AIChatViewController: NSViewController {
         static let barButtonHeight: CGFloat = 28
         static let barButtonWidth: CGFloat = 28
         static let barButtonMargin: CGFloat = 12
-        static let titleLabelSideMargin: CGFloat = 8
         static let titleButtonHeight: CGFloat = 28
         static let titleButtonHorizontalPadding: CGFloat = 8
         static let titleFaviconSize: CGFloat = 16
@@ -68,6 +69,10 @@ final class AIChatViewController: NSViewController {
             updateTopBarForHostingContext()
         }
     }
+    private var isChatFloating: Bool {
+        guard let tabID else { return false }
+        return delegate?.isChatFloating(for: tabID) ?? false
+    }
     private(set) var currentAIChatURL: URL
 
     let themeManager: ThemeManaging
@@ -83,7 +88,6 @@ final class AIChatViewController: NSViewController {
     private var titleFaviconView: NSImageView!
     private var titleTextLabel: NSTextField!
     private var titleArrowView: NSImageView!
-    private var titleLabel: NSTextField!
     private var webViewContainer: WebViewContainerView!
     private var separator: NSView!
     private var topBar: NSView!
@@ -159,10 +163,8 @@ final class AIChatViewController: NSViewController {
     }
 
     private func createAndSetupSeparator(in container: NSView) {
-        separator = NSView()
+        separator = ColorView(frame: .zero, backgroundColor: themeManager.theme.colorsProvider.separatorColor)
         separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.wantsLayer = true
-        separator.layer?.backgroundColor = NSColor.separatorColor.cgColor
         container.addSubview(separator)
 
         NSLayoutConstraint.activate([
@@ -186,13 +188,6 @@ final class AIChatViewController: NSViewController {
                                      toolTip: UserText.aiChatSidebarAttachButtonTooltip)
         attachButton.isHidden = true
         topBar.addSubview(attachButton)
-
-        titleLabel = NSTextField(labelWithString: UserText.aiChatSidebarTitle)
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.alignment = .center
-        titleLabel.font = .systemFont(ofSize: 13, weight: .medium)
-        titleLabel.textColor = .labelColor
-        topBar.addSubview(titleLabel)
 
         titleButton = makeTitleButton()
         titleButton.isHidden = true
@@ -218,12 +213,7 @@ final class AIChatViewController: NSViewController {
             attachButton.heightAnchor.constraint(equalToConstant: Constants.barButtonHeight),
             attachButton.widthAnchor.constraint(equalToConstant: Constants.barButtonWidth),
 
-            // Center: static title (docked) or clickable title button (floating)
-            titleLabel.centerXAnchor.constraint(equalTo: topBar.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleLabelSideMargin),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: detachButton.leadingAnchor, constant: -Constants.titleLabelSideMargin),
-
+            // Center: clickable title button (floating only)
             titleButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
             titleButton.heightAnchor.constraint(equalToConstant: Constants.titleButtonHeight),
             titleButton.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleButtonGutter),
@@ -328,14 +318,20 @@ final class AIChatViewController: NSViewController {
     }
 
     private func updateTopBarForHostingContext() {
-        let isFloating = view.window is AIChatFloatingWindow
-        openInNewTabButton.isHidden = isFloating
-        detachButton.isHidden = isFloating || !isChatFloatingEnabled
-        attachButton.isHidden = !isFloating
-        closeButton.isHidden = isFloating
-        titleLabel.isHidden = isFloating
-        titleButton.isHidden = !isFloating
-        titleArrowView?.isHidden = !isFloating
+        openInNewTabButton.isHidden = isChatFloating
+        detachButton.isHidden = isChatFloating || !isChatFloatingEnabled
+        attachButton.isHidden = !isChatFloating
+        closeButton.isHidden = isChatFloating
+        titleButton.isHidden = !isChatFloating
+        titleArrowView?.isHidden = !isChatFloating
+        separator.isHidden = isChatFloating
+        updateBackgroundForHostingContext()
+    }
+
+    private func updateBackgroundForHostingContext() {
+        guard let contentView = view as? ColorView else { return }
+        let colorsProvider = themeManager.theme.colorsProvider
+        contentView.backgroundColor = isChatFloating ? colorsProvider.baseBackgroundColor : colorsProvider.navigationBackgroundColor
     }
 
     private func createAndSetupWebViewContainer(in container: NSView) {
@@ -462,7 +458,6 @@ final class AIChatViewController: NSViewController {
         aiTab.webView.uiDelegate = nil
 
         aiTab.webView.stopLoading()
-        aiTab.webView.loadHTMLString("", baseURL: nil)
     }
 }
 
@@ -475,7 +470,8 @@ extension AIChatViewController: ThemeUpdateListening {
             return
         }
 
-        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+        contentView.backgroundColor = isChatFloating ? theme.colorsProvider.baseBackgroundColor : theme.colorsProvider.navigationBackgroundColor
+        (separator as? ColorView)?.backgroundColor = theme.colorsProvider.separatorColor
 
         let iconsPrimary = theme.colorsProvider.iconsColor
         openInNewTabButton?.normalTintColor = iconsPrimary

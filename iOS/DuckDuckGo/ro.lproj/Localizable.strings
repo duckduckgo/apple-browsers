@@ -2976,6 +2976,27 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Deschizi în altă aplicație?";
 
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Înapoi";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Vrei să deschizi această pagină în Safari?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Din păcate, pagina nu s-a putut încărca.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Deschide în Safari";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Rămâi pe DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Este posibil ca unele funcții ale site-ului să nu fie compatibile cu acest browser.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Acest site vrea să se deschidă în Safari.";
+
 /* No comment provided by engineer. */
 "REBRANDED" = "NE-AM REDEFINIT BRANDUL";
 

@@ -63,6 +63,7 @@ final class MainViewController: NSViewController {
     let downloadManager: FileDownloadManagerProtocol
     let isBurner: Bool
     let pinningManager: PinningManager
+    let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
@@ -138,6 +139,7 @@ final class MainViewController: NSViewController {
          sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
          winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
          pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
+         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
          memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor,
          startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler
     ) {
@@ -157,6 +159,7 @@ final class MainViewController: NSViewController {
         self.tabsPreferences = tabsPreferences
         self.duckPlayer = duckPlayer
         self.pinningManager = pinningManager
+        self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -164,6 +167,7 @@ final class MainViewController: NSViewController {
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
             featureFlagger: featureFlagger,
+            aiChatMenuConfig: aiChatMenuConfig,
             tabDragAndDropManager: tabDragAndDropManager,
             autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
         )
@@ -548,6 +552,17 @@ final class MainViewController: NSViewController {
                 aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
             }
         }
+    }
+
+    func openNewDuckAIChatTab() {
+        let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
+            ? .currentTab
+            : .newTab(selected: true)
+        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
+    }
+
+    func toggleDuckAISidebar() {
+        aiChatCoordinator.toggleSidebar()
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {

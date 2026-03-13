@@ -11,6 +11,8 @@ on:
         description: "New release version (calculated automatically if not provided)"
         required: false
         type: string
+  schedule:
+    - cron: '0 0 * * 1' # 12AM UTC on Monday
 
 concurrency:
   group: 'ios-release'
@@ -18,7 +20,16 @@ concurrency:
 
 jobs:
 
+  check_automatic_freeze:
+    name: Check Automatic Code Freeze
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || vars.IOS_AUTOMATIC_CODE_FREEZE == '1'
+    steps:
+      - name: Code freeze is enabled
+        run: echo "Automatic code freeze is enabled or workflow was triggered manually"
+
   upload_current_metadata:
+    needs: check_automatic_freeze
     name: Upload Current iOS App Version Metadata
     uses: ./.github/workflows/ios_upload_version_metadata.yml
     secrets:
@@ -29,6 +40,7 @@ jobs:
       APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
 
   create_release_branch:
+    needs: check_automatic_freeze
 
     name: Create Release Branch
 

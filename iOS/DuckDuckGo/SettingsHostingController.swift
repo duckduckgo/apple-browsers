@@ -39,8 +39,8 @@ class SettingsHostingController: UIHostingController<AnyView> {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         super.init(rootView: AnyView(EmptyView()))
 
-        viewModel.onRequestPushLegacyView = { [weak self] vc in
-            self?.pushLegacyViewController(vc)
+        viewModel.onRequestPushLegacyView = { [weak self] vc, animated in
+            self?.pushLegacyViewController(vc, animated: animated)
         }
 
         viewModel.onRequestPresentLegacyView = { [weak self] vc, modal in
@@ -80,8 +80,8 @@ class SettingsHostingController: UIHostingController<AnyView> {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func pushLegacyViewController(_ vc: UIViewController) {
-        navigationController?.pushViewController(vc, animated: true)
+    func pushLegacyViewController(_ vc: UIViewController, animated: Bool = true) {
+        navigationController?.pushViewController(vc, animated: animated)
     }
 
     func presentLegacyViewController(_ vc: UIViewController, modal: Bool = false) {

@@ -97,7 +97,7 @@ enum UserText {
 
     static let recovery = NSLocalizedString("prefrences.sync.recovery", bundle: Bundle.module, value: "Recovery", comment: "Sync settings section title")
     static let recoveryInstructions = NSLocalizedString("prefrences.sync.recovery-instructions", bundle: Bundle.module, value: "If you lose your device, you will need this recovery code to restore your synced data.", comment: "Instructions on how to restore synced data")
-    static let recoveryInstructionsFooter = NSLocalizedString("preferences.sync.recovery-instructions.footer", bundle: Bundle.module, value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer / caption on the restore synced data section in sync settings")
+    static let recoveryInstructionsFooter = NSLocalizedString("preferences.sync.recovery-instructions.footer", bundle: Bundle.module, value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer / caption on the restore synced data section in sync settings")
 
     // Sync with another device dialog
     static let syncWithAnotherDeviceTitle = NSLocalizedString("preferences.sync.sync-with-another-device.dialog-title", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync with another device dialog title")

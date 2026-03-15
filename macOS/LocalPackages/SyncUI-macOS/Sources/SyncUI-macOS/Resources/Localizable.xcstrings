@@ -3006,7 +3006,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+            "value" : "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
           }
         }
       }

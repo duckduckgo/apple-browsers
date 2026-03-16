@@ -202,7 +202,8 @@ final class FireExecutorTests: XCTestCase {
             dataStore: MockWebsiteDataStore(),
             historyCleanerProvider: { self.mockHistoryCleaner },
             appSettings: mockAppSettings,
-            aiChatSyncCleaner: mockAIChatSyncCleaner
+            aiChatSyncCleaner: mockAIChatSyncCleaner,
+            wideEvent: WideEventMock()
         )
         executor.delegate = mockDelegate
         return executor

@@ -22,7 +22,7 @@ import Common
 import DDGSync
 import Bookmarks
 import AIChat
-import BrowserServicesKit
+import PixelKit
 import PrivacyConfig
 import UserScript
 import WKAbstractions
@@ -107,6 +107,7 @@ class FireExecutor: FireExecuting {
     private let privacyStats: PrivacyStatsProviding?
     private let aiChatSyncCleaner: AIChatSyncCleaning
     let pixelsReporter: DataClearingPixelsReporter
+    private let dataClearingWideEventService: DataClearingWideEventService
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
@@ -134,7 +135,8 @@ class FireExecutor: FireExecuting {
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning,
-         pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter()) {
+         pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
+         wideEvent: WideEventManaging) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.websiteDataManager = websiteDataManager
@@ -156,6 +158,7 @@ class FireExecutor: FireExecuting {
         self.privacyStats = privacyStats
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.pixelsReporter = pixelsReporter
+        self.dataClearingWideEventService = DataClearingWideEventService(wideEvent: wideEvent)
     }
 
     
@@ -177,6 +180,8 @@ class FireExecutor: FireExecuting {
         // Fire retrigger pixel at the start of burn to track rapid manual fire operations
         // Only tracks manual fire triggers (auto-clear is excluded as it follows system timing)
         pixelsReporter.fireRetriggerPixelIfNeeded(request: request)
+
+        dataClearingWideEventService.start(request: request)
 
         // Ensure all requested options are prepared
         let unpreparedOptions = request.options.subtracting(preparedOptions)
@@ -214,10 +219,12 @@ class FireExecutor: FireExecuting {
         
         // Await async tasks
         _ = await (dataTask, aiTask)
-        
+
         // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
-        
+
+        dataClearingWideEventService.complete()
+
         // Reset prepared state for next burn cycle
         preparedOptions = []
     }
@@ -348,7 +355,10 @@ class FireExecutor: FireExecuting {
         await websiteDataManager.clear(dataStore: storeToUse)
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.currentTabsModel.count)"]) // TODO: - Customize based on browsing mode
 
-        autoconsentManagementProvider.management(for: .normal).clearCache()
+        dataClearingWideEventService.start(.clearAutoconsentManagementCache)
+        let autoconsentResult = autoconsentManagementProvider.management(for: .normal).clearCache()
+        dataClearingWideEventService.update(.clearAutoconsentManagementCache, result: autoconsentResult)
+
         daxDialogsManager.clearHeldURLData()
 
         if self.syncService.authState == .inactive {
@@ -379,7 +389,10 @@ class FireExecutor: FireExecuting {
         async let contextualChatTask: Void = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
         
         // Sync tasks
-        autoconsentManagementProvider.management(for: tabViewModel.tab.autoconsentContext).clearCache(forDomains: domains)
+        dataClearingWideEventService.start(.clearAutoconsentManagementCache)
+        let autoconsentResult = autoconsentManagementProvider.management(for: tabViewModel.tab.autoconsentContext).clearCache(forDomains: domains)
+        dataClearingWideEventService.update(.clearAutoconsentManagementCache, result: autoconsentResult)
+
         forgetTextZoom(forDomains: domains)
         
         // Await async tasks

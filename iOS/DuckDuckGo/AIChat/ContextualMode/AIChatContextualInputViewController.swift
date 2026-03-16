@@ -41,6 +41,7 @@ final class AIChatContextualInputViewController: UIViewController {
         static let horizontalPadding: CGFloat = 20
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
+        static let iPadLandscapeBottomPadding: CGFloat = 16
     }
 
     // MARK: - Properties
@@ -91,6 +92,18 @@ final class AIChatContextualInputViewController: UIViewController {
         configureNativeInput()
         configureQuickActions()
         setupKeyboardObservers()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateBottomPaddingForOrientation()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { _ in
+            self.updateBottomPaddingForOrientation()
+        })
     }
 
     // MARK: - Public Methods
@@ -242,6 +255,14 @@ private extension AIChatContextualInputViewController {
 
     @objc func keyboardWillHide(_ notification: Notification) {
         keyboardBottomConstraint?.constant = 0
+    }
+
+    func updateBottomPaddingForOrientation() {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+        let isLandscape = UIDevice.current.orientation.isLandscape ||
+            (view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
+        let padding: CGFloat = isLandscape ? Constants.iPadLandscapeBottomPadding : 0
+        safeAreaBottomConstraint?.constant = -padding
     }
 }
 

@@ -344,7 +344,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 // No subscription on backend — clear cache and notify if state changed
                 subscriptionCachingService.reset()
                 if previousSubscription != nil {
-                    NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
+                    Task { @MainActor in
+                        NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
+                    }
                 }
                 return nil
             } catch {
@@ -366,7 +368,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
             // Notify only if the subscription actually changed
             if finalSubscription != previousSubscription {
-                NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: finalSubscription])
+                Task { @MainActor in
+                    NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: finalSubscription])
+                }
             }
             subscription = finalSubscription
         }
@@ -382,7 +386,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws {
         let enrichedSubscription = try await enrichSubscriptionWithFeatures(subscription)
         subscriptionCachingService.set(enrichedSubscription)
-        NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: enrichedSubscription])
+        Task { @MainActor in
+            NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: enrichedSubscription])
+        }
     }
 
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {

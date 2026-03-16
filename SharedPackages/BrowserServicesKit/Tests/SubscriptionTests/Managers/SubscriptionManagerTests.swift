@@ -198,7 +198,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertTrue(subscription!.isActive)
     }
 
-    func testRefreshCachedSubscription_ExpiredSubscription() async {
+    func testRefreshCachedSubscription_ExpiredSubscription() async throws {
         let expiredSubscription = DuckDuckGoSubscription(
             productId: "testProduct",
             name: "Test Subscription",
@@ -215,13 +215,11 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionEndpointService.getSubscriptionResult = .success(expiredSubscription)
         mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .success(GetSubscriptionTierFeaturesResponse(features: [:]))
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        do {
-            try await subscriptionManager.getSubscription(forceRefresh: true)
-        } catch SubscriptionManagerError.noTokenAvailable {
 
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
+        let subscription = try await subscriptionManager.getSubscription(forceRefresh: true)
+        XCTAssertNotNil(subscription)
+        XCTAssertFalse(subscription!.isActive)
+        XCTAssertEqual(subscription!.status, .expired)
     }
 
     func testGetSubscription_NoDataOnBackend_ReturnsNil() async throws {

@@ -67,12 +67,18 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
+    /// Users who installed before the manual update option was removed (installBuild not set).
+    private var isLegacyUser: Bool {
+        (try? settings.installBuild) == nil
+    }
+
     var shouldHideManualUpdateOption: Bool {
-        // New installs never had the manual update option — don't show it even on rollback
-        if (try? settings.installBuild) != nil {
-            return true
-        }
+        if !isLegacyUser { return true }
         return featureFlagger.isFeatureOn(.automaticUpdatesOnly)
+    }
+
+    var shouldShowUpdateInfoMessage: Bool {
+        !isLegacyUser && featureFlagger.isFeatureOn(.automaticUpdatesOnly)
     }
 
     var shouldShowUpdateStatus: Bool {

@@ -59,8 +59,10 @@ extension Preferences {
                     AboutContentSection(model: model)
 
                     if model.shouldHideManualUpdateOption {
-                        UpdateInfoMessage()
-                            .padding(.top, 4)
+                        if model.shouldShowUpdateInfoMessage {
+                            UpdateInfoMessage()
+                                .padding(.top, 4)
+                        }
                     } else {
                         #if SPARKLE
                         UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)

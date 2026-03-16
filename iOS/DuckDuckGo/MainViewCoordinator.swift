@@ -186,12 +186,8 @@ class MainViewCoordinator {
     // MARK: - AI Tab Native Input Layout
 
     func showUnifiedToggleInput() {
-        navigationBarCollectionView.layer.removeAllAnimations()
-        unifiedToggleInputContainer.layer.removeAllAnimations()
-        constraints.navigationBarContainerTop.isActive = false
-        if !constraints.navigationBarContainerBottom.isActive {
-            constraints.navigationBarContainerBottom.isActive = true
-        }
+        setAddressBarTopActive(false)
+        setAddressBarBottomActive(true)
         setNavBarContainerBottomToToolbar()
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         unifiedToggleInputContainer.isHidden = false
@@ -231,12 +227,10 @@ class MainViewCoordinator {
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
         unifiedToggleInputContainer.backgroundColor = .clear
+        setNavBarContainerBottomToToolbar()
         if addressBarPosition == .top {
-            setNavBarContainerBottomToToolbar()
-            constraints.navigationBarContainerBottom.isActive = false
-            constraints.navigationBarContainerTop.isActive = true
-        } else {
-            setNavBarContainerBottomToToolbar()
+            setAddressBarBottomActive(false)
+            setAddressBarTopActive(true)
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
     }
@@ -321,8 +315,19 @@ class MainViewCoordinator {
     // MARK: - AI Tab Chrome
 
     func showAITabChrome() {
+        cancelInFlightLayoutAnimations()
         showAIChatTabChatHeader()
         setNavigationChromeHidden(true)
+        UIView.performWithoutAnimation {
+            superview.layoutIfNeeded()
+        }
+    }
+
+    private func cancelInFlightLayoutAnimations() {
+        contentContainer.layer.removeAllAnimations()
+        navigationBarContainer.layer.removeAllAnimations()
+        statusBackground.layer.removeAllAnimations()
+        superview.layer.removeAllAnimations()
     }
 
     func hideAITabChrome() {

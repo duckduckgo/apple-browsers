@@ -216,6 +216,16 @@ public struct UserText {
     static let syncUnavailableMessage = NSLocalizedString("sync.warning.data.syncing.disabled", bundle: Bundle.module, value: "Sorry, but Sync & Backup is currently unavailable. Please try again later.", comment: "Data syncing unavailable warning message")
     static let syncUnavailableMessageUpgradeRequired = NSLocalizedString("sync.warning.data.syncing.disabled.upgrade.required", bundle: Bundle.module, value: "Sorry, but Sync & Backup is no longer available in this app version. Please update DuckDuckGo to the latest version to continue.", comment: "Data syncing unavailable warning message")
 
+    // Simplified Sync Settings
+    static let simplifiedSyncToggleTitle = NotLocalizedString("simplified.sync.toggle.title", bundle: Bundle.module, value: "Sync & Backup", comment: "Sync & Backup enabled / disabled toggle title")
+    static let simplifiedSyncHeaderMessage = NotLocalizedString("simplified.sync.header.message", bundle: Bundle.module, value: "Save your bookmarks, autofill data, and Duck.ai chats, and sync them between your devices with end-to-end encryption.", comment: "Description of the Sync & Backup feature (when AI chat sync is available)")
+    static let simplifiedSyncHeaderMessageBasic = NotLocalizedString("simplified.sync.header.message.basic", bundle: Bundle.module, value: "Save your bookmarks and autofill data, and sync them between your devices with end-to-end encryption.", comment: "Description of the Sync & Backup feature")
+    static let simplifiedSyncWithAnotherDeviceButton = NotLocalizedString("simplified.sync.with.another.device.button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync With Another Device sync setup button label")
+    static let simplifiedUseRecoveryCodeButton = NotLocalizedString("simplified.use.recovery.code.button", bundle: Bundle.module, value: "Use Recovery Code", comment: "Use Recovery Code sync setup button label")
+    static let simplifiedAlreadySetUpSectionHeader = NotLocalizedString("simplified.already.set.up.section.header", bundle: Bundle.module, value: "Already set up on another device?", comment: "Sync settings 'Already set up' section header containing useful options")
+    static let simplifiedGetDesktopBrowserTitle = NotLocalizedString("simplified.get.desktop.browser.title", bundle: Bundle.module, value: "Get Desktop Browser", comment: "Button title to get the DuckDuckGo desktop browser.")
+    static let simplifiedGetDesktopBrowserSubtitle = NotLocalizedString("simplified.get.desktop.browser.subtitle", bundle: Bundle.module, value: "DuckDuckGo for Mac and Windows", comment: "Button subtitle to get the DuckDuckGo desktop browser")
+
     // Sync Get Other Devices
     static let syncGetOtherDevicesScreenTitle = NSLocalizedString("sync.get.other.devices.screen.title", bundle: Bundle.module, value: "Get DuckDuckGo", comment: "Title of screen with share links for users to download DuckDuckGo on other devices")
     static let syncGetOtherDevicesTitle = NSLocalizedString("sync.get.other.devices.card.title", bundle: Bundle.module, value: "Get DuckDuckGo on other devices to sync with this one", comment: "Title of card with share links for users to download DuckDuckGo on other devices")
@@ -223,4 +233,10 @@ public struct UserText {
     static let syncGetOtherDevicesButtonTitle = NSLocalizedString("sync.get.other.devices.card.button.title", bundle: Bundle.module, value: "Share Download Link", comment: "Button title to share link for downloading DuckDuckGo on other devices")
     static let syncGetOtherDeviceShareLinkMessage = NSLocalizedString("sync.get.other.devices.share.link.message", bundle: Bundle.module, value: "Install the DuckDuckGo browser on your devices to start securely syncing your bookmarks and autofill data:", comment: "Message included when sharing a url via the system share sheet")
 
+}
+
+// Use this instead of NSLocalizedString for strings that are not supposed to be translated
+// swiftlint:disable:next identifier_name
+public func NotLocalizedString(_ key: String, tableName: String? = nil, bundle: Bundle = Bundle.main, value: String = "", comment: String) -> String {
+    return value
 }

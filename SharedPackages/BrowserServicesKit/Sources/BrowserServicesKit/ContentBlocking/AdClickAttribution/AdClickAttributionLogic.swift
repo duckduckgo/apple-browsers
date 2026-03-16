@@ -148,7 +148,7 @@ public class AdClickAttributionLogic {
             return
         }
 
-        if vendor == currentETLDp1 {
+        if vendor.lowercased() == currentETLDp1.lowercased() {
             if session.leftAttributionContextAt != nil {
                 state = .activeAttribution(vendor: vendor,
                                            session: SessionInfo(start: session.attributionStartedAt),
@@ -200,7 +200,7 @@ public class AdClickAttributionLogic {
             return
         }
 
-        if tld.eTLDplus1(host) == vendor {
+        if tld.eTLDplus1(host)?.lowercased() == vendor.lowercased() {
             counter.onAttributionActive()
         }
 
@@ -214,13 +214,13 @@ public class AdClickAttributionLogic {
            if currentTime.timeIntervalSince(leftAttributionContextAt) >= featureConfig.navigationExpiration {
                Logger.contentBlocking.debug("<\(self.debugID)> Attribution has expired - navigational expiration")
                disableAttribution()
-           } else if tld.eTLDplus1(host) == vendor {
+           } else if tld.eTLDplus1(host)?.lowercased() == vendor.lowercased() {
                Logger.contentBlocking.debug("<\(self.debugID)> Refreshing navigational duration for attribution")
                state = .activeAttribution(vendor: vendor,
                                           session: SessionInfo(start: session.attributionStartedAt),
                                           rules: rules)
            }
-        } else if tld.eTLDplus1(host) != vendor {
+        } else if tld.eTLDplus1(host)?.lowercased() != vendor.lowercased() {
             Logger.contentBlocking.debug("<\(self.debugID)> Leaving attribution context")
             state = .activeAttribution(vendor: vendor,
                                        session: SessionInfo(start: session.attributionStartedAt,
@@ -230,8 +230,21 @@ public class AdClickAttributionLogic {
     }
 
     public func onRequestDetected(request: DetectedRequest) {
-        guard registerFirstActivity,
-            BlockingState.allowed(reason: .adClickAttribution) == request.state else { return }
+        guard registerFirstActivity else { return }
+
+        let isAttributionMatch: Bool
+        if case .allowed(reason: .adClickAttribution) = request.state {
+            isAttributionMatch = true
+        } else if case .activeAttribution(let vendor, _, _) = state,
+                  case .allowed(reason: .ruleException) = request.state,
+                  let pageHost = URL(string: request.pageUrl)?.host?.droppingWwwPrefix(),
+                  tld.eTLDplus1(pageHost)?.lowercased() == vendor.lowercased() {
+            isAttributionMatch = true
+        } else {
+            isAttributionMatch = false
+        }
+
+        guard isAttributionMatch else { return }
 
         eventReporting?.fire(.adAttributionActive)
         registerFirstActivity = false

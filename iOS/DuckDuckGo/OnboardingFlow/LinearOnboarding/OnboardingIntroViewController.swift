@@ -94,7 +94,7 @@ extension OnboardingIntroViewController where Content == RebrandedOnboardingView
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             daxDialogsManager: daxDialogsManager,
             restorePromptHandler: OnboardingRestorePromptHandler(
-                configuration: .disabled,
+                configuration: .enabled,
                 syncAutoRestoreHandler: syncAutoRestoreHandler
             )
         )

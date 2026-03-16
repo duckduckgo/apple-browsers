@@ -91,6 +91,8 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
     private(set) var inputMode: TextEntryMode = .aiChat
+    private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
+    private(set) var isInputVisibleForKeyboard: Bool = true
 
     var currentText: String { viewController.text }
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -99,6 +101,23 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var isOmnibarSession: Bool {
         if case .omnibar = displayState { return true }
         return false
+    }
+
+    var isAITabState: Bool {
+        if case .aiTab = displayState { return true }
+        return false
+    }
+
+    var isAITabExpanded: Bool {
+        displayState == .aiTab(.expanded)
+    }
+
+    var isActive: Bool {
+        displayState != .hidden
+    }
+
+    var shouldCollapseOnKeyboardDismiss: Bool {
+        displayState == .aiTab(.expanded) && inputMode == .aiChat
     }
 
     private weak var boundUserScript: AIChatUserScript?
@@ -160,8 +179,11 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func showCollapsed() {
         displayState = .aiTab(.collapsed)
         inputMode = .aiChat
-        viewController.setInputMode(.aiChat, animated: false)
-        viewController.setExpanded(false, animated: false)
+        isInputVisibleForKeyboard = true
+
+        let renderState = computeRenderState()
+
+        viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
         intentSubject.send(.showCollapsed)
     }
@@ -169,15 +191,17 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
         displayState = .aiTab(.expanded)
         self.inputMode = inputMode
+        isInputVisibleForKeyboard = true
 
-        viewController.setInputMode(inputMode, animated: false)
+        let renderState = computeRenderState()
+
+        viewController.apply(renderState.viewConfig, animated: false)
 
         if let prefilledText, !prefilledText.isEmpty {
             viewController.text = prefilledText
             textState = .prefilledSelected
         }
 
-        viewController.setExpanded(true, animated: false)
         intentSubject.send(.showExpanded)
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
@@ -196,9 +220,12 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func hide() {
         displayState = .hidden
+        isInputVisibleForKeyboard = true
+
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
-        viewController.setExpanded(false, animated: false)
-        contentViewController.setHeaderDisplayMode(.hidden)
+        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         intentSubject.send(.hide)
     }
 
@@ -208,21 +235,18 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let effectiveInputMode = isToggleEnabled ? inputMode : .search
         displayState = .omnibar(.active)
         self.inputMode = effectiveInputMode
-        viewController.cardPosition = cardPosition
-        viewController.usesOmnibarMargins = (cardPosition == .top)
-        viewController.isTopBarPosition = (cardPosition == .top)
-        viewController.setInputMode(effectiveInputMode, animated: false)
-        viewController.showsDismissButton = (cardPosition == .top)
+        self.cardPosition = cardPosition
+        isInputVisibleForKeyboard = true
+
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: false)
 
         if let text = prefilledText, !text.isEmpty {
             viewController.text = text
             textState = .prefilledSelected
         }
 
-        viewController.isToolbarSubmitHidden = (cardPosition == .top)
-
-        viewController.setExpanded(true, animated: false)
-        contentViewController.setHeaderDisplayMode(.active)
+        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         let height = omnibarEditingHeight()
         intentSubject.send(.showOmnibarEditing(expandedHeight: height))
 
@@ -302,17 +326,16 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func deactivateToOmnibar() {
         guard isOmnibarSession else { return }
         displayState = .hidden
-        viewController.showsDismissButton = false
-        viewController.usesOmnibarMargins = false
-        viewController.isTopBarPosition = false
-        viewController.isToolbarSubmitHidden = false
-        viewController.cardPosition = .bottom
-        viewController.setInactiveCardAppearance(false)
+        cardPosition = .bottom
+        isInputVisibleForKeyboard = true
         viewController.text = ""
         textState = .empty
+
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
-        viewController.setExpanded(false, animated: false)
-        contentViewController.setHeaderDisplayMode(.hidden)
+
+        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         intentSubject.send(.hideOmnibarEditing)
     }
 
@@ -322,35 +345,36 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController.updateToggleEnabled(enabled)
         if !enabled, isOmnibarSession {
             inputMode = .search
-            viewController.setInputMode(.search, animated: false)
+            viewController.apply(computeRenderState().viewConfig, animated: false)
             modeChangeSubject.send(.search)
         }
     }
 
     func updateOmnibarInputVisibility(_ isInputVisible: Bool) {
+        isInputVisibleForKeyboard = isInputVisible
         let isAITabSearch = displayState == .aiTab(.expanded) && inputMode == .search
 
         switch (displayState, isInputVisible) {
         case (.omnibar(.active), false):
             displayState = .omnibar(.inactive)
-            if viewController.cardPosition == .bottom {
-                viewController.setInactiveCardAppearance(true)
-            }
-            contentViewController.setHeaderDisplayMode(.inactive)
+            let renderState = computeRenderState()
+            viewController.apply(renderState.viewConfig, animated: false)
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
             intentSubject.send(.showOmnibarInactive)
         case (.omnibar(.inactive), true):
             displayState = .omnibar(.active)
-            if viewController.cardPosition == .bottom {
-                viewController.setInactiveCardAppearance(false)
-            }
-            contentViewController.setHeaderDisplayMode(.active)
+            let renderState = computeRenderState()
+            viewController.apply(renderState.viewConfig, animated: false)
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
             intentSubject.send(.showOmnibarActive)
         case (.aiTab(.expanded), false) where isAITabSearch:
-            viewController.setInactiveCardAppearance(true)
-            contentViewController.setHeaderDisplayMode(.inactive)
+            let renderState = computeRenderState(isOnAITab: true)
+            viewController.apply(renderState.viewConfig, animated: false)
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         case (.aiTab(.expanded), true) where isAITabSearch:
-            viewController.setInactiveCardAppearance(false)
-            contentViewController.setHeaderDisplayMode(.active)
+            let renderState = computeRenderState(isOnAITab: true)
+            viewController.apply(renderState.viewConfig, animated: false)
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         default:
             break
         }
@@ -365,12 +389,84 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         }
     }
 
-    func updateContentHeaderForAITab(shouldOverlay: Bool) {
-        contentViewController.setHeaderDisplayMode(shouldOverlay ? .active : .hidden)
+    func applyContentHeaderFromRenderState(isOnAITab: Bool) {
+        let renderState = computeRenderState(isOnAITab: isOnAITab)
+        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
     }
 
     func syncContentInputMode(_ mode: TextEntryMode, animated: Bool = true) {
         contentViewController.setInputMode(mode, animated: animated)
+    }
+
+    // MARK: - Render State
+
+    func computeRenderState(isOnAITab: Bool = false) -> UTIRenderState {
+        let isExpanded: Bool
+        let isInputVisible: Bool
+        let isContentVisible: Bool
+        let headerDisplayMode: UnifiedInputContentContainerViewController.HeaderDisplayMode
+        let inactiveAppearance: Bool
+
+        switch displayState {
+        case .hidden:
+            isExpanded = false
+            isInputVisible = false
+            isContentVisible = false
+            headerDisplayMode = .hidden
+            inactiveAppearance = false
+
+        case .aiTab(.collapsed):
+            isExpanded = false
+            isInputVisible = true
+            isContentVisible = false
+            headerDisplayMode = .hidden
+            inactiveAppearance = false
+
+        case .aiTab(.expanded):
+            isExpanded = true
+            isInputVisible = true
+            let isAIChatOnAITab = isOnAITab && inputMode == .aiChat
+            isContentVisible = !isAIChatOnAITab
+            let isSearchOnAITab = isOnAITab && inputMode == .search
+            let isSearchKeyboardHidden = isSearchOnAITab && !isInputVisibleForKeyboard
+            headerDisplayMode = isSearchOnAITab && isContentVisible
+                ? (isSearchKeyboardHidden ? .inactive : .active)
+                : .hidden
+            inactiveAppearance = isSearchKeyboardHidden
+
+        case .omnibar(.active):
+            isExpanded = true
+            isInputVisible = true
+            isContentVisible = true
+            headerDisplayMode = .active
+            inactiveAppearance = false
+
+        case .omnibar(.inactive):
+            isExpanded = true
+            isInputVisible = true
+            isContentVisible = true
+            headerDisplayMode = .inactive
+            inactiveAppearance = (cardPosition == .bottom)
+        }
+
+        let isFloatingSubmitVisible = displayState == .omnibar(.active)
+            && cardPosition == .top
+            && inputMode == .aiChat
+
+        return UTIRenderState(
+            isInputVisible: isInputVisible,
+            isContentVisible: isContentVisible,
+            isExpanded: isExpanded,
+            cardPosition: cardPosition,
+            usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
+            showsDismissButton: cardPosition == .top && isOmnibarSession,
+            isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
+            inactiveAppearance: inactiveAppearance,
+            isFloatingSubmitVisible: isFloatingSubmitVisible,
+            headerDisplayMode: headerDisplayMode,
+            contentInputMode: inputMode,
+            inputMode: inputMode
+        )
     }
 
     // MARK: - Private

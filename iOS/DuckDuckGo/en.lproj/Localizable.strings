@@ -2512,9 +2512,6 @@ https://duckduckgo.com/mac";
 /* The message of the onboarding dialog popup */
 "onboarding.rebranding.intro.message" = "Ready for a faster browser that keeps you protected?";
 
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message.english-only" = "Ready for a faster browser that protects you and lets you decide when and how to use AI?";
-
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hi there.";
 

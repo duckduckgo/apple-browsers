@@ -2097,7 +2097,7 @@ public struct UserText {
                 }
                 public static var message: String {
                     if Locale.current.isEnglishLanguage {
-                        NSLocalizedString("onboarding.rebranding.intro.message.english-only", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
+                        NotLocalizedString("onboarding.rebranding.intro.message.english-only", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
                     } else {
                         NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The message of the onboarding dialog popup")
                     }

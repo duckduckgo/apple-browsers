@@ -830,6 +830,7 @@ extension Pixel {
         case adAttributionLogicWrongVendorOnFailedCompilation
 
         case debugTabSwitcherDidChangeInvalidState
+        case debugTabsModelCrossModeMismatch
 
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksStructureLost
@@ -978,6 +979,28 @@ extension Pixel {
         case syncRecoveryAlternativeScanRecoveryCodeTapped
         case syncRecoveryAlternativeBackupThisDeviceTapped
         case syncRecoveryAlternativeDismissed
+
+        case syncAutoRestoreOnboardingPromptShownUnique
+        case syncAutoRestoreOnboardingRestoreTappedUnique
+        case syncAutoRestoreOnboardingSkipTappedUnique
+
+        case syncAutoRestoreToggleShown
+        case syncAutoRestoreToggleOptedOut
+
+        case syncAutoRestoreSettingsReadyShown
+        case syncAutoRestoreSettingsRestoreTapped
+        case syncAutoRestoreSettingsSkipRestoreTapped
+        case syncAutoRestoreSettingsCancelled
+        case syncAutoRestoreSettingsManualRecoveryShown
+
+        case syncAutoRestoreSettingsPageShown
+        case syncAutoRestoreSettingsPageToggleEnabled
+        case syncAutoRestoreSettingsPageToggleDisabled
+
+        case syncAutoRestoreSuccess
+        case syncAutoRestoreFailure
+        case syncAutoRestorePreservedAccountCleared
+        case syncAutoRestorePreservedAccountClearFailed
 
         case syncSetupBarcodeScreenShown
         case syncSetupBarcodeScannerSuccess
@@ -1456,6 +1479,8 @@ extension Pixel {
         case aiChatSyncEncryptionError
         case aiChatSyncDecryptionError
         case aiChatSyncHistoryEnabledError
+        case aiChatTermsAcceptedDuplicateSyncOff
+        case aiChatTermsAcceptedDuplicateSyncOn
 
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
@@ -2329,6 +2354,7 @@ extension Pixel.Event {
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
 
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
+        case .debugTabsModelCrossModeMismatch: return "m_debug_tabs-model_cross-mode-mismatch"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             
@@ -2596,6 +2622,28 @@ extension Pixel.Event {
         case .syncRecoveryAlternativeScanRecoveryCodeTapped: return "sync_recovery_alternative_scan_recovery_code_tapped"
         case .syncRecoveryAlternativeBackupThisDeviceTapped: return "sync_recovery_alternative_backup_this_device_tapped"
         case .syncRecoveryAlternativeDismissed: return "sync_recovery_alternative_dismissed"
+
+        case .syncAutoRestoreOnboardingPromptShownUnique: return "sync-auto-restore_onboarding_prompt_shown_unique"
+        case .syncAutoRestoreOnboardingRestoreTappedUnique: return "sync-auto-restore_onboarding_restore_tapped_unique"
+        case .syncAutoRestoreOnboardingSkipTappedUnique: return "sync-auto-restore_onboarding_skip_tapped_unique"
+
+        case .syncAutoRestoreToggleShown: return "sync-auto-restore_toggle_shown"
+        case .syncAutoRestoreToggleOptedOut: return "sync-auto-restore_toggle_opted_out"
+
+        case .syncAutoRestoreSettingsReadyShown: return "sync-auto-restore_settings_ready_shown"
+        case .syncAutoRestoreSettingsRestoreTapped: return "sync-auto-restore_settings_restore_tapped"
+        case .syncAutoRestoreSettingsSkipRestoreTapped: return "sync-auto-restore_settings_skip_restore_tapped"
+        case .syncAutoRestoreSettingsCancelled: return "sync-auto-restore_settings_cancelled"
+        case .syncAutoRestoreSettingsManualRecoveryShown: return "sync-auto-restore_settings_manual_recovery_shown"
+
+        case .syncAutoRestoreSettingsPageShown: return "sync-auto-restore_settings_page_shown"
+        case .syncAutoRestoreSettingsPageToggleEnabled: return "sync-auto-restore_settings_page_toggle_enabled"
+        case .syncAutoRestoreSettingsPageToggleDisabled: return "sync-auto-restore_settings_page_toggle_disabled"
+
+        case .syncAutoRestoreSuccess: return "sync-auto-restore_success"
+        case .syncAutoRestoreFailure: return "sync-auto-restore_failure"
+        case .syncAutoRestorePreservedAccountCleared: return "sync-auto-restore_preserved_account_cleared"
+        case .syncAutoRestorePreservedAccountClearFailed: return "sync-auto-restore_preserved_account_clear_failed"
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
@@ -3061,6 +3109,8 @@ extension Pixel.Event {
         case .aiChatSyncEncryptionError: return "m_aichat_sync_internal_encryption-error"
         case .aiChatSyncDecryptionError: return "m_aichat_sync_internal_decryption-error"
         case .aiChatSyncHistoryEnabledError: return "m_aichat_sync_internal_history_enabled-error"
+        case .aiChatTermsAcceptedDuplicateSyncOff: return "m_aichat_terms_accepted_duplicate_sync_off"
+        case .aiChatTermsAcceptedDuplicateSyncOn: return "m_aichat_terms_accepted_duplicate_sync_on"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

@@ -33,17 +33,18 @@ extension Preferences {
         @State private var areAutomaticUpdatesEnabled: Bool = true
 
         var autoUpdatesEnabled: Bool {
-#if SPARKLE
-    #if DEBUG
-            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-    #elseif REVIEW
-            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
-    #else
-            return true
-    #endif
-#else
-            return false
-#endif
+            let buildType = StandardApplicationBuildType()
+            if buildType.isSparkleBuild {
+                if buildType.isDebugBuild {
+                    return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+                } else if buildType.isReviewBuild {
+                    return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+                } else {
+                    return true
+                }
+            } else {
+                return false
+            }
         }
 
         var body: some View {
@@ -58,21 +59,22 @@ extension Preferences {
 
                     AboutContentSection(model: model)
 
-                    if model.shouldHideManualUpdateOption {
-                        if model.shouldShowUpdateInfoMessage {
-                            UpdateInfoMessage()
-                                .padding(.top, 4)
+                    let buildType = StandardApplicationBuildType()
+                    if buildType.isSparkleBuild {
+                        if model.shouldHideManualUpdateOption {
+                            if model.shouldShowUpdateInfoMessage {
+                                UpdateInfoMessage()
+                                    .padding(.top, 4)
+                            }
+                        } else {
+                            UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
                         }
-                    } else {
-                        #if SPARKLE
-                        UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
-                        #endif
-                    }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
-                    Spacer(minLength: 20)
-                    customFeedURLWarning
-#endif
+                        if buildType.isDebugBuild || buildType.isReviewBuild {
+                            Spacer(minLength: 20)
+                            customFeedURLWarning
+                        }
+                    }
                 }
             }.task {
                 if autoUpdatesEnabled {
@@ -87,7 +89,6 @@ extension Preferences {
             }
         }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
         /// Warning banner shown when a custom Sparkle feed URL is configured.
         ///
         /// This reminder helps developers avoid accidentally forgetting they have a custom
@@ -116,7 +117,6 @@ extension Preferences {
                 .cornerRadius(8)
             }
         }
-#endif
     }
 
     struct AboutContentSection: View {
@@ -216,11 +216,11 @@ extension Preferences {
 
         @ViewBuilder
         private var logoImage: some View {
-#if ALPHA
-            Image(.aboutPageLogoAlpha)
-#else
-            Image(.aboutPageLogo)
-#endif
+            if StandardApplicationBuildType().isAlphaBuild {
+                Image(.aboutPageLogoAlpha)
+            } else {
+                Image(.aboutPageLogo)
+            }
         }
 
         private var hasPendingUpdate: Bool {
@@ -420,7 +420,6 @@ extension Preferences {
 #endif
     }
 
-#if SPARKLE
     struct UpdatesSection: View {
         @Binding var areAutomaticUpdatesEnabled: Bool
         @ObservedObject var model: AboutPreferences
@@ -447,7 +446,6 @@ extension Preferences {
             }
         }
     }
-#endif
 
     struct UnsupportedDeviceInfoBox: View {
 

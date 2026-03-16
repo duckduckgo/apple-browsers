@@ -124,7 +124,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     private lazy var submitButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor(designSystemColor: .accent)
         button.layer.cornerRadius = Constants.toolButtonSize / 2
@@ -183,15 +183,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         outerStack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(outerStack)
 
-        let top = outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalPadding)
-        top.priority = .defaultHigh
-        let bottom = outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.verticalPadding)
-        bottom.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            top,
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            bottom,
+            outerStack.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
 
         updateSubmitButtonState()

@@ -44,8 +44,6 @@ public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
     case pendingUpdateInitiationType = "pending.update.initiation.type"
     case pendingUpdateConfiguration = "pending.update.configuration"
 
-    // Cached pending update info (PendingUpdateInfo stored as Codable)
-    case pendingUpdateInfo = "com.duckduckgo.updateController.pendingUpdateInfo"
 }
 
 /// StoringKeys conforming struct for typed access to UpdateController settings
@@ -72,9 +70,6 @@ public struct UpdateControllerSettings: StoringKeys {
     public let pendingUpdateExpectedBuild = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateExpectedBuild, assertionHandler: { _ in })
     public let pendingUpdateInitiationType = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateInitiationType, assertionHandler: { _ in })
     public let pendingUpdateConfiguration = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateConfiguration, assertionHandler: { _ in })
-
-    // Cached pending update info (PendingUpdateInfo stored as Codable)
-    public let pendingUpdateInfo = StorageKey<PendingUpdateInfo>(UpdateControllerStorageKeys.pendingUpdateInfo, assertionHandler: { _ in })
 
     public init() {}
 }

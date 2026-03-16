@@ -133,9 +133,6 @@ struct DataImportViewModel {
     /// Wide Event
     private let wideEvent: WideEventManaging
     private var dataImportWideEventData: DataImportWideEventData?
-    private var isDataImportWideEventMeasurementEnabled: Bool {
-        Application.appDelegate.featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
-    }
 
     struct DataTypeImportResult: Equatable {
         let dataType: DataImport.DataType
@@ -185,8 +182,7 @@ struct DataImportViewModel {
         }
     }
 
-#if DEBUG || REVIEW
-
+#if DEBUG
     // simulated test import failure
     struct TestImportError: DataImportError {
         enum OperationType: Int {
@@ -308,7 +304,7 @@ struct DataImportViewModel {
             return
         }
 
-#if DEBUG || REVIEW
+#if DEBUG
         // simulated test import failures
         guard dataTypes.compactMap({ testImportResults[$0] }).isEmpty else {
             importTask = .detachedWithProgress { [testImportResults] _ in
@@ -1062,7 +1058,7 @@ extension DataImportViewModel {
 
 private extension DataImportViewModel {
     mutating func setupAndStartWideEventIfNeeded() {
-        guard isDataImportWideEventMeasurementEnabled, self.dataImportWideEventData == nil else { return }
+        guard self.dataImportWideEventData == nil else { return }
         let data = DataImportWideEventData(
             source: importSource,
             contextData: WideEventContextData(name: "funnel_default_macos")
@@ -1079,7 +1075,6 @@ private extension DataImportViewModel {
     }
 
     mutating func completeDurationMeasurement(for type: DataType, with status: WideEventStatus, error: WideEventErrorData? = nil) {
-        guard isDataImportWideEventMeasurementEnabled else { return }
         dataImportWideEventData?[keyPath: type.importerDurationPath]?.complete()
         dataImportWideEventData?[keyPath: type.statusPath] = status
         if let error = error {
@@ -1090,8 +1085,6 @@ private extension DataImportViewModel {
     }
 
     mutating func completeDurationMeasurement(with importSummary: DataImportSummary) {
-        guard isDataImportWideEventMeasurementEnabled else { return }
-
         for type in DataType.allCases {
             guard let result = importSummary[type] else { continue }
 
@@ -1114,7 +1107,7 @@ private extension DataImportViewModel {
     }
 
     mutating func completeAndCleanupWideEvent(with importSummary: DataImportSummary) {
-        guard isDataImportWideEventMeasurementEnabled, let data = dataImportWideEventData else { return }
+        guard let data = dataImportWideEventData else { return }
 
         completeDurationMeasurement(with: importSummary)
         data.overallDuration?.complete()

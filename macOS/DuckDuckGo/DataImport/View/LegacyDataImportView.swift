@@ -56,12 +56,12 @@ struct LegacyDataImportView: ModalView {
     }
     @State private var progress: ProgressState?
 
-#if DEBUG || REVIEW
+#if DEBUG
     @State private var debugViewDisabled: Bool = false
 #endif
 
     private var shouldShowDebugView: Bool {
-#if DEBUG || REVIEW
+#if DEBUG
         return !debugViewDisabled
 #else
         return (!model.errors.isEmpty && isInternalUser)
@@ -368,7 +368,7 @@ struct LegacyDataImportView: ModalView {
                     Text(model.buttons[idx].title(dataType: model.screen.fileImportDataType))
                         .frame(minWidth: 80 - 16 - 1)
                 }
-                .keyboardShortcut(model.buttons[idx].shortcut)
+                .ifLet(model.buttons[idx].shortcut) { $0.keyboardShortcut($1) }
                 .disabled(model.buttons[idx].isDisabled)
             }
         }
@@ -415,8 +415,8 @@ struct LegacyDataImportView: ModalView {
     private func debugView() -> some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 10) {
-#if DEBUG || REVIEW
-                Text("REVIEW:" as String).bold()
+#if DEBUG
+                Text("DEBUG:" as String).bold()
                     .padding(.top, 10)
                     .padding(.leading, 20)
 
@@ -453,7 +453,7 @@ struct LegacyDataImportView: ModalView {
             }
             Spacer()
             Button {
-#if DEBUG || REVIEW
+#if DEBUG
                 debugViewDisabled = true
 #endif
                 model.errors.removeAll()
@@ -466,7 +466,7 @@ struct LegacyDataImportView: ModalView {
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
     }
 
-#if DEBUG || REVIEW
+#if DEBUG
     private var noFailure: String { "No failure" }
     private var zeroSuccess: String { "Success (0 imported)" }
     private var allFailureReasons: [String?] {

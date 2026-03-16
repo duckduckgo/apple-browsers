@@ -28,10 +28,11 @@ import os.log
 import SwiftUI
 import Combine
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import BrowserServicesKit
 import PrivacyConfig
 import AIChat
-import DesignResourcesKitIcons
+import UIComponents
 
 class TabSwitcherViewController: UIViewController {
 
@@ -40,6 +41,7 @@ class TabSwitcherViewController: UIViewController {
 
         static let cellMinHeight: CGFloat = 140.0
         static let cellMaxHeight: CGFloat = 209.0
+        static let modePickerWidth: CGFloat = 114
     }
 
     struct BookmarkAllResult {
@@ -124,10 +126,14 @@ class TabSwitcherViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
-    var tabsModel: TabsModel {
-        tabManager.model
+    var tabsModel: TabsModelManaging {
+        tabManager.tabsModel(for: selectedBrowsingMode)
     }
 
+    var canDismissOnEmpty: Bool {
+        !tabsModel.allowsEmpty
+    }
+    
     var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
 
     private var tabObserverCancellable: AnyCancellable?
@@ -135,7 +141,11 @@ class TabSwitcherViewController: UIViewController {
     private var trackerCountCancellable: AnyCancellable?
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
-    private var trackerInfoModel: InfoPanelView.Model?
+    private var _trackerInfoModel: InfoPanelView.Model?
+    private var activeTrackerInfoModel: InfoPanelView.Model? {
+        guard selectedBrowsingMode == .normal else { return nil }
+        return _trackerInfoModel
+    }
 
     private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
     
@@ -143,6 +153,17 @@ class TabSwitcherViewController: UIViewController {
     private(set) var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
 
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
+
+    private var pickerViewModel: ImageSegmentedPickerViewModel
+    private let pickerItems: [ImageSegmentedPickerItem]
+    private let tabCountModel: TabCountModel
+    private(set) var selectedBrowsingMode: BrowsingMode
+    private(set) var segmentedPickerHostingController: UIHostingController<TabSwitcherPickerWrapper>?
+    private var pickerSelectionCancellable: AnyCancellable?
+    private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
+    private var fireModeCapability: FireModeCapable {
+        FireModeCapability.create(using: featureFlagger)
+    }
 
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
@@ -179,6 +200,16 @@ class TabSwitcherViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.daxDialogsManager = daxDialogsManager
         self.initialTrackerCountState = initialTrackerCountState
+        let tabCountModel = TabCountModel()
+        self.tabCountModel = tabCountModel
+        self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }
+        self.selectedBrowsingMode = tabManager.currentBrowsingMode
+        self.pickerViewModel = ImageSegmentedPickerViewModel(
+                items: pickerItems,
+                selectedItem: pickerItems[tabManager.currentBrowsingMode.rawValue],
+                configuration: ImageSegmentedPickerConfiguration(),
+                scrollProgress: nil,
+                isScrollProgressDriven: false)
         super.init(coder: coder)
     }
 
@@ -191,6 +222,46 @@ class TabSwitcherViewController: UIViewController {
         appearance.configureWithTransparentBackground()
         titleBarView.standardAppearance = appearance
         titleBarView.scrollEdgeAppearance = appearance
+    }
+    
+    private func setupModeToggle() {
+        guard fireModeCapability.isFireModeEnabled else {
+            return
+        }
+        let wrapper = TabSwitcherPickerWrapper(viewModel: pickerViewModel)
+        let hostingController = UIHostingController(rootView: wrapper)
+        hostingController.view.backgroundColor = .clear
+        segmentedPickerHostingController = hostingController
+
+        addChild(hostingController)
+        hostingController.didMove(toParent: self)
+
+        hostingController.view.frame = CGRect(x: 0, y: 0, width: Constants.modePickerWidth, height: 38)
+        titleBarView.topItem?.titleView = hostingController.view
+
+        pickerSelectionCancellable = pickerViewModel.$selectedItem
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selectedItem in
+                self?.modeToggleSelectionChanged(selectedItem)
+            }
+    }
+
+    private func modeToggleSelectionChanged(_ selectedItem: ImageSegmentedPickerItem) {
+        let newMode: BrowsingMode = pickerItems.first == selectedItem ? .fire : .normal
+        guard newMode != selectedBrowsingMode else {
+            return
+        }
+        tabsModel.tabs.forEach { $0.removeObserver(self) }
+        let progress: CGFloat = newMode == .fire ? 0 : 1
+        pickerViewModel.updateScrollProgress(progress)
+        selectedBrowsingMode = newMode
+        subscribeToTabChanges()
+        currentSelection = tabsModel.currentIndex
+        UIView.performWithoutAnimation {
+            reloadCollectionView()
+            collectionView.layoutIfNeeded()
+        }
+        updateUIForSelectionMode()
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
@@ -223,6 +294,12 @@ class TabSwitcherViewController: UIViewController {
             collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            
+            // Fire mode empty view
+            fireModeEmptyStateHostingController?.view.topAnchor.constraint(equalTo: collectionView.topAnchor),
+            fireModeEmptyStateHostingController?.view.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor),
+            fireModeEmptyStateHostingController?.view.trailingAnchor.constraint(equalTo: collectionView.trailingAnchor),
+            fireModeEmptyStateHostingController?.view.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor),
 
             interfaceMode.isLarge ? collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
                 collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
@@ -271,21 +348,26 @@ class TabSwitcherViewController: UIViewController {
         borderView.isBottomVisible = !interfaceMode.isLarge
         activateLayoutConstraintsBasedOnBarPosition()
     }
+    
+    func reloadCollectionView() {
+        collectionView.reloadData()
+        updateFireModeEmptyStateVisibility()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // These should only be done once
         createTitleBar()
+        setupModeToggle()
         setupBackgroundView()
+        setupFireModeEmptyState()
         collectionView.register(
             TabSwitcherTrackerInfoHeaderView.self,
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: TabSwitcherTrackerInfoHeaderView.reuseIdentifier
         )
-        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
-            self?.collectionView.reloadData()
-        }
+        subscribeToTabChanges()
 
         // These can be done more than once but don't need to
         decorate()
@@ -365,8 +447,40 @@ class TabSwitcherViewController: UIViewController {
         collectionView.backgroundView = view
     }
 
+    private func setupFireModeEmptyState() {
+        guard fireModeCapability.isFireModeEnabled else {
+            return
+        }
+        let hostingController = UIHostingController(rootView: FireModeEmptyStateView(onNewFireTab: { [weak self] in
+            self?.addNewTab()
+        }))
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.didMove(toParent: self)
+
+        fireModeEmptyStateHostingController = hostingController
+    }
+
+    private func updateFireModeEmptyStateVisibility() {
+        let shouldShowEmptyState = selectedBrowsingMode == .fire && tabsModel.tabs.isEmpty
+        fireModeEmptyStateHostingController?.view.isHidden = !shouldShowEmptyState
+        collectionView.isHidden = shouldShowEmptyState
+    }
+
     func refreshDisplayModeButton() {
         tabsStyle = tabSwitcherSettings.isGridViewEnabled ? .grid : .list
+    }
+
+    private func subscribeToTabChanges() {
+        tabObserverCancellable = tabsModel.tabsPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.reloadCollectionView()
+            }
     }
 
     private func bindTrackerCount() {
@@ -388,13 +502,13 @@ class TabSwitcherViewController: UIViewController {
         lastAppliedTrackerCountState = state
 
         guard state.isVisible else {
-            trackerInfoModel = nil
+            _trackerInfoModel = nil
             updateTrackerInfoHeaderIfVisible()
             collectionView.collectionViewLayout.invalidateLayout()
             return
         }
 
-        trackerInfoModel = .trackerInfoPanel(
+        _trackerInfoModel = .trackerInfoPanel(
             state: state,
             onTap: { },
             onInfo: { [weak self] in
@@ -414,7 +528,7 @@ class TabSwitcherViewController: UIViewController {
             return
         }
 
-        header.configure(in: self, model: trackerInfoModel)
+        header.configure(in: self, model: activeTrackerInfoModel)
     }
 
     private func presentHideTrackerCountAlert() {
@@ -431,11 +545,12 @@ class TabSwitcherViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshTitle()
+        refreshTitleViews()
         currentSelection = tabsModel.currentIndex
         updateUIForSelectionMode()
         setupBarsLayout()
         trackerCountViewModel?.refresh()
+        updateFireModeEmptyStateVisibility()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
@@ -460,22 +575,23 @@ class TabSwitcherViewController: UIViewController {
         if isEditing {
             transitionFromMultiSelect()
         } else {
-            dismiss()
+            dismissIfPossible()
         }
     }
 
     private func scrollToInitialTab() {
-        let index = tabsModel.currentIndex
-        guard index < collectionView.numberOfItems(inSection: 0) else { return }
+        guard let index = tabsModel.currentIndex,
+            index < collectionView.numberOfItems(inSection: 0) else { return }
         let indexPath = IndexPath(row: index, section: 0)
         collectionView.scrollToItem(at: indexPath, at: .bottom, animated: false)
     }
 
-    func refreshTitle() {
-        titleBarView.topItem?.title = UserText.numberOfTabs(tabsModel.count)
-        if !selectedTabs.isEmpty {
-            titleBarView.topItem?.title = UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
-        }
+    func refreshTitleViews() {
+        let fireModeEnabled = fireModeCapability.isFireModeEnabled
+        let tabsCountTitle = fireModeEnabled ? nil : UserText.numberOfTabs(tabsModel.count)
+        let title = selectedTabs.isEmpty ? tabsCountTitle : UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
+        titleBarView.topItem?.title = title
+        tabCountModel.count = tabManager.normalTabsModel.count
     }
 
     func displayBookmarkAllStatusMessage(with results: BookmarkAllResult, openTabsCount: Int) {
@@ -511,7 +627,7 @@ class TabSwitcherViewController: UIViewController {
         canUpdateCollection = false
 
         Pixel.fire(pixel: .tabSwitcherNewTab)
-        dismiss()
+        dismissIfPossible(forceDismissOnEmpty: true)
         // This call needs to be after the dismiss to allow OmniBarEditingStateViewController
         // to present on top of MainVC instead of TabSwitcher.
         // If these calls are switched it'll be immediately dismissed along with this controller.
@@ -522,8 +638,8 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
         
-        dismiss()
-        
+        dismissIfPossible(forceDismissOnEmpty: true)
+
         self.delegate.tabSwitcherDidRequestAIChatTab(tabSwitcher: self)
     }
 
@@ -533,7 +649,7 @@ class TabSwitcherViewController: UIViewController {
         var urls = [URL]()
 
         indexPaths.compactMap {
-            tabsModel.safeGetTabAt($0.row)
+            tabsModel.get(tabAt: $0.row)
         }.forEach { tab in
             guard let link = tab.link else { return }
             if viewModel.bookmark(for: link.url) == nil {
@@ -554,20 +670,7 @@ class TabSwitcherViewController: UIViewController {
         if isEditing {
             transitionFromMultiSelect()
         } else {
-            dismiss()
-        }
-    }
-    
-    func markCurrentAsViewedAndDismiss() {
-        // Will be dismissed, so no need to process incoming updates
-        canUpdateCollection = false
-
-        dismiss()
-        if let current = currentSelection {
-            let tab = tabsModel.get(tabAt: current)
-            tab.viewed = true
-            tabManager.save()
-            delegate?.tabSwitcher(self, didSelectTab: tab)
+            dismissIfPossible()
         }
     }
 
@@ -576,20 +679,39 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func forgetAll(_ fireRequest: FireRequest) {
-        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireRequest: fireRequest)
+        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self,
+                                                     fireRequest: fireRequest)
     }
 
-    func dismiss() {
+    /// Dismisses the tab switcher unless fire mode requires the empty state to stay visible.
+    ///
+    /// Dismiss is allowed when any of these hold:
+    /// - `forceDismissOnEmpty`: caller explicitly wants dismiss (e.g. after creating a new tab)
+    /// - `canDismissOnEmpty`: normal mode — always safe to dismiss
+    /// - `!tabsModel.isEmpty`: fire mode still has tabs, so the user picked one
+    func dismissIfPossible(animated: Bool = true, forceDismissOnEmpty: Bool = false) {
+        guard forceDismissOnEmpty
+                || canDismissOnEmpty
+                || !tabsModel.isEmpty else { return }
         ViewHighlighter.hideAll()
-        dismiss(animated: true, completion: nil)
+        dismiss(animated: animated, completion: nil)
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         canUpdateCollection = false
-        tabsModel.tabs.forEach { $0.removeObserver(self) }
+        tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
+
+        let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
+
+        if selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty {
+            tabManager.setBrowsingMode(selectedBrowsingMode)
+        } else {
+            let selectedTab = tabsModel.get(tabAt: currentSelection)
+            delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
+        }
+
         super.dismiss(animated: animated) {
             completion?()
-            self.delegate?.tabSwitcherDidDismiss(tabSwitcher: self)
         }
     }
 }
@@ -597,25 +719,30 @@ class TabSwitcherViewController: UIViewController {
 extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
-        let shouldDismiss = tabsModel.count == indexPaths.count
-        let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
+        let allTabsDeleted = tabsModel.count == indexPaths.count
+        let tabsToClose = indexPaths.compactMap { tabsModel.get(tabAt: $0.row) }
         delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
         collectionView.performBatchUpdates {
             isProcessingUpdates = true
-            tabManager.bulkRemoveTabs(indexPaths)
+            tabManager.bulkRemoveTabs(tabsToClose, in: tabsModel)
             collectionView.deleteItems(at: indexPaths)
-        } completion: { _ in
-            self.currentSelection = self.tabsModel.currentIndex
-            self.isProcessingUpdates = false
-            if self.tabsModel.tabs.isEmpty {
-                self.tabsModel.add(tab: Tab())
+            if allTabsDeleted && !canDismissOnEmpty && isEditing {
+                self.transitionFromMultiSelect(reloadCollectionView: false)
             }
+        } completion: { _ in
+            self.isProcessingUpdates = false
+            if self.tabsModel.tabs.isEmpty && !self.tabsModel.allowsEmpty {
+                let newTab = Tab(fireTab: self.tabsModel.shouldCreateFireTabs)
+                self.tabsModel.insert(tab: newTab, placement: .atEnd, selectNewTab: true)
+            }
+            self.currentSelection = self.tabsModel.currentIndex
             self.delegate?.tabSwitcherDidBulkCloseTabs(tabSwitcher: self)
-            self.refreshTitle()
+            self.refreshTitleViews()
             self.updateUIForSelectionMode()
-            if shouldDismiss {
-                self.dismiss()
+            self.updateFireModeEmptyStateVisibility()
+            if allTabsDeleted {
+                self.dismissIfPossible()
             }
         }
     }
@@ -629,15 +756,6 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
     func isCurrent(tab: Tab) -> Bool {
         return currentSelection == tabsModel.indexOf(tab: tab)
-    }
-
-    private func removeFavicon(forTab tab: Tab) {
-        DispatchQueue.global(qos: .background).async {
-            if let currentHost = tab.link?.url.host,
-               !self.tabsModel.tabExists(withHost: currentHost) {
-                Favicons.shared.removeTabFavicon(forDomain: currentHost)
-            }
-        }
     }
 
 }
@@ -660,8 +778,9 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
         cell.delegate = self
         cell.isDeleting = false
         
-        if indexPath.row < tabsModel.count {
-            let tab = tabsModel.get(tabAt: indexPath.row)
+        if indexPath.row < tabsModel.count,
+           let tab = tabsModel.get(tabAt: indexPath.row) {
+            tab.removeObserver(self)
             tab.addObserver(self)
             cell.update(withTab: tab,
                         isSelectionModeEnabled: self.isEditing,
@@ -686,7 +805,7 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
             return UICollectionReusableView()
         }
 
-        header.configure(in: self, model: trackerInfoModel)
+        header.configure(in: self, model: activeTrackerInfoModel)
         return header
     }
 
@@ -699,18 +818,18 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
             Pixel.fire(pixel: .tabSwitcherTabSelected)
             (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
             updateUIForSelectionMode()
-            refreshTitle()
+            refreshTitleViews()
         } else {
             currentSelection = indexPath.row
             Pixel.fire(pixel: .tabSwitcherSwitchTabs)
-            markCurrentAsViewedAndDismiss()
+            dismissIfPossible()
         }
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
         updateUIForSelectionMode()
-        refreshTitle()
+        refreshTitleViews()
         Pixel.fire(pixel: .tabSwitcherTabDeselected)
     }
 
@@ -791,7 +910,7 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         referenceSizeForHeaderInSection section: Int) -> CGSize {
-        guard trackerInfoModel != nil else { return .zero }
+        guard activeTrackerInfoModel != nil else { return .zero }
         return CGSize(width: collectionView.bounds.width, height: TabSwitcherTrackerInfoHeaderView.estimatedHeight)
     }
 
@@ -801,9 +920,11 @@ extension TabSwitcherViewController: TabObserver {
     
     func didChange(tab: Tab) {
         guard let index = self.tabsModel.indexOf(tab: tab),
-              let cell = collectionView.cellForItem(at: IndexPath(row: index, section: 0)) as? TabViewCell,
-              // Check the current tab is the one we want to update, if not it might have been updated elsewhere
-              cell.tab?.uid == tab.uid else {
+              let cell = collectionView.cellForItem(at: IndexPath(row: index, section: 0)) as? TabViewCell else {
+            return
+        }
+        // Check the current tab is the one we want to update, if not it might have been updated elsewhere
+        guard cell.tab?.uid == tab.uid else {
             DailyPixel.fireDaily(.debugTabSwitcherDidChangeInvalidState)
             return
         }
@@ -832,7 +953,7 @@ extension TabSwitcherViewController {
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
-        collectionView.reloadData()
+        reloadCollectionView()
     }
 
 }
@@ -871,13 +992,16 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
         }
 
         collectionView.performBatchUpdates {
-            tabsModel.moveTab(from: source.row, to: destination.row)
+            guard let tab = tabsModel.get(tabAt: source.row) else {
+                return
+            }
+            tabsModel.move(tab: tab, to: destination.row)
             currentSelection = tabsModel.currentIndex
             collectionView.deleteItems(at: [source])
             collectionView.insertItems(at: [destination])
         } completion: { _ in
             if self.isEditing {
-                collectionView.reloadData() // Clears the selection
+                self.reloadCollectionView() // Clears the selection
                 collectionView.selectItem(at: destination, animated: true, scrollPosition: [])
                 self.barsHandler.configureButtonActions(tabsStyle: self.tabsStyle, canShowSelectionMenu: self.canShowSelectionMenu)
             } else {
@@ -917,5 +1041,34 @@ extension UITapGestureRecognizer {
         }
 
         return false
+    }
+}
+
+struct TabSwitcherPickerWrapper: View {
+    @ObservedObject var viewModel: ImageSegmentedPickerViewModel
+
+    var body: some View {
+        ImageSegmentedPickerView(viewModel: viewModel)
+            .frame(width: TabSwitcherViewController.Constants.modePickerWidth)
+    }
+}
+
+// MARK: - Picker Items
+
+extension BrowsingMode {
+    func segmentedPickerItem(tabCountModel: TabCountModel) -> ImageSegmentedPickerItem {
+        switch self {
+        case .normal:
+            let itemView = AnyView(TabCountBadge(model: tabCountModel))
+            return ImageSegmentedPickerItem(text: nil,
+                                            selectedCustomView: itemView,
+                                            unselectedCustomView: itemView)
+            
+        case .fire:
+            return ImageSegmentedPickerItem(
+                text: nil,
+                selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs),
+                unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs))
+        }
     }
 }

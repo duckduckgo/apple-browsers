@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Er is een apparaatwachtwoord vereist om 'Synchronisatie  en back-up' te kunnen gebruiken.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Herstel automatisch je gegevens op dit apparaat als je de app opnieuw installeert.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Als je de DuckDuckGo-app opnieuw installeert, vragen we of je je gegevens op dit apparaat wilt herstellen.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Hervat je Sync & Backup-sessie om je bladwijzers, wachtwoorden en meer te herstellen, of ga verder met een nieuwe configuratie.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Hervat synchronisatie en back-up";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Doorgaan met instellen";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Je vorige Sync & Backup-sessie is gereed.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Als je de DuckDuckGo-app opnieuw installeert, vragen we of je je gegevens op dit apparaat wilt herstellen.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Herstellen bij app-herinstallatie";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Herstellen bij app-herinstallatie";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Uit";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Aan";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Herstellen bij app-herinstallatie";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Terug";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Gesynchroniseerde gegevens herstellen";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Aan de slag";
+"recover.synced.data.sheet.button" = "Gesynchroniseerde gegevens herstellen";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Om je gesynchroniseerde gegevens te herstellen, heb je de herstelcode nodig die je hebt opgeslagen tijdens het instellen van 'Synchronisatie'. Deze code is mogelijk als PDF opgeslagen op het apparaat dat je gebruikte om 'Synchronisatie' in te stellen.";
+"recover.synced.data.sheet.description" = "Je hebt de herstelcode nodig die je kreeg toen je Sync & Backup instelde. Je hebt deze mogelijk als PDF opgeslagen op het apparaat dat je gebruikte.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Gesynchroniseerde gegevens herstellen";
+"recover.synced.data.sheet.title" = "Herstel je gesynchroniseerde gegevens";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Opnieuw verbinden om je bladwijzers, opgeslagen logins en andere apparaten te synchroniseren.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Er wordt verbinding gemaakt ...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Gegevens herstellen";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Apparaat verwijderen";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Apparaat verwijderen?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Herstelcode";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Herstelcode gekopieerd naar klembord";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Code kopiëren";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Opslaan als PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Als je geen toegang meer hebt tot je apparaten, heb je deze code nodig om je gesynchroniseerde gegevens te herstellen.";
+"save.recovery.code.save.as.pdf.button" = "Downloaden als PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Iedereen met toegang tot deze code kan bij je gesynchroniseerde gegevens. Bewaar de code daarom op een veilige plek.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Herstelcode opslaan";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Bewaar deze code zodat je je gegevens kunt herstellen als je de toegang tot dit apparaat verliest – bewaar ze veilig.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Eenvoudig je gegevens herstellen";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "PDF voor herstel opslaan";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "'Instellingen' > 'Synchronisatie en back-up' > 'Synchroniseren met een ander apparaat'";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Ga naar Instellingen";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Er is een apparaatwachtwoord vereist om 'Synchronisatie  en back-up' te kunnen gebruiken.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Beveilig je apparaat om 'Synchronisatie en back-up' te gebruiken";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Herstellen";
 
 /* Sync & Backup Title */
 "sync.title" = "Synchronisatie en back-up";

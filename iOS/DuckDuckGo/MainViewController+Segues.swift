@@ -49,7 +49,7 @@ extension MainViewController {
         }, deepLinkTarget: .customizeToolbarButton)
     }
 
-    func segueToDaxOnboarding() {
+    func segueToDaxOnboarding(completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
@@ -57,18 +57,20 @@ extension MainViewController {
             OnboardingIntroViewController.rebranded(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                daxDialogsManager: daxDialogsManager
+                daxDialogsManager: daxDialogsManager,
+                syncAutoRestoreHandler: syncAutoRestoreHandler
             )
         } else {
             OnboardingIntroViewController.legacy(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                daxDialogsManager: daxDialogsManager
+                daxDialogsManager: daxDialogsManager,
+                syncAutoRestoreHandler: syncAutoRestoreHandler
             )
         }
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
-        present(controller, animated: false)
+        present(controller, animated: false, completion: completion)
     }
 
     func segueToHomeRow() {
@@ -366,19 +368,31 @@ extension MainViewController {
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        let launchSync: () -> Void = { [weak self] in
-            self?.launchSettings {
-                if let source = source {
-                    $0.shouldPresentSyncViewWithSource(source)
-                } else {
-                    $0.presentLegacyView(.sync(pairingInfo))
-                }
+
+        let launchSync: (SettingsViewModel) -> Void = { settingsViewModel in
+            if let source {
+                settingsViewModel.shouldPresentSyncViewWithSource(source, animated: false)
+            } else {
+                settingsViewModel.presentLegacyView(.sync(pairingInfo), animated: false)
             }
         }
+
+        if let navigationController = presentedViewController as? UINavigationController,
+           navigationController.viewControllers.first is SettingsHostingController {
+            launchSettings(completion: launchSync)
+            return
+        }
+
+        let presentSyncViaSettings: () -> Void = { [weak self] in
+            self?.launchSettings(configure: { settingsViewModel, _ in
+                launchSync(settingsViewModel)
+            })
+        }
+
         if let presentedViewController {
-            presentedViewController.dismiss(animated: false, completion: launchSync)
+            presentedViewController.dismiss(animated: false, completion: presentSyncViaSettings)
         } else {
-            launchSync()
+            presentSyncViaSettings()
         }
     }
 
@@ -409,7 +423,8 @@ extension MainViewController {
                                                             subscriptionDataReporter: subscriptionDataReporter,
                                                             remoteMessagingDebugHandler: remoteMessagingDebugHandler,
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
-                                                            webExtensionManager: webExtensionManager)
+                                                            webExtensionManager: webExtensionManager,
+                                                            syncAutoRestoreHandler: syncAutoRestoreHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -468,6 +483,12 @@ extension MainViewController {
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
                 navController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
                 settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+                // Opaque nav bar and matching view background so sheet top gap (if any) is visually continuous with the bar
+                let surfaceColor = UIColor(designSystemColor: .surface)
+                navController.view.backgroundColor = surfaceColor
+                navController.navigationBar.isTranslucent = false
+                navController.navigationBar.barTintColor = surfaceColor
+                navController.navigationBar.backgroundColor = surfaceColor
 
                 // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
                 configure?(settingsViewModel, settingsController)
@@ -492,6 +513,7 @@ extension MainViewController {
 
         let debug = DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
+            syncAutoRestoreHandler: self.syncAutoRestoreHandler,
             bookmarksDatabase: self.bookmarksDatabase,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,

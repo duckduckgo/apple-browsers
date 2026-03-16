@@ -21,6 +21,7 @@ import Combine
 import AIChat
 import FeatureFlags
 import PrivacyConfig
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -33,6 +34,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private var searchPreferencesPersistor: AIChatMockSearchPreferencesPersistor!
     private var mockPreferences: MockAIChatPreferencesPersisting!
     private var mockModelsService: MockAIChatModelsProviding!
+    private var mockSubscriptionManager: SubscriptionManagerMock!
     private var tabCollectionViewModel: TabCollectionViewModel!
 
     override func setUp() {
@@ -43,6 +45,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         searchPreferencesPersistor = AIChatMockSearchPreferencesPersistor()
         mockPreferences = MockAIChatPreferencesPersisting()
         mockModelsService = MockAIChatModelsProviding()
+        mockSubscriptionManager = SubscriptionManagerMock()
         tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
 
         controller = AIChatOmnibarController(
@@ -51,7 +54,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             featureFlagger: featureFlagger,
             searchPreferencesPersistor: searchPreferencesPersistor,
             preferences: mockPreferences,
-            modelsService: mockModelsService
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager
         )
         controller.delegate = mockDelegate
     }
@@ -64,6 +68,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         searchPreferencesPersistor = nil
         mockPreferences = nil
         mockModelsService = nil
+        mockSubscriptionManager = nil
         tabCollectionViewModel = nil
         super.tearDown()
     }
@@ -296,9 +301,24 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(controller.persistedModelId, "")
     }
 
-    func testWhenModelSelected_ThenPersistedModelIdReturnsSelection() {
-        // Given
+    func testWhenModelSelectedButModelsNotLoaded_ThenPersistedModelIdFallsBackToEmpty() {
+        // Given — model selected but models haven't loaded yet
         mockPreferences.selectedModelId = "claude-sonnet-4-5"
+
+        // Then — can't validate the selection without models, falls back to empty
+        XCTAssertEqual(controller.persistedModelId, "")
+    }
+
+    func testWhenModelSelectedAndExistsInLoadedModels_ThenPersistedModelIdReturnsSelection() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "claude-sonnet-4-5", entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "claude-sonnet-4-5"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
 
         // Then
         XCTAssertEqual(controller.persistedModelId, "claude-sonnet-4-5")
@@ -356,10 +376,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(controller.selectedModelSupportsImageUpload)
     }
 
-    func testWhenSelectedModelNotInList_ThenDefaultsToTrue() async {
+    func testWhenSelectedModelNotInList_ThenFallsBackToFirstAccessible() async {
         // Given
         mockModelsService.modelsToReturn = [
-            makeRemoteModel(id: "some-model", entityHasAccess: true)
+            makeRemoteModel(id: "some-model", supportsImageUpload: true, entityHasAccess: true)
         ]
         mockPreferences.selectedModelId = "nonexistent-model"
 
@@ -367,7 +387,9 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.onOmnibarActivated()
         await waitForModels()
 
-        // Then
+        // Then — stale selection cleared, falls back to "some-model"
+        XCTAssertNil(mockPreferences.selectedModelId)
+        XCTAssertEqual(controller.persistedModelId, "some-model")
         XCTAssertTrue(controller.selectedModelSupportsImageUpload)
     }
 
@@ -376,8 +398,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     func testWhenOmnibarActivated_ThenModelsFetched() async {
         // Given
         mockModelsService.modelsToReturn = [
-            AIChatRemoteModel(id: "gpt-4o-mini", name: "GPT-4o mini", provider: "openai",
-                              entityHasAccess: true, supportsImageUpload: false,
+            AIChatRemoteModel(id: "gpt-4o-mini", name: "GPT-4o mini", modelShortName: "4o-mini",
+                              provider: "openai", entityHasAccess: true, supportsImageUpload: false,
                               supportedTools: [], accessTier: ["free"])
         ]
 
@@ -404,6 +426,9 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - Helpers
 
+    /// Creates a remote model for testing. Access is resolved locally from `accessTier`
+    /// (not `entityHasAccess`), so `accessTier` must include `"free"` for the model to be
+    /// accessible to the default free-tier test user.
     private func makeRemoteModel(
         id: String,
         supportsImageUpload: Bool = false,
@@ -412,11 +437,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         AIChatRemoteModel(
             id: id,
             name: id,
+            modelShortName: nil,
             provider: "openai",
             entityHasAccess: entityHasAccess,
             supportsImageUpload: supportsImageUpload,
             supportedTools: [],
-            accessTier: []
+            accessTier: entityHasAccess ? ["free"] : ["plus", "pro"]
         )
     }
 
@@ -461,6 +487,7 @@ private class AIChatMockSearchPreferencesPersistor: SearchPreferencesPersistor {
 
 private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
     var selectedModelId: String?
+    var selectedModelShortName: String?
 }
 
 // MARK: - Mock Models Service

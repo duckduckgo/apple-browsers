@@ -151,7 +151,7 @@ public struct AppVersion: OSVersionProviding {
     }
 
     public static let runType: AppRunType = {
-        let isCI = ProcessInfo.processInfo.environment["CI"] != nil
+        let isCI = !(ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true)
 
         if let testBundlePath = ProcessInfo().environment["XCTestBundlePath"] {
             if testBundlePath.contains("Unit") {
@@ -175,4 +175,15 @@ public struct AppVersion: OSVersionProviding {
     }()
 
     public var runType: AppRunType { Self.runType }
+
+    /// Returns true if this is an App Store build.
+    /// Returns false for DMG/Sparkle builds.
+    ///
+    /// This check works across all targets including VPN agents and system extensions
+    /// by examining the bundle identifier prefix.
+    public static var isAppStoreBuild: Bool = {
+        guard let bundleId = Bundle.main.bundleIdentifier else { return false }
+        return bundleId.hasPrefix("com.duckduckgo.mobile.ios")
+    }()
+
 }

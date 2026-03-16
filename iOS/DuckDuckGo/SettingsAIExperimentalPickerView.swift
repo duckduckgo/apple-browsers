@@ -45,6 +45,7 @@ struct SettingsAIExperimentalPickerView: View {
             ) {
                 isDuckAISelected = false
             }
+            .accessibilityIdentifier("Settings.AIFeatures.Picker.SearchOnly")
             .frame(maxWidth: .infinity, alignment: .top)
 
             PickerOptionView(
@@ -57,6 +58,7 @@ struct SettingsAIExperimentalPickerView: View {
             ) {
                 isDuckAISelected = true
             }
+            .accessibilityIdentifier("Settings.AIFeatures.Picker.SearchAndDuckAI")
             .frame(maxWidth: .infinity, alignment: .top)
         }
         // Collect per-option measured title heights and apply the maximum to both.

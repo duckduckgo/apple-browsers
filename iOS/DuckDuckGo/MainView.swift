@@ -101,6 +101,7 @@ extension MainViewFactory {
         createLogoBackground()
         createContentContainer()
         createSuggestionTrayContainer()
+        createUnifiedInputContentContainer()
         createTopSlideContainer()
         createStatusBackground()
         createTabBarContainer()
@@ -274,6 +275,14 @@ extension MainViewFactory {
         superview.addSubview(coordinator.suggestionTrayContainer)
     }
 
+    final class UnifiedInputContentContainer: UIView { }
+    private func createUnifiedInputContentContainer() {
+        coordinator.unifiedInputContentContainer = UnifiedInputContentContainer()
+        coordinator.unifiedInputContentContainer.isHidden = true
+        coordinator.unifiedInputContentContainer.backgroundColor = .clear
+        superview.addSubview(coordinator.unifiedInputContentContainer)
+    }
+
     private func createToolbar() {
         coordinator.toolbar = HitTestingToolbar()
         coordinator.toolbar.isTranslucent = false
@@ -329,6 +338,7 @@ extension MainViewFactory {
         constrainTopSlideContainer()
         constrainContentContainer()
         constrainSuggestionTrayContainer()
+        constrainUnifiedInputContentContainer()
         constrainStatusBackground()
         constrainTabBarContainer()
         constrainNavigationBarContainer()
@@ -445,14 +455,11 @@ extension MainViewFactory {
         let container = coordinator.unifiedToggleInputContainer!
         let navigationBarContainer = coordinator.navigationBarContainer!
 
-        let bottom = container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor)
-        bottom.priority = .defaultHigh
-
         NSLayoutConstraint.activate([
             container.topAnchor.constraint(equalTo: navigationBarContainer.topAnchor),
             container.leadingAnchor.constraint(equalTo: navigationBarContainer.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: navigationBarContainer.trailingAnchor),
-            bottom,
+            container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor),
         ])
     }
 
@@ -477,6 +484,17 @@ extension MainViewFactory {
             suggestionTrayContainer.constrainView(contentContainer, by: .height),
             suggestionTrayContainer.constrainView(contentContainer, by: .centerX),
             suggestionTrayContainer.constrainView(contentContainer, by: .centerY),
+        ])
+    }
+
+    private func constrainUnifiedInputContentContainer() {
+        let container = coordinator.unifiedInputContentContainer!
+        let contentContainer = coordinator.contentContainer!
+        NSLayoutConstraint.activate([
+            container.constrainView(contentContainer, by: .width),
+            container.constrainView(contentContainer, by: .height),
+            container.constrainView(contentContainer, by: .centerX),
+            container.constrainView(contentContainer, by: .centerY),
         ])
     }
 

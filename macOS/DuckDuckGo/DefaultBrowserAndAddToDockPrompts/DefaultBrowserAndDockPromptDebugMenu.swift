@@ -47,7 +47,7 @@ import Utilities
 /// **See also:**
 /// - `DefaultBrowserAndDockPromptTypeDecider.ActiveUser` - timing rules for popover/banner
 /// - `DefaultBrowserAndDockPromptTypeDecider.InactiveUser` - timing rules for inactive modal
-/// - `DefaultBrowserAndDockPromptDebugStore` - stores simulated date override
+/// - `DebugSimulatedDateStore` - shared simulated date override
 final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     private let overrideDateMenuItem = NSMenuItem(title: "", action: #selector(simulateCurrentDate))
     private let simulatedTodayDateMenuItem = NSMenuItem(title: "")
@@ -60,6 +60,9 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     private let inactiveWillShowDateMenuItem = NSMenuItem(title: "")
     private let store = NSApp.delegateTyped.defaultBrowserAndDockPromptService.store
     private let debugStore = DefaultBrowserAndDockPromptDebugStore()
+    private var debugSimulatedDateStore: DebugSimulatedDateStore {
+        DebugSimulatedDateStore(keyValueStore: Application.appDelegate.keyValueStore)
+    }
     private let defaultBrowserAndDockPromptFeatureFlagger = NSApp.delegateTyped.defaultBrowserAndDockPromptService.featureFlagger
     private let localStatisticsStore = LocalStatisticsStore()
     private let userActivityManager = NSApp.delegateTyped.defaultBrowserAndDockPromptService.userActivityManager
@@ -116,7 +119,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     /// This allows fast-forwarding time to trigger prompts without waiting.
     ///
     /// **How it works:**
-    /// - Stores override date in `DefaultBrowserAndDockPromptDebugStore.simulatedTodayDate`
+    /// - Stores override date in `DebugSimulatedDateStore`
     /// - All date calculations use this override instead of `Date()` (see `DefaultBrowserAndDockPromptService`)
     /// - Also records user activity to prevent inactive modal from showing
     ///
@@ -127,19 +130,19 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     ///
     /// **See also:**
     /// - `advanceBy14Days()` - quick jump by default delay interval
-    /// - `DefaultBrowserAndDockPromptDebugStore` - stores the override
+    /// - `DebugSimulatedDateStore` - shared simulated date store
     @objc func simulateCurrentDate() {
         let result = showDatePickerAlert()
 
         switch result {
         case .success(.some(let date)):
             // OK clicked - set new override date
-            debugStore.simulatedTodayDate = date
+            debugSimulatedDateStore.simulatedDate = date
             userActivityManager.recordActivity()
             updateMenuItemsState()
         case .success(.none):
             // Reset clicked - clear the override
-            debugStore.simulatedTodayDate = nil
+            debugSimulatedDateStore.reset()
             userActivityManager.recordActivity()
             updateMenuItemsState()
         case .failure:
@@ -164,7 +167,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     @objc func simulateFreshAppInstall() {
         resetPrompts()
         debugStore.simulatedInstallDate = Date().startOfDay
-        debugStore.simulatedTodayDate = nil
+        debugSimulatedDateStore.reset()
         updateMenuItemsState()
     }
 
@@ -186,12 +189,9 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     /// - All prompt counters reset to zero
     /// - User is considered "active" (won't trigger inactive modal)
     @objc func resetPrompts() {
+        debugSimulatedDateStore.reset()
         debugStore.reset()
-        store.popoverShownDate = nil
-        store.bannerShownDate = nil
-        store.inactiveUserModalShownDate = nil
-        store.isBannerPermanentlyDismissed = false
-        userActivityStore.save(DefaultBrowserAndDockPromptUserActivity(lastActiveDate: Date()))
+        NSApp.delegateTyped.defaultBrowserAndDockPromptService.resetDebugState()
         updateMenuItemsState()
     }
 
@@ -279,16 +279,16 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
                 // 1. Install date + 28 days (default)
                 let firstDateAfterInstall = installDate.advanced(by: .days(defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfDaysSinceInstall))
                 // 2. Today + 7 days of inactivity (default)
-                let nextDateAfterInactivity = (debugStore.simulatedTodayDate ?? Date()).advanced(by: .days(defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfInactiveDays + 1))
+                let nextDateAfterInactivity = (debugSimulatedDateStore.simulatedDate ?? Date()).advanced(by: .days(defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfInactiveDays + 1))
 
-                let installDateCriteriaMet = (debugStore.simulatedTodayDate ?? Date()) >= firstDateAfterInstall
+                let installDateCriteriaMet = (debugSimulatedDateStore.simulatedDate ?? Date()) >= firstDateAfterInstall
                 let inactiveDaysCriteriaMet = inactiveDays >= defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfInactiveDays
 
                 var inactiveWillShowDate: Date?
                 switch (installDateCriteriaMet, inactiveDaysCriteriaMet) {
                 case (true, true):
                     // Both criteria met → can show today
-                    inactiveWillShowDate = debugStore.simulatedTodayDate ?? Date()
+                    inactiveWillShowDate = debugSimulatedDateStore.simulatedDate ?? Date()
                 case (true, false):
                     // Install age met, but not inactive long enough → need more inactivity
                     inactiveWillShowDate = nextDateAfterInactivity
@@ -304,7 +304,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
             }
         }
 
-        let currentOverride = debugStore.simulatedTodayDate
+        let currentOverride = debugSimulatedDateStore.simulatedDate
 
         if let currentOverride {
             overrideDateMenuItem.title = "Override Today's Date… (Currently: \(Self.dateFormatter.string(from: currentOverride)))"
@@ -312,7 +312,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
             overrideDateMenuItem.title = "Override Today's Date…"
         }
 
-        simulatedTodayDateMenuItem.title = "Today's Date: \(Self.dateFormatter.string(from: debugStore.simulatedTodayDate ?? Date()))"
+        simulatedTodayDateMenuItem.title = "Today's Date: \(Self.dateFormatter.string(from: debugSimulatedDateStore.simulatedDate ?? Date()))"
         appInstallDateMenuItem.title = "App Install Date: \((debugStore.simulatedInstallDate ?? localStatisticsStore.installDate).map { Self.dateFormatter.string(from: $0) } ?? "N/A")"
 
         // Update Popover Menu Info
@@ -337,7 +337,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         let alert = NSAlert()
         alert.messageText = "Simulate Today's Date"
 
-        let currentOverride = debugStore.simulatedTodayDate
+        let currentOverride = debugSimulatedDateStore.simulatedDate
 
         // Create localized date formatter with numeric format (e.g., "11/19/2025" for en_US, "19.11.2025" for de_DE)
         let dateFormatter = DateFormatter()
@@ -434,9 +434,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     /// - `simulateCurrentDate()` - for custom date selection
     /// - `DefaultBrowserAndDockPromptFeatureFlagger` - defines the 14-day default intervals
     @objc private func advanceBy14Days() {
-        let currentDate = debugStore.simulatedTodayDate ?? Date()
-        let newDate = currentDate.addingTimeInterval(.days(14))
-        debugStore.simulatedTodayDate = newDate
+        debugSimulatedDateStore.advance(by: .days(14))
         updateMenuItemsState()
     }
 
@@ -465,14 +463,10 @@ private class DatePickerContainer: NSView {
 }
 
 final class DefaultBrowserAndDockPromptDebugStore {
-    @UserDefaultsWrapper(key: .debugSetDefaultAndAddToDockPromptCurrentDateKey)
-    var simulatedTodayDate: Date?
-
     @UserDefaultsWrapper(key: .debugSetDefaultAndAddToDockPromptInstallDateKey)
     var simulatedInstallDate: Date?
 
     func reset() {
-        simulatedTodayDate = nil
         simulatedInstallDate = nil
     }
 }

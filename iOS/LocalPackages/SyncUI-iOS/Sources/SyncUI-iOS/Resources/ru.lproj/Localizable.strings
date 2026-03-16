@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Для работы с функцией синхронизации и резервного копирования Sync & Backup необходим пароль от устройства.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Автоматическое восстановление данных на устройстве в случае переустановки приложения.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "В случае переустановки приложение DuckDuckGo предложит вам восстановить свои данные на этом устройстве.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Восстановите закладки, пароли и другие данные из резервной копии либо начните с нуля.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Восстановить";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Продолжить настройку";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "У вас есть резервная копия";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "В случае переустановки приложение DuckDuckGo предложит вам восстановить свои данные на этом устройстве.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Восстановить при переустановке приложения";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Восстановить при переустановке приложения";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Выключено";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Включено";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Восстановить при переустановке приложения";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Назад";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Восстановить синхронизированные данные";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Приступим!";
+"recover.synced.data.sheet.button" = "Восстановление синхронизованных данных";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Чтобы восстановить синхронизированные данные, потребуется код восстановления, который вы сохранили при первой настройке синхронизации. Возможно, он сохранен в файле PDF на устройстве, где изначально настраивалась синхронизация.";
+"recover.synced.data.sheet.description" = "Вам потребуется код восстановления, полученный при настройке синхронизации и резервного копирования. Возможно, вы сохранили его в виде PDF на устройстве, где выполнялась настройка.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Восстановление синхронизованных данных";
+"recover.synced.data.sheet.title" = "Восстановление синхронизированных данных";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Выполняется подключение для синхронизации закладок, логинов и данных других устройств.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Выполняется подключение...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Восстановление данных";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Удалить устройство";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Удалить устройство?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Код восстановления";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Код восстановления скопирован в буфер обмена";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Копировать код";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Сохранить в PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Если вы утратите доступ к своим устройствам, этот код позволит вам восстановить синхронизированные данные.";
+"save.recovery.code.save.as.pdf.button" = "Скачать в формате PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Этот код позволяет получить доступ к вашим синхронизированным данным, поэтому храните его в надежном месте.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Сохранение кода восстановления";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Сохраните этот код в надежном месте. Он позволит восстановить данные, если вы утратите доступ к устройству.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Удобное восстановление данных";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Сохранить код в PDF";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Настройки > Синхронизация и резервное копирование > Синхронизировать с другим устройством";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Открыть «Настройки»";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Для работы с функцией синхронизации и резервного копирования Sync & Backup необходим пароль от устройства.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Защитите устройство для работы функции Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Восстановление данных";
 
 /* Sync & Backup Title */
 "sync.title" = "Синхронизация и резервное копирование";

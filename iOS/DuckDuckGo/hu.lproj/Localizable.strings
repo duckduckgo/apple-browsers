@@ -2694,11 +2694,35 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "További részletek";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Nem, köszönöm";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Kihagyás";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ó, mielőtt elfelejtem…";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Szeretnéd visszaállítani a könyvjelzőidet, a jelszavaidat és az egyéb dolgokat az előző DuckDuckGo-szinkronizálásból?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Saját adataim visszaállítása";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Kihagyás";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Folytassuk ott, ahol abbahagytad";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privát. Gyors. Kevesebb hirdetés.";
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Ez a DuckDuckGo Search!";
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Felkészültél egy gyorsabb böngészőre, amely védelmet nyújt neked?";
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Szia!";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Böngészés indítása";
@@ -2966,6 +2990,27 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Megnyitás másik alkalmazásban?";
+
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Visszalépés";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Szeretnéd megnyitni ezt az oldalt a Safariban?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Sajnos nem sikerült betölteni az oldalt.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Megnyitás Safariban";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Maradok a DuckDuckGónál";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Előfordulhat, hogy a webhely egyes funkciói nem kompatibilisek ezzel a böngészővel.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Az oldal a Safariban próbál megnyílni.";
 
 /* No comment provided by engineer. */
 "REBRANDED" = "ÚJRAMÁRKÁZVA";

@@ -27,6 +27,8 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
 
+    func controllerWillPerformServerSyncOperation(setupRole: SyncSetupRole) async -> Bool
+
     func controllerDidCreateSyncAccount()
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
 
@@ -184,10 +186,18 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
 
         if let exchangeKey = syncCode.exchangeKey {
+            let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
             await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
+            guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
+                return false
+            }
             return await handleExchangeKey(exchangeKey, codeSource: codeSource)
         } else if let connectKey = syncCode.connect {
+            let setupRole: SyncSetupRole = .receiver(.connect, codeSource)
             await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource)
+            guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
+                return false
+            }
             return await handleConnectKey(connectKey, codeSource: codeSource)
         } else {
             await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource)
@@ -223,13 +233,25 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
 
         if let exchangeKey = syncCode.exchangeKey {
+            let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
             await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
+            guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
+                return false
+            }
             return await handleExchangeKey(exchangeKey, codeSource: codeSource)
         } else if let recoveryKey = syncCode.recovery {
+            let setupRole: SyncSetupRole = .receiver(.recovery, codeSource)
             await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource)
+            guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
+                return false
+            }
             return await handleRecoveryKey(recoveryKey, isRecovery: true, setupRole: .receiver(.recovery, codeSource))
         } else if let connectKey = syncCode.connect {
+            let setupRole: SyncSetupRole = .receiver(.connect, codeSource)
             await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource)
+            guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
+                return false
+            }
             return await handleConnectKey(connectKey, codeSource: codeSource)
         } else {
             // We shouldn't ever really reach this point
@@ -293,6 +315,10 @@ public class SyncConnectionController: SyncConnectionControlling {
             }
 
             delegate?.controllerDidReceiveRecoveryKey()
+
+            guard await shouldContinueServerSyncOperation(setupRole: .sharer) else {
+                return
+            }
 
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false, setupRole: .sharer)
@@ -373,5 +399,16 @@ public class SyncConnectionController: SyncConnectionControlling {
         } else {
             await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: setupRole)
         }
+    }
+
+    private func shouldContinueServerSyncOperation(setupRole: SyncSetupRole) async -> Bool {
+        await delegate?.controllerWillPerformServerSyncOperation(setupRole: setupRole) ?? true
+    }
+}
+
+@MainActor
+public extension SyncConnectionControllerDelegate {
+    func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
+        true
     }
 }

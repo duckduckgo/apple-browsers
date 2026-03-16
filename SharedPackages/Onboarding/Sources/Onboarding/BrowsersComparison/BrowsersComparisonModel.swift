@@ -18,6 +18,7 @@
 
 import Foundation
 import DesignResourcesKitIcons
+import Common
 
 public struct BrowsersComparisonModel {
 
@@ -166,7 +167,7 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 public static let cookiePopups = NSLocalizedString("onboarding.highlights.browsers.features.cookiePopups.title", bundle: Bundle.module, value: "Block cookie pop-ups", comment: "Message to highlight how the browser allows you to block cookie pop-ups")
                 public static let creepyAds = NSLocalizedString("onboarding.highlights.browsers.features.creepyAds.title", bundle: Bundle.module, value: "Block targeted ads", comment: "Message to highlight browser capability of blocking creepy ads")
                 public static let eraseBrowsingData = NSLocalizedString("onboarding.highlights.browsers.features.eraseBrowsingData.title", bundle: Bundle.module, value: "Delete browsing data with one button", comment: "Message to highlight browser capability of swiftly erase browsing data")
-                public static let privateAIChatEnglish = "Use ChatGPT privately with Duck.ai built in"
+                public static let privateAIChat = NotLocalizedString("onboarding.highlights.browsers.features.duckAI.title", value: "Use ChatGPT privately with Duck.ai built in", comment: "Message to highlight browser capability of chatting with ChatGPT without sharing data with third parties")
                 public static let duckplayer = NSLocalizedString("onboarding.highlights.browsers.features.duckplayer.title", bundle: Bundle.module, value: "Play YouTube without targeted ads", comment: "Message to highlight browser capability of watching YouTube videos without targeted ads")
             }
         }
@@ -199,7 +200,7 @@ extension BrowsersComparisonModel.PrivacyFeature {
             case .blockCreepyAds:
                 UserText.BrowsersComparison.Features.creepyAds
             case .privateAIChat:
-                UserText.BrowsersComparison.Features.privateAIChatEnglish
+                UserText.BrowsersComparison.Features.privateAIChat
             case .eraseBrowsingData:
                 UserText.BrowsersComparison.Features.eraseBrowsingData
             #if os(macOS)

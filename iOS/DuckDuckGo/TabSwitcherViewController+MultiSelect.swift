@@ -56,7 +56,7 @@ extension TabSwitcherViewController {
     }
 
     func bookmarkTabAt(_ indexPath: IndexPath) {
-        guard let tab = tabsModel.safeGetTabAt(indexPath.row), let link = tab.link else { return }
+        guard let tab = tabsModel.get(tabAt: indexPath.row), let link = tab.link else { return }
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: self.bookmarksDatabase, syncService: self.syncService)
         viewModel.createBookmark(title: link.displayTitle, url: link.url)
         ActionMessageView.present(message: UserText.tabsBookmarked(withCount: 1),
@@ -91,7 +91,7 @@ extension TabSwitcherViewController {
             UIView.transition(with: view,
                               duration: 0.3,
                               options: .transitionCrossDissolve, animations: {
-                self.refreshTitle()
+                self.refreshTitleViews()
                 self.collectionView.reloadData()
             }, completion: { _ in
                 self.isProcessingUpdates = false
@@ -134,11 +134,13 @@ extension TabSwitcherViewController {
         updateUIForSelectionMode()
     }
 
-    func transitionFromMultiSelect() {
+    func transitionFromMultiSelect(reloadCollectionView: Bool = true) {
         self.isEditing = false
-        collectionView.reloadData()
+        if reloadCollectionView {
+            collectionView.reloadData()
+        }
         updateUIForSelectionMode()
-        refreshTitle()
+        refreshTitleViews()
     }
 
     func closeAllTabs() {
@@ -268,14 +270,17 @@ extension TabSwitcherViewController {
         } else {
             state = AppWidthObserver.shared.isLargeWidth
                 ? .largeSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
-                             containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                             containsWebPages: containsWebPages, showAIChat: showAIChatButton,
+                             canDismissOnEmpty: canDismissOnEmpty)
                 : .regularSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
-                               containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                               containsWebPages: containsWebPages, showAIChat: showAIChatButton,
+                               canDismissOnEmpty: canDismissOnEmpty)
         }
 
         barsHandler.update(state)
         barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
 
+        titleBarView.topItem?.titleView = isEditing ? nil : segmentedPickerHostingController?.view
         titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
         titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
         toolbar.items = barsHandler.bottomBarItems
@@ -286,15 +291,15 @@ extension TabSwitcherViewController {
     func createMultiSelectionMenu() -> UIMenu {
 
         let otherTabCount = max(0, tabsModel.count - selectedTabs.count)
-        let selectedTabs = selectedTabs.map { self.tabsModel.safeGetTabAt($0.row) }.compactMap { $0 }
+        let selectedTabs = selectedTabs.map { self.tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
         let selectedTabsContainsWebPages = selectedTabs.contains(where: { $0.link != nil })
         let canShare = selectedTabsContainsWebPages
         let canAddBookmarks = selectedTabsContainsWebPages
         let canCloseOther = !selectedTabs.isEmpty && otherTabCount > 0
         let canBookmarkAll = selectedTabs.isEmpty && self.tabsModel.tabs.contains(where: { $0.link != nil })
-        let canShowDeselectAll = interfaceMode.isLarge && selectedTabs.count == tabsModel.count
-        let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabsModel.count
-        let canClose = interfaceMode.isLarge && selectedTabs.count > 0
+        let canShowDeselectAll = selectedTabs.count == tabsModel.count
+        let canShowSelectAll = selectedTabs.count < tabsModel.count
+        let canClose = selectedTabs.count > 0
 
         let items = [
 
@@ -375,7 +380,7 @@ extension TabSwitcherViewController {
     /// Takes indexes of tabs to create long menu for.  Interally creates tab array for those indexes, then passes either tabs or indexes to the handles in order to try and reduce the amount of
     ///  converting from [Int] -> [Tab] operations.
     func createLongPressMenuForTabs(atIndexPaths indexPaths: [IndexPath]) -> UIMenu {
-        let tabs = indexPaths.map { tabsModel.safeGetTabAt($0.row) }.compactMap { $0 }
+        let tabs = indexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
         let containsWebPages = tabs.contains(where: { $0.link != nil })
     
         let title = tabs.count > 1 ? UserText.numberOfSelectedTabsForMenuTitle(withCount: tabs.count)
@@ -487,7 +492,7 @@ extension TabSwitcherViewController {
     }
 
     func selectModeShareLinks() {
-        shareTabs(selectedTabs.compactMap { tabsModel.safeGetTabAt($0.row) })
+        shareTabs(selectedTabs.compactMap { tabsModel.get(tabAt: $0.row) })
     }
 
 }
@@ -500,7 +505,7 @@ extension TabSwitcherViewController {
     }
 
     func longPressMenuShareSelectedLinks() {
-        shareTabs(selectedTabs.map { tabsModel.safeGetTabAt($0.row) }.compactMap { $0 })
+        shareTabs(selectedTabs.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 })
     }
 
     func longPressMenuBookmarkTabs(indexPaths: [IndexPath]) {

@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Απαιτείται κωδικός πρόσβασης συσκευής για χρήση του Sync & Backup.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Αυτόματη επαναφορά των δεδομένων σας σε αυτήν τη συσκευή εάν εγκαταστήσετε ξανά την εφαρμογή.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Εάν εγκαταστήσετε ξανά την εφαρμογή DuckDuckGo, θα σας ρωτήσουμε εάν θέλετε να επαναφέρετε τα δεδομένα σας σε αυτήν τη συσκευή.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Συνεχίστε τη συνεδρία του Sync & Backup για να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία ή συνεχίστε με μια νέα ρύθμιση.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Συνέχιση του Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Συνέχιση εγκατάστασης";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Η προηγούμενη συνεδρία Sync & Backup είναι έτοιμη.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Εάν εγκαταστήσετε ξανά την εφαρμογή DuckDuckGo, θα σας ρωτήσουμε εάν θέλετε να επαναφέρετε τα δεδομένα σας σε αυτήν τη συσκευή.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Επαναφορά στην Εκ νέου εγκατάσταση εφαρμογής";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Επαναφορά στην Εκ νέου εγκατάσταση εφαρμογής";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Κλειστό";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Ενεργό";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Επαναφορά στην Εκ νέου εγκατάσταση εφαρμογής";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Πίσω";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Ανάκτηση συγχρονισμένων δεδομένων";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Ξεκινήστε";
+"recover.synced.data.sheet.button" = "Ανάκτηση συγχρονισμένων δεδομένων";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Για να κάνετε επαναφορά των συγχρονισμένων δεδομένων σας, θα χρειαστείτε τον Κωδικό ανάκτησης που αποθηκεύσατε κατά την πρώτη ρύθμιση του Συγχρονισμού. Αυτός ο κωδικός ενδέχεται να έχει αποθηκευτεί ως PDF στη συσκευή που χρησιμοποιήσατε αρχικά για ρύθμιση του Συγχρονισμού.";
+"recover.synced.data.sheet.description" = "Θα χρειαστείτε τον Κωδικό ανάκτησης που λάβατε κατά τη ρύθμιση του Sync & Backup. Ενδέχεται να το έχετε αποθηκεύσει ως PDF στη συσκευή που χρησιμοποιήσατε.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Ανάκτηση συγχρονισμένων δεδομένων";
+"recover.synced.data.sheet.title" = "Ανακτήστε τα συγχρονισμένα δεδομένα σας";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Επανασύνδεση για συγχρονισμό των σελιδοδεικτών σας, των αποθηκευμένων συνδέσεων και άλλων συσκευών.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Σύνδεση...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Ανάκτηση δεδομένων";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Αφαίρεση συσκευής";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Αφαίρεση συσκευής;";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Κωδικός ανάκτησης";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Ο κωδικός ανάκτησης αντιγράφηκε στο πρόχειρο";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Αντιγραφή κωδικού";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Αποθήκευση ως PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Σε περίπτωση που χάσετε την πρόσβαση στις συσκευές σας, θα χρειαστείτε αυτόν τον κωδικό για να ανακτήσετε τα συγχρονισμένα δεδομένα σας.";
+"save.recovery.code.save.as.pdf.button" = "Λήψη σε μορφή PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Οποιοσδήποτε με πρόσβαση σε αυτόν τον κωδικό μπορεί να έχει πρόσβαση στα συγχρονισμένα δεδομένα σας. Γι' αυτό φυλάξτε τον σε ασφαλές μέρος.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Αποθήκευση κωδικού ανάκτησης";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Αποθηκεύστε αυτόν τον κωδικό, ώστε να μπορείτε να ανακτήσετε τα δεδομένα σας σε περίπτωση που χάσετε την πρόσβαση σε αυτήν τη συσκευή — κρατήστε τον ασφαλή.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Ανακτήστε τα δεδομένα σας εύκολα";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Αποθήκευση ανάκτησης PDF";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Ρυθμίσεις > Συγχρονισμός και δημιουργία αντιγράφων ασφάλειας > Συγχρονισμός με άλλη συσκευή";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Μεταβείτε στις Ρυθμίσεις";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Απαιτείται κωδικός πρόσβασης συσκευής για χρήση του Sync & Backup.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Ασφαλίστε τη συσκευή σας για να χρησιμοποιείτε τη λειτουργία Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Ανάκτηση";
 
 /* Sync & Backup Title */
 "sync.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας";

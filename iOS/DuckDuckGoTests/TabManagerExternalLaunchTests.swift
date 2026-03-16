@@ -55,8 +55,8 @@ final class TabManagerExternalLaunchTests {
 
         let tab1 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
         let tab2 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
-        tabsModel.add(tab: tab1)
-        tabsModel.add(tab: tab2)
+        tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: false)
+        tabsModel.insert(tab: tab2, placement: .atEnd, selectNewTab: false)
 
         // WHEN
         tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
@@ -73,8 +73,8 @@ final class TabManagerExternalLaunchTests {
 
         let tab1 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
         let tab2 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
-        tabsModel.add(tab: tab1)
-        tabsModel.add(tab: tab2)
+        tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: false)
+        tabsModel.insert(tab: tab2, placement: .atEnd, selectNewTab: false)
 
         // WHEN
         tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
@@ -94,8 +94,8 @@ final class TabManagerExternalLaunchTests {
 
         let tab1 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
         let tab2 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
-        tabsModel.add(tab: tab1)
-        tabsModel.add(tab: tab2)
+        tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: false)
+        tabsModel.insert(tab: tab2, placement: .atEnd, selectNewTab: false)
 
         // WHEN
         tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
@@ -112,9 +112,9 @@ final class TabManagerExternalLaunchTests {
         let tab2 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
         let tab3 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
 
-        tabsModel.add(tab: tab1)
-        tabsModel.add(tab: tab2)
-        tabsModel.add(tab: tab3)
+        tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: false)
+        tabsModel.insert(tab: tab2, placement: .atEnd, selectNewTab: false)
+        tabsModel.insert(tab: tab3, placement: .atEnd, selectNewTab: false)
 
         tab1.isExternalLaunch = true
         tab2.isExternalLaunch = true
@@ -139,8 +139,8 @@ final class TabManagerExternalLaunchTests {
         let tab1 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
         let tab2 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
 
-        tabsModel.add(tab: tab1)
-        tabsModel.add(tab: tab2)
+        tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: false)
+        tabsModel.insert(tab: tab2, placement: .atEnd, selectNewTab: false)
 
         tab1.isExternalLaunch = true
         tab1.shouldSuppressTrackerAnimationOnFirstLoad = true
@@ -164,8 +164,8 @@ final class TabManagerExternalLaunchTests {
 
         let tab1 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
         let tab2 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
-        tabsModel.add(tab: tab1)
-        tabsModel.add(tab: tab2)
+        tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: false)
+        tabsModel.insert(tab: tab2, placement: .atEnd, selectNewTab: false)
 
         // Create TabViewControllers for the tabs (simulating already-loaded tabs)
         let viewModel1 = tabManager.viewModel(for: tab1)
@@ -188,7 +188,7 @@ final class TabManagerExternalLaunchTests {
     func whenMarkingTabAsExternalLaunchThenTrackerAnimationSuppressionIsPreserved() throws {
         // GIVEN
         let tab = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
-        tabsModel.add(tab: tab)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: false)
         tab.shouldSuppressTrackerAnimationOnFirstLoad = true
 
         #expect(!tab.isExternalLaunch)
@@ -208,7 +208,7 @@ final class TabManagerExternalLaunchTests {
         mockLaunchSourceManager.source = .standard
 
         let existingTab = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
-        tabsModel.add(tab: existingTab)
+        tabsModel.insert(tab: existingTab, placement: .atEnd, selectNewTab: false)
         tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
 
         #expect(!existingTab.isExternalLaunch)
@@ -216,7 +216,7 @@ final class TabManagerExternalLaunchTests {
 
         // WHEN
         let externalTab = Tab(link: Link(title: nil, url: URL(string: "https://www.external.com")!))
-        tabsModel.add(tab: externalTab)
+        tabsModel.insert(tab: externalTab, placement: .atEnd, selectNewTab: false)
         tabManager.markTabAsExternalLaunch(externalTab)
         tabManager.setSuppressTrackerAnimationOnFirstLoad(for: externalTab, shouldSuppress: true)
 
@@ -235,12 +235,14 @@ final class TabManagerExternalLaunchTests {
         launchSourceManager: LaunchSourceManaging
     ) throws -> TabManager {
         let tabsPersistence = TabsModelPersistence(
-            store: MockKeyValueFileStore(),
+            normalStore: MockKeyValueFileStore(),
+            fireStore: MockKeyValueFileStore(),
             legacyStore: MockKeyValueStore()
         )
+        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence)
         return TabManager(
-            model: model,
-            persistence: tabsPersistence,
+            tabsModelProvider: modelProvider,
             previewsSource: previewsSource,
             interactionStateSource: TabInteractionStateDiskSource(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),

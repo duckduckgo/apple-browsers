@@ -43,7 +43,6 @@ final class VPNRoutingRangeTests: XCTestCase {
             IPAddressRange(from: "::1/128")!,
             IPAddressRange(from: "fe80::/10")!,
             IPAddressRange(from: "ff00::/8")!,
-            IPAddressRange(from: "fc00::/7")!
         ]
 
         for expectedRange in expectedIPv4Ranges {
@@ -55,6 +54,21 @@ final class VPNRoutingRangeTests: XCTestCase {
             XCTAssertTrue(expectedRange.hasExactMatch(in: ipv6Excluded),
                          "IPv6 system range \(expectedRange) should be excluded")
         }
+    }
+
+    /// Verifies that IPv6 ULA (fc00::/7) is classified as a local network range, not a system range
+    func testIPv6UniqueLocalAddressesAreLocalNetwork() {
+        let localIPv6 = VPNRoutingRange.localIPv6NetworkRange
+        let localStrings = localIPv6.map { $0.description }
+
+        XCTAssertTrue(localStrings.contains("fc00::/7"),
+                     "localIPv6NetworkRange should contain ULA range fc00::/7")
+
+        let alwaysExcluded = VPNRoutingRange.alwaysExcludedIPv6Range
+        let alwaysExcludedStrings = alwaysExcluded.map { $0.description }
+
+        XCTAssertFalse(alwaysExcludedStrings.contains("fc00::/7"),
+                      "alwaysExcludedIPv6Range should NOT contain ULA range fc00::/7")
     }
 
     // MARK: - Local Network Range Tests
@@ -164,6 +178,7 @@ final class VPNRoutingRangeTests: XCTestCase {
             ("alwaysExcludedIPv6", VPNRoutingRange.alwaysExcludedIPv6Range),
             ("localNetwork", VPNRoutingRange.localNetworkRange),
             ("localNetworkWithoutDNS", VPNRoutingRange.localNetworkRangeWithoutDNS),
+            ("localIPv6Network", VPNRoutingRange.localIPv6NetworkRange),
             ("publicNetwork", VPNRoutingRange.publicNetworkRange)
         ]
 

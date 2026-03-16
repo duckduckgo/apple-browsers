@@ -44,22 +44,20 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
-#if APPSTORE
-        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
-        NSWorkspace.shared.open(.appStore)
-#elseif SPARKLE
-        if let warning = SupportedOSChecker().supportWarning,
-           case .unsupported = warning {
-
-            // Show not supported info
-            if NSAlert.osNotSupported(warning).runModal() != .cancel {
-                let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
-                NSWorkspace.shared.open(url)
+        if StandardApplicationBuildType().isAppStoreBuild {
+            PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
+            NSWorkspace.shared.open(.appStore)
+        } else if StandardApplicationBuildType().isSparkleBuild {
+            if let warning = SupportedOSChecker().supportWarning,
+               case .unsupported = warning {
+                // Show not supported info
+                if NSAlert.osNotSupported(warning).runModal() != .cancel {
+                    let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
+                    NSWorkspace.shared.open(url)
+                }
             }
+            showAbout(sender)
         }
-
-        showAbout(sender)
-#endif
     }
 
     // MARK: - File
@@ -386,7 +384,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func copyVersion(_ sender: Any?) {
-        NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
+        NSPasteboard.general.copy(AppVersionModel().versionLabelShort)
     }
 
     @objc func openBookmark(_ sender: Any?) {
@@ -1272,6 +1270,16 @@ extension MainViewController {
         }
     }
 
+    @objc func toggleDuckAIChromeButtonVisibility(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
+        duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .duckAI)
+    }
+
+    @objc func toggleDuckAIChromeSidebarButtonVisibility(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
+        duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .sidebar)
+    }
+
     @objc func toggleAutofillShortcut(_ sender: Any) {
         pinningManager.togglePinning(for: .autofill)
     }
@@ -1618,13 +1626,13 @@ extension MainViewController {
     }
 
     @objc func showSaveCredentialsPopover(_ sender: Any?) {
-#if DEBUG || REVIEW
+#if DEBUG
         NotificationCenter.default.post(name: .ShowSaveCredentialsPopover, object: nil)
 #endif
     }
 
     @objc func showCredentialsSavedPopover(_ sender: Any?) {
-#if DEBUG || REVIEW
+#if DEBUG
         NotificationCenter.default.post(name: .ShowCredentialsSavedPopover, object: nil)
 #endif
     }

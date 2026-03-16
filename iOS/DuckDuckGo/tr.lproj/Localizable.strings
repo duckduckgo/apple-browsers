@@ -2694,11 +2694,35 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Daha Fazla Bilgi";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Hayır Teşekkürler";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Atla";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ah, unutmadan...";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Önceki DuckDuckGo senkronizasyonundan yer işaretleri, şifreler ve daha fazlasını geri yüklemek mi istiyorsunuz?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Geri Yükle";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Atla";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Kaldığınız yerden devam edelim";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Gizli. Hızlı. Daha az reklam.";
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "DuckDuckGo Search İşte Bu!";
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Sizi koruyan daha hızlı bir tarayıcıya hazır mısınız?";
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Merhaba.";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Gezinmeye Başla";
@@ -2966,6 +2990,27 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Başka Bir Uygulamada Açılsın mı?";
+
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Geri dön";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Bu sayfayı Safari'de açmak ister misiniz?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Maalesef sayfa yüklenemedi.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Safari'de aç";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "DuckDuckGo'da kal";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Bazı web sitesi özellikleri bu tarayıcıda uyumlu olmayabilir.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Bu site Safari'de açılmak istiyor.";
 
 /* No comment provided by engineer. */
 "REBRANDED" = "YENİDEN MARKALANDI";

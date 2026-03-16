@@ -23,6 +23,11 @@ jobs:
       RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
     - name: Check out the code
       uses: actions/checkout@v4
       with:
@@ -136,10 +141,6 @@ jobs:
           - test-tag: device_info
             exclude-tags: ipad
             device-model: iPhone-16
-          - test-tag: unified_toggle_input
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
           # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
           - test-tag: device_info
             exclude-tags: iphone

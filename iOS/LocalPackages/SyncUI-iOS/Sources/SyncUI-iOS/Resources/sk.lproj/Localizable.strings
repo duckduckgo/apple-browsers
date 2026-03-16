@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Na používanie služby Sync & Backup je potrebné heslo zariadenia.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Automatické obnovenie údajov na tomto zariadení, keď si preinštaluješ aplikáciu.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Ak preinštaluješ aplikáciu DuckDuckGo, opýtame sa ťa, či chceš obnoviť svoje údaje na tomto zariadení.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Obnov reláciu Sync & Backup, aby si obnovil/-a záložky, heslá a ďalšie údaje, alebo pokračuj s novým nastavením.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Obnov Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Pokračovať v nastavovaní";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Tvoja predchádzajúca relácia Sync & Backup je pripravená.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Ak preinštaluješ aplikáciu DuckDuckGo, opýtame sa ťa, či chceš obnoviť svoje údaje na tomto zariadení.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Obnoviť pri preinštalovaní aplikácie";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Obnoviť pri preinštalovaní aplikácie";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Vypnuté";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Zapnuté";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Obnoviť pri preinštalovaní aplikácie";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Späť";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Obnovenie synchronizovaných údajov";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Začnite";
+"recover.synced.data.sheet.button" = "Obnovenie synchronizovaných údajov";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Na obnovenie synchronizovaných údajov budete potrebovať kód na obnovenie, ktorý ste uložili pri prvom nastavení funkcie Sync. Tento kód mohol byť uložený vo formáte PDF v zariadení, ktoré ste pôvodne použili na nastavenie funkcie Sync.";
+"recover.synced.data.sheet.description" = "Budeš potrebovať kód na obnovenie, ktorý si dostal/-a pri nastavovaní Sync & Backup. Možno si ho uložil/-a ako PDF súbor na zariadení, ktoré si použil/-a.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Obnovenie synchronizovaných údajov";
+"recover.synced.data.sheet.title" = "Obnov svoje synchronizované údaje";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Opätovné pripojenie na synchronizáciu záložiek, uložených prihlásení a ďalších zariadení.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Pripája sa...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Obnovenie údajov";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Odstránenie zariadenia";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Odstrániť zariadenie?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Kód obnovy";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Kód obnovenia bol skopírovaný do schránky";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kopírovať kód";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Uložiť ako PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Ak stratíte prístup k zariadeniam, budete tento kód potrebovať na obnovenie synchronizovaných údajov.";
+"save.recovery.code.save.as.pdf.button" = "Stiahnuť ako PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Každý, kto má prístup k tomuto kódu, má prístup k vašim synchronizovaným údajom, takže ich uchovávajte na bezpečnom mieste.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Uložiť kód obnovy";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Uschovaj si tento kód, aby si si mohol/mohla obnoviť údaje, ak stratíš prístup k tomuto zariadeniu – uschovaj si ho v bezpečí.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Jednoducho obnov svoje údaje";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Uložiť obnovovací PDF súbor";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Nastavenia > Synchronizácia a zálohovanie > Synchronizácia s iným zariadením";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Prejdite do Nastavení";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Na používanie služby Sync & Backup je potrebné heslo zariadenia.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Aby ste mohli používať službu Sync & Backup, zabezpečte svoje zariadenie.";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Obnoviť";
 
 /* Sync & Backup Title */
 "sync.title" = "Synchronizácia a zálohovanie";

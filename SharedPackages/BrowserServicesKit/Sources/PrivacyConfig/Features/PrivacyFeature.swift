@@ -89,6 +89,7 @@ public enum PrivacyFeature: String {
     case pageContext
     case webExtensions
     case forceDarkModeOnWebsites
+    case promoQueue
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -116,10 +117,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
     case unifiedURLPredictor
-
-    /// Enable WebKit page load timing performance reporting
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
-    case webKitPerformanceReporting
 
     // Gradual rollout for new Fire dialog replacing the legacy popover
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
@@ -301,6 +298,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case clickActionDelayReductionOptimization
     case pirRollout
     case goToMarket
+    case webViewUserAgent
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -376,9 +374,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
-    /// Enables ATB measurement for Duck.ai usage on iOS
-    case aiChatAtb
-
     /// Controls whether automatic page context attachment defaults to enabled
     case autoAttachContextByDefault
 
@@ -398,6 +393,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
+
+    /// Enables page context feature on iPad
+    case iPadPageContext
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -465,9 +463,11 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case refactorOfSyncPreferences
     case newSyncEntryPoints
     case newDeviceSyncPrompt
+    case syncAutoRestore
     case syncCreditCards
     case syncIdentities
     case aiChatSync
+    case simplifiedSyncSetupExperiment
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -606,7 +606,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
 
     case newSafariFilePicker
-    case dataImportWideEventMeasurement
     case newDataImportExperience
     case dataImportSummarySyncPromotion
 }
@@ -631,7 +630,7 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
-    case embeddedExtension
+    case embeddedExtension = "embedded"
 }
 
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {

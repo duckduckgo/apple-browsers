@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Sync & Backup -ominaisuuden käyttäminen edellyttää laitteen salasanaa.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Palauta laitteen tiedot automaattisesti, jos asennat sovelluksen uudelleen.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Jos asennat DuckDuckGo-sovelluksen uudelleen, kysymme, haluatko palauttaa laitteen tiedot.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Jatka Sync & Backup -istuntoa, niin voit palauttaa kirjanmerkit, salasanat ja muut tiedot, tai jatka uudella määrityksellä.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Jatka Sync & Backup -istuntoa";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Jatka asennusta";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Edellinen Sync & Backup -istuntosi on valmis.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Jos asennat DuckDuckGo-sovelluksen uudelleen, kysymme, haluatko palauttaa laitteen tiedot.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Palauta sovelluksen uudelleenasennuksen yhteydessä";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Palauta sovelluksen uudelleenasennuksen yhteydessä";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Pois";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Päällä";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Palauta sovelluksen uudelleenasennuksen yhteydessä";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Takaisin";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Palauta synkronoidut tiedot";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Aloita";
+"recover.synced.data.sheet.button" = "Palauta synkronoidut tiedot";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Jos haluat palauttaa synkronoidut tietosi, tarvitset palautuskoodin, jonka tallensit ottaessasi synkronoinnin käyttöön. Koodi on voitu tallentaa PDF-tiedostona laitteelle, jolla määritit synkronoinnin.";
+"recover.synced.data.sheet.description" = "Tarvitset palautuskoodin, jonka sait Sync & Backupin käyttöönotossa. Olet ehkä tallentanut sen PDF-tiedostona käyttämällesi laitteelle.";
 
 /* Recover Synced Data Sheet - Title */
 "recover.synced.data.sheet.title" = "Palauta synkronoidut tiedot";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Yhdistetään uudelleen kirjanmerkkien, tallennettujen kirjautumistietojen ja muiden laitteiden synkronointia varten.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Yhdistetään...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Tietojen palauttaminen";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Poista laite";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Poistetaanko laite?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Palautuskoodi";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Palautuskoodi kopioitu leikepöydälle";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kopioi koodi";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Tallenna PDF-tiedostona";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Jos menetät pääsyn laitteillesi, tarvitset tämän koodin palauttaaksesi synkronoidut tiedot.";
+"save.recovery.code.save.as.pdf.button" = "Lataa PDF-muodossa";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Kuka tahansa, jolla on hallussaan tämä koodi, pääsee käsiksi synkronoituihin tietoihisi, joten säilytä koodio turvallisessa paikassa.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Tallenna palautuskoodi";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Tallenna tämä koodi, jotta voit palauttaa tietosi, jos menetät pääsyn tähän laitteeseen. Pidä koodi varmassa tallessa.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Palauta tietosi helposti";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Tallenna palautuksen PDF-tiedosto";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Asetukset > Synkronointi ja varmuuskopiointi > Synkronoi toisen laitteen kanssa";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Siirry kohtaan Asetukset";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Sync & Backup -ominaisuuden käyttäminen edellyttää laitteen salasanaa.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Suojaa laitteesi käyttääksesi Sync & Backup -ominaisuutta";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Palautus";
 
 /* Sync & Backup Title */
 "sync.title" = "Synkronoi ja varmuuskopioi";

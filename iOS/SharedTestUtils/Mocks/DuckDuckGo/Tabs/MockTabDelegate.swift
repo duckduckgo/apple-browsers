@@ -46,7 +46,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tabWillRequestNewTab(_ tab: DuckDuckGo.TabViewController) -> UIKeyModifierFlags? { nil }
 
-    func tabDidRequestNewTab(_ tab: TabViewController, fireTab: Bool) {}
+    func tabDidRequestNewTab(_ tab: TabViewController) {}
     
     func newTab(reuseExisting: Bool) {}
 
@@ -244,8 +244,9 @@ final class MockPrivacyStats: PrivacyStatsProviding {
         return total
     }
 
-    func clearPrivacyStats() async {
+    func clearPrivacyStats() async -> Result<Void, Error> {
         clearCallCount += 1
+        return .success(())
     }
 
     func handleAppTermination() async {

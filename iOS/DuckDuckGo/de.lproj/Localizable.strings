@@ -2694,11 +2694,35 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Mehr erfahren";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Nein, danke";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Überspringen";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oh, bevor ich es vergesse ...";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Möchtest du deine Lesezeichen, Passwörter und mehr aus deiner vorherigen DuckDuckGo-Synchronisierung wiederherstellen?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Meine Sachen wiederherstellen";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Überspringen";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Lass uns dort weitermachen, wo du aufgehört hast";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privat. Schnell. Weniger Werbung.";
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Das ist die DuckDuckGo Search!";
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Bereit für einen schnelleren Browser, der dich schützt?";
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Hallo.";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Mit dem Browsen beginnen";
@@ -2966,6 +2990,27 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "In einer anderen App öffnen?";
+
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Zurück";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Möchtest du diese Seite in Safari öffnen?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Leider konnte die Seite nicht geladen werden.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "In Safari öffnen";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Bleib auf DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Einige Funktionen der Website sind mit diesem Browser möglicherweise nicht kompatibel.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Diese Seite möchte in Safari geöffnet werden.";
 
 /* No comment provided by engineer. */
 "REBRANDED" = "REBRANDED";

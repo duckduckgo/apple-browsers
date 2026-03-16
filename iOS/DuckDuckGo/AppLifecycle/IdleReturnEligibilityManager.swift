@@ -33,12 +33,18 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
     private let featureFlagger: FeatureFlagger
     private let effectiveOptionResolver: AfterInactivityEffectiveOptionResolving
     private let thresholdResolver: IdleReturnThresholdResolver
+    private let tutorialSettings: TutorialSettings
+    private let isStillOnboarding: () -> Bool
 
     init(featureFlagger: FeatureFlagger,
          keyValueStore: ThrowingKeyValueStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil) {
+         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil,
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+         isStillOnboarding: @escaping () -> Bool = { false }) {
         self.featureFlagger = featureFlagger
+        self.tutorialSettings = tutorialSettings
+        self.isStillOnboarding = isStillOnboarding
         let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
         self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage)
         self.thresholdResolver = IdleReturnThresholdResolver(
@@ -49,14 +55,23 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
 
     init(featureFlagger: FeatureFlagger,
          effectiveOptionResolver: AfterInactivityEffectiveOptionResolving,
-         thresholdResolver: IdleReturnThresholdResolver) {
+         thresholdResolver: IdleReturnThresholdResolver,
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+         isStillOnboarding: @escaping () -> Bool = { false }) {
         self.featureFlagger = featureFlagger
         self.effectiveOptionResolver = effectiveOptionResolver
         self.thresholdResolver = thresholdResolver
+        self.tutorialSettings = tutorialSettings
+        self.isStillOnboarding = isStillOnboarding
     }
 
+    /// Gates NTP-after-idle on linear onboarding completion and contextual
+    /// onboarding not actively showing NTP dialogs.
     func isEligibleForNTPAfterIdle() -> Bool {
-        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) && effectiveAfterInactivityOption() == .newTab
+        tutorialSettings.hasSeenOnboarding
+            && !isStillOnboarding()
+            && featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+            && effectiveAfterInactivityOption() == .newTab
     }
 
     func effectiveAfterInactivityOption() -> AfterInactivityOption {

@@ -72,7 +72,8 @@ final class NewTabPageCoordinator {
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
         syncService: DDGSyncing?,
         pinningManager: PinningManager,
-        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
+        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) },
+        promoService: PromoService? = nil
     ) {
 
         actionsManager = NewTabPageActionsManager(
@@ -104,7 +105,8 @@ final class NewTabPageCoordinator {
             subscriptionCardPersistor: subscriptionCardPersistor,
             duckPlayerPreferences: duckPlayerPreferences,
             syncService: syncService,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            promoService: promoService
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,
@@ -114,7 +116,6 @@ final class NewTabPageCoordinator {
         )
 
         notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
-            .prefix(1)
             .sink { [weak self] _ in
                 self?.newTabPageShownPixelSender.firePixel()
             }

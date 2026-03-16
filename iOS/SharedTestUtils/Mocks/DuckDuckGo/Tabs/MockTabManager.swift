@@ -23,6 +23,7 @@ import Foundation
 @MainActor
 class MockTabManager: TabManaging {
     var currentTabsModel: TabsModelManaging = TabsModel(desktop: false)
+    var currentBrowsingMode: DuckDuckGo.BrowsingMode = .normal
     
     private(set) var prepareAllTabsExceptCurrentCalled = false
     private(set) var prepareCurrentTabCalled = false

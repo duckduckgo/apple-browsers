@@ -1407,6 +1407,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
+        fireAIChatDailyPixel()
 
         fireAutoconsentDailyPixel()
         fireThemeDailyPixel()
@@ -1453,6 +1454,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.fire(GeneralPixel.dailyFireWindowConfigurationFireAnimationEnabled(
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
         ), frequency: .daily, doNotEnforcePrefix: true)
+    }
+
+    private func fireAIChatDailyPixel() {
+        let pixel: AIChatPixel = aiChatPreferences.isAIFeaturesEnabled ? .aiChatIsEnabled : .aiChatIsDisabled
+        PixelKit.fire(pixel, frequency: .daily)
     }
 
     private func fireAutoconsentDailyPixel() {

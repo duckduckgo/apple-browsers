@@ -160,5 +160,19 @@
                 "enum": ["address-bar-button", "sidebar-close-button", "context-menu", "tabbar-button"]
             }
         ]
+    },
+    "m_mac_aichat_is_enabled": {
+        "description": "Daily pixel fired when AI Chat features are enabled",
+        "owners": ["Bunn"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_is_disabled": {
+        "description": "Daily pixel fired when AI Chat features are disabled",
+        "owners": ["Bunn"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

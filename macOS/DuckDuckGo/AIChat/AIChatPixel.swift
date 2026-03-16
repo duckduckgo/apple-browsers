@@ -247,6 +247,14 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User completes onboarding with the Duck.ai toggle disabled
     case aiChatOnboardingFinishedToggleOff
 
+    // MARK: - Daily
+
+    /// Event Trigger: Fires daily when the app becomes active and AI Chat features are enabled
+    case aiChatIsEnabled
+
+    /// Event Trigger: Fires daily when the app becomes active and AI Chat features are disabled
+    case aiChatIsDisabled
+
     // MARK: -
 
     var name: String {
@@ -391,6 +399,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_start_new_conversation"
         case .aiChatMetricSentPromptOngoingChat:
             return "aichat_sent_prompt_ongoing_chat"
+        case .aiChatIsEnabled:
+            return "aichat_is_enabled"
+        case .aiChatIsDisabled:
+            return "aichat_is_disabled"
         }
     }
 
@@ -451,7 +463,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
-                .aiChatTermsAcceptedDuplicateSyncOn:
+                .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatIsEnabled,
+                .aiChatIsDisabled:
             return nil
         case .aiChatAddressBarSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
@@ -551,7 +565,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
-                .aiChatTermsAcceptedDuplicateSyncOn:
+                .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatIsEnabled,
+                .aiChatIsDisabled:
             return [.pixelSource]
         }
     }

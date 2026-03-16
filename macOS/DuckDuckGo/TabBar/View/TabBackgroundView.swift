@@ -128,13 +128,7 @@ private extension TabBackgroundView {
     }
 
     func layoutOverlay() {
-        let insets = Metrics.overlayInsets
-        let width = bounds.width - insets.left - insets.right
-        let height = bounds.height - insets.top - insets.bottom
-        let originX = bounds.origin.x + insets.left
-        let originY = bounds.origin.y + insets.top
-
-        overlayView.frame = NSRect(x: originX, y: originY, width: width, height: height)
+        overlayView.frame = bounds.inset(by: Metrics.overlayInsets)
     }
 }
 

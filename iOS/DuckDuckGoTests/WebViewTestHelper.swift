@@ -41,42 +41,6 @@ class MockNavigationDelegate: NSObject, WKNavigationDelegate {
     }
 }
 
-class MockSurrogatesUserScriptDelegate: NSObject, SurrogatesUserScriptDelegate {
-
-    var shouldProcessTrackers = true
-
-    var onSurrogateDetected: ((DetectedRequest, String) -> Void)?
-    var detectedSurrogates = Set<DetectedRequest>()
-
-    func reset() {
-        detectedSurrogates.removeAll()
-    }
-
-    func surrogatesUserScriptShouldProcessTrackers(_ script: SurrogatesUserScript) -> Bool {
-        return shouldProcessTrackers
-    }
-    
-    func surrogatesUserScriptShouldProcessCTLTrackers(_ script: SurrogatesUserScript) -> Bool {
-        false
-    }
-
-    func surrogatesUserScript(_ script: SurrogatesUserScript,
-                              detectedTracker tracker: DetectedRequest,
-                              withSurrogate host: String) {
-        detectedSurrogates.insert(tracker)
-        onSurrogateDetected?(tracker, host)
-    }
-}
-
-class CustomSurrogatesUserScript: SurrogatesUserScript {
-
-    var onSourceInjection: (String) -> String = { $0 }
-
-    override var source: String {
-        return onSourceInjection(super.source)
-    }
-}
-
 class WebKitTestHelper {
 
     static func preparePrivacyConfig(locallyUnprotected: [String],

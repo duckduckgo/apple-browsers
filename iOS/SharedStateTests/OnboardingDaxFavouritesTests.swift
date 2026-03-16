@@ -221,7 +221,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
 
     func testWhenHasSeenOnboardingIntroIsCalled_AndHasSeenOnboardingSettingIsTrue_ThenReturnFalse() throws {
         // GIVEN
-        tutorialSettingsMock.hasSeenOnboarding = true
+        sut.markOnboardingSeen()
 
         // WHEN
         let result = sut.needsToShowOnboardingIntro()

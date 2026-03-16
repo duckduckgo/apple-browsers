@@ -55,6 +55,18 @@ public struct DetectedRequest: Encodable {
         self.pageUrl = pageUrl
     }
 
+    public init(url: String, eTLDplus1: String?, ownerName: String?, entityName: String?,
+                category: String?, prevalence: Double?, state: BlockingState, pageUrl: String) {
+        self.url = url
+        self.eTLDplus1 = eTLDplus1
+        self.state = state
+        self.ownerName = ownerName
+        self.entityName = entityName
+        self.category = category
+        self.prevalence = prevalence
+        self.pageUrl = pageUrl
+    }
+
     public var domain: String? {
         guard let escapedStringURL = url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
         return URL(string: escapedStringURL)?.host

@@ -47,14 +47,7 @@ final class TabBackgroundView: NSView {
 
     // MARK: - State
 
-    private var state: TabBackgroundState = .idle {
-        didSet {
-            guard state != oldValue else { return }
-
-            applyStateChange(oldValue, entering: false)
-            applyStateChange(state, entering: true)
-        }
-    }
+    private var state: TabBackgroundState = .idle
 
     // MARK: - Public Properties
 
@@ -147,8 +140,17 @@ private extension TabBackgroundView {
 
 extension TabBackgroundView {
 
-    func performAnimationIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool) {
-        state = TabBackgroundState.nextState(isMouseOver: isMouseOver, isSelected: isSelected, isDragged: isDragged)
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool) {
+        let newState = TabBackgroundState.nextState(isMouseOver: isMouseOver, isSelected: isSelected, isDragged: isDragged)
+
+        guard state != newState else {
+            return
+        }
+
+        state = newState
+
+        applyStateChange(state, entering: false)
+        applyStateChange(newState, entering: true)
     }
 
     private func applyStateChange(_ state: TabBackgroundState, entering: Bool) {
@@ -167,9 +169,9 @@ extension TabBackgroundView {
 
 // MARK: - Animations
 
-extension TabBackgroundView {
+private extension TabBackgroundView {
 
-    private func performOverlayAnimation(visible: Bool) {
+    func performOverlayAnimation(visible: Bool) {
         guard let layer = overlayView.layer else {
             return
         }
@@ -183,7 +185,7 @@ extension TabBackgroundView {
         layer.opacity = toAlpha
     }
 
-    private func performBackgroundAnimation(visible: Bool) {
+    func performBackgroundAnimation(visible: Bool) {
         guard let layer = backgroundShapeView.layer else {
             return
         }

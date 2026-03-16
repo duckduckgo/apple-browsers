@@ -18,6 +18,8 @@
 
 import AppKit
 import Foundation
+import PrivacyConfig
+import FeatureFlags
 
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }
@@ -79,5 +81,41 @@ final class NewlineTabStyleProvider: TabStyleProviding {
 
     init(palette: ThemeColors) {
         self.palette = palette
+    }
+}
+
+final class TabAnimationsStyleProvider: TabStyleProviding {
+    private let palette: ThemeColors
+
+    var separatorColor: NSColor { palette.surfaceDecorationTertiary }
+    var selectedTabColor: NSColor { palette.surfacePrimary }
+    var hoverTabColor: NSColor { palette.controlsFillPrimary }
+
+    let separatorHeight: CGFloat = 16
+    let tabsScrollViewHeight: CGFloat = 38
+    let pinnedTabsContainerViewHeight: CGFloat = 38
+    let standardTabHeight: CGFloat = 38
+    let pinnedTabWidth: CGFloat = 38
+    let pinnedTabHeight: CGFloat = 38
+    let shouldShowSShapedTab = true
+    let isRoundedBackgroundPresentOnHover = true
+    let tabSpacing: CGFloat = 0
+    let applyTabShadow: Bool = false
+    let standardTabCornerRadius: CGFloat = 10.0
+    let tabButtonActionsCornerRadius: CGFloat = 5
+
+    init(palette: ThemeColors) {
+        self.palette = palette
+    }
+}
+
+struct TabStyleProvidingFactory {
+
+    static func buildProvider(palette: ThemeColors, featureFlagger: FeatureFlagger) -> TabStyleProviding {
+        if featureFlagger.isFeatureOn(.tabAnimations) {
+            return TabAnimationsStyleProvider(palette: palette)
+        }
+
+        return NewlineTabStyleProvider(palette: palette)
     }
 }

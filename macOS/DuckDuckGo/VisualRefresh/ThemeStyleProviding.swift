@@ -92,7 +92,7 @@ struct ThemeStyle: ThemeStyleProviding {
             fireWindowGraphic: .burnerWindowGraphicNew,
             areNavigationBarCornersRound: true,
             addressBarStyleProvider: CurrentAddressBarStyleProvider(featureFlagger: featureFlagger),
-            tabStyleProvider: NewlineTabStyleProvider(palette: palette),
+            tabStyleProvider: TabStyleProvidingFactory.buildProvider(palette: palette, featureFlagger: featureFlagger),
             colorsProvider: NewColorsProviding(palette: palette),
             iconsProvider: CurrentIconsProvider(),
             fireButtonSize: 32,

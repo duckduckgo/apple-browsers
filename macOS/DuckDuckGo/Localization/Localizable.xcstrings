@@ -58512,6 +58512,18 @@
         }
       }
     },
+    "new-right-tab.tab" : {
+      "comment" : "Menu item. Adds a new Tab to the Right of the Active one",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New Tab to the Right"
+          }
+        }
+      }
+    },
     "new.burner.window.menu.item" : {
       "comment" : "Menu item title",
       "extractionState" : "extracted_with_value",

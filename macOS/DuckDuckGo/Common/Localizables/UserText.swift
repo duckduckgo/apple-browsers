@@ -342,6 +342,7 @@ struct UserText {
 
     // MARK: -
 
+    static let newTabToTheRight = NSLocalizedString("new-right-tab.tab", value: "New Tab to the Right", comment: "Menu item. Adds a new Tab to the Right of the Active one")
     static let duplicateTab = NSLocalizedString("duplicate.tab", value: "Duplicate Tab", comment: "Menu item. Duplicate as a verb")
     static let pinTab = NSLocalizedString("pin.tab", value: "Pin Tab", comment: "Menu item. Pin as a verb")
     static let unpinTab = NSLocalizedString("unpin.tab", value: "Unpin Tab", comment: "Menu item. Unpin as a verb")

@@ -91,6 +91,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemCloseOtherAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseToTheLeftAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseToTheRightAction(_: TabBarViewItem)
+    @MainActor func tabBarViewItemNewToTheRightAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemDuplicateAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemPinAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemBookmarkThisPageAction(_: TabBarViewItem)
@@ -847,6 +848,10 @@ final class TabBarViewItem: NSCollectionViewItem {
         super.mouseDown(with: event)
     }
 
+    @objc private func newToTheRightAction(_ sender: NSButton) {
+        delegate?.tabBarViewItemNewToTheRightAction(self)
+    }
+
     @objc private func duplicateAction(_ sender: NSButton) {
         delegate?.tabBarViewItemDuplicateAction(self)
     }
@@ -1324,7 +1329,11 @@ extension TabBarViewItem: NSMenuDelegate {
         let areThereOtherTabs = otherItemsState.hasItemsToTheLeft || otherItemsState.hasItemsToTheRight
 
         // Menu Items
-        // Duplicate, Pin, Mute Section
+        // New, Duplicate, Pin, Mute Section
+        if featureFlagger.isFeatureOn(.tabAnimations) {
+            addNewToTheRightMenuItem(to: menu)
+        }
+
         addDuplicateMenuItem(to: menu)
         if !isBurner {
             addPinMenuItem(to: menu)
@@ -1373,6 +1382,12 @@ extension TabBarViewItem: NSMenuDelegate {
         let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitleMultipleTimes, action: #selector(crashMultipleTimesMenuItemAction(_:)), keyEquivalent: "")
         crashMenuItem.target = self
         menu.addItem(crashMenuItem)
+    }
+
+    private func addNewToTheRightMenuItem(to menu: NSMenu) {
+        let newTabMenuItem = NSMenuItem(title: UserText.newTabToTheRight, action: #selector(newToTheRightAction(_:)), keyEquivalent: "")
+        newTabMenuItem.target = self
+        menu.addItem(newTabMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
@@ -1842,6 +1857,7 @@ extension TabBarViewItem {
         func tabBarViewItemCloseOtherAction(_: TabBarViewItem) {}
         func tabBarViewItemCloseToTheLeftAction(_: TabBarViewItem) {}
         func tabBarViewItemCloseToTheRightAction(_: TabBarViewItem) {}
+        func tabBarViewItemNewToTheRightAction(_: TabBarViewItem) {}
         func tabBarViewItemDuplicateAction(_: TabBarViewItem) {}
         func tabBarViewItemPinAction(_: TabBarViewItem) {}
         func tabBarViewItemBookmarkThisPageAction(_: TabBarViewItem) {}

@@ -156,7 +156,7 @@ final class TabBarItemCellView: NSView {
     var themeUpdateCancellable: AnyCancellable?
 
     private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
-    private lazy var isTabAnimationsEnabled: Bool = featureFlagger.isFeatureOn(.tabAnimations)
+    private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
     fileprivate lazy var backgroundView = TabBackgroundView()
     fileprivate lazy var faviconView = TabFaviconView()
@@ -303,7 +303,7 @@ final class TabBarItemCellView: NSView {
             .layerMaxXMaxYCorner
         ]
 
-        if isTabAnimationsEnabled {
+        if displaysTabsAnimations {
             addSubview(backgroundView)
         } else if theme.tabStyleProvider.shouldShowSShapedTab {
             addSubview(leftRampView)
@@ -313,7 +313,7 @@ final class TabBarItemCellView: NSView {
         }
 
         addSubview(mouseOverView)
-        if !isTabAnimationsEnabled, theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+        if !displaysTabsAnimations, theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             roundedBackgroundColorView.cornerRadius = 6
             addSubview(roundedBackgroundColorView)
         }
@@ -379,7 +379,7 @@ final class TabBarItemCellView: NSView {
                                                       height: height)
         }
 
-        if isTabAnimationsEnabled, backgroundView.frame != bounds {
+        if displaysTabsAnimations, backgroundView.frame != bounds {
             withoutAnimation {
                 backgroundView.frame = bounds
             }
@@ -569,7 +569,7 @@ extension TabBarItemCellView: ThemeUpdateListening {
         let tabStyleProvider = theme.tabStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        if isTabAnimationsEnabled {
+        if displaysTabsAnimations {
             backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundView.overlayColor = tabStyleProvider.hoverTabColor
         } else {
@@ -733,6 +733,8 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var activePermissionIconTimer: Timer?
     private var activePermissionTypes: [PermissionType] = []
     private var currentActivePermissionIndex = 0
+
+    private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
@@ -1049,7 +1051,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
 
         withoutAnimation {
-            if featureFlagger.isFeatureOn(.tabAnimations) {
+            if displaysTabsAnimations {
                 cell.mouseOverView.backgroundColor = nil
                 cell.mouseOverView.mouseOverColor = nil
 
@@ -1070,7 +1072,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
             }
 
-            if !featureFlagger.isFeatureOn(.tabAnimations) {
+            if !displaysTabsAnimations {
                 if theme.tabStyleProvider.shouldShowSShapedTab {
                     cell.rightRampView.isHidden = !(isSelected || isDragged)
                     cell.leftRampView.isHidden = !(isSelected || isDragged)

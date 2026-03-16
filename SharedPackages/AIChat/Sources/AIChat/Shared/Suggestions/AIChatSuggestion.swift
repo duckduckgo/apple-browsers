@@ -49,11 +49,17 @@ public struct AIChatSuggestion: Identifiable, Equatable, Hashable {
         firstUserMessageContent: String? = nil
     ) {
         self.id = id
-        self.title = title
+        self.title = Self.sanitize(title)
         self.isPinned = isPinned
         self.chatId = chatId
         self.timestamp = timestamp
         self.firstUserMessageContent = firstUserMessageContent
+    }
+
+    /// Collapses any runs of whitespace (including newlines) into a single space and trims.
+    static func sanitize(_ text: String) -> String {
+        text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
     }
 }
 

@@ -409,6 +409,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let startupProfiler: StartupProfiler
     private var startupMetricsReporter: PerformanceMetricsReporter?
 
+    let displaysTabsAnimations: Bool
+
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
 
@@ -575,6 +577,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        displaysTabsAnimations = featureFlagger.isFeatureOn(.tabAnimations)
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
@@ -850,6 +854,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
                                           pixelFiring: PixelKit.shared,
+                                          wideEventManaging: wideEvent,
                                           aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
 
         var appContentBlocking: AppContentBlocking?
@@ -2018,7 +2023,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager,
-                                                aiChatSyncCleaner: aiChatSyncCleaner)
+                                                aiChatSyncCleaner: aiChatSyncCleaner,
+                                                wideEvent: wideEvent)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

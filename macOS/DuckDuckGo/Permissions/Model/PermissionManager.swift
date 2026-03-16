@@ -34,8 +34,8 @@ protocol PermissionManagerProtocol: AnyObject {
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
 
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void)
-    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
+    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
 
     /// Removes a specific permission for a domain (clears from storage)
     func removePermission(forDomain domain: String, permissionType: PermissionType)
@@ -128,7 +128,7 @@ final class PermissionManager: PermissionManagerProtocol {
         self.set(storedPermission, forDomain: domain, permissionType: permissionType)
     }
 
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void) {
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
         permissions = permissions.filter {
@@ -136,12 +136,16 @@ final class PermissionManager: PermissionManagerProtocol {
         }
         store.clear(except: permissions.values.reduce(into: [StoredPermission](), {
             $0.append(contentsOf: $1.values)
-        }), completionHandler: { _ in
-            completion()
+        }), completionHandler: { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
+            }
         })
     }
 
-    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void) {
+    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
         permissions = permissions.filter { permission in
@@ -150,8 +154,12 @@ final class PermissionManager: PermissionManagerProtocol {
         }
         store.clear(except: permissions.values.reduce(into: [StoredPermission](), {
             $0.append(contentsOf: $1.values)
-        }), completionHandler: { _ in
-            completion()
+        }), completionHandler: { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
+            }
         })
     }
 

@@ -233,6 +233,7 @@ final class TabBarItemCellView: NSView {
         return view
     }()
 
+    /// Deprecated: Always hidden when `tabAnimations` is enabled
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
     /// Deprecated: Replaced by `TabBackgroundView`
@@ -344,7 +345,10 @@ final class TabBarItemCellView: NSView {
         addSubview(titleView)
         addSubview(permissionButton)
         addSubview(closeButton)
-        addSubview(rightSeparatorView)
+
+        if !isTabAnimationsEnabled {
+            addSubview(rightSeparatorView)
+        }
 
         subscribeToThemeChanges()
         applyThemeStyle()
@@ -411,8 +415,10 @@ final class TabBarItemCellView: NSView {
             layoutForPinnedMode()
         }
 
-        let separatorHeight = theme.tabStyleProvider.separatorHeight
-        rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (separatorHeight / 2), width: 1, height: separatorHeight)
+        if !isTabAnimationsEnabled {
+            let separatorHeight = theme.tabStyleProvider.separatorHeight
+            rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (separatorHeight / 2), width: 1, height: separatorHeight)
+        }
     }
 
     private func layoutForNormalMode() {
@@ -569,9 +575,8 @@ extension TabBarItemCellView: ThemeUpdateListening {
             leftRampView.rampColor = colorsProvider.navigationBackgroundColor
             rightRampView.rampColor = colorsProvider.navigationBackgroundColor
             mouseOverView.mouseOverColor = tabStyleProvider.hoverTabColor
+            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
         }
-
-        rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
 }
 // MARK: NSAccessibilityRadioButton
@@ -1222,6 +1227,11 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func updateSeparatorView() {
+        if featureFlagger.isFeatureOn(.tabAnimations) {
+            cell.rightSeparatorView.isHidden = true
+            return
+        }
+
         let shouldHideForHover = theme.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
         let rightItemIsHighlighted = delegate?.tabBarViewItemShouldHideSeparator(self) ?? false
 

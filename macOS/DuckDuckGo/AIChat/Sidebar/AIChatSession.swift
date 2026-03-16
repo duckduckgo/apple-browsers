@@ -49,15 +49,6 @@ final class AIChatSession {
             .eraseToAnyPublisher()
     }
 
-    /// Publishes when the frontend consumes page context (via `getAIChatPageContext`),
-    /// indicating the context has been incorporated into an active chat.
-    var pageContextConsumedPublisher: AnyPublisher<Void, Never> {
-        chatViewControllerSubject
-            .compactMap { $0?.pageContextConsumedPublisher }
-            .switchToLatest()
-            .eraseToAnyPublisher()
-    }
-
     /// The live AI Chat URL (reads from the VC if alive, falls back to persisted state).
     var currentAIChatURL: URL {
         chatViewController?.currentAIChatURL ?? state.currentAIChatURL

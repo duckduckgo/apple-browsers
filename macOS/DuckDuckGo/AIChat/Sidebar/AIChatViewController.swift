@@ -125,10 +125,6 @@ final class AIChatViewController: NSViewController {
         aiTab.aiChat?.pageContextRequestedPublisher
     }
 
-    public var pageContextConsumedPublisher: AnyPublisher<Void, Never>? {
-        aiTab.aiChat?.pageContextConsumedPublisher
-    }
-
     public var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>? {
         aiTab.aiChat?.chatRestorationDataPublisher
     }

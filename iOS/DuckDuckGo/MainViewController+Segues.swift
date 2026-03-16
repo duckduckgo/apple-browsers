@@ -49,7 +49,7 @@ extension MainViewController {
         }, deepLinkTarget: .customizeToolbarButton)
     }
 
-    func segueToDaxOnboarding() {
+    func segueToDaxOnboarding(completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
@@ -70,7 +70,7 @@ extension MainViewController {
         }
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
-        present(controller, animated: false)
+        present(controller, animated: false, completion: completion)
     }
 
     func segueToHomeRow() {

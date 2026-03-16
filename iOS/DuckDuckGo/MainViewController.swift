@@ -51,6 +51,22 @@ import UserScript
 import PrivacyConfig
 import WebExtensions
 
+struct StartupOnboardingDecision {
+    let shouldShowOnboarding: Bool
+
+    init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus, tutorialSettings: TutorialSettings) {
+        switch onboardingStatus {
+        case .notOverridden:
+            shouldShowOnboarding = !tutorialSettings.hasSeenOnboarding
+        case let .overridden(.developer(completed: isOnboardingCompleted)):
+            shouldShowOnboarding = !isOnboardingCompleted
+        case let .overridden(.uiTests(completed: isOnboardingCompleted)):
+            tutorialSettings.hasSeenOnboarding = isOnboardingCompleted
+            shouldShowOnboarding = !tutorialSettings.hasSeenOnboarding
+        }
+    }
+}
+
 class MainViewController: UIViewController {
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -119,6 +135,13 @@ class MainViewController: UIViewController {
 
     var autoClearInProgress = false
     var autoClearShouldRefreshUIAfterClear = true
+    private var hasLoadedInitialView = false
+    private var isStartupOnboardingPending = false
+    private var hasPresentedStartupOnboarding = false
+    private lazy var startupOnboardingCover = StartupOnboardingCover(
+        parentViewController: self,
+        fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
+    )
 
     let privacyConfigurationManager: PrivacyConfigurationManaging
 
@@ -519,7 +542,7 @@ class MainViewController: UIViewController {
         initTabButton()
         initBookmarksButton()
         setUpUnifiedToggleInputIfNeeded()
-        loadInitialView()
+        configureStartupPresentation()
         previewsSource.prepare()
         addLaunchTabNotificationObserver()
         subscribeToEmailProtectionStatusNotifications()
@@ -558,6 +581,21 @@ class MainViewController: UIViewController {
         applyCustomizationState()
 
         mobileCustomization.delegate = self
+    }
+
+    private func configureStartupPresentation() {
+        let startupOnboardingDecision = StartupOnboardingDecision(
+            onboardingStatus: LaunchOptionsHandler().onboardingStatus,
+            tutorialSettings: tutorialSettings
+        )
+
+        isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
+
+        if isStartupOnboardingPending {
+            startupOnboardingCover.attach()
+        }
+
+        loadInitialViewIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -764,22 +802,12 @@ class MainViewController: UIViewController {
     }
     
     func startOnboardingFlowIfNotSeenBefore() {
-        // Check if we override onboarding flag and show/hide onboarding accordingly
-        // If onboarding is not overridden, show onboarding only if users have not seen it.
-        let showOnboarding: Bool
-        switch LaunchOptionsHandler().onboardingStatus {
-        case .notOverridden:
-            showOnboarding = !tutorialSettings.hasSeenOnboarding
-        case let .overridden(.developer(isOnboardingCompleted)):
-            showOnboarding = !isOnboardingCompleted
-        case let .overridden(.uiTests(isOnboardingCompleted)):
-            // Set onboarding settings so state is persisted across app re-launches during UI Tests
-            tutorialSettings.hasSeenOnboarding = isOnboardingCompleted
-            showOnboarding = !tutorialSettings.hasSeenOnboarding
+        guard isStartupOnboardingPending, !hasPresentedStartupOnboarding else { return }
+        hasPresentedStartupOnboarding = true
+        startupOnboardingCover.bringToFront()
+        segueToDaxOnboarding { [weak self] in
+            self?.startupOnboardingCover.detach()
         }
-
-        guard showOnboarding else { return }
-        segueToDaxOnboarding()
     }
 
     func presentSyncRecoveryPromptIfNeeded() {
@@ -787,7 +815,7 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger,
             syncService: syncService,
             keyValueStore: keyValueStore,
-            isOnboardingComplete: tutorialSettings.hasSeenOnboarding
+            isOnboardingComplete: !needsToShowOnboardingIntro()
         )
 
         guard let syncRecoveryPromptService = syncRecoveryPromptService else { return }
@@ -1225,7 +1253,7 @@ class MainViewController: UIViewController {
         if let presentedViewController {
             return presentedViewController.supportedInterfaceOrientations
         }
-        return tutorialSettings.hasSeenOnboarding ? [.allButUpsideDown] : [.portrait]
+        return needsToShowOnboardingIntro() ? [.portrait] : [.allButUpsideDown]
     }
 
     override var shouldAutorotate: Bool {
@@ -1263,6 +1291,12 @@ class MainViewController: UIViewController {
         } else {
             attachHomeScreen()
         }
+    }
+
+    private func loadInitialViewIfNeeded() {
+        guard !hasLoadedInitialView else { return }
+        hasLoadedInitialView = true
+        loadInitialView()
     }
 
     func handlePressEvent(event: UIPressesEvent?) {
@@ -4499,17 +4533,19 @@ extension MainViewController: OnboardingDelegate {
         
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+
         controller.modalTransitionStyle = .crossDissolve
         controller.dismiss(animated: true)
         newTabPageViewController?.onboardingCompleted()
     }
     
     func markOnboardingSeen() {
+        isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
     }
 
     func needsToShowOnboardingIntro() -> Bool {
-        !tutorialSettings.hasSeenOnboarding
+        isStartupOnboardingPending || !tutorialSettings.hasSeenOnboarding
     }
 
 }

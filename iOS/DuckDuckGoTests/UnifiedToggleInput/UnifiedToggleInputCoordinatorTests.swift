@@ -897,6 +897,77 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isModelChipHidden)
     }
 
+    // MARK: - Stale Model Selection
+
+    func test_persistedModelId_clearedWhenModelRemoved() {
+        mockPreferences.selectedModelId = "removed-model"
+        mockPreferences.selectedModelShortName = "Removed"
+        sut.models = [makeModel(id: "gpt-5", access: true), makeModel(id: "claude", access: true)]
+
+        XCTAssertEqual(sut.persistedModelId, "gpt-5")
+    }
+
+    func test_persistedModelId_clearedWhenAccessLost() {
+        mockPreferences.selectedModelId = "premium"
+        sut.models = [makeModel(id: "premium", access: false), makeModel(id: "free", access: true)]
+
+        XCTAssertEqual(sut.persistedModelId, "free")
+    }
+
+    func test_persistedModelId_noAccessibleModels_returnsEmptyString() {
+        mockPreferences.selectedModelId = "locked"
+        sut.models = [makeModel(id: "locked", access: false)]
+
+        XCTAssertEqual(sut.persistedModelId, "")
+    }
+
+    // MARK: - Chip Label Persistence
+
+    func test_updateSelectedModel_persistsShortName() {
+        sut.models = [AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)]
+        sut.updateSelectedModel("gpt-5")
+
+        XCTAssertEqual(mockPreferences.selectedModelShortName, "G5")
+    }
+
+    func test_resolveModels_emptyAccessTier_fallsBackToEntityHasAccess() {
+        let remote = AIChatRemoteModel(
+            id: "gpt-4o-mini",
+            name: "GPT-4o mini",
+            provider: "openai",
+            entityHasAccess: true,
+            supportsImageUpload: false,
+            supportedTools: [],
+            accessTier: []
+        )
+        let models = UnifiedToggleInputCoordinator.resolveModels(from: [remote], userTier: .free)
+
+        XCTAssertTrue(models[0].entityHasAccess)
+    }
+
+    func test_resolveModels_nonEmptyAccessTier_usesLocalResolution() {
+        let remote = AIChatRemoteModel(
+            id: "gpt-5",
+            name: "GPT-5",
+            provider: "openai",
+            entityHasAccess: true,
+            supportsImageUpload: false,
+            supportedTools: [],
+            accessTier: ["plus", "pro"]
+        )
+        let models = UnifiedToggleInputCoordinator.resolveModels(from: [remote], userTier: .free)
+
+        XCTAssertFalse(models[0].entityHasAccess)
+    }
+
+    func test_chipLabel_shownFromCacheBeforeFetch() {
+        mockPreferences.selectedModelShortName = "Cached Model"
+        let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
+
+        XCTAssertEqual(coordinator.viewController.modelName, "Cached Model")
+        XCTAssertNil(coordinator.viewController.modelPickerMenu)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
@@ -923,4 +994,5 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
+    var selectedModelShortName: String?
 }

@@ -127,6 +127,7 @@ final class UnifiedToggleInputView: UIView {
     /// so that sibling views (e.g. the content container) animate in sync.
     /// The owning view controller sets this.
     var onNeedsHierarchyLayout: (() -> Void)?
+    var onAttachmentsLayoutDidChange: (() -> Void)?
 
     var isVoiceSearchAvailable = false {
         didSet { handler.isVoiceSearchEnabled = isVoiceSearchAvailable }
@@ -545,6 +546,7 @@ private extension UnifiedToggleInputView {
             updateAttachmentsStripLayout()
             layoutIfNeeded()
             onNeedsHierarchyLayout?()
+            onAttachmentsLayoutDidChange?()
         }
         attachmentsStrip.onAttachmentRemoved = { [weak self] id in
             self?.onAttachmentRemoved?(id)

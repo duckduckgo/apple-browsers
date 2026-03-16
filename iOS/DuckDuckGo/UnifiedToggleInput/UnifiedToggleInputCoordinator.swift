@@ -706,17 +706,14 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         guard !viewController.isAttachmentsFull else { return }
         let attachment = AIChatImageAttachment(image: image, fileName: fileName)
         viewController.addAttachment(attachment)
-        attachmentsChangeSubject.send()
     }
 
     func removeAttachment(id: UUID) {
         viewController.removeAttachment(id: id)
-        attachmentsChangeSubject.send()
     }
 
     func clearAttachments() {
         viewController.removeAllAttachments()
-        attachmentsChangeSubject.send()
     }
 
     func updateImageButtonVisibility() {
@@ -816,6 +813,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID) {
         removeAttachment(id: id)
+    }
+
+    func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {
+        attachmentsChangeSubject.send()
     }
 }
 

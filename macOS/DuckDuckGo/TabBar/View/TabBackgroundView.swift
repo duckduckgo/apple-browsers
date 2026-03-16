@@ -27,7 +27,9 @@ final class TabBackgroundView: NSView {
         static let duration: TimeInterval = 0.25
         static let opacityVisible: Float = 1
         static let opacityHidden: Float = 0
+        static let overlayKey = "overlayAnimation"
         static let overlayOpacityVisible: Float = 0.8
+        static let shapeKey = "shapeAnimation"
         static let slideScaleDown: CGFloat = 0.92
         static let slideScaleFull: CGFloat = 1
         static let slideOffsetY: CGFloat = -8
@@ -140,25 +142,23 @@ private extension TabBackgroundView {
 
 extension TabBackgroundView {
 
-    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool) {
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool, animated: Bool = true) {
         let newState = TabBackgroundState.nextState(isMouseOver: isMouseOver, isSelected: isSelected, isDragged: isDragged)
-
         guard state != newState else {
             return
         }
 
+        applyStateChange(state, entering: false, animated: animated)
+        applyStateChange(newState, entering: true, animated: animated)
         state = newState
-
-        applyStateChange(state, entering: false)
-        applyStateChange(newState, entering: true)
     }
 
-    private func applyStateChange(_ state: TabBackgroundState, entering: Bool) {
+    private func applyStateChange(_ state: TabBackgroundState, entering: Bool, animated: Bool) {
         switch state {
         case .highlighted:
-            performOverlayAnimation(visible: entering)
+            refreshOverlayVisibility(entering, animated: animated)
         case .selected:
-            performBackgroundAnimation(visible: entering)
+            refreshBackgroundVisibility(entering, animated: animated)
         case .dragged:
             backgroundShapeView.isDragged = entering
         case .idle:
@@ -171,27 +171,41 @@ extension TabBackgroundView {
 
 private extension TabBackgroundView {
 
-    func performOverlayAnimation(visible: Bool) {
+    func refreshOverlayVisibility(_ visible: Bool, animated: Bool) {
         guard let layer = overlayView.layer else {
+            return
+        }
+
+        let toAlpha = visible ? Animations.overlayOpacityVisible : Animations.opacityHidden
+
+        guard animated else {
+            layer.removeAnimation(forKey: Animations.overlayKey)
+            layer.opacity = toAlpha
             return
         }
 
         let duration = Animations.duration
         let fromAlpha = layer.presentation()?.opacity ?? layer.opacity
-        let toAlpha = visible ? Animations.overlayOpacityVisible : Animations.opacityHidden
         let animation = CASpringAnimation.buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
 
-        layer.add(animation, forKey: "overlayAnimation")
+        layer.add(animation, forKey: Animations.overlayKey)
         layer.opacity = toAlpha
     }
 
-    func performBackgroundAnimation(visible: Bool) {
+    func refreshBackgroundVisibility(_ visible: Bool, animated: Bool) {
         guard let layer = backgroundShapeView.layer else {
             return
         }
 
-        let duration = Animations.duration
         let toAlpha = visible ? Animations.opacityVisible : Animations.opacityHidden
+
+        guard animated else {
+            layer.removeAnimation(forKey: Animations.shapeKey)
+            layer.opacity = toAlpha
+            return
+        }
+
+        let duration = Animations.duration
 
         let fadeAnimation: CASpringAnimation = .buildFadeAnimation(duration: duration, fromAlpha: layer.opacity, toAlpha: toAlpha)
 
@@ -207,7 +221,7 @@ private extension TabBackgroundView {
         group.animations = [translationAnimation, fadeAnimation, scaleAnimation]
         group.duration = duration
 
-        layer.add(group, forKey: "shapeAnimation")
+        layer.add(group, forKey: Animations.shapeKey)
         layer.opacity = toAlpha
     }
 }

@@ -30,13 +30,13 @@ protocol ThemeStyleProviding {
 
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
-    var areNavigationBarCornersRound: Bool { get }
     var fireButtonSize: CGFloat { get }
     var navigationToolbarButtonsSpacing: CGFloat { get }
     var tabBarButtonSize: CGFloat { get }
     var addToolbarShadow: Bool { get }
 
     var addressBarStyleProvider: AddressBarStyleProviding { get }
+    var navigationBarStyleProvider: NavigationBarStyleProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
     var colorsProvider: ColorsProviding { get }
     var iconsProvider: IconsProviding { get }
@@ -68,9 +68,9 @@ struct ThemeStyle: ThemeStyleProviding {
 
     let toolbarButtonsCornerRadius: CGFloat
     let fireWindowGraphic: NSImage
-    let areNavigationBarCornersRound: Bool
 
     let addressBarStyleProvider: AddressBarStyleProviding
+    let navigationBarStyleProvider: NavigationBarStyleProviding
     let tabStyleProvider: TabStyleProviding
     let colorsProvider: ColorsProviding
     let iconsProvider: IconsProviding
@@ -85,14 +85,14 @@ struct ThemeStyle: ThemeStyleProviding {
     }
 
     private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger) -> ThemeStyle {
-        return ThemeStyle(
+        ThemeStyle(
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
-            areNavigationBarCornersRound: true,
             addressBarStyleProvider: CurrentAddressBarStyleProvider(featureFlagger: featureFlagger),
-            tabStyleProvider: TabStyleProvidingFactory.buildProvider(palette: palette, featureFlagger: featureFlagger),
+            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(featureFlagger: featureFlagger),
+            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette, featureFlagger: featureFlagger),
             colorsProvider: NewColorsProviding(palette: palette),
             iconsProvider: CurrentIconsProvider(),
             fireButtonSize: 32,

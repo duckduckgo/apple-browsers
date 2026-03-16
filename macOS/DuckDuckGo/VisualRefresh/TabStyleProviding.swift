@@ -111,7 +111,7 @@ final class TabAnimationsStyleProvider: TabStyleProviding {
 
 struct TabStyleProvidingFactory {
 
-    static func buildProvider(palette: ThemeColors, featureFlagger: FeatureFlagger) -> TabStyleProviding {
+    static func buildStyleProvider(palette: ThemeColors, featureFlagger: FeatureFlagger) -> TabStyleProviding {
         if featureFlagger.isFeatureOn(.tabAnimations) {
             return TabAnimationsStyleProvider(palette: palette)
         }

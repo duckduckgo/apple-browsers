@@ -690,17 +690,29 @@ final class PromoServiceTests: XCTestCase {
     }
 
     func testWhenTriggersArriveBeforeRegistration_ThenBufferedAndProcessedAfter() async {
-        // Given: trigger sent before applicationDidBecomeActive
+        // Given
         let delegate = MockPromoDelegate(isEligible: true)
         delegate.setShowResult(.actioned)
         let promo = PromoTestHelpers.makePromo(delegate: delegate)
         let promoService = makeService(promos: [promo])
-        let expectation = XCTestExpectation(description: "promo is hidden")
+
+        let shownExpectation = XCTestExpectation(description: "promo shown after buffered trigger processed")
+        let historyExpectation = XCTestExpectation(description: "result applied to history")
+
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
-                if promos.isEmpty {
-                    expectation.fulfill()
+                if promos.contains(where: { $0.id == "test-promo" }) {
+                    shownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        promoService.historyPublisher(for: "test-promo")
+            .compactMap { $0 }
+            .sink { record in
+                if record.actioned, record.timesDismissed == 1, record.nextEligibleDate == .distantFuture {
+                    historyExpectation.fulfill()
                 }
             }
             .store(in: &cancellables)
@@ -708,10 +720,10 @@ final class PromoServiceTests: XCTestCase {
         // When: trigger first, then activate (trigger gets buffered, processed when deferral runs)
         triggerSubject.send(.appLaunched)
         promoService.applicationDidBecomeActive()
-        await fulfillment(of: [expectation], timeout: timeout)
+        await fulfillment(of: [shownExpectation, historyExpectation], timeout: timeout)
 
         // Then
-        XCTAssertEqual(delegate.hideCallCount, 1)
+        XCTAssertEqual(delegate.showCallCount, 1)
     }
 
     func testWhenExternallyActivatedAtRegistration_ThenBufferedTriggersDiscarded() async {

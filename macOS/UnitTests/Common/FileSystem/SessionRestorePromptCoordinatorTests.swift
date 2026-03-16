@@ -58,12 +58,18 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         coordinator.markUIReady()
 
         XCTAssertTrue(receivedNotifications.isEmpty)
+        guard case .uiReady = coordinator.state else {
+            return XCTFail("Coordinator state subject was \(coordinator.state) but should be uiReady")
+        }
     }
 
     func testShowRestoreSessionPrompt_whenInitialState_doesNotTriggerPrompt() throws {
         coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
 
         XCTAssertTrue(receivedNotifications.isEmpty)
+        guard case .restoreNeeded = coordinator.state else {
+            return XCTFail("Coordinator state subject was \(coordinator.state) but should be restoreNeeded")
+        }
     }
 
     // MARK: - State Transition Tests
@@ -75,6 +81,9 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(receivedNotifications.count, 1)
         XCTAssertEqual(receivedNotifications.first?.name, .sessionRestorePromptShouldBeShown)
+        guard case .promptShown = coordinator.state else {
+            return XCTFail("Coordinator state subject was \(coordinator.state) but should be promptShown")
+        }
     }
 
     func testShowRestoreSessionPrompt_afterMarkUIReady_triggersPromptImmediately() throws {
@@ -84,12 +93,19 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(receivedNotifications.count, 1)
         XCTAssertEqual(receivedNotifications.first?.name, .sessionRestorePromptShouldBeShown)
+        guard case .promptShown = coordinator.state else {
+            return XCTFail("Coordinator state subject was \(coordinator.state) but should be promptShown")
+        }
     }
 
     func testShowRestoreSessionPrompt_afterMarkUIReady_triggersPromptWithExpectedRestoreAction() throws {
         coordinator.markUIReady()
         var restoreSession = false
-        let restoreAction: (Bool) -> Void = { _ in restoreSession = true }
+        var receivedState: SessionRestorePromptCoordinator.State?
+        let restoreAction: (Bool) -> Void = { _ in
+            restoreSession = true
+            receivedState = self.coordinator.state
+        }
 
         coordinator.showRestoreSessionPrompt(restoreAction: restoreAction)
 
@@ -97,6 +113,9 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         if let notificationAction = receivedNotifications.first?.object as? (Bool) -> Void {
             notificationAction(true)
             XCTAssertTrue(restoreSession)
+            guard case .promptDismissed = receivedState else {
+                return XCTFail("Coordinator state subject was \(coordinator.state) but should be promptDismissed")
+            }
         } else {
             XCTFail("Notification action is not of expected type")
         }

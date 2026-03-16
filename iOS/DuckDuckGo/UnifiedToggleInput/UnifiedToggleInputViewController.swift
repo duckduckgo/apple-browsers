@@ -113,6 +113,17 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitHidden = newValue }
     }
 
+    func apply(_ config: UTIViewConfig, animated: Bool) {
+        cardPosition = config.cardPosition
+        usesOmnibarMargins = config.usesOmnibarMargins
+        showsDismissButton = config.showsDismissButton
+        isToolbarSubmitHidden = config.isToolbarSubmitHidden
+        isTopBarPosition = config.isTopBarPosition
+        setInputMode(config.inputMode, animated: animated)
+        setInactiveCardAppearance(config.inactiveAppearance)
+        setExpanded(config.isExpanded, animated: animated)
+    }
+
     func setExpanded(_ expanded: Bool, animated: Bool) {
         inputBarView.setExpanded(expanded, animated: animated)
     }

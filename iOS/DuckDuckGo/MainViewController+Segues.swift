@@ -483,6 +483,12 @@ extension MainViewController {
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
                 navController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
                 settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+                // Opaque nav bar and matching view background so sheet top gap (if any) is visually continuous with the bar
+                let surfaceColor = UIColor(designSystemColor: .surface)
+                navController.view.backgroundColor = surfaceColor
+                navController.navigationBar.isTranslucent = false
+                navController.navigationBar.barTintColor = surfaceColor
+                navController.navigationBar.backgroundColor = surfaceColor
 
                 // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
                 configure?(settingsViewModel, settingsController)

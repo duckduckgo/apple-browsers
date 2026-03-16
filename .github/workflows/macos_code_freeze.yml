@@ -24,6 +24,9 @@ jobs:
     name: Check Automatic Code Freeze
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || vars.MACOS_AUTOMATIC_CODE_FREEZE == '1'
+    defaults:
+      run:
+        working-directory: .
     steps:
       - name: Code freeze is enabled
         run: echo "Automatic code freeze is enabled or workflow was triggered manually"

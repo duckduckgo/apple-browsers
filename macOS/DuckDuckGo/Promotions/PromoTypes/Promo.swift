@@ -102,8 +102,9 @@ protocol PromoDelegate: AnyPromoDelegate {
 
     /// Shows the promo. Returns when user interacts, promo retracts, or hide() is called.
     /// Receives the promo's own history for result decisions (e.g. varying cooldown by timesDismissed).
+    /// Use `force` to force show the promo (for debug menu).
     @MainActor
-    func show(history: PromoHistoryRecord) async -> PromoResult
+    func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult
 
     /// Hides the promo. Must be idempotent.
     /// PromoService calls hide() after recording any result, so a delegate that has

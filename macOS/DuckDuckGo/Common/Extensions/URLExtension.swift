@@ -442,7 +442,7 @@ extension URL {
     ///
     private static var isOverrideAllowed: Bool {
         let isTestMode = [.uiTests, .integrationTests, .uiTestsOnboarding].contains(AppVersion.runType)
-        let isCI = ProcessInfo.processInfo.environment["CI"] != nil
+        let isCI = !(ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true)
         return isTestMode || isCI || UserDefaults.appConfiguration.isInternalUser
     }
 
@@ -807,17 +807,6 @@ extension URL {
         var resourceValues = URLResourceValues()
         resourceValues.isHidden = true
         try setResourceValues(resourceValues)
-    }
-
-    /// Check if location pointed by the URL is writable
-    /// - Note: if there‘s no file at the URL, it will try to create a file and then remove it
-    func isWritableLocation() -> Bool {
-        do {
-            try FileManager.default.checkWritability(self)
-            return true
-        } catch {
-            return false
-        }
     }
 
     // MARK: - System Settings

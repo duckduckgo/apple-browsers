@@ -324,7 +324,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
-                .startupMetrics:
+                .startupMetrics,
+                .promoQueue:
             true
         default:
             false
@@ -603,7 +604,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .semaphoreAlwaysVisible:
             return .internalOnly()
         case .promoQueue:
-            return .disabled
+            return .remoteReleasable(.feature(.promoQueue))
         }
     }
 }

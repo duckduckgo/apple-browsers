@@ -1480,7 +1480,7 @@ extension MainViewController {
     }
 
     @objc func newTabNextToActive(_ sender: Any?) {
-        guard let (tab, index) = getActiveTabAndIndex() else { return }
+        guard let (tab, _) = getActiveTabAndIndex() else { return }
 
         tabCollectionViewModel.insertNewTab(after: tab, with: .newtab, selected: true)
     }

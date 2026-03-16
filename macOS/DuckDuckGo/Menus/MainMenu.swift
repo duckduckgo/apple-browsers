@@ -432,7 +432,10 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: UserText.zoom, action: #selector(NSWindow.performZoom))
                 NSMenuItem.separator()
 
-                NSMenuItem(title: UserText.newTabToTheRight, action: #selector(MainViewController.newTabNextToActive))
+                if featureFlagger.isFeatureOn(.tabAnimations) {
+                    NSMenuItem(title: UserText.newTabToTheRight, action: #selector(MainViewController.newTabNextToActive))
+                }
+
                 NSMenuItem(title: UserText.duplicateTab, action: #selector(MainViewController.duplicateTab))
                 NSMenuItem(title: UserText.pinTab, action: #selector(MainViewController.pinOrUnpinTab))
                 NSMenuItem(title: UserText.moveTabToNewWindow, action: #selector(MainViewController.moveTabToNewWindow))

@@ -54,11 +54,12 @@ final class AutoconsentStatsMock: AutoconsentStatsCollecting {
         )
     }
 
-    func clearAutoconsentStats() async {
+    func clearAutoconsentStats() async -> Result<Void, Error> {
         clearAutoconsentStatsCalled = true
         totalCookiePopUpsBlocked = 0
         totalClicksMade = 0
         totalTimeSpent = 0
         statsUpdateSubject.send()
+        return .success(())
     }
 }

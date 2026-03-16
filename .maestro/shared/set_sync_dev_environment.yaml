@@ -12,6 +12,10 @@ appId: com.duckduckgo.mobile.ios
     direction: DOWN
     centerElement: true
 - tapOn: Sync
+- scrollUntilVisible:
+    element: Production
+    direction: DOWN
+    centerElement: true
 - tapOn: Production
 - tapOn: Debug
 - tapOn: Settings

@@ -350,7 +350,7 @@ class FireExecutor: FireExecuting {
 
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
-        await privacyStats?.clearPrivacyStats()
+        _ = await privacyStats?.clearPrivacyStats()
     }
     
     @MainActor

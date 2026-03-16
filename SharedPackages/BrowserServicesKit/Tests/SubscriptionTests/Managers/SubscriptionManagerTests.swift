@@ -36,6 +36,7 @@ class SubscriptionManagerTests: XCTestCase {
     var mockStorePurchaseManager: StorePurchaseManagerMock!
     var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMock!
     fileprivate var mockPixelHandler: MockSubscriptionPixelHandler!
+    var mockSubscriptionCachingService: SubscriptionCachingServiceMock!
     var overrideTokenResponseInRecoveryHandler: Result<Networking.TokenContainer, Error>?
 
     override func setUp() {
@@ -46,12 +47,14 @@ class SubscriptionManagerTests: XCTestCase {
         mockStorePurchaseManager = StorePurchaseManagerMock()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMock()
         mockPixelHandler = MockSubscriptionPixelHandler()
+        mockSubscriptionCachingService = SubscriptionCachingServiceMock()
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: mockPixelHandler
         )
@@ -76,6 +79,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionEndpointService = nil
         mockStorePurchaseManager = nil
         mockPixelHandler = nil
+        mockSubscriptionCachingService = nil
         super.tearDown()
     }
 
@@ -344,11 +348,13 @@ class SubscriptionManagerTests: XCTestCase {
     func testURLGeneration_ForSubscriptionTypes() {
         let environment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let cachingServiceMock = SubscriptionCachingServiceMock()
         subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: cachingServiceMock,
             subscriptionEnvironment: environment,
             pixelHandler: MockPixelHandler()
         )
@@ -402,11 +408,13 @@ class SubscriptionManagerTests: XCTestCase {
         // Given
         let productionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let cachingServiceMock = SubscriptionCachingServiceMock()
         let productionSubscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: cachingServiceMock,
             subscriptionEnvironment: productionEnvironment,
             pixelHandler: MockPixelHandler()
         )
@@ -422,11 +430,13 @@ class SubscriptionManagerTests: XCTestCase {
         // Given
         let stagingEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let cachingServiceMock = SubscriptionCachingServiceMock()
         let stagingSubscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: cachingServiceMock,
             subscriptionEnvironment: stagingEnvironment,
             pixelHandler: MockPixelHandler()
         )
@@ -492,11 +502,13 @@ class SubscriptionManagerTests: XCTestCase {
         mockStorePurchaseManager.isEligibleForFreeTrialResult = false
         let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let cachingServiceMock = SubscriptionCachingServiceMock()
         let sut = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: cachingServiceMock,
             subscriptionEnvironment: stripeEnvironment,
             pixelHandler: MockPixelHandler()
         )
@@ -513,11 +525,13 @@ class SubscriptionManagerTests: XCTestCase {
         mockStorePurchaseManager.isEligibleForFreeTrialResult = true
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let cachingServiceMock = SubscriptionCachingServiceMock()
         let sut = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: cachingServiceMock,
             subscriptionEnvironment: appStoreEnvironment,
             pixelHandler: MockPixelHandler()
         )
@@ -534,11 +548,13 @@ class SubscriptionManagerTests: XCTestCase {
         mockStorePurchaseManager.isEligibleForFreeTrialResult = false
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let cachingServiceMock = SubscriptionCachingServiceMock()
         let sut = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionCachingService: cachingServiceMock,
             subscriptionEnvironment: appStoreEnvironment,
             pixelHandler: MockPixelHandler()
         )

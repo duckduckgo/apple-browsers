@@ -40,8 +40,39 @@ struct UnifiedToggleInputModelMenu: Equatable {
         models: [AIChatModel],
         selectedId: String,
         isBottomAnchored: Bool,
-        advancedSectionTitle: String
+        hasActiveSubscription: Bool,
+        advancedSectionTitle: String,
+        basicSectionTitle: String
     ) -> UnifiedToggleInputModelMenu {
+        var sections: [Section]
+
+        if hasActiveSubscription {
+            sections = buildSubscribedSections(
+                models: models,
+                selectedId: selectedId,
+                advancedSectionTitle: advancedSectionTitle,
+                basicSectionTitle: basicSectionTitle
+            )
+        } else {
+            sections = buildFreeSections(
+                models: models,
+                selectedId: selectedId,
+                advancedSectionTitle: advancedSectionTitle
+            )
+        }
+
+        if isBottomAnchored {
+            sections.reverse()
+        }
+
+        return UnifiedToggleInputModelMenu(sections: sections)
+    }
+
+    private static func buildFreeSections(
+        models: [AIChatModel],
+        selectedId: String,
+        advancedSectionTitle: String
+    ) -> [Section] {
         let accessible = models.filter { $0.entityHasAccess }
         let premium = models.filter { !$0.entityHasAccess }
 
@@ -60,11 +91,39 @@ struct UnifiedToggleInputModelMenu: Equatable {
             sections.append(premiumSection)
         }
 
-        if isBottomAnchored {
-            sections.reverse()
+        return sections
+    }
+
+    private static func buildSubscribedSections(
+        models: [AIChatModel],
+        selectedId: String,
+        advancedSectionTitle: String,
+        basicSectionTitle: String
+    ) -> [Section] {
+        let advanced = models.filter { !$0.accessTier.contains("free") }
+        let basic = models.filter { $0.accessTier.contains("free") }
+
+        var sections = [Section]()
+
+        if !advanced.isEmpty {
+            sections.append(Section(
+                title: advancedSectionTitle,
+                items: advanced.map { Item(model: $0, selectedId: selectedId, isDisabled: !$0.entityHasAccess) }
+            ))
         }
 
-        return UnifiedToggleInputModelMenu(sections: sections)
+        if !basic.isEmpty {
+            sections.append(Section(
+                title: basicSectionTitle,
+                items: basic.map { Item(model: $0, selectedId: selectedId, isDisabled: !$0.entityHasAccess) }
+            ))
+        }
+
+        if sections.isEmpty {
+            sections.append(Section(title: "", items: []))
+        }
+
+        return sections
     }
 }
 

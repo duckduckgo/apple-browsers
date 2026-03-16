@@ -49,7 +49,7 @@ public struct AIChatPreferencesPersistor: AIChatPreferencesPersisting {
         }
     }
 
-    var selectedModelShortName: String? {
+    public var selectedModelShortName: String? {
         get { try? keyValueStore.object(forKey: Key.selectedModelShortName.rawValue) as? String }
         set {
             if let value = newValue {

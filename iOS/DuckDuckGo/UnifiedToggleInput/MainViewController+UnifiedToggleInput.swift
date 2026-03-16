@@ -132,8 +132,11 @@ extension MainViewController {
         NotificationCenter.default.publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self, self.currentTab?.isAITab == true else { return }
-                self.refreshAIChatTabChatHeaderSubscriptionState()
+                guard let self else { return }
+                self.unifiedToggleInputCoordinator?.fetchModels()
+                if self.currentTab?.isAITab == true {
+                    self.refreshAIChatTabChatHeaderSubscriptionState()
+                }
             }
             .store(in: &unifiedToggleInputCancellables)
 

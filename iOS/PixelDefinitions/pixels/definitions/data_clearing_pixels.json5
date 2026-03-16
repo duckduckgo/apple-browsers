@@ -1,0 +1,17 @@
+{
+    "m_fire_retrigger_in_20s": {
+        "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_fire_user_action_before_completion": {
+        "description": "Fired when user performs an action before the clearing operation completes",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

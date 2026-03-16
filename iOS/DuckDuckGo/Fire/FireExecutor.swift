@@ -106,6 +106,7 @@ class FireExecutor: FireExecuting {
     private let appSettings: AppSettings
     private let privacyStats: PrivacyStatsProviding?
     private let aiChatSyncCleaner: AIChatSyncCleaning
+    let pixelsReporter: DataClearingPixelsReporter
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
@@ -132,7 +133,8 @@ class FireExecutor: FireExecuting {
          historyCleanerProvider: HistoryCleanerProvider? = nil,
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
-         aiChatSyncCleaner: AIChatSyncCleaning) {
+         aiChatSyncCleaner: AIChatSyncCleaning,
+         pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter()) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.websiteDataManager = websiteDataManager
@@ -153,6 +155,7 @@ class FireExecutor: FireExecuting {
         self.appSettings = appSettings
         self.privacyStats = privacyStats
         self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.pixelsReporter = pixelsReporter
     }
 
     
@@ -170,14 +173,18 @@ class FireExecutor: FireExecuting {
     func burn(request: FireRequest,
               applicationState: DataStoreWarmup.ApplicationState) async {
         assert(delegate != nil, "Delegate should not be nil. This leads to unexpected behavior.")
-        
+
+        // Fire retrigger pixel at the start of burn to track rapid manual fire operations
+        // Only tracks manual fire triggers (auto-clear is excluded as it follows system timing)
+        pixelsReporter.fireRetriggerPixelIfNeeded(request: request)
+
         // Ensure all requested options are prepared
         let unpreparedOptions = request.options.subtracting(preparedOptions)
         if !unpreparedOptions.isEmpty {
             let newRequest = FireRequest(options: unpreparedOptions, trigger: request.trigger, scope: request.scope, source: request.source)
             prepare(for: newRequest)
         }
-        
+
         // Notify delegate that we're starting
         delegate?.willStartBurning(fireRequest: request)
         

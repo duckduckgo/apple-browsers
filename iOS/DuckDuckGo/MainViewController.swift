@@ -136,6 +136,7 @@ class MainViewController: UIViewController {
     var autoClearInProgress = false
     var autoClearShouldRefreshUIAfterClear = true
     private var hasLoadedInitialView = false
+    private weak var burningOverlayView: UIView?
     private var isStartupOnboardingPending = false
     private var hasPresentedStartupOnboarding = false
     private lazy var startupOnboardingCover = StartupOnboardingCover(
@@ -4355,12 +4356,57 @@ extension MainViewController {
     }
 }
 
+// MARK: - Data Clearing Overlay
+
+extension MainViewController {
+
+    /// Shows a transparent overlay that captures user interactions during data clearing.
+    ///
+    /// The overlay detects when users attempt to interact with the UI before clearing completes,
+    /// which may indicate perceived slowness or incomplete clearing. A pixel is fired on the first
+    /// interaction, then the overlay is removed to allow normal user interaction.
+    ///
+    /// Only shown for manual fire triggers (user-initiated), not auto-clear operations.
+    private func showBurningOverlay() {
+        guard let window = view.window else { return }
+
+        hideBurningOverlay()
+
+        let overlay = UIView(frame: window.bounds)
+        overlay.backgroundColor = .clear
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(burningOverlayTapped))
+        tap.cancelsTouchesInView = false
+        overlay.addGestureRecognizer(tap)
+
+        window.addSubview(overlay)
+        window.bringSubviewToFront(overlay)
+        burningOverlayView = overlay
+    }
+
+    /// Removes the burning overlay if it exists.
+    private func hideBurningOverlay() {
+        burningOverlayView?.removeFromSuperview()
+        burningOverlayView = nil
+    }
+
+    /// Fires a pixel when user taps during data clearing, then removes the overlay.
+    ///
+    /// This indicates the user attempted to interact before clearing completed,
+    /// which is a secondary SLI metric for measuring perceived clearing performance.
+    @objc private func burningOverlayTapped() {
+        guard let fireExecutor = fireExecutor as? FireExecutor else { return }
+        fireExecutor.pixelsReporter.fireUserActionBeforeCompletionPixel()
+        hideBurningOverlay()
+    }
+}
+
 extension MainViewController: FireExecutorDelegate {
     
     func willStartBurning(fireRequest: FireRequest) {
         switch fireRequest.trigger {
         case .manualFire:
-            return
+            showBurningOverlay()
         case .autoClearOnLaunch:
             autoClearInProgress = true
         case .autoClearOnForeground:
@@ -4459,6 +4505,7 @@ extension MainViewController: FireExecutorDelegate {
         }
         switch fireRequest.trigger {
         case .manualFire:
+            hideBurningOverlay()
             return
         case .autoClearOnLaunch:
             autoClearInProgress = false

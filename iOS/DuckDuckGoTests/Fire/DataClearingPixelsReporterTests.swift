@@ -1,5 +1,6 @@
 //
 //  DataClearingPixelsReporterTests.swift
+//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,16 +17,13 @@
 //  limitations under the License.
 //
 
-import OSLog
 import PixelKit
 import PixelKitTestingUtilities
 import XCTest
 
-@testable import DuckDuckGo_Privacy_Browser
+@testable import DuckDuckGo
 
 final class DataClearingPixelsReporterTests: XCTestCase {
-
-    private static let logger = Logger(subsystem: "DataClearingPixelsReporterTests", category: "Tests")
 
     private var mockPixelFiring: PixelKitMock!
     private var sut: DataClearingPixelsReporter!
@@ -49,81 +47,79 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     }
 
     // MARK: - fireRetriggerPixelIfNeeded Tests
-
+    
     @MainActor
     func testWhenFirstFireThenNoRetriggerPixelIsFired() {
         // When
-        sut.fireRetriggerPixelIfNeeded()
-
+        sut.fireRetriggerPixelIfNeeded(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        
         // Then
         XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire on first call")
     }
-
+    
     @MainActor
     func testWhenCalledTwiceWithin20SecondsThenRetriggerPixelIsFired() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings)
         // Given - first call sets lastFireTime
-        sut.fireRetriggerPixelIfNeeded()
-
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
         // When - second call within 20 seconds
         currentTime += 10
-        sut.fireRetriggerPixelIfNeeded()
-
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
         // Then
         mockPixelFiring.expectedFireCalls = [
             .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
         ]
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
-
+    
     @MainActor
     func testWhenCalledExactlyAt20SecondsThenRetriggerPixelIsFired() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings)
         // Given
-        let startTime = currentTime!
-        Self.logger.info("[👀 DIAGNOSTIC] Initial time: \(startTime, format: .fixed(precision: 17))")
-        sut.fireRetriggerPixelIfNeeded()
-
-        // When - at 20 seconds
-        currentTime += 20.0
-        let endTime = currentTime!
-        let elapsed = endTime - startTime
-        Self.logger.info("[👀 DIAGNOSTIC] After increment - currentTime: \(endTime, format: .fixed(precision: 17)), elapsed: \(elapsed, format: .fixed(precision: 17))")
-
-        sut.fireRetriggerPixelIfNeeded()
-
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
+        // When - exactly at 20 seconds (edge case, <= condition)
+        currentTime += 20
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
         // Then
         mockPixelFiring.expectedFireCalls = [
             .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
         ]
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
-
+    
     @MainActor
     func testWhenCalledAfter20SecondsThenNoRetriggerPixelIsFired() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings)
         // Given
-        sut.fireRetriggerPixelIfNeeded()
-
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
         // When - after 20 seconds
         currentTime += 21
-        sut.fireRetriggerPixelIfNeeded()
-
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
         // Then
         XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire after window expires")
     }
-
+    
     @MainActor
     func testWhenCalledMultipleTimesWithinWindowThenRetriggerPixelFiredEachTime() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings)
         // Given
-        sut.fireRetriggerPixelIfNeeded()
+        sut.fireRetriggerPixelIfNeeded(request: request)
 
         // When - multiple rapid calls within window
         currentTime += 5
-        sut.fireRetriggerPixelIfNeeded()
+        sut.fireRetriggerPixelIfNeeded(request: request)
 
         currentTime += 5
-        sut.fireRetriggerPixelIfNeeded()
+        sut.fireRetriggerPixelIfNeeded(request: request)
 
         currentTime += 5
-        sut.fireRetriggerPixelIfNeeded()
+        sut.fireRetriggerPixelIfNeeded(request: request)
 
         // Then
         mockPixelFiring.expectedFireCalls = [
@@ -135,29 +131,57 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenIsManualIsFalseThenNoRetriggerPixelIsFired() {
-        // Given - first call with isManual: false (auto-clear)
-        sut.fireRetriggerPixelIfNeeded(isManual: false)
+    func testWhenTriggerIsAutoClearOnLaunchThenNoRetriggerPixelIsFired() {
+        // Given
+        let autoClearRequest = FireRequest(options: .all, trigger: .autoClearOnLaunch, scope: .all, source: .autoClear)
+        sut.fireRetriggerPixelIfNeeded(request: autoClearRequest)
 
-        // When - second call within window, also with isManual: false
+        // When - second call within window with auto-clear trigger
         currentTime += 10
-        sut.fireRetriggerPixelIfNeeded(isManual: false)
+        sut.fireRetriggerPixelIfNeeded(request: autoClearRequest)
 
-        // Then - no pixels should fire because isManual is false
-        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire for auto-clear operations")
+        // Then - no pixels should fire because trigger is not manualFire
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire for auto-clear on launch triggers")
+    }
+
+    @MainActor
+    func testWhenTriggerIsAutoClearOnForegroundThenNoRetriggerPixelIsFired() {
+        // Given
+        let autoClearRequest = FireRequest(options: .all, trigger: .autoClearOnForeground, scope: .all, source: .autoClear)
+        sut.fireRetriggerPixelIfNeeded(request: autoClearRequest)
+
+        // When - second call within window with auto-clear foreground trigger
+        currentTime += 15
+        sut.fireRetriggerPixelIfNeeded(request: autoClearRequest)
+
+        // Then - no pixels should fire because trigger is not manualFire
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire for auto-clear on foreground triggers")
+    }
+
+    // MARK: - fireUserActionBeforeCompletionPixel Tests
+
+    func testWhenFireUserActionBeforeCompletionPixelCalledThenPixelIsFired() {
+        // When
+        sut.fireUserActionBeforeCompletionPixel()
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
     // MARK: - Nil PixelFiring Tests
-
+    
     @MainActor
     func testWhenPixelFiringIsNilThenNoPixelIsFiredAndNoCrash() {
         // Given
         sut = DataClearingPixelsReporter(pixelFiring: nil)
 
         // When - should not crash
-        sut.fireRetriggerPixelIfNeeded()
-        sut.fireRetriggerPixelIfNeeded()
+        sut.fireRetriggerPixelIfNeeded(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        sut.fireUserActionBeforeCompletionPixel()
 
-        // Then - no crash
+        // Then - no crash occurred
     }
 }

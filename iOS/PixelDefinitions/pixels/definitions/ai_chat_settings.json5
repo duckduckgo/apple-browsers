@@ -43,7 +43,7 @@
     },
     "m_aichat_is_enabled_daily": {
         "description": "Daily pixel fired on foreground to record whether AI Chat is enabled or disabled for the user",
-        "owners": ["ptemig"],
+        "owners": ["aataraxiaa"],
         "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "is_enabled"]

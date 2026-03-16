@@ -746,7 +746,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if boundUserScript != nil {
                 didSubmitPrompt.send(text)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: persistedModelId)
+                let modelId = persistedModelId.isEmpty ? nil : persistedModelId
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: modelId)
             }
         }
     }

@@ -30,15 +30,18 @@ final class AIChatPreferences: ObservableObject {
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private var windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = Application.appDelegate.aiChatMenuConfiguration,
          windowControllersManager: WindowControllersManagerProtocol = Application.appDelegate.windowControllersManager,
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager()) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
+        self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
@@ -48,8 +51,11 @@ final class AIChatPreferences: ObservableObject {
         openAIChatInSidebar = storage.openAIChatInSidebar
         shouldAutomaticallySendPageContext = storage.shouldAutomaticallySendPageContext
         showSearchAndDuckAIToggle = storage.showSearchAndDuckAIToggle
+        showDuckAIButtonInTabBar = !duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+        showSidebarButtonInTabBar = !duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
 
         subscribeToShowInApplicationMenuSettingsChanges()
+        subscribeToDuckAIChromeButtonsVisibilityChanges()
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {
@@ -118,6 +124,17 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
     }
 
+    var shouldShowTabBarButtonVisibilityOptions: Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeSidebar)
+    }
+
+    var isPageContextToggleDisabled: Bool {
+        if shouldShowTabBarButtonVisibilityOptions {
+            return false
+        }
+        return !showShortcutInAddressBar || !openAIChatInSidebar
+    }
+
     // Properties for managing the current state of AI Chat preference options
 
     @Published var isAIFeaturesEnabled: Bool {
@@ -156,6 +173,14 @@ final class AIChatPreferences: ObservableObject {
         didSet { storage.showSearchAndDuckAIToggle = showSearchAndDuckAIToggle }
     }
 
+    @Published var showDuckAIButtonInTabBar: Bool {
+        didSet { duckAIChromeButtonsVisibilityManager.setHidden(!showDuckAIButtonInTabBar, for: .duckAI) }
+    }
+
+    @Published var showSidebarButtonInTabBar: Bool {
+        didSet { duckAIChromeButtonsVisibilityManager.setHidden(!showSidebarButtonInTabBar, for: .sidebar) }
+    }
+
     @MainActor func openLearnMoreLink() {
         windowControllersManager.show(url: URL.aiChatApproachToAI, source: .ui, newTab: true, selected: true)
     }
@@ -166,5 +191,23 @@ final class AIChatPreferences: ObservableObject {
 
     @MainActor func openSearchAssistSettings() {
         windowControllersManager.show(url: URL.aiChatSettings, source: .ui, newTab: true, selected: true)
+    }
+
+    private func subscribeToDuckAIChromeButtonsVisibilityChanges() {
+        NotificationCenter.default.publisher(for: .duckAIChromeButtonsVisibilityChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let shouldShowDuckAIButton = !duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+                let shouldShowSidebarButton = !duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+
+                if showDuckAIButtonInTabBar != shouldShowDuckAIButton {
+                    showDuckAIButtonInTabBar = shouldShowDuckAIButton
+                }
+                if showSidebarButtonInTabBar != shouldShowSidebarButton {
+                    showSidebarButtonInTabBar = shouldShowSidebarButton
+                }
+            }
+            .store(in: &cancellables)
     }
 }

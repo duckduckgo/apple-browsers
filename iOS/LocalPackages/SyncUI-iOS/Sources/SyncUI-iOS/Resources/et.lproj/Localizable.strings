@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Funktsiooni Sync & Backup kasutamiseks on vaja seadme parooli.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Rakenduse uuesti installimisel taastatakse selle seadme andmed automaatselt.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Kui installid DuckDuckGo rakenduse uuesti, küsime, kas soovid oma andmed selles seadmes taastada.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Jätka funktsiooni Sync & Backup seanssi, et taastada järjehoidjad, paroolid ja muu või jätka uue seadistusega.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Jätka funktsiooniga Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Jätka seadistamist";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Sinu eelmine funktsiooni Sync & Backup seanss on valmis.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Kui installid DuckDuckGo rakenduse uuesti, küsime, kas soovid oma andmed selles seadmes taastada.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Taasta andmed rakenduse uuesti installimisel";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Taasta andmed rakenduse uuesti installimisel";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Väljas";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Sees";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Taasta andmed rakenduse uuesti installimisel";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Tagasi";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Taasta sünkroonitud andmed";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Alustage";
+"recover.synced.data.sheet.button" = "Taasta sünkroonitud andmed";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Sünkroonitud andmete taastamiseks vajad taastamiskoodi, mille salvestasid sünkroonimise esmakordsel seadistamisel. See kood võis olla salvestatud PDF-vormingus seadmesse, milles sa sünkroonimise algselt seadistasid.";
+"recover.synced.data.sheet.description" = "Sul on vaja taastamiskoodi, mille said funktsiooni Sync & Backup seadistamisel. Võimalik, et salvestasid selle PDF-failina seadmesse, mida kasutasid.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Taasta sünkroonitud andmed";
+"recover.synced.data.sheet.title" = "Oma sünkroonitud andmete taastamine";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Järjehoidjate, salvestatud sisselogimiste ja teiste seadmete sünkroonimiseks luuakse uuesti ühendus.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Ühendamine...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Andmete taastamine";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Eemalda seade";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Kas seade eemaldada?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Taastamiskood";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Taastamiskood kopeeriti lõikelauale";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kopeeri kood";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Salvesta PDF-ina";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Kui kaotad juurdepääsu oma seadmetele, vajad seda koodi oma sünkroonitud andmete taastamiseks.";
+"save.recovery.code.save.as.pdf.button" = "Laadi alla PDF-ina";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Igaüks, kellel on juurdepääs sellele koodile, võib saada juurdepääsu sinu sünkroonitud andmetele, seega hoia seda turvalises kohas.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Salvesta taastamiskood";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Salvesta see kood, et saaksid oma andmed taastada, kui kaotad juurdepääsu sellele seadmele – hoia seda turvalises kohas.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Taasta oma andmed hõlpsasti";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Salvesta taastamise PDF";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Seaded > Sünkroonimine ja varundamine > Sünkrooni teise seadmega";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Ava Sätted";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Funktsiooni Sync & Backup kasutamiseks on vaja seadme parooli.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Funktsiooni Sync & Backup kasutamiseks kindlusta oma seade";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Taastamine";
 
 /* Sync & Backup Title */
 "sync.title" = "Sünkroonimine ja varundamine";

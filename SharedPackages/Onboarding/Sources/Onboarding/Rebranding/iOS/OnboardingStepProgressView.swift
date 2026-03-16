@@ -22,8 +22,8 @@ import UIComponents
 
 public struct OnboardingStepProgressView: View {
 
-    enum Copy {
-        public static var of: String {
+    private enum Copy {
+        static var of: String {
             NSLocalizedString("onboarding.highlights.browsers.progress.of", bundle: Bundle.module, value: "of", comment: "Delimiter for step/total dots in the rebranded onboarding")
         }
     }

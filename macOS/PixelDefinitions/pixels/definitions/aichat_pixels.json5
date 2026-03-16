@@ -12,7 +12,7 @@
                 "key": "source",
                 "description": "What triggered the sidebar to open",
                 "type": "string",
-                "enum": ["address-bar-button", "summarization", "serp", "context-menu", "translation"]
+                "enum": ["address-bar-button", "summarization", "serp", "context-menu", "translation", "tabbar-button"]
             },
             {
                 "key": "automaticPageContext",
@@ -137,5 +137,28 @@
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_tabbar_button_clicked": {
+        "description": "Fired when user clicks the Duck.ai button in the tab bar to open a new chat tab",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_sidebar_closed": {
+        "description": "Fired when the AI Chat sidebar is closed",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "What triggered the sidebar to close",
+                "type": "string",
+                "enum": ["address-bar-button", "sidebar-close-button", "context-menu", "tabbar-button"]
+            }
+        ]
     }
 }

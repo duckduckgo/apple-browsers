@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "307fe6d8a17d12539c44ba98b2d703c38cfe45de",
-        "version" : "13.27.0"
+        "revision" : "965b6a29db693c707cbc46e819afec68ef37b5e0",
+        "version" : "13.32.0"
       }
     },
     {
@@ -97,6 +97,15 @@
       "state" : {
         "revision" : "cb5b2bd0da83ad29c0bec762d39f41c8ad0eaf3e",
         "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "native-apps-ducksans",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:duckduckgo/native-apps-ducksans.git",
+      "state" : {
+        "revision" : "2f3e0ec3f028ff0cf4aca459def313607f385c1f",
+        "version" : "1.0.0"
       }
     },
     {

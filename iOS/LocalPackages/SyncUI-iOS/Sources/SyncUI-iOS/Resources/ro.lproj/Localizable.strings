@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Este necesară o parolă pentru dispozitiv pentru a utiliza Sync & Backup.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Restaurează automat datele pe acest dispozitiv, dacă reinstalezi aplicația.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Dacă reinstalezi aplicația DuckDuckGo, te vom întreba dacă dorești să restaurezi datele pe acest dispozitiv.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Reia sesiunea Sync & Backup pentru a restaura marcajele, parolele și multe altele sau continuă cu o nouă configurare.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Reia Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Continuă configurarea";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Sesiunea anterioară Sync & Backup este gata.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Dacă reinstalezi aplicația DuckDuckGo, te vom întreba dacă dorești să restaurezi datele pe acest dispozitiv.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Restaurează la reinstalarea aplicației";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Restaurează la reinstalarea aplicației";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Dezactivat";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Activat";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Restaurează la reinstalarea aplicației";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Înapoi";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Recuperează datele sincronizate";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Să începem";
+"recover.synced.data.sheet.button" = "Recuperează datele sincronizate";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Pentru a restabili datele sincronizate, vei avea nevoie de codul de recuperare pe care l-ai salvat atunci când ai configurat prima dată Sincronizarea. Este posibil ca acest cod să fi fost salvat ca PDF pe dispozitivul pe care l-ai folosit inițial pentru a configura Sincronizarea.";
+"recover.synced.data.sheet.description" = "Vei avea nevoie de codul de recuperare pe care l-ai primit când ai configurat Sync & Backup. Este posibil să-l fi salvat ca PDF pe dispozitivul pe care l-ai folosit.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Recuperează datele sincronizate";
+"recover.synced.data.sheet.title" = "Recuperează-ți datele sincronizate";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Se reconectează pentru a sincroniza marcajele, datele de conectare salvate și alte dispozitive.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Se conectează...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Se recuperează datele";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Elimină dispozitivul";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Elimini dispozitivul?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Cod de recuperare";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Codul de recuperare a fost copiat în clipboard";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Copiază codul";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Salvează ca PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Dacă pierzi accesul la dispozitivele tale, vei avea nevoie de acest cod pentru a-ți recupera datele sincronizate.";
+"save.recovery.code.save.as.pdf.button" = "Descarcă ca PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Oricine are acces la acest cod poate accesa datele sincronizate, așa că te rugăm să îl păstrezi într-un loc sigur.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Salvează codul de recuperare";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Păstrează acest cod pentru a-ți putea recupera datele dacă pierzi accesul la acest dispozitiv – menține-l în siguranță.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Recuperează-ți datele cu ușurință";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Salvează PDF de recuperare";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Setări > Sincronizare și backup > Sincronizează cu un alt dispozitiv";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Mergi la Setări";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Este necesară o parolă pentru dispozitiv pentru a utiliza Sync & Backup.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Securizează-ți dispozitivul pentru a utiliza Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Recuperare";
 
 /* Sync & Backup Title */
 "sync.title" = "Sincronizare și copiere de rezervă";

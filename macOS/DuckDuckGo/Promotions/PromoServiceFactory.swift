@@ -31,22 +31,41 @@ struct PromoServiceFactory {
         let promos = makeAllPromos(dependencies: dependencies)
         let stateQueue = DispatchQueue(label: "com.duckduckgo.promoService.state")
         let historyStore = PromoHistoryStore(store: dependencies.keyValueStore, queue: stateQueue)
+
+        let dateProvider: () -> Date
+        let resetDebugDate: (() -> Void)?
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild {
+            let debugSimulatedDateStore = DebugSimulatedDateStore(keyValueStore: dependencies.keyValueStore)
+            dateProvider = { debugSimulatedDateStore.simulatedDate ?? Date() }
+            resetDebugDate = { debugSimulatedDateStore.reset() }
+        } else {
+            dateProvider = Date.init
+            resetDebugDate = nil
+        }
+
         return PromoService(
             promos: promos,
             historyStore: historyStore,
             triggerPublisher: PromoTrigger.triggerPublisher,
             initialExternalActivation: dependencies.isExternallyActivated,
-            stateQueue: stateQueue
+            stateQueue: stateQueue,
+            dateProvider: dateProvider,
+            resetDebugDate: resetDebugDate
         )
     }
 
     @MainActor
     private static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
         var promos: [Promo] = [
+            sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
-            nextSteps
-    ]
+            nextSteps,
+            defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
+            defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
+            defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService)
+        ]
 
         if includeTestPromos {
             promos.append(contentsOf: testPromos)

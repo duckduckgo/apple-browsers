@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Ett enhetslösenord krävs för att använda Sync & Backup.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Återställ automatiskt dina data på den här enheten om du installerar om appen.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Om du installerar om DuckDuckGo-appen frågar vi dig om du vill återställa dina data på den här enheten.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Återuppta din Sync & Backup-session för att återställa dina bokmärken, lösenord med mera, eller fortsätt med en ny installation.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Återuppta Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Fortsätt inställningen";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Din tidigare Sync & Backup-session är klar.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Om du installerar om DuckDuckGo-appen frågar vi dig om du vill återställa dina data på den här enheten.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Återställ vid ominstallation av appen";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Återställ vid ominstallation av appen";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Av";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "På";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Återställ vid ominstallation av appen";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Tillbaka";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Återställ synkroniserade data";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Kom igång";
+"recover.synced.data.sheet.button" = "Återställ synkroniserade data";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "För att återställa dina synkroniserade data behöver du den återställningskod som du sparade när du konfigurerade synkronisering första gången. Koden kan ha sparats som en PDF-fil på den enhet du använde för att konfigurera synkronisering första gången.";
+"recover.synced.data.sheet.description" = "Du behöver den återställningskod som du fick när du konfigurerade Sync & Backup. Du kan ha sparat koden som en PDF-fil på enheten du använde.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Återställ synkroniserade data";
+"recover.synced.data.sheet.title" = "Återställ dina synkroniserade data";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Återansluter för att synkronisera dina bokmärken, sparade inloggningar och andra enheter.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Ansluter …";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Återställer data";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Ta bort enhet";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Vill du ta bort enheten?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Återställningskod";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Återställningskoden har kopierats till urklipp";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kopiera kod";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Spara som PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Om du förlorar åtkomsten till dina enheter behöver du denna kod för att återställa dina synkroniserade data.";
+"save.recovery.code.save.as.pdf.button" = "Ladda ner som PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Alla som har tillgång till denna kod kan komma åt dina synkroniserade data. Förvara därför koden på ett säkert ställe.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Spara återställningskoden";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Spara den här koden på ett säkert ställe så att du kan återställa dina data om du förlorar åtkomsten till den här enheten.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Återställ enkelt dina data";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Spara återställnings-PDF";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Inställningar > Synkronisera och säkerhetskopiera > Synkronisera med en annan enhet";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Gå till inställningarna";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Ett enhetslösenord krävs för att använda Sync & Backup.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Säkra din enhet för att använda Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Återställning";
 
 /* Sync & Backup Title */
 "sync.title" = "Synkronisering och säkerhetskopiering";

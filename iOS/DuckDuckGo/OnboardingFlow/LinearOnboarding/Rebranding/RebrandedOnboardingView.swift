@@ -268,8 +268,11 @@ extension OnboardingRebranding {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
 
-        private func introView(shouldShowSkipOnboardingButton: Bool) -> some View {
-            let skipOnboardingView: AnyView? = if shouldShowSkipOnboardingButton {
+        @ViewBuilder
+        private func introView(dialogType: ViewState.Intro.IntroDialogType) -> some View {
+            let skipOnboardingView: AnyView? = if dialogType == .default {
+                nil
+            } else {
                 AnyView(
                     SkipOnboardingContent(
                         startBrowsingAction: model.confirmSkipOnboardingAction,
@@ -280,22 +283,38 @@ extension OnboardingRebranding {
                         }
                     )
                 )
-            } else {
-                nil
             }
 
-            return IntroDialogContent(
-                title: UserText.Onboarding.Rebranding.Intro.title,
-                message: UserText.Onboarding.Rebranding.Intro.message,
-                skipOnboardingView: skipOnboardingView,
-                showContent: $showBubbleContent,
-                continueAction: {
-                    animateContentTransition {
-                        model.startOnboardingAction(isResumingOnboarding: false)
+            switch dialogType {
+            case .restoreData:
+                RestorePromptDialogContent(
+                    skipOnboardingView: skipOnboardingView,
+                    showContent: $showBubbleContent,
+                    restoreAction: {
+                        model.restoreSyncAccountAction()
+                        animateContentTransition {
+                            model.startOnboardingAction(isResumingOnboarding: false)
+                        }
+                    },
+                    skipAction: {
+                        model.restorePromptSkipAction()
+                        model.skipOnboardingAction()
                     }
-                },
-                skipAction: model.skipOnboardingAction
-            )
+                )
+            case .skipTutorial, .default:
+                IntroDialogContent(
+                    title: UserText.Onboarding.Rebranding.Intro.title,
+                    message: UserText.Onboarding.Rebranding.Intro.message,
+                    skipOnboardingView: skipOnboardingView,
+                    showContent: $showBubbleContent,
+                    continueAction: {
+                        animateContentTransition {
+                            model.startOnboardingAction(isResumingOnboarding: false)
+                        }
+                    },
+                    skipAction: model.skipOnboardingAction
+                )
+            }
         }
 
         private var browsersComparisonView: some View {
@@ -352,8 +371,8 @@ extension OnboardingRebranding {
         @ViewBuilder
         private func bubbleBackedDialogContent(for type: ViewState.Intro.IntroType) -> some View {
             switch type {
-            case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
-                introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
+            case .startOnboardingDialog(let dialogType):
+                introView(dialogType: dialogType)
             case .browsersComparisonDialog:
                 browsersComparisonView
             case .addToDockPromoDialog:

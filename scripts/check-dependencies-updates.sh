@@ -96,15 +96,15 @@ trap 'rm -f "$DIRECT_DEPS_FILE" "$UPDATE_TYPES_FILE" "$RESOLVED_PKGS_FILE" "$FIL
 # Extract repo identifier (owner/repo) from URL
 get_repo_id() {
     local url="$1"
-    echo "$url" | sed -nE 's|.*github\.com[:/]([^/]+/[^/.]+).*|\1|p' | sed 's|\.git$||' | tr '[:upper:]' '[:lower:]'
+    # The character class [^/.] already excludes '.git' from the capture
+    echo "$url" | sed -nE 's|.*github\.com[:/]([^/]+/[^/.]+).*|\1|p' | tr '[:upper:]' '[:lower:]'
 }
 
 # Parse semver
 parse_semver() {
-    local version="$1"
-    version="${version#v}"
-    if echo "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
-        echo "$version" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1 \2 \3/'
+    local version="${1#v}"
+    if [[ "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+        echo "${BASH_REMATCH[1]} ${BASH_REMATCH[2]} ${BASH_REMATCH[3]}"
     fi
 }
 
@@ -123,12 +123,8 @@ compare_versions() {
     fi
 
     local cur_major cur_minor cur_patch lat_major lat_minor lat_patch
-    cur_major=$(echo "$cur_parts" | cut -d' ' -f1)
-    cur_minor=$(echo "$cur_parts" | cut -d' ' -f2)
-    cur_patch=$(echo "$cur_parts" | cut -d' ' -f3)
-    lat_major=$(echo "$lat_parts" | cut -d' ' -f1)
-    lat_minor=$(echo "$lat_parts" | cut -d' ' -f2)
-    lat_patch=$(echo "$lat_parts" | cut -d' ' -f3)
+    read -r cur_major cur_minor cur_patch <<< "$cur_parts"
+    read -r lat_major lat_minor lat_patch <<< "$lat_parts"
 
     if [[ $lat_major -gt $cur_major ]]; then
         echo "major"
@@ -194,16 +190,20 @@ get_latest_github_release() {
 
 # Extract package name from URL
 get_package_name() {
-    basename "$1" .git
+    local name="${1##*/}"
+    echo "${name%.git}"
 }
 
 # Get project name from path
 get_project_name() {
     local path="$1"
-    if echo "$path" | grep -q "\.xcodeproj"; then
-        basename "$(echo "$path" | sed -E 's|(.*\.xcodeproj).*|\1|')" .xcodeproj
+    if [[ "$path" == *".xcodeproj"* ]]; then
+        local proj="${path%.xcodeproj*}.xcodeproj"
+        proj="${proj##*/}"
+        echo "${proj%.xcodeproj}"
     else
-        basename "$(dirname "$path")"
+        local dir="${path%/*}"
+        echo "${dir##*/}"
     fi
 }
 
@@ -231,7 +231,7 @@ extract_from_package_swift() {
                     echo "${repo_id}|${project_name}"
                 fi
             done || true
-    done < <(find "$search_path" -name "Package.swift" -not -path "*/.build/*" -not -path "*/Packages/*" 2>/dev/null)
+    done < <(find "$search_path" \( -name ".build" -o -name "DerivedData" -o -name "Packages" \) -prune -o -name "Package.swift" -print 2>/dev/null)
 }
 
 # Find direct dependencies from Xcode project files
@@ -257,7 +257,7 @@ extract_from_xcode_project() {
                     echo "${repo_id}|${project_name}"
                 fi
             done || true
-    done < <(find "$search_path" -name "project.pbxproj" 2>/dev/null)
+    done < <(find "$search_path" \( -name ".build" -o -name "DerivedData" \) -prune -o -name "project.pbxproj" -print 2>/dev/null)
 }
 
 # Build direct dependencies map (repo_id -> project names)
@@ -326,9 +326,10 @@ get_search_roots() {
         "${path%/}/DuckDuckGo.xcworkspace"
     )
 
-    local root
+    local root found=false
     for root in "${search_roots[@]}"; do
         if [[ -e "$root" ]]; then
+            found=true
             verbose "Search root exists: $root"
             echo "$root"
         else
@@ -336,7 +337,7 @@ get_search_roots() {
         fi
     done
 
-    if [[ -z $(for root in "${search_roots[@]}"; do [[ -e "$root" ]] && echo "ok" && break; done) ]]; then
+    if [[ "$found" != true ]]; then
         echo -e "${YELLOW}Warning: None of the expected search roots exist under ${path}.${NC}" >&2
         echo -e "${YELLOW}Checked: ${search_roots[*]}${NC}" >&2
         return 1
@@ -358,8 +359,8 @@ find_resolved_files() {
 
     verbose "Searching for Package.resolved files in: ${roots[*]}"
     local results
-    results=$(find "${roots[@]}" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
-        -not -path "*/.build/*" 2>/dev/null)
+    results=$(find "${roots[@]}" \( -name ".build" -o -name "DerivedData" \) -prune -o \
+        \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) -print 2>/dev/null)
     if [[ -n "$results" ]]; then
         while IFS= read -r f; do
             verbose "Found resolved file: $f"
@@ -440,8 +441,10 @@ parse_resolved_files() {
     echo "$files" | while IFS= read -r file; do
         [[ -z "$file" ]] && continue
 
-        local version
-        version=$(grep -o '"version"[[:space:]]*:[[:space:]]*[0-9]' "$file" 2>/dev/null | head -1 | grep -o '[0-9]') || version="2"
+        local version="2"
+        if tail -3 "$file" 2>/dev/null | grep -q '"version"[[:space:]]*:[[:space:]]*1'; then
+            version="1"
+        fi
         verbose "Parsing $file (format version: $version)"
 
         if [[ "$version" == "1" ]]; then

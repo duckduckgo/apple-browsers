@@ -48,7 +48,7 @@ struct SubscriptionContainerView: View {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             switch currentViewType {
             case .subscribe:
                 SubscriptionFlowView(viewModel: flowViewModel,
@@ -66,5 +66,7 @@ struct SubscriptionContainerView: View {
                                       featureFlagger: featureFlagger)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

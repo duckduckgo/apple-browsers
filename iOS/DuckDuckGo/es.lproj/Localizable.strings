@@ -2694,11 +2694,26 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Más información";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "No, gracias";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Omitir";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oh, antes de que se me olvide...";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "¿Quieres restaurar tus marcadores, contraseñas y más de tu sincronización anterior con DuckDuckGo?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Restaura mis cosas";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Omitir";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Vamos a retomar donde lo dejaste";
 
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Privado. Rápido. Menos anuncios.";
@@ -2975,6 +2990,27 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "¿Abrir en otra aplicación?";
+
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Volver atrás";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "¿Quieres abrir esta página en Safari?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Lamentablemente, la página no se ha podido cargar.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Abrir en Safari";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Quedarse en DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Algunas funciones del sitio web pueden no ser compatibles con este navegador.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Este sitio quiere abrirse en Safari.";
 
 /* No comment provided by engineer. */
 "REBRANDED" = "CAMBIO DE NOMBRE";

@@ -29,6 +29,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapDismiss(_ vc: UnifiedToggleInputViewController)
 }
 
@@ -48,7 +49,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: isToggleEnabled)
 
     // MARK: - Public API
 
@@ -97,9 +98,9 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.cardPosition = newValue }
     }
 
-    var usesInlineEditingMargins: Bool {
-        get { inputBarView.usesInlineEditingMargins }
-        set { inputBarView.usesInlineEditingMargins = newValue }
+    var usesOmnibarMargins: Bool {
+        get { inputBarView.usesOmnibarMargins }
+        set { inputBarView.usesOmnibarMargins = newValue }
     }
 
     var isTopBarPosition: Bool {
@@ -110,6 +111,17 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isToolbarSubmitHidden: Bool {
         get { inputBarView.isToolbarSubmitHidden }
         set { inputBarView.isToolbarSubmitHidden = newValue }
+    }
+
+    func apply(_ config: UTIViewConfig, animated: Bool) {
+        cardPosition = config.cardPosition
+        usesOmnibarMargins = config.usesOmnibarMargins
+        showsDismissButton = config.showsDismissButton
+        isToolbarSubmitHidden = config.isToolbarSubmitHidden
+        isTopBarPosition = config.isTopBarPosition
+        setInputMode(config.inputMode, animated: animated)
+        setInactiveCardAppearance(config.inactiveAppearance)
+        setExpanded(config.isExpanded, animated: animated)
     }
 
     func setExpanded(_ expanded: Bool, animated: Bool) {
@@ -125,6 +137,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     func updateToggleEnabled(_ enabled: Bool) {
+        handler.isToggleEnabled = enabled
         inputBarView.updateToggleEnabled(enabled)
     }
 
@@ -174,6 +187,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapVoice(self)
+    }
+
+    func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapSearchGoTo(self)
     }
 
     func unifiedToggleInputViewDidTapDismiss(_ view: UnifiedToggleInputView) {

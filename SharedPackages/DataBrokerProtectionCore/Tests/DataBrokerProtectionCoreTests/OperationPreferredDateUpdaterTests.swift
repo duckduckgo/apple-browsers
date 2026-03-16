@@ -118,4 +118,49 @@ final class OperationPreferredDateUpdaterTests: XCTestCase {
         // Then
         XCTAssertFalse(databaseMock.wasUpdateSubmittedSuccessfullyDateForOptOutCalled)
     }
+
+    // MARK: - PreferredRunDateNilMigration
+
+    private func makeIsolatedSettings() -> DataBrokerProtectionSettings {
+        DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+    }
+
+    func testWhenPreferredRunDateMigrationAlreadyCompleted_thenDatabaseIsNotQueried() {
+        let settings = makeIsolatedSettings()
+        settings.hasPerformedPreferredRunDateMigration = true
+        let sut = OperationPreferredDateUpdater(database: databaseMock)
+
+        sut.runPreferredRunDateNilMigrationIfNeeded(settings: settings)
+
+        XCTAssertFalse(databaseMock.wasFetchAllBrokerProfileQueryDataCalled)
+    }
+
+    func testWhenPreferredRunDateMigrationRunsWithScanNilPreferredRunDate_thenScanIsUpdatedAndFlagSet() {
+        let settings = makeIsolatedSettings()
+        let scanJobData = ScanJobData(brokerId: 1, profileQueryId: 1, preferredRunDate: nil, historyEvents: [])
+        let queryData = BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: scanJobData, optOutJobData: [])
+        databaseMock.brokerProfileQueryDataToReturn = [queryData]
+        let sut = OperationPreferredDateUpdater(database: databaseMock)
+
+        sut.runPreferredRunDateNilMigrationIfNeeded(settings: settings)
+
+        XCTAssertTrue(databaseMock.wasFetchAllBrokerProfileQueryDataCalled)
+        XCTAssertTrue(databaseMock.wasUpdatedPreferredRunDateForScanCalled)
+        XCTAssertTrue(settings.hasPerformedPreferredRunDateMigration)
+    }
+
+    func testWhenPreferredRunDateMigrationRunsWithOptOutNilPreferredRunDate_thenOptOutIsUpdatedAndFlagSet() {
+        let settings = makeIsolatedSettings()
+        let optOutJobData = BrokerProfileQueryData.createOptOutJobData(extractedProfileId: 1, brokerId: 1, profileQueryId: 1, preferredRunDate: nil)
+        let scanJobData = ScanJobData(brokerId: 1, profileQueryId: 1, preferredRunDate: Date(), historyEvents: [])
+        let queryData = BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: scanJobData, optOutJobData: [optOutJobData])
+        databaseMock.brokerProfileQueryDataToReturn = [queryData]
+        let sut = OperationPreferredDateUpdater(database: databaseMock)
+
+        sut.runPreferredRunDateNilMigrationIfNeeded(settings: settings)
+
+        XCTAssertTrue(databaseMock.wasFetchAllBrokerProfileQueryDataCalled)
+        XCTAssertTrue(databaseMock.wasUpdatedPreferredRunDateForOptOutCalled)
+        XCTAssertTrue(settings.hasPerformedPreferredRunDateMigration)
+    }
 }

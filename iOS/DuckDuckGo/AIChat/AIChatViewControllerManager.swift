@@ -452,10 +452,7 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
         case .closeAIChat:
             chatViewController?.dismiss(animated: true)
         case .sendToSyncSettings, .sendToSetupSync:
-            chatViewController?.dismiss(animated: true) { [weak self] in
-                guard let self = self else { return }
-                self.delegate?.aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(self)
-            }
+            delegate?.aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(self)
         default:
             break
         }

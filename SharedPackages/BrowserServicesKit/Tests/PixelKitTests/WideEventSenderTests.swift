@@ -108,7 +108,7 @@ final class WideEventSenderTests: XCTestCase {
 
     func testInitializationWithCustomPixelKitProvider() {
         var providerCalled = false
-        let sender = DefaultWideEventSender(pixelKitProvider: {
+        let sender = DefaultWideEventSender(useMockRequests: true, pixelKitProvider: {
             providerCalled = true
             return PixelKit.shared
         })

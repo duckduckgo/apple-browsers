@@ -116,7 +116,6 @@ final class NewTabPageCoordinator {
         )
 
         notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
-            .prefix(1)
             .sink { [weak self] _ in
                 self?.newTabPageShownPixelSender.firePixel()
             }

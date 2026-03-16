@@ -49,6 +49,11 @@ jobs:
 
       steps:
 
+      - name: Register SSH keys for private repos
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
       - name: Check out the code
         uses: actions/checkout@v4
         with:
@@ -211,6 +216,11 @@ jobs:
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
+
+      - name: Register SSH keys for private repos
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
       - name: Check out the code
         uses: actions/checkout@v4

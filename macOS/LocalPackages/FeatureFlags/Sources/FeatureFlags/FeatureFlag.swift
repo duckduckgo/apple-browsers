@@ -276,9 +276,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
+    case aiChatChromeSidebar
+
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
+
+    /// Window Semaphore Fullscreen Behavior Flag
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
+    case semaphoreAlwaysVisible
 
     /// Enables the promo service to coordinate promos/calls to action
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
@@ -311,9 +318,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
+                .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
-                .startupMetrics:
+                .startupMetrics,
+                .promoQueue:
             true
         default:
             false
@@ -405,8 +414,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarFloating,
                 .startupMetrics,
                 .privateProcessName,
+                .aiChatChromeSidebar,
                 .webViewLookUpAction,
-                .promoQueue:
+                .promoQueue,
+                .semaphoreAlwaysVisible:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -580,10 +591,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
+        case .aiChatChromeSidebar:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .webViewLookUpAction:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
+        case .semaphoreAlwaysVisible:
+            return .internalOnly()
         case .promoQueue:
-            return .disabled
+            return .remoteReleasable(.feature(.promoQueue))
         }
     }
 }

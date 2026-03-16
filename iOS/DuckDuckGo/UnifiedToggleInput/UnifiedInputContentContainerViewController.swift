@@ -42,7 +42,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
 
 final class UnifiedInputContentContainerViewController: UIViewController {
 
-    enum InlineHeaderDisplayMode: Equatable {
+    enum HeaderDisplayMode: Equatable {
         case hidden
         case active
         case inactive
@@ -71,13 +71,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private var isLandscapeOrientation: Bool = false {
         didSet {
-            isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
+            isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
+        }
+    }
+    var forceBottomBarLayout: Bool = false {
+        didSet {
+            isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
         }
     }
     private var isUsingTopBarPosition: Bool
     private var isAdjustedForTopBar: Bool
     private(set) var currentSectionTitle: String?
-    private var inlineHeaderDisplayMode: InlineHeaderDisplayMode = .hidden
+    private var headerDisplayMode: HeaderDisplayMode = .hidden
 
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
@@ -182,10 +187,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateSectionTitle()
     }
 
-    func setInlineHeaderDisplayMode(_ mode: InlineHeaderDisplayMode) {
-        guard inlineHeaderDisplayMode != mode else { return }
-        inlineHeaderDisplayMode = mode
-        renderInlineHeader()
+    func setHeaderDisplayMode(_ mode: HeaderDisplayMode) {
+        guard headerDisplayMode != mode else { return }
+        headerDisplayMode = mode
+        renderHeader()
     }
 
     func setText(_ text: String) {
@@ -285,7 +290,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let text = computedSectionTitleText()
         currentSectionTitle = text.isEmpty ? nil : text
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets.top = Metrics.contentTopInset
-        renderInlineHeader()
+        renderHeader()
     }
 
     private func computedSectionTitleText() -> String {
@@ -401,7 +406,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateSectionTitle()
     }
 
-    private func renderInlineHeader() {
+    private func renderHeader() {
         if isUsingTopBarPosition {
             if let currentSectionTitle, !currentSectionTitle.isEmpty {
                 inlineHeaderView.isHidden = false
@@ -416,7 +421,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             return
         }
 
-        switch inlineHeaderDisplayMode {
+        switch headerDisplayMode {
         case .hidden:
             inlineHeaderView.isHidden = true
             inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)

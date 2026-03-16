@@ -127,7 +127,7 @@ final class SettingsViewModel: ObservableObject {
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     // Closures to interact with legacy view controllers through the container
-    var onRequestPushLegacyView: ((UIViewController) -> Void)?
+    var onRequestPushLegacyView: ((UIViewController, _ animated: Bool) -> Void)?
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
@@ -1039,9 +1039,9 @@ extension SettingsViewModel {
         presentLegacyView(.autofill)
     }
 
-    @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
+    @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil, animated: Bool = true) {
         state.syncSource = source
-        presentLegacyView(.sync(nil))
+        presentLegacyView(.sync(nil), animated: animated)
     }
 
     func openEmailProtection() {
@@ -1132,14 +1132,14 @@ extension SettingsViewModel {
 // can review and migrate
 extension SettingsViewModel {
     
-    @MainActor func presentLegacyView(_ view: SettingsLegacyViewProvider.LegacyView) {
+    @MainActor func presentLegacyView(_ view: SettingsLegacyViewProvider.LegacyView, animated: Bool = true) {
         
         switch view {
         
         case .addToDock:
             presentViewController(legacyViewProvider.addToDock, modal: true)
         case .sync(let pairingInfo):
-            pushViewController(legacyViewProvider.syncSettings(source: state.syncSource, pairingInfo: pairingInfo))
+            pushViewController(legacyViewProvider.syncSettings(source: state.syncSource, pairingInfo: pairingInfo), animated: animated)
         case .appIcon: pushViewController(legacyViewProvider.appIconSettings(onChange: { [weak self] appIcon in
             self?.state.appIcon = appIcon
         }))
@@ -1173,8 +1173,8 @@ extension SettingsViewModel {
     }
  
     @MainActor
-    private func pushViewController(_ view: UIViewController) {
-        onRequestPushLegacyView?(view)
+    private func pushViewController(_ view: UIViewController, animated: Bool = true) {
+        onRequestPushLegacyView?(view, animated)
     }
     
     @MainActor

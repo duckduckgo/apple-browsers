@@ -43,6 +43,7 @@ protocol SwitchBarHandling: AnyObject {
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
     var isTopBarPosition: Bool { get }
+    var isToggleEnabled: Bool { get }
     var isFireTab: Bool { get }
 
     var isUsingExpandedBottomBarHeight: Bool { get }
@@ -53,6 +54,7 @@ protocol SwitchBarHandling: AnyObject {
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
+    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { get }
@@ -68,6 +70,7 @@ protocol SwitchBarHandling: AnyObject {
     func microphoneButtonTapped()
     func markUserInteraction()
     func clearButtonTapped()
+    func searchGoToButtonTapped()
     func updateBarPosition(isTop: Bool)
 }
 
@@ -100,6 +103,10 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     private(set) var isTopBarPosition: Bool = true
     let isFireTab: Bool
+
+    var isToggleEnabled: Bool {
+        return true
+    }
 
     var isUsingExpandedBottomBarHeight: Bool {
         isUsingFadeOutAnimation && !isTopBarPosition
@@ -148,6 +155,10 @@ final class SwitchBarHandler: SwitchBarHandling {
         clearButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> {
+        searchGoToButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> {
         $buttonState.eraseToAnyPublisher()
     }
@@ -155,6 +166,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
+    private let searchGoToButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
     private let devicePlatform: DevicePlatformProviding.Type
 
@@ -243,7 +255,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     func clearButtonTapped() {
         clearButtonTappedSubject.send(())
     }
-    
+
+    func searchGoToButtonTapped() {
+        searchGoToButtonTappedSubject.send(())
+    }
+
     private func updateButtonState(currentText: String) {
         if !currentText.isEmpty {
             buttonState = .clearOnly

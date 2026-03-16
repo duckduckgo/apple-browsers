@@ -53,9 +53,34 @@ final class ContentBlockingTabExtension: NSObject {
     private let cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let fbBlockingEnabledProvider: FbBlockingEnabledProvider
+    private let tld: TLD
     private var trackersSubject = PassthroughSubject<DetectedTracker, Never>()
 
+    private struct SurrogateDedupKey: Hashable {
+            let pageUrl: String
+            let requestUrl: String
+        }
+
+        // Dedup only surrogate-injected events to prevent accidental double emission
+        // for the same request on the same page; keep normal tracker path unchanged.
+        private static let surrogateDedupWindow: TimeInterval = 1.0
+        private var recentSurrogateEvents: [SurrogateDedupKey: Date] = [:]
+
     private var cancellables = Set<AnyCancellable>()
+
+        @MainActor
+        private func shouldEmitSurrogate(for surrogate: TrackerProtectionSubfeature.SurrogateInjection) -> Bool {
+                    let now = Date()
+                    recentSurrogateEvents = recentSurrogateEvents.filter { now.timeIntervalSince($0.value) < Self.surrogateDedupWindow }
+
+                    let key = SurrogateDedupKey(pageUrl: surrogate.pageUrl, requestUrl: surrogate.url)
+                    if let seenAt = recentSurrogateEvents[key], now.timeIntervalSince(seenAt) < Self.surrogateDedupWindow {
+                        return false
+                    }
+
+                    recentSurrogateEvents[key] = now
+                    return true
+                }
 
 #if DEBUG
     /// set this to true when Navigation-related decision making is expected to take significant time to avoid assertions
@@ -72,22 +97,20 @@ final class ContentBlockingTabExtension: NSObject {
          userContentControllerFuture: some Publisher<some ContentBlockingAssetsInstalling, Never>,
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         contentBlockerRulesUserScriptPublisher: some Publisher<ContentBlockerRulesUserScript?, Never>,
-         surrogatesUserScriptPublisher: some Publisher<SurrogatesUserScript?, Never>) {
+         tld: TLD,
+         trackerProtectionSubfeaturePublisher: some Publisher<TrackerProtectionSubfeature?, Never>) {
 
         self.cbaTimeReporter = cbaTimeReporter
         self.fbBlockingEnabledProvider = fbBlockingEnabledProvider
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.tld = tld
         super.init()
 
         userContentControllerFuture.sink { [weak self] userContentController in
             self?.userContentController = userContentController
         }.store(in: &cancellables)
-        contentBlockerRulesUserScriptPublisher.sink { [weak self] contentBlockerRulesUserScript in
-            contentBlockerRulesUserScript?.delegate = self
-        }.store(in: &cancellables)
-        surrogatesUserScriptPublisher.sink { [weak self] surrogatesUserScript in
-            surrogatesUserScript?.delegate = self
+        trackerProtectionSubfeaturePublisher.sink { [weak self] trackerProtectionSubfeature in
+            trackerProtectionSubfeature?.delegate = self
         }.store(in: &cancellables)
     }
 
@@ -138,41 +161,46 @@ extension ContentBlockingTabExtension: NavigationResponder {
 
 }
 
-extension ContentBlockingTabExtension: ContentBlockerRulesUserScriptDelegate {
+extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
-    func contentBlockerRulesUserScriptShouldProcessTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
+    private var trackerProtectionMapper: TrackerProtectionEventMapper {
+        TrackerProtectionEventMapper(tld: tld)
+    }
+
+    func trackerProtectionShouldProcessTrackers(_ subfeature: TrackerProtectionSubfeature) -> Bool {
         return true
     }
 
-    func contentBlockerRulesUserScriptShouldProcessCTLTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
-        return fbBlockingEnabledProvider.fbBlockingEnabled
-    }
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
+        if trackerProtectionMapper.isSameSiteDetection(tracker) {
+            return
+        }
 
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript, detectedTracker tracker: DetectedRequest) {
-        trackersSubject.send(DetectedTracker(request: tracker, type: .tracker))
-        if tracker.state == BlockingState.blocked && tracker.ownerName == fbBlockingEnabledProvider.fbEntity {
+        let detectedRequest = trackerProtectionMapper.detectedRequest(from: tracker)
+
+        if TrackerProtectionEventMapper.isThirdPartyRequest(tracker) {
+            trackersSubject.send(DetectedTracker(request: detectedRequest, type: .thirdPartyRequest))
+            return
+        }
+
+        trackersSubject.send(DetectedTracker(request: detectedRequest, type: .tracker))
+
+        if tracker.ownerName == fbBlockingEnabledProvider.fbEntity && fbBlockingEnabledProvider.fbBlockingEnabled {
             fbBlockingEnabledProvider.trackerDetected()
         }
     }
 
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript, detectedThirdPartyRequest request: DetectedRequest) {
-        trackersSubject.send(DetectedTracker(request: request, type: .thirdPartyRequest))
-    }
-
-}
-
-extension ContentBlockingTabExtension: SurrogatesUserScriptDelegate {
-
-    func surrogatesUserScriptShouldProcessTrackers(_ script: SurrogatesUserScript) -> Bool {
-        return true
-    }
-
-    func surrogatesUserScriptShouldProcessCTLTrackers(_ script: SurrogatesUserScript) -> Bool {
-        fbBlockingEnabledProvider.fbBlockingEnabled
-    }
-
-    func surrogatesUserScript(_ script: SurrogatesUserScript, detectedTracker tracker: DetectedRequest, withSurrogate host: String) {
-        trackersSubject.send(DetectedTracker(request: tracker, type: .trackerWithSurrogate(host: host)))
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
+        guard shouldEmitSurrogate(for: surrogate) else {
+                    return
+                }
+        guard let surrogateHost = trackerProtectionMapper.surrogateHost(from: surrogate), !surrogateHost.isEmpty else {
+            return
+        }
+        let detectedRequest = trackerProtectionMapper.detectedRequest(from: surrogate)
+        trackersSubject.send(DetectedTracker(request: detectedRequest, type: .trackerWithSurrogate(host: surrogateHost)))
     }
 }
 

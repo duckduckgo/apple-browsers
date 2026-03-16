@@ -127,14 +127,14 @@ class SwipeTabsCoordinator: NSObject {
     }
 
     private func scrollToCurrent() {
-        guard isEnabled else { return }
-        let targetOffset = collectionView.frame.width * CGFloat(tabsModel.currentIndex)
+        guard isEnabled, let index = tabsModel.currentIndex else { return }
+        let targetOffset = collectionView.frame.width * CGFloat(index)
 
         guard targetOffset != collectionView.contentOffset.x else {
             return
         }
         
-        let indexPath = IndexPath(row: self.tabsModel.currentIndex, section: 0)
+        let indexPath = IndexPath(row: index, section: 0)
         guard indexPath.row < collectionView.numberOfItems(inSection: 0) else {
             assertionFailure("target row is equal to or greater than the number of items in the collection view")
             return
@@ -201,8 +201,11 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
     
     private func preparePreview(_ offset: CGFloat) {
+        guard let index = tabsModel.currentIndex else {
+            return
+        }
         let modifier = (offset > 0 ? -1 : 1)
-        let nextIndex = tabsModel.currentIndex + modifier
+        let nextIndex = index + modifier
         
         guard tabsModel.tabs.indices.contains(nextIndex) || tabsModel.tabs.last?.link != nil else {
             return

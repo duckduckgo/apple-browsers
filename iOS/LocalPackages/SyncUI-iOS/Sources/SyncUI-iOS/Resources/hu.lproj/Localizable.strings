@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "A Sync & Backup funkció használatához eszközjelszó szükséges.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Az alkalmazás újratelepítésekor az adataid automatikusan visszaállításra kerülnek ezen az eszközön.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Ha újratelepíted a DuckDuckGo-alkalmazást, megkérdezzük, hogy szeretnéd-e visszaállítani az adataidat ezen az eszközön.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Folytasd a Sync & Backup munkamenetedet a könyvjelzőid, a jelszavaid és az egyéb dolgaid visszaállításához, vagy hozz létre egy új beállítást.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Sync & Backup folytatása";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Beállítás folytatása";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Az előző Sync & Backup munkamenet készen áll.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Ha újratelepíted a DuckDuckGo-alkalmazást, megkérdezzük, hogy szeretnéd-e visszaállítani az adataidat ezen az eszközön.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Visszaállítás az alkalmazás újratelepítésekor";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Visszaállítás az alkalmazás újratelepítésekor";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Ki";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Be";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Visszaállítás az alkalmazás újratelepítésekor";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Vissza";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Szinkronizált adatok helyreállítása";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Első lépések";
+"recover.synced.data.sheet.button" = "Szinkronizált adatok helyreállítása";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "A szinkronizált adatok visszaállításához szükség lesz a szinkronizálás első beállításakor mentett helyreállítási kódra. Lehetséges, hogy ez a kód PDF-fájlként lett mentve a szinkronizálás beállításához eredetileg használt eszközre.";
+"recover.synced.data.sheet.description" = "Szükséged lesz a Sync & Backup beállításakor kapott helyreállítási kódra. Lehetséges, hogy PDF formátumban mentetted el azon az eszközön, amelyet használtál.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Szinkronizált adatok helyreállítása";
+"recover.synced.data.sheet.title" = "A szinkronizált adataid helyreállítása";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Újracsatlakozás a könyvjelzőid, a mentett bejelentkezéseid és más eszközeid szinkronizálásához.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Csatlakozás…";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Adatok helyreállítása";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Eszköz eltávolítása";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Eszköz eltávolítása?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Helyreállítási kód";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Helyreállítási kód a vágólapra másolva";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kód másolása";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Mentés PDF-ként";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Ha elveszted az eszközökhöz való hozzáférést, erre a kódra lesz szükséged a szinkronizált adatok helyreállításához.";
+"save.recovery.code.save.as.pdf.button" = "Letöltés PDF-ként";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Bárki, aki hozzáférhet ehhez a kódhoz, hozzáférhet a szinkronizált adatokhoz is, ezért tartsd biztonságos helyen.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Helyreállítási kód mentése";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Mentsd el ezt a kódot, hogy helyreállíthasd az adataidat, ha elveszíted a hozzáférést ehhez az eszközhöz – őrizd meg egy biztonságos helyen.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Az adataid egyszerű helyreállítása";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Helyreállítási PDF-fájl mentése";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Beállítások > Szinkronizálás és biztonsági mentés > szinkronizálás másik eszközzel";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Lépj a Beállítások menübe";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "A Sync & Backup funkció használatához eszközjelszó szükséges.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Eszköz lezárása a Sync & Backup használatához";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Helyreállítás";
 
 /* Sync & Backup Title */
 "sync.title" = "Szinkronizálás és biztonsági mentés";

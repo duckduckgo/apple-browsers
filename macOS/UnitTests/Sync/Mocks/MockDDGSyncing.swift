@@ -36,9 +36,13 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     var mainTokenRescopeResult: String?
+    var mainTokenRescopeError: Error?
     private(set) var mainTokenRescopeScopes: [String] = []
     func mainTokenRescope(to scope: String) async throws -> String? {
         mainTokenRescopeScopes.append(scope)
+        if let mainTokenRescopeError {
+            throw mainTokenRescopeError
+        }
         return mainTokenRescopeResult
     }
 
@@ -96,6 +100,18 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     func initializeIfNeeded() {
+    }
+
+    func enableSyncFromPreservedAccount() async throws {
+    }
+
+    var removePreservedSyncAccountCallCount = 0
+    var removePreservedSyncAccountError: Error?
+    func removePreservedSyncAccount() throws {
+        removePreservedSyncAccountCallCount += 1
+        if let removePreservedSyncAccountError {
+            throw removePreservedSyncAccountError
+        }
     }
 
     var createAccountCallback: ((String, String) -> Void)?

@@ -18,6 +18,7 @@
 
 import Foundation
 import Persistence
+import PrivacyConfig
 import RemoteMessaging
 
 /// Centralized dependencies required to build promo delegates.
@@ -26,4 +27,6 @@ struct PromoDependencies {
     let keyValueStore: ThrowingKeyValueStoring
     let isExternallyActivated: Bool
     let activeRemoteMessageModel: ActiveRemoteMessageModel
+    let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
+    let sessionRestoreCoordinator: SessionRestorePromptCoordinating
 }

@@ -50,6 +50,8 @@ on:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
+      SSH_PRIVATE_KEY_DUCKSANS_FONT:
+        required: true
 
 concurrency:
   # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,
@@ -170,10 +172,12 @@ jobs:
       pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
-    - name: Register SSH key for certificates repository access
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
@@ -445,10 +449,12 @@ jobs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
 
     steps:
-    - name: Register SSH key for certificates repository access
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
       uses: actions/checkout@v4

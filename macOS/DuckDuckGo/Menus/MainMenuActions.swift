@@ -1270,6 +1270,16 @@ extension MainViewController {
         }
     }
 
+    @objc func toggleDuckAIChromeButtonVisibility(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
+        duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .duckAI)
+    }
+
+    @objc func toggleDuckAIChromeSidebarButtonVisibility(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
+        duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .sidebar)
+    }
+
     @objc func toggleAutofillShortcut(_ sender: Any) {
         pinningManager.togglePinning(for: .autofill)
     }
@@ -1616,13 +1626,13 @@ extension MainViewController {
     }
 
     @objc func showSaveCredentialsPopover(_ sender: Any?) {
-#if DEBUG || REVIEW
+#if DEBUG
         NotificationCenter.default.post(name: .ShowSaveCredentialsPopover, object: nil)
 #endif
     }
 
     @objc func showCredentialsSavedPopover(_ sender: Any?) {
-#if DEBUG || REVIEW
+#if DEBUG
         NotificationCenter.default.post(name: .ShowCredentialsSavedPopover, object: nil)
 #endif
     }

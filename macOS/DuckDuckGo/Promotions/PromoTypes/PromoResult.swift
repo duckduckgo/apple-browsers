@@ -20,7 +20,7 @@ import Foundation
 
 /// Outcome of showing a promo.
 /// Determines whether the promo is eligible to be shown again on the next trigger, and if so, after what interval (cooldown).
-enum PromoResult {
+enum PromoResult: Equatable {
     /// User engaged with the CTA. Permanently dismissed.
     case actioned
 

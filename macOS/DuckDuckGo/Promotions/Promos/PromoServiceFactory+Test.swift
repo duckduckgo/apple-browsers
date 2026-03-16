@@ -59,7 +59,7 @@ final class TestPromoDelegate: PromoDelegate {
     }
 
     @MainActor
-    func show(history: PromoHistoryRecord) async -> PromoResult {
+    func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short

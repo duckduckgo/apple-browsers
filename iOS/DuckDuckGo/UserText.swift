@@ -2096,7 +2096,11 @@ public struct UserText {
                     NSLocalizedString("onboarding.rebranding.intro.title", value: "Hi there.", comment: "The title of the onboarding intro")
                 }
                 public static var message: String {
-                    NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The message of the onboarding dialog popup")
+                    if Locale.current.isEnglishLanguage {
+                        NSLocalizedString("onboarding.rebranding.intro.message.english-only", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
+                    } else {
+                        NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The message of the onboarding dialog popup")
+                    }
                 }
             }
         }
@@ -2442,6 +2446,9 @@ public struct UserText {
             static let learnMore =  NSLocalizedString("onboarding.privacypro.promo.buttons.learnMore", value: "Learn More", comment: "Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall.")
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 
+            public enum Rebranding {
+                static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.rebranding.skip", value: "No Thanks", comment: "Button to decline and dismiss the subscription promotion and continue the onboarding process.")
+            }
         }
     }
     

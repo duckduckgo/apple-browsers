@@ -24,6 +24,10 @@ public extension AccessibilityIdentifiers {
         public static let resetSimulatedDate = "PromoDebugMenu.resetSimulatedDate"
         public static let advanceSimulatedDate1Hour = "PromoDebugMenu.advanceSimulatedDate1Hour"
         public static let advanceSimulatedDate1Day = "PromoDebugMenu.advanceSimulatedDate1Day"
+        public static func promoMenuItem(_ id: String) -> String {
+            "PromoDebugMenu.promoMenuItem.\(id)"
+        }
+        public static let forceShowPromo = "PromoDebugMenu.promoMenuItem.forceShow"
         public static func testPromoAlert(_ id: String) -> String {
             "PromoQueue.testPromoAlert.\(id)"
         }

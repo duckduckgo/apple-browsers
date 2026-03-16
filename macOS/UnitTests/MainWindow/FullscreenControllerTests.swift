@@ -99,22 +99,6 @@ final class MainViewControllerDefaultBrowserPromptTests: XCTestCase, MainViewCon
 
 }
 
-private final class DefaultBrowserAndDockPromptPresentingMock: DefaultBrowserAndDockPromptPresenting {
-
-    private let bannerSubject = PassthroughSubject<Void, Never>()
-    private(set) var tryToShowPromptCallCount = 0
-
-    var bannerDismissedPublisher: AnyPublisher<Void, Never> {
-        bannerSubject.eraseToAnyPublisher()
-    }
-
-    func tryToShowPrompt(popoverAnchorProvider: @escaping () -> NSView?,
-                         bannerViewHandler: @escaping (BannerMessageViewController) -> Void,
-                         inactiveUserModalWindowProvider: @escaping () -> NSWindow?) {
-        tryToShowPromptCallCount += 1
-    }
-}
-
 private final class WinBackOfferPromptPresentingMock: WinBackOfferPromptPresenting {
     private(set) var tryToShowPromptCallCount = 0
 

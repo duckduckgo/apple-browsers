@@ -36,9 +36,9 @@ final class TabBackgroundShapeView: NSView {
         }
     }
 
-    var rampSize: NSSize? {
+    var tabRampSize: NSSize? {
         didSet {
-            guard oldValue != rampSize else { return }
+            guard oldValue != tabRampSize else { return }
             needsDisplay = true
         }
     }
@@ -74,18 +74,18 @@ final class TabBackgroundShapeView: NSView {
         backgroundColor.setFill()
         backgroundPath.fill()
 
-        guard shouldDisplayRamps, let rampSize else {
+        guard shouldDisplayRamps, let tabRampSize else {
             return
         }
 
-        context.translateBy(x: rampSize.width * -1, y: 0)
+        context.translateBy(x: tabRampSize.width * -1, y: 0)
         NSBezierPath
-            .leadingRampPath(size: rampSize)
+            .leadingRampPath(size: tabRampSize)
             .fill()
 
-        context.translateBy(x: bounds.width + rampSize.width, y: 0)
+        context.translateBy(x: bounds.width + tabRampSize.width, y: 0)
         NSBezierPath
-            .trailingRampPath(size: rampSize)
+            .trailingRampPath(size: tabRampSize)
             .fill()
     }
 }

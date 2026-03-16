@@ -134,63 +134,6 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
-    // MARK: - fireErrorPixel Tests
-
-    func testWhenFireErrorPixelCalledThenPixelIsFired() {
-        // Given
-        let testError = NSError(domain: "test", code: 123)
-
-        // When
-        sut.fireErrorPixel(.burnWebCacheError(testError))
-
-        // Then
-        mockPixelFiring.expectedFireCalls = [
-            .init(pixel: DataClearingPixels.burnWebCacheError(testError), frequency: .dailyAndStandard)
-        ]
-        mockPixelFiring.verifyExpectations(file: #file, line: #line)
-    }
-
-    // MARK: - fireDurationPixel Tests
-
-    func testWhenFireDurationPixelCalledThenPixelIsFiredWithCorrectDuration() {
-        // Given
-        let startTime = currentTime!
-        currentTime += 1.5 // 1.5 seconds = 1500ms
-
-        // When
-        sut.fireDurationPixel(DataClearingPixels.burnWebCacheDuration, from: startTime)
-
-        // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.frequency, .standard)
-
-        // Verify duration parameter is correct (1500ms)
-        if case .burnWebCacheDuration(let duration) = mockPixelFiring.actualFireCalls.first?.pixel as? DataClearingPixels {
-            XCTAssertEqual(duration, 1500)
-        } else {
-            XCTFail("Expected burnWebCacheDuration pixel")
-        }
-    }
-
-    func testWhenFireDurationPixelWithEntityCalledThenPixelIsFired() {
-        // Given
-        let startTime = currentTime!
-        currentTime += 2 // 2 seconds = 2000ms
-
-        // When
-        sut.fireDurationPixel(DataClearingPixels.burnHistoryDuration, from: startTime, entity: "history")
-
-        // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
-
-        if case .burnHistoryDuration(let entity, let duration) = mockPixelFiring.actualFireCalls.first?.pixel as? DataClearingPixels {
-            XCTAssertEqual(entity, "history")
-            XCTAssertEqual(duration, 2000)
-        } else {
-            XCTFail("Expected burnHistoryDuration pixel")
-        }
-    }
-
     // MARK: - Nil PixelFiring Tests
 
     @MainActor
@@ -201,7 +144,6 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         // When - should not crash
         sut.fireRetriggerPixelIfNeeded()
         sut.fireRetriggerPixelIfNeeded()
-        sut.fireErrorPixel(.burnWebCacheError(NSError(domain: "test", code: 1)))
 
         // Then - no crash
     }

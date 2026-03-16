@@ -699,16 +699,16 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
-    func removeSelected(forceChange: Bool = false) {
-        guard changesEnabled || forceChange else { return }
+    func removeSelected(forceChange: Bool = false) -> Result<Void, Error> {
+        guard changesEnabled || forceChange else { return .success(()) }
 
         guard let selectionIndex else {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnTabsError(TabCollectionViewModelError.noTabSelected))
             Logger.tabLazyLoading.error("TabCollectionViewModel: No tab selected")
-            return
+            return .failure(TabCollectionViewModelError.noTabSelected)
         }
 
         remove(at: selectionIndex, forceChange: forceChange)
+        return .success(())
     }
 
     // MARK: - Others
@@ -789,22 +789,21 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
     }
 
-    func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false) {
-        guard changesEnabled || forceChange else { return }
+    func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false) -> Result<Void, Error> {
+        guard changesEnabled || forceChange else { return .success(()) }
         guard let tabCollection = tabCollection(for: index) else {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnTabsError(TabCollectionViewModelError.tabCollectionAtIndexNotFound(String(describing: index))))
             Logger.tabLazyLoading.error("TabCollectionViewModel: Tab collection for index \(String(describing: index)) not found")
-            return
+            return .failure(TabCollectionViewModelError.tabCollectionAtIndexNotFound(String(describing: index)))
         }
 
         tabCollection.replaceTab(at: index.item, with: tab)
 
         guard let selectionIndex else {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnTabsError(TabCollectionViewModelError.noTabSelected))
             Logger.tabLazyLoading.error("TabCollectionViewModel: No tab selected")
-            return
+            return .failure(TabCollectionViewModelError.noTabSelected)
         }
         select(at: selectionIndex, forceChange: forceChange)
+        return .success(())
     }
 
     private func subscribeToPinnedTabsSettingChanged() {

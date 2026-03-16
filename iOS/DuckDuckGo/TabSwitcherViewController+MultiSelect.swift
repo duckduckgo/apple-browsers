@@ -297,9 +297,9 @@ extension TabSwitcherViewController {
         let canAddBookmarks = selectedTabsContainsWebPages
         let canCloseOther = !selectedTabs.isEmpty && otherTabCount > 0
         let canBookmarkAll = selectedTabs.isEmpty && self.tabsModel.tabs.contains(where: { $0.link != nil })
-        let canShowDeselectAll = interfaceMode.isLarge && selectedTabs.count == tabsModel.count
-        let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabsModel.count
-        let canClose = interfaceMode.isLarge && selectedTabs.count > 0
+        let canShowDeselectAll = selectedTabs.count == tabsModel.count
+        let canShowSelectAll = selectedTabs.count < tabsModel.count
+        let canClose = selectedTabs.count > 0
 
         let items = [
 

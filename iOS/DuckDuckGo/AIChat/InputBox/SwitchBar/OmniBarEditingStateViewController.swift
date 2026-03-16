@@ -319,8 +319,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        let suggestionTrayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: suggestionTrayEscapeHatch)
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: escapeHatchModel)
         suggestionTrayManager = manager
     }
 

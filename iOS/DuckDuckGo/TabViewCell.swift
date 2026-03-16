@@ -220,23 +220,26 @@ final class TabViewCell: UICollectionViewCell {
         return asset
     }
 
+    private static let cachedNonFireTabLogoImage: UIImage = {
+        let image = UIImage(resource: .logo)
+        let renderFormat = UIGraphicsImageRendererFormat.default()
+        renderFormat.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: Constants.cellLogoSize,
+                                                            height: Constants.cellLogoSize),
+                                               format: renderFormat)
+        return renderer.image { _ in
+            image.draw(in: CGRect(x: 0,
+                                  y: 0,
+                                  width: Constants.cellLogoSize,
+                                  height: Constants.cellLogoSize))
+        }
+    }()
+
     static func logoImage(for tab: Tab?) -> UIImage {
         if let tab, tab.fireTab {
             return DesignSystemImages.Color.Size96.fireTab
-
         } else {
-            let image = UIImage(resource: .logo)
-            let renderFormat = UIGraphicsImageRendererFormat.default()
-            renderFormat.opaque = false
-            let renderer = UIGraphicsImageRenderer(size: CGSize(width: Constants.cellLogoSize,
-                                                                height: Constants.cellLogoSize),
-                                                   format: renderFormat)
-            return renderer.image { _ in
-                image.draw(in: CGRect(x: 0,
-                                      y: 0,
-                                      width: Constants.cellLogoSize,
-                                      height: Constants.cellLogoSize))
-            }
+            return cachedNonFireTabLogoImage
         }
     }
 

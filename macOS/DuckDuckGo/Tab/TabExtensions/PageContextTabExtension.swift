@@ -116,9 +116,9 @@ final class PageContextTabExtension {
 
                 let previousContent = self.content
                 self.content = tabContent
-                // Reset user-removed suppression on any navigation so auto-collect
-                // resumes on the next page, regardless of feature flag state.
-                if case .url = tabContent, case .url = previousContent {
+                // Reset user-removed suppression when navigating to a new URL so
+                // auto-collect resumes on the next page, regardless of feature flag state.
+                if case .url = tabContent {
                     self.userRemovedContext = false
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)

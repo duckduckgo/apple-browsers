@@ -694,12 +694,13 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     // MARK: - Image Attachments
 
     func presentImagePicker() {
+        let remaining = Self.maxImageAttachments - viewController.currentAttachments.count
+        guard remaining > 0 else { return }
         guard let scene = viewController.view.window?.windowScene,
               let root = scene.keyWindow?.rootViewController else { return }
         var config = PHPickerConfiguration()
         config.filter = .images
-        let remaining = Self.maxImageAttachments - viewController.currentAttachments.count
-        config.selectionLimit = max(remaining, 0)
+        config.selectionLimit = remaining
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = self
         root.present(picker, animated: true)
@@ -850,7 +851,6 @@ extension UnifiedToggleInputCoordinator: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         for result in results {
-            guard !viewController.isAttachmentsFull else { break }
             let provider = result.itemProvider
             guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
             provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in

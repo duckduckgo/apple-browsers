@@ -85,14 +85,16 @@ struct ThemeStyle: ThemeStyleProviding {
     }
 
     private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger) -> ThemeStyle {
-        ThemeStyle(
+        let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
+
+        return ThemeStyle(
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
             addressBarStyleProvider: CurrentAddressBarStyleProvider(featureFlagger: featureFlagger),
-            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(featureFlagger: featureFlagger),
-            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette, featureFlagger: featureFlagger),
+            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(displaysTabsAnimations: displaysTabsAnimations),
+            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette, displaysTabsAnimations: displaysTabsAnimations),
             colorsProvider: NewColorsProviding(palette: palette),
             iconsProvider: CurrentIconsProvider(),
             fireButtonSize: 32,

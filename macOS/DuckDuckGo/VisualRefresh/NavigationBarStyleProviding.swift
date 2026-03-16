@@ -17,8 +17,6 @@
 //
 
 import AppKit
-import FeatureFlags
-import PrivacyConfig
 
 protocol NavigationBarStyleProviding {
     var topCornerRadius: CGFloat? { get }
@@ -34,8 +32,8 @@ final class RefreshNavigationBarStyleProviding: NavigationBarStyleProviding {
 
 struct NavigationBarStyleProvidingFactory {
 
-    static func buildStyleProvider(featureFlagger: FeatureFlagger) -> NavigationBarStyleProviding {
-        if featureFlagger.isFeatureOn(.tabAnimations) {
+    static func buildStyleProvider(displaysTabsAnimations: Bool) -> NavigationBarStyleProviding {
+        if displaysTabsAnimations {
             return RefreshNavigationBarStyleProviding()
         }
 

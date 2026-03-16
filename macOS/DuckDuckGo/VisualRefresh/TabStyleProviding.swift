@@ -18,8 +18,6 @@
 
 import AppKit
 import Foundation
-import PrivacyConfig
-import FeatureFlags
 
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }
@@ -115,8 +113,8 @@ final class TabAnimationsStyleProvider: TabStyleProviding {
 
 struct TabStyleProvidingFactory {
 
-    static func buildStyleProvider(palette: ThemeColors, featureFlagger: FeatureFlagger) -> TabStyleProviding {
-        if featureFlagger.isFeatureOn(.tabAnimations) {
+    static func buildStyleProvider(palette: ThemeColors, displaysTabsAnimations: Bool) -> TabStyleProviding {
+        if displaysTabsAnimations {
             return TabAnimationsStyleProvider(palette: palette)
         }
 

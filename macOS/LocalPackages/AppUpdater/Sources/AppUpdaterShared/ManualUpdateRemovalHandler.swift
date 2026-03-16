@@ -18,6 +18,7 @@
 
 import FeatureFlags
 import Persistence
+import PrivacyConfig
 
 /// Determines whether the manual update option should be hidden based on
 /// install history and the `automaticUpdatesOnly` feature flag.

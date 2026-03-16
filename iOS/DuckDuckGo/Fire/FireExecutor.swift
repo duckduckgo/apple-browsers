@@ -359,7 +359,9 @@ class FireExecutor: FireExecuting {
         let autoconsentResult = autoconsentManagementProvider.management(for: .normal).clearCache()
         dataClearingWideEventService?.update(.clearAutoconsentManagementCache, result: autoconsentResult)
 
-        daxDialogsManager.clearHeldURLData()
+        dataClearingWideEventService?.start(.clearDaxDialogsHeldURLData)
+        let daxDialogsResult = daxDialogsManager.clearHeldURLData()
+        dataClearingWideEventService?.update(.clearDaxDialogsHeldURLData, result: daxDialogsResult)
 
         if self.syncService.authState == .inactive {
             self.bookmarksDatabaseCleaner?.cleanUpDatabaseNow()

@@ -878,8 +878,15 @@ extension AppDelegate {
 
     private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) async throws {
         let configManager = Application.appDelegate.configurationManager
+        let hadOverride = configurationURLProvider.isURLOverridden(for: .privacyConfiguration)
+        let previousCustomURL: URL? = hadOverride ? configurationURLProvider.url(for: .privacyConfiguration) : nil
         try configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
-        try await configManager.fetchPrivacyConfiguration(isDebug: true)
+        do {
+            try await configManager.fetchPrivacyConfiguration(isDebug: true)
+        } catch {
+            try? configurationURLProvider.setCustomURL(previousCustomURL, for: .privacyConfiguration)
+            throw error
+        }
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
         } else {

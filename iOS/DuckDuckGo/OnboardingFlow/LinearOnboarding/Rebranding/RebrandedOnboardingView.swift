@@ -215,16 +215,16 @@ extension OnboardingRebranding {
                         .transition( // Scale content from 0.1 to 1.0 and fade in when appearing for the first time
                             .scale.combined(with: .opacity)
                         )
-#if DEBUG || ALPHA
-                        .safeAreaInset(edge: .bottom) {
-                            Button {
-                                model.overrideOnboardingCompleted()
-                            } label: {
-                                Text(UserText.Onboarding.Intro.Debug.skip)
-                            }
-                            .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
-                        }
-#endif
+//#if DEBUG || ALPHA
+//                        .safeAreaInset(edge: .bottom) {
+//                            Button {
+//                                model.overrideOnboardingCompleted()
+//                            } label: {
+//                                Text(UserText.Onboarding.Intro.Debug.skip)
+//                            }
+//                            .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
+//                        }
+//#endif
                 }
             }
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)

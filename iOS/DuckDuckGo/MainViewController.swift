@@ -666,6 +666,12 @@ class MainViewController: UIViewController {
         DailyPixel.fireDaily(.aiChatContextualAutoAttachDAU,
                              withAdditionalParameters: ["is_enabled": isEnabled])
     }
+
+    private func fireAIChatIsEnabledPixel() {
+        let isEnabled = "\(aiChatSettings.isAIChatEnabled)"
+        DailyPixel.fireDaily(.aiChatIsEnabledDaily,
+                             withAdditionalParameters: ["is_enabled": isEnabled])
+    }
     
     private func fireKeyboardSettingsPixels() {
         let keyboardSettings = KeyboardSettings()
@@ -1534,6 +1540,7 @@ class MainViewController: UIViewController {
         fireExperimentalAddressBarPixel()
         fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
+        fireAIChatIsEnabledPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
         skipSERPFlow = true

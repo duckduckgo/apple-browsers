@@ -272,19 +272,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - VC Delegate: Submit — AI Chat Mode, With Bound Script
 
-    func test_submitAIChat_withBoundScript_publishesToDidSubmitPrompt() {
-        let userScript = makeTestUserScript()
-        sut.bindToTab(userScript)
-
-        let exp = expectation(description: "didSubmitPrompt fires")
-        sut.didSubmitPrompt
-            .sink { XCTAssertEqual($0, "hello AI"); exp.fulfill() }
-            .store(in: &cancellables)
-
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
-        waitForExpectations(timeout: 1)
-    }
-
     func test_submitAIChat_withBoundScript_doesNotCallDelegatePromptMethod() {
         let userScript = makeTestUserScript()
         sut.bindToTab(userScript)

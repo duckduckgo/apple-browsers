@@ -35,16 +35,21 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let supportedOSChecker: SupportedOSChecking
     private var cancellables = Set<AnyCancellable>()
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
+    private let manualUpdateRemovalHandler: ManualUpdateRemovalHandling
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger,
+         manualUpdateRemovalHandler: ManualUpdateRemovalHandling? = nil,
          windowControllersManager: WindowControllersManagerProtocol,
          keyValueStore: ThrowingKeyValueStoring,
          supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
-        self.settings = keyValueStore.throwingKeyedStoring()
+        let settings: any ThrowingKeyedStoring<UpdateControllerSettings> = keyValueStore.throwingKeyedStoring()
+        self.settings = settings
+        self.manualUpdateRemovalHandler = manualUpdateRemovalHandler
+            ?? ManualUpdateRemovalHandler(settings: settings, featureFlagger: featureFlagger)
         self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         internalUserDecider.isInternalUserPublisher
@@ -67,18 +72,13 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
-    /// Users who installed before the manual update option was removed (installBuild not set).
-    private var isLegacyUser: Bool {
-        (try? settings.installBuild) == nil
-    }
-
     var shouldHideManualUpdateOption: Bool {
-        if !isLegacyUser { return true }
-        return featureFlagger.isFeatureOn(.automaticUpdatesOnly)
+        manualUpdateRemovalHandler.shouldHideManualUpdateOption
     }
 
     var shouldShowUpdateInfoMessage: Bool {
-        !isLegacyUser && featureFlagger.isFeatureOn(.automaticUpdatesOnly)
+        !manualUpdateRemovalHandler.isLegacyUser
+            && featureFlagger.isFeatureOn(.automaticUpdatesOnly)
     }
 
     var shouldShowUpdateStatus: Bool {

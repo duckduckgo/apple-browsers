@@ -162,7 +162,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     public var areAutomaticUpdatesEnabled: Bool {
         get {
-            (try? settings.automaticUpdates) ?? true
+            if manualUpdateRemovalHandler.shouldHideManualUpdateOption { return true }
+            return (try? settings.automaticUpdates) ?? true
         }
         set {
             let oldValue = areAutomaticUpdatesEnabled
@@ -226,6 +227,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
+    private let manualUpdateRemovalHandler: ManualUpdateRemovalHandling
     private let allowCustomUpdateFeed: Bool
     private let pixelFiring: PixelFiring?
     private let isOnboardingFinished: () -> Bool
@@ -262,6 +264,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
+                manualUpdateRemovalHandler: ManualUpdateRemovalHandling,
                 pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
@@ -272,6 +275,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
+        self.manualUpdateRemovalHandler = manualUpdateRemovalHandler
         self.allowCustomUpdateFeed = allowCustomUpdateFeed
         self.internalUserDecider = internalUserDecider
         self.notificationPresenter = notificationPresenter
@@ -283,7 +287,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
         // Capture the current value before initializing updateWideEvent
-        let currentAutomaticUpdatesEnabled = (try? settings.automaticUpdates) ?? true
+        let currentAutomaticUpdatesEnabled = manualUpdateRemovalHandler.shouldHideManualUpdateOption
+            || ((try? settings.automaticUpdates) ?? true)
         self.updateWideEvent = SparkleUpdateWideEvent(
             wideEventManager: wideEvent,
             internalUserDecider: internalUserDecider,

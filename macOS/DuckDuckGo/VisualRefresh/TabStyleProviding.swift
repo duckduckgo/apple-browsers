@@ -32,6 +32,7 @@ protocol TabStyleProviding {
     var pinnedTabWidth: CGFloat { get }
 
     var shouldShowSShapedTab: Bool { get }
+    var shouldShowTabSeparators: Bool { get }
     var selectedTabColor: NSColor { get }
     var hoverTabColor: NSColor { get }
     var isRoundedBackgroundPresentOnHover: Bool { get }
@@ -50,6 +51,7 @@ final class LegacyTabStyleProvider: TabStyleProviding {
     let pinnedTabWidth: CGFloat = 34
     let pinnedTabHeight: CGFloat = 34
     let shouldShowSShapedTab = false
+    let shouldShowTabSeparators = true
     let selectedTabColor: NSColor = .navigationBarBackground
     let hoverTabColor: NSColor = .tabMouseOver
     let isRoundedBackgroundPresentOnHover = false
@@ -73,6 +75,7 @@ final class NewlineTabStyleProvider: TabStyleProviding {
     let pinnedTabWidth: CGFloat = 38
     let pinnedTabHeight: CGFloat = 38
     let shouldShowSShapedTab = true
+    let shouldShowTabSeparators = true
     let isRoundedBackgroundPresentOnHover = true
     let tabSpacing: CGFloat = 1
     let applyTabShadow: Bool = true
@@ -98,6 +101,7 @@ final class TabAnimationsStyleProvider: TabStyleProviding {
     let pinnedTabWidth: CGFloat = 38
     let pinnedTabHeight: CGFloat = 38
     let shouldShowSShapedTab = true
+    let shouldShowTabSeparators = false
     let isRoundedBackgroundPresentOnHover = true
     let tabSpacing: CGFloat = 0
     let applyTabShadow: Bool = false

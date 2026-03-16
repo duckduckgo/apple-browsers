@@ -346,7 +346,7 @@ final class TabBarItemCellView: NSView {
         addSubview(permissionButton)
         addSubview(closeButton)
 
-        if !isTabAnimationsEnabled {
+        if theme.tabStyleProvider.shouldShowTabSeparators {
             addSubview(rightSeparatorView)
         }
 
@@ -415,7 +415,7 @@ final class TabBarItemCellView: NSView {
             layoutForPinnedMode()
         }
 
-        if !isTabAnimationsEnabled {
+        if theme.tabStyleProvider.shouldShowTabSeparators {
             let separatorHeight = theme.tabStyleProvider.separatorHeight
             rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (separatorHeight / 2), width: 1, height: separatorHeight)
         }
@@ -1227,12 +1227,13 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func updateSeparatorView() {
-        if featureFlagger.isFeatureOn(.tabAnimations) {
+        let tabStyleProvider = theme.tabStyleProvider
+        guard tabStyleProvider.shouldShowTabSeparators else {
             cell.rightSeparatorView.isHidden = true
             return
         }
 
-        let shouldHideForHover = theme.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
+        let shouldHideForHover = tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
         let rightItemIsHighlighted = delegate?.tabBarViewItemShouldHideSeparator(self) ?? false
 
         let newIsHidden = shouldHideForHover || rightItemIsHighlighted || isSelected || isDragged || isLeftToSelected

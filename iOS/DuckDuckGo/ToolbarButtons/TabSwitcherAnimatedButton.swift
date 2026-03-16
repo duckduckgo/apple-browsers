@@ -83,7 +83,11 @@ class TabSwitcherAnimatedButton: UIView, TabSwitcherButton {
         }
     }
 
-    var isFireMode: Bool = false
+    var isFireMode: Bool = false {
+        didSet {
+            updateAnimationColor()
+        }
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)

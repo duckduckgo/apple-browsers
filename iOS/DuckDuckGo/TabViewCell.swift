@@ -235,9 +235,24 @@ final class TabViewCell: UICollectionViewCell {
         }
     }()
 
+    private static let fireTabLogoImage: UIImage = {
+        let image = DesignSystemImages.Color.Size96.fireTab
+        let renderFormat = UIGraphicsImageRendererFormat.default()
+        renderFormat.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: Constants.cellLogoSize,
+                                                            height: Constants.cellLogoSize),
+                                               format: renderFormat)
+        return renderer.image { _ in
+            image.draw(in: CGRect(x: 0,
+                                  y: 0,
+                                  width: Constants.cellLogoSize,
+                                  height: Constants.cellLogoSize))
+        }
+    }()
+
     static func logoImage(for tab: Tab?) -> UIImage {
         if let tab, tab.fireTab {
-            return DesignSystemImages.Color.Size96.fireTab
+            return fireTabLogoImage
         } else {
             return regularLogoImage
         }

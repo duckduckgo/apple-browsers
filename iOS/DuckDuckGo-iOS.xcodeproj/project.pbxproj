@@ -259,6 +259,8 @@
 		36F619582F68655A00CBF121 /* DataClearingPixelsReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F619562F68655A00CBF121 /* DataClearingPixelsReporter.swift */; };
 		36F6195A2F68655A00CBF121 /* DataClearingPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F619542F68655A00CBF121 /* DataClearingPixels.swift */; };
 		36F6195C2F68657100CBF121 /* DataClearingPixelsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F6195B2F68657100CBF121 /* DataClearingPixelsReporterTests.swift */; };
+		36F6195E2F686F0C00CBF121 /* DataClearingWideEventService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F6195D2F686F0C00CBF121 /* DataClearingWideEventService.swift */; };
+		36F619602F686F3300CBF121 /* DataClearingWideEventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F6195F2F686F3300CBF121 /* DataClearingWideEventServiceTests.swift */; };
 		3712091E2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */; };
 		372A0FF02B2389590033BF7F /* SyncMetricsEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */; };
 		373608902ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */; };
@@ -2683,6 +2685,8 @@
 		36F619542F68655A00CBF121 /* DataClearingPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixels.swift; sourceTree = "<group>"; };
 		36F619562F68655A00CBF121 /* DataClearingPixelsReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporter.swift; sourceTree = "<group>"; };
 		36F6195B2F68657100CBF121 /* DataClearingPixelsReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporterTests.swift; sourceTree = "<group>"; };
+		36F6195D2F686F0C00CBF121 /* DataClearingWideEventService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingWideEventService.swift; sourceTree = "<group>"; };
+		36F6195F2F686F3300CBF121 /* DataClearingWideEventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingWideEventServiceTests.swift; sourceTree = "<group>"; };
 		3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingStoreErrorHandling.swift; sourceTree = "<group>"; };
 		372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetricsEventsHandler.swift; sourceTree = "<group>"; };
 		3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesDisplayModeStorage.swift; sourceTree = "<group>"; };
@@ -6087,6 +6091,7 @@
 		36F619572F68655A00CBF121 /* Statistics */ = {
 			isa = PBXGroup;
 			children = (
+				36F6195D2F686F0C00CBF121 /* DataClearingWideEventService.swift */,
 				36F619542F68655A00CBF121 /* DataClearingPixels.swift */,
 				36F619562F68655A00CBF121 /* DataClearingPixelsReporter.swift */,
 			);
@@ -6633,6 +6638,7 @@
 		8097AA582EE652CF00E995F9 /* Fire */ = {
 			isa = PBXGroup;
 			children = (
+				36F6195F2F686F3300CBF121 /* DataClearingWideEventServiceTests.swift */,
 				36F6195B2F68657100CBF121 /* DataClearingPixelsReporterTests.swift */,
 				80437D6C2EFB3BD600D3E896 /* AutoClearSettingsViewModelTests.swift */,
 				80DD839E2EF0FEF400DAB108 /* DataClearingSettingsViewModelTests.swift */,
@@ -12171,6 +12177,7 @@
 				319B49C42E68AF5C00DD265F /* NewAddressBarPickerViewController.swift in Sources */,
 				311BD1AF2836BB4200AEF6C1 /* AutofillItemsLockedView.swift in Sources */,
 				85DE681A2B6A8BB000DED4FE /* MainViewCoordinator.swift in Sources */,
+				36F6195E2F686F0C00CBF121 /* DataClearingWideEventService.swift in Sources */,
 				C18128A22D737D8700807C09 /* AutofillSettingsViewModel.swift in Sources */,
 				C18128A32D737D8700807C09 /* AutofillSettingsViewController.swift in Sources */,
 				C18128A42D737D8700807C09 /* AutofillSettingsView.swift in Sources */,
@@ -12795,6 +12802,7 @@
 				4B2DF8A62E64C67300FBF11E /* WideEventServiceTests.swift in Sources */,
 				56C23F652E0AD93600FD63C6 /* MockFeedbackSender.swift in Sources */,
 				80CDFA1D2EF0AEB600375E73 /* MockTabManager.swift in Sources */,
+				36F619602F686F3300CBF121 /* DataClearingWideEventServiceTests.swift in Sources */,
 				56CA25EE2DB7ABCF00BE4226 /* LocalizationTests.swift in Sources */,
 				9FAB4B7B2E98C98300D8298A /* MockRemoteMessagingActionHandler.swift in Sources */,
 				98D094832E6AFA6B00D94984 /* InternalUserCommandsTests.swift in Sources */,

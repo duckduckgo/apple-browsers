@@ -163,19 +163,6 @@ final class PageContextTabExtension {
             }
             .store(in: &cancellables)
 
-        NotificationCenter.default.publisher(for: .aiChatPageContextRemovedByUser)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.userRemovedContext = true
-            }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: .aiChatPageContextConsumedByChat)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.hasContextBeenConsumedByChat = true
-            }
-            .store(in: &cancellables)
     }
 
     private func subscribeToCollectionResult() {
@@ -215,6 +202,20 @@ final class PageContextTabExtension {
             .sink { [weak self] in
                 self?.shouldForceContextCollection = true
                 self?.collectPageContextIfNeeded()
+            }
+            .store(in: &sidebarCancellables)
+
+        session.pageContextConsumedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.hasContextBeenConsumedByChat = true
+            }
+            .store(in: &sidebarCancellables)
+
+        session.pageContextRemovedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.userRemovedContext = true
             }
             .store(in: &sidebarCancellables)
     }

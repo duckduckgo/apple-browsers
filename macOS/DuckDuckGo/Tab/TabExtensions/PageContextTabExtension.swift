@@ -116,6 +116,11 @@ final class PageContextTabExtension {
 
                 let previousContent = self.content
                 self.content = tabContent
+                // Reset user-removed suppression on any navigation so auto-collect
+                // resumes on the next page, regardless of feature flag state.
+                if case .url = tabContent, case .url = previousContent {
+                    self.userRemovedContext = false
+                }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
             }
@@ -282,8 +287,6 @@ final class PageContextTabExtension {
               session.chatViewController != nil else {
             return
         }
-
-        userRemovedContext = false
 
         switch navigationAction(autoCollectEnabled: isContextCollectionEnabled, contextConsumed: hasContextBeenConsumedByChat) {
         case .collectNewContext:

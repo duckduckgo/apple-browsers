@@ -161,6 +161,7 @@ extension TabBackgroundView {
             refreshBackgroundVisibility(entering, animated: animated)
         case .dragged:
             backgroundShapeView.isDragged = entering
+            refreshBackgroundVisibility(entering, animated: false)
         case .idle:
             break
         }

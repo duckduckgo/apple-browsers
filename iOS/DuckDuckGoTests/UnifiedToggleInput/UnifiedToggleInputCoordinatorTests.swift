@@ -968,6 +968,71 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertNil(coordinator.viewController.modelPickerMenu)
     }
 
+    // MARK: - Model ID Suppression on Follow-up Prompts
+
+    func test_submitAIChat_firstPrompt_sendsModelId() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat)
+        XCTAssertEqual(mockDelegate.submittedModelId, "gpt-5")
+    }
+
+    func test_submitAIChat_secondPrompt_sendsNilModelId() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat)
+        mockDelegate.submittedModelId = nil
+        sut.showExpanded()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+        XCTAssertNil(mockDelegate.submittedModelId)
+    }
+
+    func test_submitAIChat_afterNewChat_sendsModelIdAgain() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat)
+        sut.startNewChat()
+        sut.showExpanded()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "new chat prompt", mode: .aiChat)
+        XCTAssertEqual(mockDelegate.submittedModelId, "gpt-5")
+    }
+
+    func test_submitAIChat_emptyPersistedModelId_sendsNilModelId() {
+        mockPreferences.selectedModelId = nil
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertNil(mockDelegate.submittedModelId)
+    }
+
+    // MARK: - Attachments Change Publisher
+
+    func test_addImageAttachment_publishesAttachmentsChange() {
+        let exp = expectation(description: "attachmentsChange fires")
+        sut.attachmentsChangePublisher
+            .sink { exp.fulfill() }
+            .store(in: &cancellables)
+
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 10, height: 10)).image { ctx in
+            UIColor.red.setFill()
+            ctx.fill(CGRect(origin: .zero, size: CGSize(width: 10, height: 10)))
+        }
+        sut.addImageAttachment(image: image, fileName: "test.png")
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_clearAttachments_publishesAttachmentsChange() {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 10, height: 10)).image { ctx in
+            UIColor.red.setFill()
+            ctx.fill(CGRect(origin: .zero, size: CGSize(width: 10, height: 10)))
+        }
+        sut.addImageAttachment(image: image, fileName: "test.png")
+
+        let exp = expectation(description: "attachmentsChange fires on clear")
+        var fired = false
+        sut.attachmentsChangePublisher
+            .sink { if !fired { fired = true; exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.clearAttachments()
+        waitForExpectations(timeout: 1)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
@@ -981,12 +1046,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
     var submittedModelId: String?
+    var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedQuery: String?
     var didRequestVoiceSearch = false
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedPrompt = prompt
         submittedModelId = modelId
+        submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearch = true }

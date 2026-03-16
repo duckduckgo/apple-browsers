@@ -440,7 +440,9 @@ class MainViewController: UIViewController {
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
 
         super.init(nibName: nil, bundle: nil)
-        
+
+        resetOnboarding()
+
         tabManager.delegate = self
         tabManager.aiChatContentDelegate = self
         tabManager.fireModeDelegate = self
@@ -5250,6 +5252,28 @@ extension MainViewController {
             let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: currentTab.tabModel.textZoomContext)
             await textZoomCoordinator.showTextZoomEditor(inController: self, forWebView: webView)
         }
+    }
+
+    private func resetOnboarding() {
+        tutorialSettings.hasSeenOnboarding = false
+        UserDefaults().removeObject(forKey: LaunchOptionsHandler.isOnboardingCompleted)
+        let settings = DefaultDaxDialogsSettings()
+        settings.isDismissed = false
+        settings.tryAnonymousSearchShown = false
+        settings.tryVisitASiteShown = false
+        settings.browsingAfterSearchShown = false
+        settings.browsingWithTrackersShown = false
+        settings.browsingWithoutTrackersShown = false
+        settings.browsingMajorTrackingSiteShown = false
+        settings.fireButtonEducationShownOrExpired = false
+        settings.fireMessageExperimentShown = false
+        settings.fireButtonPulseDateShown = nil
+        settings.privacyButtonPulseShown = false
+        settings.browsingFinalDialogShown = false
+        settings.subscriptionPromotionDialogShown = false
+        UserDefaults().removeObject(forKey: "com.duckduckgo.ios.onboarding.didApplyOnboardingChoiceSettings")
+        aiChatSettings.enableAIChatSearchInputUserSettings(enable: false)
+        tabManager.removeAll()
     }
 
 }

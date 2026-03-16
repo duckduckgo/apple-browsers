@@ -25,18 +25,16 @@ enum UnifiedToggleInputImageEncoder {
     static func encode(_ attachments: [AIChatImageAttachment]) -> [AIChatNativePrompt.NativePromptImage]? {
         guard !attachments.isEmpty else { return nil }
         let images = attachments.compactMap { attachment -> AIChatNativePrompt.NativePromptImage? in
-            let ext = (attachment.fileName as NSString).pathExtension.lowercased()
-            let isJPEG = ext == "jpg" || ext == "jpeg"
-            let data: Data?
-            if isJPEG {
-                data = attachment.image.jpegData(compressionQuality: 0.85)
-            } else {
-                data = attachment.image.pngData()
+            if let jpegData = attachment.image.jpegData(compressionQuality: 0.85) {
+                return AIChatNativePrompt.NativePromptImage(
+                    data: jpegData.base64EncodedString(),
+                    format: "jpeg"
+                )
             }
-            guard let data else { return nil }
+            guard let pngData = attachment.image.pngData() else { return nil }
             return AIChatNativePrompt.NativePromptImage(
-                data: data.base64EncodedString(),
-                format: isJPEG ? "jpeg" : "png"
+                data: pngData.base64EncodedString(),
+                format: "png"
             )
         }
         return images.isEmpty ? nil : images

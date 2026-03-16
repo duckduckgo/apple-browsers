@@ -28,46 +28,30 @@ final class UnifiedToggleInputImageEncoderTests: XCTestCase {
         XCTAssertNil(result)
     }
 
-    func testJPEGFileNameProducesJPEGFormat() {
-        let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: "photo.jpg")
+    func testEncodesAsJPEGByDefault() {
+        let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: "photo")
         let result = UnifiedToggleInputImageEncoder.encode([attachment])
         XCTAssertEqual(result?.count, 1)
         XCTAssertEqual(result?.first?.format, "jpeg")
         XCTAssertFalse(result?.first?.data.isEmpty ?? true)
     }
 
-    func testJPEFileNameProducesJPEGFormat() {
-        let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: "photo.jpeg")
-        let result = UnifiedToggleInputImageEncoder.encode([attachment])
-        XCTAssertEqual(result?.first?.format, "jpeg")
-    }
-
-    func testPNGFileNameProducesPNGFormat() {
-        let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: "screenshot.png")
-        let result = UnifiedToggleInputImageEncoder.encode([attachment])
-        XCTAssertEqual(result?.first?.format, "png")
-    }
-
-    func testWebPFileNameFallsToPNG() {
-        let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: "sticker.webp")
-        let result = UnifiedToggleInputImageEncoder.encode([attachment])
-        XCTAssertEqual(result?.first?.format, "png")
-    }
-
-    func testNoExtensionFallsToPNG() {
-        let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: "image")
-        let result = UnifiedToggleInputImageEncoder.encode([attachment])
-        XCTAssertEqual(result?.first?.format, "png")
+    func testEncodesAsJPEGRegardlessOfExtension() {
+        for name in ["photo.png", "sticker.webp", "image.gif", "noext"] {
+            let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: name)
+            let result = UnifiedToggleInputImageEncoder.encode([attachment])
+            XCTAssertEqual(result?.first?.format, "jpeg", "Expected jpeg for \(name)")
+        }
     }
 
     func testMultipleAttachmentsEncoded() {
-        let attachments = (0..<3).map { AIChatImageAttachment(image: makeTestImage(), fileName: "img\($0).png") }
+        let attachments = (0..<3).map { AIChatImageAttachment(image: makeTestImage(), fileName: "img\($0)") }
         let result = UnifiedToggleInputImageEncoder.encode(attachments)
         XCTAssertEqual(result?.count, 3)
     }
 
     func testOutputIsValidBase64() {
-        let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: "test.png")
+        let attachment = AIChatImageAttachment(image: makeTestImage(), fileName: "test")
         let result = UnifiedToggleInputImageEncoder.encode([attachment])
         XCTAssertNotNil(result?.first.flatMap { Data(base64Encoded: $0.data) })
     }

@@ -794,9 +794,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Model Selection: supportsImageUpload
 
-    func test_selectedModelSupportsImageUpload_returnsTrue_whenModelsEmpty() {
+    func test_selectedModelSupportsImageUpload_returnsFalse_whenModelsEmpty() {
         sut.models = []
-        XCTAssertTrue(sut.selectedModelSupportsImageUpload)
+        XCTAssertFalse(sut.selectedModelSupportsImageUpload)
     }
 
     func test_selectedModelSupportsImageUpload_returnsFalse_whenSelectedModelDoesNot() {

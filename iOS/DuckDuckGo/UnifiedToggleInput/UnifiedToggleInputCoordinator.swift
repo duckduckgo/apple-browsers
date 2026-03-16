@@ -116,7 +116,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private(set) var hasSubmittedPrompt = false
     private(set) var subscriptionState: SubscriptionState = .free
 
-    var persistedModelId: String? {
+    var persistedModelId: String {
         let id = preferences.selectedModelId
         if let id, !models.isEmpty {
             if let model = models.first(where: { $0.id == id }) {
@@ -127,10 +127,13 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         return id ?? firstAccessibleModelId
     }
 
+    var currentModelId: String? {
+        preferences.selectedModelId
+    }
+
     var selectedModelSupportsImageUpload: Bool {
-        guard !models.isEmpty else { return true }
-        guard let id = persistedModelId else { return true }
-        return models.first(where: { $0.id == id })?.supportsImageUpload ?? true
+        guard !models.isEmpty else { return false }
+        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
     }
 
     var isOmnibarSession: Bool {
@@ -155,13 +158,12 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         displayState == .aiTab(.expanded) && inputMode == .aiChat
     }
 
-    private var firstAccessibleModelId: String? {
-        models.first(where: { $0.entityHasAccess })?.id
+    private var firstAccessibleModelId: String {
+        models.first(where: { $0.entityHasAccess })?.id ?? ""
     }
 
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
-    private var cancellables = Set<AnyCancellable>()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -199,8 +201,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
         viewController.delegate = self
-        subscribeToGeneratingState()
-        subscribeToStopGeneratingTap()
 
         if let cachedLabel = preferences.selectedModelShortName {
             viewController.modelName = cachedLabel
@@ -360,10 +360,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func activateInput() {
         viewController.activateInput()
-    }
-
-    func stopGeneratingButtonTapped() {
-        viewController.handler.stopGeneratingButtonTapped()
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
@@ -629,7 +625,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     private func updateModelChipLabel() {
-        guard let selectedId = persistedModelId else { return }
+        let selectedId = persistedModelId
         let shortName = models.first(where: { $0.id == selectedId })?.shortName
         if let shortName {
             viewController.modelName = shortName
@@ -732,27 +728,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     // MARK: - Private
-
-    private func subscribeToGeneratingState() {
-        $aiChatStatus
-            .map { status in
-                status == .loading || status == .streaming || status == .startStreamNewPrompt
-            }
-            .removeDuplicates()
-            .sink { [weak self] isGenerating in
-                guard let self else { return }
-                self.viewController.isGenerating = isGenerating
-            }
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToStopGeneratingTap() {
-        viewController.handler.stopGeneratingButtonTappedPublisher
-            .sink { [weak self] in
-                self?.didPressStopGeneratingButton.send()
-            }
-            .store(in: &cancellables)
-    }
 
     private func updateModelChipVisibility() {
         viewController.isModelChipHidden = hasSubmittedPrompt

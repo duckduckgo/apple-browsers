@@ -113,7 +113,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private(set) var hasSubmittedPrompt = false
     private(set) var subscriptionState: SubscriptionState = .free
 
-    var persistedModelId: String {
+    var persistedModelId: String? {
         let id = preferences.selectedModelId
         if let id, !models.isEmpty {
             if let model = models.first(where: { $0.id == id }) {
@@ -124,13 +124,10 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         return id ?? firstAccessibleModelId
     }
 
-    var currentModelId: String? {
-        preferences.selectedModelId
-    }
-
     var selectedModelSupportsImageUpload: Bool {
         guard !models.isEmpty else { return true }
-        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? true
+        guard let id = persistedModelId else { return true }
+        return models.first(where: { $0.id == id })?.supportsImageUpload ?? true
     }
 
     var isOmnibarSession: Bool {
@@ -155,8 +152,8 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         displayState == .aiTab(.expanded) && inputMode == .aiChat
     }
 
-    private var firstAccessibleModelId: String {
-        models.first(where: { $0.entityHasAccess })?.id ?? ""
+    private var firstAccessibleModelId: String? {
+        models.first(where: { $0.entityHasAccess })?.id
     }
 
     private weak var boundUserScript: AIChatUserScript?
@@ -616,7 +613,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     private func updateModelChipLabel() {
-        let selectedId = persistedModelId
+        guard let selectedId = persistedModelId else { return }
         let shortName = models.first(where: { $0.id == selectedId })?.shortName
         if let shortName {
             viewController.modelName = shortName
@@ -749,8 +746,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if boundUserScript != nil {
                 didSubmitPrompt.send(text)
             } else {
-                let modelId = persistedModelId.isEmpty ? nil : persistedModelId
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: modelId)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: persistedModelId)
             }
         }
     }

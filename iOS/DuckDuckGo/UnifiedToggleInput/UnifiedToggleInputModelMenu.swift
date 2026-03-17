@@ -38,7 +38,7 @@ struct UnifiedToggleInputModelMenu: Equatable {
 
     static func build(
         models: [AIChatModel],
-        selectedId: String,
+        selectedId: String?,
         isBottomAnchored: Bool,
         hasActiveSubscription: Bool,
         advancedSectionTitle: String,
@@ -70,7 +70,7 @@ struct UnifiedToggleInputModelMenu: Equatable {
 
     private static func buildFreeSections(
         models: [AIChatModel],
-        selectedId: String,
+        selectedId: String?,
         advancedSectionTitle: String
     ) -> [Section] {
         let accessible = models.filter { $0.entityHasAccess }
@@ -96,7 +96,7 @@ struct UnifiedToggleInputModelMenu: Equatable {
 
     private static func buildSubscribedSections(
         models: [AIChatModel],
-        selectedId: String,
+        selectedId: String?,
         advancedSectionTitle: String,
         basicSectionTitle: String
     ) -> [Section] {
@@ -128,7 +128,7 @@ struct UnifiedToggleInputModelMenu: Equatable {
 }
 
 extension UnifiedToggleInputModelMenu.Item {
-    init(model: AIChatModel, selectedId: String, isDisabled: Bool) {
+    init(model: AIChatModel, selectedId: String?, isDisabled: Bool) {
         self.modelId = model.id
         self.name = model.name
         self.provider = model.provider

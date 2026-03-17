@@ -792,10 +792,10 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.persistedModelId, "free")
     }
 
-    func test_persistedModelId_fallsBackToEmptyString() {
+    func test_persistedModelId_fallsBackToNil() {
         mockPreferences.selectedModelId = nil
         sut.models = []
-        XCTAssertEqual(sut.persistedModelId, "")
+        XCTAssertNil(sut.persistedModelId)
     }
 
     // MARK: - Model Selection: updateSelectedModel
@@ -914,11 +914,11 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.persistedModelId, "free")
     }
 
-    func test_persistedModelId_noAccessibleModels_returnsEmptyString() {
+    func test_persistedModelId_noAccessibleModels_returnsNil() {
         mockPreferences.selectedModelId = "locked"
         sut.models = [makeModel(id: "locked", access: false)]
 
-        XCTAssertEqual(sut.persistedModelId, "")
+        XCTAssertNil(sut.persistedModelId)
     }
 
     // MARK: - Chip Label Persistence

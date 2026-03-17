@@ -217,22 +217,6 @@ private struct QuitSurveyOptionRow: View {
     }
 }
 
-// MARK: - Inline Checkbox Toggle Style
-
-private struct InlineCheckboxToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        Button(action: { configuration.isOn.toggle() }) {
-            HStack(spacing: 8) {
-                Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                    .foregroundColor(configuration.isOn ? Color(designSystemColor: .accentAltContentPrimary) : Color(designSystemColor: .iconsSecondary))
-                configuration.label
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Domain Toggle Row
 
 private struct DomainToggleRow: View {
@@ -240,39 +224,41 @@ private struct DomainToggleRow: View {
     @Binding var isSelected: Bool
 
     var body: some View {
-        Toggle(isOn: $isSelected) {
-            HStack(spacing: 8) {
-                if let favicon = entry.favicon {
-                    Image(nsImage: favicon)
-                        .resizable()
-                        .frame(width: 16, height: 16)
-                        .clipShape(RoundedRectangle(cornerRadius: 3))
-                } else {
-                    Image(systemName: "globe")
-                        .frame(width: 16, height: 16)
-                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
-                }
+        HStack(alignment: .center, spacing: 6) {
+            Toggle("", isOn: $isSelected)
+                .toggleStyle(.checkbox)
+                .labelsHidden()
 
-                VStack(alignment: .leading, spacing: 1) {
-                    if let title = entry.title {
-                        Text(title)
-                            .systemLabel()
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(entry.domain)
-                            .caption2()
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        Text(entry.domain)
-                            .systemLabel()
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+            if let favicon = entry.favicon {
+                Image(nsImage: favicon)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
+            } else {
+                Image(systemName: "globe")
+                    .frame(width: 16, height: 16)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+            }
+
+            VStack(alignment: .leading, spacing: 1) {
+                if let title = entry.title {
+                    Text(title)
+                        .systemLabel()
+                        .lineLimit(1)
+                    Text(entry.domain)
+                        .caption2()
+                        .lineLimit(1)
+                } else {
+                    Text(entry.domain)
+                        .systemLabel()
+                        .lineLimit(1)
                 }
             }
+
+            Spacer()
         }
-        .toggleStyle(InlineCheckboxToggleStyle())
+        .contentShape(Rectangle())
+        .onTapGesture { isSelected.toggle() }
     }
 }
 
@@ -297,7 +283,7 @@ private struct OtherDomainRow: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .toggleStyle(InlineCheckboxToggleStyle())
+            .toggleStyle(.checkbox)
 
             if viewModel.isOtherDomainSelected {
                 TextField(UserText.quitSurveyAffectedDomainsOtherPlaceholder, text: $viewModel.otherDomainText)

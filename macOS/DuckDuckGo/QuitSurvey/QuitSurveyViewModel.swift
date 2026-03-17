@@ -106,6 +106,8 @@ final class QuitSurveyViewModel: ObservableObject {
     private static let websitesDidntWorkOption = QuitSurveyOption(id: websitesDidntWorkOptionId, text: UserText.quitSurveyOptionWebsitesDidntWork)
     private static let somethingElseOption = QuitSurveyOption(id: "something-else", text: UserText.quitSurveyOptionSomethingElse)
 
+    static let domainSelectorTriggerIds: Set<String> = [websitesDidntWorkOptionId, "pages-froze", "pages-loaded-slowly"]
+
     let availableOptions: [QuitSurveyOption]
     let recentDomains: [QuitSurveyDomainEntry]
 
@@ -128,7 +130,7 @@ final class QuitSurveyViewModel: ObservableObject {
 
     var shouldShowDomainSelector: Bool {
         featureFlagger.isFeatureOn(.websitesHistoryFirstTimeQuitSurvey)
-            && selectedOptions.contains(Self.websitesDidntWorkOption.id)
+            && !selectedOptions.isDisjoint(with: Self.domainSelectorTriggerIds)
             && !recentDomains.isEmpty
     }
 
@@ -197,7 +199,7 @@ final class QuitSurveyViewModel: ObservableObject {
     func toggleOption(_ optionId: String) {
         if selectedOptions.contains(optionId) {
             selectedOptions.remove(optionId)
-            if optionId == Self.websitesDidntWorkOption.id {
+            if Self.domainSelectorTriggerIds.contains(optionId) && !shouldShowDomainSelector {
                 clearDomainState()
             }
         } else {
@@ -231,7 +233,9 @@ final class QuitSurveyViewModel: ObservableObject {
 
         var effectiveDomains = selectedDomains
         let rawOther = otherDomainText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedOther = (URL(string: rawOther)?.trimmingQueryItemsAndFragment().host ?? rawOther)
+        let resolvedURL = URL(string: rawOther).flatMap { $0.host != nil ? $0 : nil }
+            ?? URL(string: "https://\(rawOther)")
+        let trimmedOther = (resolvedURL?.trimmingQueryItemsAndFragment().host ?? rawOther)
             .replacingOccurrences(of: ",", with: "")
         if isOtherDomainSelected && !trimmedOther.isEmpty {
             effectiveDomains.insert(trimmedOther)

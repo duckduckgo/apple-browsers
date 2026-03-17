@@ -191,6 +191,48 @@ final class QuitSurveyViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.shouldShowDomainSelector)
     }
 
+    func testShouldShowDomainSelectorWhenPagesFrozePillSelectedAndHistoryNonEmpty() {
+        let historyCoordinating = HistoryCoordinatingMock()
+        historyCoordinating.history = [
+            makeEntry(host: "example.com", lastVisit: Date()),
+        ]
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.websitesHistoryFirstTimeQuitSurvey]
+
+        let viewModel = QuitSurveyViewModel(
+            persistor: nil,
+            featureFlagger: featureFlagger,
+            historyCoordinating: historyCoordinating,
+            onQuit: {}
+        )
+
+        XCTAssertFalse(viewModel.shouldShowDomainSelector)
+
+        viewModel.toggleOption("pages-froze")
+        XCTAssertTrue(viewModel.shouldShowDomainSelector)
+    }
+
+    func testShouldShowDomainSelectorWhenPagesLoadedSlowlyPillSelectedAndHistoryNonEmpty() {
+        let historyCoordinating = HistoryCoordinatingMock()
+        historyCoordinating.history = [
+            makeEntry(host: "example.com", lastVisit: Date()),
+        ]
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.websitesHistoryFirstTimeQuitSurvey]
+
+        let viewModel = QuitSurveyViewModel(
+            persistor: nil,
+            featureFlagger: featureFlagger,
+            historyCoordinating: historyCoordinating,
+            onQuit: {}
+        )
+
+        XCTAssertFalse(viewModel.shouldShowDomainSelector)
+
+        viewModel.toggleOption("pages-loaded-slowly")
+        XCTAssertTrue(viewModel.shouldShowDomainSelector)
+    }
+
     func testShouldNotShowDomainSelectorWhenFeatureFlagIsOff() {
         let historyCoordinating = HistoryCoordinatingMock()
         historyCoordinating.history = [
@@ -274,6 +316,56 @@ final class QuitSurveyViewModelTests: XCTestCase {
         XCTAssertTrue(vm.selectedDomains.isEmpty)
         XCTAssertFalse(vm.isOtherDomainSelected)
         XCTAssertTrue(vm.otherDomainText.isEmpty)
+    }
+
+    func testDeselectingPagesFrozePillClearsDomainStateWhenItIsLastTrigger() {
+        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        vm.toggleOption("pages-froze")
+        vm.toggleDomain("example.com")
+        vm.toggleOtherDomain()
+        vm.otherDomainText = "other.com"
+
+        vm.toggleOption("pages-froze") // deselect — no other triggers selected
+
+        XCTAssertTrue(vm.selectedDomains.isEmpty)
+        XCTAssertFalse(vm.isOtherDomainSelected)
+        XCTAssertTrue(vm.otherDomainText.isEmpty)
+    }
+
+    func testDeselectingPagesLoadedSlowlyPillClearsDomainStateWhenItIsLastTrigger() {
+        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        vm.toggleOption("pages-loaded-slowly")
+        vm.toggleDomain("example.com")
+        vm.toggleOtherDomain()
+        vm.otherDomainText = "other.com"
+
+        vm.toggleOption("pages-loaded-slowly") // deselect — no other triggers selected
+
+        XCTAssertTrue(vm.selectedDomains.isEmpty)
+        XCTAssertFalse(vm.isOtherDomainSelected)
+        XCTAssertTrue(vm.otherDomainText.isEmpty)
+    }
+
+    func testDeselectingOneTriggerKeepsDomainStateWhenAnotherTriggerIsStillSelected() {
+        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        vm.toggleOption(QuitSurveyViewModel.websitesDidntWorkOptionId)
+        vm.toggleOption("pages-froze")
+        vm.toggleDomain("example.com")
+
+        vm.toggleOption("pages-froze") // deselect — websites-didnt-work is still selected
+
+        XCTAssertTrue(vm.selectedDomains.contains("example.com"))
+    }
+
+    func testDeselectingLastTriggerClearsDomainStateEvenWithOtherNonTriggerPillsSelected() {
+        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        vm.toggleOption("pages-froze")
+        vm.toggleOption("slow-to-open") // non-trigger pill
+        vm.toggleDomain("example.com")
+
+        vm.toggleOption("pages-froze") // deselect last trigger
+
+        XCTAssertTrue(vm.selectedDomains.isEmpty)
     }
 
     func testDeselectingWebsitesPillMeansDomainsNotSubmitted() {

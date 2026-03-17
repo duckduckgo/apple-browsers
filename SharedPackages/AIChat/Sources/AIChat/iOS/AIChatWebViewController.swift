@@ -18,6 +18,7 @@
 //
 
 #if os(iOS)
+import AVFoundation
 import UIKit
 import WebKit
 
@@ -37,6 +38,7 @@ final class AIChatWebViewController: UIViewController {
         webView.isOpaque = false /// Required to make the background color visible
         webView.backgroundColor = .webViewBackgroundColor
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         return webView
     }()
@@ -238,6 +240,26 @@ extension AIChatWebViewController: WKNavigationDelegate {
         } else {
             loadingView.stopAnimating()
         }
+    }
+}
+
+// MARK: - WKUIDelegate
+
+extension AIChatWebViewController: WKUIDelegate {
+
+    func webView(_ webView: WKWebView,
+                 requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo,
+                 type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        guard origin.host.isDuckAIHost,
+              type == .microphone || type == .cameraAndMicrophone else {
+            decisionHandler(.deny)
+            return
+        }
+
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        decisionHandler(status == .authorized ? .grant : .deny)
     }
 }
 

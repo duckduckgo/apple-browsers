@@ -41,7 +41,7 @@ final class MainWindow: NSWindow {
         return super.setFrameAutosaveName(self.frameAutosaveName)
     }
 
-    private var trafficLightsCancellables = [AnyCancellable]()
+    private var semaphoreLightsManager: SemaphoreLightsManager?
 
     init(frame: NSRect) {
         super.init(contentRect: frame,
@@ -50,13 +50,10 @@ final class MainWindow: NSWindow {
                    defer: true)
 
         setupWindow()
-        startListeningToNotifications()
-        subscribeToTrafficLightsFrames()
-        assert(AppVersion.runType != .unitTests, "MainWindow should not be created in unit tests")
-    }
+        semaphoreLightsManager = SemaphoreLightsManager(window: self)
+        semaphoreLightsManager?.startObservingChanges()
 
-    deinit {
-        stopListeningToNotifications()
+        assert(AppVersion.runType != .unitTests, "MainWindow should not be created in unit tests")
     }
 
     // To avoid beep sounds, this keyDown method catches events that go through the
@@ -82,8 +79,6 @@ final class MainWindow: NSWindow {
 
         // Setting minimum width to fit the wide NTP search bar
         minSize = .init(width: Self.minWindowWidth, height: 0)
-
-        layoutTrafficLights()
     }
 
     /// The overridden method sends `firstResponderDidChange` notification on first responder change
@@ -148,113 +143,101 @@ final class MainWindow: NSWindow {
         }
         return children
     }
+}
 
-    // MARK: - Traffic Lights Repositioning
+// MARK: - SemaphoreLightsManager
 
-    private func startListeningToNotifications() {
-        let notificationCenter = NotificationCenter.default
-        notificationCenter.addObserver(self, selector: #selector(windowDidResize), name: NSWindow.didResizeNotification, object: self)
-        notificationCenter.addObserver(self, selector: #selector(windowDidExitFullScreen), name: NSWindow.didExitFullScreenNotification, object: self)
-        notificationCenter.addObserver(self, selector: #selector(windowWillEnterFullScreen), name: NSWindow.willEnterFullScreenNotification, object: self)
-        notificationCenter.addObserver(self, selector: #selector(windowWillExitFullScreen), name: NSWindow.willExitFullScreenNotification, object: self)
-        notificationCenter.addObserver(self, selector: #selector(windowDidEnterFullScreen), name: NSWindow.didEnterFullScreenNotification, object: self)
-        notificationCenter.addObserver(self, selector: #selector(windowDidDeminiaturize), name: NSWindow.didDeminiaturizeNotification, object: self)
+class SemaphoreLightsManager {
+
+    private var cancellables = [AnyCancellable]()
+    private weak var window: NSWindow?
+    var buttonTypesAndLocations: [NSWindow.ButtonType: NSPoint] = [
+        .closeButton:       NSPoint(x: 17, y: 14),
+        .miniaturizeButton: NSPoint(x: 37, y: 14),
+        .zoomButton:        NSPoint(x: 57, y: 14)
+    ]
+
+
+    init(window: NSWindow) {
+        self.window = window
     }
 
-    private func stopListeningToNotifications() {
+    deinit {
+        stopListeningToNotifications()
+    }
+
+    func startObservingChanges() {
+        layoutTrafficLights()
+        startListeningToNotifications()
+        subscribeToTrafficLightsFrames()
+    }
+}
+
+private extension SemaphoreLightsManager {
+
+    func startListeningToNotifications() {
+        let observedNotificationNames = [
+            NSWindow.didResizeNotification,
+            NSWindow.didBecomeKeyNotification,
+            NSWindow.didBecomeMainNotification,
+            NSWindow.didResignKeyNotification,
+            NSWindow.didResignMainNotification,
+            NSWindow.didResizeNotification,
+            NSWindow.didExitFullScreenNotification,
+            NSWindow.willEnterFullScreenNotification,
+            NSWindow.willExitFullScreenNotification,
+            NSWindow.didEnterFullScreenNotification,
+            NSWindow.didDeminiaturizeNotification,
+        ]
+
+        for name in observedNotificationNames {
+            NotificationCenter.default.addObserver(self, selector: #selector(processWindowNotification), name: name, object: window)
+        }
+    }
+
+    func stopListeningToNotifications() {
         NotificationCenter.default.removeObserver(self)
     }
 
-    private func subscribeToTrafficLightsFrames() {
-        guard let closeButton = standardWindowButton(.closeButton) else {
+    func subscribeToTrafficLightsFrames() {
+        guard let closeButton = window?.standardWindowButton(.closeButton) else {
             return
         }
 
         closeButton
             .publisher(for: \.frame)
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.layoutTrafficLights()
             }
-            .store(in: &trafficLightsCancellables)
+            .store(in: &cancellables)
     }
-
-    override func becomeKey() {
-        super.becomeKey()
-        layoutTrafficLights()
-    }
-
-    override func resignKey() {
-        super.resignKey()
-        layoutTrafficLights()
-    }
-
-    override var maxSize: NSSize {
-        didSet {
-            layoutTrafficLights()
-        }
-    }
-
-    override var minSize: NSSize {
-        didSet {
-            layoutTrafficLights()
-        }
-    }
-}
-
-// MARK: - Notification Handlers
-
-private extension MainWindow {
-
-    @objc
-    func windowDidExitFullScreen(_ note: Notification) {
-        layoutTrafficLights()
-    }
-
-    @objc
-    func windowWillEnterFullScreen(_ note: Notification) {
-        layoutTrafficLights()
-    }
-
-    @objc
-    func windowWillExitFullScreen(_ note: Notification) {
-        layoutTrafficLights()
-    }
-
-    @objc
-    func windowDidEnterFullScreen(_ note: Notification) {
-        layoutTrafficLights()
-    }
-
-    @objc
-    func windowDidResize(_ note: Notification) {
-        layoutTrafficLights()
-    }
-
-    @objc
-    func windowDidDeminiaturize(_ note: Notification) {
-        layoutTrafficLights()
-    }
-}
-
-private extension MainWindow {
 
     func layoutTrafficLights() {
-        let originY: CGFloat = 14
-        let buttonLocations: [NSPoint] = [
-            NSPoint(x: 17, y: originY),
-            NSPoint(x: 37, y: originY),
-            NSPoint(x: 57, y: originY)
-        ]
+        if Thread.isMainThread {
+            layoutTrafficLightsOnMainThread()
+            return
+        }
 
-        let buttonTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton ]
+        DispatchQueue.main.async { [weak self] in
+            self?.layoutTrafficLightsOnMainThread()
+        }
+    }
 
-        for (type, origin) in zip(buttonTypes, buttonLocations) {
-            guard let button = standardWindowButton(type), button.frame.origin != origin else {
+    private func layoutTrafficLightsOnMainThread() {
+        for (type, origin) in buttonTypesAndLocations {
+            guard let button = window?.standardWindowButton(type), button.frame.origin != origin else {
                 continue
             }
 
             button.frame.origin = origin
         }
+    }
+}
+
+private extension SemaphoreLightsManager {
+
+    @objc
+    func processWindowNotification(_ note: Notification) {
+        layoutTrafficLights()
     }
 }

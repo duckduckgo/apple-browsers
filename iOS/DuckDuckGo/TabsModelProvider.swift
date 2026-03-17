@@ -62,6 +62,8 @@ protocol TabsModelProviding {
     var normalTabsModel: TabsModelManaging { get }
     var fireModeTabsModel: TabsModelManaging { get }
     var aggregateTabsModel: TabsModelReading { get }
+    /// Clears tabs for the given browsing mode, or all tabs if `nil`.
+    func clearTabs(for browsingMode: BrowsingMode?)
     func save()
 }
 
@@ -86,6 +88,18 @@ class TabsModelProvider: TabsModelProviding {
         self.aggregateTabsModel = AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel)
     }
     
+    func clearTabs(for browsingMode: BrowsingMode?) {
+        switch browsingMode {
+        case .normal:
+            _normalTabsModel.clearAll()
+        case .fire:
+            _fireModeTabsModel.clearAll()
+        case nil:
+            _normalTabsModel.clearAll()
+            _fireModeTabsModel.clearAll()
+        }
+    }
+
     func save() {
         persistence.save(model: _normalTabsModel, for: .normal)
         persistence.save(model: _fireModeTabsModel, for: .fire)

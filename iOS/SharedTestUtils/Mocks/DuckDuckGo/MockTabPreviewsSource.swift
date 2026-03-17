@@ -24,6 +24,7 @@ import UIKit
 class MockTabPreviewsSource: TabPreviewsSource {
 
     var removePreviewsWithIdNotInCalls = [Set<String>]()
+    private(set) var removeAllPreviewsCalled = false
     var totalStoredPreviewsReturnValue: Int?
 
     init(totalStoredPreviews: Int? = nil) {
@@ -40,9 +41,10 @@ class MockTabPreviewsSource: TabPreviewsSource {
     }
 
     func removeAllPreviews() {
+        removeAllPreviewsCalled = true
     }
 
-    func removePreviewsWithIdNotIn(_ ids: Set<String>) async {
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) {
         removePreviewsWithIdNotInCalls.append(ids)
     }
 

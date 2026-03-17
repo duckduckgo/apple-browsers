@@ -82,6 +82,62 @@ final class TabsModelProviderTests: XCTestCase {
         XCTAssertEqual(sut.aggregateTabsModel.count, normalModel.count + fireModel.count)
     }
 
+    // MARK: - Clear Tabs
+
+    func testWhenClearTabsForNormalThenOnlyNormalTabsAreCleared() {
+        let normalModel = TabsModel(tabs: [
+            Tab(link: exampleLink),
+            Tab(link: exampleLink)
+        ], desktop: false)
+        let fireModel = TabsModel(tabs: [
+            Tab(link: exampleLink, fireTab: true)
+        ], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        sut.clearTabs(for: .normal)
+
+        XCTAssertEqual(sut.normalTabsModel.count, 1, "Normal model should have auto-inserted empty tab")
+        XCTAssertNil(sut.normalTabsModel.tabs.first?.link, "Remaining normal tab should be empty (auto-inserted)")
+        XCTAssertEqual(sut.fireModeTabsModel.count, 1, "Fire model should be untouched")
+    }
+
+    func testWhenClearTabsForFireThenOnlyFireTabsAreCleared() {
+        let normalModel = TabsModel(tabs: [
+            Tab(link: exampleLink)
+        ], desktop: false)
+        let fireModel = TabsModel(tabs: [
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true)
+        ], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        sut.clearTabs(for: .fire)
+
+        XCTAssertEqual(sut.normalTabsModel.count, 1, "Normal model should be untouched")
+        XCTAssertEqual(sut.normalTabsModel.tabs.first?.link?.url.absoluteString, "https://example.com")
+        XCTAssertEqual(sut.fireModeTabsModel.count, 0, "Fire model should be empty")
+    }
+
+    func testWhenClearTabsForNilThenBothModelsAreCleared() {
+        let normalModel = TabsModel(tabs: [
+            Tab(link: exampleLink),
+            Tab(link: exampleLink)
+        ], desktop: false)
+        let fireModel = TabsModel(tabs: [
+            Tab(link: exampleLink, fireTab: true)
+        ], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        sut.clearTabs(for: nil)
+
+        XCTAssertEqual(sut.normalTabsModel.count, 1, "Normal model should have auto-inserted empty tab")
+        XCTAssertNil(sut.normalTabsModel.tabs.first?.link, "Remaining normal tab should be empty")
+        XCTAssertEqual(sut.fireModeTabsModel.count, 0, "Fire model should be empty")
+    }
+
     // MARK: - Save
 
     func testWhenSaveCalledThenPersistenceReceivesBothModels() {

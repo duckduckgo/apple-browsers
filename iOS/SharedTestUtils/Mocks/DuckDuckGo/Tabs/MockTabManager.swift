@@ -25,8 +25,11 @@ class MockTabManager: TabManaging {
     var currentTabsModel: TabsModelManaging = TabsModel(desktop: false)
     
     private(set) var prepareAllTabsExceptCurrentCalled = false
+    private(set) var prepareAllTabsExceptCurrentBrowsingMode: BrowsingMode?
     private(set) var prepareCurrentTabCalled = false
+    private(set) var prepareCurrentTabBrowsingMode: BrowsingMode?
     nonisolated(unsafe) private(set) var removeAllCalled = false
+    nonisolated(unsafe) private(set) var removeAllBrowsingMode: BrowsingMode?
     var prepareTabCalled = false
     private(set) var prepareTabCalledWith: Tab?
     
@@ -44,16 +47,19 @@ class MockTabManager: TabManaging {
     private(set) var controllerForTabCalled = false
     private(set) var controllerForTabCalledWith: Tab?
     
-    func prepareAllTabsExceptCurrentForDataClearing() {
+    func prepareAllTabsExceptCurrentForDataClearing(browsingMode: BrowsingMode? = nil) {
         prepareAllTabsExceptCurrentCalled = true
+        prepareAllTabsExceptCurrentBrowsingMode = browsingMode
     }
     
-    func prepareCurrentTabForDataClearing() {
+    func prepareCurrentTabForDataClearing(browsingMode: BrowsingMode? = nil) {
         prepareCurrentTabCalled = true
+        prepareCurrentTabBrowsingMode = browsingMode
     }
     
-    nonisolated func removeAll() {
+    nonisolated func removeAll(browsingMode: BrowsingMode? = nil) {
         removeAllCalled = true
+        removeAllBrowsingMode = browsingMode
     }
 
     func viewModelForCurrentTab() -> DuckDuckGo.TabViewModel? {

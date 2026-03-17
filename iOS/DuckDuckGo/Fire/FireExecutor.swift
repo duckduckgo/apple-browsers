@@ -52,6 +52,7 @@ struct FireRequest {
     
     enum Scope {
         case tab(viewModel: TabViewModel)
+        case fireMode
         case all
     }
     
@@ -264,7 +265,9 @@ class FireExecutor: FireExecuting {
     private func prepareForBurningTabs(scope: FireRequest.Scope) {
         switch scope {
         case .all:
-            tabManager.prepareAllTabsExceptCurrentForDataClearing()
+            tabManager.prepareAllTabsExceptCurrentForDataClearing(browsingMode: nil)
+        case .fireMode:
+            tabManager.prepareAllTabsExceptCurrentForDataClearing(browsingMode: .fire)
         case .tab(let viewModel):
             // Only prepare the tab if it's not the current tab
             // Current tabs are prepared during burnTabs
@@ -278,9 +281,12 @@ class FireExecutor: FireExecuting {
     private func burnTabs(scope: FireRequest.Scope, domains: [String]?) {
         switch scope {
         case .all:
-            tabManager.prepareCurrentTabForDataClearing()
-            tabManager.removeAll()
+            tabManager.prepareCurrentTabForDataClearing(browsingMode: nil)
+            tabManager.removeAll(browsingMode: nil)
             Favicons.shared.clearCache(.tabs)
+        case .fireMode:
+            tabManager.prepareCurrentTabForDataClearing(browsingMode: .fire)
+            tabManager.removeAll(browsingMode: .fire)
         case .tab(let viewModel):
             guard let domains else {
                 Logger.general.error("Expected domains to be present when burning a single tab")
@@ -322,6 +328,9 @@ class FireExecutor: FireExecuting {
         switch scope {
         case .tab(let viewModel):
             await burnTabData(tabViewModel: viewModel, domains: domains)
+        case .fireMode:
+            // TODO: - Implement
+            break
         case .all:
             await burnAllData()
         }
@@ -439,6 +448,9 @@ class FireExecutor: FireExecuting {
         switch request.scope {
         case .tab(let viewModel):
             await burnTabAIHistory(tabViewModel: viewModel)
+        case .fireMode:
+            // TODO: - Implement
+            return
         case .all:
             await burnAllAIHistory(trigger: request.trigger)
         }

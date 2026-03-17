@@ -26,7 +26,7 @@ protocol TabPreviewsSource: AnyObject {
     func update(preview: UIImage, forTab tab: Tab)
     func removePreview(forTab tab: Tab)
     func removeAllPreviews()
-    func removePreviewsWithIdNotIn(_ ids: Set<String>) async
+    func removePreviewsWithIdNotIn(_ ids: Set<String>)
     func totalStoredPreviews() -> Int?
     func preview(for tab: Tab) -> UIImage?
 
@@ -189,8 +189,12 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         return UIImage(data: data)
     }
 
-    func removePreviewsWithIdNotIn(_ ids: Set<String>) async {
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) {
         guard let directory = previewStoreDir else { return }
+        guard !ids.isEmpty else {
+            removeAllPreviews()
+            return
+        }
         let contents = try? FileManager.default.contentsOfDirectory(atPath: directory.path)
         contents?.forEach {
             let id = $0.dropping(suffix: ".png")

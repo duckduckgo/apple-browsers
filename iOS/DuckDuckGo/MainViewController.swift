@@ -4293,7 +4293,7 @@ extension MainViewController {
     private func presentPostBurnMessage(scope: FireRequest.Scope, tabsCount: Int) {
         let message: String
         switch scope {
-        case .all:
+        case .all, .fireMode:
             message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
             
         case .tab:
@@ -4382,6 +4382,9 @@ extension MainViewController: FireExecutorDelegate {
             DailyPixel.fire(pixel: .forgetAllExecutedDaily, withAdditionalParameters: params)
         case .tab:
             DailyPixel.fireDailyAndCount(pixel: .singleTabBurnExecuted, withAdditionalParameters: params)
+        case .fireMode:
+            // TODO: - Add fire mode burn pixel
+            break
         }
     }
     
@@ -4390,15 +4393,19 @@ extension MainViewController: FireExecutorDelegate {
         findInPageView?.done()
 
         if #available(iOS 18.4, *) {
+            let tabs: [Tab]
             switch fireRequest.scope {
             case .all:
-                for tab in tabManager.allTabsModel.tabs {
-                    if let tabController = tabManager.controller(for: tab) {
-                        webExtensionEventsCoordinator?.didCloseTab(tabController)
-                    }
-                }
+                tabs = tabManager.allTabsModel.tabs
+            case .fireMode:
+                tabs = tabManager.tabsModel(for: .fire).tabs
             case .tab:
-                break
+                tabs = []
+            }
+            for tab in tabs {
+                if let tabController = tabManager.controller(for: tab) {
+                    webExtensionEventsCoordinator?.didCloseTab(tabController)
+                }
             }
         }
     }
@@ -4409,6 +4416,9 @@ extension MainViewController: FireExecutorDelegate {
         switch fireRequest.scope {
         case .all:
             refreshUIAfterClear()
+        case .fireMode:
+            // TODO: - Custom fire mode UI handling
+            return
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
             return
@@ -4439,6 +4449,9 @@ extension MainViewController: FireExecutorDelegate {
             Task {
                 await aiChatViewControllerManager.killSessionAndResetTimer()
             }
+        case .fireMode:
+            // TODO: - Custom fire mode logic
+            return
         case .tab:
             // No custom logic for tab scope
             return

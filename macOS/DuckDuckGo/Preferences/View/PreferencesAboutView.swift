@@ -77,6 +77,9 @@ extension Preferences {
                                 customFeedURLWarning(onDismiss: { isCustomFeedWarningDismissed = true })
                             }
                         }
+                    } else if buildType.isAppStoreBuild {
+                        UpdateInfoMessage()
+                            .padding(.top, 4)
                     }
                 }
             }.task {

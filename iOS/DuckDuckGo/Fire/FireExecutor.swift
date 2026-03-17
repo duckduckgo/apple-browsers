@@ -499,6 +499,7 @@ class FireExecutor: FireExecuting {
         return request.options.contains(.aiChats) && shouldAllowAIChatsBurn
     }
     
+    @MainActor
     private func burnAIHistory(request: FireRequest) async {
         dataClearingWideEventService?.start(.clearAIChatHistory)
         let result: Result<Void, Error>

@@ -39,18 +39,14 @@ public class DefaultObservationsDataCleaner: ObservationsDataCleaning {
     public func removeObservationsData() async -> Result<Void, Error> {
         switch getValidDatabasePool() {
         case .success(let pool):
-            if let pool = pool {
-                return removeObservationsData(from: pool)
-            } else {
-                Logger.general.debug("Could not find valid pool to clear observations data")
-                return .failure(ObservationsDataCleaningError.noDatabasePoolFound)
-            }
+            return removeObservationsData(from: pool)
         case .failure(let error):
+            Logger.general.debug("Could not find valid pool to clear observations data")
             return .failure(error)
         }
     }
 
-    func getValidDatabasePool() -> Result<DatabasePool?, Error> {
+    func getValidDatabasePool() -> Result<DatabasePool, Error> {
         let bundleID = Bundle.main.bundleIdentifier ?? ""
 
         let databaseURLs = [

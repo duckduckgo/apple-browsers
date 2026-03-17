@@ -39,12 +39,14 @@ struct ClearInteractionStateTask: LaunchTask {
         }
 
         // Perform file removal on the current background queue as it is thread-safe
+        let statesToRemove: [URL]
         switch statesToRemoveResult {
-        case .success(let statesToRemove):
-            _ = interactionStateSource.removeStates(at: statesToRemove, isCancelled: context.isCancelled)
+        case .success(let urls):
+            statesToRemove = urls
         case .failure:
-            break
+            statesToRemove = []
         }
+        _ = interactionStateSource.removeStates(at: statesToRemove, isCancelled: context.isCancelled)
         context.finish()
     }
 

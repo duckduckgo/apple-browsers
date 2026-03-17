@@ -355,7 +355,10 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func copyCode() {
-        UIPasteboard.general.string = recoveryCode
+        Task { @MainActor in
+            guard await commonAuthenticate() else { return }
+            UIPasteboard.general.string = recoveryCode
+        }
     }
 
     public func manageBookmarks() {

@@ -591,6 +591,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool) {
+        // Close the tab and create or reuse an empty tab
         delegate?.tabDidRequestClose(tab,
                                      behavior: .createOrReuseEmptyTab,
                                      clearTabHistory: clearTabHistory)

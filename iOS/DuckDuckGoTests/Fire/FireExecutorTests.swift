@@ -29,6 +29,7 @@ import PersistenceTestingUtils
 import DDGSync
 import WKAbstractions
 import BrowserServicesKitTestsUtils
+import PixelKitTestingUtilities
 
 @MainActor
 final class FireExecutorTests: XCTestCase {

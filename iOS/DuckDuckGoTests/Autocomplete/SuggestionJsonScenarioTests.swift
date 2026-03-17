@@ -494,7 +494,8 @@ extension SuggestionJsonScenarioTests {
             return []
         }
         
-        func removeTabHistory(for tabIDs: [String]) async {
+        func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
+            return .success(())
         }
 
         func removeBrowsingHistory(tabID: String) async -> ActionResult? {

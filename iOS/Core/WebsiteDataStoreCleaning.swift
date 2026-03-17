@@ -46,6 +46,8 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
             return .failure(WebsiteDataStoreCleaningError.unsupportedIOSVersion)
         }
 
+        // Attempt to clean up all previous stores, but wait for a few seconds.
+        // If this fails, we are going to still clean them next time as WebKit keeps track of all stores for us.
         Task {
             var encounteredError: Error?
 

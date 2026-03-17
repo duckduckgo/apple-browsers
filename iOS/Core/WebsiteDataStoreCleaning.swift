@@ -19,10 +19,14 @@
 
 import WebKit
 
+public enum WebsiteDataStoreCleaningError: Error {
+    case unsupportedIOSVersion
+}
+
 public protocol WebsiteDataStoreCleaning {
 
     func countContainers() async -> Int
-    func removeAllContainersAfterDelay(previousCount: Int) async
+    func removeAllContainersAfterDelay(previousCount: Int) async -> Result<Void, Error>
 
 }
 
@@ -37,11 +41,11 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
     }
 
     @MainActor
-    public func removeAllContainersAfterDelay(previousCount: Int) async {
-        guard #available(iOS 17, *) else { return }
+    public func removeAllContainersAfterDelay(previousCount: Int) async -> Result<Void, Error> {
+        guard #available(iOS 17, *) else {
+            return .failure(WebsiteDataStoreCleaningError.unsupportedIOSVersion)
+        }
 
-        // Attempt to clean up all previous stores, but wait for a few seconds.
-        // If this fails, we are going to still clean them next time as WebKit keeps track of all stores for us.
         Task {
             try? await Task.sleep(interval: 3.0)
             for uuid in await WKWebsiteDataStore.allDataStoreIdentifiers {
@@ -50,6 +54,8 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
 
             await checkForLeftBehindDataStores(previousLeftOversCount: previousCount)
         }
+
+        return .success(())
     }
 
     @MainActor

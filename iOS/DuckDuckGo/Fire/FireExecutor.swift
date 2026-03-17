@@ -348,11 +348,13 @@ class FireExecutor: FireExecuting {
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
 
         let pixel = TimedPixel(.forgetAllDataCleared)
-        
+
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
         let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
-        await websiteDataManager.clear(dataStore: storeToUse)
+        let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse)
+        updateWideEventWithWebsiteDataResults(websiteDataResult)
+
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.currentTabsModel.count)"]) // TODO: - Customize based on browsing mode
 
         dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
@@ -381,15 +383,15 @@ class FireExecutor: FireExecuting {
             Logger.general.error("Expected domains to be present when burning tab scoped data")
             return
         }
-        
+
         let timedPixel = TimedPixel(.singleTabDataCleared)
-        
+
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
         let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
-        
+
         // Async tasks
-        async let websiteDataTask: Void = websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
+        async let websiteDataTask = websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
         async let historyTask: Void = historyManager.removeBrowsingHistory(tabID: tabViewModel.tab.uid)
         async let contextualChatTask: Void = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
 
@@ -403,8 +405,9 @@ class FireExecutor: FireExecuting {
         dataClearingWideEventService?.update(.forgetTextZoom, result: textZoomResult)
 
         // Await async tasks
-        _ = await (websiteDataTask, historyTask, contextualChatTask)
-        
+        let (websiteDataResult, _, _) = await (websiteDataTask, historyTask, contextualChatTask)
+        updateWideEventWithWebsiteDataResults(websiteDataResult)
+
         // Fire completion pixel with timing
         let tabType = tabViewModel.tab.isAITab ? "ai" : "web"
         timedPixel.fire(withAdditionalParameters: [
@@ -523,5 +526,15 @@ class FireExecutor: FireExecuting {
             }
         }
         return result
+    }
+
+    private func updateWideEventWithWebsiteDataResults(_ result: WebsiteDataClearingResult) {
+        dataClearingWideEventService?.update(.clearSafelyRemovableWebsiteData, actionResult: result.safelyRemovableData)
+        dataClearingWideEventService?.update(.clearFireproofableDataForNonFireproofDomains, actionResult: result.fireproofableData)
+        dataClearingWideEventService?.update(.clearCookiesForNonFireproofedDomains, actionResult: result.cookies)
+        dataClearingWideEventService?.update(.removeObservationsData, actionResult: result.observationsData)
+        if let removeContainersResult = result.removeAllContainersAfterDelay {
+            dataClearingWideEventService?.update(.removeAllContainersAfterDelay, actionResult: removeContainersResult)
+        }
     }
 }

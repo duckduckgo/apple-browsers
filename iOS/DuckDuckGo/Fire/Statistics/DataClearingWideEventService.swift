@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Core
 import BrowserServicesKit
 import PixelKit
 
@@ -89,6 +90,26 @@ final class DataClearingWideEventService {
         eventData?[keyPath: action.durationPath]?.complete()
 
         switch result {
+        case .success:
+            eventData?[keyPath: action.statusPath] = .success
+        case .failure(let error):
+            eventData?[keyPath: action.statusPath] = .failure
+            eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error)
+        }
+    }
+
+    /// Updates the wide event with an action result including pre-measured interval.
+    ///
+    /// This method is used when the action duration is measured at the Core layer
+    /// and returned along with the result.
+    ///
+    /// - Parameters:
+    ///   - action: The action that completed.
+    ///   - actionResult: The action result containing both result and measured interval.
+    func update(_ action: DataClearingWideEventData.Action, actionResult: ActionResult) {
+        eventData?[keyPath: action.durationPath] = actionResult.measuredInterval
+
+        switch actionResult.result {
         case .success:
             eventData?[keyPath: action.statusPath] = .success
         case .failure(let error):

@@ -354,6 +354,10 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.createAccountAndStartSyncing(optionsViewModel: self)
     }
 
+    public func copyCode() {
+        UIPasteboard.general.string = recoveryCode
+    }
+
     public func manageBookmarks() {
         delegate?.launchBookmarksViewController()
     }

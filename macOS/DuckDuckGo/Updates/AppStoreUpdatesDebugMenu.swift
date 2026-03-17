@@ -34,7 +34,9 @@ final class AppStoreUpdatesDebugMenu: NSMenu {
             NSMenuItem(title: "Force Update Available", action: #selector(toggleForceUpdate))
                 .targetting(self)
             NSMenuItem.separator()
-            NSMenuItem(title: "Reset Install Build Metadata", action: #selector(resetInstallBuildMetadata))
+            NSMenuItem(title: "Simulate New User", action: #selector(simulateNewUser))
+                .targetting(self)
+            NSMenuItem(title: "Simulate Legacy User", action: #selector(simulateLegacyUser))
                 .targetting(self)
             NSMenuItem(title: "Reset Debug Settings", action: #selector(resetDebugSettings))
                 .targetting(self)
@@ -58,12 +60,22 @@ final class AppStoreUpdatesDebugMenu: NSMenu {
         updateMenuItemsState()
     }
 
-    @objc private func resetInstallBuildMetadata() {
+    @objc private func simulateNewUser() {
+        try? settings.set(1, for: \.installBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Simulating New User"
+        alert.informativeText = "Install build metadata has been set. Close and reopen Settings for changes to take effect."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    @objc private func simulateLegacyUser() {
         try? settings.removeValue(for: \.installBuild)
 
         let alert = NSAlert()
-        alert.messageText = "Install Build Metadata Reset"
-        alert.informativeText = "The install build metadata has been cleared. The app will behave as a legacy user on next launch."
+        alert.messageText = "Simulating Legacy User"
+        alert.informativeText = "Install build metadata has been cleared. Close and reopen Settings for changes to take effect."
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }

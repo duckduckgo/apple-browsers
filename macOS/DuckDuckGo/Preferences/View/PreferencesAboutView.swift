@@ -31,6 +31,7 @@ extension Preferences {
     struct AboutView: View {
         @ObservedObject var model: AboutPreferences
         @State private var areAutomaticUpdatesEnabled: Bool = true
+        @State private var isCustomFeedWarningDismissed = false
 
         var autoUpdatesEnabled: Bool {
             let buildType = StandardApplicationBuildType()
@@ -71,8 +72,10 @@ extension Preferences {
                         }
 
                         if buildType.isDebugBuild || buildType.isReviewBuild {
-                            Spacer(minLength: 20)
-                            customFeedURLWarning
+                            if !isCustomFeedWarningDismissed {
+                                Spacer(minLength: 20)
+                                customFeedURLWarning(onDismiss: { isCustomFeedWarningDismissed = true })
+                            }
                         }
                     }
                 }
@@ -95,7 +98,7 @@ extension Preferences {
         /// feed URL set, which could lead to confusion when testing updates or when the
         /// app doesn't behave as expected with production updates.
         @ViewBuilder
-        private var customFeedURLWarning: some View {
+        private func customFeedURLWarning(onDismiss: @escaping () -> Void) -> some View {
             if let customURL = model.customFeedURL {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -110,6 +113,12 @@ extension Preferences {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    Spacer()
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)

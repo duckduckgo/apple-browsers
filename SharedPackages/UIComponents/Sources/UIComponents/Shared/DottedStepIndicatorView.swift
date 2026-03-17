@@ -45,7 +45,14 @@ public struct DottedStepIndicatorView: View {
         HStack(spacing: style.dotSpacing) {
             ForEach(1...totalDots, id: \.self) { index in
                 let size = selectedDot == index ? style.selectedDotSize : style.unselectedDotSize
-                let color = selectedDot == index ? style.selectedDotFillColor : style.unselectedDotFillColor
+                let color = if index < selectedDot {
+                    style.unselectedDotBeforeSelectedFillColor
+                } else if index > selectedDot {
+                    style.unselectedDotAfterSelectedFillColor
+                } else {
+                    style.selectedDotFillColor
+                }
+
                 Capsule()
                     .fill(color)
                     .frame(width: size, height: size)
@@ -68,8 +75,10 @@ public extension DottedStepIndicatorView {
         let unselectedDotSize: CGFloat
         /// Fill colour of the selected dot
         let selectedDotFillColor: Color
-        /// Fill colour of unselected dots
-        let unselectedDotFillColor: Color
+        /// Fill colour of unselected dots before the selected dot
+        let unselectedDotBeforeSelectedFillColor: Color
+        /// Fill colour of unselected dots after the selected dot
+        let unselectedDotAfterSelectedFillColor: Color
         /// Animation used when transitioning between steps
         let animation: Animation
 
@@ -80,21 +89,24 @@ public extension DottedStepIndicatorView {
         ///   - selectedDotSize: Size of the selected dot. Default is 12.0.
         ///   - unselectedDotSize: Size of unselected dots. Default is 6.0.
         ///   - selectedDotFillColor: Fill color for the selected dot. Default is `.primary`.
-        ///   - unselectedDotFillColor: Fill color for unselected dots. Default is `.primary`.
+        ///   - unselectedDotBeforeSelectedFillColor: Fill color for unselected dots before the selected Dot. Default is `.primary`.
+        ///   - unselectedDotAfterSelectedFillColor: Fill color for unselected dots after the selected Dot. Default is `.primary`.
         ///   - animation: Animation for step transitions. Default is `.default`.
         public init(
             dotSpacing: CGFloat = 4.0,
             selectedDotSize: CGFloat = 12.0,
             unselectedDotSize: CGFloat = 6.0,
             selectedDotFillColor: Color = .primary,
-            unselectedDotFillColor: Color = .primary,
+            unselectedDotBeforeSelectedFillColor: Color = .primary,
+            unselectedDotAfterSelectedFillColor: Color = .primary,
             animation: Animation = .default
         ) {
             self.dotSpacing = dotSpacing
             self.selectedDotSize = selectedDotSize
             self.unselectedDotSize = unselectedDotSize
             self.selectedDotFillColor = selectedDotFillColor
-            self.unselectedDotFillColor = unselectedDotFillColor
+            self.unselectedDotBeforeSelectedFillColor = unselectedDotBeforeSelectedFillColor
+            self.unselectedDotAfterSelectedFillColor = unselectedDotAfterSelectedFillColor
             self.animation = animation
         }
     }
@@ -113,7 +125,8 @@ public extension DottedStepIndicatorView {
                     totalDots: 5,
                     style: .init(
                         selectedDotFillColor: .blue,
-                        unselectedDotFillColor: .blue.opacity(0.5)
+                        unselectedDotBeforeSelectedFillColor: .blue,
+                        unselectedDotAfterSelectedFillColor: .blue.opacity(0.5)
                     )
                 )
                 .frame(width: 200, height: 8)

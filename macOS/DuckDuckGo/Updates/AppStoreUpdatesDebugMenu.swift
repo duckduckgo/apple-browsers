@@ -19,18 +19,23 @@
 import AppKit
 import AppUpdaterShared
 import Common
+import Persistence
 
 final class AppStoreUpdatesDebugMenu: NSMenu {
     private let debugSettings = UpdatesDebugSettings()
     private let forceUpdateMenuItem = NSMenuItem(title: "")
+    private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
-    init() {
+    init(keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
+        self.settings = keyValueStore.throwingKeyedStoring()
         super.init(title: "")
 
         buildItems {
             NSMenuItem(title: "Force Update Available", action: #selector(toggleForceUpdate))
                 .targetting(self)
             NSMenuItem.separator()
+            NSMenuItem(title: "Reset Install Build Metadata", action: #selector(resetInstallBuildMetadata))
+                .targetting(self)
             NSMenuItem(title: "Reset Debug Settings", action: #selector(resetDebugSettings))
                 .targetting(self)
             NSMenuItem.separator()
@@ -51,6 +56,16 @@ final class AppStoreUpdatesDebugMenu: NSMenu {
     @objc private func toggleForceUpdate() {
         debugSettings.forceUpdateAvailable.toggle()
         updateMenuItemsState()
+    }
+
+    @objc private func resetInstallBuildMetadata() {
+        try? settings.removeValue(for: \.installBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Install Build Metadata Reset"
+        alert.informativeText = "The install build metadata has been cleared. The app will behave as a legacy user on next launch."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     @objc private func resetDebugSettings() {

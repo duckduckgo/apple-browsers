@@ -145,7 +145,7 @@ private class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         }
 #endif
 
-        return 0 + extraTopPadding
+        return extraTopPadding
     }()
 
     class var extraTabBarBackgroundTopPadding: CGFloat {

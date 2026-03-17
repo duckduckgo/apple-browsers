@@ -147,18 +147,23 @@ final class MainWindow: NSWindow {
 
 // MARK: - SemaphoreLightsManager
 
-class SemaphoreLightsManager {
+final class SemaphoreLightsManager {
+
+    enum Metrics {
+        static let buttonsAndLocations: [NSWindow.ButtonType: NSPoint] = [
+            .closeButton:       NSPoint(x: 17, y: 14),
+            .miniaturizeButton: NSPoint(x: 37, y: 14),
+            .zoomButton:        NSPoint(x: 57, y: 14)
+        ]
+    }
 
     private var cancellables = [AnyCancellable]()
     private weak var window: NSWindow?
-    var buttonTypesAndLocations: [NSWindow.ButtonType: NSPoint] = [
-        .closeButton:       NSPoint(x: 17, y: 14),
-        .miniaturizeButton: NSPoint(x: 37, y: 14),
-        .zoomButton:        NSPoint(x: 57, y: 14)
-    ]
+    private let buttonsAndLocations: [NSWindow.ButtonType: NSPoint]
 
-    init(window: NSWindow) {
+    init(window: NSWindow, buttonsAndLocations: [NSWindow.ButtonType: NSPoint]?) {
         self.window = window
+        self.buttonsAndLocations = buttonsAndLocations ?? Metrics.buttonsAndLocations
     }
 
     deinit {
@@ -181,7 +186,6 @@ private extension SemaphoreLightsManager {
             NSWindow.didBecomeMainNotification,
             NSWindow.didResignKeyNotification,
             NSWindow.didResignMainNotification,
-            NSWindow.didResizeNotification,
             NSWindow.didExitFullScreenNotification,
             NSWindow.willEnterFullScreenNotification,
             NSWindow.willExitFullScreenNotification,

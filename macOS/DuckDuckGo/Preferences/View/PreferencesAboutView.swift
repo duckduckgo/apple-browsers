@@ -402,11 +402,21 @@ extension Preferences {
             }
         }
 
+        private static let boldWords = [
+            UserText.aboutUpdateInfoAppStoreLink,
+            UserText.aboutUpdateInfoAppStoreSettings
+        ]
+
         @available(macOS 12, *)
         private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
             var attributed = AttributedString(fullText)
             if let range = attributed.range(of: linkText) {
                 attributed[range].link = .appStore
+            }
+            for word in Self.boldWords {
+                if let range = attributed.range(of: word) {
+                    attributed[range].inlinePresentationIntent = .stronglyEmphasized
+                }
             }
             return attributed
         }
@@ -430,6 +440,13 @@ extension Preferences {
                 attributedString.addAttribute(.link, value: URL.appStore, range: nsRange)
                 attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
                 attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
+            }
+
+            let boldFont = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+            for word in Self.boldWords {
+                if let range = fullText.range(of: word) {
+                    attributedString.addAttribute(.font, value: boldFont, range: NSRange(range, in: fullText))
+                }
             }
 
             return attributedString

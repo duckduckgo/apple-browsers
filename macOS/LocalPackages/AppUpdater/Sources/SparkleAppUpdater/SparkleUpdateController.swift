@@ -320,6 +320,13 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
         _ = try? configureUpdater()
 
+        pixelFiring?.fire(
+            UpdateFlowPixels.updateConfigurationDaily(
+                configuration: areAutomaticUpdatesEnabled ? "automatic" : "manual"
+            ),
+            frequency: .daily
+        )
+
         validateUpdateExpectations()
     }
 

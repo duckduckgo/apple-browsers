@@ -345,7 +345,9 @@ class FireExecutor: FireExecuting {
     
     @MainActor
     private func burnAllData() async {
+        dataClearingWideEventService?.start(.clearURLCaches)
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
+        dataClearingWideEventService?.update(.clearURLCaches, result: .success(()))
 
         let pixel = TimedPixel(.forgetAllDataCleared)
 

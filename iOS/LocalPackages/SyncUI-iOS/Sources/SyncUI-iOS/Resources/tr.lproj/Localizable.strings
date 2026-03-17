@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Sync & Backup'ı kullanmak için cihaz şifresi gerekir.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Uygulama yeniden yüklendiğinde bu cihazdaki veriler de otomatik olarak geri yüklenir.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "DuckDuckGo uygulamasını yeniden yüklerseniz, verilerinizi bu cihazda geri yüklemek isteyip istemediğinizi sorarız.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Yer işaretleri, şifreler ve daha fazlasını geri yüklemek için Sync & Backup oturumuna devam edin veya yeni bir kurulum yapın.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Sync & Backup'a devam et";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Kuruluma Devam Et";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Önceki Sync & Backup oturumunuz hazır.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "DuckDuckGo uygulamasını yeniden yüklerseniz, verilerinizi bu cihazda geri yüklemek isteyip istemediğinizi sorarız.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Uygulama Yeniden Yüklendiğinde Geri Yükle";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Uygulama Yeniden Yüklendiğinde Geri Yükle";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Kapalı";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Açık";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Uygulama Yeniden Yüklendiğinde Geri Yükle";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Geri";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Senkronize Edilen Verileri Kurtar";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Başlayın";
+"recover.synced.data.sheet.button" = "Senkronize Edilen Verileri Kurtar";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Senkronize edilmiş verilerinizi geri yüklemek için Senkronizasyonu ilk kez ayarlarken belirlediğiniz Kurtarma Koduna ihtiyacınız olacaktır. Bu kod, Senkronizasyonu yapmak üzere kullandığınız cihaza PDF olarak kaydedilmiş olabilir.";
+"recover.synced.data.sheet.description" = "Sync & Backup kurulumunda verilen Kurtarma Koduna ihtiyacınız olacak. Kullandığınız cihazda PDF olarak kaydetmiş olabilirsiniz.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Senkronize Edilen Verileri Kurtar";
+"recover.synced.data.sheet.title" = "Senkronize edilmiş verilerinizi kurtarın";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Yer işaretleri, kaydedilmiş oturum açma bilgileri ve diğer cihazları senkronize etmek için yeniden bağlantı kuruluyor.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Bağlanıyor...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Verilerin Kurtarılması";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Cihazı Kaldır";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Cihaz Kaldırılsın mı?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Kurtarma Kodu";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Kurtarma kodu panoya kopyalandı";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kodu Kopyala";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "PDF olarak kaydet";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Cihazlarınıza erişiminizi kaybederseniz, senkronize edilmiş verilerinizi kurtarmak için bu koda ihtiyacınız olacaktır.";
+"save.recovery.code.save.as.pdf.button" = "PDF olarak indir";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Bu koda erişimi olan herkes senkronize edilmiş verilerinize erişebileceği için lütfen bu kodu güvenli bir yerde saklayın.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Kurtarma Kodunu Kaydet";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Bu kodu kaydedin ve güvenli bir yerde tutun. Böylece bu cihaza erişiminizi kaybederseniz verilerinizi kurtarabilirsiniz.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Verilerinizi Kolayca Kurtarın";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Kurtarma PDF'ini Kaydet";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Ayarlar > Senkronizasyon ve Yedekleme > Başka Bir Cihazla Senkronize Et";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Ayarlar'a gidin";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Sync & Backup'ı kullanmak için cihaz şifresi gerekir.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Sync & Backup'ı kullanmak için cihazınızı güvenli hale getirin";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Kurtarma";
 
 /* Sync & Backup Title */
 "sync.title" = "Senkronizasyon ve Yedekleme";

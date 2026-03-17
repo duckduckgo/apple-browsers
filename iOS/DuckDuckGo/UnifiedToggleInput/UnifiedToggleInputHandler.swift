@@ -41,6 +41,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
 
+    var isGenerating: Bool = false {
+        didSet { updateButtonState() }
+    }
+
+    var isExpanded: Bool = false {
+        didSet { updateButtonState() }
+    }
+
     var isVoiceSearchEnabled: Bool {
         didSet { updateButtonState() }
     }
@@ -91,6 +99,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         searchGoToButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let stopGeneratingButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var stopGeneratingButtonTappedPublisher: AnyPublisher<Void, Never> {
+        stopGeneratingButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
     init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
@@ -137,12 +150,20 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         searchGoToButtonTappedSubject.send()
     }
 
+    func stopGeneratingButtonTapped() {
+        stopGeneratingButtonTappedSubject.send()
+    }
+
     func updateBarPosition(isTop: Bool) {}
 
     // MARK: - Private
 
     private func updateButtonState() {
-        if !currentText.isEmpty {
+        if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
+            buttonState = .stopGeneratingAndSearchGoTo
+        } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
+            buttonState = .stopGeneratingOnly
+        } else if !currentText.isEmpty {
             buttonState = .clearOnly
         } else if !isToggleEnabled && currentToggleState == .aiChat {
             buttonState = isVoiceSearchEnabled ? .voiceAndSearchGoTo : .searchGoToOnly

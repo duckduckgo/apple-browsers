@@ -76,6 +76,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
         let historyManager = MockHistoryManager()
         let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
+        let syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
         let featureFlagger = MockFeatureFlagger()
         let aiChatSettings = MockAIChatSettingsProvider()
         let fireproofing = MockFireproofing()
@@ -167,6 +168,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
             featureFlagger: featureFlagger,
             idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
             textZoomCoordinatorProvider: textZoomCoordinatorProvider,
@@ -219,7 +221,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
 
     func testWhenHasSeenOnboardingIntroIsCalled_AndHasSeenOnboardingSettingIsTrue_ThenReturnFalse() throws {
         // GIVEN
-        tutorialSettingsMock.hasSeenOnboarding = true
+        sut.markOnboardingSeen()
 
         // WHEN
         let result = sut.needsToShowOnboardingIntro()

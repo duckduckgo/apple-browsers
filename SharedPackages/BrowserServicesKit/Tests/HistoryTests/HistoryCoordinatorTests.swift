@@ -167,7 +167,7 @@ class HistoryCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(historyCoordinator.history!.count, 4)
 
-        historyCoordinator.burnAll {
+        historyCoordinator.burnAll { _ in
             // We now clean the database directly so we don't burn by entry
             XCTAssertEqual(historyStoringMock.removeEntriesArray.count, 0)
 
@@ -194,7 +194,7 @@ class HistoryCoordinatorTests: XCTestCase {
         let visitsToBurn = Array(historyCoordinator.history!.first!.visits)
 
         let waiter = expectation(description: "Wait")
-        historyCoordinator.burnVisits(visitsToBurn) {
+        historyCoordinator.burnVisits(visitsToBurn) { _ in
             waiter.fulfill()
             XCTAssertEqual(historyStoringMock.removeEntriesArray.count, 1)
             XCTAssertEqual(historyStoringMock.removeEntriesArray.first!.url, url1)
@@ -216,7 +216,7 @@ class HistoryCoordinatorTests: XCTestCase {
         let visitsToBurn = Array(historyCoordinator.history!.first!.visits)
 
         let waiter = expectation(description: "Wait")
-        historyCoordinator.burnVisits(visitsToBurn) {
+        historyCoordinator.burnVisits(visitsToBurn) { _ in
             waiter.fulfill()
             XCTAssertEqual(historyStoringMock.removeVisitsArray.count, 3)
         }
@@ -248,7 +248,7 @@ class HistoryCoordinatorTests: XCTestCase {
         let visitsToBurn = Array(historyCoordinator.history!.first!.visits)
 
         let waiter = expectation(description: "Wait")
-        historyCoordinator.burnVisits(visitsToBurn) {
+        historyCoordinator.burnVisits(visitsToBurn) { _ in
             waiter.fulfill()
             // Simply don't raise an assertion
         }
@@ -281,11 +281,16 @@ class HistoryCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(historyCoordinator.history!.count, 6)
 
-        historyCoordinator.burnDomains(["duckduckgo.com", fireproofDomain], tld: TLD()) { urls in
+        historyCoordinator.burnDomains(["duckduckgo.com", fireproofDomain], tld: TLD()) { result in
             let expectedUrls = Set([url1, url2, url3, url4])
 
             XCTAssertEqual(Set(historyStoringMock.removeEntriesArray.map(\.url)), expectedUrls)
-            XCTAssertEqual(urls, expectedUrls)
+
+            if case .success(let urls) = result {
+                XCTAssertEqual(urls, expectedUrls)
+            } else {
+                XCTFail("Expected success result")
+            }
 
             burnAllFinished.fulfill()
         }
@@ -523,7 +528,7 @@ class HistoryCoordinatorTests: XCTestCase {
             saveExpectation2.fulfill()
         }
 
-        historyCoordinator.resetCookiePopupBlocked(for: ["example.com"], tld: TLD()) {
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com"], tld: TLD()) { _ in
             resetExpectation.fulfill()
         }
 
@@ -560,7 +565,7 @@ class HistoryCoordinatorTests: XCTestCase {
         let initialSaveCount = historyStoringMock.savedHistoryEntries.count
 
         let resetExpectation = expectation(description: "Reset called")
-        historyCoordinator.resetCookiePopupBlocked(for: [], tld: TLD()) {
+        historyCoordinator.resetCookiePopupBlocked(for: [], tld: TLD()) { _ in
             resetExpectation.fulfill()
         }
 
@@ -580,7 +585,7 @@ class HistoryCoordinatorTests: XCTestCase {
         let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
 
         let completionExpectation = expectation(description: "Completion called")
-        historyCoordinator.resetCookiePopupBlocked(for: ["example.com"], tld: TLD()) {
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com"], tld: TLD()) { _ in
             completionExpectation.fulfill()
         }
 
@@ -624,7 +629,7 @@ class HistoryCoordinatorTests: XCTestCase {
             saveExpectation2.fulfill()
         }
 
-        historyCoordinator.resetCookiePopupBlocked(for: ["example.com", "test.org"], tld: TLD()) {
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com", "test.org"], tld: TLD()) { _ in
             resetExpectation.fulfill()
         }
 

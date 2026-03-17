@@ -227,4 +227,156 @@ final class DDGSyncLifecycleTests: XCTestCase {
         XCTAssertEqual(mockErrorHandler.handledErrors, [])
     }
 
+    func testWhenInitializingAndSyncDisabledAndPreserveClosureTrueThenAccountIsNotRemoved() {
+        secureStorageStub.theAccount = .mock
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        XCTAssertEqual(syncService.authState, .initializing)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNotNil(secureStorageStub.theAccount)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [])
+    }
+
+    func testWhenInitializingAndSyncDisabledAndPreserveClosureTrueAndCannotReadAccountThenAccountIsNotRemoved() {
+        let expectedError = SyncError.failedToReadSecureStore(status: 0)
+        secureStorageStub.theAccount = .mock
+        secureStorageStub.mockReadError = expectedError
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        XCTAssertEqual(syncService.authState, .initializing)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNotNil(secureStorageStub.theAccount)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToLoadAccount])
+    }
+
+    func testWhenInitializingAndSyncDisabledAndPreserveClosureFalseThenAccountIsRemoved() {
+        secureStorageStub.theAccount = .mock
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { false }
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        XCTAssertEqual(syncService.authState, .initializing)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNil(secureStorageStub.theAccount)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.accountRemoved(.syncEnabledNotSetOnKeyValueStore)])
+    }
+
+    func testWhenEnableSyncFromPreservedAccountThenSyncIsReEnabled() async throws {
+        secureStorageStub.theAccount = .mock
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNotNil(secureStorageStub.theAccount)
+
+        try await syncService.enableSyncFromPreservedAccount()
+
+        XCTAssertEqual(syncService.authState, .active)
+        XCTAssertNotNil(try dependencies.keyValueStore.object(forKey: DDGSync.Constants.syncEnabledKey))
+    }
+
+    func testWhenEnableSyncFromPreservedAccountAndEngineSetupFailsThenErrorIsThrownAndStateReturnsToInactive() async {
+        secureStorageStub.theAccount = .mock
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        XCTAssertEqual(syncService.authState, .inactive)
+
+        secureStorageStub.mockWriteError = .failedToWriteSecureStore(status: 0)
+
+        await assertThrowsError(SyncError.failedToSetupEngine) {
+            try await syncService.enableSyncFromPreservedAccount()
+        }
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNil(try? dependencies.keyValueStore.object(forKey: DDGSync.Constants.syncEnabledKey))
+        XCTAssertFalse((dependencies.scheduler as! SchedulerMock).isEnabled)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToSetupEngine])
+    }
+
+    func testWhenEnableSyncFromPreservedAccountAndEngineSetupFailsAndRemoveFailsThenFallbackClearsSyncEnabledKey() async {
+        secureStorageStub.theAccount = .mock
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        XCTAssertEqual(syncService.authState, .inactive)
+
+        secureStorageStub.mockWriteError = .failedToWriteSecureStore(status: 0)
+        kvfStoreStub.throwOnRemove = MockError.error
+
+        await assertThrowsError(SyncError.failedToSetupEngine) {
+            try await syncService.enableSyncFromPreservedAccount()
+        }
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNil(try? dependencies.keyValueStore.object(forKey: DDGSync.Constants.syncEnabledKey))
+        XCTAssertFalse((dependencies.scheduler as! SchedulerMock).isEnabled)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToSetupEngine])
+    }
+
+    func testWhenEnableSyncFromPreservedAccountAndAlreadyActiveThenMethodReturnsWithoutWriting() async throws {
+        secureStorageStub.theAccount = .mock
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        XCTAssertEqual(syncService.authState, .active)
+
+        kvfStoreStub.throwOnSet = MockError.error
+
+        try await syncService.enableSyncFromPreservedAccount()
+
+        XCTAssertEqual(syncService.authState, .active)
+    }
+
+    func testWhenEnableSyncFromPreservedAccountAndCannotWriteSyncEnabledThenErrorIsThrown() async {
+        secureStorageStub.theAccount = .mock
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        XCTAssertEqual(syncService.authState, .inactive)
+
+        kvfStoreStub.throwOnSet = MockError.error
+
+        await assertThrowsAnyError {
+            try await syncService.enableSyncFromPreservedAccount()
+        }
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNil(try? dependencies.keyValueStore.object(forKey: DDGSync.Constants.syncEnabledKey))
+    }
+
+    func testWhenRemovePreservedSyncAccountAndPreservedAccountExistsThenAccountIsRemoved() throws {
+        secureStorageStub.theAccount = .mock
+        dependencies.shouldPreserveAccountWhenSyncDisabled = { true }
+        let dataProvider = DataProvidingMock(feature: .init(name: "bookmarks"))
+        try dataProvider.registerFeature(withState: .readyToSync)
+        dataProvidersSource.dataProviders = [dataProvider]
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNotNil(secureStorageStub.theAccount)
+        XCTAssertTrue(dataProvider.isFeatureRegistered)
+
+        try syncService.removePreservedSyncAccount()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNil(secureStorageStub.theAccount)
+        XCTAssertFalse(dataProvider.isFeatureRegistered)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.accountRemoved(.userStartedFreshSetup)])
+    }
+
 }

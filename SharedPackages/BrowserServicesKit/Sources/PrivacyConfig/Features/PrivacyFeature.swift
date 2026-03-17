@@ -89,6 +89,7 @@ public enum PrivacyFeature: String {
     case pageContext
     case webExtensions
     case forceDarkModeOnWebsites
+    case promoQueue
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -178,6 +179,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case startupMetrics
 
     case semaphoreAlwaysVisible
+
+    case tabAnimations
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -467,9 +470,11 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case refactorOfSyncPreferences
     case newSyncEntryPoints
     case newDeviceSyncPrompt
+    case syncAutoRestore
     case syncCreditCards
     case syncIdentities
     case aiChatSync
+    case simplifiedSyncSetupExperiment
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

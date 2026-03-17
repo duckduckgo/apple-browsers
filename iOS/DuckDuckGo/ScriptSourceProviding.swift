@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
+import Configuration
 import PrivacyConfig
 import DDGSync
 import enum UserScript.UserScriptError
@@ -31,8 +32,6 @@ public protocol ScriptSourceProviding {
     var loginDetectionEnabled: Bool { get }
     var sendDoNotSell: Bool { get }
     var sync: DDGSyncing { get }
-    var contentBlockerRulesConfig: ContentBlockerUserScriptConfig { get }
-    var surrogatesConfig: SurrogatesUserScriptConfig { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var autofillSourceProvider: AutofillUserScriptSourceProvider { get }
     var contentScopeProperties: ContentScopeProperties { get }
@@ -41,6 +40,7 @@ public protocol ScriptSourceProviding {
     var currentCohorts: [ContentScopeExperimentData] { get }
     var syncErrorHandler: SyncErrorHandling { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
+    var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
 
 }
 
@@ -63,8 +63,6 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
 
     var sync: DDGSyncing
 
-    let contentBlockerRulesConfig: ContentBlockerUserScriptConfig
-    let surrogatesConfig: SurrogatesUserScriptConfig
     let autofillSourceProvider: AutofillUserScriptSourceProvider
     let contentScopeProperties: ContentScopeProperties
     let sessionKey: String
@@ -77,6 +75,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     var currentCohorts: [ContentScopeExperimentData] = []
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
+    let trackerProtectionDataSource: TrackerProtectionDataSource?
 
     init(dependencies: Dependencies) {
 
@@ -88,15 +87,14 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         self.fireproofing = dependencies.fireproofing
         self.contentScopeExperimentsManager = dependencies.contentScopeExperimentsManager
 
-        contentBlockerRulesConfig = Self.buildContentBlockerRulesConfig(contentBlockingManager: contentBlockingManager,
-                                                                        privacyConfigurationManager: privacyConfigurationManager)
-        surrogatesConfig = Self.buildSurrogatesConfig(contentBlockingManager: contentBlockingManager,
-                                                      privacyConfigurationManager: privacyConfigurationManager)
         sessionKey = Self.generateSessionKey()
         messageSecret = Self.generateSessionKey()
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
         syncErrorHandler = dependencies.syncErrorHandler
         webExtensionAvailability = dependencies.webExtensionAvailability
+        trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
+            contentBlockingManager: contentBlockingManager
+        )
 
         contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
@@ -104,7 +102,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                         isInternalUser: dependencies.internalUserDecider.isInternalUser,
                                                         debug: AppUserDefaults().contentScopeDebugStateEnabled,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
-                                                        currentCohorts: currentCohorts)
+                                                        currentCohorts: currentCohorts,
+                                                        trackerData: trackerProtectionDataSource?.trackerData)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
     }
@@ -127,50 +126,6 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         }
     }
     
-    private static func buildContentBlockerRulesConfig(contentBlockingManager: ContentBlockerRulesManagerProtocol,
-                                                       privacyConfigurationManager: PrivacyConfigurationManaging) -> ContentBlockerUserScriptConfig {
-        
-        let currentMainRules = contentBlockingManager.currentMainRules
-        let privacyConfig = privacyConfigurationManager.privacyConfig
-
-        do {
-            return try DefaultContentBlockerUserScriptConfig(privacyConfiguration: privacyConfig,
-                                                             trackerData: currentMainRules?.trackerData,
-                                                             ctlTrackerData: nil,
-                                                             tld: AppDependencyProvider.shared.storageCache.tld,
-                                                             trackerDataManager: ContentBlocking.shared.trackerDataManager)
-        } catch {
-            if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
-            }
-            fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error)")
-        }
-    }
-
-    private static func buildSurrogatesConfig(contentBlockingManager: ContentBlockerRulesManagerProtocol,
-                                              privacyConfigurationManager: PrivacyConfigurationManaging) -> SurrogatesUserScriptConfig {
-
-        let surrogates = FileStore().loadAsString(for: .surrogates) ?? ""
-        let currentMainRules = contentBlockingManager.currentMainRules
-
-        do {
-            let surrogatesConfig = try DefaultSurrogatesUserScriptConfig(privacyConfig: privacyConfigurationManager.privacyConfig,
-                                                                         surrogates: surrogates,
-                                                                         trackerData: currentMainRules?.trackerData,
-                                                                         encodedSurrogateTrackerData: currentMainRules?.encodedTrackerData,
-                                                                         trackerDataManager: ContentBlocking.shared.trackerDataManager,
-                                                                         tld: AppDependencyProvider.shared.storageCache.tld,
-                                                                         isDebugBuild: isDebugBuild)
-
-            return surrogatesConfig
-        } catch {
-            if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
-            }
-            fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error)")
-        }
-    }
-
     private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging) -> [ContentScopeExperimentData] {
         let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
         return experiments.map {

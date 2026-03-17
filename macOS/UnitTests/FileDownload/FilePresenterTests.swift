@@ -18,6 +18,7 @@
 
 import AppKitExtensions
 import Combine
+import Common
 import Foundation
 import SharedSandboxTestUtilities
 import XCTest
@@ -27,15 +28,17 @@ import XCTest
 @available(macOS 12.0, *)
 final class FilePresenterTests: XCTestCase {
 
+    let isCI = !(ProcessInfo().environment["CI"]?.isEmpty ?? true)
     let fm = FileManager()
     let testData = "test data".utf8data
     let helperApp = URL(fileURLWithPath: ProcessInfo().environment["__XCODE_BUILT_PRODUCTS_DIR_PATHS"]!).appendingPathComponent("sandbox-test-tool.app")
-    var runningApp: NSRunningApplication?
-    var cancellables = Set<AnyCancellable>()
+    @MainActor var runningApp: NSRunningApplication?
+    @MainActor var cancellables = Set<AnyCancellable>()
 
-    var onFileRead: ((FileReadResult) -> Void)?
-    var onError: ((NSError) -> Void)?
+    @MainActor var onFileRead: ((FileReadResult) -> Void)?
+    @MainActor var onError: ((NSError) -> Void)?
 
+    @MainActor
     override func setUp() async throws {
         DistributedNotificationCenter.default().publisher(for: SandboxTestNotification.fileRead.name).sink { [unowned self] n in
             guard let onFileRead,
@@ -65,6 +68,7 @@ final class FilePresenterTests: XCTestCase {
         ["fm", "runningApp"]
     }
 
+    @MainActor
     override func tearDown() async throws {
         await terminateApp()
         cancellables.removeAll()
@@ -80,7 +84,8 @@ final class FilePresenterTests: XCTestCase {
         return fileURL
     }
 
-    private func runHelperApp(opening url: URL? = nil, newInstance: Bool = true, helloExpectation: XCTestExpectation? = XCTestExpectation(description: "hello received")) async throws -> NSRunningApplication {
+    @MainActor
+    private func runHelperApp(opening url: URL? = nil, newInstance: Bool = true, helloExpectation: XCTestExpectation? = XCTestExpectation(description: "hello received")) async throws {
         var c: AnyCancellable?
         if let helloExpectation {
             c = DistributedNotificationCenter.default().publisher(for: SandboxTestNotification.hello.name).sink { n in
@@ -97,27 +102,53 @@ final class FilePresenterTests: XCTestCase {
         await fulfillment(of: helloExpectation.map { [$0] } ?? [], timeout: 5)
         withExtendedLifetime(c) {}
 
-        return app
+        if runningApp == nil {
+            runningApp = app
+        } else {
+            XCTAssertEqual(app, runningApp)
+        }
     }
 
+    @MainActor
     private func terminateApp(timeout: TimeInterval = 5, expectation: XCTestExpectation = XCTestExpectation(description: "terminated")) async {
-        if runningApp == nil {
+        guard let runningApp else {
             expectation.fulfill()
+            return
         }
-        let c = runningApp?.publisher(for: \.isTerminated).filter { $0 }.sink { _ in
+        let c = runningApp.publisher(for: \.isTerminated).filter { $0 }.sink { _ in
             expectation.fulfill()
         }
         post(.terminate)
-        runningApp?.forceTerminate()
+        let retryTask = Task {
+            var cnt = 0
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                await MainActor.run {
+                    guard runningApp.isTerminated != true else { return }
+                    if cnt < 2 {
+                        self.post(.terminate)
+                    } else {
+                        runningApp.terminate()
+                    }
+                }
+                cnt += 1
+            }
+        }
 
         await fulfillment(of: [expectation], timeout: timeout)
+        retryTask.cancel()
         withExtendedLifetime(c) {}
+        c.cancel()
+
+        self.runningApp = nil
     }
 
+    @MainActor
     private func post(_ name: SandboxTestNotification, with object: String? = nil) {
-        DistributedNotificationCenter.default().post(name: .init(name.rawValue), object: object)
+        DistributedNotificationCenter.default().postNotificationName(.init(name.rawValue), object: object, userInfo: nil, deliverImmediately: true)
     }
 
+    @MainActor
     private func fileReadPromise(timeout: TimeInterval = 5, file: StaticString = #file, line: UInt = #line) -> Future<FileReadResult, Error> {
         Future<FileReadResult, Error> { [unowned self] fulfill in
             onFileRead = { result in
@@ -137,18 +168,20 @@ final class FilePresenterTests: XCTestCase {
     }
 
     // MARK: - Test sandboxed file access
-#if APPSTORE && !CI
 
     func testTool_run() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
         // 1. make non-sandbox file
         let nonSandboxUrl = try makeNonSandboxFile()
 
         // 2. run the helper app
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. send command to open the non-sandbox file
-        let fileReadPromise = fileReadPromise()
-        post(.openFileWithoutBookmark, with: nonSandboxUrl.path)
+        let fileReadPromise = await fileReadPromise()
+        await post(.openFileWithoutBookmark, with: nonSandboxUrl.path)
 
         // 4. Validate file opening failed
         do {
@@ -160,12 +193,16 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testTool_bookmarkCreation() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file
         let nonSandboxUrl = try makeNonSandboxFile()
 
         // 2. open the file with the helper app
-        let fileReadPromise = fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        let fileReadPromise = await fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
 
         // 3. Validate file opened successfully
         let result = try await fileReadPromise.value
@@ -175,22 +212,26 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhenSandboxFilePresenterIsOpen_itCanReadFile_accessStoppedWhenClosed() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file; open the file and create bookmark with the helper app
         let nonSandboxUrl = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
         guard let bookmark = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
+        await post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
 
         // 4. read the file
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl.path)
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl.path)
         let result = try await fileReadPromise.value
         XCTAssertEqual(result.path, nonSandboxUrl.path)
         XCTAssertEqual(result.data, testData.utf8String())
@@ -201,14 +242,14 @@ final class FilePresenterTests: XCTestCase {
         let c = DistributedNotificationCenter.default().publisher(for: SandboxTestNotification.stopAccessingSecurityScopedResourceCalled.name).sink { _ in
             e.fulfill()
         }
-        post(.closeFilePresenter, with: nonSandboxUrl.path)
+        await post(.closeFilePresenter, with: nonSandboxUrl.path)
         await fulfillment(of: [e], timeout: 1)
 
         withExtendedLifetime(c) {}
 
         // 6. Validate file reading fails
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl.path)
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl.path)
         do {
             let r = try await fileReadPromise.value
             XCTFail("File should be inaccessible, got \(r)")
@@ -218,20 +259,24 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhenFileIsRenamed_accessIsPreserved() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file; open the file and create bookmark with the helper app
         let nonSandboxUrl = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
         guard let bookmark = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl.path)
+        await post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl.path)
         _=try await fileReadPromise.value
 
         // 4.a rename the file
@@ -272,8 +317,8 @@ final class FilePresenterTests: XCTestCase {
         withExtendedLifetime((c1, c2)) {}
 
         // 5. read the renamed file
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: newUrl2.path)
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: newUrl2.path)
         let result = try await fileReadPromise.value
         XCTAssertEqual(result.path, newUrl2.path)
         XCTAssertEqual(result.data, testData.utf8String())
@@ -284,10 +329,14 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhenFileIsRenamed_renamedFileCanBeRead() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file; open the file and create bookmark with the helper app
         let nonSandboxUrl = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
         guard let bookmark = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. rename the file
@@ -296,15 +345,15 @@ final class FilePresenterTests: XCTestCase {
 
         // 3. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
-        fileReadPromise = self.fileReadPromise()
+        await post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
+        fileReadPromise = await self.fileReadPromise()
 
         // 4. read the renamed file
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: newUrl.path)
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: newUrl.path)
         let result = try await fileReadPromise.value
         XCTAssertEqual(result.path, newUrl.path)
         XCTAssertEqual(result.data, testData.utf8String())
@@ -314,20 +363,24 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhenFileIsMovedToTrash_moveIsDetected() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file; open the file and create bookmark with the helper app
         let nonSandboxUrl = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
         guard let bookmark = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl.path)
+        await post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl.path)
         _=try await fileReadPromise.value
 
         // 4. rename the file
@@ -353,20 +406,24 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhenSandboxFilePresenterIsOpenAndFileIsRenamed_accessStoppedWhenClosed() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file; open the file and create bookmark with the helper app
         let nonSandboxUrl = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
         guard let bookmark = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl.path)
+        await post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl.path)
         _=try await fileReadPromise.value
 
         // 4. rename the file
@@ -387,14 +444,14 @@ final class FilePresenterTests: XCTestCase {
         let c2 = DistributedNotificationCenter.default().publisher(for: SandboxTestNotification.stopAccessingSecurityScopedResourceCalled.name).sink { _ in
             eStopped.fulfill()
         }
-        post(.closeFilePresenter, with: nonSandboxUrl.path)
+        await post(.closeFilePresenter, with: nonSandboxUrl.path)
         await fulfillment(of: [eStopped], timeout: 1)
 
         withExtendedLifetime((c, c2)) {}
 
         // 6. Validate file reading fails
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: newUrl.path)
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: newUrl.path)
         do {
             let r = try await fileReadPromise.value
             XCTFail("File should be inaccessible, got \(r)")
@@ -404,20 +461,24 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhenSandboxFilePresenterIsClosed_fileRenameIsNotDetected() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file; open the file and create bookmark with the helper app
         let nonSandboxUrl = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
         guard let bookmark = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl.path)
+        await post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl.path)
         _=try await fileReadPromise.value
 
         // 4. close BookmarkFilePresenter
@@ -425,7 +486,7 @@ final class FilePresenterTests: XCTestCase {
         let c2 = DistributedNotificationCenter.default().publisher(for: SandboxTestNotification.stopAccessingSecurityScopedResourceCalled.name).sink { _ in
             eStopped.fulfill()
         }
-        post(.closeFilePresenter, with: nonSandboxUrl.path)
+        await post(.closeFilePresenter, with: nonSandboxUrl.path)
         await fulfillment(of: [eStopped], timeout: 1)
 
         // 5. rename the file
@@ -440,8 +501,8 @@ final class FilePresenterTests: XCTestCase {
         }
 
         // 6. Validate file reading fails
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: newUrl.path)
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: newUrl.path)
         do {
             let r = try await fileReadPromise.value
             XCTFail("File should be inaccessible, got \(r)")
@@ -454,20 +515,24 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhenFileIsRenamedAndRecreatedWithOriginalName_fileIsNotAccessible() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file; open the file and create bookmark with the helper app
         let nonSandboxUrl = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
         guard let bookmark = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl.path)
+        await post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl.path)
         _=try await fileReadPromise.value
 
         // 4. rename the file
@@ -487,9 +552,9 @@ final class FilePresenterTests: XCTestCase {
         try testData.write(to: nonSandboxUrl)
 
         // 6. read the re-created file - should fail
-        fileReadPromise = self.fileReadPromise()
+        fileReadPromise = await self.fileReadPromise()
 
-        post(.openFile, with: nonSandboxUrl.path)
+        await post(.openFile, with: nonSandboxUrl.path)
         do {
             let r = try await fileReadPromise.value
             XCTFail("File should be inaccessible, got \(r)")
@@ -501,20 +566,24 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhenFileIsRemoved_removalIsDetected() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make non-sandbox file; open the file and create bookmark with the helper app
         let nonSandboxUrl = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl)
         guard let bookmark = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl.path)
+        await post(.openBookmarkWithFilePresenter, with: bookmark.base64EncodedString())
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl.path)
         _=try await fileReadPromise.value
 
         // 4. remove the file
@@ -537,28 +606,32 @@ final class FilePresenterTests: XCTestCase {
     }
 
     func testWhen2FilesAreCrossRenamedAnd1stFileClosed_accessTo2ndIsPreserved() async throws {
+        guard AppVersion.isAppStoreBuild && !isCI else {
+            throw XCTSkip("Sandbox file presenter tests only run in App Store builds outside CI")
+        }
+
         // 1. make 2 non-sandbox files; open the files and create bookmarks with the helper app
         let nonSandboxUrl1 = try makeNonSandboxFile()
         let nonSandboxUrl2 = try makeNonSandboxFile()
-        var fileReadPromise = self.fileReadPromise()
-        runningApp = try await runHelperApp(opening: nonSandboxUrl1)
+        var fileReadPromise = await self.fileReadPromise()
+        try await runHelperApp(opening: nonSandboxUrl1)
         guard let bookmark1 = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
-        fileReadPromise = self.fileReadPromise()
+        fileReadPromise = await self.fileReadPromise()
         _=try await runHelperApp(opening: nonSandboxUrl2, newInstance: false, helloExpectation: nil)
         guard let bookmark2 = try await fileReadPromise.value.bookmark else { XCTFail("No bookmark"); return }
 
         // 2. restart the app
         await terminateApp()
-        runningApp = try await runHelperApp()
+        try await runHelperApp()
 
         // 3. open the bookmark with BookmarkFilePresenter
-        post(.openBookmarkWithFilePresenter, with: bookmark1.base64EncodedString())
-        post(.openBookmarkWithFilePresenter, with: bookmark2.base64EncodedString())
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl1.path)
+        await post(.openBookmarkWithFilePresenter, with: bookmark1.base64EncodedString())
+        await post(.openBookmarkWithFilePresenter, with: bookmark2.base64EncodedString())
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl1.path)
         _=try await fileReadPromise.value
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl2.path)
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl2.path)
         _=try await fileReadPromise.value
 
         // 4. cross-rename the files
@@ -581,14 +654,14 @@ final class FilePresenterTests: XCTestCase {
         let c2 = DistributedNotificationCenter.default().publisher(for: SandboxTestNotification.stopAccessingSecurityScopedResourceCalled.name).sink { n in
             e3.fulfill()
         }
-        post(.closeFilePresenter, with: nonSandboxUrl1.path)
+        await post(.closeFilePresenter, with: nonSandboxUrl1.path)
         await fulfillment(of: [e3], timeout: 1)
 
         withExtendedLifetime(c2) {}
 
         // 6.a validate 2nd file (renamed to nonSandboxUrl1) can still be accessed
-        fileReadPromise = self.fileReadPromise()
-        post(.openFile, with: nonSandboxUrl1.path)
+        fileReadPromise = await self.fileReadPromise()
+        await post(.openFile, with: nonSandboxUrl1.path)
         let result = try await fileReadPromise.value
         XCTAssertEqual(result.path, nonSandboxUrl1.path)
         XCTAssertEqual(result.data, testData.utf8String())
@@ -596,9 +669,9 @@ final class FilePresenterTests: XCTestCase {
         XCTAssertNotNil(result.bookmark)
 
         // 6.b 1st file read should fail
-        fileReadPromise = self.fileReadPromise()
+        fileReadPromise = await self.fileReadPromise()
 
-        post(.openFile, with: nonSandboxUrl2.path)
+        await post(.openFile, with: nonSandboxUrl2.path)
         do {
             let r = try await fileReadPromise.value
             XCTFail("File should be inaccessible, got \(r)")
@@ -606,8 +679,6 @@ final class FilePresenterTests: XCTestCase {
             XCTAssertEqual(error, CocoaError(.fileReadNoPermission) as NSError)
         }
     }
-
-#endif
 
     // MARK: - Test non-sandboxed file access
 

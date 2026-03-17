@@ -55,6 +55,8 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     var didFindTwoAccountsDuringRecoveryCalled: SyncCode.RecoveryKey?
     var didErrorCalled = { }
     var didErrorErrors: (error: SyncConnectionError, underlyingError: Error?)?
+    var shouldContinueServerSyncOperation = true
+    var willPerformServerSyncOperationCallCount = 0
 
     func controllerWillBeginTransmittingRecoveryKey() async {
         didBeginTransmittingRecoveryKeyCalled()
@@ -70,6 +72,11 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
         didRecognizeScannedCodeCalled()
+    }
+
+    func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
+        willPerformServerSyncOperationCallCount += 1
+        return shouldContinueServerSyncOperation
     }
 
     func controllerDidCreateSyncAccount() {
@@ -267,6 +274,30 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(spiedKey?.userId, userId)
     }
 
+    @MainActor
+    func test_startConnectMode_pollSucceeds_whenDelegateBlocksServerOperation_doesNotLogIn() async throws {
+        let remoteConnector = MockRemoteConnecting()
+        remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "test", primaryKey: Data())
+        dependencies.createRemoteConnectorStub = remoteConnector
+
+        let mockAccountManager = AccountManagingMock()
+        dependencies.account = mockAccountManager
+
+        delegate.shouldContinueServerSyncOperation = false
+        let didReceiveRecoveryKey = expectation(description: "Delegate notified recovery key received")
+        delegate.didReceiveRecoveryKeyCalled = {
+            didReceiveRecoveryKey.fulfill()
+        }
+
+        _ = try await controller.startConnectMode()
+
+        await fulfillment(of: [didReceiveRecoveryKey], timeout: 5)
+        await Task.yield()
+
+        XCTAssertEqual(delegate.willPerformServerSyncOperationCallCount, 1)
+        XCTAssertFalse(mockAccountManager.loginCalled)
+    }
+
     func test_startConnectMode_pollingFails_sendsError() async throws {
         let remoteConnector = MockRemoteConnecting()
         remoteConnector.pollForRecoveryKeyError = SyncError.failedToPrepareForConnect("")
@@ -406,6 +437,20 @@ final class SyncConnectionControllerTests: XCTestCase {
             await self.controller.startPairingMode(self.createPairingInfo(code: Self.validConnectCode))
         }
         XCTAssertEqual(error, .failedToCreateAccount)
+    }
+
+    @MainActor
+    func test_startPairingMode_withConnectCode_whenDelegateBlocksServerOperation_doesNotTransmitRecoveryKey() async {
+        let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
+        dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
+        delegate.shouldContinueServerSyncOperation = false
+
+        let result = await controller.startPairingMode(createPairingInfo(code: Self.validConnectCode))
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(delegate.willPerformServerSyncOperationCallCount, 1)
+        XCTAssertEqual(mockRecoveryKeyTransmitter.sendCalled, 0)
+        XCTAssertNil(delegate.didCompleteAccountConnectionValue)
     }
 
     func test_startPairingMode_withConnectCode_transmitsRecoveryKey() async {
@@ -587,6 +632,19 @@ final class SyncConnectionControllerTests: XCTestCase {
         await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertTrue(mockAccountManager.loginCalled)
+    }
+
+    @MainActor
+    func test_syncCodeEntered_withRecoveryCode_whenDelegateBlocksServerOperation_doesNotAttemptLogin() async {
+        let mockAccountManager = AccountManagingMock()
+        dependencies.account = mockAccountManager
+        delegate.shouldContinueServerSyncOperation = false
+
+        let result = await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanURLBarcodes: true, codeSource: .pastedCode)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(delegate.willPerformServerSyncOperationCallCount, 1)
+        XCTAssertFalse(mockAccountManager.loginCalled)
     }
 
     @MainActor

@@ -27,6 +27,8 @@ public protocol AIChatInputBoxHandling {
     var didSubmitQuery: PassthroughSubject<String, Never> { get }
     var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
 
+    var persistedModelId: String? { get }
+
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { get }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { get }
     var aiChatStatus: AIChatStatusValue { get set }

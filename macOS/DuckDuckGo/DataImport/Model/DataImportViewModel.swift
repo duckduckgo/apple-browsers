@@ -182,8 +182,7 @@ struct DataImportViewModel {
         }
     }
 
-#if DEBUG || REVIEW
-
+#if DEBUG
     // simulated test import failure
     struct TestImportError: DataImportError {
         enum OperationType: Int {
@@ -305,7 +304,7 @@ struct DataImportViewModel {
             return
         }
 
-#if DEBUG || REVIEW
+#if DEBUG
         // simulated test import failures
         guard dataTypes.compactMap({ testImportResults[$0] }).isEmpty else {
             importTask = .detachedWithProgress { [testImportResults] _ in

@@ -18,7 +18,7 @@
 //
 
 protocol UnifiedToggleInputDelegate: AnyObject {
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?)
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
 }

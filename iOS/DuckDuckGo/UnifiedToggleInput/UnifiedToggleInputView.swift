@@ -103,6 +103,25 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
     }
 
+    var isGenerating: Bool = false {
+        didSet { toolsToolbar.isGenerating = isGenerating }
+    }
+
+    var modelName: String {
+        get { toolsToolbar.modelName }
+        set { toolsToolbar.modelName = newValue }
+    }
+
+    var modelPickerMenu: UIMenu? {
+        get { toolsToolbar.modelPickerMenu }
+        set { toolsToolbar.modelPickerMenu = newValue }
+    }
+
+    var isModelChipHidden: Bool {
+        get { toolsToolbar.isModelChipHidden }
+        set { toolsToolbar.isModelChipHidden = newValue }
+    }
+
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
     /// so that sibling views (e.g. the content container) animate in sync.
     /// The owning view controller sets this.
@@ -307,6 +326,7 @@ final class UnifiedToggleInputView: UIView {
     func setExpanded(_ expanded: Bool, animated: Bool) {
         guard expanded != isExpanded else { return }
         isExpanded = expanded
+        handler.isExpanded = expanded
 
         let toggleHeight: CGFloat = (expanded && isToggleEnabled) ? Constants.toggleHeight : 0
         let showToolbar = expanded && isToggleEnabled && toggleView.selectedMode == .aiChat
@@ -474,6 +494,9 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onSubmitTapped = { [weak self] in
             guard let self else { return }
             handler.submitText(handler.currentText)
+        }
+        toolsToolbar.onStopGeneratingTapped = { [weak self] in
+            self?.handler.stopGeneratingButtonTapped()
         }
         addSubview(toolsToolbar)
 

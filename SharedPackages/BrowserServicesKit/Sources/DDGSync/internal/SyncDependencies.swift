@@ -40,6 +40,7 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     var scheduler: SchedulingInternal { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var errorEvents: EventMapping<SyncError> { get }
+    var shouldPreserveAccountWhenSyncDisabled: () -> Bool { get }
 
     func createRemoteConnector() throws -> RemoteConnecting
     func createRemoteKeyExchanger() throws -> any RemoteKeyExchanging

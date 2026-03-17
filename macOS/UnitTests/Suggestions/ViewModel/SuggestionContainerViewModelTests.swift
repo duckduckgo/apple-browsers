@@ -545,6 +545,76 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         XCTAssertEqual(suggestionContainerViewModel.rowContent(at: 0), .searchCell)
     }
 
+    @MainActor
+    func testWhenAIFeaturesDisabledAfterInit_ThenAIChatCellIsHidden() {
+        // Setup with AI chat toggle enabled and AI features initially enabled
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarCluster]
+        let aiChatStorage = MockAIChatPreferencesStorage()
+        aiChatStorage.isAIFeaturesEnabled = true
+
+        suggestionContainerViewModel = SuggestionContainerViewModel(
+            isHomePage: false,
+            isBurner: false,
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            ),
+            themeManager: MockThemeManager(),
+            featureFlagger: featureFlagger,
+            aiChatPreferencesStorage: aiChatStorage
+        )
+
+        suggestionContainerViewModel.setUserStringValue("test query", userAppendedStringToTheEnd: false)
+        suggestionLoadingMock.completion?(SuggestionResult.noTopHitsResult, nil)
+
+        // AI chat cell should initially be visible
+        XCTAssertTrue(suggestionContainerViewModel.shouldShowAIChatCell, "AI chat cell should appear when AI features enabled")
+
+        // Disable AI features after init (simulates user toggling the setting)
+        aiChatStorage.isAIFeaturesEnabled = false
+
+        // AI chat cell should now be hidden
+        XCTAssertFalse(suggestionContainerViewModel.shouldShowAIChatCell, "AI chat cell should be hidden after AI features disabled")
+
+        // Only search cell should remain in the header
+        XCTAssertTrue(suggestionContainerViewModel.shouldShowSearchCell, "Search cell should still appear")
+    }
+
+    @MainActor
+    func testWhenAIFeaturesDisabledAfterInit_ThenAIChatCellFooterIsHidden() {
+        // Setup with AI chat toggle enabled but cluster OFF (AI chat always in footer)
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
+        let aiChatStorage = MockAIChatPreferencesStorage()
+        aiChatStorage.isAIFeaturesEnabled = true
+
+        suggestionContainerViewModel = SuggestionContainerViewModel(
+            isHomePage: false,
+            isBurner: false,
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            ),
+            themeManager: MockThemeManager(),
+            featureFlagger: featureFlagger,
+            aiChatPreferencesStorage: aiChatStorage
+        )
+
+        suggestionContainerViewModel.setUserStringValue("test query", userAppendedStringToTheEnd: false)
+        suggestionLoadingMock.completion?(SuggestionResult.noTopHitsResult, nil)
+
+        // AI chat cell should initially appear in the footer
+        let lastRowIndex = suggestionContainerViewModel.numberOfRows - 1
+        XCTAssertEqual(suggestionContainerViewModel.rowContent(at: lastRowIndex), .aiChatCell, "AI chat cell should appear in footer")
+
+        // Disable AI features after init
+        aiChatStorage.isAIFeaturesEnabled = false
+
+        // Footer should no longer contain AI chat cell
+        XCTAssertEqual(suggestionContainerViewModel.numberOfFooterRows, 0, "Footer should have no rows when AI features disabled")
+    }
+
 }
 
 extension SuggestionContainerViewModel {

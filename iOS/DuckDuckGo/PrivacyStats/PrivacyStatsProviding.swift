@@ -23,7 +23,7 @@ import PrivacyStats
 protocol PrivacyStatsProviding {
     func recordBlockedTracker(_ name: String) async
     func fetchPrivacyStatsTotalCount() async -> Int64
-    func clearPrivacyStats() async
+    func clearPrivacyStats() async -> Result<Void, Error>
     func handleAppTermination() async
 }
 

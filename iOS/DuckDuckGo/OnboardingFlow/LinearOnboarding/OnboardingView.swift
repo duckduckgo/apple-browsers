@@ -78,8 +78,8 @@ struct OnboardingView: View {
                     content: {
                         VStack {
                             switch state.type {
-                            case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
-                                introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
+                            case .startOnboardingDialog(let dialogType):
+                                introView(dialogType: dialogType)
                             case .browsersComparisonDialog:
                                 browsersComparisonView
                             case .addToDockPromoDialog:
@@ -101,7 +101,11 @@ struct OnboardingView: View {
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.daxDialogVisibilityDelay) {
                     model.introState.showDaxDialogBox = true
-                    model.introState.animateIntroText = true
+                    if case .startOnboardingDialog(type: .restoreData) = state.type {
+                        model.restorePromptState.animateTitle = true
+                    } else {
+                        model.introState.animateIntroText = true
+                    }
                 }
             }
         }
@@ -121,8 +125,11 @@ struct OnboardingView: View {
             }
     }
 
-    private func introView(shouldShowSkipOnboardingButton: Bool) -> some View {
-        let skipOnboardingView: AnyView? = if shouldShowSkipOnboardingButton {
+    @ViewBuilder
+    private func introView(dialogType: ViewState.Intro.IntroDialogType) -> some View {
+        let skipOnboardingView: AnyView? = if dialogType == .default {
+            nil
+        } else {
             AnyView(
                 SkipOnboardingContent(
                     animateTitle: $model.skipOnboardingState.animateTitle,
@@ -135,23 +142,42 @@ struct OnboardingView: View {
                     }
                 )
             )
-        } else {
-            nil
         }
 
-        return IntroDialogContent(
-            title: model.copy.introTitle,
-            skipOnboardingView: skipOnboardingView,
-            animateText: $model.introState.animateIntroText,
-            showCTA: $model.introState.showIntroButton,
-            isSkipped: $model.isSkipped,
-            continueAction: {
-                animateBrowserComparisonViewState(isResumingOnboarding: false)
-            },
-            skipAction: model.skipOnboardingAction
-        )
-        .onboardingDaxDialogStyle()
-        .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
+        switch dialogType {
+        case .restoreData:
+            RestorePromptDialogContent(
+                skipOnboardingView: skipOnboardingView,
+                animateText: $model.restorePromptState.animateTitle,
+                animateBody: $model.restorePromptState.animateBody,
+                showCTA: $model.restorePromptState.showContent,
+                isSkipped: $model.isSkipped,
+                restoreAction: {
+                    model.restoreSyncAccountAction()
+                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                },
+                skipAction: {
+                    model.restorePromptSkipAction()
+                    model.skipOnboardingAction()
+                }
+            )
+            .onboardingDaxDialogStyle()
+            .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
+        case .skipTutorial, .default:
+            IntroDialogContent(
+                title: model.copy.introTitle,
+                skipOnboardingView: skipOnboardingView,
+                animateText: $model.introState.animateIntroText,
+                showCTA: $model.introState.showIntroButton,
+                isSkipped: $model.isSkipped,
+                continueAction: {
+                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                },
+                skipAction: model.skipOnboardingAction
+            )
+            .onboardingDaxDialogStyle()
+            .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
+        }
     }
 
     private var browsersComparisonView: some View {
@@ -268,8 +294,14 @@ extension OnboardingView.ViewState {
 
 extension OnboardingView.ViewState.Intro {
 
+    enum IntroDialogType: Equatable {
+        case `default`
+        case restoreData
+        case skipTutorial
+    }
+
     enum IntroType: Equatable {
-        case startOnboardingDialog(canSkipTutorial: Bool)
+        case startOnboardingDialog(type: IntroDialogType)
         case browsersComparisonDialog
         case addToDockPromoDialog
         case chooseAppIconDialog
@@ -320,6 +352,14 @@ struct OnboardingView_Previews: PreviewProvider {
         func disableContextualDaxDialogs() {}
     }
 
+    final class MockRestorePromptHandler: OnboardingRestorePromptHandling {
+        func isEligibleForRestorePrompt() -> Bool {
+            false
+        }
+
+        func restoreSyncAccount() {}
+    }
+
     static var previews: some View {
         ForEach(ColorScheme.allCases, id: \.self) {
             OnboardingView(
@@ -330,7 +370,8 @@ struct OnboardingView_Previews: PreviewProvider {
                         videoPlayer: VideoPlayerCoordinator(configuration: VideoPlayerConfiguration()),
                         eventMapper: SystemSettingsPiPTutorialPixelHandler(),
                     ),
-                    daxDialogsManager: MockDaxDialogDisabling()
+                    daxDialogsManager: MockDaxDialogDisabling(),
+                    restorePromptHandler: MockRestorePromptHandler()
                 )
             )
             .preferredColorScheme($0)

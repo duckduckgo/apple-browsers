@@ -29,7 +29,7 @@ name: 06_delete_account
 
 # Try to login and check for error
 - assertVisible: Begin Syncing
-- tapOn: Sync with Another Device
+- tapOn: Sync With Another Device
 - inputText: "0000"
 - pressKey: Enter
 - runFlow:

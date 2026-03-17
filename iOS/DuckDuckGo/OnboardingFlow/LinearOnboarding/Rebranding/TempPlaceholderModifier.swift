@@ -31,7 +31,7 @@ private struct TempPlaceholderModifier: ViewModifier {
         content
             .opacity(0.4)
             .overlay(alignment: .center) {
-                Text("Temp")
+                Text(verbatim: "Temp")
                     .font(.caption2.weight(.semibold))
                     .foregroundColor(.black)
                     .padding(.vertical, 2)

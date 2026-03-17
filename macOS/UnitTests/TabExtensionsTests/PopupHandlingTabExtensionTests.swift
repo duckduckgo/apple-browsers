@@ -2108,15 +2108,15 @@ class TestPermissionManager: PermissionManagerProtocol {
         persistedPermissions[domain]?[permissionType] = decision
     }
 
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void) {
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
     }
 
-    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void) {
+    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
     }
 

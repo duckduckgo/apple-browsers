@@ -168,6 +168,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
+        case .getAIChatNativePrompt:
+            return handler.getAIChatNativePrompt
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
         case .getAIChatPageContext:
@@ -235,7 +237,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         inputBoxCancellables.removeAll()
 
         inputBoxHandler?.didSubmitPrompt
-            .sink(receiveValue: submitPrompt)
+            .sink(receiveValue: { [weak self] prompt in
+                let modelId = self?.inputBoxHandler?.persistedModelId
+                self?.submitPrompt(prompt, modelId: modelId)
+            })
             .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressNewChatButton
@@ -256,7 +261,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     // MARK: - AI Chat Actions
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, pageContext: pageContext)
+        submitPrompt(prompt, pageContext: pageContext, modelId: nil)
+    }
+
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext)
         push(.submitPrompt(promptPayload))
     }
     

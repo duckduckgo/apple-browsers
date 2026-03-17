@@ -40,13 +40,25 @@ public final class DefaultWideEventSender: WideEventSending {
     private let storage: WideEventStoring
 
     public init(
-        pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
-        postRequestHandler: POSTRequestHandler? = nil,
+        pixelKitProvider: @escaping () -> PixelKit?,
+        postRequestHandler: @escaping POSTRequestHandler,
         storage: WideEventStoring = WideEventUserDefaultsStorage()
     ) {
         self.pixelKitProvider = pixelKitProvider
-        self.postRequestHandler = postRequestHandler ?? Self.defaultPOSTRequestHandler
+        self.postRequestHandler = postRequestHandler
         self.storage = storage
+    }
+
+    public convenience init(
+        useMockRequests: Bool,
+        pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
+        storage: WideEventStoring = WideEventUserDefaultsStorage()
+    ) {
+        self.init(
+            pixelKitProvider: pixelKitProvider,
+            postRequestHandler: useMockRequests ? Self.mockPOSTRequestHandler : Self.defaultPOSTRequestHandler,
+            storage: storage
+        )
     }
 
     public func send<T: WideEventData>(
@@ -196,11 +208,7 @@ public final class DefaultWideEventSender: WideEventSending {
 
         postRequestHandler(Self.postEndpoint, jsonData, headers) { success, error in
             if success {
-#if DEBUG || REVIEW || ALPHA
-                Self.logger.info("Wide event POST request skipped due to non-release build configuration")
-#else
                 Self.logger.info("Wide event POST request sent successfully")
-#endif
             } else {
                 Self.logger.error("Wide event POST request failed: \(String(describing: error), privacy: .public)")
             }
@@ -267,18 +275,23 @@ public final class DefaultWideEventSender: WideEventSending {
         dict[first] = child
     }
 
+    private static func mockPOSTRequestHandler(
+        url: URL,
+        body: Data,
+        headers: [String: String],
+        onComplete: @escaping (Bool, Error?) -> Void
+    ) {
+        // Avoid sending real POST events when running debug mode, since we can't talk to the staging environment from
+        // the client environment directly:
+        onComplete(true, nil)
+    }
+
     private static func defaultPOSTRequestHandler(
         url: URL,
         body: Data,
         headers: [String: String],
         onComplete: @escaping (Bool, Error?) -> Void
     ) {
-#if DEBUG || REVIEW || ALPHA
-        // Avoid sending real POST events when running debug mode, since we can't talk to the staging environment from
-        // the client environment directly:
-        onComplete(true, nil)
-        return
-#else
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = body
@@ -295,7 +308,6 @@ public final class DefaultWideEventSender: WideEventSending {
 
             onComplete(success, error)
         }.resume()
-#endif
     }
 }
 

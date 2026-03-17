@@ -194,9 +194,15 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             sections.append(BrowsingMenuModel.Section(items: otherItems))
         }
 
+        // Show enough items to reveal "Open Bookmarks" (7th item in both layouts):
+        // Non-merged: 3 (Bookmark, Favorite, Share) + 3 (Find in Page, Zoom, Desktop Site) + 1 (Open Bookmarks)
+        // Merged: 6 (Bookmark, Favorite, Share, Find in Page, Zoom, Desktop Site) + 1 (Open Bookmarks)
+        let preferredDetentItemCount = 7
+
         return BrowsingMenuModel(
             headerItems: headerItems,
-            sections: sections
+            sections: sections,
+            preferredDetentItemCount: preferredDetentItemCount
         )
     }
 }

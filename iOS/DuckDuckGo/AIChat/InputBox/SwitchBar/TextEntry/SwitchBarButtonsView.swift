@@ -101,32 +101,21 @@ class SwitchBarButtonsView: UIView {
 
     private let stack = UIStackView()
     private let clearButton = BrowserChromeButton(.secondary)
-    private let stopGeneratingButton: UIButton = {
+    private lazy var stopGeneratingButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.baseForegroundColor = .white
         config.image = DesignSystemImages.Glyphs.Size16.stopSquare
         config.contentInsets = .zero
-
-        let button = UIButton(configuration: config)
-        button.translatesAutoresizingMaskIntoConstraints = false
-
-        let backdrop = UIView()
-        backdrop.translatesAutoresizingMaskIntoConstraints = false
-        backdrop.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
-        backdrop.layer.cornerRadius = 14
-        backdrop.clipsToBounds = true
-        backdrop.isUserInteractionEnabled = false
-        button.insertSubview(backdrop, at: 0)
-
-        let inset: CGFloat = 2
-        NSLayoutConstraint.activate([
-            backdrop.topAnchor.constraint(equalTo: button.topAnchor, constant: inset),
-            backdrop.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: inset),
-            backdrop.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -inset),
-            backdrop.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: -inset),
-        ])
-
-        return button
+        return UIButton(configuration: config)
+    }()
+    private let stopGeneratingBackdrop: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
+        view.layer.cornerRadius = 14
+        view.clipsToBounds = true
+        view.isUserInteractionEnabled = false
+        return view
     }()
     private let voiceButton = BrowserChromeButton(.primary)
     private let separatorView = UIView()
@@ -137,6 +126,7 @@ class SwitchBarButtonsView: UIView {
         static let separatorWidth: CGFloat = 1
         static let separatorHeight: CGFloat = 20
 
+        static let stopButtonBackdropInset: CGFloat = 2
         static let accessibilityPrefix = "Browser.OmniBar"
     }
 
@@ -166,6 +156,7 @@ class SwitchBarButtonsView: UIView {
         addSubview(stack)
 
         stack.addArrangedSubview(clearButton)
+        stopGeneratingButton.insertSubview(stopGeneratingBackdrop, at: 0)
         stack.addArrangedSubview(stopGeneratingButton)
         stack.addArrangedSubview(voiceButton)
         stack.addArrangedSubview(separatorView)
@@ -184,6 +175,11 @@ class SwitchBarButtonsView: UIView {
 
             stopGeneratingButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             stopGeneratingButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            stopGeneratingBackdrop.topAnchor.constraint(equalTo: stopGeneratingButton.topAnchor, constant: Constants.stopButtonBackdropInset),
+            stopGeneratingBackdrop.leadingAnchor.constraint(equalTo: stopGeneratingButton.leadingAnchor, constant: Constants.stopButtonBackdropInset),
+            stopGeneratingBackdrop.trailingAnchor.constraint(equalTo: stopGeneratingButton.trailingAnchor, constant: -Constants.stopButtonBackdropInset),
+            stopGeneratingBackdrop.bottomAnchor.constraint(equalTo: stopGeneratingButton.bottomAnchor, constant: -Constants.stopButtonBackdropInset),
 
             voiceButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             voiceButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),

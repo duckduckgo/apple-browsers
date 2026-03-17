@@ -101,19 +101,35 @@ extension SimplifiedSyncSettingsView {
     @ViewBuilder
     var headerSection: some View {
         Section {
-            HStack {
-                VStack(alignment: .center, spacing: 20) {
-                    Image("Sync-New-128")
+            VStack(spacing: 20) {
+                Image(model.isSyncEnabled ? "Sync-Pair-96" : "Sync-New-128")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 128, height: 96)
+                    .padding(.top, -16)
 
+                if model.isSyncEnabled {
+                    Button(action: model.scanQRCode) {
+                        HStack(spacing: 8) {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size16.qr)
+                            Text(UserText.simplifiedSyncAnotherDeviceButton)
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle(disabled: !model.isConnectingDevicesAvailable, compact: true, fullWidth: false))
+                    .disabled(!model.isConnectingDevicesAvailable)
+                    .padding(.vertical, 10)
+                } else {
                     Text(model.isAIChatSyncEnabled ? UserText.simplifiedSyncHeaderMessage : UserText.simplifiedSyncHeaderMessageBasic)
                         .daxBodyRegular()
                         .multilineTextAlignment(.center)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
             }
+            .frame(maxWidth: .infinity)
         } header: {
             devEnvironmentIndicator
         }
+        .listRowInsets(EdgeInsets())
         .listRowBackground(Color(designSystemColor: .background))
     }
 
@@ -146,7 +162,7 @@ extension SimplifiedSyncSettingsView {
         Section {
             Toggle(isOn: Binding(
                 get: { model.isSyncEnabled },
-                set: { newValue in
+                set: { _ in
                     // To be implemented
                 }
             )) {
@@ -227,7 +243,7 @@ extension SimplifiedSyncSettingsView {
     var syncEnabledContent: some View {
         syncUnavailableViewWhileLoggedIn
         syncPausedBanners
-        syncEnabledHeaderSection
+        headerSection
         syncToggleSection
         syncedDevicesSection
         getDesktopBrowserSection(source: .activated)
@@ -323,31 +339,6 @@ extension SimplifiedSyncSettingsView {
         SyncWarningMessageView(title: title, message: description, buttonTitle: actionTitle, buttonAction: action)
     }
 
-    @ViewBuilder
-    var syncEnabledHeaderSection: some View {
-        Section {
-            HStack {
-                Spacer()
-                VStack(alignment: .center, spacing: 12) {
-                    Image("Sync-Pair-96")
-
-                    Button(action: model.scanQRCode) {
-                        HStack(spacing: 8) {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size16.qr)
-                            Text(UserText.simplifiedSyncAnotherDeviceButton)
-                        }
-                    }
-                    .buttonStyle(PrimaryButtonStyle(disabled: !model.isConnectingDevicesAvailable, fullWidth: false))
-                    .disabled(!model.isConnectingDevicesAvailable)
-                }
-                Spacer()
-            }
-        } header: {
-            devEnvironmentIndicator
-        }
-        .listRowBackground(Color(designSystemColor: .background))
-    }
-
     // MARK: Devices
 
     @ViewBuilder
@@ -361,7 +352,7 @@ extension SimplifiedSyncSettingsView {
             HStack {
                 Text(UserText.syncedDevicesSectionHeader)
                 Circle()
-                    .fill(.green)
+                    .fill(Color(designSystemColor: .alertGreen))
                     .frame(width: 8)
             }
         }
@@ -426,6 +417,7 @@ extension SimplifiedSyncSettingsView {
             Text(UserText.simplifiedBookmarksSectionHeader)
         } footer: {
             Text(LocalizedStringKey(String(format: UserText.simplifiedBookmarksSectionFooterFormat, "https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/syncing-favorites")))
+                .tint(Color(designSystemColor: .accent))
         }
         .onAppear {
             model.delegate?.updateOptions()

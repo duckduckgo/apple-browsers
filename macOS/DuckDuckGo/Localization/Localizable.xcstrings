@@ -80396,6 +80396,18 @@
         }
       }
     },
+    "preferences.about.update-info.appstore.settings" : {
+      "comment" : "The 'Settings' text that appears bold within the App Store update info message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
     "preferences.about.update-info.sparkle" : {
       "comment" : "Informational message shown on the About screen for Sparkle (non-App Store) builds explaining that the app updates automatically",
       "extractionState" : "extracted_with_value",

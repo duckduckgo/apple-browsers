@@ -101,6 +101,7 @@ private extension TabBackgroundView {
         wantsLayer = true
 
         backgroundShapeView.wantsLayer = true
+        backgroundShapeView.clipsToBounds = false
         backgroundShapeView.tabRampSize = Metrics.tabRampSize
         backgroundShapeView.tabCornerRadius = Metrics.tabCornerRadius
 

@@ -81,7 +81,7 @@ final class AboutPreferencesManualUpdateTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.automaticUpdatesOnly]
         makeAboutPreferences()
 
-        XCTAssertTrue(aboutPreferences.shouldShowUpdateInfoMessage)
+        XCTAssertFalse(aboutPreferences.shouldShowUpdateInfoMessage)
     }
 
     func testShouldShowMessage_legacyUser_flagOn() {
@@ -89,6 +89,6 @@ final class AboutPreferencesManualUpdateTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.automaticUpdatesOnly]
         makeAboutPreferences()
 
-        XCTAssertFalse(aboutPreferences.shouldShowUpdateInfoMessage)
+        XCTAssertTrue(aboutPreferences.shouldShowUpdateInfoMessage)
     }
 }

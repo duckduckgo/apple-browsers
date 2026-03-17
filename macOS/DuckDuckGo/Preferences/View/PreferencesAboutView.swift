@@ -364,27 +364,32 @@ extension Preferences {
     }
 
     struct UpdateInfoMessage: View {
-        var body: some View {
-#if SPARKLE
-            TextMenuItemCaption(UserText.aboutUpdateInfoSparkle)
-#elseif APPSTORE
-            let linkText = UserText.aboutUpdateInfoAppStoreLink
-            let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText)
-            HStack(spacing: 0) {
-                if #available(macOS 12.0, *) {
-                    Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
-                }
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .foregroundColor(Color(.greyText))
-#endif
+        private let buildType: ApplicationBuildType
+
+        init(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
+            self.buildType = buildType
         }
 
-#if APPSTORE
+        var body: some View {
+            if buildType.isSparkleBuild {
+                TextMenuItemCaption(UserText.aboutUpdateInfoSparkle)
+            } else if buildType.isAppStoreBuild {
+                let linkText = UserText.aboutUpdateInfoAppStoreLink
+                let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText)
+                HStack(spacing: 0) {
+                    if #available(macOS 12.0, *) {
+                        Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
+                    }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundColor(Color(.greyText))
+            }
+        }
+
         @available(macOS 12, *)
         private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
             var attributed = AttributedString(fullText)
@@ -417,7 +422,6 @@ extension Preferences {
 
             return attributedString
         }
-#endif
     }
 
     struct UpdatesSection: View {

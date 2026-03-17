@@ -28,6 +28,9 @@ import PrivacyConfig
 ///
 /// When the picker is hidden, consumers should treat automatic updates as
 /// enabled regardless of the stored user preference.
+///
+/// An informational message about automatic updates is shown only to legacy
+/// users (when the flag is on) so they know the manual option has been removed.
 public protocol ManualUpdateRemovalHandling {
     var isLegacyUser: Bool { get }
     var shouldHideManualUpdateOption: Bool { get }

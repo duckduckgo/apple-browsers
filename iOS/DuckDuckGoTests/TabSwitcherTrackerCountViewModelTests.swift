@@ -42,7 +42,10 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
             }
             return total
         }
-        func clearPrivacyStats() async { clearCallCount += 1 }
+        func clearPrivacyStats() async -> Result<Void, Error> {
+            clearCallCount += 1
+            return .success(())
+        }
         func handleAppTermination() async { handleAppTerminationCallCount += 1 }
     }
 

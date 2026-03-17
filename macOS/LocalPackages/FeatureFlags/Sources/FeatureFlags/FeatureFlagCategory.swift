@@ -58,6 +58,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .standaloneMigration,
+                .aiChatMultiplePageContexts,
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
                 .aiChatChromeSidebar,

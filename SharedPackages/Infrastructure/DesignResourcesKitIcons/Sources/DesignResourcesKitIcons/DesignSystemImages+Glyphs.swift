@@ -248,6 +248,7 @@ public extension DesignSystemImages {
             public static var sortAscending: DesignSystemImage { .init(resource: .sortAscending16) }
             public static var sortDescending: DesignSystemImage { .init(resource: .sortDescending16) }
             public static var sortManually: DesignSystemImage { .init(resource: .sortManually16) }
+            public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare16) }
             public static var subscription: DesignSystemImage { .init(resource: .privacyPro16) }
             public static var summary: DesignSystemImage { .init(resource: .summary16) }
             public static var support: DesignSystemImage { .init(resource: .support16) }
@@ -469,6 +470,7 @@ public extension DesignSystemImages {
             public static var pointUp: DesignSystemImage { .init(resource: .pointUp24) }
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid24) }
             public static var print: DesignSystemImage { .init(resource: .print24) }
+            public static var qr: DesignSystemImage { .init(resource: .QR_24) }
             public static var reload: DesignSystemImage { .init(resource: .reload24) }
             public static var reloadSmall: DesignSystemImage { .init(resource: .reloadSmall24) }
             public static var rename: DesignSystemImage { .init(resource: .rename24) }

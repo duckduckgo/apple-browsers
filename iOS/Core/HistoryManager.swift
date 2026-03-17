@@ -72,7 +72,7 @@ public class HistoryManager: HistoryManaging {
         self.isAutocompleteEnabledByUser = isAutocompleteEnabledByUser
         self.isRecentlyVisitedSitesEnabledByUser = isRecentlyVisitedSitesEnabledByUser
     }
-    
+
     @MainActor
     public var history: BrowsingHistory? {
         historyCoordinator.history
@@ -81,7 +81,7 @@ public class HistoryManager: HistoryManaging {
     @MainActor
     public func removeAllHistory() async {
         await withCheckedContinuation { continuation in
-            dbCoordinator.burnAll {
+            dbCoordinator.burnAll { _ in
                 continuation.resume()
             }
         }
@@ -98,7 +98,7 @@ public class HistoryManager: HistoryManaging {
             }
         }
     }
-    
+
     @MainActor
     public func addVisit(of url: URL, tabID: String?, fireTab: Bool = false) {
         // Fire tabs: only record tab history, never global
@@ -108,17 +108,17 @@ public class HistoryManager: HistoryManaging {
             historyCoordinator.addVisit(of: url, tabID: tabID)
         }
     }
-    
+
     @MainActor
     public func updateTitleIfNeeded(title: String, url: URL) {
         historyCoordinator.updateTitleIfNeeded(title: title, url: url)
     }
-    
+
     @MainActor
     public func commitChanges(url: URL) {
         historyCoordinator.commitChanges(url: url)
     }
-    
+
     @MainActor
     public func tabHistory(tabID: String) async throws -> [URL] {
         return try await tabHistoryCoordinator.tabHistory(tabID: tabID)
@@ -165,8 +165,6 @@ class NullHistoryCoordinator: HistoryCoordinating {
     var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {
         $historyDictionary
     }
-    
-    var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
 
     func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
         return nil
@@ -194,29 +192,29 @@ class NullHistoryCoordinator: HistoryCoordinating {
         return nil
     }
 
-    func burnAll(completion: @escaping @MainActor () -> Void) {
+    func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         DispatchQueue.main.asyncOrNow {
-            completion()
+            completion(.success(()))
         }
     }
 
-    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
+    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
         DispatchQueue.main.asyncOrNow {
-            completion([])
+            completion(.success([]))
         }
     }
 
-    func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor () -> Void) {
+    func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         DispatchQueue.main.asyncOrNow {
-            completion()
+            completion(.success(()))
         }
     }
-    
+
     func burnVisits(for tabID: String) async throws {
     }
 
-    func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
-
+    func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+        completion(.success(()))
     }
 
     func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
@@ -290,7 +288,7 @@ class HistoryStoreEventMapper: EventMapping<History.HistoryDatabaseError> {
 
             case .insertTabHistoryFailed:
                 Pixel.fire(pixel: .historyInsertTabHistoryFailed, error: error)
-                
+
             case .removeTabHistoryFailed:
                 Pixel.fire(pixel: .historyRemoveTabHistoryFailed, error: error)
 

@@ -77,10 +77,12 @@ final class FaviconManagerMock: FaviconManagement {
         return nil
     }
 
-    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async -> Result<Void, Error> {
+        return .success(())
     }
 
-    func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: BrowsingHistory, tld: TLD) async {
+    func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: BrowsingHistory, tld: TLD) async -> Result<Void, Error> {
+        return .success(())
     }
 }
 #endif

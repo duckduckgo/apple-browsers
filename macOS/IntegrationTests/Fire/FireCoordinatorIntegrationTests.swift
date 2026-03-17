@@ -22,6 +22,7 @@ import HistoryView
 import Persistence
 import PersistenceTestingUtils
 import SharedTestUtilities
+import PixelKitTestingUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -3096,6 +3097,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             windowControllersManager: Application.appDelegate.windowControllersManager,
             pixelFiring: nil,
+            wideEventManaging: WideEventMock(),
             historyProvider: mockHistoryProvider,
             fireViewModel: vm,
             tabViewModelGetter: { window in

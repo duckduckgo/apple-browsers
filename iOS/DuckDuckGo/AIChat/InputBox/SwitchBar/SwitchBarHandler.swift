@@ -71,7 +71,12 @@ protocol SwitchBarHandling: AnyObject {
     func markUserInteraction()
     func clearButtonTapped()
     func searchGoToButtonTapped()
+    func stopGeneratingButtonTapped()
     func updateBarPosition(isTop: Bool)
+}
+
+extension SwitchBarHandling {
+    func stopGeneratingButtonTapped() {}
 }
 
 // MARK: - SwitchBarHandler Implementation

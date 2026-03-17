@@ -84,8 +84,15 @@ struct ThemeStyle: ThemeStyleProviding {
         return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)
     }
 
+    private static var displaysTabsAnimations: Bool?
+    private static func displaysTabsAnimations(featureFlagger: FeatureFlagger) -> Bool {
+        let output = displaysTabsAnimations ?? featureFlagger.isFeatureOn(.tabAnimations)
+        displaysTabsAnimations = output
+        return output
+    }
+
     private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger) -> ThemeStyle {
-        let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
+        let displaysTabsAnimations = displaysTabsAnimations(featureFlagger: featureFlagger)
 
         return ThemeStyle(
             name: name,

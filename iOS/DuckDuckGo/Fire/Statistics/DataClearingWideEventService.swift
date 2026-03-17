@@ -58,7 +58,7 @@ final class DataClearingWideEventService {
         completeAllPending()
 
         let data = DataClearingWideEventData(
-            options: request.toWideEventOptions(),
+            includedOptions: request.toIncludedOptions(),
             trigger: request.toWideEventTrigger(),
             overallDuration: .startingNow(),
             scope: request.toWideEventScope(),
@@ -156,19 +156,20 @@ private extension DataClearingWideEventService {
 
 private extension FireRequest {
 
-    /// Transforms Fire request options to wide event options.
-    func toWideEventOptions() -> DataClearingWideEventData.Options {
-        if options == .all {
-            return .all
-        } else if options == [.tabs, .data] {
-            return .data
-        } else if options == .aiChats {
-            return .aiChats
-        } else if options == .tabs {
-            return .tab
-        } else {
-            return .all
+    /// Prepares comma-separated list of included options from Fire request.
+    /// This provides granular detail about which specific flags are set.
+    func toIncludedOptions() -> String {
+        var includedOptions: [String] = []
+        if options.contains(.tabs) {
+            includedOptions.append("tabs")
         }
+        if options.contains(.data) {
+            includedOptions.append("data")
+        }
+        if options.contains(.aiChats) {
+            includedOptions.append("aiChats")
+        }
+        return includedOptions.joined(separator: ",")
     }
 
     /// Transforms Fire request trigger to wide event trigger.

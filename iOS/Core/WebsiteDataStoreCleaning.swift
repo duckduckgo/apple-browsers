@@ -19,10 +19,6 @@
 
 import WebKit
 
-public enum WebsiteDataStoreCleaningError: Error {
-    case unsupportedIOSVersion
-}
-
 public protocol WebsiteDataStoreCleaning {
 
     func countContainers() async -> Int

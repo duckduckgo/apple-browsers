@@ -61,10 +61,10 @@
                                     "description": "Reason for the current status",
                                     "enum": ["partial_data", "timeout"]
                                 },
-                                "options": {
+                                "included_options": {
                                     "type": "string",
-                                    "description": "What data the user selected for clearing",
-                                    "enum": ["tab", "data", "aiChats", "all"]
+                                    "description": "Comma-separated list of specific options selected (tabs, data, aiChats) (iOS only)",
+                                    "enum": ["tabs", "data", "aiChats", "tabs,data", "tabs,aiChats", "data,aiChats", "tabs,data,aiChats"]
                                 },
                                 "trigger": {
                                     "type": "string",

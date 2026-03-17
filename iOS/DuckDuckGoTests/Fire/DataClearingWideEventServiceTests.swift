@@ -66,7 +66,7 @@ final class DataClearingWideEventServiceTests: XCTestCase {
             XCTFail("Expected DataClearingWideEventData to be started")
             return
         }
-        XCTAssertEqual(eventData.options, .all)
+        XCTAssertEqual(eventData.includedOptions, "tabs,data,aiChats")
         XCTAssertEqual(eventData.trigger, .manualFire)
         XCTAssertEqual(eventData.scope, .all)
         XCTAssertEqual(eventData.source, .settings)
@@ -170,16 +170,19 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         }
     }
 
-    func testStart_withDifferentOptions_mapsOptionsToWideEvent() {
-        // Test option mappings
-        let optionMappings: [(FireRequest.Options, DataClearingWideEventData.Options)] = [
-            (.all, .all),
-            (.tabs, .tab),
-            (.aiChats, .aiChats),
-            ([.tabs, .data], .data)
+    func testStart_withDifferentOptions_mapsIncludedOptionsToWideEvent() {
+        // Test included options mappings (iOS uses comma-separated list)
+        let optionMappings: [(FireRequest.Options, String)] = [
+            (.all, "tabs,data,aiChats"),
+            (.tabs, "tabs"),
+            (.data, "data"),
+            (.aiChats, "aiChats"),
+            ([.tabs, .data], "tabs,data"),
+            ([.data, .aiChats], "data,aiChats"),
+            ([.tabs, .aiChats], "tabs,aiChats")
         ]
 
-        for (requestOptions, expectedOptions) in optionMappings {
+        for (requestOptions, expectedIncludedOptions) in optionMappings {
             // Given
             let request = FireRequest(
                 options: requestOptions,
@@ -196,7 +199,7 @@ final class DataClearingWideEventServiceTests: XCTestCase {
                 XCTFail("Expected DataClearingWideEventData for options \(requestOptions)")
                 return
             }
-            XCTAssertEqual(eventData.options, expectedOptions, "Options \(requestOptions) should map to \(expectedOptions)")
+            XCTAssertEqual(eventData.includedOptions, expectedIncludedOptions, "Options \(requestOptions) should map to includedOptions '\(expectedIncludedOptions)'")
         }
     }
 

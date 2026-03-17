@@ -19,25 +19,18 @@
 import AppKit
 import AppUpdaterShared
 import Common
-import Persistence
 
 final class AppStoreUpdatesDebugMenu: NSMenu {
     private let debugSettings = UpdatesDebugSettings()
     private let forceUpdateMenuItem = NSMenuItem(title: "")
-    private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
-    init(keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
-        self.settings = keyValueStore.throwingKeyedStoring()
+    init() {
         super.init(title: "")
 
         buildItems {
             NSMenuItem(title: "Force Update Available", action: #selector(toggleForceUpdate))
                 .targetting(self)
             NSMenuItem.separator()
-            NSMenuItem(title: "Simulate New User", action: #selector(simulateNewUser))
-                .targetting(self)
-            NSMenuItem(title: "Simulate Legacy User", action: #selector(simulateLegacyUser))
-                .targetting(self)
             NSMenuItem(title: "Reset Debug Settings", action: #selector(resetDebugSettings))
                 .targetting(self)
             NSMenuItem.separator()
@@ -58,26 +51,6 @@ final class AppStoreUpdatesDebugMenu: NSMenu {
     @objc private func toggleForceUpdate() {
         debugSettings.forceUpdateAvailable.toggle()
         updateMenuItemsState()
-    }
-
-    @objc private func simulateNewUser() {
-        try? settings.set(1, for: \.installBuild)
-
-        let alert = NSAlert()
-        alert.messageText = "Simulating New User"
-        alert.informativeText = "Install build metadata has been set. Close and reopen Settings for changes to take effect."
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
-    }
-
-    @objc private func simulateLegacyUser() {
-        try? settings.removeValue(for: \.installBuild)
-
-        let alert = NSAlert()
-        alert.messageText = "Simulating Legacy User"
-        alert.informativeText = "Install build metadata has been cleared. Close and reopen Settings for changes to take effect."
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
     }
 
     @objc private func resetDebugSettings() {

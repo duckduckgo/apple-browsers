@@ -58,7 +58,7 @@ final class NavigationActionBarViewModel: ObservableObject {
         isVoiceModeFeatureEnabled && !isSearchMode && !hasText
     }
 
-    // MARK: - Action Callbacks 
+    // MARK: - Action Callbacks
     let onMicrophoneTapped: () -> Void
     let onNewLineTapped: () -> Void
     let onSearchTapped: () -> Void
@@ -158,4 +158,13 @@ final class NavigationActionBarViewModel: ObservableObject {
 
         return hasText && !hasUserInteractedWithText
     }
+
+    func searchButtonTapped() {
+        if shouldShowVoiceModeButton {
+            onVoiceModeTapped()
+        } else {
+            onSearchTapped()
+        }
+    }
+
 }

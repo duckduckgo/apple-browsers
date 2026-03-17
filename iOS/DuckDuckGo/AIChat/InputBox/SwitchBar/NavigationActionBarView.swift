@@ -241,11 +241,7 @@ final class NavigationActionBarView: UIView {
     }
     
     @objc private func searchTapped() {
-        if viewModel.shouldShowVoiceModeButton {
-            viewModel.onVoiceModeTapped()
-        } else {
-            viewModel.onSearchTapped()
-        }
+        viewModel.searchButtonTapped()
     }
 
     // MARK: - UI Updates

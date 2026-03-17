@@ -129,7 +129,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     }
 }
 
-final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
+private class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
     /// The TabBar component requires an extra top padding whenever all of the following are met:
     ///     1. We're building on `Xcode 26`
@@ -138,11 +138,8 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     /// In any other scenario, applying a top padding would result in an unexpected gap.
     /// As per the `.tabAnimations` UX Refresh, we're also introducing an extra top padding of `6pt`
     ///
-    let tabBarBackgroundTopPadding: CGFloat
-
-    private static func calculateTabBarBackgroundTopPadding(displaysTabsAnimations: Bool) -> CGFloat {
-        let extraTopPadding: CGFloat = displaysTabsAnimations ? 6 : .zero
-
+    private(set) lazy var tabBarBackgroundTopPadding: CGFloat = {
+        let extraTopPadding = Self.extraTabBarBackgroundTopPadding
 #if compiler(>=6.2)
         if #available(macOS 26.0, *), Bundle.main.designCompatibilityEnabled == false {
             return 2 + extraTopPadding
@@ -150,6 +147,10 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 #endif
 
         return 0 + extraTopPadding
+    }()
+
+    class var extraTabBarBackgroundTopPadding: CGFloat {
+        .zero
     }
 
     private let navigationBarHeightForDefault: CGFloat = 52
@@ -167,16 +168,13 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
 
     private let featureFlagger: FeatureFlagger
-    private let displaysTabsAnimations: Bool
 
     private var isAIChatOmnibarEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
     }
 
-    init(featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool) {
+    init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
-        self.displaysTabsAnimations = displaysTabsAnimations
-        self.tabBarBackgroundTopPadding = Self.calculateTabBarBackgroundTopPadding(displaysTabsAnimations: displaysTabsAnimations)
     }
 
     let defaultAddressBarFontSize: CGFloat = 13
@@ -254,5 +252,23 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
         return 32
+    }
+}
+
+private class RefreshAddressBarStyleProvider: CurrentAddressBarStyleProvider {
+
+    override class var extraTabBarBackgroundTopPadding: CGFloat {
+        6
+    }
+}
+
+struct AddressBarStyleProvidingFactory {
+
+    static func buildStyleProvider(featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool) -> AddressBarStyleProviding {
+        if displaysTabsAnimations {
+            return RefreshAddressBarStyleProvider(featureFlagger: featureFlagger)
+        }
+
+        return CurrentAddressBarStyleProvider(featureFlagger: featureFlagger)
     }
 }

@@ -218,7 +218,8 @@ final class MainWindowController: NSWindowController {
         // Empty toolbar ensures that window buttons are centered vertically
         window?.toolbar = NSToolbar()
         window?.toolbar?.showsBaselineSeparator = true
-        window?.toolbarStyle = .unifiedCompact
+        window?.toolbarStyle = .expanded
+
         moveTabBarView(toTitlebarView: true)
     }
 

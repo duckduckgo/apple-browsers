@@ -138,13 +138,14 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     /// In any other scenario, applying a top padding would result in an unexpected gap
     ///
     let tabBarBackgroundTopPadding: CGFloat = {
+        let extraTopPadding: CGFloat = 4
 #if compiler(>=6.2)
         if #available(macOS 26.0, *), Bundle.main.designCompatibilityEnabled == false {
-            return 2
+            return 2 + extraTopPadding
         }
 #endif
 
-        return 0
+        return 0 + extraTopPadding
     }()
 
     private let navigationBarHeightForDefault: CGFloat = 52

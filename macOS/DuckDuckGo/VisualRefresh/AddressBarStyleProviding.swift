@@ -135,10 +135,14 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     ///     1. We're building on `Xcode 26`
     ///     2. We're running on `Tahoe`
     ///     3. The `UIDesignRequiresCompatibility` flag is disabled
-    /// In any other scenario, applying a top padding would result in an unexpected gap
+    /// In any other scenario, applying a top padding would result in an unexpected gap.
+    /// As per the `.tabAnimations` UX Refresh, we're also introducing an extra top padding of `6pt`
     ///
-    let tabBarBackgroundTopPadding: CGFloat = {
-        let extraTopPadding: CGFloat = 4
+    let tabBarBackgroundTopPadding: CGFloat
+
+    private static func calculateTabBarBackgroundTopPadding(displaysTabsAnimations: Bool) -> CGFloat {
+        let extraTopPadding: CGFloat = displaysTabsAnimations ? 6 : .zero
+
 #if compiler(>=6.2)
         if #available(macOS 26.0, *), Bundle.main.designCompatibilityEnabled == false {
             return 2 + extraTopPadding
@@ -146,7 +150,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 #endif
 
         return 0 + extraTopPadding
-    }()
+    }
 
     private let navigationBarHeightForDefault: CGFloat = 52
     private let navigationBarHeightForHomePage: CGFloat = 52
@@ -163,13 +167,16 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
 
     private let featureFlagger: FeatureFlagger
+    private let displaysTabsAnimations: Bool
 
     private var isAIChatOmnibarEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
     }
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool) {
         self.featureFlagger = featureFlagger
+        self.displaysTabsAnimations = displaysTabsAnimations
+        self.tabBarBackgroundTopPadding = Self.calculateTabBarBackgroundTopPadding(displaysTabsAnimations: displaysTabsAnimations)
     }
 
     let defaultAddressBarFontSize: CGFloat = 13

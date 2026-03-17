@@ -50,8 +50,8 @@ final class MainWindow: NSWindow {
                    defer: true)
 
         setupWindow()
-        semaphoreLightsManager = SemaphoreLightsManager(window: self)
-        semaphoreLightsManager?.startObservingChanges()
+        semaphoreLightsManager = SemaphoreLightsManager()
+        semaphoreLightsManager?.startObservingChanges(in: self)
 
         assert(AppVersion.runType != .unitTests, "MainWindow should not be created in unit tests")
     }
@@ -158,11 +158,9 @@ final class SemaphoreLightsManager {
     }
 
     private var cancellables = [AnyCancellable]()
-    private weak var window: NSWindow?
     private let buttonTypesAndLocations: [NSWindow.ButtonType: NSPoint]
 
-    init(window: NSWindow, buttonsTypesAndLocations: [NSWindow.ButtonType: NSPoint]? = nil) {
-        self.window = window
+    init(buttonsTypesAndLocations: [NSWindow.ButtonType: NSPoint]? = nil) {
         self.buttonTypesAndLocations = buttonsTypesAndLocations ?? Metrics.buttonTypesAndLocations
     }
 
@@ -170,16 +168,16 @@ final class SemaphoreLightsManager {
         stopListeningToNotifications()
     }
 
-    func startObservingChanges() {
-        layoutTrafficLights()
-        startListeningToNotifications()
-        subscribeToTrafficLightsFrames()
+    func startObservingChanges(in window: NSWindow) {
+        layoutTrafficLights(window: window)
+        startListeningToNotifications(window: window)
+        subscribeToTrafficLightChanges(window: window)
     }
 }
 
 private extension SemaphoreLightsManager {
 
-    func startListeningToNotifications() {
+    func startListeningToNotifications(window: NSWindow) {
         let observedNotificationNames = [
             NSWindow.didResizeNotification,
             NSWindow.didBecomeKeyNotification,
@@ -202,33 +200,39 @@ private extension SemaphoreLightsManager {
         NotificationCenter.default.removeObserver(self)
     }
 
-    func subscribeToTrafficLightsFrames() {
-        guard let closeButton = window?.standardWindowButton(.closeButton) else {
+    func subscribeToTrafficLightChanges(window: NSWindow) {
+        guard let closeButton = window.standardWindowButton(.closeButton) else {
             return
         }
 
         closeButton
             .publisher(for: \.frame)
-            .sink { [weak self] _ in
-                self?.layoutTrafficLights()
+            .sink { [weak self, weak closeButton] _ in
+                guard let `self`, let window = closeButton?.window else {
+                    return
+                }
+
+                self.layoutTrafficLights(window: window)
             }
             .store(in: &cancellables)
     }
 
-    func layoutTrafficLights() {
+    func layoutTrafficLights(window: NSWindow) {
+        let work = DispatchWorkItem { [weak self] in
+            self?.layoutTrafficLightsOnMainThread(window: window)
+        }
+
         if Thread.isMainThread {
-            layoutTrafficLightsOnMainThread()
+            work.perform()
             return
         }
 
-        DispatchQueue.main.async { [weak self] in
-            self?.layoutTrafficLightsOnMainThread()
-        }
+        DispatchQueue.main.async(execute: work)
     }
 
-    private func layoutTrafficLightsOnMainThread() {
+    private func layoutTrafficLightsOnMainThread(window: NSWindow) {
         for (type, origin) in buttonTypesAndLocations {
-            guard let button = window?.standardWindowButton(type), button.frame.origin != origin else {
+            guard let button = window.standardWindowButton(type), button.frame.origin != origin else {
                 continue
             }
 
@@ -241,6 +245,10 @@ private extension SemaphoreLightsManager {
 
     @objc
     func processWindowNotification(_ note: Notification) {
-        layoutTrafficLights()
+        guard let window = note.object as? NSWindow else {
+            return
+        }
+
+        layoutTrafficLights(window: window)
     }
 }

@@ -468,15 +468,18 @@ class FireExecutor: FireExecuting {
     }
     
     private func burnAIHistory(request: FireRequest) async {
+        dataClearingWideEventService?.start(.clearAIChatHistory)
+        let result: Result<Void, Error>
         switch request.scope {
         case .tab(let viewModel):
-            await burnTabAIHistory(tabViewModel: viewModel)
+            result = await burnTabAIHistory(tabViewModel: viewModel)
         case .all:
-            await burnAllAIHistory(trigger: request.trigger)
+            result = await burnAllAIHistory(trigger: request.trigger)
         }
+        dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
     
-    private func burnAllAIHistory(trigger: FireRequest.Trigger) async {
+    private func burnAllAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
         let cleaner = historyCleanerProvider()
         let result = await cleaner.cleanAIChatHistory()
         switch result {
@@ -491,13 +494,15 @@ class FireExecutor: FireExecuting {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
+        return result
     }
     
-    private func burnTabAIHistory(tabViewModel: TabViewModel) async {
+    private func burnTabAIHistory(tabViewModel: TabViewModel) async -> Result<Void, Error> {
         if let chatID = await tabViewModel.currentAIChatId {
-            await deleteChat(chatID: chatID)
+            return await deleteChat(chatID: chatID)
         } else {
             Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
+            return .success(())
         }
     }
 

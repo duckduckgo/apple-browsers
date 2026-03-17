@@ -145,6 +145,10 @@ public class DataClearingWideEventData: WideEventData {
     public var removeAllContainersAfterDelayStatus: ActionStatus?
     public var removeAllContainersAfterDelayError: WideEventErrorData?
 
+    public var deleteContextualAIChatDuration: WideEvent.MeasuredInterval?
+    public var deleteContextualAIChatStatus: ActionStatus?
+    public var deleteContextualAIChatError: WideEventErrorData?
+
     // macOS-only actions
     public var clearPermissionsDuration: WideEvent.MeasuredInterval?
     public var clearPermissionsStatus: ActionStatus?
@@ -320,6 +324,7 @@ extension DataClearingWideEventData {
         case clearDaxDialogsHeldURLData = "clear_daxDialogs_held_URL_data"
         case removeObservationsData = "clear_website_data.remove_observations_data"
         case removeAllContainersAfterDelay = "clear_website_data.remove_all_containers_after_delay"
+        case deleteContextualAIChat = "delete_contextual_aiChat"
 
         // macOS-only actions
         case clearPermissions = "clear_permissions"
@@ -352,6 +357,7 @@ extension DataClearingWideEventData {
             case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataDuration
             case .removeObservationsData: return \.removeObservationsDataDuration
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayDuration
+            case .deleteContextualAIChat: return \.deleteContextualAIChatDuration
             case .clearPermissions: return \.clearPermissionsDuration
             case .clearVisitedLinks: return \.clearVisitedLinksDuration
             case .clearRecentlyClosed: return \.clearRecentlyClosedDuration
@@ -384,6 +390,7 @@ extension DataClearingWideEventData {
             case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataStatus
             case .removeObservationsData: return \.removeObservationsDataStatus
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayStatus
+            case .deleteContextualAIChat: return \.deleteContextualAIChatStatus
             case .clearPermissions: return \.clearPermissionsStatus
             case .clearVisitedLinks: return \.clearVisitedLinksStatus
             case .clearRecentlyClosed: return \.clearRecentlyClosedStatus
@@ -416,6 +423,7 @@ extension DataClearingWideEventData {
             case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataError
             case .removeObservationsData: return \.removeObservationsDataError
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayError
+            case .deleteContextualAIChat: return \.deleteContextualAIChatError
             case .clearPermissions: return \.clearPermissionsError
             case .clearVisitedLinks: return \.clearVisitedLinksError
             case .clearRecentlyClosed: return \.clearRecentlyClosedError

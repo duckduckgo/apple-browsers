@@ -138,9 +138,6 @@ final class TabViewCell: UICollectionViewCell {
         layer.cornerRadius = Constants.cellCornerRadius
         layer.cornerCurve = .continuous
 
-        let accentColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
-        unread.tintColor = accentColor
-
         favicon.layer.cornerRadius = 4
         favicon.layer.cornerCurve = .continuous
         favicon.layer.masksToBounds = true

@@ -249,11 +249,8 @@ enum AIChatPixel: PixelKitEvent {
 
     // MARK: - Daily
 
-    /// Event Trigger: Fires daily when the app becomes active and AI Chat features are enabled
-    case aiChatIsEnabled
-
-    /// Event Trigger: Fires daily when the app becomes active and AI Chat features are disabled
-    case aiChatIsDisabled
+    /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
+    case aiChatIsEnabled(isEnabled: Bool)
 
     // MARK: -
 
@@ -401,8 +398,6 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sent_prompt_ongoing_chat"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
-        case .aiChatIsDisabled:
-            return "aichat_is_disabled"
         }
     }
 
@@ -463,10 +458,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
-                .aiChatTermsAcceptedDuplicateSyncOn,
-                .aiChatIsEnabled,
-                .aiChatIsDisabled:
+                .aiChatTermsAcceptedDuplicateSyncOn:
             return nil
+        case .aiChatIsEnabled(let isEnabled):
+            return ["is_enabled": isEnabled ? "1" : "0"]
         case .aiChatAddressBarSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
         case .aiChatAddressBarButtonClicked(let action):
@@ -566,8 +561,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
-                .aiChatIsEnabled,
-                .aiChatIsDisabled:
+                .aiChatIsEnabled:
             return [.pixelSource]
         }
     }

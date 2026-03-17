@@ -1457,8 +1457,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireAIChatDailyPixel() {
-        let pixel: AIChatPixel = aiChatPreferences.isAIFeaturesEnabled ? .aiChatIsEnabled : .aiChatIsDisabled
-        PixelKit.fire(pixel, frequency: .daily)
+        PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
     }
 
     private func fireAutoconsentDailyPixel() {

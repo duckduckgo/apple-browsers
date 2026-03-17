@@ -162,17 +162,19 @@
         ]
     },
     "m_mac_aichat_is_enabled": {
-        "description": "Daily pixel fired when AI Chat features are enabled",
+        "description": "Daily pixel reporting whether AI Chat features are enabled or disabled",
         "owners": ["Bunn"],
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
-    "m_mac_aichat_is_disabled": {
-        "description": "Daily pixel fired when AI Chat features are disabled",
-        "owners": ["Bunn"],
-        "triggers": ["scheduled"],
-        "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "is_enabled",
+                "description": "Whether AI Chat features are currently enabled",
+                "type": "string",
+                "enum": ["0", "1"]
+            }
+        ]
     }
 }

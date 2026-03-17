@@ -150,7 +150,7 @@ final class MainWindow: NSWindow {
 final class SemaphoreLightsManager {
 
     enum Metrics {
-        static let buttonsAndLocations: [NSWindow.ButtonType: NSPoint] = [
+        static let buttonTypesAndLocations: [NSWindow.ButtonType: NSPoint] = [
             .closeButton:       NSPoint(x: 17, y: 14),
             .miniaturizeButton: NSPoint(x: 37, y: 14),
             .zoomButton:        NSPoint(x: 57, y: 14)
@@ -159,11 +159,11 @@ final class SemaphoreLightsManager {
 
     private var cancellables = [AnyCancellable]()
     private weak var window: NSWindow?
-    private let buttonsAndLocations: [NSWindow.ButtonType: NSPoint]
+    private let buttonTypesAndLocations: [NSWindow.ButtonType: NSPoint]
 
-    init(window: NSWindow, buttonsAndLocations: [NSWindow.ButtonType: NSPoint]?) {
+    init(window: NSWindow, buttonsTypesAndLocations: [NSWindow.ButtonType: NSPoint]? = nil) {
         self.window = window
-        self.buttonsAndLocations = buttonsAndLocations ?? Metrics.buttonsAndLocations
+        self.buttonTypesAndLocations = buttonsTypesAndLocations ?? Metrics.buttonTypesAndLocations
     }
 
     deinit {

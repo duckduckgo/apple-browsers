@@ -42,9 +42,7 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
 
     @MainActor
     public func removeAllContainersAfterDelay(previousCount: Int) async -> Result<Void, Error> {
-        guard #available(iOS 17, *) else {
-            return .failure(WebsiteDataStoreCleaningError.unsupportedIOSVersion)
-        }
+        guard #available(iOS 17, *) else { return .success(()) }
 
         // Attempt to clean up all previous stores, but wait for a few seconds.
         // If this fails, we are going to still clean them next time as WebKit keeps track of all stores for us.

@@ -472,7 +472,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         tabControllerCache.append(controller)
 
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: !inBackground)
-        tab.viewed = !inBackground
+        if !inBackground {
+            tab.viewed = true
+        }
 
         cacheDelegate?.tabManager(self, didCreateController: controller)
 

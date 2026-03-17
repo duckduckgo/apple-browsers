@@ -4030,7 +4030,6 @@ extension MainViewController: TabSwitcherDelegate {
         }
         
         if let tab {
-            tab.viewed = true
             tabManager.select(tab, forcingMode: true, dismissCurrent: false)
         }
 

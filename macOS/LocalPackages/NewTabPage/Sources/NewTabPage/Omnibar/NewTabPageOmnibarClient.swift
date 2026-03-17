@@ -50,9 +50,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         super.init()
 
-        Publishers.Merge(
-            configProvider.isAIChatShortcutEnabledPublisher,
-            configProvider.isAIChatSettingVisiblePublisher
+        Publishers.Merge3(
+            configProvider.isAIChatShortcutEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.isAIChatSettingVisiblePublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.modePublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in

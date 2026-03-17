@@ -26,6 +26,7 @@ import InlineSnapshotTesting
 import History
 import os.log
 import Persistence
+import PixelKit
 import Suggestions
 import XCTest
 
@@ -496,7 +497,8 @@ extension SuggestionJsonScenarioTests {
         func removeTabHistory(for tabIDs: [String]) async {
         }
 
-        func removeBrowsingHistory(tabID: String) async {
+        func removeBrowsingHistory(tabID: String) async -> ActionResult? {
+            return ActionResult(result: .success(()), measuredInterval: .init(start: .now, end: .now))
         }
     }
 }

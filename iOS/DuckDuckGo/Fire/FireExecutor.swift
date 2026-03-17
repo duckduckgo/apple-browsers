@@ -237,7 +237,9 @@ class FireExecutor: FireExecuting {
               request.options.contains(.data) else {
             return
         }
+        dataClearingWideEventService?.start(.cancelAllDownloads)
         downloadManager.cancelAllDownloads()
+        dataClearingWideEventService?.update(.cancelAllDownloads, result: .success(()))
     }
 
     @MainActor
@@ -368,7 +370,9 @@ class FireExecutor: FireExecuting {
         dataClearingWideEventService?.update(.clearDaxDialogsHeldURLData, result: daxDialogsResult)
 
         if self.syncService.authState == .inactive {
+            dataClearingWideEventService?.start(.clearBookmarkDatabase)
             self.bookmarksDatabaseCleaner?.cleanUpDatabaseNow()
+            dataClearingWideEventService?.update(.clearBookmarkDatabase, result: .success(()))
         }
 
         dataClearingWideEventService?.start(.forgetTextZoom)
@@ -399,8 +403,8 @@ class FireExecutor: FireExecuting {
 
         // Async tasks
         async let websiteDataTask = websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
-        async let historyTask: Void = historyManager.removeBrowsingHistory(tabID: tabViewModel.tab.uid)
-        async let contextualChatTask: Void = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
+        async let historyTask = historyManager.removeBrowsingHistory(tabID: tabViewModel.tab.uid)
+        async let contextualChatTask = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
 
         // Sync tasks
         dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
@@ -412,8 +416,12 @@ class FireExecutor: FireExecuting {
         dataClearingWideEventService?.update(.forgetTextZoom, result: textZoomResult)
 
         // Await async tasks
-        let (websiteDataResult, _, _) = await (websiteDataTask, historyTask, contextualChatTask)
+        let (websiteDataResult, historyResult, contextualChatResult) = await (websiteDataTask, historyTask, contextualChatTask)
         updateWideEventWithWebsiteDataResults(websiteDataResult)
+        if let historyResult {
+            dataClearingWideEventService?.update(.clearAllHistory, actionResult: historyResult)
+        }
+        dataClearingWideEventService?.update(.deleteContextualAIChat, actionResult: contextualChatResult)
 
         // Fire completion pixel with timing
         let tabType = tabViewModel.tab.isAITab ? "ai" : "web"
@@ -438,11 +446,15 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func deleteContextualChatIfNeeded(tabViewModel: TabViewModel) async {
+    private func deleteContextualChatIfNeeded(tabViewModel: TabViewModel) async -> ActionResult {
+        var interval = WideEvent.MeasuredInterval.startingNow()
+
         guard appSettings.autoClearAIChatHistory,
               let contextualChatID = tabViewModel.currentContextualChatId else {
-            return
+            interval.complete()
+            return ActionResult(result: .success(()), measuredInterval: interval)
         }
+
         let result = await deleteChat(chatID: contextualChatID)
         switch result {
         case .success:
@@ -450,6 +462,9 @@ class FireExecutor: FireExecuting {
         case .failure:
             Logger.aiChat.debug("Failed to delete contextual ai chat")
         }
+
+        interval.complete()
+        return ActionResult(result: result, measuredInterval: interval)
     }
     
     // MARK: - Clear AI History

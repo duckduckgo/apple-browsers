@@ -21,6 +21,7 @@ import Foundation
 import XCTest
 import BrowserServicesKit
 import Persistence
+import PixelKit
 import History
 @testable import Core
 
@@ -89,8 +90,9 @@ class MockHistoryManager: HistoryManaging {
         removeTabHistoryExpectation?.fulfill()
     }
     
-    func removeBrowsingHistory(tabID: String) async {
+    func removeBrowsingHistory(tabID: String) async -> ActionResult? {
         removeBrowsingHistoryCalls.append(tabID)
+        return ActionResult(result: .success(()), measuredInterval: .init(start: .now, end: .now))
     }
 
 }

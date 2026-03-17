@@ -24,17 +24,6 @@ import PixelKit
 
 import WKAbstractions
 
-/// Per-action result with measured interval for wide event instrumentation.
-public struct ActionResult {
-    public let result: Result<Void, Error>
-    public let measuredInterval: WideEvent.MeasuredInterval
-
-    public init(result: Result<Void, Error>, measuredInterval: WideEvent.MeasuredInterval) {
-        self.result = result
-        self.measuredInterval = measuredInterval
-    }
-}
-
 /// Result structure containing per-action results from website data clearing.
 /// Returned to FireExecutor for wide event instrumentation.
 public struct WebsiteDataClearingResult {

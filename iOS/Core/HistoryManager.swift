@@ -23,6 +23,7 @@ import BrowserServicesKit
 import History
 import Common
 import Persistence
+import PixelKit
 import os.log
 
 public protocol HistoryManaging {
@@ -36,7 +37,7 @@ public protocol HistoryManaging {
     @MainActor func commitChanges(url: URL)
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
     @MainActor func removeTabHistory(for tabIDs: [String]) async
-    @MainActor func removeBrowsingHistory(tabID: String) async
+    @MainActor func removeBrowsingHistory(tabID: String) async -> ActionResult?
 }
 
 public class HistoryManager: HistoryManaging {
@@ -142,11 +143,17 @@ public class HistoryManager: HistoryManaging {
     /// This removes the tab's history records from the global browsing history,
     /// used when burning a single tab to clear its footprint from history.
     @MainActor
-    public func removeBrowsingHistory(tabID: String) async {
+    public func removeBrowsingHistory(tabID: String) async -> ActionResult? {
+        var interval = WideEvent.MeasuredInterval.startingNow()
+
         do {
             try await dbCoordinator.burnVisits(for: tabID)
+            interval.complete()
+            return ActionResult(result: .success(()), measuredInterval: interval)
         } catch {
             Logger.history.error("Failed to remove global history for tab: \(error.localizedDescription)")
+            interval.complete()
+            return ActionResult(result: .failure(error), measuredInterval: interval)
         }
     }
 

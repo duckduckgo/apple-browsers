@@ -306,8 +306,6 @@ class FireExecutor: FireExecuting {
         case .tab(let viewModel):
             guard let domains else {
                 Logger.general.error("Expected domains to be present when burning a single tab")
-                dataClearingWideEventService?.start(.clearTabs)
-                dataClearingWideEventService?.update(.clearTabs, result: .failure(DataClearingWideEventError(description: "Expected domains to be present when burning a single tab")))
                 return
             }
             // Prepare the tab if it's the current tab (non-current tabs were prepared earlier)

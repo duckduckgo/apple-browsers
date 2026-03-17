@@ -91,6 +91,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     // MARK: - Manager Components
 
@@ -115,6 +116,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                   privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
                   aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+                  voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
                   escapeHatch: EscapeHatchModel? = nil) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
@@ -123,6 +125,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
+        self.voiceShortcutFeature = voiceShortcutFeature
         self.escapeHatchModel = escapeHatch
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
@@ -365,7 +368,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(
             switchBarHandler: switchBarHandler,
-            isVoiceModeFeatureEnabled: featureFlagger.isFeatureOn(.duckAIVoiceShortcut)
+            isVoiceModeFeatureEnabled: voiceShortcutFeature.isAvailable
         )
         if isUsingTopBarPosition {
             // Note this is not installed in contentContainerView - this is floating over content.

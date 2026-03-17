@@ -89,6 +89,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
     private let featureFlagger: FeatureFlagger
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -177,6 +178,7 @@ final class SwitchBarHandler: SwitchBarHandling {
          sessionStateMetrics: SessionStateMetricsProviding,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
          isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
@@ -185,6 +187,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.sessionStateMetrics = sessionStateMetrics
         self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
+        self.voiceShortcutFeature = voiceShortcutFeature
         self.isFireTab = isFireTab
 
         // Set up app lifecycle observers to reset session flags
@@ -265,7 +268,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         if !currentText.isEmpty {
             buttonState = .clearOnly
         } else if voiceSearchHelper.isVoiceSearchEnabled
-                    && !(currentToggleState == .aiChat && featureFlagger.isFeatureOn(.duckAIVoiceShortcut)) {
+                    && !(currentToggleState == .aiChat && voiceShortcutFeature.isAvailable) {
             if isUsingFadeOutAnimation || !isTopBarPosition {
                 buttonState = .voiceOnly
             } else {

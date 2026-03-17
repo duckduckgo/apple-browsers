@@ -75,7 +75,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         super.viewDidLoad()
 
         omniBarView.duckAITextViewDelegate = self
-        omniBarView.isVoiceModeEnabled = dependencies.featureFlagger.isFeatureOn(.duckAIVoiceShortcut)
+        omniBarView.isVoiceModeEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             self?.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
         }

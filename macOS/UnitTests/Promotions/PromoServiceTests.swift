@@ -1298,7 +1298,7 @@ final class PromoServiceTests: XCTestCase {
         delegate.setShowResult(.noChange)
         let promo = PromoTestHelpers.makePromo(id: "restore-after-dismiss", delegate: delegate)
         let promoService = makeService(promos: [promo])
-        
+
         let shownExpectation = XCTestExpectation(description: "restored promo shown")
         let resultExpectation = XCTestExpectation(description: "restored promo result persisted")
         promoService.visiblePromosPublisher

@@ -375,8 +375,13 @@ class FireExecutor: FireExecuting {
         let textZoomResult = self.forgetTextZoom()
         dataClearingWideEventService?.update(.forgetTextZoom, result: textZoomResult)
 
-        await historyManager.removeAllHistory()
-        _ = await privacyStats?.clearPrivacyStats()
+        dataClearingWideEventService?.start(.clearAllHistory)
+        let historyResult = await historyManager.removeAllHistory()
+        dataClearingWideEventService?.update(.clearAllHistory, result: historyResult)
+
+        dataClearingWideEventService?.start(.clearPrivacyStats)
+        let privacyStatsResult = await privacyStats?.clearPrivacyStats() ?? .success(())
+        dataClearingWideEventService?.update(.clearPrivacyStats, result: privacyStatsResult)
     }
     
     @MainActor

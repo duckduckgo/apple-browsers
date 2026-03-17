@@ -29,7 +29,7 @@ public protocol HistoryManaging {
 
     var isEnabledByUser: Bool { get }
     var history: BrowsingHistory? { get }
-    @MainActor func removeAllHistory() async
+    @MainActor func removeAllHistory() async -> Result<Void, Error>
     @MainActor func deleteHistoryForURL(_ url: URL) async
     @MainActor func addVisit(of url: URL, tabID: String?, fireTab: Bool)
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
@@ -79,10 +79,10 @@ public class HistoryManager: HistoryManaging {
     }
 
     @MainActor
-    public func removeAllHistory() async {
+    public func removeAllHistory() async -> Result<Void, Error> {
         await withCheckedContinuation { continuation in
-            dbCoordinator.burnAll { _ in
-                continuation.resume()
+            dbCoordinator.burnAll { result in
+                continuation.resume(returning: result)
             }
         }
     }

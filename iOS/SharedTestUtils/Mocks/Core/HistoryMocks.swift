@@ -55,8 +55,9 @@ class MockHistoryManager: HistoryManaging {
         return historyFeatureEnabled
     }
 
-    func removeAllHistory() async {
+    func removeAllHistory() async -> Result<Void, Error> {
         removeAllHistoryCallCount += 1
+        return .success(())
     }
 
     func deleteHistoryForURL(_ url: URL) async {

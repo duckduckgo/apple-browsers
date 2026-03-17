@@ -136,7 +136,6 @@ private class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     ///     2. We're running on `Tahoe`
     ///     3. The `UIDesignRequiresCompatibility` flag is disabled
     /// In any other scenario, applying a top padding would result in an unexpected gap.
-    /// As per the `.tabAnimations` UX Refresh, we're also introducing an extra top padding of `6pt`
     ///
     private(set) lazy var tabBarBackgroundTopPadding: CGFloat = {
         let extraTopPadding = Self.extraTabBarBackgroundTopPadding
@@ -257,6 +256,7 @@ private class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
 private class RefreshAddressBarStyleProvider: CurrentAddressBarStyleProvider {
 
+    /// When the `.tabAnimations` Feature Flag is enabled, we'll introduce an extra Top Padding of `6pt`
     override class var extraTabBarBackgroundTopPadding: CGFloat {
         6
     }

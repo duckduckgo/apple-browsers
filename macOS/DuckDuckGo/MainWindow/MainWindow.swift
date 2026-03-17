@@ -157,7 +157,6 @@ class SemaphoreLightsManager {
         .zoomButton:        NSPoint(x: 57, y: 14)
     ]
 
-
     init(window: NSWindow) {
         self.window = window
     }

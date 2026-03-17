@@ -20,7 +20,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion"]
     },
 
     "m_fire_clear_website_data_remove_all_containers_after_delay_failure": {
@@ -28,6 +28,6 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

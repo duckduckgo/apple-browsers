@@ -11,6 +11,7 @@
             "wideEventAppName",
             "wideEventAppVersion",
             "wideEventPlatform",
+            "wideEventFormFactor",
             "wideEventType",
             "wideEventSampleRate",
             "wideEventIsFirstDailyOccurrence",

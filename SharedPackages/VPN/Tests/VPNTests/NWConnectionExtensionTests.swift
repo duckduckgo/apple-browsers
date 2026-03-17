@@ -43,14 +43,16 @@ final class NWConnectionExtensionTests: XCTestCase {
         let stateUpdateStream = connection.stateUpdateStream
         connection.start(queue: .main)
 
-        let eReady = expectation(description: "connection is ready")
+        let eReadyOrNetworkDown = expectation(description: "connection is ready")
         let eFinished = expectation(description: "stateUpdateStream finished")
         async let states = withTimeout(5) {
             var states = [NWConnection.State]()
             for try await state in stateUpdateStream {
                 states.append(state)
                 if case .ready = state {
-                    eReady.fulfill()
+                    eReadyOrNetworkDown.fulfill()
+                } else if case .waiting(let error) = state, case .posix(let code) = error, code == .ENETDOWN {
+                    eReadyOrNetworkDown.fulfill()
                 }
             }
             eFinished.fulfill()
@@ -58,11 +60,20 @@ final class NWConnectionExtensionTests: XCTestCase {
             return states
         }
 
-        await fulfillment(of: [eReady])
+        await fulfillment(of: [eReadyOrNetworkDown])
         connection.cancel()
 
         await fulfillment(of: [eFinished])
         let result = try await states
+
+        let networkIsDown = result.contains { state in
+            if case .waiting(let error) = state, case .posix(let code) = error {
+                return code == .ENETDOWN
+            }
+            return false
+        }
+
+        try XCTSkipIf(networkIsDown, "Network is down — skipping test")
 
         XCTAssertEqual(result, [.preparing, .ready, .cancelled])
         XCTAssertFalse(Task.isCancelled)

@@ -2745,10 +2745,9 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChatVoiceModeInTab() {
-        if currentTab == nil {
-            if tabManager.current(createIfNeeded: true) == nil {
-                fatalError("failed to create tab")
-            }
+        guard tabManager.current(createIfNeeded: true) != nil else {
+            assertionFailure("openAIChatVoiceModeInTab: no current tab available")
+            return
         }
 
         guard let currentTab else { return }

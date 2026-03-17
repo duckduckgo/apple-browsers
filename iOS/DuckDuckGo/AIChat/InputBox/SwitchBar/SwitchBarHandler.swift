@@ -220,10 +220,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     func setToggleState(_ state: TextEntryMode) {
         // Only fire pixel if the state is actually changing
         let isStateChanging = currentToggleState != state
-        
+
         currentToggleState = state
         saveToggleState()
-        
+        updateButtonState(currentText: currentText)
+
         if isStateChanging {
             fireModeSwitchedPixel(to: state)
         }
@@ -263,7 +264,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     private func updateButtonState(currentText: String) {
         if !currentText.isEmpty {
             buttonState = .clearOnly
-        } else if voiceSearchHelper.isVoiceSearchEnabled {
+        } else if voiceSearchHelper.isVoiceSearchEnabled
+                    && !(currentToggleState == .aiChat && featureFlagger.isFeatureOn(.duckAIVoiceShortcut)) {
             if isUsingFadeOutAnimation || !isTopBarPosition {
                 buttonState = .voiceOnly
             } else {

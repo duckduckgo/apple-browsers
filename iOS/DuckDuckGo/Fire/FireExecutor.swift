@@ -296,7 +296,9 @@ class FireExecutor: FireExecuting {
         case .all:
             tabManager.prepareCurrentTabForDataClearing()
             tabManager.removeAll()
-            Favicons.shared.clearCache(.tabs)
+            dataClearingWideEventService?.start(.clearFaviconCache)
+            let faviconResult = Favicons.shared.clearCache(.tabs)
+            dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         case .tab(let viewModel):
             guard let domains else {
                 Logger.general.error("Expected domains to be present when burning a single tab")
@@ -312,8 +314,10 @@ class FireExecutor: FireExecuting {
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
             // Close the tab and append a new empty tab, reusing existing one if exists
             tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
-            
-            Favicons.shared.removeTabFavicons(forDomains: domains)
+
+            dataClearingWideEventService?.start(.clearFaviconCache)
+            let faviconResult = Favicons.shared.removeTabFavicons(forDomains: domains)
+            dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         }
     }
     

@@ -164,7 +164,7 @@
     "m_mac_aichat_is_enabled": {
         "description": "Daily pixel reporting whether AI Chat features are enabled or disabled",
         "owners": ["Bunn"],
-        "triggers": ["scheduled"],
+        "triggers": ["other"],
         "suffixes": ["daily"],
         "parameters": [
             "appVersion",

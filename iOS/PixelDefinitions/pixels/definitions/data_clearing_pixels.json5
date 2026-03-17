@@ -15,7 +15,7 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
-    "m_fire_clear_website_data.remove_all_containers_after_delay_success": {
+    "m_fire_clear_website_data_remove_all_containers_after_delay_success": {
         "description": "Fired when website data container cleanup after delay completes successfully",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
@@ -23,11 +23,11 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
-    "m_fire_clear_website_data.remove_all_containers_after_delay_failure": {
+    "m_fire_clear_website_data_remove_all_containers_after_delay_failure": {
         "description": "Fired when website data container cleanup after delay fails",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource", "error"]
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

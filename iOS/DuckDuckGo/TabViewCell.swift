@@ -65,6 +65,10 @@ final class TabViewCell: UICollectionViewCell {
     var isDeleting = false
     var canDelete = false
     var isSelectionModeEnabled = false
+    
+    var isFireTab: Bool {
+        tab?.fireTab ?? false
+    }
 
     static let gridReuseIdentifier = "TabViewGridCell"
     static let listReuseIdentifier = "TabViewListCell"
@@ -134,7 +138,8 @@ final class TabViewCell: UICollectionViewCell {
         layer.cornerRadius = Constants.cellCornerRadius
         layer.cornerCurve = .continuous
 
-        unread.tintColor = UIColor(designSystemColor: .accent)
+        let accentColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        unread.tintColor = accentColor
 
         favicon.layer.cornerRadius = 4
         favicon.layer.cornerCurve = .continuous
@@ -201,13 +206,13 @@ final class TabViewCell: UICollectionViewCell {
         previewTrailingConstraint?.isActive = true
     }
 
-    private static var unreadImageAsset: UIImageAsset {
+    private static func unreadImageAsset(accentColor: UIColor) -> UIImageAsset {
 
         func unreadImage(for style: UIUserInterfaceStyle) -> UIImage {
             let color = ThemeManager.shared.currentTheme.tabSwitcherCellBackgroundColor.resolvedColor(with: .init(userInterfaceStyle: style))
             let image = UIImage.stackedIconImage(withIconImage: UIImage(resource: .tabUnread),
                                                  borderWidth: 6.0,
-                                                 foregroundColor: UIColor(designSystemColor: .accent),
+                                                 foregroundColor: accentColor,
                                                  borderColor: color)
             return image
         }
@@ -355,7 +360,6 @@ final class TabViewCell: UICollectionViewCell {
     }
 
     func updateCurrentTabBorder() {
-        let isFireTab = tab?.fireTab ?? false
         let currentTabColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .decorationTertiary)
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
         let borderColor = isSelectionModeEnabled ? UIColor(designSystemColor: .accent) : currentTabColor
@@ -482,7 +486,8 @@ final class TabViewCell: UICollectionViewCell {
 
     private func decorate() {
         border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
-        unread.image = Self.unreadImageAsset.image(with: .current)
+        let accentColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        unread.image = Self.unreadImageAsset(accentColor: accentColor).image(with: .current)
         removeButton.tintColor = UIColor(designSystemColor: .icons)
 
         background.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)

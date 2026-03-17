@@ -114,7 +114,7 @@ final class MainWindow: NSWindow {
         didChangeValue(for: \.childWindows)
     }
 
-    /// Makes custom Tab Bar visible for VoiceOver (Accessibility Inspector) as the direct window‘s child
+    /// Makes custom Tab Bar visible for VoiceOver (Accessibility Inspector) as the direct window’s child
     /// (`accessibilityEnabled` and `isAccessibilityElement` are set in `MainWindowController.moveTabBarView(toTitlebarView:)`)
     override func accessibilityChildren() -> [Any]? {
         guard var children = super.accessibilityChildren() else { return nil }
@@ -150,18 +150,27 @@ final class MainWindow: NSWindow {
 final class SemaphoreLightsManager {
 
     enum Metrics {
-        static let buttonTypesAndLocations: [NSWindow.ButtonType: NSPoint] = [
+        static let buttonTypesAndLocationsWindowed: [NSWindow.ButtonType: NSPoint] = [
             .closeButton:       NSPoint(x: 17, y: 14),
             .miniaturizeButton: NSPoint(x: 37, y: 14),
             .zoomButton:        NSPoint(x: 57, y: 14)
         ]
+
+        static let buttonTypesAndLocationsFullscreen: [NSWindow.ButtonType: NSPoint] = [
+            .closeButton:       NSPoint(x: 12, y: 11),
+            .miniaturizeButton: NSPoint(x: 32, y: 11),
+            .zoomButton:        NSPoint(x: 52, y: 11)
+        ]
     }
 
     private var cancellables = [AnyCancellable]()
-    private let buttonTypesAndLocations: [NSWindow.ButtonType: NSPoint]
+    private let buttonTypesAndLocationsWindowed: [NSWindow.ButtonType: NSPoint]
+    private let buttonTypesAndLocationsFullscreen: [NSWindow.ButtonType: NSPoint]
+    private var isFullscreen = false
 
-    init(buttonsTypesAndLocations: [NSWindow.ButtonType: NSPoint]? = nil) {
-        self.buttonTypesAndLocations = buttonsTypesAndLocations ?? Metrics.buttonTypesAndLocations
+    init(buttonTypesAndLocationsWindowed: [NSWindow.ButtonType: NSPoint]? = nil, buttonTypesAndLocationsFullscreen: [NSWindow.ButtonType: NSPoint]? = nil) {
+        self.buttonTypesAndLocationsWindowed = buttonTypesAndLocationsWindowed ?? Metrics.buttonTypesAndLocationsWindowed
+        self.buttonTypesAndLocationsFullscreen = buttonTypesAndLocationsFullscreen ?? Metrics.buttonTypesAndLocationsFullscreen
     }
 
     deinit {
@@ -185,8 +194,6 @@ private extension SemaphoreLightsManager {
             NSWindow.didResignKeyNotification,
             NSWindow.didResignMainNotification,
             NSWindow.didExitFullScreenNotification,
-            NSWindow.willEnterFullScreenNotification,
-            NSWindow.willExitFullScreenNotification,
             NSWindow.didEnterFullScreenNotification,
             NSWindow.didDeminiaturizeNotification,
         ]
@@ -194,6 +201,9 @@ private extension SemaphoreLightsManager {
         for name in observedNotificationNames {
             NotificationCenter.default.addObserver(self, selector: #selector(processWindowNotification), name: name, object: window)
         }
+
+        NotificationCenter.default.addObserver(self, selector: #selector(willEnterFullScreen), name: NSWindow.willEnterFullScreenNotification, object: window)
+        NotificationCenter.default.addObserver(self, selector: #selector(willExitFullScreen), name: NSWindow.willExitFullScreenNotification, object: window)
     }
 
     func stopListeningToNotifications() {
@@ -231,11 +241,13 @@ private extension SemaphoreLightsManager {
     }
 
     private func layoutTrafficLightsOnMainThread(window: NSWindow) {
-        for (type, origin) in buttonTypesAndLocations {
+        let buttonMap = isFullscreen ? buttonTypesAndLocationsFullscreen : buttonTypesAndLocationsWindowed
+        for (type, origin) in buttonMap {
             guard let button = window.standardWindowButton(type), button.frame.origin != origin else {
                 continue
             }
 
+            NSLog("### button.frame.origin \(button.frame.origin)")
             button.frame.origin = origin
         }
     }
@@ -249,6 +261,29 @@ private extension SemaphoreLightsManager {
             return
         }
 
+        layoutTrafficLights(window: window)
+    }
+
+    @objc
+    func willEnterFullScreen(_ note: Notification) {
+        guard let window = note.object as? NSWindow else {
+            return
+        }
+
+        NSLog("### Will Enter Fullscreen")
+        window.toolbarStyle = .unifiedCompact
+        isFullscreen = true
+        layoutTrafficLights(window: window)
+    }
+
+    @objc
+    func willExitFullScreen(_ note: Notification) {
+        guard let window = note.object as? NSWindow else {
+            return
+        }
+        NSLog("### Will EXIT Fullscreen")
+        window.toolbarStyle = .expanded
+        isFullscreen = false
         layoutTrafficLights(window: window)
     }
 }

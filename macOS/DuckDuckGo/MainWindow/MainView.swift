@@ -357,6 +357,18 @@ final class MainView: NSView {
         return max(Constants.aiChatOmnibarContainerMinHeight, availableHeight)
     }
 
+    // MARK: - Fullscreen
+
+    func windowWillEnterFullScreen() {
+        navigationBarTopConstraint.constant = navigationBarTopPadding - 6
+        layoutSubtreeIfNeeded()
+    }
+
+    func windowWillExitFullScreen() {
+        navigationBarTopConstraint.constant = navigationBarTopPadding
+        layoutSubtreeIfNeeded()
+    }
+
     // MARK: - NSDraggingDestination
 
     override func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {

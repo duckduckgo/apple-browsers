@@ -387,6 +387,7 @@ extension MainWindowController: NSWindowDelegate {
     func windowWillEnterFullScreen(_ notification: Notification) {
         mainViewController.tabBarViewController.draggingSpace.isHidden = true
         mainViewController.windowWillEnterFullScreen()
+        mainViewController.mainView.windowWillEnterFullScreen()
 
         if !appearancePreferences.showTabsAndBookmarksBarOnFullScreen {
             hideTabBarAndBookmarksBar()
@@ -395,6 +396,7 @@ extension MainWindowController: NSWindowDelegate {
 
     func windowWillExitFullScreen(_ notification: Notification) {
         mainViewController.tabBarViewController.draggingSpace.isHidden = false
+        mainViewController.mainView.windowWillExitFullScreen()
 
         if !appearancePreferences.showTabsAndBookmarksBarOnFullScreen {
             showTabBarAndBookmarksBar()

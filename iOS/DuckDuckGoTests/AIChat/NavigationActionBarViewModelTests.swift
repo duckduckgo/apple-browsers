@@ -97,6 +97,36 @@ final class NavigationActionBarViewModelTests: XCTestCase {
         XCTAssertFalse(voiceModeCalled)
         XCTAssertTrue(searchCalled)
     }
+
+    // MARK: - shouldShowVoiceModeButton
+
+    func testShouldShowVoiceModeButtonWhenFeatureEnabledAndDuckAIModeAndNoText() {
+        let handler = MockSwitchBarHandler(toggleState: .aiChat, hasText: false)
+        let viewModel = NavigationActionBarViewModel(switchBarHandler: handler, isVoiceModeFeatureEnabled: true)
+
+        XCTAssertTrue(viewModel.shouldShowVoiceModeButton)
+    }
+
+    func testShouldNotShowVoiceModeButtonWhenFeatureDisabled() {
+        let handler = MockSwitchBarHandler(toggleState: .aiChat, hasText: false)
+        let viewModel = NavigationActionBarViewModel(switchBarHandler: handler, isVoiceModeFeatureEnabled: false)
+
+        XCTAssertFalse(viewModel.shouldShowVoiceModeButton)
+    }
+
+    func testShouldNotShowVoiceModeButtonWhenInSearchMode() {
+        let handler = MockSwitchBarHandler(toggleState: .search, hasText: false)
+        let viewModel = NavigationActionBarViewModel(switchBarHandler: handler, isVoiceModeFeatureEnabled: true)
+
+        XCTAssertFalse(viewModel.shouldShowVoiceModeButton)
+    }
+
+    func testShouldNotShowVoiceModeButtonWhenHasText() {
+        let handler = MockSwitchBarHandler(toggleState: .aiChat, hasText: true)
+        let viewModel = NavigationActionBarViewModel(switchBarHandler: handler, isVoiceModeFeatureEnabled: true)
+
+        XCTAssertFalse(viewModel.shouldShowVoiceModeButton)
+    }
 }
 
 // MARK: - Mock

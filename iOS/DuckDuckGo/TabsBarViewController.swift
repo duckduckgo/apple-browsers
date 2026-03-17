@@ -80,6 +80,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         return tabsModel?.count ?? 0
     }
     
+    var hasUnread: Bool {
+        return tabsModel?.hasUnread ?? false
+    }
+    
     var currentIndex: Int? {
         return tabsModel?.currentIndex
     }
@@ -206,6 +210,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         collectionView.reloadData()
         tabSwitcherButton.tabCount = tabsCount
         tabSwitcherButton.isFireMode = (tabManager?.currentBrowsingMode ?? .normal) == .fire
+        tabSwitcherButton.hasUnread = hasUnread
     }
 
     func backgroundTabAdded() {

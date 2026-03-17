@@ -1701,6 +1701,13 @@ class MainViewController: UIViewController {
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
+
+        let shouldSaveTabs = tab.tabModel.viewed == false
+        tab.tabModel.viewed = true
+        if shouldSaveTabs {
+            tabManager.save()
+        }
+
         if tab.link == nil {
             attachHomeScreen(previousTab: previousTab)
         } else {

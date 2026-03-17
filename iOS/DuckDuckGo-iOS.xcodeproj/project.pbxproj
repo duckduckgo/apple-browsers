@@ -243,7 +243,7 @@
 		31F43E212F4734B8001BBCDA /* AIChatAddressBarExperienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F43E202F4734B8001BBCDA /* AIChatAddressBarExperienceTests.swift */; };
 		31FD991B2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */; };
 		35281034C485F1E15258BFD5 /* RebrandedOnboardingView+IntroDialogContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9785D25DF2EA27126C8A33B8 /* RebrandedOnboardingView+IntroDialogContent.swift */; };
-		362AB8342F698F5300E3F222 /* ActionResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 362AB8332F698F5300E3F222 /* ActionResult.swift */; };
+		362AB8362F6991D000E3F222 /* ActionResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 362AB8352F6991D000E3F222 /* ActionResult.swift */; };
 		365E900B2E566C2300BDB0E8 /* AIChatIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */; };
 		365E90132E5673DF00BDB0E8 /* SearchInAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */; };
 		369809BF2E5635E7007FE895 /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369809BE2E5635E1007FE895 /* AppShortcuts.swift */; };
@@ -2673,7 +2673,7 @@
 		31F43E1E2F472F3C001BBCDA /* AIChatAddressBarExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAddressBarExperience.swift; sourceTree = "<group>"; };
 		31F43E202F4734B8001BBCDA /* AIChatAddressBarExperienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAddressBarExperienceTests.swift; sourceTree = "<group>"; };
 		31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentalAIChatManager.swift; sourceTree = "<group>"; };
-		362AB8332F698F5300E3F222 /* ActionResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionResult.swift; sourceTree = "<group>"; };
+		362AB8352F6991D000E3F222 /* ActionResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionResult.swift; sourceTree = "<group>"; };
 		365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatIntent.swift; sourceTree = "<group>"; };
 		365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchInAppIntent.swift; sourceTree = "<group>"; };
 		369809BE2E5635E1007FE895 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
@@ -10089,7 +10089,7 @@
 		F143C3191E4A99DD00CFDE3A /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				362AB8332F698F5300E3F222 /* ActionResult.swift */,
+				362AB8352F6991D000E3F222 /* ActionResult.swift */,
 				983AB2302E12CFBE00F0223F /* QRunInBackgroundAssertion.swift */,
 				6F9857332CD27F98001BE9A0 /* BoolFileMarker.swift */,
 				9FCFCD7D2C6AF52A006EB7A0 /* LaunchOptionsHandler.swift */,
@@ -13679,7 +13679,7 @@
 				F1A886781F29394E0096251E /* WebCacheManager.swift in Sources */,
 				C1CAAA9C2CFCB39800C37EE6 /* AutofillLoginListSorting.swift in Sources */,
 				6F03CB072C32F173004179A8 /* PixelFiring.swift in Sources */,
-				362AB8342F698F5300E3F222 /* ActionResult.swift in Sources */,
+				362AB8362F6991D000E3F222 /* ActionResult.swift in Sources */,
 				C14882DA27F2011C00D59F0C /* BookmarksExporter.swift in Sources */,
 				8598D2DC2CEB93AD00C45685 /* FaviconsCacheType.swift in Sources */,
 				1E6A4D692984208800A371D3 /* LocaleExtension.swift in Sources */,

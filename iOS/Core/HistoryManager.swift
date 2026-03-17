@@ -36,7 +36,7 @@ public protocol HistoryManaging {
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func commitChanges(url: URL)
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
-    @MainActor func removeTabHistory(for tabIDs: [String]) async
+    @MainActor func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error>
     @MainActor func removeBrowsingHistory(tabID: String) async -> ActionResult?
 }
 
@@ -130,11 +130,13 @@ public class HistoryManager: HistoryManaging {
     /// Tab history tracks which URLs were visited in each tab (used to determine what to burn),
     /// but is not surfaced to the user. Call this when closing tabs to clean up stale records.
     @MainActor
-    public func removeTabHistory(for tabIDs: [String]) async {
+    public func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
         do {
             try await tabHistoryCoordinator.removeVisits(for: tabIDs)
+            return .success(())
         } catch {
             Logger.history.error("Failed to remove tab history: \(error.localizedDescription)")
+            return .failure(error)
         }
     }
 

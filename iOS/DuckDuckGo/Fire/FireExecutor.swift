@@ -246,7 +246,9 @@ class FireExecutor: FireExecuting {
     private func didFinishBurning(fireRequest: FireRequest) async {
         if case .tab(let viewModel) = fireRequest.scope,
            fireRequest.options.contains(.tabs) {
-            await historyManager.removeTabHistory(for: [viewModel.tab.uid])
+            dataClearingWideEventService?.start(.clearTabs)
+            let result = await historyManager.removeTabHistory(for: [viewModel.tab.uid])
+            dataClearingWideEventService?.update(.clearTabs, result: result)
         }
         delegate?.didFinishBurning(fireRequest: fireRequest)
     }
@@ -295,13 +297,17 @@ class FireExecutor: FireExecuting {
         switch scope {
         case .all:
             tabManager.prepareCurrentTabForDataClearing()
-            tabManager.removeAll()
+            dataClearingWideEventService?.start(.clearTabs)
+            let removeAllResult = tabManager.removeAll()
+            dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
             dataClearingWideEventService?.start(.clearFaviconCache)
             let faviconResult = Favicons.shared.clearCache(.tabs)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         case .tab(let viewModel):
             guard let domains else {
                 Logger.general.error("Expected domains to be present when burning a single tab")
+                dataClearingWideEventService?.start(.clearTabs)
+                dataClearingWideEventService?.update(.clearTabs, result: .failure(DataClearingWideEventError(description: "Expected domains to be present when burning a single tab")))
                 return
             }
             // Prepare the tab if it's the current tab (non-current tabs were prepared earlier)

@@ -3764,7 +3764,7 @@ extension MainViewController: TabDelegate {
             refreshControls()
             themeColorManager.updateThemeColor()
         }
-        tabManager.save()
+        _ = tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f

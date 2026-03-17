@@ -85,9 +85,10 @@ class MockHistoryManager: HistoryManaging {
         return tabHistoryResult
     }
     
-    func removeTabHistory(for tabIDs: [String]) async {
+    func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
         removeTabHistoryCalls.append(tabIDs)
         removeTabHistoryExpectation?.fulfill()
+        return .success(())
     }
     
     func removeBrowsingHistory(tabID: String) async -> ActionResult? {

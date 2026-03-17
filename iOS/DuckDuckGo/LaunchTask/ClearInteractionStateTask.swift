@@ -34,12 +34,17 @@ struct ClearInteractionStateTask: LaunchTask {
         }
 
         // Accessing tabManager.model.tabs must happen on the main thread
-        let statesToRemove: [URL] = DispatchQueue.main.sync {
+        let statesToRemoveResult: Result<[URL], Error> = DispatchQueue.main.sync {
             interactionStateSource.urlsToRemove(excluding: tabManager.allTabsModel.tabs)
         }
 
         // Perform file removal on the current background queue as it is thread-safe
-        interactionStateSource.removeStates(at: statesToRemove, isCancelled: context.isCancelled)
+        switch statesToRemoveResult {
+        case .success(let statesToRemove):
+            _ = interactionStateSource.removeStates(at: statesToRemove, isCancelled: context.isCancelled)
+        case .failure:
+            break
+        }
         context.finish()
     }
 

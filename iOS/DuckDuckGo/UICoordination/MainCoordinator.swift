@@ -405,9 +405,9 @@ final class MainCoordinator {
             normalModel = TabsModel(desktop: isPadDevice, mode: .normal)
             fireModel = TabsModel(desktop: isPadDevice, mode: .fire)
             tabsPersistence.clearAll()
-            tabsPersistence.save(model: normalModel, for: .normal)
-            tabsPersistence.save(model: fireModel, for: .fire)
-            previewsSource.removeAllPreviews()
+            _ = tabsPersistence.save(model: normalModel, for: .normal)
+            _ = tabsPersistence.save(model: fireModel, for: .fire)
+            _ = previewsSource.removeAllPreviews()
         } else {
             normalModel = try tabsPersistence.getTabsModel(for: .normal)
                 ?? TabsModel(desktop: isPadDevice, mode: .normal)

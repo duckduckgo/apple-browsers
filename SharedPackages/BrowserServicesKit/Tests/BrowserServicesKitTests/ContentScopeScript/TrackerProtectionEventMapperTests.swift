@@ -77,52 +77,29 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         return try! JSONDecoder().decode(TrackerProtectionSubfeature.SurrogateInjection.self, from: data)
     }
 
-    // MARK: - P0-1: Same-site suppression (strict same eTLD+1)
+    // MARK: - P0-1: Same eTLD+1 requests are not auto-suppressed
 
-    func testSameSiteDetection_sameETLDplus1_tracker_returnsTrue() {
+    func testSameETLDplus1BlockedTracker_mapsToBlocked() {
         let tracker = makeTracker(
             url: "https://cdn.example.com/pixel.js",
             blocked: true,
             reason: "default block",
             pageUrl: "https://www.example.com/page"
         )
-        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertEqual(request.state, .blocked)
     }
 
-    func testSameSiteDetection_sameETLDplus1_thirdPartyRequest_returnsTrue() {
+    func testSameETLDplus1ThirdPartyRequest_mapsToOtherThirdPartyRequest() {
         let tracker = makeTracker(
             url: "https://cdn.example.com/image.png",
             blocked: false,
             reason: "thirdPartyRequest",
             pageUrl: "https://www.example.com"
         )
-        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
-    }
-
-    func testSameSiteDetection_differentETLDplus1_returnsFalse() {
-        let tracker = makeTracker(
-            url: "https://tracker.other.com/pixel.js",
-            pageUrl: "https://www.example.com"
-        )
-        XCTAssertFalse(mapper.isSameSiteDetection(tracker))
-    }
-
-    func testSameSiteDetection_sameHost_returnsTrue() {
-        let tracker = makeTracker(
-            url: "https://example.com/pixel.js",
-            pageUrl: "https://example.com/page"
-        )
-        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
-    }
-
-    func testSameSiteDetection_firstPartyReason_sameETLDplus1_returnsTrue() {
-        let tracker = makeTracker(
-            url: "https://cdn.example.com/script.js",
-            blocked: false,
-            reason: "first party",
-            pageUrl: "https://www.example.com"
-        )
-        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertEqual(request.state, .allowed(reason: .otherThirdPartyRequest))
+        XCTAssertTrue(TrackerProtectionEventMapper.isThirdPartyRequest(tracker))
     }
 
     // MARK: - P0-2: Affiliated third-party tracker → ownedByFirstParty
@@ -193,9 +170,9 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         }
     }
 
-    // MARK: - P0-4: Non-tracker same-site suppression
+    // MARK: - P0-4: Non-tracker third-party classification
 
-    func testThirdPartyRequest_sameSite_isSameSiteDetection() {
+    func testThirdPartyRequest_sameSite_routesAsThirdPartyRequest() {
         let tracker = makeTracker(
             url: "https://cdn.example.com/style.css",
             blocked: false,
@@ -206,7 +183,9 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
             category: nil,
             prevalence: nil
         )
-        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertEqual(request.state, .allowed(reason: .otherThirdPartyRequest))
+        XCTAssertTrue(TrackerProtectionEventMapper.isThirdPartyRequest(tracker))
     }
 
     // MARK: - P0-5: Non-tracker affiliated classification

@@ -173,10 +173,6 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
     func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
                            didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
-        if trackerProtectionMapper.isSameSiteDetection(tracker) {
-            return
-        }
-
         let detectedRequest = trackerProtectionMapper.detectedRequest(from: tracker)
 
         if TrackerProtectionEventMapper.isThirdPartyRequest(tracker) {

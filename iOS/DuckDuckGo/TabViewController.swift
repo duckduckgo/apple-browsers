@@ -3164,10 +3164,6 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
                            didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
         guard let url = url else { return }
 
-        if Self.trackerProtectionMapper.isSameSiteDetection(tracker) {
-            return
-        }
-
         let detectedRequest = Self.trackerProtectionMapper.detectedRequest(from: tracker)
 
         if TrackerProtectionEventMapper.isThirdPartyRequest(tracker) {

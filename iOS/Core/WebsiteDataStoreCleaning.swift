@@ -47,12 +47,31 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
         }
 
         Task {
-            try? await Task.sleep(interval: 3.0)
+            var encounteredError: Error?
+
+            do {
+                try await Task.sleep(interval: 3.0)
+            } catch {
+                encounteredError = error
+            }
+
             for uuid in await WKWebsiteDataStore.allDataStoreIdentifiers {
-                try? await WKWebsiteDataStore.remove(forIdentifier: uuid)
+                do {
+                    try await WKWebsiteDataStore.remove(forIdentifier: uuid)
+                } catch {
+                    if encounteredError == nil {
+                        encounteredError = error
+                    }
+                }
             }
 
             await checkForLeftBehindDataStores(previousLeftOversCount: previousCount)
+
+            if let error = encounteredError {
+                Pixel.fire(pixel: .fireRemoveAllContainersAfterDelayFailure, error: error)
+            } else {
+                Pixel.fire(pixel: .fireRemoveAllContainersAfterDelaySuccess)
+            }
         }
 
         return .success(())

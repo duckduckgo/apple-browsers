@@ -46,6 +46,22 @@ private func makeEntry(url: URL, lastVisit: Date) -> HistoryEntry {
     )
 }
 
+// MARK: - Helpers
+
+private func makeFeatureFlagWithDomainSelector() -> MockFeatureFlagger {
+    let flagger = MockFeatureFlagger()
+    flagger.enabledFeatureFlags = [.websitesHistoryFirstTimeQuitSurvey]
+    return flagger
+}
+
+@MainActor private func makeHistory(_ domains: [String]) -> HistoryCoordinatingMock {
+    let mock = HistoryCoordinatingMock()
+    mock.history = domains.enumerated().map { index, domain in
+        makeEntry(host: domain, lastVisit: Date().addingTimeInterval(-Double(index)))
+    }
+    return mock
+}
+
 // MARK: - View Model Factory
 
 @MainActor
@@ -159,7 +175,7 @@ final class QuitSurveyViewModelTests: XCTestCase {
         let viewModel = QuitSurveyViewModel(
             persistor: nil,
             featureFlagger: MockFeatureFlagger(),
-            historyCoordinating: nil,
+            historyCoordinating: makeHistory(["example.com"]),
             onQuit: {}
         )
 
@@ -305,7 +321,8 @@ final class QuitSurveyViewModelTests: XCTestCase {
 
     func testDeselectingWebsitesPillClearsDomainState() {
         let sender = MockFeedbackSender()
-        let vm = QuitSurveyViewModel(feedbackSender: sender, featureFlagger: MockFeatureFlagger(), onQuit: {})
+        let vm = QuitSurveyViewModel(feedbackSender: sender, featureFlagger: makeFeatureFlagWithDomainSelector(),
+                                     historyCoordinating: makeHistory(["example.com"]), onQuit: {})
         vm.toggleOption(QuitSurveyViewModel.websitesDidntWorkOptionId)
         vm.toggleDomain("example.com")
         vm.toggleOtherDomain()
@@ -319,7 +336,8 @@ final class QuitSurveyViewModelTests: XCTestCase {
     }
 
     func testDeselectingPagesFrozePillClearsDomainStateWhenItIsLastTrigger() {
-        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        let vm = QuitSurveyViewModel(featureFlagger: makeFeatureFlagWithDomainSelector(),
+                                     historyCoordinating: makeHistory(["example.com"]), onQuit: {})
         vm.toggleOption("pages-froze")
         vm.toggleDomain("example.com")
         vm.toggleOtherDomain()
@@ -333,7 +351,8 @@ final class QuitSurveyViewModelTests: XCTestCase {
     }
 
     func testDeselectingPagesLoadedSlowlyPillClearsDomainStateWhenItIsLastTrigger() {
-        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        let vm = QuitSurveyViewModel(featureFlagger: makeFeatureFlagWithDomainSelector(),
+                                     historyCoordinating: makeHistory(["example.com"]), onQuit: {})
         vm.toggleOption("pages-loaded-slowly")
         vm.toggleDomain("example.com")
         vm.toggleOtherDomain()
@@ -347,7 +366,8 @@ final class QuitSurveyViewModelTests: XCTestCase {
     }
 
     func testDeselectingOneTriggerKeepsDomainStateWhenAnotherTriggerIsStillSelected() {
-        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        let vm = QuitSurveyViewModel(featureFlagger: makeFeatureFlagWithDomainSelector(),
+                                     historyCoordinating: makeHistory(["example.com"]), onQuit: {})
         vm.toggleOption(QuitSurveyViewModel.websitesDidntWorkOptionId)
         vm.toggleOption("pages-froze")
         vm.toggleDomain("example.com")
@@ -358,7 +378,8 @@ final class QuitSurveyViewModelTests: XCTestCase {
     }
 
     func testDeselectingLastTriggerClearsDomainStateEvenWithOtherNonTriggerPillsSelected() {
-        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        let vm = QuitSurveyViewModel(featureFlagger: makeFeatureFlagWithDomainSelector(),
+                                     historyCoordinating: makeHistory(["example.com"]), onQuit: {})
         vm.toggleOption("pages-froze")
         vm.toggleOption("slow-to-open") // non-trigger pill
         vm.toggleDomain("example.com")
@@ -370,7 +391,8 @@ final class QuitSurveyViewModelTests: XCTestCase {
 
     func testDeselectingWebsitesPillMeansDomainsNotSubmitted() {
         let sender = MockFeedbackSender()
-        let vm = QuitSurveyViewModel(feedbackSender: sender, featureFlagger: MockFeatureFlagger(), onQuit: {})
+        let vm = QuitSurveyViewModel(feedbackSender: sender, featureFlagger: makeFeatureFlagWithDomainSelector(),
+                                     historyCoordinating: makeHistory(["example.com"]), onQuit: {})
         vm.toggleOption(QuitSurveyViewModel.websitesDidntWorkOptionId)
         vm.toggleDomain("example.com")
         vm.toggleOtherDomain()
@@ -385,7 +407,8 @@ final class QuitSurveyViewModelTests: XCTestCase {
     }
 
     func testGoBackClearsDomainState() {
-        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(), onQuit: {})
+        let vm = QuitSurveyViewModel(featureFlagger: MockFeatureFlagger(),
+                                     historyCoordinating: makeHistory(["example.com"]), onQuit: {})
         vm.selectNegativeResponse()
         vm.toggleOption(QuitSurveyViewModel.websitesDidntWorkOptionId)
         vm.toggleDomain("example.com")
@@ -404,7 +427,7 @@ final class QuitSurveyViewModelTests: XCTestCase {
     func testSubmitFeedbackFiresPixelWithAffectedDomainsParameter() {
         let pixelMock = PixelKitMock(expecting: [])
         let sender = MockFeedbackSender()
-        let vm = makeViewModel(feedbackSender: sender, pixelFiring: pixelMock)
+        let vm = makeViewModel(feedbackSender: sender, pixelFiring: pixelMock, historyCoordinating: makeHistory(["example.com"]))
         vm.toggleOption(QuitSurveyViewModel.websitesDidntWorkOptionId)
         vm.toggleDomain("example.com")
         vm.submitFeedback()

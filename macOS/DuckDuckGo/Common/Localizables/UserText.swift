@@ -1316,7 +1316,7 @@ struct UserText {
         return String(format: localized, url)
     }
 
-    static let aboutUpdateInfoSparkle = NSLocalizedString("preferences.about.update-info.sparkle", value: "Manual updates are no longer available — your app will now update automatically to ensure you always have the latest fixes and improvements.", comment: "Informational message shown on the About screen for Sparkle (non-App Store) builds explaining that the app updates automatically")
+    static let aboutUpdateInfoSparkle = NSLocalizedString("preferences.about.update-info.sparkle", value: "Your app will update automatically when you quit to ensure you always have the latest fixes and improvements.", comment: "Informational message shown on the About screen for Sparkle (non-App Store) builds explaining that the app updates automatically")
     static let aboutUpdateInfoAppStore = NSLocalizedString("preferences.about.update-info.appstore", value: "Keep DuckDuckGo up to date by enabling automatic updates in %@ > App Store menu > Settings.", comment: "Informational message shown on the About screen for App Store builds. The placeholder %@ is replaced by a clickable 'App Store' link text.")
     static let aboutUpdateInfoAppStoreLink = NSLocalizedString("preferences.about.update-info.appstore.link", value: "App Store", comment: "The clickable 'App Store' text that appears within the App Store update info message")
 

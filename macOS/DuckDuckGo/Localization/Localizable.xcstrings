@@ -60313,7 +60313,7 @@
     },
     "notification.manual.update.action" : {
       "comment" : "Action to take when a manual update is available.",
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -80403,7 +80403,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manual updates are no longer available — your app will now update automatically to ensure you always have the latest fixes and improvements."
+            "value" : "Your app will update automatically when you quit to ensure you always have the latest fixes and improvements."
           }
         }
       }
@@ -92914,7 +92914,7 @@
     },
     "settings.automatic.updates" : {
       "comment" : "Title of the checkbox item to set up automatic updates of the browser",
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -92974,7 +92974,7 @@
     },
     "settings.browser.updates.title" : {
       "comment" : "Title of the section in Settings where people set up automatic vs manual updates",
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -93334,7 +93334,7 @@
     },
     "settings.manual.updates" : {
       "comment" : "Title of the checkbox item to set up manual updates of the browser",
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {

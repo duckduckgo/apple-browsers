@@ -1,4 +1,3 @@
-
 /* Buton label for Edit action */
 "action.generic.edit" = "Edit";
 
@@ -143,6 +142,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Settings label for bottom position for the address bar */
+"address.bar.bottom" = "Bottom";
+
+/* Settings label for top position for the address bar */
+"address.bar.top" = "Top";
+
 /* No comment provided by engineer. */
 "addWidget.button" = "Add Widget";
 
@@ -163,12 +168,6 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "One tap to your favorite sites.";
-
-/* Settings label for bottom position for the address bar */
-"address.bar.bottom" = "Bottom";
-
-/* Settings label for top position for the address bar */
-"address.bar.top" = "Top";
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Features";
@@ -923,6 +922,9 @@
 /* Delete bookmark alert title */
 "bookmark.delete.alert.title" = "Delete?";
 
+/* The message shown after a bookmark has been deleted */
+"bookmark.deleted.toast" = "Bookmark deleted";
+
 /* Delete bookmark folder alert delete button */
 "bookmark.deleteFolderAlert.deleteButton" = "Delete";
 
@@ -931,9 +933,6 @@
 
 /* Delete bookmark folder alert title */
 "bookmark.deleteFolderAlert.title" = "Delete %@?";
-
-/* The message shown after a bookmark has been deleted */
-"bookmark.deleted.toast" = "Bookmark deleted";
 
 /* Edit bookmark screen title */
 "bookmark.editBookmark.title" = "Edit Bookmark";
@@ -1352,15 +1351,6 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.";
 
-/* Text displayed when DuckPlayer is always enabled */
-"duckPlayer.alwaysEnabled.label" = "Always";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode. */
-"duckPlayer.ask.label" = "Ask every time";
-
-/* Text displayed when DuckPlayer is in off. */
-"duckPlayer.never.label" = "Never";
-
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Attach Page Content";
 
@@ -1429,6 +1419,15 @@
 
 /* Remove from device confirmation dialog text */
 "duckduckgo.subscription.remove.from.device.text" = "You will no longer be able to access your DuckDuckGo subscription on this device. This will not cancel your subscription, and it will remain active on your other devices.";
+
+/* Text displayed when DuckPlayer is always enabled */
+"duckPlayer.alwaysEnabled.label" = "Always";
+
+/* Text displayed when DuckPlayer is in 'Ask' mode. */
+"duckPlayer.ask.label" = "Ask every time";
+
+/* Text displayed when DuckPlayer is in off. */
+"duckPlayer.never.label" = "Never";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -3254,6 +3253,12 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Set Your Address Bar Position";
 
+/* Privacy pro description subtitle in settings when the is activating */
+"settings.subscription.activating" = "Activating";
+
+/* Subscription activation pending description */
+"settings.subscription.activation.pending.description" = "This is taking longer than usual, please check back later.";
+
 /* Paid AIChat protection cell title for subscription */
 "settings.subscription.AIChat.title" = "Duck.ai";
 
@@ -3262,24 +3267,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
-
-/* Identity theft restoration cell subtitle for privacy pro */
-"settings.subscription.ITR.subtitle" = "If your identity is stolen, we'll help restore it";
-
-/* Identity theft restoration cell title for privacy pro */
-"settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Product name for the subscription bundle */
-"settings.subscription.Section" = "DuckDuckGo Subscription";
-
-/* VPN cell title for privacy pro */
-"settings.subscription.VPN.title" = "VPN";
-
-/* Privacy pro description subtitle in settings when the is activating */
-"settings.subscription.activating" = "Activating";
-
-/* Subscription activation pending description */
-"settings.subscription.activation.pending.description" = "This is taking longer than usual, please check back later.";
 
 /* Privacy pro description subtitle in settings */
 "settings.subscription.description.no.duck.ai.row" = "Subscribers get our VPN and Identity Theft Restoration.";
@@ -3299,8 +3286,17 @@ Take back control of your personal information with the browser designed for dat
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo Subscription";
 
+/* Identity theft restoration cell subtitle for privacy pro */
+"settings.subscription.ITR.subtitle" = "If your identity is stolen, we'll help restore it";
+
+/* Identity theft restoration cell title for privacy pro */
+"settings.subscription.ITR.title" = "Identity Theft Restoration";
+
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Subscription Settings";
+
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "DuckDuckGo Subscription";
 
 /* Subscribe to DuckDuckGo button text */
 "settings.subscription.subscribe.button" = "Subscribe to DuckDuckGo";
@@ -3313,6 +3309,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Try Free";
+
+/* VPN cell title for privacy pro */
+"settings.subscription.VPN.title" = "VPN";
 
 /* Label of a button navigating to the Support page */
 "settings.support" = "Support";
@@ -3470,11 +3469,11 @@ Take back control of your personal information with the browser designed for dat
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Edit Email";
 
-/* Button title for confirming email deletion */
-"subscription.activate.manage.email.OK" = "OK";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Cancel";
+
+/* Button title for confirming email deletion */
+"subscription.activate.manage.email.OK" = "OK";
 
 /* Button title for starting the process of adding subscription via Apple Account */
 "subscription.activate.via.apple.account.button" = "Restore Purchase";
@@ -3899,6 +3898,18 @@ Take back control of your personal information with the browser designed for dat
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Search";
 
+/* Autocomplete selected suggestion into the Address Bar button accessibility label */
+"voiceover.action.suggestion.autocomplete" = "Autocomplete suggestion";
+
+/* Voice-over title for a Bookmark suggestion. Noun */
+"voiceover.suggestion.type.bookmark" = "Bookmark";
+
+/* Search for suggestion action accessibility title */
+"voiceover.suggestion.type.search" = "Search at DuckDuckGo";
+
+/* Open suggested website action accessibility title */
+"voiceover.suggestion.type.website" = "Open website";
+
 /* No microphone permission alert action button to open the settings app */
 "voiceSearch.alert.no-permission.action.settings" = "Settings";
 
@@ -3919,18 +3930,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Voice-search footer note with on-device privacy warning */
 "voiceSearch.footer.note.old" = "Audio is processed on-device. It's not stored or shared with anyone, including DuckDuckGo.";
-
-/* Autocomplete selected suggestion into the Address Bar button accessibility label */
-"voiceover.action.suggestion.autocomplete" = "Autocomplete suggestion";
-
-/* Voice-over title for a Bookmark suggestion. Noun */
-"voiceover.suggestion.type.bookmark" = "Bookmark";
-
-/* Search for suggestion action accessibility title */
-"voiceover.suggestion.type.search" = "Search at DuckDuckGo";
-
-/* Open suggested website action accessibility title */
-"voiceover.suggestion.type.website" = "Open website";
 
 /* Cancel action for the alert when the subscription expires */
 "vpn.access-revoked.alert.action.cancel" = "Dismiss";
@@ -4148,11 +4147,11 @@ Take back control of your personal information with the browser designed for dat
 /* Confirmation message */
 "web.url.save.favorite.done" = "Favorite added";
 
-/* OK button for JavaScript alerts */
-"webJSAlert.OK.button" = "OK";
-
 /* Cancel button for JavaScript alerts */
 "webJSAlert.cancel.button" = "Cancel";
+
+/* OK button for JavaScript alerts */
+"webJSAlert.OK.button" = "OK";
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "A message from %@:";
@@ -4231,3 +4230,4 @@ https://duckduckgo.com/windows";
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "What do you want to import?";
+

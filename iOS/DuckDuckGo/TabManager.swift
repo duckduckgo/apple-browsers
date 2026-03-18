@@ -33,6 +33,7 @@ import WebExtensions
 
 protocol TabManaging {
     var currentTabsModel: TabsModelManaging { get }
+    var currentBrowsingMode: BrowsingMode { get }
     @MainActor func prepareAllTabsExceptCurrentForDataClearing(browsingMode: BrowsingMode?)
     @MainActor func prepareCurrentTabForDataClearing(browsingMode: BrowsingMode?)
     func removeAll(browsingMode: BrowsingMode?)

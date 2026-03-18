@@ -49,7 +49,8 @@ struct PromoServiceFactory {
             historyStore: historyStore,
             triggerPublisher: PromoTrigger.triggerPublisher,
             initialExternalActivation: dependencies.isExternallyActivated,
-            isOnboardingCompletedProvider: dependencies.isOnboardingCompletedProvider, stateQueue: stateQueue,
+            isOnboardingCompletedProvider: dependencies.isOnboardingCompletedProvider,
+            stateQueue: stateQueue,
             dateProvider: dateProvider,
             resetDebugDate: resetDebugDate
         )

@@ -180,7 +180,7 @@ public class WebCacheManager: WebsiteDataManaging {
         let count = await dataStoreCleaner.countContainers()
         await performMigrationIfNeeded(dataStoreIDManager: dataStoreIDManager, cookieStorage: cookieStorage, destinationStore: dataStore)
 
-        var result = await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: .all)
+        let result = await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: .all)
 
         var removeContainersInterval = WideEvent.MeasuredInterval.startingNow()
         let removeContainersResult = await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: count)

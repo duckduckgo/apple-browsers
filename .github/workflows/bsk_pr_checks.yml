@@ -109,7 +109,7 @@ jobs:
         run: >
           set -o pipefail && swift test --enable-swift-testing
           | tee -a build-log.txt
-          | grep -vE "CoreData:.*NSXPCConnection|CoreData: XPC:"
+          | grep -vE "CoreData: error:|CoreData: XPC:"
           | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Send Unit Tests Status Pixel

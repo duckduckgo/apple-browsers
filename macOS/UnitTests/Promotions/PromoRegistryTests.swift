@@ -46,10 +46,10 @@ final class PromoRegistryTests: XCTestCase {
         let dependencies = PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
+            isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock()
-        )
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock())
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

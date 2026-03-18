@@ -196,6 +196,19 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationNewTabsInfo)
     }
     
+    // MARK: - subtitle Tests - Fire Mode
+    
+    func testWhenBrowsingModeIsFireThenSubtitleIsNil() {
+        // Given
+        let tabViewModel = createTabViewModel()
+        
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel, browsingMode: .fire)
+        
+        // Then
+        XCTAssertNil(sut.subtitle)
+    }
+    
     // MARK: - subtitle Tests - AI Tab
     
     func testAITabSubtitle() {

@@ -63,6 +63,7 @@ final class AIChatSuggestionsView: NSView {
     private var viewTrackingArea: NSTrackingArea?
 
     var onSuggestionClicked: ((AIChatSuggestion) -> Void)?
+    var onSuggestionDeleted: ((AIChatSuggestion) -> Void)?
 
     // MARK: - Initialization
 
@@ -157,6 +158,10 @@ final class AIChatSuggestionsView: NSView {
 
             rowView.onClick = { [weak self] in
                 self?.onSuggestionClicked?(suggestion)
+            }
+
+            rowView.onDelete = { [weak self] in
+                self?.onSuggestionDeleted?(suggestion)
             }
 
             rowView.onMouseMoved = { [weak self] in

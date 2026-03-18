@@ -412,6 +412,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             )
         }
 
+        // Handle suggestion deletions
+        suggestionsView.onSuggestionDeleted = { [weak self] suggestion in
+            self?.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
+        }
+
         // Bind to view model with height change callback
         suggestionsView.bind(to: omnibarController.suggestionsViewModel) { [weak self] newHeight in
             self?.updateSuggestionsHeight(newHeight)

@@ -89994,6 +89994,18 @@
         }
       }
     },
+    "remove.recent.chat.suggestion.tooltip" : {
+      "comment" : "Tooltip for the button which removes a recent Duck.ai chat from the suggestions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove from recent chats"
+          }
+        }
+      }
+    },
     "remove.suggestion.tooltip" : {
       "comment" : "Tooltip for the button which removes the history entry from the history",
       "extractionState" : "extracted_with_value",

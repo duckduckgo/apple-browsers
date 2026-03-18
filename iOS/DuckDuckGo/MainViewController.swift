@@ -581,6 +581,8 @@ class MainViewController: UIViewController {
         applyCustomizationState()
 
         mobileCustomization.delegate = self
+
+        installContextualSheetDismissGesture()
     }
 
     private func configureStartupPresentation() {
@@ -3384,6 +3386,19 @@ extension MainViewController: OmniBarDelegate {
         themeColorManager.updateThemeColor()
     }
 
+    private func installContextualSheetDismissGesture() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissContextualSheetOnBackgroundTap))
+        tap.cancelsTouchesInView = false
+        tap.delaysTouchesBegan = false
+        tap.delaysTouchesEnded = false
+        tap.delegate = self
+        viewCoordinator.navigationBarContainer.addGestureRecognizer(tap)
+    }
+
+    @objc private func dismissContextualSheetOnBackgroundTap() {
+        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+    }
+
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
         guard let currentTab,
               currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
@@ -4227,6 +4242,15 @@ extension MainViewController: TabSwitcherButtonDelegate {
                 await self.segueToTabSwitcher()
             }
         }
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension MainViewController: UIGestureRecognizerDelegate {
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
     }
 }
 

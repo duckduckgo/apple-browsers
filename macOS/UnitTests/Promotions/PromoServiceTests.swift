@@ -285,7 +285,7 @@ final class PromoServiceTests: XCTestCase {
             promos: [promo],
             isOnboardingCompletedProvider: { false }
         )
-        
+
         let shownExpectation = XCTestExpectation(description: "external promo visible while onboarding incomplete")
         let resultExpectation = XCTestExpectation(description: "external promo result recorded")
         promoService.visiblePromosPublisher

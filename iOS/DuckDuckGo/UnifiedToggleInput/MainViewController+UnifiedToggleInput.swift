@@ -80,6 +80,21 @@ extension MainViewController {
                 self?.handleModeChange(mode)
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.attachmentsChangePublisher
+            .sink { [weak self] in
+                guard let self, let coordinator = unifiedToggleInputCoordinator else { return }
+                if coordinator.isAITabExpanded {
+                    adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
+                } else if coordinator.isOmnibarSession {
+                    let height = coordinator.omnibarEditingHeight()
+                    UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+                        self.viewCoordinator.constraints.navigationBarContainerHeight.constant = height
+                        self.viewCoordinator.superview.layoutIfNeeded()
+                    }
+                }
+            }
+            .store(in: &unifiedToggleInputCancellables)
     }
 
     private func handleModeChange(_ mode: TextEntryMode) {
@@ -132,8 +147,11 @@ extension MainViewController {
         NotificationCenter.default.publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self, self.currentTab?.isAITab == true else { return }
-                self.refreshAIChatTabChatHeaderSubscriptionState()
+                guard let self else { return }
+                self.unifiedToggleInputCoordinator?.fetchModels()
+                if self.currentTab?.isAITab == true {
+                    self.refreshAIChatTabChatHeaderSubscriptionState()
+                }
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -167,7 +185,8 @@ extension MainViewController {
         if tab.isAITab {
             viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             if let userScript = tab.userScripts?.aiChatUserScript {
-                coordinator.bindToTab(userScript)
+                let hasExistingChat = tab.url?.duckAIChatID != nil
+                coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
             }
             if coordinator.isAITabState && viewCoordinator.isNavigationChromeHidden {
                 return
@@ -283,7 +302,7 @@ extension MainViewController {
             }
         }
 
-        view.layoutIfNeeded()
+
     }
 
     private func installUnifiedInputContentViewController() {
@@ -413,8 +432,8 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
 extension MainViewController: UnifiedToggleInputDelegate {
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String) {
-        openAIChat(prompt, autoSend: true)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
+        openAIChat(prompt, autoSend: true, modelId: modelId, images: images)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -488,6 +507,8 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {
+        unifiedToggleInputCoordinator?.startNewChat()
+        unifiedToggleInputCoordinator?.showCollapsed()
         currentTab?.submitStartChatAction()
     }
 

@@ -51,6 +51,22 @@ import UserScript
 import PrivacyConfig
 import WebExtensions
 
+struct StartupOnboardingDecision {
+    let shouldShowOnboarding: Bool
+
+    init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus, tutorialSettings: TutorialSettings) {
+        switch onboardingStatus {
+        case .notOverridden:
+            shouldShowOnboarding = !tutorialSettings.hasSeenOnboarding
+        case let .overridden(.developer(completed: isOnboardingCompleted)):
+            shouldShowOnboarding = !isOnboardingCompleted
+        case let .overridden(.uiTests(completed: isOnboardingCompleted)):
+            tutorialSettings.hasSeenOnboarding = isOnboardingCompleted
+            shouldShowOnboarding = !tutorialSettings.hasSeenOnboarding
+        }
+    }
+}
+
 class MainViewController: UIViewController {
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -119,6 +135,14 @@ class MainViewController: UIViewController {
 
     var autoClearInProgress = false
     var autoClearShouldRefreshUIAfterClear = true
+    private var hasLoadedInitialView = false
+    private weak var burningOverlayView: UIView?
+    private var isStartupOnboardingPending = false
+    private var hasPresentedStartupOnboarding = false
+    private lazy var startupOnboardingCover = StartupOnboardingCover(
+        parentViewController: self,
+        fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
+    )
 
     let privacyConfigurationManager: PrivacyConfigurationManaging
 
@@ -519,7 +543,7 @@ class MainViewController: UIViewController {
         initTabButton()
         initBookmarksButton()
         setUpUnifiedToggleInputIfNeeded()
-        loadInitialView()
+        configureStartupPresentation()
         previewsSource.prepare()
         addLaunchTabNotificationObserver()
         subscribeToEmailProtectionStatusNotifications()
@@ -558,6 +582,23 @@ class MainViewController: UIViewController {
         applyCustomizationState()
 
         mobileCustomization.delegate = self
+
+        installContextualSheetDismissGesture()
+    }
+
+    private func configureStartupPresentation() {
+        let startupOnboardingDecision = StartupOnboardingDecision(
+            onboardingStatus: LaunchOptionsHandler().onboardingStatus,
+            tutorialSettings: tutorialSettings
+        )
+
+        isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
+
+        if isStartupOnboardingPending {
+            startupOnboardingCover.attach()
+        }
+
+        loadInitialViewIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -626,6 +667,12 @@ class MainViewController: UIViewController {
     private func fireContextualAutoAttachPixel() {
         let isEnabled = "\(aiChatSettings.isAutomaticContextAttachmentEnabled)"
         DailyPixel.fireDaily(.aiChatContextualAutoAttachDAU,
+                             withAdditionalParameters: ["is_enabled": isEnabled])
+    }
+
+    private func fireAIChatIsEnabledPixel() {
+        let isEnabled = "\(aiChatSettings.isAIChatEnabled)"
+        DailyPixel.fireDaily(.aiChatIsEnabledDaily,
                              withAdditionalParameters: ["is_enabled": isEnabled])
     }
     
@@ -765,22 +812,12 @@ class MainViewController: UIViewController {
     }
     
     func startOnboardingFlowIfNotSeenBefore() {
-        // Check if we override onboarding flag and show/hide onboarding accordingly
-        // If onboarding is not overridden, show onboarding only if users have not seen it.
-        let showOnboarding: Bool
-        switch LaunchOptionsHandler().onboardingStatus {
-        case .notOverridden:
-            showOnboarding = !tutorialSettings.hasSeenOnboarding
-        case let .overridden(.developer(isOnboardingCompleted)):
-            showOnboarding = !isOnboardingCompleted
-        case let .overridden(.uiTests(isOnboardingCompleted)):
-            // Set onboarding settings so state is persisted across app re-launches during UI Tests
-            tutorialSettings.hasSeenOnboarding = isOnboardingCompleted
-            showOnboarding = !tutorialSettings.hasSeenOnboarding
+        guard isStartupOnboardingPending, !hasPresentedStartupOnboarding else { return }
+        hasPresentedStartupOnboarding = true
+        startupOnboardingCover.bringToFront()
+        segueToDaxOnboarding { [weak self] in
+            self?.startupOnboardingCover.detach()
         }
-
-        guard showOnboarding else { return }
-        segueToDaxOnboarding()
     }
 
     func presentSyncRecoveryPromptIfNeeded() {
@@ -788,7 +825,7 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger,
             syncService: syncService,
             keyValueStore: keyValueStore,
-            isOnboardingComplete: tutorialSettings.hasSeenOnboarding
+            isOnboardingComplete: !needsToShowOnboardingIntro()
         )
 
         guard let syncRecoveryPromptService = syncRecoveryPromptService else { return }
@@ -1226,7 +1263,7 @@ class MainViewController: UIViewController {
         if let presentedViewController {
             return presentedViewController.supportedInterfaceOrientations
         }
-        return tutorialSettings.hasSeenOnboarding ? [.allButUpsideDown] : [.portrait]
+        return needsToShowOnboardingIntro() ? [.portrait] : [.allButUpsideDown]
     }
 
     override var shouldAutorotate: Bool {
@@ -1264,6 +1301,12 @@ class MainViewController: UIViewController {
         } else {
             attachHomeScreen()
         }
+    }
+
+    private func loadInitialViewIfNeeded() {
+        guard !hasLoadedInitialView else { return }
+        hasLoadedInitialView = true
+        loadInitialView()
     }
 
     func handlePressEvent(event: UIPressesEvent?) {
@@ -1506,6 +1549,7 @@ class MainViewController: UIViewController {
         fireExperimentalAddressBarPixel()
         fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
+        fireAIChatIsEnabledPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
         skipSERPFlow = true
@@ -1639,7 +1683,7 @@ class MainViewController: UIViewController {
     ///   - autoSend: Whether to automatically send the query. Defaults to `false`.
     ///   - payload: Optional payload data for AI Chat. Defaults to `nil`.
     ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
-    private func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
         guard let currentTab else {
             assertionFailure("load called with no current tab")
             return
@@ -1648,9 +1692,8 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
 
-
         prepareTabForRequest {
-            currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
+            currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools, modelId: modelId, images: images)
         }
     }
 
@@ -2704,9 +2747,9 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters, includedParameters: [.atb])
     }
 
-    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
-            openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools)
+            openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools, modelId: modelId, images: images)
         } else {
             aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
         }
@@ -2719,13 +2762,13 @@ class MainViewController: UIViewController {
     ///   - autoSend: Whether to automatically send the query
     ///   - payload: Optional payload data for AI Chat
     ///   - tools: Optional RAG tools available in AI Chat
-    private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+    private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             return
         }
 
-        load(query, autoSend: autoSend, payload: payload, tools: tools)
+        load(query, autoSend: autoSend, payload: payload, tools: tools, modelId: modelId, images: images)
     }
     
     /// Executes the closure if the current tab is an AI tab
@@ -3358,6 +3401,19 @@ extension MainViewController: OmniBarDelegate {
         themeColorManager.updateThemeColor()
     }
 
+    private func installContextualSheetDismissGesture() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissContextualSheetOnBackgroundTap))
+        tap.cancelsTouchesInView = false
+        tap.delaysTouchesBegan = false
+        tap.delaysTouchesEnded = false
+        tap.delegate = self
+        viewCoordinator.navigationBarContainer.addGestureRecognizer(tap)
+    }
+
+    @objc private func dismissContextualSheetOnBackgroundTap() {
+        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+    }
+
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
         guard let currentTab,
               currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
@@ -3743,7 +3799,7 @@ extension MainViewController: TabDelegate {
             refreshControls()
             themeColorManager.updateThemeColor()
         }
-        tabManager.save()
+        _ = tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
@@ -4203,6 +4259,15 @@ extension MainViewController: TabSwitcherButtonDelegate {
     }
 }
 
+// MARK: - UIGestureRecognizerDelegate
+
+extension MainViewController: UIGestureRecognizerDelegate {
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
+}
+
 extension MainViewController: GestureToolbarButtonDelegate {
     
     func singleTapDetected(in sender: GestureToolbarButton) {
@@ -4334,12 +4399,59 @@ extension MainViewController {
     }
 }
 
+// MARK: - Data Clearing Overlay
+
+extension MainViewController {
+
+    /// Shows a transparent overlay that captures user interactions during data clearing.
+    ///
+    /// The overlay detects when users attempt to interact with the UI before clearing completes,
+    /// which may indicate perceived slowness or incomplete clearing. A pixel is fired on the first
+    /// interaction, then the overlay is removed to allow normal user interaction.
+    ///
+    /// Only shown for manual fire triggers (user-initiated), not auto-clear operations.
+    private func showBurningOverlay() {
+        guard let window = view.window else { return }
+
+        hideBurningOverlay()
+
+        let overlay = UIView(frame: window.bounds)
+        overlay.backgroundColor = .clear
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(burningOverlayTapped))
+        tap.cancelsTouchesInView = false
+        overlay.addGestureRecognizer(tap)
+
+        window.addSubview(overlay)
+        window.bringSubviewToFront(overlay)
+        burningOverlayView = overlay
+    }
+
+    /// Removes the burning overlay if it exists.
+    private func hideBurningOverlay() {
+        burningOverlayView?.removeFromSuperview()
+        burningOverlayView = nil
+    }
+
+    /// Removes the overlay when user taps during data clearing, and fires a pixel if possible.
+    ///
+    /// This indicates the user attempted to interact before clearing completed,
+    /// which is a secondary SLI metric for measuring perceived clearing performance.
+    /// The overlay is always removed to respect user action, even if pixel firing fails.
+    @objc private func burningOverlayTapped() {
+        if let fireExecutor = fireExecutor as? FireExecutor {
+            fireExecutor.pixelsReporter.fireUserActionBeforeCompletionPixel()
+        }
+        hideBurningOverlay()
+    }
+}
+
 extension MainViewController: FireExecutorDelegate {
     
     func willStartBurning(fireRequest: FireRequest) {
         switch fireRequest.trigger {
         case .manualFire:
-            return
+            showBurningOverlay()
         case .autoClearOnLaunch:
             autoClearInProgress = true
         case .autoClearOnForeground:
@@ -4438,6 +4550,7 @@ extension MainViewController: FireExecutorDelegate {
         }
         switch fireRequest.trigger {
         case .manualFire:
+            hideBurningOverlay()
             return
         case .autoClearOnLaunch:
             autoClearInProgress = false
@@ -4512,17 +4625,19 @@ extension MainViewController: OnboardingDelegate {
         
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+
         controller.modalTransitionStyle = .crossDissolve
         controller.dismiss(animated: true)
         newTabPageViewController?.onboardingCompleted()
     }
     
     func markOnboardingSeen() {
+        isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
     }
 
     func needsToShowOnboardingIntro() -> Bool {
-        !tutorialSettings.hasSeenOnboarding
+        isStartupOnboardingPending || !tutorialSettings.hasSeenOnboarding
     }
 
 }

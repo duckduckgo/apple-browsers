@@ -40,7 +40,7 @@ struct RebrandedBrowsersComparisonModel {
                 case .privateSearch:
                     return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch
                 case .privateAIChat:
-                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateAIChatEnglish
+                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateAIChat
                 case .blockTrackers:
                     return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.trackerBlockers
                 case .blockCookies:

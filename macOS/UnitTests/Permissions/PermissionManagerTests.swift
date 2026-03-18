@@ -211,7 +211,7 @@ final class PermissionManagerTests: XCTestCase {
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
         fireproofDomains.add(domain: PermissionEntity.entity1.domain)
 
-        manager.burnPermissions(except: fireproofDomains) {}
+        manager.burnPermissions(except: fireproofDomains) { _ in }
 
         XCTAssertEqual(store.history, [.load, .clear(exceptions: [PermissionEntity.entity1.permission])])
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity1.domain,
@@ -227,7 +227,7 @@ final class PermissionManagerTests: XCTestCase {
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
         fireproofDomains.add(domain: PermissionEntity.entity1.domain)
 
-        manager.burnPermissions(of: [PermissionEntity.entity2.domain.droppingWwwPrefix()], tld: Application.appDelegate.tld) {}
+        manager.burnPermissions(of: [PermissionEntity.entity2.domain.droppingWwwPrefix()], tld: Application.appDelegate.tld) { _ in }
 
         XCTAssertEqual(store.history, [.load, .clear(exceptions: [PermissionEntity.entity1.permission])])
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity1.domain,
@@ -263,7 +263,7 @@ extension PermissionManagerTests {
         store.permissions = [notificationEntity]
 
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
-        manager.burnPermissions(except: fireproofDomains) {}
+        manager.burnPermissions(except: fireproofDomains) { _ in }
 
         let result = manager.permission(forDomain: "notifications.example.com", permissionType: .notification)
         XCTAssertEqual(result, .ask, "Notification permission should be cleared after burn")

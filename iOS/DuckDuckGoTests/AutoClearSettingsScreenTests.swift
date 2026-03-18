@@ -24,7 +24,7 @@ import XCTest
 class AutoClearSettingsScreenTests: XCTestCase {
     
     func testWhenOpeningSettingsThenClearDataToggleIsSetBasedOnAppSettings() {
-        let appSettings = AppUserDefaults()
+        let appSettings = AppSettingsMock()
         appSettings.autoClearAction = []
 
         if let settingsController = AutoClearSettingsViewController.loadFromStoryboard(appSettings: appSettings) {
@@ -45,7 +45,7 @@ class AutoClearSettingsScreenTests: XCTestCase {
     }
     
     func testWhenClearDataSwitchIsToggledThenTableIsUpdated() {
-        let appSettings = AppUserDefaults()
+        let appSettings = AppSettingsMock()
         appSettings.autoClearAction = []
         
         guard let settingsController = AutoClearSettingsViewController.loadFromStoryboard(appSettings: appSettings) else {

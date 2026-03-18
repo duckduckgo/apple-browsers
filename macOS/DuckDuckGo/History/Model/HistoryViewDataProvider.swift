@@ -36,7 +36,7 @@ extension HistoryCoordinator: HistoryDataSource {
     @MainActor
     func delete(_ visits: [Visit]) async {
         await withCheckedContinuation { continuation in
-            burnVisits(visits) {
+            burnVisits(visits) { _ in
                 continuation.resume()
             }
         }

@@ -225,6 +225,10 @@ class SwitchBarTextEntryView: UIView {
         buttonsView.onSearchGoToTapped = { [weak self] in
             self?.handler.searchGoToButtonTapped()
         }
+
+        buttonsView.onStopGeneratingTapped = { [weak self] in
+            self?.handler.stopGeneratingButtonTapped()
+        }
     }
 
     private func updateButtonsPadding() {

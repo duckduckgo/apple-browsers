@@ -114,6 +114,13 @@ extension BrowserTabViewController: AIChatSidebarHosting {
             selectTab(with: tabID)
         }
 
+        // Keep exactly one AI Chat VC attached to the sidebar container.
+        // Without this, tab switches can leave multiple chat VCs stacked,
+        // and the "already embedded" fast-path can show stale content.
+        children
+            .filter { $0 !== chatViewController && $0.view.superview === sidebarContainer }
+            .forEach { $0.removeCompletely() }
+
         if chatViewController.parent === self,
            chatViewController.view.superview === sidebarContainer {
             return

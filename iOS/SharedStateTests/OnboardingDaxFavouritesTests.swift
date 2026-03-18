@@ -210,7 +210,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
 
     func testWhenMarkOnboardingSeenIsCalled_ThenSetHasSeenOnboardingTrue() {
         // GIVEN
-        XCTAssertFalse(tutorialSettingsMock.hasSeenOnboarding)
+        tutorialSettingsMock.hasSeenOnboarding = false
 
         // WHEN
         sut.markOnboardingSeen()
@@ -221,7 +221,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
 
     func testWhenHasSeenOnboardingIntroIsCalled_AndHasSeenOnboardingSettingIsTrue_ThenReturnFalse() throws {
         // GIVEN
-        tutorialSettingsMock.hasSeenOnboarding = true
+        sut.markOnboardingSeen()
 
         // WHEN
         let result = sut.needsToShowOnboardingIntro()

@@ -113,12 +113,14 @@ public class Favicons {
         }
     }
 
-    public func clearCache(_ cacheType: FaviconsCacheType, clearMemoryCache: Bool = false) {
+    public func clearCache(_ cacheType: FaviconsCacheType, clearMemoryCache: Bool = false) -> Result<Void, Error> {
         Constants.caches[cacheType]?.clearDiskCache()
-        
+
         if clearMemoryCache {
             Constants.caches[cacheType]?.clearMemoryCache()
         }
+
+        return .success(())
     }
 
     private func removeFavicon(forDomain domain: String, fromCache cacheType: FaviconsCacheType) {
@@ -147,8 +149,9 @@ public class Favicons {
        removeFavicon(forCacheKey: key, fromCache: .tabs)
     }
     
-    public func removeTabFavicons(forDomains domains: [String]) {
+    public func removeTabFavicons(forDomains domains: [String]) -> Result<Void, Error> {
         domains.forEach { removeTabFavicon(forDomain: $0) }
+        return .success(())
     }
 
     private func copyFavicon(forDomain domain: String, fromCache: FaviconsCacheType, toCache: FaviconsCacheType, completion: ((UIImage?) -> Void)? = nil) {

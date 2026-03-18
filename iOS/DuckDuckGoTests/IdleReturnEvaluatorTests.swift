@@ -26,7 +26,7 @@ import PrivacyConfig
 final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManaging {
     var isEligibleForNTPAfterIdleResult = true
     var effectiveAfterInactivityOptionResult: AfterInactivityOption = .newTab
-    var idleThresholdSecondsResult = 60
+    var idleThresholdSecondsResult = 300
 
     func isEligibleForNTPAfterIdle() -> Bool {
         isEligibleForNTPAfterIdleResult
@@ -95,22 +95,22 @@ final class IdleReturnEvaluatorTests {
         #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: oneMinuteAgo))
     }
 
-    @Test("When settings missing then uses default threshold and returns true for 60+s idle")
+    @Test("When settings missing then uses default threshold and returns true for 300+s idle")
     func whenSettingsMissingThenUsesDefaultThreshold() {
         let evaluator = makeEvaluator(settingsJSON: nil)
-        let aMinuteAgo = Date().addingTimeInterval(-60)
-        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: aMinuteAgo))
-        let lessThanMinuteAgo = Date().addingTimeInterval(-59)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lessThanMinuteAgo))
+        let fiveMinutesAgo = Date().addingTimeInterval(-300)
+        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: fiveMinutesAgo))
+        let justUnderFiveMinutes = Date().addingTimeInterval(-299)
+        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
     }
 
     @Test("When settings invalid JSON then uses default threshold")
     func whenSettingsInvalidThenUsesDefaultThreshold() {
         let evaluator = makeEvaluator(settingsJSON: "not json")
-        let aMinuteAgo = Date().addingTimeInterval(-60)
-        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: aMinuteAgo))
-        let lessThanMinuteAgo = Date().addingTimeInterval(-59)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lessThanMinuteAgo))
+        let fiveMinutesAgo = Date().addingTimeInterval(-300)
+        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: fiveMinutesAgo))
+        let justUnderFiveMinutes = Date().addingTimeInterval(-299)
+        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
     }
 
     @Test("When eligibility manager returns false then shouldShowNTPAfterIdle returns false even when over threshold")
@@ -125,9 +125,9 @@ final class IdleReturnEvaluatorTests {
     @Test("When idleThresholdSeconds missing in settings then uses default")
     func whenIdleThresholdSecondsMissingThenUsesDefault() {
         let evaluator = makeEvaluator(settingsJSON: "{}")
-        let aMinuteAgo = Date().addingTimeInterval(-60)
-        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: aMinuteAgo))
-        let lessThanMinuteAgo = Date().addingTimeInterval(-59)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lessThanMinuteAgo))
+        let fiveMinutesAgo = Date().addingTimeInterval(-300)
+        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: fiveMinutesAgo))
+        let justUnderFiveMinutes = Date().addingTimeInterval(-299)
+        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
     }
 }

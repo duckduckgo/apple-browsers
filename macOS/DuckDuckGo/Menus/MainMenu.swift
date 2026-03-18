@@ -60,7 +60,7 @@ final class LazyBookmarkFolderMenuDelegate: NSObject, NSMenuDelegate {
         }
         for viewModel in children {
             let item = NSMenuItem(bookmarkViewModel: viewModel)
-            if let folder = viewModel.entity as? BookmarkFolder {
+            if let folder = viewModel.entity as? BookmarkFolder, !folder.children.isEmpty {
                 let subMenu = NSMenu(title: folder.title)
                 subMenu.addItem(NSMenuItem()) // placeholder
                 let childViewModels = folder.children.map(BookmarkViewModel.init)
@@ -245,6 +245,11 @@ final class MainMenu: NSMenu {
 
         subscribeToBookmarkList(bookmarkManager: bookmarkManager)
         subscribeToFavicons(faviconManager: faviconManager)
+
+        if featureFlagger.isFeatureOn(.lazyMenuRebuild) {
+            bookmarksMenu.delegate = self
+            favoritesMenu.delegate = self
+        }
 
         setupAIChatMenu()
         subscribeToAIChatPreferences(aiChatMenuConfig: aiChatMenuConfig)
@@ -611,6 +616,12 @@ final class MainMenu: NSMenu {
 
     // MARK: - Bookmarks
 
+    private(set) var pendingFavoriteViewModels: [BookmarkViewModel] = []
+    private(set) var pendingTopLevelViewModels: [BookmarkViewModel] = []
+    private(set) var bookmarksMenuNeedsRebuild = false
+    private(set) var bookmarkFaviconsNeedUpdate = false
+    private var folderDelegates: [LazyBookmarkFolderMenuDelegate] = []
+
     var faviconsCancellable: AnyCancellable?
     @MainActor
     private func subscribeToFavicons(faviconManager: FaviconManagement) {
@@ -618,9 +629,12 @@ final class MainMenu: NSMenu {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loaded in
                 guard let self, loaded else { return }
-
-                self.updateFavicons(in: bookmarksMenu)
-                self.updateFavicons(in: favoritesMenu)
+                if self.featureFlagger.isFeatureOn(.lazyMenuRebuild) {
+                    self.bookmarkFaviconsNeedUpdate = true
+                } else {
+                    self.updateFavicons(in: bookmarksMenu)
+                    self.updateFavicons(in: favoritesMenu)
+                }
             }
     }
 
@@ -646,8 +660,19 @@ final class MainMenu: NSMenu {
                 return (favorites, topLevelEntities)
             }
             .sink { [weak self] favorites, topLevel in
-                Task { @MainActor in
-                    self?.updateBookmarksMenu(favoriteViewModels: favorites, topLevelBookmarkViewModels: topLevel)
+                guard let self else { return }
+                if self.featureFlagger.isFeatureOn(.lazyMenuRebuild) {
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        self.pendingFavoriteViewModels = favorites
+                        self.pendingTopLevelViewModels = topLevel
+                        self.bookmarksMenuNeedsRebuild = true
+                    }
+                } else {
+                    Task { @MainActor in
+                        self.updateBookmarksMenu(favoriteViewModels: favorites,
+                                                 topLevelBookmarkViewModels: topLevel)
+                    }
                 }
             }
     }
@@ -664,8 +689,12 @@ final class MainMenu: NSMenu {
     // Nested recursing functions cause body length
     @MainActor
     func updateBookmarksMenu(favoriteViewModels: [BookmarkViewModel], topLevelBookmarkViewModels: [BookmarkViewModel]) {
+        let isLazy = featureFlagger.isFeatureOn(.lazyMenuRebuild)
+        if isLazy {
+            folderDelegates.removeAll()
+        }
 
-        func bookmarkMenuItems(from bookmarkViewModels: [BookmarkViewModel], topLevel: Bool = true) -> [NSMenuItem] {
+        func bookmarkMenuItems(from bookmarkViewModels: [BookmarkViewModel], topLevel: Bool = true, isLazy: Bool, folderDelegates: inout [LazyBookmarkFolderMenuDelegate]) -> [NSMenuItem] {
             var menuItems = [NSMenuItem]()
 
             if !topLevel {
@@ -680,13 +709,24 @@ final class MainMenu: NSMenu {
                 let menuItem = NSMenuItem(bookmarkViewModel: viewModel)
 
                 if let folder = viewModel.entity as? BookmarkFolder {
-                    let subMenu = NSMenu(title: folder.title)
                     let childViewModels = folder.children.map(BookmarkViewModel.init)
-                    let childMenuItems = bookmarkMenuItems(from: childViewModels, topLevel: false)
-                    subMenu.items = childMenuItems
+                    if isLazy {
+                        if !childViewModels.isEmpty {
+                            let subMenu = NSMenu(title: folder.title)
+                            subMenu.addItem(NSMenuItem()) // placeholder
+                            let delegate = LazyBookmarkFolderMenuDelegate(children: childViewModels)
+                            subMenu.delegate = delegate
+                            folderDelegates.append(delegate)
+                            menuItem.submenu = subMenu
+                        }
+                    } else {
+                        let subMenu = NSMenu(title: folder.title)
+                        let childMenuItems = bookmarkMenuItems(from: childViewModels, topLevel: false, isLazy: false, folderDelegates: &folderDelegates)
+                        subMenu.items = childMenuItems
 
-                    if !subMenu.items.isEmpty {
-                        menuItem.submenu = subMenu
+                        if !subMenu.items.isEmpty {
+                            menuItem.submenu = subMenu
+                        }
                     }
                 }
 
@@ -717,7 +757,7 @@ final class MainMenu: NSMenu {
         }
 
         let cleanedBookmarkItems = bookmarksMenu.items.dropLast(bookmarksMenu.items.count - (favoritesSeparatorIndex + 1))
-        let bookmarkItems = bookmarkMenuItems(from: topLevelBookmarkViewModels)
+        let bookmarkItems = bookmarkMenuItems(from: topLevelBookmarkViewModels, isLazy: isLazy, folderDelegates: &folderDelegates)
         bookmarksMenu.items = Array(cleanedBookmarkItems) + bookmarkItems
 
         let cleanedFavoriteItems = favoritesMenu.items.dropLast(favoritesMenu.items.count - (favoriteThisPageSeparatorIndex + 1))
@@ -1367,6 +1407,26 @@ extension NSMenu {
             } else if !item.isHidden {
                 break
             }
+        }
+    }
+}
+
+// MARK: - NSMenuDelegate
+extension MainMenu: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu === bookmarksMenu || menu === favoritesMenu else { return }
+        guard featureFlagger.isFeatureOn(.lazyMenuRebuild) else { return }
+
+        if bookmarksMenuNeedsRebuild {
+            updateBookmarksMenu(
+                favoriteViewModels: pendingFavoriteViewModels,
+                topLevelBookmarkViewModels: pendingTopLevelViewModels
+            )
+            bookmarksMenuNeedsRebuild = false
+            bookmarkFaviconsNeedUpdate = false
+        } else if bookmarkFaviconsNeedUpdate {
+            updateFavicons(in: menu)
+            bookmarkFaviconsNeedUpdate = false
         }
     }
 }

@@ -38,6 +38,7 @@ final class SwitchBarHandlerTests: XCTestCase {
     private var mockVoiceSearchHelper: MockVoiceSearchHelper!
     private var mockStorage: MockKeyValueStore!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockAIChatSettings: MockAIChatSettingsProvider!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -46,6 +47,7 @@ final class SwitchBarHandlerTests: XCTestCase {
         mockVoiceSearchHelper = MockVoiceSearchHelper()
         mockStorage = MockKeyValueStore()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        mockAIChatSettings = MockAIChatSettingsProvider()
         cancellables = Set<AnyCancellable>()
         createSUT()
     }
@@ -56,13 +58,15 @@ final class SwitchBarHandlerTests: XCTestCase {
         mockVoiceSearchHelper = nil
         mockStorage = nil
         mockFeatureFlagger = nil
+        mockAIChatSettings = nil
         super.tearDown()
     }
 
     private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self, featureFlagger: FeatureFlagger? = nil) {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
-            storage: mockStorage, aiChatSettings: MockAIChatSettingsProvider(),
+            storage: mockStorage,
+            aiChatSettings: mockAIChatSettings,
             sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
             featureFlagger: featureFlagger ?? mockFeatureFlagger,
             devicePlatform: devicePlatform,
@@ -111,113 +115,77 @@ final class SwitchBarHandlerTests: XCTestCase {
         XCTAssertFalse(sut.buttonState.showsVoiceButton)
     }
 
+    // MARK: - Default Omnibar Mode Tests
+
+    func testDefaultOmnibarMode_Search_ShouldDefaultToSearch() {
+        mockAIChatSettings.defaultOmnibarMode = .search
+        createSUT()
+
+        XCTAssertEqual(sut.currentToggleState, .search)
+    }
+
+    func testDefaultOmnibarMode_DuckAI_ShouldDefaultToAIChat() {
+        mockAIChatSettings.defaultOmnibarMode = .duckAI
+        createSUT()
+
+        XCTAssertEqual(sut.currentToggleState, .aiChat)
+    }
+
+    func testDefaultOmnibarMode_LastUsed_ShouldRestoreSearch() {
+        mockStorage.set(TextEntryMode.search.rawValue, forKey: StorageKey.toggleState)
+        mockAIChatSettings.defaultOmnibarMode = .lastUsed
+        createSUT()
+
+        XCTAssertEqual(sut.currentToggleState, .search)
+    }
+
+    func testDefaultOmnibarMode_LastUsed_ShouldRestoreAIChat() {
+        mockStorage.set(TextEntryMode.aiChat.rawValue, forKey: StorageKey.toggleState)
+        mockAIChatSettings.defaultOmnibarMode = .lastUsed
+        createSUT()
+
+        XCTAssertEqual(sut.currentToggleState, .aiChat)
+    }
+
+    func testDefaultOmnibarMode_LastUsed_WhenNoStoredValue_ShouldDefaultToSearch() {
+        mockAIChatSettings.defaultOmnibarMode = .lastUsed
+        createSUT()
+
+        XCTAssertEqual(sut.currentToggleState, .search)
+    }
+
+    func testDefaultOmnibarMode_LastUsed_ShouldPersistAcrossInstances() {
+        mockAIChatSettings.defaultOmnibarMode = .lastUsed
+        createSUT()
+        sut.setToggleState(.aiChat)
+
+        createSUT()
+
+        XCTAssertEqual(sut.currentToggleState, .aiChat)
+    }
+
+    func testExplicitSetToggleState_ShouldOverrideDefault() {
+        mockAIChatSettings.defaultOmnibarMode = .duckAI
+        createSUT()
+
+        sut.setToggleState(.search)
+
+        XCTAssertEqual(sut.currentToggleState, .search)
+    }
+
     // MARK: - Toggle State Persistence Tests
-    /*
-     Disable Toggle states while new approach is being evaluated
-     https://app.asana.com/1/137249556945/project/72649045549333/task/1210814996510636?focus=true
-     func testRestoreToggleState_WhenNoStoredValue_ShouldDefaultToSearch() {
-     // Given: No stored value in storage
-     mockStorage.clearAll()
 
-     // When: Creating a new handler
-     createSUT()
+    func testSaveToggleState_WhenSetToSearch_ShouldPersist() {
+        sut.setToggleState(.search)
 
-     // Then: Should default to search mode
-     XCTAssertEqual(sut.currentToggleState, .search)
-     }
+        XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "search")
+    }
 
-     func testRestoreToggleState_WhenStoredValueIsSearch_ShouldRestoreSearch() {
-     // Given: Stored value is "search"
-     mockStorage.set(TextEntryMode.search.rawValue, forKey: StorageKey.toggleState)
+    func testSaveToggleState_WhenSetToAIChat_ShouldPersist() {
+        sut.setToggleState(.aiChat)
 
-     // When: Creating a new handler
-     createSUT()
-
-     // Then: Should restore search mode
-     XCTAssertEqual(sut.currentToggleState, .search)
-     }
-
-     func testRestoreToggleState_WhenStoredValueIsAIChat_ShouldRestoreAIChat() {
-     // Given: Stored value is "aiChat"
-     mockStorage.set(TextEntryMode.aiChat.rawValue, forKey: StorageKey.toggleState)
-
-     // When: Creating a new handler
-     createSUT()
-
-     // Then: Should restore aiChat mode
-     XCTAssertEqual(sut.currentToggleState, .aiChat)
-     }
-
-     func testRestoreToggleState_WhenStoredValueIsInvalid_ShouldDefaultToSearch() {
-     // Given: Stored value is invalid
-     mockStorage.set("invalidValue", forKey: StorageKey.toggleState)
-
-     // When: Creating a new handler
-     createSUT()
-
-     // Then: Should default to search mode
-     XCTAssertEqual(sut.currentToggleState, .search)
-     }
-
-     func testRestoreToggleState_WhenStoredValueIsWrongType_ShouldDefaultToSearch() {
-     // Given: Stored value is wrong type (number instead of string)
-     mockStorage.set(123, forKey: StorageKey.toggleState)
-
-     // When: Creating a new handler
-     createSUT()
-
-     // Then: Should default to search mode
-     XCTAssertEqual(sut.currentToggleState, .search)
-     }
-
-     func testSaveToggleState_WhenSetToSearch_ShouldPersistSearchValue() {
-     // Given: Handler is initialized
-     createSUT()
-
-     // When: Setting toggle state to search
-     sut.setToggleState(.search)
-
-     // Then: Should save "search" to storage
-     XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "search")
-     }
-
-     func testSaveToggleState_WhenSetToAIChat_ShouldPersistAIChatValue() {
-     // Given: Handler is initialized
-     createSUT()
-
-     // When: Setting toggle state to aiChat
-     sut.setToggleState(.aiChat)
-
-     // Then: Should save "aiChat" to storage
-     XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "aiChat")
-     }
-
-     func testToggleStatePersistence_WhenMultipleChanges_ShouldPersistLatestValue() {
-     // Given: Handler is initialized
-     createSUT()
-
-     // When: Making multiple changes
-     sut.setToggleState(.search)
-     sut.setToggleState(.aiChat)
-     sut.setToggleState(.search)
-
-     // Then: Should persist the latest value
-     XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "search")
-     XCTAssertEqual(sut.currentToggleState, .search)
-     }
-
-     func testToggleStatePersistenceAcrossInstances_ShouldMaintainState() {
-     // Given: First handler instance with aiChat mode
-     sut.setToggleState(.aiChat)
-     let firstInstanceState = sut.currentToggleState
-
-     // When: Creating a new handler instance
-     createSUT()
-
-     // Then: New instance should restore the same state
-     XCTAssertEqual(firstInstanceState, .aiChat)
-     XCTAssertEqual(sut.currentToggleState, .aiChat)
-     }
+        XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "aiChat")
+    }
 
     // MARK: - Toggle State Publisher Tests
 
@@ -236,7 +204,8 @@ final class SwitchBarHandlerTests: XCTestCase {
     }
 
     func testToggleStatePublisher_InitialValue_ShouldBeCurrentState() {
-        // Given: Handler with specific state
+        // Given: Handler with lastUsed mode and stored aiChat state
+        mockAIChatSettings.defaultOmnibarMode = .lastUsed
         mockStorage.set("aiChat", forKey: StorageKey.toggleState)
         createSUT()
 
@@ -359,45 +328,16 @@ final class SwitchBarHandlerTests: XCTestCase {
         XCTAssertEqual(tappedCount, 1)
     }
 
-    // MARK: - Force Web Search Tests
-
-    func testToggleForceWebSearch_ShouldToggleValue() {
-        // Given: Handler with initial force web search state
-        let initialState = sut.forceWebSearch
-
-        // When: Toggling force web search
-        sut.toggleForceWebSearch()
-
-        // Then: Should toggle the value
-        XCTAssertEqual(sut.forceWebSearch, !initialState)
-    }
-
-    func testSetForceWebSearch_ShouldSetSpecificValue() {
-        // Given: Handler is initialized
-        createSUT()
-
-        // When: Setting force web search to true
-        sut.setForceWebSearch(true)
-
-        // Then: Should set the value
-        XCTAssertTrue(sut.forceWebSearch)
-
-        // When: Setting force web search to false
-        sut.setForceWebSearch(false)
-
-        // Then: Should set the value
-        XCTAssertFalse(sut.forceWebSearch)
-    }
-
     // MARK: - Integration Tests
 
     func testEndToEndToggleStatePersistence_ShouldWorkCorrectly() {
-        // Given: Fresh storage
+        // Given: Fresh storage with lastUsed mode
         mockStorage.clearAll()
+        mockAIChatSettings.defaultOmnibarMode = .lastUsed
 
         // When: Creating handler, changing state, and recreating
         createSUT()
-        XCTAssertEqual(sut.currentToggleState, .search) // Default
+        XCTAssertEqual(sut.currentToggleState, .search) // Default when no stored value
 
         sut.setToggleState(.aiChat)
         XCTAssertEqual(sut.currentToggleState, .aiChat)
@@ -430,7 +370,6 @@ final class SwitchBarHandlerTests: XCTestCase {
         // Then: Should emit with aiChat mode
         XCTAssertEqual(submissions.last?.mode, .aiChat)
     }
-     */
 
     // MARK: - Voice Button Tests (iPhone uses fade-out animation)
 

@@ -60,6 +60,8 @@ protocol AIChatUserScriptHandling {
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
+    @MainActor func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -295,6 +297,74 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
         return nil
+    }
+
+    // MARK: - Tab Picker
+
+    @MainActor
+    func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
+            return AIChatOpenTabsResponse(tabs: [])
+        }
+
+        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
+        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
+        let allTabs = pinnedTabs + tabCollection.tabs
+
+        let tabMetadata: [AIChatTabMetadata] = allTabs.compactMap { tab in
+            guard case .url(let url, _, _) = tab.content else { return nil }
+            let favicon = faviconData(for: url)
+            return AIChatTabMetadata(
+                tabId: tab.uuid,
+                title: tab.title ?? url.host ?? "",
+                url: url.absoluteString,
+                favicon: favicon
+            )
+        }
+
+        return AIChatOpenTabsResponse(tabs: tabMetadata)
+    }
+
+    @MainActor
+    func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let params: AIChatTabContentParams = DecodableHelper.decode(from: params) else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
+        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
+        let allTabs = pinnedTabs + tabCollection.tabs
+
+        guard let tab = allTabs.first(where: { $0.uuid == params.tabId }) else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        // Access the tab's PageContextUserScript via its user scripts
+        guard let userScripts = tab.userContentController?.userScripts as? UserScripts,
+              let pageContextScript = userScripts.pageContextUserScript else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        let pageContext = await pageContextScript.collectAndWait()
+        return AIChatTabContentResponse(pageContext: pageContext)
+    }
+
+    @MainActor
+    private func faviconData(for url: URL) -> [AIChatPageContextData.PageContextFavicon] {
+        // Use the same favicon approach as PageContextTabExtension
+        if let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
+           let cgImage = favicon.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
+            if let pngData = bitmapRep.representation(using: .png, properties: [:]) {
+                let base64 = "data:image/png;base64,\(pngData.base64EncodedString())"
+                return [AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")]
+            }
+        }
+        return []
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {

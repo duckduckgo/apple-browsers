@@ -58,12 +58,33 @@ final class PageContextUserScript: NSObject, Subfeature {
         collectionResultPublisher = collectionResultSubject.eraseToAnyPublisher()
     }
 
-    /// Requests collecting page context
+    /// Requests collecting page context (fire-and-forget, result via collectionResultPublisher)
     func collect() {
         guard let webView else {
             return
         }
         broker?.push(method: MessageName.collect.rawValue, params: nil, for: self, into: webView)
+    }
+
+    /// Requests collecting page context and awaits the result.
+    /// Used by the tab picker to extract content from a specific tab.
+    @MainActor
+    func collectAndWait(timeout: TimeInterval = 5.0) async -> AIChatPageContextData? {
+        collect()
+        return await withCheckedContinuation { continuation in
+            var cancellable: AnyCancellable?
+            let timeoutTask = Task {
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                cancellable?.cancel()
+                continuation.resume(returning: nil)
+            }
+            cancellable = collectionResultSubject
+                .first()
+                .sink { result in
+                    timeoutTask.cancel()
+                    continuation.resume(returning: result)
+                }
+        }
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {

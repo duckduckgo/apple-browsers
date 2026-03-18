@@ -269,6 +269,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         PassthroughSubject<Void, Never>().eraseToAnyPublisher()
     }
 
+    func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
         chatRestorationDataSubject.eraseToAnyPublisher()
     }

@@ -262,6 +262,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case aiChatMultiplePageContexts
 
+    /// Enables the tab picker UI for attaching content from multiple open tabs to Duck.ai chat
+    case aiChatTabPicker
+
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
@@ -421,6 +424,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
                 .aiChatMultiplePageContexts,
+                .aiChatTabPicker,
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
@@ -596,6 +600,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatMultiplePageContexts:
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
+        case .aiChatTabPicker:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.tabPicker))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:

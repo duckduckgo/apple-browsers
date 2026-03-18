@@ -171,3 +171,43 @@ public struct AIChatPageContextData: Codable, Equatable {
         return title.isEmpty && favicon.isEmpty && content.isEmpty && fullContentLength == 0
     }
 }
+
+// MARK: - Tab Picker Types
+
+/// Metadata for a single open browser tab, returned by `getAIChatOpenTabs`.
+public struct AIChatTabMetadata: Codable {
+    public let tabId: String
+    public let title: String
+    public let url: String
+    public let favicon: [AIChatPageContextData.PageContextFavicon]
+
+    public init(tabId: String, title: String, url: String, favicon: [AIChatPageContextData.PageContextFavicon]) {
+        self.tabId = tabId
+        self.title = title
+        self.url = url
+        self.favicon = favicon
+    }
+}
+
+/// Response to the `getAIChatOpenTabs` request.
+public struct AIChatOpenTabsResponse: Codable {
+    public let tabs: [AIChatTabMetadata]
+
+    public init(tabs: [AIChatTabMetadata]) {
+        self.tabs = tabs
+    }
+}
+
+/// Parameters for the `getAIChatTabContent` request.
+public struct AIChatTabContentParams: Codable {
+    public let tabId: String
+}
+
+/// Response to the `getAIChatTabContent` request.
+public struct AIChatTabContentResponse: Codable {
+    public let pageContext: AIChatPageContextData?
+
+    public init(pageContext: AIChatPageContextData?) {
+        self.pageContext = pageContext
+    }
+}

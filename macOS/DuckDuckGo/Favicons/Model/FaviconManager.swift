@@ -55,14 +55,14 @@ protocol FaviconManagement: AnyObject {
     func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon?
 
     @MainActor
-    func burn(except: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async
+    func burn(except: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async -> Result<Void, Error>
 
     @MainActor
     func burnDomains(_ domains: Set<String>,
                      exceptBookmarks bookmarkManager: BookmarkManager,
                      exceptSavedLogins: Set<String>,
                      exceptExistingHistory history: BrowsingHistory,
-                     tld: TLD) async
+                     tld: TLD) async -> Result<Void, Error>
 }
 
 /**
@@ -296,27 +296,27 @@ final class FaviconManager: FaviconManagement {
 
     // MARK: - Burning
 
-    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String> = []) async {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String> = []) async -> Result<Void, Error> {
         await referenceCache.burn(except: fireproofDomains, bookmarkManager: bookmarkManager, savedLogins: savedLogins)
-        await imageCache.burn(except: fireproofDomains, bookmarkManager: bookmarkManager, savedLogins: savedLogins)
+        return await imageCache.burn(except: fireproofDomains, bookmarkManager: bookmarkManager, savedLogins: savedLogins)
     }
 
     func burnDomains(_ baseDomains: Set<String>,
                      exceptBookmarks bookmarkManager: BookmarkManager,
                      exceptSavedLogins: Set<String> = [],
                      exceptExistingHistory history: BrowsingHistory,
-                     tld: TLD) async {
+                     tld: TLD) async -> Result<Void, Error> {
         let existingHistoryDomains = Set(history.compactMap { $0.url.host })
 
         await referenceCache.burnDomains(baseDomains, exceptBookmarks: bookmarkManager,
                                          exceptSavedLogins: exceptSavedLogins,
                                          exceptHistoryDomains: existingHistoryDomains,
                                          tld: tld)
-        await imageCache.burnDomains(baseDomains,
-                                     exceptBookmarks: bookmarkManager,
-                                     exceptSavedLogins: exceptSavedLogins,
-                                     exceptHistoryDomains: existingHistoryDomains,
-                                     tld: tld)
+        return await imageCache.burnDomains(baseDomains,
+                                            exceptBookmarks: bookmarkManager,
+                                            exceptSavedLogins: exceptSavedLogins,
+                                            exceptHistoryDomains: existingHistoryDomains,
+                                            tld: tld)
     }
 
     // MARK: - Private

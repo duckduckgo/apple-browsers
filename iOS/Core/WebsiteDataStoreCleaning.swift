@@ -22,7 +22,7 @@ import WebKit
 public protocol WebsiteDataStoreCleaning {
 
     func countContainers() async -> Int
-    func removeAllContainersAfterDelay(previousCount: Int) async
+    func removeAllContainersAfterDelay(previousCount: Int) async -> Result<Void, Error>
 
 }
 
@@ -37,19 +37,40 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
     }
 
     @MainActor
-    public func removeAllContainersAfterDelay(previousCount: Int) async {
-        guard #available(iOS 17, *) else { return }
+    public func removeAllContainersAfterDelay(previousCount: Int) async -> Result<Void, Error> {
+        guard #available(iOS 17, *) else { return .success(()) }
 
         // Attempt to clean up all previous stores, but wait for a few seconds.
         // If this fails, we are going to still clean them next time as WebKit keeps track of all stores for us.
         Task {
-            try? await Task.sleep(interval: 3.0)
+            var encounteredError: Error?
+
+            do {
+                try await Task.sleep(interval: 3.0)
+            } catch {
+                encounteredError = error
+            }
+
             for uuid in await WKWebsiteDataStore.allDataStoreIdentifiers {
-                try? await WKWebsiteDataStore.remove(forIdentifier: uuid)
+                do {
+                    try await WKWebsiteDataStore.remove(forIdentifier: uuid)
+                } catch {
+                    if encounteredError == nil {
+                        encounteredError = error
+                    }
+                }
             }
 
             await checkForLeftBehindDataStores(previousLeftOversCount: previousCount)
+
+            if let error = encounteredError {
+                Pixel.fire(pixel: .fireRemoveAllContainersAfterDelayFailure, error: error)
+            } else {
+                Pixel.fire(pixel: .fireRemoveAllContainersAfterDelaySuccess)
+            }
         }
+
+        return .success(())
     }
 
     @MainActor

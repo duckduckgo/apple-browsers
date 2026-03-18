@@ -40,33 +40,41 @@ internal class WebCacheManager {
 
     private let fireproofDomains: FireproofDomains
     private let websiteDataStore: WebsiteDataStore
-    private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
-    init(fireproofDomains: FireproofDomains, websiteDataStore: WebsiteDataStore = WKWebsiteDataStore.default(), dataClearingPixelsReporter: DataClearingPixelsReporter = .init()) {
+    init(fireproofDomains: FireproofDomains, websiteDataStore: WebsiteDataStore = WKWebsiteDataStore.default()) {
         self.fireproofDomains = fireproofDomains
         self.websiteDataStore = websiteDataStore
-        self.dataClearingPixelsReporter = dataClearingPixelsReporter
     }
 
-    func clear(baseDomains: Set<String>? = nil) async {
-        let startTime = CACurrentMediaTime()
+    func clear(baseDomains: Set<String>? = nil, dataClearingWideEventService: DataClearingWideEventService? = nil) async {
         // first cleanup ~/Library/Caches
-        await clearFileCache()
+        dataClearingWideEventService?.start(.clearFileCache)
+        let fileCacheResult = await clearFileCache()
+        dataClearingWideEventService?.update(.clearFileCache, result: fileCacheResult)
 
-        await clearDeviceHashSalts()
+        dataClearingWideEventService?.start(.clearDeviceHashSalts)
+        let deviceHashSaltsResult = await clearDeviceHashSalts()
+        dataClearingWideEventService?.update(.clearDeviceHashSalts, result: deviceHashSaltsResult)
 
-        await removeAllSafelyRemovableDataTypes()
+        dataClearingWideEventService?.start(.clearSafelyRemovableWebsiteData)
+        let safelyRemovableResult = await removeAllSafelyRemovableDataTypes()
+        dataClearingWideEventService?.update(.clearSafelyRemovableWebsiteData, result: safelyRemovableResult)
 
-        await removeLocalStorageAndIndexedDBForNonFireproofDomains()
+        dataClearingWideEventService?.start(.clearFireproofableDataForNonFireproofDomains)
+        let fireproofableDataResult = await removeLocalStorageAndIndexedDBForNonFireproofDomains()
+        dataClearingWideEventService?.update(.clearFireproofableDataForNonFireproofDomains, result: fireproofableDataResult)
 
-        await removeCookies(for: baseDomains)
+        dataClearingWideEventService?.start(.clearCookiesForNonFireproofedDomains)
+        let cookiesResult = await removeCookies(for: baseDomains)
+        dataClearingWideEventService?.update(.clearCookiesForNonFireproofedDomains, result: cookiesResult)
 
-        await self.removeResourceLoadStatisticsDatabase()
-
-        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnWebCacheDuration, from: startTime)
+        dataClearingWideEventService?.start(.clearRemoveResourceLoadStatisticsDatabase)
+        let resourceLoadStatsResult = await self.removeResourceLoadStatisticsDatabase()
+        dataClearingWideEventService?.update(.clearRemoveResourceLoadStatisticsDatabase, result: resourceLoadStatsResult)
     }
 
-    private func clearFileCache() async {
+    private func clearFileCache() async -> Result<Void, Error> {
+        var firstError: Error?
         let fm = FileManager.default
         let cachesDir = fm.urls(for: .cachesDirectory, in: .userDomainMask).first!
             .appendingPathComponent(Bundle.main.bundleIdentifier!)
@@ -75,19 +83,24 @@ internal class WebCacheManager {
         do {
             try fm.createDirectory(at: tmpDir, withIntermediateDirectories: false, attributes: nil)
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
             Logger.general.error("Could not create temporary directory: \(error.localizedDescription)")
-            return
+            firstError = firstError ?? error
         }
 
-        let contents = try? fm.contentsOfDirectory(atPath: cachesDir.path)
-        for name in contents ?? [] {
+        var contents: [String] = []
+        do {
+            contents = try fm.contentsOfDirectory(atPath: cachesDir.path)
+        } catch {
+            firstError = firstError ?? error
+        }
+
+        for name in contents {
             guard ["WebKit", "fsCachedData"].contains(name) || name.hasPrefix("Cache.") else { continue }
 
             do {
                 try fm.moveItem(at: cachesDir.appendingPathComponent(name), to: tmpDir.appendingPathComponent(name))
             } catch {
-                dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
+                firstError = firstError ?? error
             }
         }
 
@@ -96,16 +109,24 @@ internal class WebCacheManager {
                                     withIntermediateDirectories: false,
                                     attributes: nil)
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
+            firstError = firstError ?? error
         }
 
         Process("/bin/rm", "-rf", tmpDir.path).launch()
+
+        if let error = firstError {
+            return .failure(error)
+        }
+        return .success(())
     }
 
-    private func clearDeviceHashSalts() async {
+    private func clearDeviceHashSalts() async -> Result<Void, Error> {
+        var firstError: Error?
+
         guard let bundleID = Bundle.main.bundleIdentifier,
               var libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first else {
-            return
+            let error = DataClearingWideEventError(description: "Could not get bundle ID or library URL")
+            return .failure(error)
         }
         libraryURL.appendPathComponent("WebKit/\(bundleID)/WebsiteData/DeviceIdHashSalts/1")
 
@@ -115,15 +136,14 @@ internal class WebCacheManager {
         do {
             try fm.createDirectory(at: tmpDir, withIntermediateDirectories: false, attributes: nil)
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
             Logger.general.error("Could not create temporary directory: \(error.localizedDescription)")
-            return
+            firstError = firstError ?? error
         }
 
         do {
             try fm.moveItem(at: libraryURL, to: tmpDir.appendingPathComponent("1"))
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
+            firstError = firstError ?? error
         }
 
         do {
@@ -131,22 +151,28 @@ internal class WebCacheManager {
                                     withIntermediateDirectories: false,
                                     attributes: nil)
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
+            firstError = firstError ?? error
         }
 
         Process("/bin/rm", "-rf", tmpDir.path).launch()
+
+        if let error = firstError {
+            return .failure(error)
+        }
+        return .success(())
     }
 
     @MainActor
-    private func removeAllSafelyRemovableDataTypes() async {
+    private func removeAllSafelyRemovableDataTypes() async -> Result<Void, Error> {
         let safelyRemovableTypes = WKWebsiteDataStore.safelyRemovableWebsiteDataTypes
 
         // Remove all data except cookies, local storage, and IndexedDB for all domains, and then filter cookies to preserve those allowed by Fireproofing.
         await websiteDataStore.removeData(ofTypes: safelyRemovableTypes, modifiedSince: Date.distantPast)
+        return .success(())
     }
 
     @MainActor
-    private func removeLocalStorageAndIndexedDBForNonFireproofDomains() async {
+    private func removeLocalStorageAndIndexedDBForNonFireproofDomains() async -> Result<Void, Error> {
         let allRecords = await websiteDataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
 
         let removableRecords = allRecords.filter { record in
@@ -155,11 +181,14 @@ internal class WebCacheManager {
             !URL.duckduckgoDomain.contains(record.displayName) && !URL.duckAiDomain.contains(record.displayName) && !fireproofDomains.fireproofDomains.contains(record.displayName)
         }
         await websiteDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypesExceptCookies, for: removableRecords)
+        return .success(())
     }
 
     @MainActor
-    private func removeCookies(for baseDomains: Set<String>? = nil) async {
-        guard let cookieStore = websiteDataStore.cookieStore else { return }
+    private func removeCookies(for baseDomains: Set<String>? = nil) async -> Result<Void, Error> {
+        guard let cookieStore = websiteDataStore.cookieStore else {
+            return .failure(DataClearingWideEventError(description: "cookieStore not available"))
+        }
         var cookies = await cookieStore.allCookies()
 
         if let baseDomains = baseDomains {
@@ -180,23 +209,37 @@ internal class WebCacheManager {
             Logger.fire.debug("Deleting cookie for \(cookie.domain) named \(cookie.name)")
             await cookieStore.deleteCookie(cookie)
         }
+        return .success(())
     }
 
     // WKWebView doesn't provide a way to remove the observations database, which contains domains that have been
     // visited by the user. This database is removed directly as a part of the Fire button process.
-    private func removeResourceLoadStatisticsDatabase() async {
+    private func removeResourceLoadStatisticsDatabase() async -> Result<Void, Error> {
+        var firstError: Error?
+
         guard let bundleID = Bundle.main.bundleIdentifier,
               var libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first else {
-            return
+            let error = DataClearingWideEventError(description: "Could not get bundle ID or library URL")
+            return .failure(error)
         }
 
         libraryURL.appendPathComponent("WebKit/\(bundleID)/WebsiteData/ResourceLoadStatistics")
 
-        let contentsOfDirectory = (try? FileManager.default.contentsOfDirectory(at: libraryURL, includingPropertiesForKeys: [.nameKey])) ?? []
+        var contentsOfDirectory: [URL] = []
+        do {
+            contentsOfDirectory = try FileManager.default.contentsOfDirectory(at: libraryURL, includingPropertiesForKeys: [.nameKey])
+        } catch {
+            firstError = firstError ?? error
+        }
+
         let fileNames = contentsOfDirectory.compactMap(\.suggestedFilename)
 
         guard fileNames.contains("observations.db") else {
-            return
+            // Database doesn't exist, nothing to clear
+            if let error = firstError {
+                return .failure(error)
+            }
+            return .success(())
         }
 
         // We've confirmed that the observations.db exists, now it can be cleaned out. We can't delete it entirely, as
@@ -205,22 +248,29 @@ internal class WebCacheManager {
         let databasePath = libraryURL.appendingPathComponent("observations.db")
 
         guard let pool = try? DatabasePool(path: databasePath.absoluteString) else {
-            return
+            let error = DataClearingWideEventError(description: "Could not open observations database")
+            return .failure(firstError ?? error)
         }
 
-        removeObservationsData(from: pool)
+        removeObservationsData(from: pool, firstError: &firstError)
+
         do {
             try await pool.vacuum()
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
+            firstError = firstError ?? error
         }
 
         // For an unknown reason, domains may be still present in the database binary when running `strings` over it, despite SQL queries returning an
         // empty array, and despite vacuuming the database. Delete again to be safe.
-        removeObservationsData(from: pool)
+        removeObservationsData(from: pool, firstError: &firstError)
+
+        if let error = firstError {
+            return .failure(error)
+        }
+        return .success(())
     }
 
-    private func removeObservationsData(from pool: DatabasePool) {
+    private func removeObservationsData(from pool: DatabasePool, firstError: inout Error?) {
         do {
             try pool.write { database in
                 try database.execute(sql: "PRAGMA wal_checkpoint(TRUNCATE);")
@@ -232,8 +282,8 @@ internal class WebCacheManager {
                 }
             }
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
             Logger.fire.error("Failed to clear observations database: \(error.localizedDescription)")
+            firstError = firstError ?? error
         }
     }
 }

@@ -26,6 +26,7 @@ import InlineSnapshotTesting
 import History
 import os.log
 import Persistence
+import PixelKit
 import Suggestions
 import XCTest
 
@@ -379,7 +380,6 @@ extension SuggestionJsonScenarioTests {
         
         var history: [History.HistoryEntry]?
         var allHistoryVisits: [History.Visit]?
-        var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
 
         @Published var historyDictionary: [URL: History.HistoryEntry]?
         var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {
@@ -420,21 +420,21 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func burnAll(completion: @escaping @MainActor () -> Void) {
+        func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
             MainActor.assumeMainThread {
-                completion()
+                completion(.success(()))
             }
         }
-        
-        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
+
+        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
             MainActor.assumeMainThread {
-                completion([])
+                completion(.success([]))
             }
         }
-        
-        func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor () -> Void) {
+
+        func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
             MainActor.assumeMainThread {
-                completion()
+                completion(.success(()))
             }
         }
         
@@ -447,9 +447,9 @@ extension SuggestionJsonScenarioTests {
             }
         }
 
-        func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
+        func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
             MainActor.assumeMainThread {
-                completion()
+                completion(.success(()))
             }
         }
     }
@@ -469,7 +469,8 @@ extension SuggestionJsonScenarioTests {
             return historyFeatureEnabled
         }
         
-        func removeAllHistory() async {
+        func removeAllHistory() async -> Result<Void, Error> {
+            return .success(())
         }
         
         func deleteHistoryForURL(_ url: URL) async {
@@ -493,10 +494,12 @@ extension SuggestionJsonScenarioTests {
             return []
         }
         
-        func removeTabHistory(for tabIDs: [String]) async {
+        func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
+            return .success(())
         }
 
-        func removeBrowsingHistory(tabID: String) async {
+        func removeBrowsingHistory(tabID: String) async -> ActionResult? {
+            return ActionResult(result: .success(()), measuredInterval: .init(start: .now, end: .now))
         }
     }
 }

@@ -527,7 +527,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         // Select and remove childTab2
         tabCollectionViewModel.selectPrevious()
-        tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.removeSelected()
 
         XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, childTab1)
     }
@@ -585,7 +585,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.appendNewTab()
         let selectedTab = tabCollectionViewModel.selectedTabViewModel?.tab
 
-        tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.removeSelected()
 
         XCTAssertFalse(tabCollectionViewModel.tabCollection.tabs.contains(selectedTab!))
     }
@@ -734,7 +734,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenOneURLTabOpenThenCanBookmarkAllOpenTabsIsFalse() throws {
         // GIVEN
         let sut = TabCollectionViewModel.aTabCollectionViewModel()
-        sut.replaceTab(at: .unpinned(0), with: .init(content: .url(.duckDuckGo, credential: nil, source: .ui)))
+        _ = sut.replaceTab(at: .unpinned(0), with: .init(content: .url(.duckDuckGo, credential: nil, source: .ui)))
         let firstTabViewModel = try XCTUnwrap(sut.tabViewModel(at: 0))
         XCTAssertEqual(sut.tabViewModels.count, 1)
         XCTAssertEqual(firstTabViewModel.tabContent, .url(.duckDuckGo, credential: nil, source: .ui))
@@ -750,7 +750,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenOneURLTabAndOnePinnedTabOpenThenCanBookmarkAllOpenTabsIsFalse() {
         // GIVEN
         let sut = TabCollectionViewModel.aTabCollectionViewModel()
-        sut.replaceTab(at: .unpinned(0), with: .init(content: .url(.duckDuckGo, credential: nil, source: .ui)))
+        _ = sut.replaceTab(at: .unpinned(0), with: .init(content: .url(.duckDuckGo, credential: nil, source: .ui)))
         sut.append(tab: .init(content: .url(.duckDuckGoEmail, credential: nil, source: .ui)))
         sut.pinTab(at: 0)
         XCTAssertEqual(sut.pinnedTabs.count, 1)

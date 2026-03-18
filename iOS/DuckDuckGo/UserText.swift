@@ -70,11 +70,20 @@ public struct UserText {
     // MARK: Fire Mode Empty State
 
     public static let fireModeEmptyStateTitle = NotLocalizedString("fire.mode.empty.state.title", value: "Fire Tabs", comment: "Title shown on the Fire Mode empty state screen")
+    public static let fireTabEmptyStateTitle = NotLocalizedString("fire.tab.empty.state.title", value: "Fire Tab", comment: "Title shown on the Fire tab empty state screen")
     public static let fireModeEmptyStateBulletHistory = NotLocalizedString("fire.mode.empty.state.bullet.history", value: "Browse without saving local history", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
     public static let fireModeEmptyStateBulletAccount = NotLocalizedString("fire.mode.empty.state.bullet.account", value: "Sign in to a site with a different account", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
     public static let fireModeEmptyStateBulletTroubleshoot = NotLocalizedString("fire.mode.empty.state.bullet.troubleshoot", value: "Troubleshoot websites", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
     public static let fireModeEmptyStateDescription = NotLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
     public static let fireModeEmptyStateNewFireTab = NotLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
+    
+    // MARK: - Tab Switcher Fire Mode
+    public static let openNewTab = NotLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
+    public static let openNewFireTab = NotLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
+    public static let closeFireTab = NotLocalizedString("tab.close.closeFireTab", value: "Close fire tab", comment: "Accessibility label on tab cell")
+    public static let closeNewTab = NotLocalizedString("tab.close.closeNewTab", value: "Close tab", comment: "Accessibility label on tab cell")
+    public static let newTabTitle = NotLocalizedString("tab.new.title", value: "New Tab", comment: "New tab title")
+    public static let fireTabTitle = NotLocalizedString("tab.fire.title", value: "Fire Tab", comment: "Fire tab title")
 
     public static let actionOpen = NSLocalizedString("action.title.open", value: "Open", comment: "Open action")
     public static let actionCopy = NSLocalizedString("action.title.copy", value: "Copy", comment: "Copy action")
@@ -1538,17 +1547,23 @@ public struct UserText {
     public static let settingsAutolock = NSLocalizedString("settings.autolock", value: "Application Lock", comment: "Settings screen cell text for Application Lock")
     public static let settingsAutoLockDescription = NSLocalizedString("settings.autolock.description", value: "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.", comment: "Section footer Autolock description")
 
-    // After Inactivity (NTP / Last Used Tab) – NotLocalizedString until copy is final
-    public static let settingsAfterInactivityLabel = NotLocalizedString("settings.afterInactivity.label", value: "After Inactivity", comment: "Settings picker label for what to show when returning after inactivity")
-    public static let settingsAfterInactivityOptionNewTab = NotLocalizedString("settings.afterInactivity.option.newTab", value: "New Tab", comment: "Option: show New Tab when returning after inactivity")
-    public static let settingsAfterInactivityOptionLastUsedTab = NotLocalizedString("settings.afterInactivity.option.lastUsedTab", value: "Last Used Tab", comment: "Option: show last used tab when returning after inactivity")
-    public static let settingsAfterInactivityFooterFormat = NotLocalizedString("settings.afterInactivity.footer.format", value: "Choose what you see when you return after %@ of inactivity.", comment: "Section footer; %@ is the idle interval (e.g. 1 minute)")
-    public static let settingsAfterInactivityIdleIntervalPlaceholder = NotLocalizedString("settings.afterInactivity.idle.interval.placeholder", value: "1 minute", comment: "Placeholder idle interval in settings footer until remote config copy is used")
-    public static let settingsAfterInactivityIdleIntervalSecondSingular = NotLocalizedString("settings.afterInactivity.idle.interval.second", value: "1 second", comment: "Idle interval 1 second for settings footer")
-    public static let settingsAfterInactivityIdleIntervalSecondsFormat = NotLocalizedString("settings.afterInactivity.idle.interval.seconds", value: "%d seconds", comment: "Idle interval in seconds for settings footer (plural)")
-    public static let settingsAfterInactivityIdleIntervalMinutesFormat = NotLocalizedString("settings.afterInactivity.idle.interval.minutes", value: "%d minutes", comment: "Idle interval in minutes for settings footer (plural)")
-    public static let settingsAfterInactivityIdleIntervalHourSingular = NotLocalizedString("settings.afterInactivity.idle.interval.hour", value: "1 hour", comment: "Idle interval 1 hour for settings footer")
-    public static let settingsAfterInactivityIdleIntervalHoursFormat = NotLocalizedString("settings.afterInactivity.idle.interval.hours", value: "%d hours", comment: "Idle interval in hours for settings footer (plural)")
+    // After Inactivity (NTP / Last Used Tab)
+    public static let settingsAfterInactivityLabel = NSLocalizedString("settings.afterInactivity.label", value: "After Inactivity", comment: "Settings picker label for what to show when returning after inactivity")
+    public static let settingsAfterInactivityOptionNewTab = NSLocalizedString("settings.afterInactivity.option.newTab", value: "New Tab", comment: "Option: show New Tab when returning after inactivity")
+    public static let settingsAfterInactivityOptionLastUsedTab = NSLocalizedString("settings.afterInactivity.option.lastUsedTab", value: "Last Used Tab", comment: "Option: show last used tab when returning after inactivity")
+    public static let settingsAfterInactivityFooterFormat = NSLocalizedString("settings.afterInactivity.footer.format", value: "Choose what you see when you return after %@ of inactivity.", comment: "Section footer; %@ is the idle interval (e.g. 5 minutes)")
+    public static let settingsAfterInactivityIdleIntervalSecondSingular = NSLocalizedString("settings.afterInactivity.idle.interval.second", value: "1 second", comment: "Idle interval 1 second for settings footer")
+    public static let settingsAfterInactivityIdleIntervalMinuteSingular = NSLocalizedString("settings.afterInactivity.idle.interval.minute", value: "1 minute", comment: "Idle interval 1 minute for settings footer")
+    public static let settingsAfterInactivityIdleIntervalSecondsFormat = NSLocalizedString("settings.afterInactivity.idle.interval.seconds", value: "%d seconds", comment: "Idle interval in seconds for settings footer (plural)")
+    public static let settingsAfterInactivityIdleIntervalMinutesFormat = NSLocalizedString("settings.afterInactivity.idle.interval.minutes", value: "%d minutes", comment: "Idle interval in minutes for settings footer (plural)")
+    public static let settingsAfterInactivityIdleIntervalHourSingular = NSLocalizedString("settings.afterInactivity.idle.interval.hour", value: "1 hour", comment: "Idle interval 1 hour for settings footer")
+    public static let settingsAfterInactivityIdleIntervalHoursFormat = NSLocalizedString("settings.afterInactivity.idle.interval.hours", value: "%d hours", comment: "Idle interval in hours for settings footer (plural)")
+
+    // Escape Hatch (Return to Tab Card)
+    public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
+    public static let escapeHatchReturnToAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.accessibility.label", value: "Return to %@", comment: "Accessibility label for escape hatch card; %@ is the tab title")
+    public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
+    public static let escapeHatchAccessibilityHint = NSLocalizedString("escapeHatch.accessibility.hint", value: "Switches to this tab", comment: "Accessibility hint for the escape hatch card")
 
     public static let settingsDataClearingForgetAllFootnote = NSLocalizedString("settings.data.clear.forget.all.footnote", value: "Clears all tabs and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
     public static let settingsDataClearingForgetAllWithAiChatFootnote = NSLocalizedString("settings.data.clear.forget.all.duck.ai.footnote", value: "Clears all tabs, Duck.ai chats, and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
@@ -1981,6 +1996,9 @@ public struct UserText {
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
+    public static let aiChatAdvancedModelsMenuTitle = NotLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")
+    public static let aiChatAdvancedModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-advanced-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when the user has an active subscription")
+    public static let aiChatBasicModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-basic-section-header", value: "Basic Models", comment: "Section header in the model picker menu for basic/free models when the user has an active subscription")
 
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
@@ -2097,7 +2115,7 @@ public struct UserText {
                 }
                 public static var message: String {
                     if Locale.current.isEnglishLanguage {
-                        NSLocalizedString("onboarding.rebranding.intro.message.english-only", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
+                        NotLocalizedString("onboarding.rebranding.intro.message.english-only", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
                     } else {
                         NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The message of the onboarding dialog popup")
                     }

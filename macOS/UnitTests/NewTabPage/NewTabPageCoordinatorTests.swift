@@ -24,6 +24,7 @@ import HistoryView
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
+import PixelKitTestingUtilities
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyStats
@@ -40,7 +41,7 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
     func recordBlockedTracker(_ name: String) async {}
     func fetchPrivacyStats() async -> [String: Int64] { [:] }
     func fetchPrivacyStatsTotalCount() async -> Int64 { 0 }
-    func clearPrivacyStats() async {}
+    func clearPrivacyStats() async -> Result<Void, Error> { .success(()) }
     func handleAppTermination() async {}
 }
 
@@ -61,7 +62,9 @@ final class MockAutoconsentStats: AutoconsentStatsCollecting {
             totalTotalTimeSpentBlockingCookiePopUps: 0
         )
     }
-    func clearAutoconsentStats() async {}
+    func clearAutoconsentStats() async -> Result<Void, Error> {
+        return .success(())
+    }
 }
 
 final class NewTabPageCoordinatorTests: XCTestCase {
@@ -117,6 +120,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                                               faviconManagement: FaviconManagerMock(),
                                               windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
+                                              wideEventManaging: WideEventMock(),
                                               historyProvider: MockHistoryViewDataProvider())
         let cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager)
         let visualizeFireAnimationDecider = MockVisualizeFireAnimationDecider()

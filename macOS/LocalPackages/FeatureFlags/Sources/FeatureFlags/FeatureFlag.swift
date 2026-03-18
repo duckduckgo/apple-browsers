@@ -259,6 +259,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case supportsSyncChatsDeletion
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
+    case aiChatMultiplePageContexts
+
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
@@ -290,6 +293,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the promo service to coordinate promos/calls to action
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
     case promoQueue
+
+    /// Enables the new Tab Animations (Milestone 1)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
+    case tabAnimations
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -300,7 +307,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    public var defaultValue: Bool {
+    public var defaultValue: FeatureFlagDefaultValue {
         switch self {
         case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
@@ -317,15 +324,19 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
-                .aiChatSidebarFloating,
                 .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics,
                 .promoQueue:
-            true
+            .enabled
+        case .autofillPasswordsStatusBar,
+             .aiChatSidebarFloating,
+             .semaphoreAlwaysVisible,
+             .tabAnimations:
+            .internalOnly
         default:
-            false
+            .disabled
         }
     }
 
@@ -409,6 +420,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .wideEventPostEndpoint,
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
+                .aiChatMultiplePageContexts,
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
@@ -417,7 +429,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatChromeSidebar,
                 .webViewLookUpAction,
                 .promoQueue,
-                .semaphoreAlwaysVisible:
+                .semaphoreAlwaysVisible,
+                .tabAnimations:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -556,7 +569,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .autofillPasswordsStatusBar:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordsStatusBar))
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .memoryUsageMonitor:
@@ -581,12 +594,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .supportsSyncChatsDeletion:
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
+        case .aiChatMultiplePageContexts:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:
             return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
         case .aiChatSidebarFloating:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating))
         case .startupMetrics:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
@@ -596,9 +611,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webViewLookUpAction:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .semaphoreAlwaysVisible:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
             return .remoteReleasable(.feature(.promoQueue))
+        case .tabAnimations:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
         }
     }
 }

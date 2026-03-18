@@ -330,7 +330,7 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.select(at: .pinned(0))
         let selectedTab = tabCollectionViewModel.selectedTabViewModel?.tab
 
-        tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.removeSelected()
 
         XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.tabs.contains(selectedTab!))
     }

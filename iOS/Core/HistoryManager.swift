@@ -23,20 +23,21 @@ import BrowserServicesKit
 import History
 import Common
 import Persistence
+import PixelKit
 import os.log
 
 public protocol HistoryManaging {
 
     var isEnabledByUser: Bool { get }
     var history: BrowsingHistory? { get }
-    @MainActor func removeAllHistory() async
+    @MainActor func removeAllHistory() async -> Result<Void, Error>
     @MainActor func deleteHistoryForURL(_ url: URL) async
     @MainActor func addVisit(of url: URL, tabID: String?, fireTab: Bool)
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func commitChanges(url: URL)
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
-    @MainActor func removeTabHistory(for tabIDs: [String]) async
-    @MainActor func removeBrowsingHistory(tabID: String) async
+    @MainActor func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error>
+    @MainActor func removeBrowsingHistory(tabID: String) async -> ActionResult?
 }
 
 public class HistoryManager: HistoryManaging {
@@ -72,17 +73,17 @@ public class HistoryManager: HistoryManaging {
         self.isAutocompleteEnabledByUser = isAutocompleteEnabledByUser
         self.isRecentlyVisitedSitesEnabledByUser = isRecentlyVisitedSitesEnabledByUser
     }
-    
+
     @MainActor
     public var history: BrowsingHistory? {
         historyCoordinator.history
     }
 
     @MainActor
-    public func removeAllHistory() async {
+    public func removeAllHistory() async -> Result<Void, Error> {
         await withCheckedContinuation { continuation in
-            dbCoordinator.burnAll {
-                continuation.resume()
+            dbCoordinator.burnAll { result in
+                continuation.resume(returning: result)
             }
         }
     }
@@ -98,7 +99,7 @@ public class HistoryManager: HistoryManaging {
             }
         }
     }
-    
+
     @MainActor
     public func addVisit(of url: URL, tabID: String?, fireTab: Bool = false) {
         // Fire tabs: only record tab history, never global
@@ -108,17 +109,17 @@ public class HistoryManager: HistoryManaging {
             historyCoordinator.addVisit(of: url, tabID: tabID)
         }
     }
-    
+
     @MainActor
     public func updateTitleIfNeeded(title: String, url: URL) {
         historyCoordinator.updateTitleIfNeeded(title: title, url: url)
     }
-    
+
     @MainActor
     public func commitChanges(url: URL) {
         historyCoordinator.commitChanges(url: url)
     }
-    
+
     @MainActor
     public func tabHistory(tabID: String) async throws -> [URL] {
         return try await tabHistoryCoordinator.tabHistory(tabID: tabID)
@@ -129,11 +130,13 @@ public class HistoryManager: HistoryManaging {
     /// Tab history tracks which URLs were visited in each tab (used to determine what to burn),
     /// but is not surfaced to the user. Call this when closing tabs to clean up stale records.
     @MainActor
-    public func removeTabHistory(for tabIDs: [String]) async {
+    public func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
         do {
             try await tabHistoryCoordinator.removeVisits(for: tabIDs)
+            return .success(())
         } catch {
             Logger.history.error("Failed to remove tab history: \(error.localizedDescription)")
+            return .failure(error)
         }
     }
 
@@ -142,11 +145,17 @@ public class HistoryManager: HistoryManaging {
     /// This removes the tab's history records from the global browsing history,
     /// used when burning a single tab to clear its footprint from history.
     @MainActor
-    public func removeBrowsingHistory(tabID: String) async {
+    public func removeBrowsingHistory(tabID: String) async -> ActionResult? {
+        var interval = WideEvent.MeasuredInterval.startingNow()
+
         do {
             try await dbCoordinator.burnVisits(for: tabID)
+            interval.complete()
+            return ActionResult(result: .success(()), measuredInterval: interval)
         } catch {
             Logger.history.error("Failed to remove global history for tab: \(error.localizedDescription)")
+            interval.complete()
+            return ActionResult(result: .failure(error), measuredInterval: interval)
         }
     }
 
@@ -165,8 +174,6 @@ class NullHistoryCoordinator: HistoryCoordinating {
     var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {
         $historyDictionary
     }
-    
-    var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
 
     func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
         return nil
@@ -194,29 +201,29 @@ class NullHistoryCoordinator: HistoryCoordinating {
         return nil
     }
 
-    func burnAll(completion: @escaping @MainActor () -> Void) {
+    func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         DispatchQueue.main.asyncOrNow {
-            completion()
+            completion(.success(()))
         }
     }
 
-    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
+    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
         DispatchQueue.main.asyncOrNow {
-            completion([])
+            completion(.success([]))
         }
     }
 
-    func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor () -> Void) {
+    func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         DispatchQueue.main.asyncOrNow {
-            completion()
+            completion(.success(()))
         }
     }
-    
+
     func burnVisits(for tabID: String) async throws {
     }
 
-    func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
-
+    func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+        completion(.success(()))
     }
 
     func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
@@ -290,7 +297,7 @@ class HistoryStoreEventMapper: EventMapping<History.HistoryDatabaseError> {
 
             case .insertTabHistoryFailed:
                 Pixel.fire(pixel: .historyInsertTabHistoryFailed, error: error)
-                
+
             case .removeTabHistoryFailed:
                 Pixel.fire(pixel: .historyRemoveTabHistoryFailed, error: error)
 

@@ -21,9 +21,13 @@ import Common
 import GRDB
 import os.log
 
+public enum ObservationsDataCleaningError: Error {
+    case noDatabasePoolFound
+}
+
 public protocol ObservationsDataCleaning {
 
-    func removeObservationsData() async
+    func removeObservationsData() async -> Result<Void, Error>
 
 }
 
@@ -32,15 +36,17 @@ public class DefaultObservationsDataCleaner: ObservationsDataCleaning {
 
     public init() { }
 
-    public func removeObservationsData() async {
-        if let pool = getValidDatabasePool() {
-            removeObservationsData(from: pool)
-        } else {
+    public func removeObservationsData() async -> Result<Void, Error> {
+        switch getValidDatabasePool() {
+        case .success(let pool):
+            return removeObservationsData(from: pool)
+        case .failure(let error):
             Logger.general.debug("Could not find valid pool to clear observations data")
+            return .failure(error)
         }
     }
 
-    func getValidDatabasePool() -> DatabasePool? {
+    func getValidDatabasePool() -> Result<DatabasePool, Error> {
         let bundleID = Bundle.main.bundleIdentifier ?? ""
 
         let databaseURLs = [
@@ -50,12 +56,19 @@ public class DefaultObservationsDataCleaner: ObservationsDataCleaning {
                 .appendingPathComponent("WebKit/\(bundleID)/WebsiteData/ResourceLoadStatistics/observations.db")
         ]
 
-        guard let validURL = databaseURLs.first(where: { FileManager.default.fileExists(atPath: $0.path) }) else { return nil }
+        guard let validURL = databaseURLs.first(where: { FileManager.default.fileExists(atPath: $0.path) }) else {
+            return .failure(ObservationsDataCleaningError.noDatabasePoolFound)
+        }
 
-        return try? DatabasePool(path: validURL.absoluteString)
+        do {
+            let pool = try DatabasePool(path: validURL.absoluteString)
+            return .success(pool)
+        } catch {
+            return .failure(error)
+        }
     }
 
-    private func removeObservationsData(from pool: DatabasePool) {
+    private func removeObservationsData(from pool: DatabasePool) -> Result<Void, Error> {
         do {
             try pool.write { database in
                 try database.execute(sql: "PRAGMA wal_checkpoint(TRUNCATE);")
@@ -66,8 +79,10 @@ public class DefaultObservationsDataCleaner: ObservationsDataCleaning {
                     try database.execute(sql: "DELETE FROM \(table)")
                 }
             }
+            return .success(())
         } catch {
             Pixel.fire(pixel: .debugCannotClearObservationsDatabase, error: error)
+            return .failure(error)
         }
     }
 

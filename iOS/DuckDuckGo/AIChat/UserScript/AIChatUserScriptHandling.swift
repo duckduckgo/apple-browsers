@@ -79,6 +79,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -110,6 +111,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     private var payloadHandler: (any AIChatConsumableDataHandling)?
+    private let promptHandler: any AIChatConsumableDataHandling
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
@@ -134,12 +136,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          syncHandler: AIChatSyncHandling,
          featureFlagger: FeatureFlagger,
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
+         promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
+        self.promptHandler = promptHandler
         self.aichatFullModeFeature = aichatFullModeFeature
         self.aichatContextualModeFeature = aichatContextualModeFeature
         setUpSyncStatusObserver()
@@ -236,12 +240,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         let supportsNativeChatInput = supportsFullMode && featureFlagger.isFeatureOn(.unifiedToggleInput)
+        let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt
 
         return AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
             supportsOpeningSettings: defaults.supportsOpeningSettings,
-            supportsNativePrompt: defaults.supportsNativePrompt,
+            supportsNativePrompt: supportsNativePrompt,
             supportsStandaloneMigration: experimentalAIChatManager.isStandaloneMigrationSupported,
             supportsNativeChatInput: supportsNativeChatInput,
             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
@@ -279,6 +284,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
         inputBoxHandler?.aiChatInputBoxVisibility = .visible
         return nil
+    }
+
+    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? {
+        promptHandler.consumeData() as? AIChatNativePrompt
     }
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {

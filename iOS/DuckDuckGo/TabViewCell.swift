@@ -59,11 +59,16 @@ final class TabViewCell: UICollectionViewCell {
 
     weak var delegate: TabViewCellDelegate?
     weak var tab: Tab?
+    private var isFireModeEnabled: Bool = false
 
     var isCurrent = false
     var isDeleting = false
     var canDelete = false
     var isSelectionModeEnabled = false
+    
+    var isFireTab: Bool {
+        tab?.fireTab ?? false
+    }
 
     static let gridReuseIdentifier = "TabViewGridCell"
     static let listReuseIdentifier = "TabViewListCell"
@@ -133,8 +138,6 @@ final class TabViewCell: UICollectionViewCell {
         layer.cornerRadius = Constants.cellCornerRadius
         layer.cornerCurve = .continuous
 
-        unread.tintColor = UIColor(designSystemColor: .accent)
-
         favicon.layer.cornerRadius = 4
         favicon.layer.cornerCurve = .continuous
         favicon.layer.masksToBounds = true
@@ -200,13 +203,13 @@ final class TabViewCell: UICollectionViewCell {
         previewTrailingConstraint?.isActive = true
     }
 
-    private static var unreadImageAsset: UIImageAsset {
+    private static func unreadImageAsset(accentColor: UIColor) -> UIImageAsset {
 
         func unreadImage(for style: UIUserInterfaceStyle) -> UIImage {
             let color = ThemeManager.shared.currentTheme.tabSwitcherCellBackgroundColor.resolvedColor(with: .init(userInterfaceStyle: style))
             let image = UIImage.stackedIconImage(withIconImage: UIImage(resource: .tabUnread),
                                                  borderWidth: 6.0,
-                                                 foregroundColor: UIColor(designSystemColor: .accent),
+                                                 foregroundColor: accentColor,
                                                  borderColor: color)
             return image
         }
@@ -219,7 +222,7 @@ final class TabViewCell: UICollectionViewCell {
         return asset
     }
 
-    static let logoImage: UIImage = {
+    private static let regularLogoImage: UIImage = {
         let image = UIImage(resource: .logo)
         let renderFormat = UIGraphicsImageRendererFormat.default()
         renderFormat.opaque = false
@@ -233,6 +236,18 @@ final class TabViewCell: UICollectionViewCell {
                                   height: Constants.cellLogoSize))
         }
     }()
+
+    static func logoImage(for tab: Tab?) -> UIImage {
+        if let tab, tab.fireTab {
+            return DesignSystemImages.Color.Size96.fireTab
+        } else {
+            return regularLogoImage
+        }
+    }
+
+    var logoImage: UIImage {
+        Self.logoImage(for: tab)
+    }
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -342,7 +357,6 @@ final class TabViewCell: UICollectionViewCell {
     }
 
     func updateCurrentTabBorder() {
-        let isFireTab = tab?.fireTab ?? false
         let currentTabColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .decorationTertiary)
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
         let borderColor = isSelectionModeEnabled ? UIColor(designSystemColor: .accent) : currentTabColor
@@ -363,11 +377,13 @@ final class TabViewCell: UICollectionViewCell {
 
     func update(withTab tab: Tab,
                 isSelectionModeEnabled: Bool,
-                preview: UIImage?) {
+                preview: UIImage?,
+                isFireModeEnabled: Bool) {
         accessibilityElements = [ title as Any, removeButton as Any ]
 
         self.tab = tab
         self.isSelectionModeEnabled = isSelectionModeEnabled
+        self.isFireModeEnabled = isFireModeEnabled
 
         if !isDeleting {
             isHidden = false
@@ -407,12 +423,12 @@ final class TabViewCell: UICollectionViewCell {
 
         } else if tab.link == nil {
             updatePreviewToDisplayLogo()
-            self.preview?.image = Self.logoImage
+            self.preview?.image = logoImage
             self.preview?.contentMode = .center
 
+            updateEmptyTabLabel(for: tab)
             link?.isHidden = false
             link?.text = UserText.homeTabSearchAndFavorites
-            title.text = UserText.homeTabTitle
             favicon.image = UIImage(resource: .logo)
             unread.isHidden = true
             self.preview?.isHidden = !tab.viewed
@@ -445,6 +461,16 @@ final class TabViewCell: UICollectionViewCell {
 
         updateUIForSelectionMode(removeButton, selectionIndicator)
     }
+    
+    private func updateEmptyTabLabel(for tab: Tab) {
+        if isFireModeEnabled {
+            title.text = tab.fireTab ? UserText.fireTabTitle : UserText.newTabTitle
+            title.accessibilityLabel = tab.fireTab ? UserText.openNewFireTab : UserText.openNewTab
+        } else {
+            title.text = UserText.homeTabTitle
+            title.accessibilityLabel = UserText.openHomeTab
+        }
+    }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
@@ -457,7 +483,8 @@ final class TabViewCell: UICollectionViewCell {
 
     private func decorate() {
         border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
-        unread.image = Self.unreadImageAsset.image(with: .current)
+        let accentColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        unread.image = Self.unreadImageAsset(accentColor: accentColor).image(with: .current)
         removeButton.tintColor = UIColor(designSystemColor: .icons)
 
         background.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)

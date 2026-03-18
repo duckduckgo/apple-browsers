@@ -19,6 +19,8 @@
 
 import AIChat
 import Combine
+import os.log
+import Subscription
 import UIKit
 
 // MARK: - State Types
@@ -55,13 +57,17 @@ enum UnifiedToggleInputIntent: Equatable {
     case hide
 }
 
+// MARK: - Subscription State
+
+struct SubscriptionState {
+    let userTier: AIChatUserTier
+    let hasActiveSubscription: Bool
+
+    static let free = SubscriptionState(userTier: .free, hasActiveSubscription: false)
+}
+
 // MARK: - Coordinator
 
-/// Pure state machine managing the unified toggle input lifecycle and FE bridge via `AIChatInputBoxHandling`.
-/// Drives the view controller through `UnifiedToggleInputViewControllerDelegate` and emits
-/// `UnifiedToggleInputIntent`s for MainVC to manage container-level layout (visibility, keyboard constraints).
-///
-/// Does not access the view hierarchy directly — all UI manipulation goes through the view controller.
 @MainActor
 final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
@@ -81,7 +87,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     // MARK: - Properties
 
-    /// The managed view controller. Access for installation only — query coordinator properties for state.
     private(set) var viewController: UnifiedToggleInputViewController
     private(set) var contentViewController: UnifiedInputContentContainerViewController
     private(set) var floatingSubmitViewController: UnifiedToggleInputFloatingSubmitViewController
@@ -97,6 +102,33 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var currentText: String { viewController.text }
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
+
+    // MARK: - Model Picker
+
+    private let modelsService: AIChatModelsProviding
+    private var preferences: AIChatPreferencesPersisting
+    private let subscriptionManager: any SubscriptionManager
+    var models: [AIChatModel] = []
+    private var modelsFetchTask: Task<Void, Never>?
+    private(set) var hasSubmittedPrompt = false
+    private(set) var subscriptionState: SubscriptionState = .free
+
+    var persistedModelId: String? {
+        let id = preferences.selectedModelId
+        if let id, !models.isEmpty {
+            if let model = models.first(where: { $0.id == id }) {
+                return model.entityHasAccess ? id : firstAccessibleModelId
+            }
+            return firstAccessibleModelId
+        }
+        return id ?? firstAccessibleModelId
+    }
+
+    var selectedModelSupportsImageUpload: Bool {
+        guard !models.isEmpty else { return true }
+        guard let id = persistedModelId else { return true }
+        return models.first(where: { $0.id == id })?.supportsImageUpload ?? true
+    }
 
     var isOmnibarSession: Bool {
         if case .omnibar = displayState { return true }
@@ -120,8 +152,13 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         displayState == .aiTab(.expanded) && inputMode == .aiChat
     }
 
+    private var firstAccessibleModelId: String? {
+        models.first(where: { $0.entityHasAccess })?.id
+    }
+
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    private var cancellables = Set<AnyCancellable>()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -140,21 +177,36 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     // MARK: - Initialization
 
-    init(isToggleEnabled: Bool) {
+    init(
+        isToggleEnabled: Bool,
+        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
+        subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager
+    ) {
         self.isToggleEnabled = isToggleEnabled
+        self.modelsService = modelsService
+        self.preferences = preferences
+        self.subscriptionManager = subscriptionManager
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
         contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
         viewController.delegate = self
+        subscribeToGeneratingState()
+        subscribeToStopGeneratingTap()
+
+        if let cachedLabel = preferences.selectedModelShortName {
+            viewController.modelName = cachedLabel
+        }
     }
 
     // MARK: - Tab Binding
 
-    func bindToTab(_ userScript: AIChatUserScript) {
+    func bindToTab(_ userScript: AIChatUserScript, hasExistingChat: Bool = false) {
         let newIdentifier = ObjectIdentifier(userScript)
         if boundUserScriptIdentifier == newIdentifier {
             boundUserScript = userScript
             userScript.inputBoxHandler = self
+            syncChipVisibility(hasExistingChat: hasExistingChat)
             return
         }
         let hadPreviousScript = boundUserScriptIdentifier != nil
@@ -162,15 +214,25 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
         userScript.inputBoxHandler = self
+        syncChipVisibility(hasExistingChat: hasExistingChat)
         if hadPreviousScript {
             resetInputState()
         }
+    }
+
+    private func syncChipVisibility(hasExistingChat: Bool) {
+        let shouldHide = hasExistingChat
+        guard hasSubmittedPrompt != shouldHide else { return }
+        hasSubmittedPrompt = shouldHide
+        updateModelChipVisibility()
     }
 
     func unbind() {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
+        hasSubmittedPrompt = false
+        updateModelChipVisibility()
         resetSessionState()
     }
 
@@ -196,6 +258,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let renderState = computeRenderState()
 
         viewController.apply(renderState.viewConfig, animated: false)
+        fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {
             viewController.text = prefilledText
@@ -237,9 +300,12 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         self.inputMode = effectiveInputMode
         self.cardPosition = cardPosition
         isInputVisibleForKeyboard = true
+        hasSubmittedPrompt = false
+        updateModelChipVisibility()
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
+        fetchModels()
 
         if let text = prefilledText, !text.isEmpty {
             viewController.text = text
@@ -282,6 +348,10 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func activateInput() {
         viewController.activateInput()
+    }
+
+    func stopGeneratingButtonTapped() {
+        viewController.handler.stopGeneratingButtonTapped()
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
@@ -469,7 +539,168 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         )
     }
 
+    // MARK: - Model Picker Actions
+
+    func fetchModels() {
+        modelsFetchTask?.cancel()
+        modelsFetchTask = Task { [weak self] in
+            guard let self else { return }
+            let state = await self.resolveSubscriptionState()
+            guard !Task.isCancelled else { return }
+            self.subscriptionState = state
+            do {
+                let remoteModels = try await modelsService.fetchModels()
+                guard !Task.isCancelled else { return }
+                self.models = Self.resolveModels(from: remoteModels, userTier: state.userTier)
+                self.clearStaleModelSelectionIfNeeded()
+                self.updateModelChipLabel()
+            } catch {
+                os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
+            }
+        }
+    }
+
+    func startNewChat() {
+        hasSubmittedPrompt = false
+        updateModelChipVisibility()
+    }
+
+    func updateSelectedModel(_ modelId: String) {
+        preferences.selectedModelId = modelId
+        preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        updateModelChipLabel()
+    }
+
+    private func buildModelMenuDescription() -> UnifiedToggleInputModelMenu {
+        UnifiedToggleInputModelMenu.build(
+            models: models,
+            selectedId: persistedModelId,
+            isBottomAnchored: viewController.cardPosition == .bottom,
+            hasActiveSubscription: subscriptionState.hasActiveSubscription,
+            advancedSectionTitle: subscriptionState.hasActiveSubscription
+                ? UserText.aiChatAdvancedModelsSectionHeader
+                : UserText.aiChatAdvancedModelsMenuTitle,
+            basicSectionTitle: UserText.aiChatBasicModelsSectionHeader
+        )
+    }
+
+    private func buildModelPickerMenu() -> UIMenu {
+        let description = buildModelMenuDescription()
+        let modelLookup = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
+
+        let uiSections: [UIMenu] = description.sections.map { section in
+            let actions = section.items.map { item -> UIAction in
+                let model = modelLookup[item.modelId]
+                return UIAction(
+                    title: item.name,
+                    image: model?.menuIcon,
+                    attributes: item.isDisabled ? .disabled : [],
+                    state: item.isSelected ? .on : .off
+                ) { [weak self] _ in
+                    self?.updateSelectedModel(item.modelId)
+                }
+            }
+
+            var options: UIMenu.Options = .displayInline
+            if !section.items.contains(where: { $0.isDisabled }) {
+                options.insert(.singleSelection)
+            }
+
+            return UIMenu(title: section.title, options: options, children: actions)
+        }
+
+        return UIMenu(children: uiSections)
+    }
+
+    private func updateModelChipLabel() {
+        guard let selectedId = persistedModelId else { return }
+        let shortName = models.first(where: { $0.id == selectedId })?.shortName
+        if let shortName {
+            viewController.modelName = shortName
+            preferences.selectedModelShortName = shortName
+        }
+        viewController.modelPickerMenu = models.isEmpty ? nil : buildModelPickerMenu()
+    }
+
+    // MARK: - Model Resolution
+
+    static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
+        remoteModels.map { remote in
+            if remote.accessTier.isEmpty {
+                return AIChatModel(
+                    id: remote.id,
+                    name: remote.name,
+                    shortName: remote.modelShortName,
+                    provider: .from(id: remote.id, providerString: remote.provider),
+                    supportsImageUpload: remote.supportsImageUpload,
+                    supportedImageFormats: remote.supportsImageUpload ? ["png", "jpeg", "webp"] : [],
+                    entityHasAccess: remote.entityHasAccess,
+                    accessTier: remote.accessTier
+                )
+            }
+            return AIChatModel(remoteModel: remote, userTier: userTier)
+        }
+    }
+
+    // MARK: - Subscription Resolution
+
+    nonisolated private func resolveSubscriptionState() async -> SubscriptionState {
+        do {
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+            guard subscription.isActive, let tier = subscription.tier else {
+                return .free
+            }
+            let userTier: AIChatUserTier
+            switch tier {
+            case .plus: userTier = .plus
+            case .pro: userTier = .pro
+            }
+            return SubscriptionState(userTier: userTier, hasActiveSubscription: true)
+        } catch {
+            return .free
+        }
+    }
+
+    // MARK: - Stale Selection Clearing
+
+    private func clearStaleModelSelectionIfNeeded() {
+        guard let selectedId = preferences.selectedModelId, !models.isEmpty else { return }
+
+        let selectedModel = models.first(where: { $0.id == selectedId })
+        let isStale = selectedModel == nil || selectedModel?.entityHasAccess == false
+
+        if isStale {
+            preferences.selectedModelId = nil
+            preferences.selectedModelShortName = nil
+        }
+    }
+
     // MARK: - Private
+
+    private func subscribeToGeneratingState() {
+        $aiChatStatus
+            .map { status in
+                status == .loading || status == .streaming || status == .startStreamNewPrompt
+            }
+            .removeDuplicates()
+            .sink { [weak self] isGenerating in
+                guard let self else { return }
+                self.viewController.isGenerating = isGenerating
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToStopGeneratingTap() {
+        viewController.handler.stopGeneratingButtonTappedPublisher
+            .sink { [weak self] in
+                self?.didPressStopGeneratingButton.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateModelChipVisibility() {
+        viewController.isModelChipHidden = hasSubmittedPrompt
+    }
 
     private func resetSessionState() {
         viewController.text = ""
@@ -505,6 +736,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            hasSubmittedPrompt = true
+            updateModelChipVisibility()
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
@@ -513,7 +746,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if boundUserScript != nil {
                 didSubmitPrompt.send(text)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: persistedModelId)
             }
         }
     }

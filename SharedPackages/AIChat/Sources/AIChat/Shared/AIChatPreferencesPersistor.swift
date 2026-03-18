@@ -19,14 +19,13 @@
 import Foundation
 import Persistence
 
-protocol AIChatPreferencesPersisting {
-    /// The ID of the last model selected by the user in the AI Chat omnibar.
+public protocol AIChatPreferencesPersisting {
     var selectedModelId: String? { get set }
     /// The short display name of the last selected model, used to show the button before models are fetched.
     var selectedModelShortName: String? { get set }
 }
 
-struct AIChatPreferencesPersistor: AIChatPreferencesPersisting {
+public struct AIChatPreferencesPersistor: AIChatPreferencesPersisting {
 
     enum Key: String {
         case selectedModelId = "aichat.omnibar.selected-model-id"
@@ -35,11 +34,11 @@ struct AIChatPreferencesPersistor: AIChatPreferencesPersisting {
 
     private let keyValueStore: ThrowingKeyValueStoring
 
-    init(keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
+    public init(keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
         self.keyValueStore = keyValueStore
     }
 
-    var selectedModelId: String? {
+    public var selectedModelId: String? {
         get { try? keyValueStore.object(forKey: Key.selectedModelId.rawValue) as? String }
         set {
             if let value = newValue {
@@ -50,7 +49,7 @@ struct AIChatPreferencesPersistor: AIChatPreferencesPersisting {
         }
     }
 
-    var selectedModelShortName: String? {
+    public var selectedModelShortName: String? {
         get { try? keyValueStore.object(forKey: Key.selectedModelShortName.rawValue) as? String }
         set {
             if let value = newValue {

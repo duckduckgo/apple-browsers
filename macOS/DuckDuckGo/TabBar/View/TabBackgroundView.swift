@@ -203,7 +203,8 @@ private extension TabBackgroundView {
 
         let duration = Animations.duration
 
-        let fadeAnimation: CABasicAnimation = .buildFadeAnimation(duration: duration, fromAlpha: layer.opacity, toAlpha: toAlpha)
+        let fromAlpha = layer.presentation()?.opacity ?? layer.opacity
+        let fadeAnimation: CABasicAnimation = .buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
 
         let translationAnimation: CABasicAnimation = visible
             ? .buildTranslationYAnimation(duration: duration, fromValue: Animations.slideOffsetY, toValue: .zero)

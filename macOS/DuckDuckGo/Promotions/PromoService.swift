@@ -216,6 +216,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Publisher for promo triggers.
     private let triggerPublisher: AnyPublisher<PromoTrigger, Never>
 
+    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished.
+    private let isOnboardingCompletedProvider: () -> Bool
+
     /// Triggers to be evaluated after delegate registration and deferral window ends.
     private var bufferedTriggers = Set<PromoTrigger>()
 
@@ -258,6 +261,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         historyStore: PromoHistoryStoring,
         triggerPublisher: AnyPublisher<PromoTrigger, Never>,
         initialExternalActivation: Bool = false,
+        isOnboardingCompletedProvider: @escaping () -> Bool,
         stateQueue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.promoService.state"),
         evaluationDeferralWindow: TimeInterval = 0.5,
         registrationFallbackTimeout: TimeInterval = 1.0,
@@ -268,6 +272,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         self.promos = promos
         self.historyStore = historyStore
         self.triggerPublisher = triggerPublisher
+        self.isOnboardingCompletedProvider = isOnboardingCompletedProvider
         self.stateQueue = stateQueue
         self.dateProvider = dateProvider
         self.resetDebugDate = resetDebugDate
@@ -432,6 +437,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// and showing any that are newly eligible. Triggers are evaluated in promo priority order.
     private func evaluateTriggers(_ triggers: Set<PromoTrigger>) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
+        guard isOnboardingCompletedProvider() else { return }
+
         let matchingPromos = promos.filter { $0.triggers.contains(where: triggers.contains) }
         for promo in matchingPromos {
             (promo.delegate as? PromoDelegate)?.refreshEligibility()

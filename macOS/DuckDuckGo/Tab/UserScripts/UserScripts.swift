@@ -41,6 +41,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
     let clickToLoadScript: ClickToLoadUserScript
 
+    let contentBlockerRulesScript: ContentBlockerRulesUserScript
+    let surrogatesScript: SurrogatesUserScript
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autofillScript: WebsiteAutofillUserScript
@@ -57,7 +59,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let historyViewUserScript: HistoryViewUserScript
     let newTabPageUserScript: NewTabPageUserScript?
     let serpSettingsUserScript: SERPSettingsUserScript?
-    let trackerProtectionSubfeature = TrackerProtectionSubfeature()
     let faviconScript = FaviconUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
@@ -69,6 +70,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
+        contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
+        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,
@@ -103,11 +106,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            debug: contentScopePreferences.isDebugStateEnabled,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts,
-                                           themeVariant: themeVariant,
-                                           trackerData: sourceProvider.trackerProtectionDataSource?.trackerData)
+                                           themeVariant: themeVariant)
         do {
-            let ctlEnabled = privacyConfig.isEnabled(featureKey: .clickToLoad)
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, trackerProtectionDataSource: sourceProvider.trackerProtectionDataSource, ctlEnabled: ctlEnabled))
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
@@ -195,8 +196,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }
 
-        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
-
         if let subscriptionUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
@@ -264,6 +263,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     lazy var userScripts: [UserScript] = [
         debugScript,
+        surrogatesScript,
+        contentBlockerRulesScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript

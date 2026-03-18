@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+import AIChat
 
 final class AIChatPreferencesPersistorTests: XCTestCase {
 

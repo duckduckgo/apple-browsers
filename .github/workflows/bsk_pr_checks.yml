@@ -106,7 +106,7 @@ jobs:
 
       - name: Run tests
         id: run-unit-tests
-        run: set -o pipefail && swift test --enable-swift-testing 2>swift-test-stderr.log | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+        run: set -o pipefail && swift test --enable-swift-testing | tee -a build-log.txt | grep -v "CoreData:.*NSXPCConnection\|CoreData: XPC:" | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -176,9 +176,7 @@ jobs:
         if: always()
         with:
           name: build-log.txt
-          path: |
-            SharedPackages/BrowserServicesKit/build-log.txt
-            SharedPackages/BrowserServicesKit/swift-test-stderr.log
+          path: SharedPackages/BrowserServicesKit/build-log.txt
 
       - name: Wait for crash reports to be generated
         if: failure()

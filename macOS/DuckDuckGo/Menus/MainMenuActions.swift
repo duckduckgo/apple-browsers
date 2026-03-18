@@ -520,6 +520,14 @@ extension AppDelegate {
 
     // MARK: - Debug
 
+    @objc func debugClearWebViewCache(_ sender: Any?) {
+        WKWebsiteDataStore.default().removeData(
+            ofTypes: [WKWebsiteDataTypeDiskCache,
+                      WKWebsiteDataTypeMemoryCache,
+                      WKWebsiteDataTypeOfflineWebApplicationCache],
+            modifiedSince: .distantPast) { }
+    }
+
     @MainActor
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)

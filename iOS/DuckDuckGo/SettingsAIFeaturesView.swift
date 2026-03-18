@@ -196,3 +196,13 @@ private enum FooterAction {
         }
     }
 }
+
+extension DefaultOmnibarMode: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .search: return UserText.settingsDefaultOmnibarModeSearch
+        case .duckAI: return UserText.settingsDefaultOmnibarModeDuckAI
+        case .lastUsed: return UserText.settingsDefaultOmnibarModeLastUsed
+        }
+    }
+}

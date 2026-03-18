@@ -20,21 +20,13 @@
 import Foundation
 
 /// Defines how the omnibar toggle position is determined on app launch.
-public enum DefaultOmnibarMode: String, CaseIterable, CustomStringConvertible {
+public enum DefaultOmnibarMode: String, CaseIterable {
     /// Always start in Search mode.
     case search
     /// Always start in Duck.ai mode.
     case duckAI
     /// Restore the last used toggle position.
     case lastUsed
-
-    public var description: String {
-        switch self {
-        case .search: return "Search"
-        case .duckAI: return "Duck.ai"
-        case .lastUsed: return "Last Used"
-        }
-    }
 }
 
 public protocol AIChatSettingsProvider {

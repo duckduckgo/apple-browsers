@@ -163,7 +163,6 @@ struct SettingsAIFeaturesView: View {
 }
 
 private extension SettingsAIFeaturesView {
-
     var footerAttributedString: AttributedString {
         var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
         var link = AttributedString(UserText.subscriptionFeedback)

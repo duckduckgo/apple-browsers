@@ -381,6 +381,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController?
+    let dockStateChecker: DockStateChecking
     var dockCustomization: DockCustomization?
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
@@ -414,7 +415,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    init(dockCustomization: DockCustomization?) {
+    init(dockCustomization: DockCustomization?, dockStateChecker: DockStateChecking) {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -422,6 +423,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
+        self.dockStateChecker = dockStateChecker
         self.dockCustomization = dockCustomization
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
@@ -1435,9 +1437,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily, doNotEnforcePrefix: true)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily, doNotEnforcePrefix: true)
-        if let dockCustomization {
-            PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
-        }
+        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockStateChecker.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
     }
 
     private func fireDailyFireWindowConfigurationPixels() {

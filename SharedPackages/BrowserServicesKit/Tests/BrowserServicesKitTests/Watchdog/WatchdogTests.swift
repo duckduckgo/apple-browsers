@@ -531,6 +531,7 @@ final class WatchdogTests: XCTestCase {
     }
 
     func testCooldownDoesNotAffectRecoveredEvents() async throws {
+        XCTFail("Forced failure to verify CI annotation surfacing")
         let store = FiredEventsStore()
         let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
             store.append(event)

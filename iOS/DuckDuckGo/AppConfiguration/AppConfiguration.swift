@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import WidgetKit
 import Core
@@ -49,6 +50,7 @@ struct AppConfiguration {
         clearTemporaryDirectory()
         try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
         migrateAIChatSettings()
+        setDefaultOmnibarModeIfNeeded()
         migratePromptCooldown()
 
         WidgetCenter.shared.reloadAllTimelines()
@@ -66,6 +68,18 @@ struct AppConfiguration {
             }
             return sharedUserDefaults ?? UserDefaults()
         })
+    }
+
+    /// Set the default omnibar mode for new users on first launch.
+    /// Must run before ATB is assigned (in `finalize`) so `hasInstallStatistics` correctly
+    /// distinguishes new installs (false) from existing users updating (true).
+    private func setDefaultOmnibarModeIfNeeded() {
+        let store = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
+        let key = LegacyAiChatUserDefaultsKeys.defaultOmnibarModeKey
+        guard store.object(forKey: key) == nil else { return }
+        let isExistingUser = StatisticsUserDefaults().hasInstallStatistics
+        let defaultMode: DefaultOmnibarMode = isExistingUser ? .search : .lastUsed
+        store.set(defaultMode.rawValue, forKey: key)
     }
 
     /// Migrate Default Browser prompt cooldown to global modal prompt cooldown.

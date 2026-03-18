@@ -262,6 +262,9 @@ final class AppearancePreferences: ObservableObject {
 
     @Published var themeAppearance: ThemeAppearance {
         didSet {
+            guard oldValue != themeAppearance else {
+                return
+            }
             persistor.themeAppearance = themeAppearance.rawValue
             updateUserInterfaceStyle()
         }
@@ -269,6 +272,9 @@ final class AppearancePreferences: ObservableObject {
 
     @Published var themeName: ThemeName {
         didSet {
+            guard oldValue != themeName else {
+                return
+            }
             persistor.themeName = themeName.rawValue
         }
     }

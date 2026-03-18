@@ -86,7 +86,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         if case .fireMode = capturedRequest?.scope {
             // Expected scope
         } else {
-            XCTFail("Expected scope to be .all")
+            XCTFail("Expected scope to be .fireMode")
         }
     }
     

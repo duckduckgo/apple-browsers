@@ -33,6 +33,11 @@ final class TabsModelProviderTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.fireMode]
     }
 
+    override func tearDown() {
+        featureFlagger = nil
+        super.tearDown()
+    }
+
     // MARK: - Aggregate Count
     
     func testWhenNormalModelHasDefaultTabAndFireModelIsEmptyThenAggregateCountIsOne() throws {

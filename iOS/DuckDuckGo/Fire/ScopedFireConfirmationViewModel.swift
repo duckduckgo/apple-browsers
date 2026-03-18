@@ -153,7 +153,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             return UserText.scopedFireConfirmationNewTabsInfo
         }
         
-        // Skip explainatory subtitles for fire mode
+        // Skip explanatory subtitles for fire mode
         guard browsingMode != .fire else {
             return nil
         }

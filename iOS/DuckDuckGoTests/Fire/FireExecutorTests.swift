@@ -691,6 +691,21 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
         XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
     }
+
+    func testWhenAutoClearAIChatHistoryDisabled_ThenContextualChatNotDeleted() async {
+        // Given
+        let contextualChatID = "contextual-chat-id-789"
+        let tabViewModel = makeTabViewModelWithContextualChat(contextualChatID: contextualChatID)
+        mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab with contextual chat but auto-clear disabled
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Contextual chat should NOT be deleted because user setting is disabled
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
+    }
     
     // MARK: - Fire Mode Scope Tests
 
@@ -712,22 +727,5 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockTabManager.prepareCurrentTabBrowsingMode, .fire)
         XCTAssertTrue(mockTabManager.removeAllCalled)
         XCTAssertEqual(mockTabManager.removeAllBrowsingMode, .fire)
-    }
-
-    // MARK: - Contextual Chat Deletion Tests (Data Burn)
-
-    func testWhenAutoClearAIChatHistoryDisabled_ThenContextualChatNotDeleted() async {
-        // Given
-        let contextualChatID = "contextual-chat-id-789"
-        let tabViewModel = makeTabViewModelWithContextualChat(contextualChatID: contextualChatID)
-        mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
-        let executor = makeFireExecutor()
-        
-        // When - Burn data for a tab with contextual chat but auto-clear disabled
-        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
-        
-        // Then - Contextual chat should NOT be deleted because user setting is disabled
-        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
-        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
     }
 }

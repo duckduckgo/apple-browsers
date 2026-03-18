@@ -36,7 +36,7 @@ protocol TabManaging {
     var currentBrowsingMode: BrowsingMode { get }
     @MainActor func prepareAllTabsExceptCurrentForDataClearing(browsingMode: BrowsingMode?)
     @MainActor func prepareCurrentTabForDataClearing(browsingMode: BrowsingMode?)
-    func removeAll(browsingMode: BrowsingMode?)
+    @MainActor func removeAll(browsingMode: BrowsingMode?)
     @MainActor func viewModelForCurrentTab() -> TabViewModel?
     @MainActor func prepareTab(_ tab: Tab)
     @MainActor func isCurrentTab(_ tab: Tab) -> Bool
@@ -482,6 +482,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     /// Warning! This will leave the underlying tabs empty.  This is intentional so that the the
     ///  Tab Switcher's UICollectionView 'delete items' function doesn't complain about mis-matching
     ///   number of items.
+    @MainActor
     func bulkRemoveTabs(_ tabs: [Tab], in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         model.removeTabs(tabs)
@@ -489,6 +490,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         save()
     }
 
+    @MainActor
     func remove(tab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         model.remove(tab: tab)
@@ -496,6 +498,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         save()
     }
 
+    @MainActor
     func replace(tab: Tab, withNewTab newTab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         // In normal mode, removing the last tab auto-inserts a blank tab, so we skip
@@ -512,6 +515,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         save()
     }
 
+    @MainActor
     private func removeFromCache(_ controller: TabViewController) {
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
@@ -615,6 +619,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     // MARK: - Tab Cleanup
     
+    @MainActor
     private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
@@ -657,6 +662,7 @@ extension TabManager {
         }
     }
     
+    @MainActor
     func removeAll(browsingMode: BrowsingMode? = nil) {
         let tabsData = tabsRemovalData(browsingMode: browsingMode)
 

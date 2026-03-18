@@ -551,6 +551,25 @@ class LazyBookmarkFolderMenuDelegateTests: XCTestCase {
         XCTAssertEqual(menu.items.count, countAfterFirstOpen + 1, "Sentinel should still be present — menu was not rebuilt")
     }
 
+    func testEmptyFolderHasNoSubmenu() {
+        // GIVEN
+        let folder = BookmarkFolder(id: "1", title: "Empty Folder")
+        // no children added
+        let folderViewModel = BookmarkViewModel(entity: folder)
+
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [folderViewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu)
+
+        // THEN
+        let folderItem = menu.items.first
+        XCTAssertNil(folderItem?.submenu, "Empty folder should not have a submenu")
+    }
+
     func testFolderChildrenGetLazySubmenus() {
         // GIVEN
         let childBookmark = Bookmark(id: "2", url: "https://child.com", title: "Child", isFavorite: false)

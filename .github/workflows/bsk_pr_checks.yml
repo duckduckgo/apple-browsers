@@ -101,16 +101,12 @@ jobs:
 
       - name: Start log stream in background
         run: |
-          log stream --debug --info --predicate 'process == "xctest" OR process == "swiftpm-xctest-helper"' --style syslog > xctest.log 2>&1 &
+          log stream --debug --info --predicate '(process == "xctest" OR process == "swiftpm-xctest-helper") AND subsystem != "com.apple.coredata"' --style syslog > xctest.log 2>&1 &
           echo $! > log_stream.pid
 
       - name: Run tests
         id: run-unit-tests
-        run: >
-          set -o pipefail && swift test --enable-swift-testing
-          | tee -a build-log.txt
-          | grep -vE "CoreData: error:|CoreData: XPC:"
-          | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+        run: set -o pipefail && swift test --enable-swift-testing | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'

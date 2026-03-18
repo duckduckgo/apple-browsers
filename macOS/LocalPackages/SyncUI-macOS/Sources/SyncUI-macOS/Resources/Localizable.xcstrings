@@ -3003,10 +3003,58 @@
       "comment" : "Footer / caption on the restore synced data section in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los datos de Sync & Backup no se pueden recuperar después de 18 meses de inactividad. [Más información](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les données Sync & Backup ne peuvent pas être récupérées après 18 mois d'inactivité. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I dati Sync & Backup non possono essere recuperati dopo 18 mesi di inattività. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danych Sync & Backup nie można odzyskać po 18 miesiącach braku aktywności. [Dowiedz się więcej](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível recuperar os dados de Sync & Backup após 18 meses de inatividade. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Резервные копии Sync & Backup не восстанавливаются после 18 месяцев бездействия. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
           }
         }
       }
@@ -7457,8 +7505,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Alle Personen, die Zugriff auf diesen Code haben, können auf deine synchronisierten Daten zugreifen. Bewahre ihn daher bitte an einem sicheren Ort auf."
+            "state" : "translated",
+            "value" : "Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden."
           }
         },
         "en" : {
@@ -7469,44 +7517,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cualquiera que tenga acceso a este código puede acceder a tus datos sincronizados, así que guárdalo en un lugar seguro."
+            "state" : "translated",
+            "value" : "Los datos de Sync & Backup no se pueden recuperar después de 18 meses de inactividad."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Toute personne ayant accès à ce code peut accéder à vos données synchronisées. Veuillez donc le garder en lieu sûr."
+            "state" : "translated",
+            "value" : "Les données Sync & Backup ne peuvent pas être récupérées après 18 mois d'inactivité."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Chiunque abbia accesso a questo codice può accedere ai tuoi dati sincronizzati, quindi conservalo in un luogo sicuro."
+            "state" : "translated",
+            "value" : "I dati di Sync & Backup non possono essere recuperati dopo 18 mesi di inattività."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Iedereen met toegang tot deze code kan bij je gesynchroniseerde gegevens. Bewaar de code daarom op een veilige plek."
+            "state" : "translated",
+            "value" : "Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Każdy, kto ma dostęp do tego kodu, może uzyskać dostęp do zsynchronizowanych danych, więc przechowuj go w bezpiecznym miejscu."
+            "state" : "translated",
+            "value" : "Danych Sync & Backup nie można odzyskać po 18 miesiącach braku aktywności."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Qualquer pessoa com acesso a este código pode aceder aos teus dados sincronizados, por isso, guarda o código num local seguro."
+            "state" : "translated",
+            "value" : "Não é possível recuperar os dados de Sync & Backup após 18 meses de inatividade."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Этот код позволяет получить доступ к вашим синхронизированным данным, поэтому храните его в надежном месте."
+            "state" : "translated",
+            "value" : "Резервные копии Sync & Backup не восстанавливаются после 18 месяцев бездействия."
           }
         }
       }

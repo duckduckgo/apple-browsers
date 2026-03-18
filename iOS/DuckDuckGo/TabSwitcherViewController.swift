@@ -451,9 +451,10 @@ class TabSwitcherViewController: UIViewController {
         guard fireModeCapability.isFireModeEnabled else {
             return
         }
-        let hostingController = UIHostingController(rootView: FireModeEmptyStateView(onNewFireTab: { [weak self] in
+        let emptyStateView = FireModeEmptyStateView(type: .tabSwitcher(onNewFireTab: { [weak self] in
             self?.addNewTab()
         }))
+        let hostingController = UIHostingController(rootView: emptyStateView)
         hostingController.view.backgroundColor = .clear
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
@@ -782,9 +783,11 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
            let tab = tabsModel.get(tabAt: indexPath.row) {
             tab.removeObserver(self)
             tab.addObserver(self)
+            let isFireModeEnabled = fireModeCapability.isFireModeEnabled
             cell.update(withTab: tab,
                         isSelectionModeEnabled: self.isEditing,
-                        preview: previewsSource.preview(for: tab))
+                        preview: previewsSource.preview(for: tab),
+                        isFireModeEnabled: isFireModeEnabled)
         }
         
         return cell
@@ -929,9 +932,11 @@ extension TabSwitcherViewController: TabObserver {
             return
         }
 
+        let isFireModeEnabled = fireModeCapability.isFireModeEnabled
         cell.update(withTab: tab,
                     isSelectionModeEnabled: self.isEditing,
-                    preview: previewsSource.preview(for: tab))
+                    preview: previewsSource.preview(for: tab),
+                    isFireModeEnabled: isFireModeEnabled)
     }
 }
 

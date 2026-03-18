@@ -25,8 +25,8 @@ final class MockTabInteractionStateSource: TabInteractionStateSource {
     func saveState(_ state: Any?, for tab: Tab) { }
     func popLastStateForTab(_ tab: Tab) -> Data? { return nil }
     func removeStateForTab(_ tab: Tab) { }
-    func removeAll(excluding excludedTabs: [Tab]) { }
-    func urlsToRemove(excluding excludedTabs: [Tab]) -> [URL] { [] }
-    func removeStates(at urls: [URL], isCancelled: (() -> Bool)?) { }
+    func removeAll(excluding excludedTabs: [Tab]) -> Result<Void, Error> { return .success(()) }
+    func urlsToRemove(excluding excludedTabs: [Tab]) -> Result<[URL], Error> { return .success([]) }
+    func removeStates(at urls: [URL], isCancelled: (() -> Bool)?) -> Result<Void, Error> { return .success(()) }
 
 }

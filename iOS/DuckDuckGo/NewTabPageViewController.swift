@@ -78,7 +78,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
 
-        newTabPageViewModel = NewTabPageViewModel()
+        newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)

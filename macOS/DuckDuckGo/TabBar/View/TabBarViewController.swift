@@ -179,9 +179,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var leftSideStackLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var rightSideStackView: NSStackView!
     private var duckAIChromeControlContainer: ColorView?
+    private var duckAIChromeBlurView: NSVisualEffectView?
     private var duckAIChromeTitleButton: MouseOverButton?
     private var duckAIChromeSidebarButton: MouseOverButton?
     private var duckAIChromeDivider: ColorView?
+
+    private var isFireWindow: Bool {
+        tabCollectionViewModel.isBurner
+    }
 
     private var isChromeSidebarFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
@@ -585,6 +590,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             sidebarButton.isHidden = true
             divider.isHidden = true
             container.isHidden = true
+            updateDuckAIChromeVibrancyBackground()
             return
         }
 
@@ -602,14 +608,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         if !duckAIHidden && !sidebarHidden {
             titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
             sidebarButton.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
+            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
         } else if !duckAIHidden {
             titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
+            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
         } else if !sidebarHidden {
             sidebarButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
             container.backgroundColor = .clear
         }
+
+        updateDuckAIChromeVibrancyBackground()
     }
 
     func refreshDuckAIChromeButtonsVisibility() {
@@ -629,10 +637,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         guard let duckAIChromeControlContainer, let duckAIChromeTitleButton, let duckAIChromeSidebarButton else { return }
 
         let colorsProvider = theme.colorsProvider
-        duckAIChromeControlContainer.backgroundColor = colorsProvider.buttonMouseOverColor
+        duckAIChromeControlContainer.backgroundColor = isFireWindow ? .clear : colorsProvider.buttonMouseOverColor
         duckAIChromeControlContainer.cornerRadius = theme.toolbarButtonsCornerRadius
         duckAIChromeControlContainer.borderColor = nil
         duckAIChromeControlContainer.borderWidth = 0
+
+        updateDuckAIChromeVibrancyBackground()
 
         let titleFont = NSFont.systemFont(ofSize: 13)
         duckAIChromeTitleButton.attributedTitle = NSAttributedString(string: UserText.aiChatTitle, attributes: [
@@ -681,7 +691,49 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             colorsProvider.separatorActiveColor : colorsProvider.separatorColor
     }
 
+    private func updateDuckAIChromeVibrancyBackground() {
+        guard let duckAIChromeControlContainer else { return }
+
+        if isFireWindow {
+            if duckAIChromeBlurView == nil {
+                let vibrancyView = NSVisualEffectView()
+                vibrancyView.translatesAutoresizingMaskIntoConstraints = false
+                vibrancyView.material = .hudWindow
+                vibrancyView.blendingMode = .withinWindow
+                vibrancyView.state = .active
+                vibrancyView.wantsLayer = true
+                vibrancyView.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
+                vibrancyView.layer?.masksToBounds = true
+
+                duckAIChromeControlContainer.addSubview(vibrancyView, positioned: .below, relativeTo: duckAIChromeControlContainer.subviews.first)
+
+                NSLayoutConstraint.activate([
+                    vibrancyView.leadingAnchor.constraint(equalTo: duckAIChromeControlContainer.leadingAnchor),
+                    vibrancyView.trailingAnchor.constraint(equalTo: duckAIChromeControlContainer.trailingAnchor),
+                    vibrancyView.topAnchor.constraint(equalTo: duckAIChromeControlContainer.topAnchor),
+                    vibrancyView.bottomAnchor.constraint(equalTo: duckAIChromeControlContainer.bottomAnchor)
+                ])
+                duckAIChromeBlurView = vibrancyView
+            }
+
+            let shadow = NSShadow()
+            shadow.shadowColor = NSColor.black.withAlphaComponent(0.12)
+            shadow.shadowOffset = CGSize(width: 0, height: -0.5)
+            shadow.shadowBlurRadius = 1.5
+            duckAIChromeControlContainer.shadow = shadow
+            duckAIChromeControlContainer.wantsLayer = true
+            duckAIChromeControlContainer.layer?.masksToBounds = false
+        } else {
+            duckAIChromeBlurView?.removeFromSuperview()
+            duckAIChromeBlurView = nil
+            duckAIChromeControlContainer.shadow = nil
+        }
+    }
+
     private func removeDuckAIChromeSegmentedControl() {
+        duckAIChromeBlurView?.removeFromSuperview()
+        duckAIChromeBlurView = nil
+
         guard let duckAIChromeControlContainer else { return }
         rightSideStackView.removeArrangedSubview(duckAIChromeControlContainer)
         duckAIChromeControlContainer.removeFromSuperview()

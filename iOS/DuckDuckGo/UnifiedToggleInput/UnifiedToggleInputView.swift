@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
 import DesignResourcesKit
 import UIKit
@@ -103,10 +104,30 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
     }
 
+    var isGenerating: Bool = false {
+        didSet { toolsToolbar.isGenerating = isGenerating }
+    }
+
+    var modelName: String {
+        get { toolsToolbar.modelName }
+        set { toolsToolbar.modelName = newValue }
+    }
+
+    var modelPickerMenu: UIMenu? {
+        get { toolsToolbar.modelPickerMenu }
+        set { toolsToolbar.modelPickerMenu = newValue }
+    }
+
+    var isModelChipHidden: Bool {
+        get { toolsToolbar.isModelChipHidden }
+        set { toolsToolbar.isModelChipHidden = newValue }
+    }
+
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
     /// so that sibling views (e.g. the content container) animate in sync.
     /// The owning view controller sets this.
     var onNeedsHierarchyLayout: (() -> Void)?
+    var onAttachmentsLayoutDidChange: (() -> Void)?
 
     var isVoiceSearchAvailable = false {
         didSet { handler.isVoiceSearchEnabled = isVoiceSearchAvailable }
@@ -128,6 +149,38 @@ final class UnifiedToggleInputView: UIView {
         set { handler.isTopBarPosition = newValue }
     }
 
+    // MARK: - Attachment Callbacks
+
+    var onAttachTapped: (() -> Void)?
+    var onAttachmentRemoved: ((UUID) -> Void)?
+
+    // MARK: - Attachment API
+
+    var isImageButtonHidden: Bool {
+        get { toolsToolbar.isImageButtonHidden }
+        set { toolsToolbar.isImageButtonHidden = newValue }
+    }
+
+    var isAttachmentsFull: Bool {
+        attachmentsStrip.isFull
+    }
+
+    var currentAttachments: [AIChatImageAttachment] {
+        attachmentsStrip.attachments
+    }
+
+    func addAttachment(_ attachment: AIChatImageAttachment) {
+        attachmentsStrip.addAttachment(attachment)
+    }
+
+    func removeAttachment(id: UUID) {
+        attachmentsStrip.removeAttachment(id: id)
+    }
+
+    func removeAllAttachments() {
+        attachmentsStrip.removeAllAttachments()
+    }
+
     // MARK: - Components
 
     private let handler: UnifiedToggleInputHandler
@@ -138,6 +191,7 @@ final class UnifiedToggleInputView: UIView {
 
     private let cardView = UIView()
     private let toggleView = UnifiedToggleInputToggleView()
+    private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
     private lazy var dismissButton: UIButton = makeDismissButton()
 
@@ -199,6 +253,7 @@ final class UnifiedToggleInputView: UIView {
     private var toggleHeightConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
+    private var attachmentsStripHeightConstraint: NSLayoutConstraint!
     private var toolbarHeightConstraint: NSLayoutConstraint!
     private var dismissButtonTopConstraint: NSLayoutConstraint!
     private var dismissButtonCenterYConstraint: NSLayoutConstraint!
@@ -307,6 +362,7 @@ final class UnifiedToggleInputView: UIView {
     func setExpanded(_ expanded: Bool, animated: Bool) {
         guard expanded != isExpanded else { return }
         isExpanded = expanded
+        handler.isExpanded = expanded
 
         let toggleHeight: CGFloat = (expanded && isToggleEnabled) ? Constants.toggleHeight : 0
         let showToolbar = expanded && isToggleEnabled && toggleView.selectedMode == .aiChat
@@ -352,6 +408,7 @@ final class UnifiedToggleInputView: UIView {
             self.toggleView.alpha = (expanded && self.isToggleEnabled) ? 1 : 0
             self.toolbarHeightConstraint.constant = showToolbar ? 56 : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
+            self.updateAttachmentsStripLayout()
         }
 
         if animated {
@@ -416,17 +473,30 @@ final class UnifiedToggleInputView: UIView {
         toolbarHeightConstraint.constant = showToolbar ? 56 : 0
         cardView.layer.borderWidth = showToolbar ? 0.5 : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
+        expandedShadow0.isHidden = !showToolbar
+        expandedShadow1.isHidden = !showToolbar
+        updateAttachmentsStripLayout()
 
         guard animated else {
             toolsToolbar.alpha = showToolbar ? 1 : 0
+            attachmentsStrip.alpha = attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
+            layoutIfNeeded()
             return
         }
 
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
+            self.attachmentsStrip.alpha = self.attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             self.layoutIfNeeded()
             self.onNeedsHierarchyLayout?()
         }
+    }
+
+    private func updateAttachmentsStripLayout() {
+        let hasImages = !attachmentsStrip.attachments.isEmpty
+        let showStrip = hasImages && isExpanded && handler.currentToggleState == .aiChat
+        attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
+        attachmentsStrip.alpha = showStrip ? 1 : 0
     }
 }
 
@@ -468,12 +538,33 @@ private extension UnifiedToggleInputView {
         textEntryView.placeholderTextColor = UIColor(designSystemColor: .textTertiary)
         addSubview(textEntryView)
 
+        attachmentsStrip.translatesAutoresizingMaskIntoConstraints = false
+        attachmentsStrip.clipsToBounds = false
+        attachmentsStrip.alpha = 0
+        attachmentsStrip.onAttachmentsChanged = { [weak self] in
+            guard let self else { return }
+            updateAttachmentsStripLayout()
+            layoutIfNeeded()
+            onNeedsHierarchyLayout?()
+            onAttachmentsLayoutDidChange?()
+        }
+        attachmentsStrip.onAttachmentRemoved = { [weak self] id in
+            self?.onAttachmentRemoved?(id)
+        }
+        addSubview(attachmentsStrip)
+
         toolsToolbar.translatesAutoresizingMaskIntoConstraints = false
         toolsToolbar.clipsToBounds = true
         toolsToolbar.alpha = 0
         toolsToolbar.onSubmitTapped = { [weak self] in
             guard let self else { return }
             handler.submitText(handler.currentText)
+        }
+        toolsToolbar.onStopGeneratingTapped = { [weak self] in
+            self?.handler.stopGeneratingButtonTapped()
+        }
+        toolsToolbar.onAttachTapped = { [weak self] in
+            self?.onAttachTapped?()
         }
         addSubview(toolsToolbar)
 
@@ -506,6 +597,7 @@ private extension UnifiedToggleInputView {
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
+        attachmentsStripHeightConstraint = attachmentsStrip.heightAnchor.constraint(equalToConstant: 0)
         toolbarHeightConstraint = toolsToolbar.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
@@ -523,7 +615,12 @@ private extension UnifiedToggleInputView {
             textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
 
-            toolsToolbar.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            attachmentsStrip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            attachmentsStrip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            attachmentsStripHeightConstraint,
+
+            toolsToolbar.topAnchor.constraint(equalTo: attachmentsStrip.bottomAnchor),
             toolsToolbar.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             toolsToolbar.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             toolbarBottomConstraint,

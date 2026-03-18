@@ -17,40 +17,44 @@
 //
 
 import AppKit
+import QuartzCore
 
-/// Renders the Tab Background in a single CALayer: This helps us avoid Core Animation artifacts, when animating multiple layers at the concurrently
-///
+/// Renders the Tab Background using a CAShapeLayer so path and fill are updated without CPU-bound draw(_:).
 final class TabBackgroundShapeView: NSView {
+
+    private var lastPathSize: NSSize = .zero
 
     var backgroundColor: NSColor = .clear {
         didSet {
             guard oldValue != backgroundColor else { return }
-            needsDisplay = true
+            shapeLayer.fillColor = backgroundColor.cgColor
         }
     }
 
     var isDragged: Bool = false {
         didSet {
             guard oldValue != isDragged else { return }
-            needsDisplay = true
+            refreshShapePath()
         }
     }
 
     var tabRampSize: NSSize? {
         didSet {
             guard oldValue != tabRampSize else { return }
-            needsDisplay = true
+            refreshShapePath()
         }
     }
 
     var tabCornerRadius: CGFloat = .zero {
         didSet {
             guard oldValue != tabCornerRadius else { return }
-            needsDisplay = true
+            refreshShapePath()
         }
     }
 
-    // MARK: - Private Properties
+    // MARK: - Private
+
+    private let shapeLayer = CAShapeLayer()
 
     private var backgroundRoundedCorners: [NSBezierPath.Corners] {
         isDragged ? [.topLeft, .topRight, .bottomLeft, .bottomRight] : [.bottomLeft, .bottomRight]
@@ -60,33 +64,71 @@ final class TabBackgroundShapeView: NSView {
         !isDragged
     }
 
-    // MARK: - Drawing
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+    }
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        wantsLayer = true
+    }
 
-        guard let context = NSGraphicsContext.current?.cgContext else {
+    override func layout() {
+        super.layout()
+
+        refreshShapeBoundsAndPath()
+    }
+}
+
+// MARK: - Core Graphics Helpers
+
+private extension TabBackgroundShapeView {
+
+    private func refreshShapeBoundsAndPath() {
+        guard let layer else {
             return
         }
 
-        let backgroundPath = NSBezierPath(roundedRect: bounds, forCorners: backgroundRoundedCorners, cornerRadius: tabCornerRadius)
+        if shapeLayer.superlayer == nil {
+            layer.addSublayer(shapeLayer)
+        }
 
-        backgroundColor.setFill()
-        backgroundPath.fill()
+        if shapeLayer.frame != bounds {
+            shapeLayer.frame = bounds
+        }
+
+        if lastPathSize != bounds.size {
+            refreshShapePath()
+            lastPathSize = bounds.size
+        }
+    }
+
+    private func refreshShapePath() {
+        shapeLayer.path = buildBackgroundCGPath()
+    }
+
+    private func buildBackgroundCGPath() -> CGPath? {
+        guard bounds.width > 0, bounds.height > 0 else {
+            return nil
+        }
+
+        let backgroundPath = NSBezierPath(roundedRect: bounds, forCorners: backgroundRoundedCorners, cornerRadius: tabCornerRadius).asCGPath()
 
         guard shouldDisplayRamps, let tabRampSize else {
-            return
+            return backgroundPath
         }
 
-        context.translateBy(x: tabRampSize.width * -1, y: 0)
-        NSBezierPath
-            .leadingRampPath(size: tabRampSize)
-            .fill()
+        let outputPath = CGMutablePath()
+        outputPath.addPath(backgroundPath)
 
-        context.translateBy(x: bounds.width + tabRampSize.width, y: 0)
-        NSBezierPath
-            .trailingRampPath(size: tabRampSize)
-            .fill()
+        let leadingRamp = NSBezierPath.leadingRampPath(size: tabRampSize).asCGPath()
+        outputPath.addPath(leadingRamp, transform: CGAffineTransform(translationX: -tabRampSize.width, y: 0))
+
+        let trailingRamp = NSBezierPath.trailingRampPath(size: tabRampSize).asCGPath()
+        outputPath.addPath(trailingRamp, transform: CGAffineTransform(translationX: bounds.width, y: 0))
+
+        return outputPath
     }
 }
 

@@ -25,9 +25,9 @@ protocol TabInteractionStateSource {
     func saveState(_ state: Any?, for tab: Tab)
     func popLastStateForTab(_ tab: Tab) -> Data?
     func removeStateForTab(_ tab: Tab)
-    func removeAll(excluding excludedTabs: [Tab])
-    func urlsToRemove(excluding excludedTabs: [Tab]) -> [URL]
-    func removeStates(at urls: [URL], isCancelled: (() -> Bool)?)
+    func removeAll(excluding excludedTabs: [Tab]) -> Result<Void, Error>
+    func urlsToRemove(excluding excludedTabs: [Tab]) -> Result<[URL], Error>
+    func removeStates(at urls: [URL], isCancelled: (() -> Bool)?) -> Result<Void, Error>
 }
 
 protocol TabInteractionStateSourceDebugging {
@@ -114,28 +114,45 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
         try? fileManager.removeItem(at: tabCacheLocation)
     }
 
-    func removeAll(excluding excludedTabs: [Tab]) {
-        let urls = urlsToRemove(excluding: excludedTabs)
-        removeStates(at: urls)
-    }
-
-    func urlsToRemove(excluding excludedTabs: [Tab]) -> [URL] {
-        guard let allCacheFiles = try? allCacheFiles() else {
-            return []
-        }
-        let excludedUIDs = Set(excludedTabs.compactMap { $0.uid })
-        return allCacheFiles.filter { file in
-            !excludedUIDs.contains(file.lastPathComponent)
+    func removeAll(excluding excludedTabs: [Tab]) -> Result<Void, Error> {
+        let urlsResult = urlsToRemove(excluding: excludedTabs)
+        switch urlsResult {
+        case .success(let urls):
+            return removeStates(at: urls)
+        case .failure(let error):
+            return .failure(error)
         }
     }
 
-    func removeStates(at urls: [URL], isCancelled: (() -> Bool)? = nil) {
+    func urlsToRemove(excluding excludedTabs: [Tab]) -> Result<[URL], Error> {
+        do {
+            let allCacheFiles = try allCacheFiles()
+            let excludedUIDs = Set(excludedTabs.compactMap { $0.uid })
+            let urls = allCacheFiles.filter { file in
+                !excludedUIDs.contains(file.lastPathComponent)
+            }
+            return .success(urls)
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    func removeStates(at urls: [URL], isCancelled: (() -> Bool)? = nil) -> Result<Void, Error> {
+        var encounteredError: Error?
         for url in urls {
             if isCancelled?() == true {
                 break
             }
-            try? fileManager.removeItem(at: url)
+            do {
+                try fileManager.removeItem(at: url)
+            } catch {
+                encounteredError = error
+            }
         }
+        if let error = encounteredError {
+            return .failure(error)
+        }
+        return .success(())
     }
 
     func allCacheFiles() throws -> [URL] {

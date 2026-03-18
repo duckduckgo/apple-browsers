@@ -117,8 +117,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     }
 
-    func clearHeldURLData() {
-
+    func clearHeldURLData() -> Result<Void, Error> {
+        return .success(())
     }
 
     func fireButtonPulseStarted() {
@@ -184,8 +184,9 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func resumeRegularFlow() {}
 
-    func clearHeldURLData() {
+    func clearHeldURLData() -> Result<Void, Error> {
         clearHeldURLDataCallCount += 1
+        return .success(())
     }
 
     func fireButtonPulseStarted() {}

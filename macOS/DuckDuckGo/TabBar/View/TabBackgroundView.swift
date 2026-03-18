@@ -24,7 +24,7 @@ final class TabBackgroundView: NSView {
     // MARK: - Constants
 
     private enum Animations {
-        static let duration: TimeInterval = 0.25
+        static let duration: TimeInterval = 0.15
         static let opacityVisible: Float = 1
         static let opacityHidden: Float = 0
         static let overlayKey = "overlayAnimation"
@@ -182,7 +182,7 @@ private extension TabBackgroundView {
 
         let duration = Animations.duration
         let fromAlpha = layer.presentation()?.opacity ?? layer.opacity
-        let animation = CASpringAnimation.buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
+        let animation = CABasicAnimation.buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
 
         layer.add(animation, forKey: Animations.overlayKey)
         layer.opacity = toAlpha
@@ -203,7 +203,8 @@ private extension TabBackgroundView {
 
         let duration = Animations.duration
 
-        let fadeAnimation: CASpringAnimation = .buildFadeAnimation(duration: duration, fromAlpha: layer.opacity, toAlpha: toAlpha)
+        let fromAlpha = layer.presentation()?.opacity ?? layer.opacity
+        let fadeAnimation: CABasicAnimation = .buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
 
         let translationAnimation: CABasicAnimation = visible
             ? .buildTranslationYAnimation(duration: duration, fromValue: Animations.slideOffsetY, toValue: .zero)

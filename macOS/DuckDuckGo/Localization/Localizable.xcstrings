@@ -58848,14 +58848,14 @@
         }
       }
     },
-    "new-right-tab.tab" : {
-      "comment" : "Menu item. Adds a new Tab to the Right of the Active one",
+    "new-tab-on-right.tab" : {
+      "comment" : "Menu item. Adds a New Tab to the Right of the Active one",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "New Tab to the Right"
+            "value" : "New Tab on Right"
           }
         }
       }

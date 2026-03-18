@@ -1958,6 +1958,10 @@ class MainViewController: UIViewController {
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
+
+        DispatchQueue.main.async {
+            self.viewCoordinator.navigationBarContainer.superview?.setNeedsUpdateConstraints()
+        }
     }
 
     private func deferredFireOrientationPixel() {

@@ -631,11 +631,11 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    func moveTab(at fromIndex: Int, to otherViewModel: TabCollectionViewModel, at toIndex: Int) {
-        moveTab(at: .unpinned(fromIndex), to: otherViewModel, at: .unpinned(toIndex))
+    func moveTab(at fromIndex: Int, to otherViewModel: TabCollectionViewModel, at toIndex: Int, selected: Bool = true) {
+        moveTab(at: .unpinned(fromIndex), to: otherViewModel, at: .unpinned(toIndex), selected: selected)
     }
 
-    func moveTab(at fromIndex: TabIndex, to otherViewModel: TabCollectionViewModel, at toIndex: TabIndex) {
+    func moveTab(at fromIndex: TabIndex, to otherViewModel: TabCollectionViewModel, at toIndex: TabIndex, selected: Bool = true) {
         assert(self !== otherViewModel)
         guard changesEnabled else { return }
 
@@ -652,10 +652,19 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        didRemoveTab(tab: movedTab, at: fromIndex, withParent: parentTab)
+        defer {
+            otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: selected)
+        }
 
-        otherViewModel.selectWithoutResettingState(at: toIndex)
-        otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
+        if selected {
+            didRemoveTab(tab: movedTab, at: fromIndex, withParent: parentTab)
+            otherViewModel.selectWithoutResettingState(at: toIndex)
+            return
+        }
+
+        performAndAdjustSelectedTab {
+            didRemoveTab(tab: movedTab, at: fromIndex, withParent: parentTab)
+        }
     }
 
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
@@ -780,13 +789,32 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    func moveTab(at index: TabIndex, to newIndex: TabIndex) {
+    func moveTab(at index: TabIndex, to newIndex: TabIndex, selected: Bool = true) {
         guard changesEnabled, index.isInSameSection(as: newIndex), let tabCollection = tabCollection(for: index) else { return }
+        defer {
+            delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
+        }
 
-        tabCollection.moveTab(at: index.item, to: newIndex.item)
-        selectWithoutResettingState(at: newIndex)
+        if selected {
+            tabCollection.moveTab(at: index.item, to: newIndex.item)
+            selectWithoutResettingState(at: newIndex)
+            return
+        }
 
-        delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
+        performAndAdjustSelectedTab {
+            tabCollection.moveTab(at: index.item, to: newIndex.item)
+        }
+    }
+
+    private func performAndAdjustSelectedTab(_ work: () -> Void) {
+        guard let previouslySelectedTab = selectedTabIndex.flatMap({ tab(at: $0) }) else {
+            work()
+            return
+        }
+
+        /// Adjust the selectionIndex, otherwise it'll end up Out of Sync
+        work()
+        select(tab: previouslySelectedTab)
     }
 
     func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false) -> Result<Void, Error> {

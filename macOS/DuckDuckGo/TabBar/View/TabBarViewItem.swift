@@ -76,6 +76,10 @@ extension TabViewModel: TabBarViewModel {
 protocol TabBarViewItemDelegate: AnyObject {
 
     @MainActor func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool)
+
+    @MainActor func tabBarViewItemMouseDownAction(_ tabBarViewItem: TabBarViewItem)
+    @MainActor func tabBarViewItemMouseUpAction(_ tabBarViewItem: TabBarViewItem)
+
     @MainActor func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem)
 
     @MainActor func tabBarViewItemCanBeDuplicated(_: TabBarViewItem) -> Bool
@@ -807,8 +811,10 @@ final class TabBarViewItem: NSCollectionViewItem {
         activePermissionIconTimer?.invalidate()
     }
 
+    private var performsAnimations: Bool = true
     override var isSelected: Bool {
         didSet {
+            NSLog("### Selected: \(isSelected)")
             if isSelected {
                 isDragged = false
             }
@@ -831,14 +837,32 @@ final class TabBarViewItem: NSCollectionViewItem {
 
             updateSubviews()
 
-            cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+            cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: performsAnimations)
             updateUsedPermissions()
         }
     }
 
+    private func performWithoutAnimations(_ work: () -> Void) {
+        performsAnimations = false
+        work()
+        performsAnimations = true
+    }
+
     override var draggingImageComponents: [NSDraggingImageComponent] {
+        let previouslySelected = isSelected
         isDragged = true
-        return super.draggingImageComponents
+
+        let result = super.draggingImageComponents
+
+        guard previouslySelected != isSelected else {
+            return result
+        }
+
+        performWithoutAnimations {
+            isSelected = previouslySelected
+        }
+
+        return result
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -847,7 +871,13 @@ final class TabBarViewItem: NSCollectionViewItem {
             return
         }
 
+        delegate?.tabBarViewItemMouseDownAction(self)
         super.mouseDown(with: event)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        delegate?.tabBarViewItemMouseUpAction(self)
+        super.mouseUp(with: event)
     }
 
     @objc private func newToTheRightAction(_ sender: NSButton) {
@@ -1830,6 +1860,8 @@ extension TabBarViewItem {
         }
 
         func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool) {}
+        func tabBarViewItemMouseDownAction(_ tabBarViewItem: TabBarViewItem) { }
+        func tabBarViewItemMouseUpAction(_ tabBarViewItem: TabBarViewItem) { }
         func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem) {}
         func tabBarViewItemCanBeDuplicated(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemCanBePinned(_: TabBarViewItem) -> Bool { false }

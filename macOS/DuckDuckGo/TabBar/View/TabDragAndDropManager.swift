@@ -29,9 +29,11 @@ final class TabDragAndDropManager {
 
     private(set) var sourceUnit: Unit?
     private(set) var destinationUnit: Unit?
+    private var selected: Bool = false
 
-    func setSource(tabCollectionViewModel: TabCollectionViewModel, index: TabIndex) {
+    func setSource(tabCollectionViewModel: TabCollectionViewModel, index: TabIndex, selected: Bool) {
         sourceUnit = .init(tabCollectionViewModel: tabCollectionViewModel, index: index)
+        self.selected = selected
     }
 
     func setDestination(tabCollectionViewModel: TabCollectionViewModel, index: TabIndex) {
@@ -70,7 +72,7 @@ final class TabDragAndDropManager {
         let destinationCollection = destinationUnit.index.isPinnedTab ? destinationTabCollectionViewModel.pinnedTabsCollection : destinationTabCollectionViewModel.tabCollection
         if let destinationCollection {
             let newIndex = min(destinationUnit.index.item, destinationCollection.tabs.count)
-            sourceTabCollectionViewModel.moveTab(at: sourceUnit.index.item, to: destinationTabCollectionViewModel, at: newIndex)
+            sourceTabCollectionViewModel.moveTab(at: sourceUnit.index.item, to: destinationTabCollectionViewModel, at: newIndex, selected: selected)
         }
     }
 

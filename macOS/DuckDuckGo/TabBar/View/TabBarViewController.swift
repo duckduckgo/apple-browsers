@@ -176,6 +176,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     @IBOutlet weak var shadowView: TabShadowView!
 
+    private var disableSelectionChanges: Bool = false
+
     @IBOutlet weak var leftSideStackLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var rightSideStackView: NSStackView!
     private var duckAIChromeControlContainer: ColorView?
@@ -1223,8 +1225,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
               let oldIndex = tabDragAndDropManager.sourceUnit?.index,
               oldIndex != newIndex else { return }
 
-        tabCollectionViewModel.moveTab(at: oldIndex, to: newIndex)
-        tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: newIndex)
+        let selected = tabCollectionViewModel.selectedTabIndex == oldIndex
+
+        tabCollectionViewModel.moveTab(at: oldIndex, to: newIndex, selected: selected)
+        tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: newIndex, selected: selected)
     }
 
     private func moveToNewWindow(unpinnedIndex: Int, droppingPoint: NSPoint? = nil, burner: Bool) {
@@ -1954,19 +1958,15 @@ extension TabBarViewController: NSCollectionViewDelegate {
             return
         }
 
-        if highlightState == .forSelection {
-            clearSelection()
-
-            let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-            tabCollectionViewModel.select(at: tabIndex)
-
-            // Poor old NSCollectionView
-            DispatchQueue.main.async {
-                self.collectionView.scrollToSelected()
-            }
-        }
-
         hideTabPreview()
+    }
+
+    func collectionView(_ collectionView: NSCollectionView, shouldSelectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
+        return disableSelectionChanges ? [] : indexPaths
+    }
+
+    func collectionView(_ collectionView: NSCollectionView, shouldDeselectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
+        return disableSelectionChanges ? [] : indexPaths
     }
 
     func collectionView(_ collectionView: NSCollectionView, pasteboardWriterForItemAt indexPath: IndexPath) -> NSPasteboardWriting? {
@@ -1980,8 +1980,10 @@ extension TabBarViewController: NSCollectionViewDelegate {
         guard let indexPath = indexPaths.first else { return }
 
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        let isSelected = tabCollectionViewModel.selectedTabIndex == tabIndex
 
-        tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: tabIndex)
+        tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: tabIndex, selected: isSelected)
+
         hideTabPreview()
     }
 
@@ -2112,6 +2114,26 @@ extension TabBarViewController: NSCollectionViewDelegate {
 // MARK: - TabBarViewItemDelegate
 
 extension TabBarViewController: TabBarViewItemDelegate {
+
+    func tabBarViewItemMouseDownAction(_ tabBarViewItem: TabBarViewItem) {
+        disableSelectionChanges = true
+    }
+
+    func tabBarViewItemMouseUpAction(_ tabBarViewItem: TabBarViewItem) {
+        disableSelectionChanges = false
+
+        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem), tabCollectionViewModel.selectedTabIndex != tabIndex else {
+            return
+        }
+
+        clearSelection()
+        tabCollectionViewModel.select(at: tabIndex)
+
+        // Poor old NSCollectionView
+        DispatchQueue.main.async {
+            self.collectionView.scrollToSelected()
+        }
+    }
 
     func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem) {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true

@@ -33,6 +33,47 @@ import SubscriptionUI
 import Utilities
 import PixelKit
 
+// MARK: - LazyBookmarkFolderMenuDelegate
+
+@MainActor
+final class LazyBookmarkFolderMenuDelegate: NSObject, NSMenuDelegate {
+    private let children: [BookmarkViewModel]
+    private var isPopulated = false
+    private var childDelegates: [LazyBookmarkFolderMenuDelegate] = []
+
+    init(children: [BookmarkViewModel]) {
+        self.children = children
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard !isPopulated else { return }
+        isPopulated = true
+        menu.removeAllItems() // removes the placeholder
+        buildItems(in: menu)
+    }
+
+    private func buildItems(in menu: NSMenu) {
+        let bookmarks = children.compactMap { $0.entity as? Bookmark }
+        if bookmarks.count > 1 {
+            menu.addItem(NSMenuItem(bookmarkViewModels: children))
+            menu.addItem(.separator())
+        }
+        for viewModel in children {
+            let item = NSMenuItem(bookmarkViewModel: viewModel)
+            if let folder = viewModel.entity as? BookmarkFolder {
+                let subMenu = NSMenu(title: folder.title)
+                subMenu.addItem(NSMenuItem()) // placeholder
+                let childViewModels = folder.children.map(BookmarkViewModel.init)
+                let delegate = LazyBookmarkFolderMenuDelegate(children: childViewModels)
+                childDelegates.append(delegate) // retain delegate (NSMenu.delegate is weak)
+                subMenu.delegate = delegate
+                item.submenu = subMenu
+            }
+            menu.addItem(item)
+        }
+    }
+}
+
 final class MainMenu: NSMenu {
 
     enum Constants {

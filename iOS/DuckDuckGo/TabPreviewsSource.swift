@@ -57,7 +57,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         
         // Remove already stored previews for tabs that were not yet closed by the user
         if !tabSettings.isGridViewEnabled {
-            removeAllPreviews()
+            _ = removeAllPreviews()
         }
     }
     

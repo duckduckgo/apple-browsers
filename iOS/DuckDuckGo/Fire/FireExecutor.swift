@@ -429,7 +429,9 @@ class FireExecutor: FireExecuting {
         if let historyResult {
             dataClearingWideEventService?.update(.clearAllHistory, actionResult: historyResult)
         }
-        dataClearingWideEventService?.update(.deleteContextualAIChat, actionResult: contextualChatResult)
+        if let contextualChatResult {
+            dataClearingWideEventService?.update(.deleteContextualAIChat, actionResult: contextualChatResult)
+        }
 
         // Fire completion pixel with timing
         let tabType = tabViewModel.tab.isAITab ? "ai" : "web"
@@ -454,11 +456,14 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func deleteContextualChatIfNeeded(tabViewModel: TabViewModel) async -> ActionResult {
+    private func deleteContextualChatIfNeeded(tabViewModel: TabViewModel) async -> ActionResult? {
+        guard appSettings.autoClearAIChatHistory else {
+            return nil
+        }
+
         var interval = WideEvent.MeasuredInterval.startingNow()
 
-        guard appSettings.autoClearAIChatHistory,
-              let contextualChatID = tabViewModel.currentContextualChatId else {
+        guard let contextualChatID = tabViewModel.currentContextualChatId else {
             interval.complete()
             return ActionResult(result: .success(()), measuredInterval: interval)
         }

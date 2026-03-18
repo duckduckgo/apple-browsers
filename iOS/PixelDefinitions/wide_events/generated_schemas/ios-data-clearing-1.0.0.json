@@ -10,7 +10,7 @@
             "type": "object",
             "required": ["type", "version"],
             "additionalProperties": false,
-            "properties": { "type": { "const": "ios-data-clearing" }, "version": { "const": "1.0.1" } }
+            "properties": { "type": { "const": "ios-data-clearing" }, "version": { "const": "1.0.0" } }
         },
         "app": {
             "type": "object",

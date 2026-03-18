@@ -4390,13 +4390,15 @@ extension MainViewController {
         burningOverlayView = nil
     }
 
-    /// Fires a pixel when user taps during data clearing, then removes the overlay.
+    /// Removes the overlay when user taps during data clearing, and fires a pixel if possible.
     ///
     /// This indicates the user attempted to interact before clearing completed,
     /// which is a secondary SLI metric for measuring perceived clearing performance.
+    /// The overlay is always removed to respect user action, even if pixel firing fails.
     @objc private func burningOverlayTapped() {
-        guard let fireExecutor = fireExecutor as? FireExecutor else { return }
-        fireExecutor.pixelsReporter.fireUserActionBeforeCompletionPixel()
+        if let fireExecutor = fireExecutor as? FireExecutor {
+            fireExecutor.pixelsReporter.fireUserActionBeforeCompletionPixel()
+        }
         hideBurningOverlay()
     }
 }

@@ -4294,7 +4294,7 @@ extension MainViewController {
         case .tab:
             return 1
         case .fireMode:
-            return tabManager.currentTabsModel.count
+            return tabManager.tabsModel(for: .fire).count
         case .all:
             return tabManager.allTabsModel.count
         }

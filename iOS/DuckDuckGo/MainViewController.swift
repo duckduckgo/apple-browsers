@@ -4305,6 +4305,11 @@ extension MainViewController {
     }
     
     private func refreshUIAfterClear() {
+        if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
+            showTabSwitcher()
+            tabSwitcherController?.updateUIForSelectionMode()
+            return
+        }
         showBars()
         attachHomeScreen()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
@@ -4415,11 +4420,8 @@ extension MainViewController: FireExecutorDelegate {
         guard fireRequest.trigger == .manualFire else { return }
                 
         switch fireRequest.scope {
-        case .all:
+        case .all, .fireMode:
             refreshUIAfterClear()
-        case .fireMode:
-            // TODO: - Custom fire mode UI handling
-            return
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
             return

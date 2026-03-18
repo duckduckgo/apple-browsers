@@ -77,8 +77,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     var shouldShowUpdateInfoMessage: Bool {
-        manualUpdateRemovalHandler.isLegacyUser
-            && featureFlagger.isFeatureOn(.automaticUpdatesOnly)
+        shouldHideManualUpdateOption
     }
 
     var shouldShowUpdateStatus: Bool {

@@ -24,7 +24,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 private final class MockManualUpdateRemovalHandler: ManualUpdateRemovalHandling {
-    var isLegacyUser: Bool = false
+    var userNeverHadManualUpdateOption: Bool = false
     var shouldHideManualUpdateOption: Bool = false
 }
 
@@ -76,19 +76,17 @@ final class AboutPreferencesManualUpdateTests: XCTestCase {
 
     // MARK: - shouldShowUpdateInfoMessage
 
-    func testShouldShowMessage_newUser_flagOn() {
-        mockHandler.isLegacyUser = false
-        mockFeatureFlagger.enabledFeatureFlags = [.automaticUpdatesOnly]
-        makeAboutPreferences()
-
-        XCTAssertFalse(aboutPreferences.shouldShowUpdateInfoMessage)
-    }
-
-    func testShouldShowMessage_legacyUser_flagOn() {
-        mockHandler.isLegacyUser = true
-        mockFeatureFlagger.enabledFeatureFlags = [.automaticUpdatesOnly]
+    func testShouldShowMessage_whenHidden() {
+        mockHandler.shouldHideManualUpdateOption = true
         makeAboutPreferences()
 
         XCTAssertTrue(aboutPreferences.shouldShowUpdateInfoMessage)
+    }
+
+    func testShouldNotShowMessage_whenNotHidden() {
+        mockHandler.shouldHideManualUpdateOption = false
+        makeAboutPreferences()
+
+        XCTAssertFalse(aboutPreferences.shouldShowUpdateInfoMessage)
     }
 }

@@ -23,16 +23,14 @@ import PrivacyConfig
 /// Determines whether the manual update option should be hidden based on
 /// install history and the `automaticUpdatesOnly` feature flag.
 ///
-/// - New users (`installBuild` set): picker is always hidden.
-/// - Legacy users (`installBuild` nil): picker hidden only when flag is on.
+/// - Users who never had the manual option (`installBuild` set): picker is always hidden.
+/// - Users who previously had the manual option (`installBuild` nil): picker hidden only when flag is on.
 ///
 /// When the picker is hidden, consumers should treat automatic updates as
 /// enabled regardless of the stored user preference.
 ///
-/// An informational message about automatic updates is shown only to legacy
-/// users (when the flag is on) so they know the manual option has been removed.
 public protocol ManualUpdateRemovalHandling {
-    var isLegacyUser: Bool { get }
+    var userNeverHadManualUpdateOption: Bool { get }
     var shouldHideManualUpdateOption: Bool { get }
 }
 
@@ -47,12 +45,12 @@ public final class ManualUpdateRemovalHandler: ManualUpdateRemovalHandling {
         self.featureFlagger = featureFlagger
     }
 
-    public var isLegacyUser: Bool {
-        (try? settings.installBuild) == nil
+    public var userNeverHadManualUpdateOption: Bool {
+        (try? settings.installBuild) != nil
     }
 
     public var shouldHideManualUpdateOption: Bool {
-        if !isLegacyUser { return true }
+        if userNeverHadManualUpdateOption { return true }
         return featureFlagger.isFeatureOn(.automaticUpdatesOnly)
     }
 }

@@ -54,7 +54,7 @@ final class ManualUpdateRemovalHandlerTests: XCTestCase {
         mockFeatureFlagger.featuresStub[FeatureFlag.automaticUpdatesOnly.rawValue] = true
         makeHandler()
 
-        XCTAssertFalse(handler.isLegacyUser)
+        XCTAssertTrue(handler.userNeverHadManualUpdateOption)
         XCTAssertTrue(handler.shouldHideManualUpdateOption)
     }
 
@@ -63,25 +63,25 @@ final class ManualUpdateRemovalHandlerTests: XCTestCase {
         mockFeatureFlagger.featuresStub[FeatureFlag.automaticUpdatesOnly.rawValue] = false
         makeHandler()
 
-        XCTAssertFalse(handler.isLegacyUser)
+        XCTAssertTrue(handler.userNeverHadManualUpdateOption)
         XCTAssertTrue(handler.shouldHideManualUpdateOption)
     }
 
     func testLegacyUser_flagOn_shouldHide() {
-        // installBuild not set — legacy user
+        // installBuild not set — user previously had the manual option
         mockFeatureFlagger.featuresStub[FeatureFlag.automaticUpdatesOnly.rawValue] = true
         makeHandler()
 
-        XCTAssertTrue(handler.isLegacyUser)
+        XCTAssertFalse(handler.userNeverHadManualUpdateOption)
         XCTAssertTrue(handler.shouldHideManualUpdateOption)
     }
 
     func testLegacyUser_flagOff_shouldNotHide() {
-        // installBuild not set — legacy user
+        // installBuild not set — user previously had the manual option
         mockFeatureFlagger.featuresStub[FeatureFlag.automaticUpdatesOnly.rawValue] = false
         makeHandler()
 
-        XCTAssertTrue(handler.isLegacyUser)
+        XCTAssertFalse(handler.userNeverHadManualUpdateOption)
         XCTAssertFalse(handler.shouldHideManualUpdateOption)
     }
 }

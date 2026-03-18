@@ -52,8 +52,9 @@ class MockTabManager: TabManaging {
         prepareCurrentTabCalled = true
     }
     
-    nonisolated func removeAll() {
+    nonisolated func removeAll() -> Result<Void, Error> {
         removeAllCalled = true
+        return .success(())
     }
 
     func viewModelForCurrentTab() -> DuckDuckGo.TabViewModel? {

@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Cocoa
 import Common
 import Configuration
+import Networking
 import Crashes
 import FeatureFlags
 import History
@@ -876,20 +877,45 @@ extension AppDelegate {
     }
 
     private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) async throws {
+        let configManager = Application.appDelegate.configurationManager
+        let hadOverride = configurationURLProvider.isURLOverridden(for: .privacyConfiguration)
+        let previousCustomURL: URL? = hadOverride ? configurationURLProvider.url(for: .privacyConfiguration) : nil
         try configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
-        await Application.appDelegate.configurationManager.refreshNow(isDebug: true)
+        do {
+            try await configManager.fetchPrivacyConfiguration(isDebug: true)
+        } catch {
+            try? configurationURLProvider.setCustomURL(previousCustomURL, for: .privacyConfiguration)
+            throw error
+        }
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
         } else {
             Logger.config.log("New configuration URL reset to default")
         }
+        Task {
+            await configManager.refreshNow(isDebug: true)
+        }
     }
 
-    private func showErrorAlert(message: String) {
+    private func readableErrorMessage(for error: Swift.Error) -> String {
+        if case APIRequest.Error.urlSession(let urlError) = error {
+            return urlError.localizedDescription
+        }
+        if case ConfigurationFetcher.Error.apiRequest(let apiError) = error,
+           case APIRequest.Error.urlSession(let urlError) = apiError {
+            return urlError.localizedDescription
+        }
+        if case ConfigurationFetcher.Error.invalidPayload = error {
+            return "The server returned data that is not a valid privacy configuration."
+        }
+        return error.localizedDescription
+    }
+
+    private func showConfigurationFetchErrorAlert(url: URL, error: Swift.Error) {
         let alert = NSAlert()
-        alert.messageText = "Error"
-        alert.informativeText = message
-        alert.alertStyle = .warning
+        alert.messageText = "Configuration Fetch Failed"
+        alert.informativeText = "Failed to fetch privacy configuration from:\n\(url.absoluteString)\n\nError: \(readableErrorMessage(for: error))"
+        alert.alertStyle = .critical
         alert.runModal()
     }
 
@@ -897,9 +923,9 @@ extension AppDelegate {
         let alert = NSAlert()
         alert.messageText = "Configuration Update Complete"
         if let configurationUrl {
-            alert.informativeText = "Privacy configuration URL has been set to:\n\(configurationUrl.absoluteString)\n\nThe configuration refresh operation has completed. Check the logs for any errors."
+            alert.informativeText = "Privacy configuration has been successfully fetched and applied from:\n\(configurationUrl.absoluteString)"
         } else {
-            alert.informativeText = "Privacy configuration has been reset to use the default settings.\n\nThe configuration refresh operation has completed. Check the logs for any errors."
+            alert.informativeText = "Privacy configuration has been reset to the default URL and successfully refreshed."
         }
         alert.alertStyle = .informational
         alert.runModal()
@@ -919,8 +945,8 @@ extension AppDelegate {
                 do {
                     try await setPrivacyConfigurationUrl(newConfigurationUrl)
                     showConfigurationUpdateCompleteAlert(configurationUrl: newConfigurationUrl)
-                } catch let error {
-                    showErrorAlert(message: error.localizedDescription)
+                } catch {
+                    showConfigurationFetchErrorAlert(url: newConfigurationUrl, error: error)
                 }
             }
         }
@@ -931,8 +957,9 @@ extension AppDelegate {
             do {
                 try await setPrivacyConfigurationUrl(nil)
                 showConfigurationUpdateCompleteAlert(configurationUrl: nil)
-            } catch let error {
-                showErrorAlert(message: error.localizedDescription)
+            } catch {
+                let defaultURL = configurationURLProvider.url(for: .privacyConfiguration)
+                showConfigurationFetchErrorAlert(url: defaultURL, error: error)
             }
         }
     }

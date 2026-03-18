@@ -151,7 +151,7 @@ public extension OnboardingTheme {
                     OnboardingRebranding.OnboardingStyles.BubbleDismissButtonStyle(
                         contentPadding: dismissButtonMetrics.contentPadding,
                         backgroundColor: colorPalette.bubbleBackground,
-                        borderColor: colorPalette.bubbleBorder,
+                        borderColor: Color(singleUseColor: .rebranding(.accentAltPrimary)), // Dark mode bubble does not have a border color, hence reference the color directly.
                         borderWidth: borderWidth,
                         buttonSize: dismissButtonMetrics.buttonSize
                     )

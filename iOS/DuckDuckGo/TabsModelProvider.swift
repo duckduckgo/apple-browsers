@@ -62,7 +62,7 @@ protocol TabsModelProviding {
     var normalTabsModel: TabsModelManaging { get }
     var fireModeTabsModel: TabsModelManaging { get }
     var aggregateTabsModel: TabsModelReading { get }
-    func save()
+    func save() -> Result<Void, Error>
 }
 
 class TabsModelProvider: TabsModelProviding {
@@ -86,9 +86,17 @@ class TabsModelProvider: TabsModelProviding {
         self.aggregateTabsModel = AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel)
     }
     
-    func save() {
-        persistence.save(model: _normalTabsModel, for: .normal)
-        persistence.save(model: _fireModeTabsModel, for: .fire)
+    func save() -> Result<Void, Error> {
+        let normalResult = persistence.save(model: _normalTabsModel, for: .normal)
+        let fireResult = persistence.save(model: _fireModeTabsModel, for: .fire)
+
+        if case .failure(let error) = normalResult {
+            return .failure(error)
+        }
+        if case .failure(let error) = fireResult {
+            return .failure(error)
+        }
+        return .success(())
     }
 }
 

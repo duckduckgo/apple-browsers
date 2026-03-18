@@ -106,7 +106,9 @@ final class ModalPromptCoordinationService {
             return
         }
 
-        guard viewController.presentedViewController == nil || viewController.presentedViewController?.isBeingDismissed == true else {
+        let presented = viewController.presentedViewController
+        let isOmniBarEditing = presented is OmniBarEditingStateViewController
+        guard presented == nil || presented?.isBeingDismissed == true || isOmniBarEditing else {
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A modal is already presented.")
             return
         }

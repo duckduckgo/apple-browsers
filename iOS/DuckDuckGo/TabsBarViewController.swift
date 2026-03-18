@@ -380,6 +380,7 @@ extension MainViewController: TabsBarDelegate {
             return
         }
 
+        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         dismissOmniBar()
 
         // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.

@@ -157,7 +157,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         guard let message = AIChatUserScriptMessages(rawValue: methodName) else {
-            Logger.aiChat.debug("Unhandled message: \(methodName) in AIChatUserScript")
+            Logger.aiChat.debug("AIChatUserScript: unhandled message: \(methodName)")
             return nil
         }
 
@@ -268,7 +268,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext)
         push(.submitPrompt(promptPayload))
     }
-    
+
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, images: images, modelId: modelId)
+        push(.submitPrompt(promptPayload))
+    }
+
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
     func submitStartChatAction() {
         push(.newChatAction)

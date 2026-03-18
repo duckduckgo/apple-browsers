@@ -52,9 +52,6 @@ public class DataClearingWideEventData: WideEventData {
 
     // MARK: - Shared Feature Properties
 
-    /// What data the user selected for clearing.
-    public var options: Options
-
     /// What initiated the clearing flow.
     public var trigger: Trigger
 
@@ -63,6 +60,9 @@ public class DataClearingWideEventData: WideEventData {
 
     // MARK: - iOS-Specific Properties
 
+    /// Comma-separated list of specific options selected (iOS only).
+    public var includedOptions: String?
+
     /// Scope of the clearing action (iOS only).
     public var scope: Scope?
 
@@ -70,6 +70,9 @@ public class DataClearingWideEventData: WideEventData {
     public var source: Source?
 
     // MARK: - macOS-Specific Properties
+
+    /// What data the user selected for clearing (macOS only).
+    public var options: Options?
 
     /// Execution path during clearing (macOS only).
     public var path: Path?
@@ -145,6 +148,10 @@ public class DataClearingWideEventData: WideEventData {
     public var removeAllContainersAfterDelayStatus: ActionStatus?
     public var removeAllContainersAfterDelayError: WideEventErrorData?
 
+    public var deleteContextualAIChatDuration: WideEvent.MeasuredInterval?
+    public var deleteContextualAIChatStatus: ActionStatus?
+    public var deleteContextualAIChatError: WideEventErrorData?
+
     // macOS-only actions
     public var clearPermissionsDuration: WideEvent.MeasuredInterval?
     public var clearPermissionsStatus: ActionStatus?
@@ -189,7 +196,8 @@ public class DataClearingWideEventData: WideEventData {
     // MARK: - Initialization
 
     public init(
-        options: Options,
+        options: Options? = nil,
+        includedOptions: String? = nil,
         trigger: Trigger,
         overallDuration: WideEvent.MeasuredInterval? = nil,
         scope: Scope? = nil,
@@ -201,6 +209,7 @@ public class DataClearingWideEventData: WideEventData {
         globalData: WideEventGlobalData = WideEventGlobalData()
     ) {
         self.options = options
+        self.includedOptions = includedOptions
         self.trigger = trigger
         self.overallDuration = overallDuration
         self.scope = scope
@@ -320,6 +329,7 @@ extension DataClearingWideEventData {
         case clearDaxDialogsHeldURLData = "clear_daxDialogs_held_URL_data"
         case removeObservationsData = "clear_website_data.remove_observations_data"
         case removeAllContainersAfterDelay = "clear_website_data.remove_all_containers_after_delay"
+        case deleteContextualAIChat = "delete_contextual_aiChat"
 
         // macOS-only actions
         case clearPermissions = "clear_permissions"
@@ -352,6 +362,7 @@ extension DataClearingWideEventData {
             case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataDuration
             case .removeObservationsData: return \.removeObservationsDataDuration
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayDuration
+            case .deleteContextualAIChat: return \.deleteContextualAIChatDuration
             case .clearPermissions: return \.clearPermissionsDuration
             case .clearVisitedLinks: return \.clearVisitedLinksDuration
             case .clearRecentlyClosed: return \.clearRecentlyClosedDuration
@@ -384,6 +395,7 @@ extension DataClearingWideEventData {
             case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataStatus
             case .removeObservationsData: return \.removeObservationsDataStatus
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayStatus
+            case .deleteContextualAIChat: return \.deleteContextualAIChatStatus
             case .clearPermissions: return \.clearPermissionsStatus
             case .clearVisitedLinks: return \.clearVisitedLinksStatus
             case .clearRecentlyClosed: return \.clearRecentlyClosedStatus
@@ -416,6 +428,7 @@ extension DataClearingWideEventData {
             case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataError
             case .removeObservationsData: return \.removeObservationsDataError
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayError
+            case .deleteContextualAIChat: return \.deleteContextualAIChatError
             case .clearPermissions: return \.clearPermissionsError
             case .clearVisitedLinks: return \.clearVisitedLinksError
             case .clearRecentlyClosed: return \.clearRecentlyClosedError
@@ -443,7 +456,8 @@ extension DataClearingWideEventData {
         }()
 
         var params: [String: Encodable] = Dictionary(compacting: [
-            (WideEventParameter.DataClearingFeature.options, options.rawValue),
+            (WideEventParameter.DataClearingFeature.options, options?.rawValue),
+            (WideEventParameter.DataClearingFeature.includedOptions, includedOptions),
             (WideEventParameter.DataClearingFeature.trigger, trigger.rawValue),
             (WideEventParameter.DataClearingFeature.overallLatency, processedOverallLatency),
             (WideEventParameter.DataClearingFeature.scope, scope?.rawValue),
@@ -536,6 +550,7 @@ extension WideEventParameter {
     /// Parameter keys for data clearing wide events.
     public enum DataClearingFeature {
         static let options = "feature.data.ext.options"
+        static let includedOptions = "feature.data.ext.included_options"
         static let trigger = "feature.data.ext.trigger"
         static let overallLatency = "feature.data.ext.overall_latency_ms"
         static let scope = "feature.data.ext.scope"

@@ -231,7 +231,8 @@ struct Launching: LaunchingHandling {
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,
-                                              sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault)
+                                              sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
+                                              wideEvent: AppDependencyProvider.shared.wideEvent)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

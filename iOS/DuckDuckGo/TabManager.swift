@@ -35,7 +35,7 @@ protocol TabManaging {
     var currentTabsModel: TabsModelManaging { get }
     @MainActor func prepareAllTabsExceptCurrentForDataClearing()
     @MainActor func prepareCurrentTabForDataClearing()
-    func removeAll()
+    func removeAll() -> Result<Void, Error>
     @MainActor func viewModelForCurrentTab() -> TabViewModel?
     @MainActor func prepareTab(_ tab: Tab)
     @MainActor func isCurrentTab(_ tab: Tab) -> Bool
@@ -399,7 +399,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         tabControllerCache.append(controller)
         cacheDelegate?.tabManager(self, didCreateController: controller)
 
-        save()
+        _ = save()
         return controller
     }
 
@@ -407,7 +407,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
         model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
-        save()
+        _ = save()
     }
 
     func firstHomeTab(in tabsModel: TabsModelManaging? = nil) -> Tab? {
@@ -450,7 +450,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             current()?.dismiss()
         }
         model.select(tab: tab)
-        save()
+        _ = save()
         return current(createIfNeeded: true)
     }
 
@@ -474,7 +474,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         cacheDelegate?.tabManager(self, didCreateController: controller)
 
-        save()
+        _ = save()
         return controller
     }
 
@@ -485,14 +485,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         model.removeTabs(tabs)
         clean(tabs: tabs, clearTabHistory: true)
-        save()
+        _ = save()
     }
 
     func remove(tab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
-        save()
+        _ = save()
     }
 
     func replace(tab: Tab, withNewTab newTab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
@@ -508,7 +508,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)
             clean(tabs: [tab], clearTabHistory: clearTabHistory)
         }
-        save()
+        _ = save()
     }
 
     private func removeFromCache(_ controller: TabViewController) {
@@ -518,21 +518,32 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.dismiss()
     }
 
-    func removeAll() {
+    func removeAll() -> Result<Void, Error> {
         // TODO: - Handle fire mode burns
         let tabIDs = currentTabsModel.tabs.map { $0.uid }
-        previewsSource.removeAllPreviews()
+        let previewsResult = previewsSource.removeAllPreviews()
         currentTabsModel.clearAll()
         for controller in tabControllerCache {
             removeFromCache(controller)
         }
-        interactionStateSource?.removeAll(excluding: [])
+        let interactionResult = interactionStateSource?.removeAll(excluding: [])
         removeTabHistory(for: tabIDs)
-        save()
+        let saveResult = save()
+
+        if case .failure(let error) = previewsResult {
+            return .failure(error)
+        }
+        if let interactionResult = interactionResult, case .failure(let error) = interactionResult {
+            return .failure(error)
+        }
+        if case .failure(let error) = saveResult {
+            return .failure(error)
+        }
+        return .success(())
     }
 
     func removeLeftoverInteractionStates() {
-        interactionStateSource?.removeAll(excluding: allTabsModel.tabs)
+        _ = interactionStateSource?.removeAll(excluding: allTabsModel.tabs)
     }
 
     @MainActor
@@ -546,8 +557,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
 
-    func save() {
-        tabsModelProvider.save()
+    func save() -> Result<Void, Error> {
+        return tabsModelProvider.save()
     }
 
     @MainActor

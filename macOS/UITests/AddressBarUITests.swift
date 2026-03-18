@@ -333,7 +333,24 @@ class AddressBarUITests: UITestCase {
 
         // After losing focus, the passive text field should be visible and show the page URL without suffix
         let passiveValue = app.addressBarValueActivatingIfNeeded(shouldActivate: false) ?? ""
-        XCTAssertEqual(passiveValue, searchQuery, "Suffix should not be visible when address bar is not focused, got: \(passiveValue)")
+        XCTAssertEqual(passiveValue, searchQuery, "Search suffix should not be visible when address bar is not focused, got: \(passiveValue)")
+
+        // Now test with a URL input (which triggers "– Visit example.com" suffix)
+        let urlQuery = "example.com"
+        app.activateAddressBar()
+        addressBarTextField.typeText(urlQuery)
+
+        // Verify the suffix is shown while focused
+        let focusedURLValue = addressBarTextField.value as? String ?? ""
+        XCTAssertTrue(focusedURLValue.starts(with: urlQuery))
+        XCTAssertNotEqual(focusedURLValue, urlQuery, "Visit suffix should be visible while address bar is focused")
+
+        // Click on the webView to lose focus without committing
+        webView.click()
+
+        // After losing focus, the suffix should not be visible
+        let passiveURLValue = app.addressBarValueActivatingIfNeeded(shouldActivate: false) ?? ""
+        XCTAssertEqual(passiveURLValue, urlQuery, "Visit suffix should not be visible when address bar is not focused, got: \(passiveURLValue)")
     }
 
     // MARK: - Edge Cases Tests

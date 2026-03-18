@@ -278,7 +278,7 @@ final class TabManagerTests: XCTestCase {
                                                    fireStore: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
         let fireModel = fireModel ?? TabsModel(tabs: [], desktop: false, mode: .fire)
-        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence)
+        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence, featureFlagger: featureFlagger)
         return TabManager(tabsModelProvider: modelProvider,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),

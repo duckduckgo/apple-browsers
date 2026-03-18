@@ -19,6 +19,7 @@
 
 import Foundation
 import Combine
+import PrivacyConfig
 
 protocol TabsModelReading {
     var count: Int { get }
@@ -81,11 +82,12 @@ class TabsModelProvider: TabsModelProviding {
     private var persistence: TabsModelPersisting
 
     
-    init(normalTabsModel: TabsModel, fireModeTabsModel: TabsModel, persistence: TabsModelPersisting) {
+    init(normalTabsModel: TabsModel, fireModeTabsModel: TabsModel, persistence: TabsModelPersisting, featureFlagger: FeatureFlagger) {
         self._normalTabsModel = normalTabsModel
         self._fireModeTabsModel = fireModeTabsModel
         self.persistence = persistence
-        self.aggregateTabsModel = AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel)
+        let capability = FireModeCapability.create(using: featureFlagger)
+        self.aggregateTabsModel = capability.isFireModeEnabled ? AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel) : normalTabsModel
     }
     
     func clearTabs(for browsingMode: BrowsingMode?) {

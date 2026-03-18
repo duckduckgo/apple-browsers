@@ -47,5 +47,19 @@
         "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "is_enabled"]
+    },
+    "m_aichat_settings_default_toggle_position_changed": {
+        "description": "Fired when the user changes the default toggle position setting in AI Features settings",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "value",
+                "description": "The selected default toggle position: search, duckAI, or lastUsed",
+                "type": "string"
+            }
+        ]
     }
 }

@@ -352,7 +352,8 @@ final class SwitchBarHandler: SwitchBarHandling {
         let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let parameters = [
             "direction": direction,
-            "had_text": String(hadText)
+            "had_text": String(hadText),
+            "default_position": aiChatSettings.defaultOmnibarMode.rawValue
         ]
         Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
     }

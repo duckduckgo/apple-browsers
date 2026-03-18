@@ -63,6 +63,11 @@
                 "key": "had_text",
                 "description": "Whether text was present in the input when mode was switched: true or false",
                 "type": "boolean"
+            },
+            {
+                "key": "default_position",
+                "description": "The user's default toggle position setting: search, duckAI, or lastUsed",
+                "type": "string"
             }
         ]
     },

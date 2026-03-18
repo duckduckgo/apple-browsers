@@ -246,6 +246,8 @@ final class AIChatSettings: AIChatSettingsProvider {
     func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
         keyValueStore.set(mode.rawValue, forKey: .defaultOmnibarModeKey)
         triggerSettingsChangedNotification()
+        DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDefaultTogglePositionChanged,
+                                      withAdditionalParameters: ["value": mode.rawValue])
     }
     
     /// Process the settings view funnels step

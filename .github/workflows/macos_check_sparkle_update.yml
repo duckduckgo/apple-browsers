@@ -1,6 +1,7 @@
 name: Check Sparkle Update
 
 on:
+  push:
   schedule:
     - cron: '0 1 * * 5'  # Every Friday at 01:00 UTC
   workflow_dispatch:
@@ -105,12 +106,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           pr_number="${{ steps.create-pr.outputs.pull-request-number }}"
-          current_body=$(gh pr view "$pr_number" --json body --jq '.body')
 
-          gh pr edit "$pr_number" \
-            --body "Task/Issue URL: ${{ steps.create-asana-task.outputs.task_url }}
-
-          ${current_body}"
+          {
+            echo "Task/Issue URL: ${{ steps.create-asana-task.outputs.task_url }}"
+            echo
+            gh pr view "$pr_number" --json body --jq '.body'
+          } | gh pr edit "$pr_number" --body-file -
 
           gh pr ready "$pr_number"
           gh pr edit "$pr_number" --add-reviewer diegoreymendez,jotaemepereira

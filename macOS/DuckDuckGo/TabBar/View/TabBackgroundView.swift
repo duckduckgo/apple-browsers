@@ -24,7 +24,7 @@ final class TabBackgroundView: NSView {
     // MARK: - Constants
 
     private enum Animations {
-        static let duration: TimeInterval = 0.25
+        static let duration: TimeInterval = 0.15
         static let opacityVisible: Float = 1
         static let opacityHidden: Float = 0
         static let overlayKey = "overlayAnimation"

@@ -268,23 +268,25 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
 
-        let capturedTextEntryMode = textEntryMode
+        let capturedTextEntryMode: TextEntryMode? = textEntryMode
 
         if let omniDelegate {
             omniDelegate.dismissContextualSheetIfNeeded { [weak self] in
                 guard let self else { return }
-                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, explicitTextEntryMode: capturedTextEntryMode, animated: animated)
             }
         } else {
-            present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+            present(for: textField, suggestionsDependencies: suggestionsDependencies, explicitTextEntryMode: capturedTextEntryMode, animated: animated)
         }
     }
 
-    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
+    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, explicitTextEntryMode: TextEntryMode?, animated: Bool) {
         guard editingStateViewController == nil else { return }
 
         let switchBarHandler = createSwitchBarHandler(for: textField)
-        switchBarHandler.setToggleState(textEntryMode)
+        if let explicitTextEntryMode {
+            switchBarHandler.setToggleState(explicitTextEntryMode)
+        }
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let escapeHatch = omniDelegate?.escapeHatchForEditingState()

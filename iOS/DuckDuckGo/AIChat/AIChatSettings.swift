@@ -141,6 +141,14 @@ final class AIChatSettings: AIChatSettingsProvider {
         keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: featureFlagger.isFeatureOn(.aiChatAutoAttachContextByDefault))
     }
 
+    var defaultOmnibarMode: DefaultOmnibarMode {
+        guard let rawValue = keyValueStore.object(forKey: .defaultOmnibarModeKey) as? String,
+              let mode = DefaultOmnibarMode(rawValue: rawValue) else {
+            return .search
+        }
+        return mode
+    }
+
     func enableAIChat(enable: Bool) {
         keyValueStore.set(enable, forKey: .isAIChatEnabledKey)
         triggerSettingsChangedNotification()
@@ -234,6 +242,11 @@ final class AIChatSettings: AIChatSettingsProvider {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextDisabled)
         }
     }
+
+    func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
+        keyValueStore.set(mode.rawValue, forKey: .defaultOmnibarModeKey)
+        triggerSettingsChangedNotification()
+    }
     
     /// Process the settings view funnels step
     func processSettingsViewedFunnelStep() {
@@ -274,6 +287,7 @@ private extension String {
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
     static let showChatSuggestionsKey = "aichat.settings.showChatSuggestions"
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
+    static let defaultOmnibarModeKey = "aichat.settings.defaultOmnibarMode"
 }
 
 enum LegacyAiChatUserDefaultsKeys {

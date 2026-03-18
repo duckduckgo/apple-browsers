@@ -3121,6 +3121,9 @@ Take back control of your personal information with the browser designed for dat
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Default Browser";
 
+/* Label for the default omnibar toggle position picker in AI Features settings */
+"settings.default.omnibar.mode.header" = "Toggle Position";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Delete Duck.ai Chats";
 

@@ -96,6 +96,8 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var isAIChatTabSwitcherUserSettingsEnabled: Bool = false
     var isAIChatFullModeEnabled: Bool = false
     var isAutomaticContextAttachmentEnabled: Bool = false
+    var isChatSuggestionsEnabled: Bool = true
+    var defaultOmnibarMode: DefaultOmnibarMode = .search
 
     func enableAIChat(enable: Bool) {
         isAIChatEnabled = enable
@@ -107,6 +109,10 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
     func enableAIChatFullModeSetting(enable: Bool) {}
     func enableAutomaticContextAttachment(enable: Bool) {}
+    func enableChatSuggestions(enable: Bool) {}
+    func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
+        defaultOmnibarMode = mode
+    }
 }
 #endif
 

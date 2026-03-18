@@ -1502,8 +1502,10 @@ extension SettingsViewModel {
                     }
                 } else {
                     guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
-                    self.objectWillChange.send()
-                    self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                    withAnimation {
+                        self.objectWillChange.send()
+                        self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                    }
                 }
             }
         )
@@ -1535,6 +1537,16 @@ extension SettingsViewModel {
                     self.objectWillChange.send()
                     self.aiChatSettings.enableAutomaticContextAttachment(enable: newValue)
                 }
+            }
+        )
+    }
+
+    var defaultOmnibarModeBinding: Binding<DefaultOmnibarMode> {
+        Binding<DefaultOmnibarMode>(
+            get: { self.aiChatSettings.defaultOmnibarMode },
+            set: { newValue in
+                self.objectWillChange.send()
+                self.aiChatSettings.setDefaultOmnibarMode(newValue)
             }
         )
     }

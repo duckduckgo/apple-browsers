@@ -25,6 +25,7 @@ import BrowserServicesKit
 import Common
 import Networking
 import PixelKit
+import AIChat
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -75,6 +76,15 @@ struct SettingsAIFeaturesView: View {
                                 .padding(.vertical, 8)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
+
+                        if viewModel.aiChatSearchInputEnabledBinding.wrappedValue {
+                            SettingsPickerCellView(
+                                label: UserText.settingsDefaultOmnibarModeHeader,
+                                options: DefaultOmnibarMode.allCases.map { Optional($0) },
+                                selectedOption: viewModel.defaultOmnibarModeBinding
+                            )
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     } footer: {
                         Text(footerAttributedString)
                             .environment(\.openURL, OpenURLAction { url in
@@ -153,6 +163,7 @@ struct SettingsAIFeaturesView: View {
 }
 
 private extension SettingsAIFeaturesView {
+
     var footerAttributedString: AttributedString {
         var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
         var link = AttributedString(UserText.subscriptionFeedback)

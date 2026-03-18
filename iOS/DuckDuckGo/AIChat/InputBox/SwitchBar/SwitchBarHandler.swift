@@ -192,6 +192,8 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.devicePlatform = devicePlatform
         self.isFireTab = isFireTab
 
+        applyDefaultOmnibarMode()
+
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
@@ -313,11 +315,21 @@ final class SwitchBarHandler: SwitchBarHandling {
         storage.set(currentToggleState.rawValue, forKey: StorageKey.toggleState)
     }
 
-    /// Intentionally not called yet, https://app.asana.com/1/137249556945/project/72649045549333/task/1210814996510636?focus=true
-    func restoreToggleState() {
+    private func restoreToggleState() {
         if let storedValue = storage.object(forKey: StorageKey.toggleState) as? String,
            let restoredState = TextEntryMode(rawValue: storedValue) {
             currentToggleState = restoredState
+        }
+    }
+
+    private func applyDefaultOmnibarMode() {
+        switch aiChatSettings.defaultOmnibarMode {
+        case .search:
+            currentToggleState = .search
+        case .duckAI:
+            currentToggleState = .aiChat
+        case .lastUsed:
+            restoreToggleState()
         }
     }
     

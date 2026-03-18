@@ -111,6 +111,17 @@ private extension NewTabPageView {
 
     @ViewBuilder
     private var emptyStateView: some View {
+        if viewModel.fireTab {
+            FireModeEmptyStateView(type: .tab,
+                                   escapeHatch: viewModel.escapeHatch,
+                                   onEscapeHatchTap: viewModel.onEscapeHatchTap)
+        } else {
+            logoEmptyView
+        }
+    }
+    
+    @ViewBuilder
+    private var logoEmptyView: some View {
         GeometryReader { proxy in
             ZStack {
                 if shouldShowLogoInEmptyState {
@@ -209,7 +220,7 @@ private struct Metrics {
 
 #Preview("Regular") {
     NewTabPageView(
-        viewModel: NewTabPageViewModel(),
+        viewModel: NewTabPageViewModel(fireTab: false),
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
@@ -223,7 +234,7 @@ private struct Metrics {
 
 #Preview("With message") {
     NewTabPageView(
-        viewModel: NewTabPageViewModel(),
+        viewModel: NewTabPageViewModel(fireTab: false),
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: [
@@ -248,7 +259,7 @@ private struct Metrics {
 
 #Preview("No favorites") {
     NewTabPageView(
-        viewModel: NewTabPageViewModel(),
+        viewModel: NewTabPageViewModel(fireTab: false),
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
@@ -262,7 +273,7 @@ private struct Metrics {
 
 #Preview("Empty") {
     NewTabPageView(
-        viewModel: NewTabPageViewModel(),
+        viewModel: NewTabPageViewModel(fireTab: false),
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []

@@ -157,7 +157,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         guard let message = AIChatUserScriptMessages(rawValue: methodName) else {
-            Logger.aiChat.debug("Unhandled message: \(methodName) in AIChatUserScript")
+            Logger.aiChat.debug("AIChatUserScript: unhandled message: \(methodName)")
             return nil
         }
 
@@ -168,6 +168,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
+        case .getAIChatNativePrompt:
+            return handler.getAIChatNativePrompt
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
         case .getAIChatPageContext:
@@ -235,7 +237,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         inputBoxCancellables.removeAll()
 
         inputBoxHandler?.didSubmitPrompt
-            .sink(receiveValue: submitPrompt)
+            .sink(receiveValue: { [weak self] prompt in
+                let modelId = self?.inputBoxHandler?.persistedModelId
+                self?.submitPrompt(prompt, modelId: modelId)
+            })
             .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressNewChatButton
@@ -256,10 +261,19 @@ final class AIChatUserScript: NSObject, Subfeature {
     // MARK: - AI Chat Actions
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, pageContext: pageContext)
+        submitPrompt(prompt, pageContext: pageContext, modelId: nil)
+    }
+
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext)
         push(.submitPrompt(promptPayload))
     }
-    
+
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, images: images, modelId: modelId)
+        push(.submitPrompt(promptPayload))
+    }
+
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
     func submitStartChatAction() {
         push(.newChatAction)

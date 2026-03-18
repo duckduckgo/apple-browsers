@@ -369,7 +369,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, barView: contentContainerView, isTopBarPosition: false)
+        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, anchorView: contentContainerView, isTopBarPosition: false)
     }
 
     private func setupSubscriptions() {

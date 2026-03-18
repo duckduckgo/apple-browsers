@@ -70,6 +70,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
         appearancePreferences.$themeName
             .dropFirst()
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] themeName in
                 self?.switchToTheme(named: themeName)
@@ -80,6 +81,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private func subscribeToSystemAppearance() {
         appearancePreferences.$themeAppearance
             .dropFirst()
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] appearance in
                 self?.appearance = appearance

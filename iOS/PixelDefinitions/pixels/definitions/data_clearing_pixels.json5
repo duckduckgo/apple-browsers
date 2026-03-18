@@ -1,0 +1,33 @@
+{
+    "m_fire_retrigger_in_20s": {
+        "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_fire_user_action_before_completion": {
+        "description": "Fired when user performs an action before the clearing operation completes",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_fire_clear_website_data_remove_all_containers_after_delay_success": {
+        "description": "Fired when website data container cleanup after delay completes successfully",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_fire_clear_website_data_remove_all_containers_after_delay_failure": {
+        "description": "Fired when website data container cleanup after delay fails",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    }
+}

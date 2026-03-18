@@ -16,24 +16,23 @@
 //  limitations under the License.
 //
 
-import AIChat
 import Foundation
 import WebKit
 
 // MARK: - Cookie Providing
 
-protocol AIChatCookieProviding {
+public protocol AIChatCookieProviding {
     func cookies(for url: URL) async -> [HTTPCookie]
 }
 
-struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
+public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
     private let cookieStore: WKHTTPCookieStore
 
-    init(cookieStore: WKHTTPCookieStore = WKWebsiteDataStore.default().httpCookieStore) {
+    public init(cookieStore: WKHTTPCookieStore = WKWebsiteDataStore.default().httpCookieStore) {
         self.cookieStore = cookieStore
     }
 
-    func cookies(for url: URL) async -> [HTTPCookie] {
+    public func cookies(for url: URL) async -> [HTTPCookie] {
         await withCheckedContinuation { continuation in
             cookieStore.getAllCookies { cookies in
                 let domain = url.host ?? ""
@@ -49,36 +48,51 @@ struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
 
 // MARK: - Remote Models
 
-struct AIChatModelsResponse: Decodable {
-    let models: [AIChatRemoteModel]
+public struct AIChatModelsResponse: Decodable {
+    public let models: [AIChatRemoteModel]
+
+    public init(models: [AIChatRemoteModel]) {
+        self.models = models
+    }
 }
 
-struct AIChatRemoteModel: Decodable, Equatable {
-    let id: String
-    let name: String
-    let modelShortName: String?
-    let provider: String
-    let entityHasAccess: Bool
-    let supportsImageUpload: Bool
-    let supportedTools: [String]
-    let accessTier: [String]
+public struct AIChatRemoteModel: Decodable, Equatable {
+    public let id: String
+    public let name: String
+    public let modelShortName: String?
+    public let provider: String
+    public let entityHasAccess: Bool
+    public let supportsImageUpload: Bool
+    public let supportedTools: [String]
+    public let accessTier: [String]
+
+    public init(id: String, name: String, modelShortName: String? = nil, provider: String, entityHasAccess: Bool, supportsImageUpload: Bool, supportedTools: [String], accessTier: [String]) {
+        self.id = id
+        self.name = name
+        self.modelShortName = modelShortName
+        self.provider = provider
+        self.entityHasAccess = entityHasAccess
+        self.supportsImageUpload = supportsImageUpload
+        self.supportedTools = supportedTools
+        self.accessTier = accessTier
+    }
 }
 
 // MARK: - Service Protocol
 
-protocol AIChatModelsProviding {
+public protocol AIChatModelsProviding {
     func fetchModels() async throws -> [AIChatRemoteModel]
 }
 
 // MARK: - Service Implementation
 
-final class AIChatModelsService: AIChatModelsProviding {
+public final class AIChatModelsService: AIChatModelsProviding {
 
-    enum ServiceError: Error, LocalizedError {
+    public enum ServiceError: Error, LocalizedError {
         case invalidResponse
         case httpError(statusCode: Int)
 
-        var errorDescription: String? {
+        public var errorDescription: String? {
             switch self {
             case .invalidResponse: return "Invalid response from models endpoint"
             case .httpError(let statusCode): return "HTTP error \(statusCode) from models endpoint"
@@ -90,7 +104,7 @@ final class AIChatModelsService: AIChatModelsProviding {
     private let session: URLSession
     private let cookieProvider: AIChatCookieProviding
 
-    init(
+    public init(
         baseURL: URL = URL(string: "https://duck.ai")!,
         session: URLSession = .shared,
         cookieProvider: AIChatCookieProviding = WKHTTPCookieStoreProvider()
@@ -100,7 +114,7 @@ final class AIChatModelsService: AIChatModelsProviding {
         self.cookieProvider = cookieProvider
     }
 
-    func fetchModels() async throws -> [AIChatRemoteModel] {
+    public func fetchModels() async throws -> [AIChatRemoteModel] {
         let url = baseURL.appendingPathComponent("duckchat/v1/models")
 
         let cookies = await cookieProvider.cookies(for: baseURL)
@@ -125,8 +139,7 @@ final class AIChatModelsService: AIChatModelsProviding {
 
 // MARK: - AIChatModel Mapping
 
-/// Represents the user's resolved access tier for model unlocking.
-enum AIChatUserTier: String {
+public enum AIChatUserTier: String {
     case free
     case plus
     case pro
@@ -136,8 +149,7 @@ enum AIChatUserTier: String {
 extension AIChatModel {
     private static let nativeSupportedImageFormats = ["png", "jpeg", "webp"]
 
-    /// Creates an `AIChatModel` from a remote model, resolving access based on the user's local subscription tier.
-    init(remoteModel: AIChatRemoteModel, userTier: AIChatUserTier) {
+    public init(remoteModel: AIChatRemoteModel, userTier: AIChatUserTier) {
         let hasAccess = remoteModel.accessTier.contains(userTier.rawValue)
         self.init(
             id: remoteModel.id,
@@ -153,10 +165,7 @@ extension AIChatModel {
 }
 
 extension AIChatModel.ModelProvider {
-    /// Maps a remote model's ID and provider string to the local ModelProvider enum.
-    /// Model ID takes precedence since togetherai hosts models from multiple providers.
-    /// Handles both `/` and `_` separators in model IDs (e.g. "meta-llama/Llama" or "meta-llama_Llama").
-    static func from(id: String, providerString: String) -> AIChatModel.ModelProvider {
+    public static func from(id: String, providerString: String) -> AIChatModel.ModelProvider {
         if id.hasPrefix("meta-llama/") || id.hasPrefix("meta-llama_") || providerString == "azure" {
             return .meta
         } else if id.hasPrefix("mistralai/") || id.hasPrefix("mistralai_") {

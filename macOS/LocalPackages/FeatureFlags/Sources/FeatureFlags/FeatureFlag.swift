@@ -310,7 +310,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    public var defaultValue: Bool {
+    public var defaultValue: FeatureFlagDefaultValue {
         switch self {
         case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
@@ -327,17 +327,22 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
-                .aiChatSidebarFloating,
                 .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics,
                 .promoQueue,
                 .websitesHistoryFirstTimeQuitSurvey,
-                .tabAnimations:
-            true
+                .tabAnimations,
+                .promoQueue:
+            .enabled
+        case .autofillPasswordsStatusBar,
+             .aiChatSidebarFloating,
+             .semaphoreAlwaysVisible,
+             .tabAnimations:
+            .internalOnly
         default:
-            false
+            .disabled
         }
     }
 
@@ -571,7 +576,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .autofillPasswordsStatusBar:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordsStatusBar))
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .memoryUsageMonitor:
@@ -603,7 +608,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNtpRecentChats:
             return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
         case .aiChatSidebarFloating:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating))
         case .startupMetrics:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
@@ -613,13 +618,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webViewLookUpAction:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .semaphoreAlwaysVisible:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
             return .remoteReleasable(.feature(.promoQueue))
         case .websitesHistoryFirstTimeQuitSurvey:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .tabAnimations:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
         }
     }
 }

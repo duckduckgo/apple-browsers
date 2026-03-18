@@ -180,6 +180,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
+
+    case semaphoreAlwaysVisible
+
+    case tabAnimations
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -242,6 +246,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case suppressTrackerAnimationOnColdStart
 
     case customXSafariRedirectHandling
+
+    case crashReportOptInStatusResetting
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -281,6 +287,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
     case onboardingExperiment
+
+    case autofillPasswordsStatusBar
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -387,6 +395,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case supportsSyncChatsDeletion
 
     case sidebarResizable
+
+    case sidebarFloating
 
     /// Enables recent AI chats on the New Tab Page omnibar
     case ntpRecentChats

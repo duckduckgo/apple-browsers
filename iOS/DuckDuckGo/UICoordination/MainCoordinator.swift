@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
+import PixelKit
 import PrivacyConfig
 import Subscription
 import Persistence
@@ -61,6 +62,7 @@ final class MainCoordinator {
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
+    private let wideEvent: WideEventManaging
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
@@ -100,13 +102,15 @@ final class MainCoordinator {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          whatsNewRepository: WhatsNewMessageRepository,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
-         syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager
+         syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
+         wideEvent: WideEventManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
+        self.wideEvent = wideEvent
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
@@ -177,7 +181,8 @@ final class MainCoordinator {
                                         privacyConfigurationManager: privacyConfigurationManager,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         privacyStats: privacyStats,
-                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner)
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
+                                        wideEvent: wideEvent)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
             syncService: syncService.sync
@@ -400,9 +405,9 @@ final class MainCoordinator {
             normalModel = TabsModel(desktop: isPadDevice, mode: .normal)
             fireModel = TabsModel(desktop: isPadDevice, mode: .fire)
             tabsPersistence.clearAll()
-            tabsPersistence.save(model: normalModel, for: .normal)
-            tabsPersistence.save(model: fireModel, for: .fire)
-            previewsSource.removeAllPreviews()
+            _ = tabsPersistence.save(model: normalModel, for: .normal)
+            _ = tabsPersistence.save(model: fireModel, for: .fire)
+            _ = previewsSource.removeAllPreviews()
         } else {
             normalModel = try tabsPersistence.getTabsModel(for: .normal)
                 ?? TabsModel(desktop: isPadDevice, mode: .normal)

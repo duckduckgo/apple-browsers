@@ -271,10 +271,13 @@ final class AIChatContextualSheetViewController: UIViewController {
         super.viewWillAppear(animated)
         configureSheetPresentation()
         pixelHandler.fireSheetOpened()
+        addKeyboardObserver()
     }
-    
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        view.endEditing(true)
+        removeKeyboardObserver()
         pixelHandler.fireSheetDismissed()
     }
 
@@ -351,7 +354,6 @@ private extension AIChatContextualSheetViewController {
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         isWebViewVisible = true
-        webVC.setMediumDetent(isCurrentlyMediumDetent)
     }
 
     func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
@@ -688,6 +690,25 @@ private extension AIChatContextualSheetViewController {
         modalPresentationStyle = .pageSheet
     }
 
+    func addKeyboardObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(sheetKeyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+    }
+
+    func removeKeyboardObserver() {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+    }
+
+    @objc func sheetKeyboardWillShow() {
+        if isWebViewVisible && isCurrentlyMediumDetent {
+            expandToLargeDetent()
+        }
+    }
+
     func configureSheetPresentation() {
         guard let sheet = sheetPresentationController else { return }
 
@@ -708,9 +729,7 @@ private extension AIChatContextualSheetViewController {
 extension AIChatContextualSheetViewController: UISheetPresentationControllerDelegate {
 
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
-        let isMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
-        isCurrentlyMediumDetent = isMediumDetent
-        webViewController?.setMediumDetent(isMediumDetent)
+        isCurrentlyMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
     }
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {

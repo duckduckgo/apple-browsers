@@ -24,7 +24,7 @@ import UIKit
 /// Protocol for tab controllers that support full mode AIChat content loading.
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String?, autoSend: Bool, payload: Any?, tools: [AIChatRAGTool]?, modelId: String?)
+    func load(_ query: String?, autoSend: Bool, payload: Any?, tools: [AIChatRAGTool]?, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
@@ -43,12 +43,12 @@ protocol AITabController {
 extension TabViewController: AITabController {
 
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil) {
+    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
 
         aiChatContentHandler.setPayload(payload: payload)
 
-        if let modelId, let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: autoSend, modelId: modelId)
+        if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: autoSend, images: images, modelId: modelId)
             AIChatPromptHandler.shared.setData(prompt)
         }
 

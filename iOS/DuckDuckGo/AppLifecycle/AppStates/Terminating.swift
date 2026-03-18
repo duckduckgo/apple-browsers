@@ -75,7 +75,7 @@ struct Terminating: TerminatingHandling {
         switch error {
         case .database(let error):
             additionalParams = [
-                PixelParameters.applicationState: "\(application.applicationState.rawValue)",
+                PixelParameters.applicationState: application.applicationState.stringValue,
                 PixelParameters.dataAvailability: "\(application.isProtectedDataAvailable)"
             ]
             switch error {
@@ -198,6 +198,19 @@ struct Terminating: TerminatingHandling {
         window.makeKeyAndVisible()
 
         rootViewController.present(alertController, animated: true, completion: nil)
+    }
+
+}
+
+private extension UIApplication.State {
+
+    var stringValue: String {
+        switch self {
+        case .active: return "active"
+        case .inactive: return "inactive"
+        case .background: return "background"
+        @unknown default: return "unknown"
+        }
     }
 
 }

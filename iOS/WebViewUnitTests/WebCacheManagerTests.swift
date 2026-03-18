@@ -366,8 +366,9 @@ class MockDataStoreCleaner: WebsiteDataStoreCleaning {
         return countContainersReturnValue
     }
     
-    func removeAllContainersAfterDelay(previousCount: Int) {
+    func removeAllContainersAfterDelay(previousCount: Int) async -> Result<Void, Error> {
         removeAllContainersAfterDelayCalls.append(previousCount)
+        return .success(())
     }
 
 }
@@ -376,8 +377,9 @@ class MockObservationsCleaner: ObservationsDataCleaning {
 
     var removeObservationsDataCallCount = 0
 
-    func removeObservationsData() async {
+    func removeObservationsData() async -> Result<Void, Error> {
         removeObservationsDataCallCount += 1
+        return .success(())
     }
 
 }

@@ -32,6 +32,8 @@ import WebKit
 
 final class UserScripts: UserScriptsProvider {
 
+    let contentBlockerUserScript: ContentBlockerRulesUserScript
+    let surrogatesScript: SurrogatesUserScript
     let autofillUserScript: AutofillUserScript
     let loginFormDetectionScript: LoginFormDetectionUserScript?
     let contentScopeUserScript: ContentScopeUserScript
@@ -57,7 +59,6 @@ final class UserScripts: UserScriptsProvider {
     private(set) var findInPageScript = FindInPageUserScript()
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingSubfeature = PrintingSubfeature()
-    private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
     private(set) var debugScript = DebugUserScript()
 
     private let isAutoconsentExtensionAvailable: Bool
@@ -69,6 +70,8 @@ final class UserScripts: UserScriptsProvider {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
+        contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
+        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
@@ -77,8 +80,8 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope,
-                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue],
-                                                                privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, trackerProtectionDataSource: sourceProvider.trackerProtectionDataSource, ctlEnabled: false))
+                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue],
+                                                                privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
                                                                         scriptContext: .contentScopeIsolated,
@@ -120,7 +123,6 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
         contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
-        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()
@@ -136,6 +138,8 @@ final class UserScripts: UserScriptsProvider {
         var scripts: [UserScript?] = [
             debugScript,
             findInPageScript,
+            surrogatesScript,
+            contentBlockerUserScript,
             fullScreenVideoScript,
             autofillUserScript,
             loginFormDetectionScript,

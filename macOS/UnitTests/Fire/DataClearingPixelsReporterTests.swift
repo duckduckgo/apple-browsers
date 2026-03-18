@@ -134,6 +134,19 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
+    @MainActor
+    func testWhenIsManualIsFalseThenNoRetriggerPixelIsFired() {
+        // Given - first call with isManual: false (auto-clear)
+        sut.fireRetriggerPixelIfNeeded(isManual: false)
+
+        // When - second call within window, also with isManual: false
+        currentTime += 10
+        sut.fireRetriggerPixelIfNeeded(isManual: false)
+
+        // Then - no pixels should fire because isManual is false
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire for auto-clear operations")
+    }
+
     // MARK: - Nil PixelFiring Tests
 
     @MainActor

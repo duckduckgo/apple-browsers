@@ -29,6 +29,23 @@ extension CABasicAnimation {
         return animation
     }
 
+    static func buildFadeInAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, toAlpha: Float = 1) -> CABasicAnimation {
+        buildFadeAnimation(duration: duration, timingFunctionName: timingFunctionName, fromAlpha: 0, toAlpha: toAlpha)
+    }
+
+    static func buildFadeOutAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromAlpha: Float? = nil) -> CABasicAnimation {
+        buildFadeAnimation(duration: duration, timingFunctionName: timingFunctionName, fromAlpha: fromAlpha, toAlpha: 0)
+    }
+
+    static func buildFadeAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromAlpha: Float? = nil, toAlpha: Float) -> CABasicAnimation {
+        let animation = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
+        animation.duration = duration
+        animation.fromValue = fromAlpha
+        animation.toValue = toAlpha
+        animation.timingFunction = CAMediaTimingFunction(name: timingFunctionName)
+        return animation
+    }
+
     static func buildRotationAnimation(duration: TimeInterval) -> CABasicAnimation {
         let animation = CABasicAnimation(keyPath: "transform.rotation.z")
         animation.fromValue = 0

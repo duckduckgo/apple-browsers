@@ -57,15 +57,15 @@ struct ReturnToTabCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabelText))
-        .accessibilityHint(Text("Switches to this tab"))
+        .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
         .accessibilityIdentifier("NTP.escapeHatch.card")
     }
 
     private var accessibilityLabelText: String {
         if model.subtitle.isEmpty {
-            return "Return to \(model.title)"
+            return String(format: UserText.escapeHatchReturnToAccessibilityLabelFormat, model.title)
         }
-        return "Return to \(model.title), \(model.subtitle)"
+        return String(format: UserText.escapeHatchReturnToWithSubtitleAccessibilityLabelFormat, model.title, model.subtitle)
     }
 
     private var returnToLabel: some View {
@@ -93,7 +93,7 @@ struct ReturnToTabCard: View {
     }
 
     private var returnToLabelText: String {
-        "Return to..."
+        UserText.escapeHatchReturnToLabel
     }
 }
 

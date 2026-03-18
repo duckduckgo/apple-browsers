@@ -837,7 +837,7 @@ extension SettingsViewModel {
     private func clearHistoryIfNeeded() {
         if !historyManager.isEnabledByUser {
             Task {
-                await self.historyManager.removeAllHistory()
+                _ = await self.historyManager.removeAllHistory()
             }
         }
     }
@@ -958,7 +958,7 @@ extension SettingsViewModel {
         let minutes = seconds / 60
         if minutes >= 1 {
             if minutes == 1 {
-                return UserText.settingsAfterInactivityIdleIntervalPlaceholder
+                return UserText.settingsAfterInactivityIdleIntervalMinuteSingular
             }
             return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, minutes)
         }

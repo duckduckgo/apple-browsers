@@ -148,8 +148,8 @@ extension TabExtensionsBuilder {
                                         userContentControllerFuture: args.userContentControllerFuture,
                                         cbaTimeReporter: dependencies.cbaTimeReporter,
                                         privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                                        tld: dependencies.privacyFeatures.contentBlocking.tld,
-                                        trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature))
+                                        contentBlockerRulesUserScriptPublisher: userScripts.map(\.?.contentBlockerRulesScript),
+                                        surrogatesUserScriptPublisher: userScripts.map(\.?.surrogatesScript))
         }
 
         let specialErrorPageTabExtension = add {
@@ -191,6 +191,7 @@ extension TabExtensionsBuilder {
         add {
             AdClickAttributionTabExtension(inheritedAttribution: args.inheritedAttribution,
                                            userContentControllerFuture: args.userContentControllerFuture,
+                                           contentBlockerRulesScriptPublisher: userScripts.map { $0?.contentBlockerRulesScript },
                                            trackerInfoPublisher: contentBlocking.trackersPublisher.map { $0.request },
                                            dependencies: dependencies.privacyFeatures.contentBlocking)
         }

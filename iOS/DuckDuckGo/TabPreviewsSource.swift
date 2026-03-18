@@ -25,7 +25,7 @@ protocol TabPreviewsSource: AnyObject {
     func prepare()
     func update(preview: UIImage, forTab tab: Tab)
     func removePreview(forTab tab: Tab)
-    func removeAllPreviews()
+    func removeAllPreviews() -> Result<Void, Error>
     func removePreviewsWithIdNotIn(_ ids: Set<String>) async
     func totalStoredPreviews() -> Int?
     func preview(for tab: Tab) -> UIImage?
@@ -57,7 +57,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         
         // Remove already stored previews for tabs that were not yet closed by the user
         if !tabSettings.isGridViewEnabled {
-            removeAllPreviews()
+            _ = removeAllPreviews()
         }
     }
     
@@ -94,15 +94,29 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         }
     }
     
-    func removeAllPreviews() {
+    func removeAllPreviews() -> Result<Void, Error> {
         cache.removeAll()
-        guard let dirUrl = previewStoreDir else { return }
-        
-        if let previews = try? FileManager.default.contentsOfDirectory(at: dirUrl, includingPropertiesForKeys: nil) {
+        guard let dirUrl = previewStoreDir else { return .success(()) }
+
+        var encounteredError: Error?
+
+        do {
+            let previews = try FileManager.default.contentsOfDirectory(at: dirUrl, includingPropertiesForKeys: nil)
             for previewUrl in previews {
-                try? FileManager.default.removeItem(at: previewUrl)
+                do {
+                    try FileManager.default.removeItem(at: previewUrl)
+                } catch {
+                    encounteredError = error
+                }
             }
+        } catch {
+            encounteredError = error
         }
+
+        if let error = encounteredError {
+            return .failure(error)
+        }
+        return .success(())
     }
     
     fileprivate func cleanupCache() {

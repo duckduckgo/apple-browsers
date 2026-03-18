@@ -4,4 +4,5 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: "Browsing menu"
 - scrollUntilVisible:
     element: ${ITEM}
+    centerElement: true
 - tapOn: ${ITEM}

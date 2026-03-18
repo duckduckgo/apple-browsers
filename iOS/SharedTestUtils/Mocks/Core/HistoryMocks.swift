@@ -21,6 +21,7 @@ import Foundation
 import XCTest
 import BrowserServicesKit
 import Persistence
+import PixelKit
 import History
 @testable import Core
 
@@ -55,8 +56,9 @@ class MockHistoryManager: HistoryManaging {
         return historyFeatureEnabled
     }
 
-    func removeAllHistory() async {
+    func removeAllHistory() async -> Result<Void, Error> {
         removeAllHistoryCallCount += 1
+        return .success(())
     }
 
     func deleteHistoryForURL(_ url: URL) async {
@@ -83,13 +85,15 @@ class MockHistoryManager: HistoryManaging {
         return tabHistoryResult
     }
     
-    func removeTabHistory(for tabIDs: [String]) async {
+    func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
         removeTabHistoryCalls.append(tabIDs)
         removeTabHistoryExpectation?.fulfill()
+        return .success(())
     }
     
-    func removeBrowsingHistory(tabID: String) async {
+    func removeBrowsingHistory(tabID: String) async -> ActionResult? {
         removeBrowsingHistoryCalls.append(tabID)
+        return ActionResult(result: .success(()), measuredInterval: .init(start: .now, end: .now))
     }
 
 }

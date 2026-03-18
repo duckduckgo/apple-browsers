@@ -4257,7 +4257,7 @@ extension MainViewController {
                                 transitionCompletion: (() -> Void)? = nil,
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
-        let tabsCount = tabManager.currentTabsModel.count // TODO: - Customize based on browsing mode
+        let tabsCount = tabsCount(for: request.scope)
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         
@@ -4268,7 +4268,7 @@ extension MainViewController {
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: { [weak self] in
-            self?.presentPostBurnMessage(scope: request.scope, tabsCount: tabsCount)
+            self?.presentPostBurnMessage(tabsCount: tabsCount)
             transitionCompletion?()
         } completion: {
             self.subscriptionDataReporter.saveFireCount()
@@ -4290,16 +4290,20 @@ extension MainViewController {
         }
     }
     
-    @MainActor
-    private func presentPostBurnMessage(scope: FireRequest.Scope, tabsCount: Int) {
-        let message: String
+    private func tabsCount(for scope: FireRequest.Scope) -> Int {
         switch scope {
-        case .all, .fireMode:
-            message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
-            
         case .tab:
-            message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: 1)
+            return 1
+        case .fireMode:
+            return tabManager.currentTabsModel.count
+        case .all:
+            return tabManager.allTabsModel.count
         }
+    }
+    
+    @MainActor
+    private func presentPostBurnMessage(tabsCount: Int) {
+        let message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
         ActionMessageView.present(message: message,
                                   presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
     }

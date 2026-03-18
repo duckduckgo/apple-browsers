@@ -297,6 +297,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the new Tab Animations (Milestone 1)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
     case tabAnimations
+
+    /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
+    case lazyMenuRebuild
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -328,7 +331,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics,
-                .promoQueue:
+                .promoQueue,
+                .lazyMenuRebuild:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
@@ -430,7 +434,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webViewLookUpAction,
                 .promoQueue,
                 .semaphoreAlwaysVisible,
-                .tabAnimations:
+                .tabAnimations,
+                .lazyMenuRebuild:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -616,6 +621,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.promoQueue))
         case .tabAnimations:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
+        case .lazyMenuRebuild:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
         }
     }
 }

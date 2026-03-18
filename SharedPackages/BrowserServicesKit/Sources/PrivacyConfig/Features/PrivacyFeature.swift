@@ -181,6 +181,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case semaphoreAlwaysVisible
 
     case tabAnimations
+
+    case lazyMenuRebuild
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

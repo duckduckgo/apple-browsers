@@ -27,8 +27,8 @@ enum TestExperimentFlags: String, CaseIterable {
 }
 
 extension TestExperimentFlags: FeatureFlagDescribing {
-    var defaultValue: Bool {
-        false
+    var defaultValue: FeatureFlagDefaultValue {
+        .disabled
     }
 
     var supportsLocalOverriding: Bool { true }

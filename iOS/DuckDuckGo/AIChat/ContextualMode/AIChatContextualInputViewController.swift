@@ -66,8 +66,7 @@ final class AIChatContextualInputViewController: UIViewController {
         return view
     }()
 
-    private var safeAreaBottomConstraint: NSLayoutConstraint?
-    private var keyboardBottomConstraint: NSLayoutConstraint?
+    private var bottomConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
@@ -160,6 +159,8 @@ private extension AIChatContextualInputViewController {
         quickActionsScrollView.addSubview(quickActionsView)
         embedNativeInputViewController()
 
+        bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+
         NSLayoutConstraint.activate([
             quickActionsScrollView.topAnchor.constraint(equalTo: view.topAnchor),
             quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
@@ -176,11 +177,8 @@ private extension AIChatContextualInputViewController {
             nativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: quickActionsView.bottomAnchor, constant: Constants.quickActionsBottomSpacing),
             nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            nativeInputViewController.view.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor),
+            bottomConstraint!,
         ])
-
-        safeAreaBottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        safeAreaBottomConstraint?.isActive = true
     }
 
     func embedNativeInputViewController() {
@@ -232,37 +230,23 @@ private extension AIChatContextualInputViewController {
         )
     }
 
-    // Note: UIKeyboardLayoutGuide has known issues on first appearance in sheets.
-    // The layout frame isn't properly initialized until after the view has appeared.
-    // We use a safe area constraint initially, then switch to keyboard layout guide when the keyboard appears.
-    //
-    // Related references:
-    // - https://useyourloaf.com/blog/keyboard-layout-guide/
-    // - https://developer.apple.com/forums/thread/746826
-
     @objc func keyboardWillShow(_ notification: Notification) {
-        if keyboardBottomConstraint == nil {
-            safeAreaBottomConstraint?.isActive = false
-            keyboardBottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(
-                equalTo: view.keyboardLayoutGuide.topAnchor,
-                constant: -Constants.keyboardSpacing
-            )
-            keyboardBottomConstraint?.isActive = true
-        } else {
-            keyboardBottomConstraint?.constant = -Constants.keyboardSpacing
-        }
+        bottomConstraint?.constant = -Constants.keyboardSpacing
     }
 
     @objc func keyboardWillHide(_ notification: Notification) {
-        keyboardBottomConstraint?.constant = 0
+        bottomConstraint?.constant = bottomPaddingForOrientation()
     }
 
     func updateBottomPaddingForOrientation() {
-        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+        bottomConstraint?.constant = bottomPaddingForOrientation()
+    }
+
+    func bottomPaddingForOrientation() -> CGFloat {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return 0 }
         let isLandscape = UIDevice.current.orientation.isLandscape ||
             (view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
-        let padding: CGFloat = isLandscape ? Constants.iPadLandscapeBottomPadding : 0
-        safeAreaBottomConstraint?.constant = -padding
+        return isLandscape ? -Constants.iPadLandscapeBottomPadding : 0
     }
 }
 

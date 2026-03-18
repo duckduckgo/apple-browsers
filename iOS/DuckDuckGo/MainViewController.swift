@@ -667,6 +667,12 @@ class MainViewController: UIViewController {
         DailyPixel.fireDaily(.aiChatContextualAutoAttachDAU,
                              withAdditionalParameters: ["is_enabled": isEnabled])
     }
+
+    private func fireAIChatIsEnabledPixel() {
+        let isEnabled = "\(aiChatSettings.isAIChatEnabled)"
+        DailyPixel.fireDaily(.aiChatIsEnabledDaily,
+                             withAdditionalParameters: ["is_enabled": isEnabled])
+    }
     
     private func fireKeyboardSettingsPixels() {
         let keyboardSettings = KeyboardSettings()
@@ -1535,6 +1541,7 @@ class MainViewController: UIViewController {
         fireExperimentalAddressBarPixel()
         fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
+        fireAIChatIsEnabledPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
         skipSERPFlow = true
@@ -1668,7 +1675,7 @@ class MainViewController: UIViewController {
     ///   - autoSend: Whether to automatically send the query. Defaults to `false`.
     ///   - payload: Optional payload data for AI Chat. Defaults to `nil`.
     ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
-    private func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
         guard let currentTab else {
             assertionFailure("load called with no current tab")
             return
@@ -1677,9 +1684,8 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
 
-
         prepareTabForRequest {
-            currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
+            currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools, modelId: modelId, images: images)
         }
     }
 
@@ -2725,9 +2731,9 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters, includedParameters: [.atb])
     }
 
-    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
-            openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools)
+            openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools, modelId: modelId, images: images)
         } else {
             aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
         }
@@ -2740,13 +2746,13 @@ class MainViewController: UIViewController {
     ///   - autoSend: Whether to automatically send the query
     ///   - payload: Optional payload data for AI Chat
     ///   - tools: Optional RAG tools available in AI Chat
-    private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+    private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             return
         }
 
-        load(query, autoSend: autoSend, payload: payload, tools: tools)
+        load(query, autoSend: autoSend, payload: payload, tools: tools, modelId: modelId, images: images)
     }
     
     /// Executes the closure if the current tab is an AI tab

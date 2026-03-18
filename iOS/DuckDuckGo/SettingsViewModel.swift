@@ -1545,6 +1545,7 @@ extension SettingsViewModel {
         Binding<DefaultOmnibarMode>(
             get: { self.aiChatSettings.defaultOmnibarMode },
             set: { newValue in
+                guard newValue != self.aiChatSettings.defaultOmnibarMode else { return }
                 self.objectWillChange.send()
                 self.aiChatSettings.setDefaultOmnibarMode(newValue)
             }

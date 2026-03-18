@@ -117,7 +117,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   escapeHatch: EscapeHatchModel? = nil) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
-        self.daxLogoManager = DaxLogoManager()
+        self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -319,7 +319,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: escapeHatchModel)
+        let suggestionTrayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: suggestionTrayEscapeHatch)
         suggestionTrayManager = manager
     }
 
@@ -356,8 +357,21 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installDaxLogoView() {
-        if let view = switchBarVC.segmentedPickerView {
-            daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, barView: view, isTopBarPosition: isUsingTopBarPosition)
+        if switchBarHandler.isFireTab {
+            let escapeHatchTap: (() -> Void)? = escapeHatchModel.map { model in
+                { [weak self] in self?.delegate?.onSwitchToTab(model.targetTab) }
+            }
+            daxLogoManager.installInViewController(self,
+                                                   asSubviewOf: contentContainerView,
+                                                   anchorView: switchBarVC.view,
+                                                   isTopBarPosition: isUsingTopBarPosition,
+                                                   escapeHatch: escapeHatchModel,
+                                                   onEscapeHatchTap: escapeHatchTap)
+        } else if let view = switchBarVC.segmentedPickerView {
+            daxLogoManager.installInViewController(self,
+                                                   asSubviewOf: contentContainerView,
+                                                   anchorView: view,
+                                                   isTopBarPosition: isUsingTopBarPosition)
         }
     }
 
@@ -572,7 +586,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
-        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchModel != nil ? Constants.escapeHatchLogoZoneHeight : 0)
+        let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Constants.escapeHatchLogoZoneHeight : 0
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
     }
 
 }

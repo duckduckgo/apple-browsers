@@ -40,12 +40,14 @@ class MockTabPreviewsSource: TabPreviewsSource {
     func removePreview(forTab tab: DuckDuckGo.Tab) {
     }
 
-    func removeAllPreviews() {
+    func removeAllPreviews() -> Result<Void, Error> {
         removeAllPreviewsCalled = true
+        return .success(())
     }
 
-    func removePreviewsWithIdNotIn(_ ids: Set<String>) {
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) -> Result<Void, Error>  {
         removePreviewsWithIdNotInCalls.append(ids)
+        return .success(())
     }
 
     func totalStoredPreviews() -> Int? {

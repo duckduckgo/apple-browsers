@@ -29,6 +29,7 @@ import PersistenceTestingUtils
 import DDGSync
 import WKAbstractions
 import BrowserServicesKitTestsUtils
+import PixelKitTestingUtilities
 
 @MainActor
 final class FireExecutorTests: XCTestCase {
@@ -202,7 +203,8 @@ final class FireExecutorTests: XCTestCase {
             dataStore: MockWebsiteDataStore(),
             historyCleanerProvider: { self.mockHistoryCleaner },
             appSettings: mockAppSettings,
-            aiChatSyncCleaner: mockAIChatSyncCleaner
+            aiChatSyncCleaner: mockAIChatSyncCleaner,
+            wideEvent: WideEventMock()
         )
         executor.delegate = mockDelegate
         return executor

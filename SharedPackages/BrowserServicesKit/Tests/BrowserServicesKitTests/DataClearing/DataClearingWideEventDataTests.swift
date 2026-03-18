@@ -30,13 +30,13 @@ final class DataClearingWideEventDataTests: XCTestCase {
 
         // When
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: contextData
         )
 
         // Then
-        XCTAssertEqual(eventData.options, .all)
+        XCTAssertNil(eventData.options)
+        XCTAssertNil(eventData.includedOptions)
         XCTAssertEqual(eventData.trigger, .manualFire)
         XCTAssertNil(eventData.overallDuration)
         XCTAssertNil(eventData.scope)
@@ -52,7 +52,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
 
         // When
         let eventData = DataClearingWideEventData(
-            options: .tab,
+            includedOptions: "tabs",
             trigger: .manualFire,
             overallDuration: WideEvent.MeasuredInterval(start: base, end: base.addingTimeInterval(2.5)),
             scope: .tab,
@@ -61,7 +61,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         )
 
         // Then
-        XCTAssertEqual(eventData.options, .tab)
+        XCTAssertEqual(eventData.includedOptions, "tabs")
         XCTAssertEqual(eventData.trigger, .manualFire)
         XCTAssertEqual(eventData.scope, .tab)
         XCTAssertEqual(eventData.source, .browsing)
@@ -97,10 +97,10 @@ final class DataClearingWideEventDataTests: XCTestCase {
 
     // MARK: - B. JSON Parameters - Basic Fields
 
-    func testJSONParameters_includesRequiredFields() {
+    func testJSONParameters_includesRequiredFields_iOS() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
+            includedOptions: "tabs,data,aiChats",
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -109,14 +109,29 @@ final class DataClearingWideEventDataTests: XCTestCase {
         let params = eventData.jsonParameters()
 
         // Then
-        XCTAssertEqual(params["feature.data.ext.options"] as? String, "all")
+        XCTAssertEqual(params["feature.data.ext.included_options"] as? String, "tabs,data,aiChats")
         XCTAssertEqual(params["feature.data.ext.trigger"] as? String, "manualFire")
+    }
+
+    func testJSONParameters_includesRequiredFields_macOS() {
+        // Given
+        let eventData = DataClearingWideEventData(
+            options: .all,
+            trigger: .manual,
+            contextData: WideEventContextData(name: "test-context")
+        )
+
+        // When
+        let params = eventData.jsonParameters()
+
+        // Then
+        XCTAssertEqual(params["feature.data.ext.options"] as? String, "all")
+        XCTAssertEqual(params["feature.data.ext.trigger"] as? String, "manual")
     }
 
     func testJSONParameters_includesOverallDuration() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -136,7 +151,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_includesIOSOnlyFields() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .tab,
+            includedOptions: "tabs",
             trigger: .manualFire,
             scope: .tab,
             source: .browsing,
@@ -147,6 +162,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         let params = eventData.jsonParameters()
 
         // Then
+        XCTAssertEqual(params["feature.data.ext.included_options"] as? String, "tabs")
         XCTAssertEqual(params["feature.data.ext.scope"] as? String, "tab")
         XCTAssertEqual(params["feature.data.ext.source"] as? String, "browsing")
     }
@@ -172,7 +188,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_excludesNilOptionalFields() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -181,6 +196,8 @@ final class DataClearingWideEventDataTests: XCTestCase {
         let params = eventData.jsonParameters()
 
         // Then
+        XCTAssertNil(params["feature.data.ext.options"])
+        XCTAssertNil(params["feature.data.ext.included_options"])
         XCTAssertNil(params["feature.data.ext.overall_latency_ms"])
         XCTAssertNil(params["feature.data.ext.scope"])
         XCTAssertNil(params["feature.data.ext.source"])
@@ -193,7 +210,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_includesActionLatency() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -213,7 +229,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_includesActionStatus() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -229,7 +244,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_includesActionError_topLevelOnly() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -248,7 +262,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_includesActionError_withSingleUnderlyingError() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -271,7 +284,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_includesActionError_withMultipleUnderlyingErrors() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -299,7 +311,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_excludesNilActionFields() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -320,7 +331,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_completeSuccessfulFlow_withMultipleActions() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -393,7 +403,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testActionDurationPath_returnsCorrectKeyPath_forSharedActions() {
         // Given
         var eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -414,7 +423,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testActionDurationPath_returnsCorrectKeyPath_forIOSOnlyActions() {
         // Given
         var eventData = DataClearingWideEventData(
-            options: .tab,
+            includedOptions: "tabs",
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -450,7 +459,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testActionStatusPath_returnsCorrectKeyPath() {
         // Given
         var eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -466,7 +474,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testActionErrorPath_returnsCorrectKeyPath() {
         // Given
         var eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -484,7 +491,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testAllActionKeyPaths_areAccessible() {
         // Given
         var eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -582,7 +588,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testCompletionDecision_noOverallDurationStart_returnsPartialData() async {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -602,7 +607,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testCompletionDecision_intervalAlreadyCompleted_returnsPartialData() async {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -624,7 +628,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testCompletionDecision_clearingTimeoutExceeded_returnsTimeout() async {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -646,7 +649,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testCompletionDecision_withinTimeout_returnsKeepPending() async {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -670,7 +672,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testDurationFormatting_roundsTo10msPrecision() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -710,7 +711,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
 
         for (inputMs, expected) in testCases {
             let eventData = DataClearingWideEventData(
-                options: .all,
                 trigger: .manualFire,
                 contextData: WideEventContextData(name: "test-context")
             )
@@ -730,7 +730,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testDurationFormatting_capsAt10Seconds() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -751,7 +750,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testDurationFormatting_appliesToOverallLatency() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -772,7 +770,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testDurationFormatting_overallLatencyCappedAt10Seconds() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -793,7 +790,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testDurationFormatting_exactlyAtCap() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -814,7 +810,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testDurationFormatting_handlesZero() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -852,7 +847,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_withErrorDescription_includesDescription() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -869,7 +863,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_withoutErrorDescription_excludesDescription() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -886,7 +879,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_withStartOnlyDuration_excludesDuration() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )
@@ -902,7 +894,6 @@ final class DataClearingWideEventDataTests: XCTestCase {
     func testJSONParameters_withEndOnlyDuration_excludesDuration() {
         // Given
         let eventData = DataClearingWideEventData(
-            options: .all,
             trigger: .manualFire,
             contextData: WideEventContextData(name: "test-context")
         )

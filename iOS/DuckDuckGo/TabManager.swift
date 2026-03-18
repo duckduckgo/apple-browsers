@@ -36,7 +36,7 @@ protocol TabManaging {
     var currentBrowsingMode: BrowsingMode { get }
     @MainActor func prepareAllTabsExceptCurrentForDataClearing(browsingMode: BrowsingMode?)
     @MainActor func prepareCurrentTabForDataClearing(browsingMode: BrowsingMode?)
-    @MainActor func removeAll(browsingMode: BrowsingMode?)
+    @MainActor func removeAll(browsingMode: BrowsingMode?) -> Result<Void, Error>
     @MainActor func viewModelForCurrentTab() -> TabViewModel?
     @MainActor func prepareTab(_ tab: Tab)
     @MainActor func isCurrentTab(_ tab: Tab) -> Bool
@@ -400,7 +400,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         tabControllerCache.append(controller)
         cacheDelegate?.tabManager(self, didCreateController: controller)
 
-        save()
+        _ = save()
         return controller
     }
 
@@ -408,7 +408,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
         model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
-        save()
+        _ = save()
     }
 
     func firstHomeTab(in tabsModel: TabsModelManaging? = nil) -> Tab? {
@@ -451,7 +451,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             current()?.dismiss()
         }
         model.select(tab: tab)
-        save()
+        _ = save()
         return current(createIfNeeded: true)
     }
 
@@ -472,10 +472,13 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         tabControllerCache.append(controller)
 
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: !inBackground)
+        if !inBackground {
+            tab.viewed = true
+        }
 
         cacheDelegate?.tabManager(self, didCreateController: controller)
 
-        save()
+        _ = save()
         return controller
     }
 
@@ -487,7 +490,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         model.removeTabs(tabs)
         clean(tabs: tabs, clearTabHistory: true)
-        save()
+        _ = save()
     }
 
     @MainActor
@@ -495,7 +498,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
-        save()
+        _ = save()
     }
 
     @MainActor
@@ -512,7 +515,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)
             clean(tabs: [tab], clearTabHistory: clearTabHistory)
         }
-        save()
+        _ = save()
     }
 
     @MainActor
@@ -524,7 +527,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func removeLeftoverInteractionStates() {
-        interactionStateSource?.removeAll(excluding: allTabsModel.tabs)
+        _ = interactionStateSource?.removeAll(excluding: allTabsModel.tabs)
     }
 
     @MainActor
@@ -538,8 +541,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
 
-    func save() {
-        tabsModelProvider.save()
+    func save() -> Result<Void, Error> {
+        return tabsModelProvider.save()
     }
 
     /// Prepares all tabs for upcoming data clearing, skipping the current tab
@@ -663,19 +666,30 @@ extension TabManager {
     }
     
     @MainActor
-    func removeAll(browsingMode: BrowsingMode? = nil) {
+    func removeAll(browsingMode: BrowsingMode? = nil) -> Result<Void, Error> {
         let tabsData = tabsRemovalData(browsingMode: browsingMode)
 
-        previewsSource.removePreviewsWithIdNotIn(tabsData.tabIDsToPreserve)
+        let previewsResult = previewsSource.removePreviewsWithIdNotIn(tabsData.tabIDsToPreserve)
         tabsModelProvider.clearTabs(for: browsingMode)
 
         for controller in tabsData.tabControllersToDelete {
             removeFromCache(controller)
         }
 
-        interactionStateSource?.removeAll(excluding: tabsData.tabsToPreserve)
+        let interactionResult = interactionStateSource?.removeAll(excluding: tabsData.tabsToPreserve)
         removeTabHistory(for: Array(tabsData.tabIDsToDelete))
-        save()
+        let saveResult = save()
+
+        if case .failure(let error) = previewsResult {
+            return .failure(error)
+        }
+        if let interactionResult = interactionResult, case .failure(let error) = interactionResult {
+            return .failure(error)
+        }
+        if case .failure(let error) = saveResult {
+            return .failure(error)
+        }
+        return .success(())
     }
     
     private func tabsRemovalData(browsingMode: BrowsingMode?) -> TabsRemovalData {
@@ -728,7 +742,7 @@ extension TabManager {
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
             ])
             Task(priority: .utility) {
-                previewsSource.removePreviewsWithIdNotIn(Set(allTabsModel.tabs.map { $0.uid }))
+                _ = previewsSource.removePreviewsWithIdNotIn(Set(allTabsModel.tabs.map { $0.uid }))
             }
         }
     }

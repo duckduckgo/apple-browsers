@@ -58,9 +58,10 @@ class MockTabManager: TabManaging {
         prepareCurrentTabBrowsingMode = browsingMode
     }
     
-    nonisolated func removeAll(browsingMode: BrowsingMode? = nil) {
+    nonisolated func removeAll(browsingMode: BrowsingMode? = nil) -> Result<Void, Error> {
         removeAllCalled = true
         removeAllBrowsingMode = browsingMode
+        return .success(())
     }
 
     func viewModelForCurrentTab() -> DuckDuckGo.TabViewModel? {

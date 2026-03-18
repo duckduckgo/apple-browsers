@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 
 // MARK: - Delegate Protocol
@@ -31,6 +32,9 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapDismiss(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
+    func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -135,6 +139,31 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isModelChipHidden = newValue }
     }
 
+    var isImageButtonHidden: Bool {
+        get { inputBarView.isImageButtonHidden }
+        set { inputBarView.isImageButtonHidden = newValue }
+    }
+
+    var isAttachmentsFull: Bool {
+        inputBarView.isAttachmentsFull
+    }
+
+    var currentAttachments: [AIChatImageAttachment] {
+        inputBarView.currentAttachments
+    }
+
+    func addAttachment(_ attachment: AIChatImageAttachment) {
+        inputBarView.addAttachment(attachment)
+    }
+
+    func removeAttachment(id: UUID) {
+        inputBarView.removeAttachment(id: id)
+    }
+
+    func removeAllAttachments() {
+        inputBarView.removeAllAttachments()
+    }
+
     func apply(_ config: UTIViewConfig, animated: Bool) {
         cardPosition = config.cardPosition
         usesOmnibarMargins = config.usesOmnibarMargins
@@ -182,6 +211,18 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.delegate = self
         barView.onNeedsHierarchyLayout = { [weak self] in
             self?.view.window?.layoutIfNeeded()
+        }
+        barView.onAttachTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapAttach(self)
+        }
+        barView.onAttachmentRemoved = { [weak self] id in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVC(self, didRemoveAttachment: id)
+        }
+        barView.onAttachmentsLayoutDidChange = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidChangeAttachments(self)
         }
         view = barView
     }

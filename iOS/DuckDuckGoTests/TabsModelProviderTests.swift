@@ -91,7 +91,7 @@ final class TabsModelProviderTests: XCTestCase {
 
         let sut = makeSUT(normalModel: normalModel, fireModel: fireModel, persistence: persistence)
 
-        sut.save()
+        _ = sut.save()
 
         XCTAssertEqual(persistence.savedModels.count, 2)
         XCTAssertTrue(persistence.savedModels.contains { $0.key == .normal && $0.model === normalModel })
@@ -122,8 +122,9 @@ private final class MockTabsModelPersistence: TabsModelPersisting {
         nil
     }
 
-    func save(model: TabsModel, for key: TabsModelStorageKey) {
+    func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         savedModels.append(SavedModel(model: model, key: key))
+        return .success(())
     }
 
     func clear(for key: TabsModelStorageKey) {}

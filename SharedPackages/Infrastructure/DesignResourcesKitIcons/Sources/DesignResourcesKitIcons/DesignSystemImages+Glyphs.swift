@@ -426,6 +426,8 @@ public extension DesignSystemImages {
             public static var findSearchSmall: DesignSystemImage { .init(resource: .findSearchSmall24) }
             public static var fire: DesignSystemImage { .init(resource: .fire24) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid24) }
+            public static var fireTabMobile: DesignSystemImage { .init(resource: .fireTabMobile24) }
+            public static var fireTabMobileFrame: DesignSystemImage { .init(resource: .fireTabMobileFrame24) }
             public static var fireTabs: DesignSystemImage { .init(resource: .fireTabs24) }
             public static var fireproof: DesignSystemImage { .init(resource: .fireproof24) }
             public static var fireproofSolid: DesignSystemImage { .init(resource: .fireproofSolid24) }

@@ -250,6 +250,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case customXSafariRedirectHandling
 
     case crashReportOptInStatusResetting
+
+    case fireproofingETLDPlus1
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

@@ -37,6 +37,7 @@ public protocol AIChatInputBoxHandling {
 
 public enum AIChatStatusValue: String, Codable {
     case startStreamNewPrompt = "start_stream:new_prompt"
+    case startStreamRestartStream = "start_stream:restart_stream"
     case loading
     case streaming
     case error

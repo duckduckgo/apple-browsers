@@ -157,6 +157,11 @@
                 "key": "is-bookmarks-db-file-present",
                 "description": "Whether the main bookmarks database file exists in the App Group container",
                 "type": "boolean"
+            },
+            {
+                "key": "is-bookmarks-db-file-present-2",
+                "description": "Whether the main bookmarks database file exists in the App Group container (checked at validator creation time)",
+                "type": "boolean"
             }
         ]
     },

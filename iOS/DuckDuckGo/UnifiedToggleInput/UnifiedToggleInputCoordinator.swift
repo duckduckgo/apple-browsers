@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import os.log
+import PhotosUI
 import Subscription
 import UIKit
 
@@ -70,6 +71,8 @@ struct SubscriptionState {
 
 @MainActor
 final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
+
+    private static let maxImageAttachments = 3
 
     // MARK: - AIChatInputBoxHandling
 
@@ -124,10 +127,13 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         return id ?? firstAccessibleModelId
     }
 
+    var currentModelId: String? {
+        preferences.selectedModelId
+    }
+
     var selectedModelSupportsImageUpload: Bool {
-        guard !models.isEmpty else { return true }
-        guard let id = persistedModelId else { return true }
-        return models.first(where: { $0.id == id })?.supportsImageUpload ?? true
+        guard !models.isEmpty else { return false }
+        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
     }
 
     var isOmnibarSession: Bool {
@@ -156,9 +162,10 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         models.first(where: { $0.entityHasAccess })?.id
     }
 
+    private var cancellables = Set<AnyCancellable>()
+
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
-    private var cancellables = Set<AnyCancellable>()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -173,6 +180,11 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private let modeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
     var modeChangePublisher: AnyPublisher<TextEntryMode, Never> {
         modeChangeSubject.eraseToAnyPublisher()
+    }
+
+    private let attachmentsChangeSubject = PassthroughSubject<Void, Never>()
+    var attachmentsChangePublisher: AnyPublisher<Void, Never> {
+        attachmentsChangeSubject.eraseToAnyPublisher()
     }
 
     // MARK: - Initialization
@@ -233,6 +245,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         boundUserScriptIdentifier = nil
         hasSubmittedPrompt = false
         updateModelChipVisibility()
+        clearAttachments()
         resetSessionState()
     }
 
@@ -340,6 +353,9 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         inputMode = effectiveMode
         viewController.setInputMode(effectiveMode, animated: animated)
         modeChangeSubject.send(effectiveMode)
+        if effectiveMode == .search {
+            clearAttachments()
+        }
     }
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
@@ -400,6 +416,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         isInputVisibleForKeyboard = true
         viewController.text = ""
         textState = .empty
+        clearAttachments()
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
@@ -554,6 +571,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
                 self.models = Self.resolveModels(from: remoteModels, userTier: state.userTier)
                 self.clearStaleModelSelectionIfNeeded()
                 self.updateModelChipLabel()
+                self.updateImageButtonVisibility()
             } catch {
                 os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
             }
@@ -563,12 +581,14 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func startNewChat() {
         hasSubmittedPrompt = false
         updateModelChipVisibility()
+        clearAttachments()
     }
 
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
         preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
         updateModelChipLabel()
+        updateImageButtonVisibility()
     }
 
     private func buildModelMenuDescription() -> UnifiedToggleInputModelMenu {
@@ -613,7 +633,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     private func updateModelChipLabel() {
-        guard let selectedId = persistedModelId else { return }
+        let selectedId = persistedModelId
         let shortName = models.first(where: { $0.id == selectedId })?.shortName
         if let shortName {
             viewController.modelName = shortName
@@ -672,6 +692,43 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         if isStale {
             preferences.selectedModelId = nil
             preferences.selectedModelShortName = nil
+        }
+    }
+
+    // MARK: - Image Attachments
+
+    func presentImagePicker() {
+        let remaining = Self.maxImageAttachments - viewController.currentAttachments.count
+        guard remaining > 0 else { return }
+        guard let scene = viewController.view.window?.windowScene,
+              let root = scene.keyWindow?.rootViewController else { return }
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = remaining
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        root.present(picker, animated: true)
+    }
+
+    func addImageAttachment(image: UIImage, fileName: String) {
+        guard !viewController.isAttachmentsFull else { return }
+        let attachment = AIChatImageAttachment(image: image, fileName: fileName)
+        viewController.addAttachment(attachment)
+    }
+
+    func removeAttachment(id: UUID) {
+        viewController.removeAttachment(id: id)
+    }
+
+    func clearAttachments() {
+        viewController.removeAllAttachments()
+    }
+
+    func updateImageButtonVisibility() {
+        let supportsImages = selectedModelSupportsImageUpload
+        viewController.isImageButtonHidden = !supportsImages
+        if !supportsImages {
+            clearAttachments()
         }
     }
 
@@ -736,6 +793,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            let images = UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+            let modelId = hasSubmittedPrompt ? nil : persistedModelId
+            clearAttachments()
             hasSubmittedPrompt = true
             updateModelChipVisibility()
             if isOmnibarSession {
@@ -743,10 +803,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             } else {
                 showCollapsed()
             }
-            if boundUserScript != nil {
-                didSubmitPrompt.send(text)
+            if let userScript = boundUserScript {
+                userScript.submitPrompt(text, images: images, modelId: modelId)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: persistedModelId)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: modelId, images: images)
             }
         }
     }
@@ -773,6 +833,38 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             showCollapsed()
         } else {
             deactivateToOmnibar()
+        }
+    }
+
+    func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController) {
+        presentImagePicker()
+    }
+
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID) {
+        removeAttachment(id: id)
+    }
+
+    func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {
+        attachmentsChangeSubject.send()
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+
+extension UnifiedToggleInputCoordinator: PHPickerViewControllerDelegate {
+
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        for result in results {
+            let provider = result.itemProvider
+            guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
+            provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
+                guard let image = object as? UIImage else { return }
+                let fileName = provider.suggestedName ?? "image"
+                DispatchQueue.main.async {
+                    self?.addImageAttachment(image: image, fileName: fileName)
+                }
+            }
         }
     }
 }

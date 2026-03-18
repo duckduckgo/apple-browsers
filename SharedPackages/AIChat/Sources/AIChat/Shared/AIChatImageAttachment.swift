@@ -107,9 +107,29 @@ public struct AIChatImageAttachment: Identifiable {
 
     public init(id: UUID = UUID(), image: UIImage, fileName: String, fileURL: URL? = nil) {
         self.id = id
-        self.image = image
+        self.image = Self.resizeIfNeeded(image, maxDimension: 512)
         self.fileName = fileName
         self.fileURL = fileURL
+    }
+
+    private static func resizeIfNeeded(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        guard size.width > maxDimension || size.height > maxDimension else {
+            return image
+        }
+
+        let aspectRatio = size.width / size.height
+        let newSize: CGSize
+        if size.width > size.height {
+            newSize = CGSize(width: maxDimension, height: maxDimension / aspectRatio)
+        } else {
+            newSize = CGSize(width: maxDimension * aspectRatio, height: maxDimension)
+        }
+
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
     #endif
 }

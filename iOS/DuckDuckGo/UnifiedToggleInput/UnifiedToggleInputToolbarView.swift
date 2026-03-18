@@ -21,8 +21,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 
-/// Horizontal toolbar with AI tool buttons: globe, image, [spacer], model picker chip, submit.
-/// All buttons except submit are non-functional stubs for Part 1.
+/// Horizontal toolbar with AI tool buttons: image, [spacer], model picker chip, submit.
 final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Constants
@@ -31,7 +30,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let verticalPadding: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
-        static let leftGroupSpacing: CGFloat = 4
         static let rightGroupSpacing: CGFloat = 8
         static let chipHeight: CGFloat = 32
         static let chipCornerRadius: CGFloat = 16
@@ -42,7 +40,6 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Callbacks
 
-    var onSearchTapped: (() -> Void)?
     var onAttachTapped: (() -> Void)?
     var onModelPickerTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
@@ -79,16 +76,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { modelChipButton.isHidden = newValue }
     }
 
+    var isImageButtonHidden: Bool {
+        get { imageButton.isHidden }
+        set { imageButton.isHidden = newValue }
+    }
+
     // MARK: - UI Components
 
-    private lazy var globeButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size16.globe,
-        accessibilityLabel: UserText.aiChatToolbarSearchButtonAccessibilityLabel,
-        action: #selector(searchTapped)
-    )
-
     private lazy var imageButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size16.image,
+        image: DesignSystemImages.Glyphs.Size24.attach,
         accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
         action: #selector(attachTapped)
     )
@@ -174,14 +170,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     // MARK: - Setup
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [globeButton, imageButton])
-        leftGroup.axis = .horizontal
-        leftGroup.spacing = Constants.leftGroupSpacing
-        leftGroup.alignment = .center
-        leftGroup.translatesAutoresizingMaskIntoConstraints = false
-        leftGroup.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        leftGroup.layer.cornerRadius = 20
-        leftGroup.clipsToBounds = true
+        imageButton.translatesAutoresizingMaskIntoConstraints = false
 
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
@@ -193,7 +182,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         rightGroup.alignment = .center
         rightGroup.translatesAutoresizingMaskIntoConstraints = false
 
-        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [imageButton, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -248,7 +237,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
-    @objc private func searchTapped() { onSearchTapped?() }
     @objc private func attachTapped() { onAttachTapped?() }
     @objc private func modelPickerTapped() { onModelPickerTapped?() }
     @objc private func submitTapped() { onSubmitTapped?() }

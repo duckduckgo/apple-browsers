@@ -343,10 +343,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatTabContentResponse(pageContext: nil)
         }
 
-        // Access the tab's PageContextUserScript via its user scripts
-        guard let userScripts = tab.userContentController?.userScripts as? UserScripts,
+        // Access the tab's PageContextUserScript via its content blocking assets
+        guard let userScripts = tab.userContentController?.contentBlockingAssets?.userScripts as? UserScripts,
               let pageContextScript = userScripts.pageContextUserScript else {
             return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        // Ensure the webView is set — it may have been released for background tabs
+        if pageContextScript.webView == nil {
+            pageContextScript.webView = tab.webView
         }
 
         let pageContext = await pageContextScript.collectAndWait()

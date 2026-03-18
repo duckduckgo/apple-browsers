@@ -72,17 +72,24 @@ final class PageContextUserScript: NSObject, Subfeature {
     func collectAndWait(timeout: TimeInterval = 5.0) async -> AIChatPageContextData? {
         collect()
         return await withCheckedContinuation { continuation in
+            var didResume = false
             var cancellable: AnyCancellable?
             let timeoutTask = Task {
                 try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                 cancellable?.cancel()
-                continuation.resume(returning: nil)
+                if !didResume {
+                    didResume = true
+                    continuation.resume(returning: nil)
+                }
             }
             cancellable = collectionResultSubject
                 .first()
                 .sink { result in
                     timeoutTask.cancel()
-                    continuation.resume(returning: result)
+                    if !didResume {
+                        didResume = true
+                        continuation.resume(returning: result)
+                    }
                 }
         }
     }

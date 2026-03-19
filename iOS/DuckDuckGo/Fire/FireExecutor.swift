@@ -461,17 +461,18 @@ class FireExecutor: FireExecuting {
         case .normalMode:
             result = await burnNormalModeAIHistory(trigger: request.trigger)
         case .all:
-            result = await burnAllAIHistory(trigger: request.trigger)
+            result = await burnAllAIHistory(trigger: request.trigger, options: request.options)
         }
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
 
-    private func burnAllAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
-        async let normalResult = burnNormalModeAIHistory(trigger: trigger)
-        async let fireResult = burnFireModeAIHistory()
-        let results = await (normalResult, fireResult)
-        if case .failure = results.0 { return results.0 }
-        if case .failure = results.1 { return results.1 }
+    private func burnAllAIHistory(trigger: FireRequest.Trigger, options: FireRequest.Options) async -> Result<Void, Error> {
+        async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger)
+        let shouldBurnFireModeChats = !options.contains(.data) // Invalidating the fire mode datastore makes deleting chats redundant.
+        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory() : .success(())
+        let (normalResult, fireResult) = await (normalBurnTask, fireBurnTask)
+        if case .failure = normalResult { return normalResult }
+        if case .failure = fireResult { return fireResult }
         return .success(())
     }
 

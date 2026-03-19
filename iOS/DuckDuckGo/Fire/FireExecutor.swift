@@ -176,7 +176,9 @@ class FireExecutor: FireExecuting {
                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                dataClearingWideEventService: dataClearingWideEventService),
             HistoryFireWorker(historyManager: historyManager,
-                              dataClearingWideEventService: dataClearingWideEventService)
+                              dataClearingWideEventService: dataClearingWideEventService),
+            PrivacyStatsFireWorker(privacyStats: privacyStats,
+                                   dataClearingWideEventService: dataClearingWideEventService)
         ]
     }
 
@@ -393,10 +395,6 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnAllData() async {
         let pixel = TimedPixel(.forgetAllDataCleared)
-
-        dataClearingWideEventService?.start(.clearPrivacyStats)
-        let privacyStatsResult = await privacyStats?.clearPrivacyStats() ?? .success(())
-        dataClearingWideEventService?.update(.clearPrivacyStats, result: privacyStatsResult)
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.tabsModel(for: .normal).count)"])
     }
     

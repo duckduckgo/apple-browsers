@@ -643,6 +643,7 @@
 		80A09D582F6B96E700AACDEE /* BookmarksFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D572F6B96DD00AACDEE /* BookmarksFireWorker.swift */; };
 		80A09D5A2F6B97A700AACDEE /* TextZoomFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D592F6B978B00AACDEE /* TextZoomFireWorker.swift */; };
 		80A09D5C2F6B99CF00AACDEE /* HistoryFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D5B2F6B99C800AACDEE /* HistoryFireWorker.swift */; };
+		80A09D5E2F6B9B1900AACDEE /* PrivacyStatsFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D5D2F6B9B0F00AACDEE /* PrivacyStatsFireWorker.swift */; };
 		80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A198C62F1AB3A10015521B /* TabViewModel.swift */; };
 		80BADA432EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */; };
 		80C947FD2F53E819002EDB79 /* Tab+ConvenienceInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */; };
@@ -3015,6 +3016,7 @@
 		80A09D572F6B96DD00AACDEE /* BookmarksFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksFireWorker.swift; sourceTree = "<group>"; };
 		80A09D592F6B978B00AACDEE /* TextZoomFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextZoomFireWorker.swift; sourceTree = "<group>"; };
 		80A09D5B2F6B99C800AACDEE /* HistoryFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryFireWorker.swift; sourceTree = "<group>"; };
+		80A09D5D2F6B9B0F00AACDEE /* PrivacyStatsFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsFireWorker.swift; sourceTree = "<group>"; };
 		80A198C62F1AB3A10015521B /* TabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModel.swift; sourceTree = "<group>"; };
 		80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationSettingsStore.swift; sourceTree = "<group>"; };
 		80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+ConvenienceInitializer.swift"; sourceTree = "<group>"; };
@@ -6707,6 +6709,7 @@
 				80A09D552F6B95D700AACDEE /* DaxDialogsFireWorker.swift */,
 				80A09D4F2F6B82F200AACDEE /* FireExecutorWorker.swift */,
 				80A09D5B2F6B99C800AACDEE /* HistoryFireWorker.swift */,
+				80A09D5D2F6B9B0F00AACDEE /* PrivacyStatsFireWorker.swift */,
 				80A09D592F6B978B00AACDEE /* TextZoomFireWorker.swift */,
 				80A09D512F6B853700AACDEE /* URLCacheFireWorker.swift */,
 				80A09D4D2F6B80B700AACDEE /* WebsiteDataFireWorker.swift */,
@@ -11806,6 +11809,7 @@
 				6FE1F3412E33A1EB00C88A09 /* OmniBarEditingStateTransitioning.swift in Sources */,
 				31FD991B2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift in Sources */,
 				7B8E0EC62CC81B4900B2B722 /* TipKitController.swift in Sources */,
+				80A09D5E2F6B9B1900AACDEE /* PrivacyStatsFireWorker.swift in Sources */,
 				7B1604EC2CB68BDA00A44EC6 /* TipKitController+ConvenienceInitializers.swift in Sources */,
 				851672D12BED1FC900592F24 /* AutocompleteView.swift in Sources */,
 				7B1681022D106CCC005EAE24 /* UserTextShared.swift in Sources */,

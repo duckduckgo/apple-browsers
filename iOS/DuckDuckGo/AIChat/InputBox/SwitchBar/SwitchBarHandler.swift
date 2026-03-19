@@ -83,7 +83,7 @@ extension SwitchBarHandling {
 final class SwitchBarHandler: SwitchBarHandling {
 
     // MARK: - Constants
-    private enum StorageKey {
+    enum StorageKey {
         static let toggleState = "SwitchBarHandler.toggleState"
     }
 

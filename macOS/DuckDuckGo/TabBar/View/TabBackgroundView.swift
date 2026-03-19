@@ -254,11 +254,6 @@ private enum TabBackgroundState {
 
 private extension TabBackgroundState {
 
-    static func shouldAnimateExit(from oldState: TabBackgroundState, to newState: TabBackgroundState) -> Bool {
-        // Optimization: no need to animate Highlight dismissal when transitioning directly to Selected
-        !(oldState == .highlighted && newState == .selected)
-    }
-
     static func nextState(isMouseOver: Bool, isSelected: Bool, isDragged: Bool) -> TabBackgroundState {
         if isSelected {
             return .selected

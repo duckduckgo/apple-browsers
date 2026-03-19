@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+import Core
+
 struct HistoryFireWorker: FireExecutorWorker {
 
     private let historyManager: HistoryManaging

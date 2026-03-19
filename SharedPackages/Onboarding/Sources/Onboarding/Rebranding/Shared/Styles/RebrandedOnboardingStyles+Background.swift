@@ -69,6 +69,7 @@ extension OnboardingRebranding.OnboardingStyles {
         @Environment(\.onboardingTheme) private var theme
 
         @StateObject private var keyboardResponder: KeyboardResponder
+        @State private var imageGlobalFrame: CGRect = .zero
 
         private let backgroundType: ContextualOnboardingBackgroundType
         private let imageOffsetY: CGFloat
@@ -99,6 +100,10 @@ extension OnboardingRebranding.OnboardingStyles {
                                 GeometryReader { proxy in
                                     Color.clear
                                         .preference(key: BackgroundIllustrationHeightPreferenceKey.self, value: proxy.size.height)
+                                        .preference(key: BackgroundIllustrationFramePreferenceKey.self, value: proxy.frame(in: .global))
+                                        .onPreferenceChange(BackgroundIllustrationFramePreferenceKey.self) { frame in
+                                            imageGlobalFrame = frame
+                                        }
                                 }
                             )
                             .offset(y: calculateImageOffset(for: geometry))
@@ -115,22 +120,48 @@ extension OnboardingRebranding.OnboardingStyles {
             .ignoresSafeArea(.keyboard)
         }
 
+        // Calculates the vertical offset needed to adjust the background image when the keyboard appears.
+        // The offset calculation works as follows:
+        // 1. Get the keyboard frame in global coordinates (from KeyboardResponder)
+        // 2. Get the image frame in global coordinates (captured via preference key)
+        // 3. Calculate intersection to detect if keyboard overlaps the image
+        // 4. If overlap exists, calculate offset to move image's bottom edge to keyboard's top edge
+        //
+        // Example scenario:
+        //   - Image bottom at Y=730 (imageGlobalFrame.maxY)
+        //   - Keyboard top at Y=600 (keyboardFrame.minY)
+        //   - Inset = 20
+        //   - Target position: 600 + 20 = 620
+        //   - Offset needed: 620 - 730 = -110 (move up 110 points)
         private func calculateImageOffset(for geometry: GeometryProxy) -> CGFloat {
             #if os(iOS)
+            // Early exit if no keyboard is visible
             guard keyboardResponder.keyboardFrame.height > 0 else { return imageOffsetY }
 
-            let viewGlobalFrame = geometry.frame(in: .global)
+            // Early exit if image frame hasn't been captured yet
+            guard !imageGlobalFrame.isEmpty else { return imageOffsetY }
 
-            // Convert keyboard's global Y position to local coordinate space
-            let keyboardTopInLocalCoordinates = keyboardResponder.keyboardFrame.height > 0 ? keyboardResponder.keyboardFrame.minY - viewGlobalFrame.minY : 0
+            let keyboardFrame = keyboardResponder.keyboardFrame
 
-            // keyboardTopInLocal is where the keyboard starts in our local coordinate space
-            // For bottom-aligned image, current position is at contentHeight
-            // We want to move it to keyboardTopInLocal + cornerOverlap (so it extends 30px behind keyboard)
-            // Offset = target position - current position
-            let targetY = keyboardTopInLocalCoordinates + contentInsetOffKeyboard
-            let currentY = geometry.size.height
-            let offset = targetY - currentY
+            // Check if image and keyboard actually overlap
+            // This is crucial for iPad where floating/split keyboards may not overlap the image
+            let intersection = imageGlobalFrame.intersection(keyboardFrame)
+
+            // No overlap = no adjustment needed
+            // This handles floating keyboards, split keyboards, or keyboards that don't reach the image
+            guard !intersection.isNull, intersection.height > 0 else {
+                return imageOffsetY
+            }
+
+            // Calculate where the image currently is (bottom edge in global coordinates)
+            let currentImageBottom = imageGlobalFrame.maxY
+
+            // Calculate where we want the image to be (just above keyboard with inset)
+            // The inset allows the image to extend slightly behind the keyboard's rounded corners
+            let targetImageBottom = keyboardFrame.minY + contentInsetOffKeyboard
+
+            // Calculate how much to move the image (positive values would move it down)
+            let offset = targetImageBottom - currentImageBottom
 
             return offset
             #else
@@ -205,6 +236,13 @@ private struct BackgroundIllustrationHeightPreferenceKey: PreferenceKey {
     }
 }
 
+private struct BackgroundIllustrationFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
 // MARK: - Contextual Onboarding + View Extension
 
 /// Animation configuration used when presenting contextual onboarding background illustrations.
@@ -228,8 +266,14 @@ public struct BackgroundAnimationContext {
     public static let `default` = BackgroundAnimationContext(animation: .easeInOut(duration: 0.3), delay: 0.1)
 }
 
+/// Defines how the contextual onboarding background should respond to keyboard appearance.
 public enum KeyboardBehavior: Equatable {
+    /// Adjusts the background image position when the keyboard appears to keep it visible.
+    /// The image will move up so its bottom edge sits at the keyboard's top edge plus the inset.
+    /// - Parameter inset: Distance in points to extend the image behind the keyboard's rounded corners. Defaults to 20pt.
     case adjustForKeyboard(inset: CGFloat = 20)
+
+    /// Does not adjust for keyboard - background remains in its original position.
     case ignoreKeyboard
 
     var isEnabled: Bool {
@@ -250,7 +294,16 @@ public extension View {
 
     /// Applies the contextual onboarding background illustration.
     ///
-    /// If an animation context is provided, the illustration animates in from the bottom edge.
+    /// This modifier adds a background illustration appropriate for the given onboarding step.
+    /// The background can optionally animate in and adjust for keyboard appearance.
+    ///
+    /// - Parameters:
+    ///   - backgroundType: The type of background illustration to display.
+    ///   - animationContext: Optional animation configuration. When provided, the illustration animates in from the bottom edge.
+    ///   - keyboardBehavior: How the background should respond to keyboard appearance. Defaults to `.ignoreKeyboard`.
+    ///
+    /// - Note: On iPad, keyboard adjustments only apply when the keyboard overlaps the background image.
+    ///   Floating or split keyboards that don't overlap the image will not trigger adjustments.
     @ViewBuilder
     func applyContextualOnboardingBackground(
         backgroundType: ContextualOnboardingBackgroundType,
@@ -266,11 +319,22 @@ public extension View {
 
 }
 
+/// Observable object that tracks keyboard frame changes.
+///
+/// This class listens to keyboard notifications and publishes the keyboard's frame
+/// in global screen coordinates. Views can observe these changes to adjust their layout
+/// when the keyboard appears or disappears.
 final class KeyboardResponder: ObservableObject {
+    /// The current keyboard frame in global screen coordinates.
+    /// Returns `.zero` when the keyboard is hidden or when keyboard observation is disabled.
     @Published var keyboardFrame: CGRect = .zero
 
     private var cancellables: Set<AnyCancellable> = []
 
+    /// Creates a keyboard responder.
+    ///
+    /// - Parameter isEnabled: Whether to observe keyboard notifications. When `false`,
+    ///   no notifications are observed and `keyboardFrame` will always be `.zero`.
     init(isEnabled: Bool = true) {
         guard isEnabled else { return }
 

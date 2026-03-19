@@ -169,8 +169,6 @@ jobs:
     needs: [ create_release_branch, run_tests, increment_build_number, prepare_release, tag_and_merge, publish_release ]
     if: >
       always() &&
-      needs.create_release_branch.outputs.asana_task_id != '' &&
-      needs.create_release_branch.outputs.release_branch_name != '' &&
       (
         needs.run_tests.result == 'failure' ||
         needs.increment_build_number.result == 'failure' ||

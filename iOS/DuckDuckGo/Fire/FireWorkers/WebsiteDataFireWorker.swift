@@ -60,14 +60,26 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
         guard #available(iOS 17.0, *) else {
             return .success(())
         }
-        let currentId = idManager.currentFireModeID
         idManager.invalidateCurrentFireModeID()
-        do {
-            try await WKWebsiteDataStore.remove(forIdentifier: currentId)
-            return .success(())
-        } catch {
-            return .failure(error)
+        return await removeAllPendingFireModeDataStores()
+    }
+
+    @available(iOS 17.0, *)
+    @MainActor
+    private func removeAllPendingFireModeDataStores() async -> Result<Void, Error> {
+        var lastError: Error?
+        for id in idManager.pendingRemovalFireModeIDs {
+            do {
+                try await WKWebsiteDataStore.remove(forIdentifier: id)
+                idManager.removePendingRemovalFireModeID(id)
+            } catch {
+                lastError = error
+            }
         }
+        if let lastError {
+            return .failure(lastError)
+        }
+        return .success(())
     }
     
     @MainActor

@@ -631,7 +631,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockTabManager.prepareCurrentTabCalled)
         XCTAssertTrue(mockTabManager.removeAllCalled)
         XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
-        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 2)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
     }
     
     func testBurnMultipleOptionsIndividually() async {

@@ -646,6 +646,7 @@
 		80A09D5E2F6B9B1900AACDEE /* PrivacyStatsFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D5D2F6B9B0F00AACDEE /* PrivacyStatsFireWorker.swift */; };
 		80A09D602F6BA03A00AACDEE /* ContextualChatFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D5F2F6BA03300AACDEE /* ContextualChatFireWorker.swift */; };
 		80A09D622F6BA07700AACDEE /* AIChatDeleter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D612F6BA07500AACDEE /* AIChatDeleter.swift */; };
+		80A09D642F6BBA1F00AACDEE /* DataStoreWarmupWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D632F6BBA1D00AACDEE /* DataStoreWarmupWorker.swift */; };
 		80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A198C62F1AB3A10015521B /* TabViewModel.swift */; };
 		80BADA432EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */; };
 		80C947FD2F53E819002EDB79 /* Tab+ConvenienceInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */; };
@@ -3021,6 +3022,7 @@
 		80A09D5D2F6B9B0F00AACDEE /* PrivacyStatsFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsFireWorker.swift; sourceTree = "<group>"; };
 		80A09D5F2F6BA03300AACDEE /* ContextualChatFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualChatFireWorker.swift; sourceTree = "<group>"; };
 		80A09D612F6BA07500AACDEE /* AIChatDeleter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatDeleter.swift; sourceTree = "<group>"; };
+		80A09D632F6BBA1D00AACDEE /* DataStoreWarmupWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStoreWarmupWorker.swift; sourceTree = "<group>"; };
 		80A198C62F1AB3A10015521B /* TabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModel.swift; sourceTree = "<group>"; };
 		80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationSettingsStore.swift; sourceTree = "<group>"; };
 		80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+ConvenienceInitializer.swift"; sourceTree = "<group>"; };
@@ -6709,9 +6711,10 @@
 		80A09D4C2F6B809700AACDEE /* FireWorkers */ = {
 			isa = PBXGroup;
 			children = (
-				80A09D5F2F6BA03300AACDEE /* ContextualChatFireWorker.swift */,
 				80A09D532F6B88B300AACDEE /* AutoConsentFireWorker.swift */,
 				80A09D572F6B96DD00AACDEE /* BookmarksFireWorker.swift */,
+				80A09D5F2F6BA03300AACDEE /* ContextualChatFireWorker.swift */,
+				80A09D632F6BBA1D00AACDEE /* DataStoreWarmupWorker.swift */,
 				80A09D552F6B95D700AACDEE /* DaxDialogsFireWorker.swift */,
 				80A09D4F2F6B82F200AACDEE /* FireExecutorWorker.swift */,
 				80A09D5B2F6B99C800AACDEE /* HistoryFireWorker.swift */,
@@ -12517,6 +12520,7 @@
 				9FA09DA72EA71F2900E26F3F /* PromptCooldownStore.swift in Sources */,
 				80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */,
 				9FA09DA82EA71F2900E26F3F /* PromptCooldownManager.swift in Sources */,
+				80A09D642F6BBA1F00AACDEE /* DataStoreWarmupWorker.swift in Sources */,
 				1E4DCF4E27B6A69600961E25 /* DownloadsListHostingController.swift in Sources */,
 				850F93DB2B594AB800823EEA /* ZippedPassKitPreviewHelper.swift in Sources */,
 				4BCD14672B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift in Sources */,

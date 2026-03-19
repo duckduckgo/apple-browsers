@@ -103,7 +103,7 @@ class FireExecutor: FireExecuting {
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
-    private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
+    private var dataStoreWarmupWorker: DataStoreWarmupWorker = .init()
     private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
     
@@ -353,11 +353,8 @@ class FireExecutor: FireExecuting {
         }
         burnInProgress = true
 
-        // This needs to happen only once per app launch
-        if let dataStoreWarmup {
-            await dataStoreWarmup.ensureReady(applicationState: applicationState)
-            self.dataStoreWarmup = nil
-        }
+        dataStoreWarmupWorker.applicationState = applicationState
+        await dataStoreWarmupWorker.execute(scope: scope, domains: domains)
         
         let pixel = dataClearingTimedPixel(for: scope)
         

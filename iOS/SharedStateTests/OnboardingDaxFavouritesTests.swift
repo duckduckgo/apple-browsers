@@ -101,7 +101,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                                                               webExtensionAvailability: nil)
 
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
-        let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence)
+        let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence, featureFlagger: featureFlagger)
         let tabManager = TabManager(tabsModelProvider: modelProvider,
                                     previewsSource: MockTabPreviewsSource(),
                                     interactionStateSource: nil,

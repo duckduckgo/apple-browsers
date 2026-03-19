@@ -19,6 +19,7 @@
 
 import Foundation
 import Combine
+import PrivacyConfig
 
 protocol TabsModelReading {
     var count: Int { get }
@@ -62,7 +63,9 @@ protocol TabsModelProviding {
     var normalTabsModel: TabsModelManaging { get }
     var fireModeTabsModel: TabsModelManaging { get }
     var aggregateTabsModel: TabsModelReading { get }
-    func save()
+    /// Clears tabs for the given browsing mode, or all tabs if `nil`.
+    func clearTabs(for browsingMode: BrowsingMode?)
+    func save() -> Result<Void, Error>
 }
 
 class TabsModelProvider: TabsModelProviding {
@@ -79,16 +82,37 @@ class TabsModelProvider: TabsModelProviding {
     private var persistence: TabsModelPersisting
 
     
-    init(normalTabsModel: TabsModel, fireModeTabsModel: TabsModel, persistence: TabsModelPersisting) {
+    init(normalTabsModel: TabsModel, fireModeTabsModel: TabsModel, persistence: TabsModelPersisting, featureFlagger: FeatureFlagger) {
         self._normalTabsModel = normalTabsModel
         self._fireModeTabsModel = fireModeTabsModel
         self.persistence = persistence
-        self.aggregateTabsModel = AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel)
+        let capability = FireModeCapability.create(using: featureFlagger)
+        self.aggregateTabsModel = capability.isFireModeEnabled ? AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel) : normalTabsModel
     }
     
-    func save() {
-        persistence.save(model: _normalTabsModel, for: .normal)
-        persistence.save(model: _fireModeTabsModel, for: .fire)
+    func clearTabs(for browsingMode: BrowsingMode?) {
+        switch browsingMode {
+        case .normal:
+            _normalTabsModel.clearAll()
+        case .fire:
+            _fireModeTabsModel.clearAll()
+        case nil:
+            _normalTabsModel.clearAll()
+            _fireModeTabsModel.clearAll()
+        }
+    }
+
+    func save() -> Result<Void, Error> {
+        let normalResult = persistence.save(model: _normalTabsModel, for: .normal)
+        let fireResult = persistence.save(model: _fireModeTabsModel, for: .fire)
+
+        if case .failure(let error) = normalResult {
+            return .failure(error)
+        }
+        if case .failure(let error) = fireResult {
+            return .failure(error)
+        }
+        return .success(())
     }
 }
 

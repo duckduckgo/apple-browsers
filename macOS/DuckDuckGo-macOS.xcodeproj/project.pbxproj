@@ -92,6 +92,12 @@
 		1D3A2B632D2D226B00F06679 /* WebExtensionInternalSiteNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3A2B622D2D225B00F06679 /* WebExtensionInternalSiteNavigationDelegate.swift */; };
 		1D3A2B672D2D230800F06679 /* WebExtensionInternalSiteHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3A2B652D2D230000F06679 /* WebExtensionInternalSiteHandler.swift */; };
 		1D3B1AB92934062B006F4388 /* PasswordManagerCoordinatingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3B1AB82934062B006F4388 /* PasswordManagerCoordinatingMock.swift */; };
+		DA0001012F5B000000000001 /* PasswordManagerCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0001012F5B000000000000 /* PasswordManagerCoordinatorTests.swift */; };
+		DA0001012F5B000000000002 /* PasswordManagerCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0001012F5B000000000000 /* PasswordManagerCoordinatorTests.swift */; };
+		1D3EEDF22F4FB37A00813434 /* AIChatModelsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3EEDF12F4FB37600813434 /* AIChatModelsServiceTests.swift */; };
+		1D3EEDF32F4FB37A00813434 /* AIChatModelsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3EEDF12F4FB37600813434 /* AIChatModelsServiceTests.swift */; };
+		1D3EEDF52F4FB38700813434 /* AIChatPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3EEDF42F4FB38500813434 /* AIChatPreferencesPersistorTests.swift */; };
+		1D3EEDF62F4FB38700813434 /* AIChatPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3EEDF42F4FB38500813434 /* AIChatPreferencesPersistorTests.swift */; };
 		1D4071AE2BD64267002D4537 /* DockCustomizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4071AD2BD64266002D4537 /* DockCustomizer.swift */; };
 		1D4071AF2BD64267002D4537 /* DockCustomizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4071AD2BD64266002D4537 /* DockCustomizer.swift */; };
 		1D43EB3429297D760065E5D6 /* BWNotRespondingAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D43EB3329297D760065E5D6 /* BWNotRespondingAlert.swift */; };
@@ -4608,6 +4614,9 @@
 		1D3A2B622D2D225B00F06679 /* WebExtensionInternalSiteNavigationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionInternalSiteNavigationDelegate.swift; sourceTree = "<group>"; };
 		1D3A2B652D2D230000F06679 /* WebExtensionInternalSiteHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionInternalSiteHandler.swift; sourceTree = "<group>"; };
 		1D3B1AB82934062B006F4388 /* PasswordManagerCoordinatingMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagerCoordinatingMock.swift; sourceTree = "<group>"; };
+		DA0001012F5B000000000000 /* PasswordManagerCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagerCoordinatorTests.swift; sourceTree = "<group>"; };
+		1D3EEDF12F4FB37600813434 /* AIChatModelsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatModelsServiceTests.swift; sourceTree = "<group>"; };
+		1D3EEDF42F4FB38500813434 /* AIChatPreferencesPersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPreferencesPersistorTests.swift; sourceTree = "<group>"; };
 		1D4071AD2BD64266002D4537 /* DockCustomizer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DockCustomizer.swift; sourceTree = "<group>"; };
 		1D43EB3329297D760065E5D6 /* BWNotRespondingAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWNotRespondingAlert.swift; sourceTree = "<group>"; };
 		1D4B03D52CA4431C00224E99 /* BookmarkUrlExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkUrlExtension.swift; sourceTree = "<group>"; };
@@ -7214,6 +7223,7 @@
 			children = (
 				1D3B1ABA29369DBC006F4388 /* Bitwarden */,
 				1D3B1AB82934062B006F4388 /* PasswordManagerCoordinatingMock.swift */,
+				DA0001012F5B000000000000 /* PasswordManagerCoordinatorTests.swift */,
 			);
 			path = PasswordManagers;
 			sourceTree = "<group>";
@@ -15651,6 +15661,7 @@
 				3706FDFC293F661700E42796 /* PasswordManagementItemModelTests.swift in Sources */,
 				1E2A887B2E2E477A00C29AC0 /* AIChatSessionStoreTests.swift in Sources */,
 				3706FDFD293F661700E42796 /* PasswordManagerCoordinatingMock.swift in Sources */,
+				DA0001012F5B000000000002 /* PasswordManagerCoordinatorTests.swift in Sources */,
 				CC26B6752F0D269D00D380B6 /* NewTabPageNextStepsCardsActionHandlerTests.swift in Sources */,
 				3798580E2D730E32008773F6 /* HistoryQueryKindExtensionTests.swift in Sources */,
 				3706FDFE293F661700E42796 /* FaviconReferenceCacheTests.swift in Sources */,
@@ -17879,6 +17890,7 @@
 				BB72939D2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */,
 				37598F002D5A383A00720EAF /* HistoryViewDataProviderTests.swift in Sources */,
 				1D3B1AB92934062B006F4388 /* PasswordManagerCoordinatingMock.swift in Sources */,
+				DA0001012F5B000000000001 /* PasswordManagerCoordinatorTests.swift in Sources */,
 				1D77921828FDC54C00BE0210 /* FaviconReferenceCacheTests.swift in Sources */,
 				FD23FD2B28816606007F6985 /* AutoconsentMessageProtocolTests.swift in Sources */,
 				56A0543B2C20878E007D8FAB /* DuckSchemeHandlerTests.swift in Sources */,

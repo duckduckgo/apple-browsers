@@ -222,25 +222,50 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(manager.currentTabsModel.tabs[0] === newTab)
     }
 
-    func testWhenFireModeRemoveAllDoesNotAffectNormalMode() throws {
-        let fireModel = TabsModel(tabs: [
-            Tab(link: Link(title: "fire", url: URL(string: "https://fire.com")!), fireTab: true)
-        ], desktop: false, mode: .fire)
-        let normalModel = TabsModel(tabs: [
-            Tab(link: Link(title: "normal", url: URL(string: "https://normal.com")!))
-        ], desktop: false)
-        let flagger = MockFeatureFlagger()
-        flagger.enabledFeatureFlags = [.fireMode]
-        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+    // MARK: - removeAll(browsingMode:) Isolation
 
-        manager.removeAll()
+    func testWhenRemoveAllWithFireMode() throws {
+        let normalTab = Tab(link: Link(title: "normal", url: URL(string: "https://normal.com")!))
+        let fireTab = Tab(link: Link(title: "fire", url: URL(string: "https://fire.com")!), fireTab: true)
+        let normalModel = TabsModel(tabs: [normalTab], desktop: false)
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let mockPreviews = MockTabPreviewsSource()
 
-        XCTAssertEqual(manager.currentTabsModel.count, 0)
+        let manager = try makeManager(normalModel, fireModel: fireModel, previewsSource: mockPreviews)
 
-        manager.setBrowsingMode(.normal)
-        XCTAssertEqual(manager.currentTabsModel.count, 1)
-        XCTAssertEqual(manager.currentTabsModel.tabs[0].link?.url.absoluteString, "https://normal.com")
+        manager.removeAll(browsingMode: .fire)
+
+        // Previews preserved
+        XCTAssertEqual(mockPreviews.removePreviewsWithIdNotInCalls.count, 1)
+        let preservedIDs = mockPreviews.removePreviewsWithIdNotInCalls.first
+        XCTAssertEqual(preservedIDs, Set([normalTab.uid]))
+        
+        // Normal tabs untouched
+        XCTAssertEqual(fireModel.count, 0)
+        XCTAssertEqual(normalModel.count, 1)
+        XCTAssertEqual(normalModel.tabs.first?.link?.url.absoluteString, "https://normal.com")
+    }
+
+    func testWhenRemoveAllWithNilPreserveNothing() throws {
+        let normalTab = Tab(link: Link(title: "normal", url: URL(string: "https://normal.com")!))
+        let fireTab = Tab(link: Link(title: "fire", url: URL(string: "https://fire.com")!), fireTab: true)
+        let normalModel = TabsModel(tabs: [normalTab], desktop: false)
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let mockPreviews = MockTabPreviewsSource()
+
+        let manager = try makeManager(normalModel, fireModel: fireModel, previewsSource: mockPreviews)
+
+        manager.removeAll(browsingMode: nil)
+
+        // Previews removed
+        XCTAssertEqual(mockPreviews.removePreviewsWithIdNotInCalls.count, 1)
+        let preservedIDs = mockPreviews.removePreviewsWithIdNotInCalls.first
+        XCTAssertTrue(preservedIDs?.isEmpty ?? false)
+        
+        // All tabs removed
+        XCTAssertEqual(fireModel.count, 0)
+        XCTAssertEqual(normalModel.count, 1)
+        XCTAssertNil(normalModel.tabs.first?.link?.url.absoluteString)
     }
 
     func makeManager(_ model: TabsModel,
@@ -253,7 +278,7 @@ final class TabManagerTests: XCTestCase {
                                                    fireStore: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
         let fireModel = fireModel ?? TabsModel(tabs: [], desktop: false, mode: .fire)
-        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence)
+        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence, featureFlagger: featureFlagger)
         return TabManager(tabsModelProvider: modelProvider,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),

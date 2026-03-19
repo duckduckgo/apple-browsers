@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
+import PixelKit
 import PrivacyConfig
 import Subscription
 import Persistence
@@ -69,6 +70,7 @@ final class MainCoordinator {
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
+    private let wideEvent: WideEventManaging
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
@@ -109,20 +111,22 @@ final class MainCoordinator {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          whatsNewRepository: WhatsNewMessageRepository,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
-         syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager
+         syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
+         wideEvent: WideEventManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
+        self.wideEvent = wideEvent
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
-        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
+        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence, featureFlagger: featureFlagger)
         let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
         reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
         let daxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: featureFlagger,
@@ -186,7 +190,8 @@ final class MainCoordinator {
                                         privacyConfigurationManager: privacyConfigurationManager,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         privacyStats: privacyStats,
-                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner)
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
+                                        wideEvent: wideEvent)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
             syncService: syncService.sync
@@ -400,6 +405,7 @@ final class MainCoordinator {
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
                                          tabsPersistence: TabsModelPersisting,
+                                         featureFlagger: FeatureFlagger,
                                          appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModelProviding {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
         let normalModel: TabsModel
@@ -409,9 +415,9 @@ final class MainCoordinator {
             normalModel = TabsModel(desktop: isPadDevice, mode: .normal)
             fireModel = TabsModel(desktop: isPadDevice, mode: .fire)
             tabsPersistence.clearAll()
-            tabsPersistence.save(model: normalModel, for: .normal)
-            tabsPersistence.save(model: fireModel, for: .fire)
-            previewsSource.removeAllPreviews()
+            _ = tabsPersistence.save(model: normalModel, for: .normal)
+            _ = tabsPersistence.save(model: fireModel, for: .fire)
+            _ = previewsSource.removeAllPreviews()
         } else {
             normalModel = try tabsPersistence.getTabsModel(for: .normal)
                 ?? TabsModel(desktop: isPadDevice, mode: .normal)
@@ -420,7 +426,8 @@ final class MainCoordinator {
         }
         return TabsModelProvider(normalTabsModel: normalModel,
                                  fireModeTabsModel: fireModel,
-                                 persistence: tabsPersistence)
+                                 persistence: tabsPersistence,
+                                 featureFlagger: featureFlagger)
     }
 
     private static func makeTextZoomCoordinatorProvider() -> TextZoomCoordinatorProvider {

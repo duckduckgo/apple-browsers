@@ -637,10 +637,7 @@ class MainViewController: UIViewController {
 
         presentSyncRecoveryPromptIfNeeded()
 
-        // Should be safe to call anyway but only really need for this specific scenario
-        if #available(iOS 26, *), isPad {
-            view.setNeedsUpdateConstraints()
-        }
+        forceNavigationBarPositioningOnPadOS26()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -1959,7 +1956,13 @@ class MainViewController: UIViewController {
 
         hideNotificationBarIfBrokenSitePromptShown()
 
-        DispatchQueue.main.async {
+        forceNavigationBarPositioningOnPadOS26()
+    }
+
+    var forceNavigationBarPositioningDebouncer = Debouncer()
+    private func forceNavigationBarPositioningOnPadOS26() {
+        guard #available(iOS 26, *), isPad else { return }
+        forceNavigationBarPositioningDebouncer.debounce(for: 0.1) {
             self.viewCoordinator.navigationBarContainer.superview?.setNeedsUpdateConstraints()
         }
     }

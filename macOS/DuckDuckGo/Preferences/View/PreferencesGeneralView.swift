@@ -91,6 +91,9 @@ extension Preferences {
                             }
                         }
                     }
+                    .onAppear {
+                        dockModel.refresh()
+                    }
                 } else if dockModel.canShowDockInstructions {
                     PreferencePaneSection(UserText.shortcuts, spacing: 4) {
                         PreferencePaneSubSection {

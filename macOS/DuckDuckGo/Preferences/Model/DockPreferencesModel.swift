@@ -66,6 +66,10 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     func openAddToDockHelpURL() {
         openNewTab(with: .addToDockHelpURL)
     }
+
+    func refresh() {
+        addedToDock = false
+    }
 }
 
 private extension URL {

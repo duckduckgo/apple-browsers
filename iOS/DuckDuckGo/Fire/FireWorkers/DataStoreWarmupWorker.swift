@@ -35,7 +35,8 @@ actor DataStoreWarmupWorker: FireExecutorWorker {
     }
     
     func burnFireModeData() async {
-        await ensureFireModeStoreIsReady()
+        // Fire mode clearing destroys the entire WKWebsiteDataStore container rather than
+        // clearing data within it, so warmup is unnecessary.
     }
     
     func burnTabData(tabViewModel: TabViewModel, domains: [String]) async {

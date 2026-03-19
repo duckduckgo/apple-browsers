@@ -99,6 +99,8 @@ private extension TabBackgroundView {
 
     func setupView() {
         wantsLayer = true
+        clipsToBounds = false
+        layer?.masksToBounds = false
 
         backgroundShapeView.wantsLayer = true
         backgroundShapeView.clipsToBounds = false

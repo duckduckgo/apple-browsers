@@ -65,11 +65,18 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testSetConfigUpdatesModeAndSettings() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, enableAiChatTools: nil, aiModelSections: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, enableAiChatTools: nil, selectedModelId: nil, aiModelSections: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
         XCTAssertEqual(configProvider.isAIChatSettingVisible, true)
+    }
+
+    @MainActor
+    func testSetConfigPersistsSelectedModelId() async throws {
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, enableAiChatTools: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-4o-mini")
     }
 
     // MARK: - getSuggestions

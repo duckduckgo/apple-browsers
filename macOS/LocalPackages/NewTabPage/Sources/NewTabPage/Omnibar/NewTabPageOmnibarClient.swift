@@ -88,6 +88,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             showCustomizePopover: configProvider.showCustomizePopover,
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
+            selectedModelId: configProvider.selectedModelId,
             aiModelSections: aiModelSections
         )
     }
@@ -102,6 +103,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         if let showCustomizePopover = config.showCustomizePopover {
             configProvider.showCustomizePopover = showCustomizePopover
         }
+        if let selectedModelId = config.selectedModelId {
+            configProvider.selectedModelId = selectedModelId
+        }
         return nil
     }
 
@@ -114,6 +118,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             showCustomizePopover: configProvider.showCustomizePopover,
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
+            selectedModelId: configProvider.selectedModelId,
             aiModelSections: nil
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)

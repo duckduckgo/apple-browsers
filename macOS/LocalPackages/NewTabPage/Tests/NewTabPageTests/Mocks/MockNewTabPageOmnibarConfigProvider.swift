@@ -48,4 +48,6 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var isAIChatRecentChatsEnabled: Bool = false
 
     var isAIChatToolsEnabled: Bool = false
+
+    var selectedModelId: String?
 }

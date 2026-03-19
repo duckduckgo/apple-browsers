@@ -35,4 +35,6 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     var isAIChatRecentChatsEnabled: Bool { get }
 
     var isAIChatToolsEnabled: Bool { get }
+
+    var selectedModelId: String? { get set }
 }

@@ -26,7 +26,7 @@ import XCTest
 
 @testable import DuckDuckGo
 
-class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
+class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconManaging {
 
     var db: CoreDataDatabase!
 
@@ -216,16 +216,29 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
         didUpdateFaviconCalled = true
     }
 
-    func loadFavicon(forDomain domain: String, fromURL url: URL?, intoCache cacheType: FaviconsCacheType, completion: ((UIImage?) -> Void)?) {
-        loadFaviconDomain = domain
-        loadFaviconURL = url
-        loadFaviconCache = cacheType
-        completion?(image)
-    }
-
     func replaceFireproofFavicon(forDomain domain: String?, withImage: UIImage) {
         replaceFaviconCalled = true
     }
+
+    // MARK: - FaviconManaging stubs
+
+    func clearCache(_ cacheType: FaviconsCacheType, clearMemoryCache: Bool) {}
+    func removeBookmarkFavicon(forDomain domain: String) {}
+    func removeFireproofFavicon(forDomain domain: String) {}
+    func removeTabFavicon(forDomain domain: String) {}
+    func removeTabFavicon(forCacheKey key: String) {}
+    func removeTabFavicons(forDomains domains: [String]) {}
+    func loadFavicon(forDomain domain: String?, fromURL url: URL?, intoCache targetCacheType: FaviconsCacheType, fromCache: FaviconsCacheType?, queue: DispatchQueue?, completion: ((UIImage?) -> Void)?) {
+        if let domain = domain {
+            loadFaviconDomain = domain
+            loadFaviconURL = url
+            loadFaviconCache = targetCacheType
+        }
+        completion?(image)
+    }
+    func hasFavicon(for domain: String) -> Bool { false }
+    func storeFavicon(_ imageData: Data, with url: URL?, for documentURL: URL) async throws {}
+    func populateFavicon(for domain: String, intoCache: FaviconsCacheType, fromCache: FaviconsCacheType?) {}
 
     func createBookmark() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)

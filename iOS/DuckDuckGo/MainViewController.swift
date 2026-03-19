@@ -236,6 +236,7 @@ class MainViewController: UIViewController {
 
     let featureDiscovery: FeatureDiscovery
     let fireproofing: Fireproofing
+    let favicons: FaviconManaging
     let websiteDataManager: WebsiteDataManaging
     let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
 
@@ -344,6 +345,7 @@ class MainViewController: UIViewController {
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
+        favicons: FaviconManaging,
         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
         websiteDataManager: WebsiteDataManaging,
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
@@ -410,6 +412,7 @@ class MainViewController: UIViewController {
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
+        self.favicons = favicons
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
@@ -2939,7 +2942,7 @@ extension MainViewController: BrowserChromeDelegate {
 
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
-        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
+        favicons.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
         if url.isBookmarklet() {
             executeBookmarklet(url)
         } else {

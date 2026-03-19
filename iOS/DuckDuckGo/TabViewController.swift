@@ -129,7 +129,7 @@ class TabViewController: UIViewController {
     var daxEasterEggHandler: DaxEasterEggHandling?
     var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
 
-    let favicons = Favicons.shared
+    let favicons: FaviconManaging
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
@@ -248,7 +248,7 @@ class TabViewController: UIViewController {
     let bookmarksDatabase: CoreDataDatabase
     lazy var faviconUpdater = FireproofFaviconUpdater(bookmarksDatabase: bookmarksDatabase,
                                                       tab: tabModel,
-                                                      favicons: Favicons.shared,
+                                                      favicons: favicons,
                                                       sharedSecureVault: sharedSecureVault)
 
     private let refreshControl = UIRefreshControl()
@@ -414,6 +414,7 @@ class TabViewController: UIViewController {
                                    autoconsentManagement: AutoconsentManaging,
                                    websiteDataManager: WebsiteDataManaging,
                                    fireproofing: Fireproofing,
+                                   favicons: FaviconManaging,
                                    tabInteractionStateSource: TabInteractionStateSource?,
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
@@ -446,6 +447,7 @@ class TabViewController: UIViewController {
                               textZoomCoordinator: textZoomCoordinator,
                               autoconsentManagement: autoconsentManagement,
                               fireproofing: fireproofing,
+                              favicons: favicons,
                               websiteDataManager: websiteDataManager,
                               tabInteractionStateSource: tabInteractionStateSource,
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
@@ -552,6 +554,7 @@ class TabViewController: UIViewController {
                    textZoomCoordinator: TextZoomCoordinating,
                    autoconsentManagement: AutoconsentManaging,
                    fireproofing: Fireproofing,
+                   favicons: FaviconManaging,
                    websiteDataManager: WebsiteDataManaging,
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
@@ -586,6 +589,7 @@ class TabViewController: UIViewController {
         self.textZoomCoordinator = textZoomCoordinator
         self.autoconsentManagement = autoconsentManagement
         self.fireproofing = fireproofing
+        self.favicons = favicons
         self.websiteDataManager = websiteDataManager
         self.tabInteractionStateSource = tabInteractionStateSource
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
@@ -641,7 +645,7 @@ class TabViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing)
+        fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing, favicons: favicons)
         initAttributionLogic()
         decorate()
         addTextZoomObserver()
@@ -3895,7 +3899,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
 
                         self.showLoginDetails(with: newCredential.account, source: .viewSavedLoginPrompt)
                     })
-                    Favicons.shared.loadFavicon(forDomain: newCredential.account.domain, intoCache: .fireproof, fromCache: .tabs)
+                    self.favicons.loadFavicon(forDomain: newCredential.account.domain, intoCache: .fireproof, fromCache: .tabs)
                 }
 
                 guard let domain = newCredential.account.domain else { return }

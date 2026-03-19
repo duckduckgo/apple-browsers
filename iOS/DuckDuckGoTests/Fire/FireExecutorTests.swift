@@ -194,6 +194,7 @@ final class FireExecutorTests: XCTestCase {
             syncService: syncService ?? mockSyncService,
             bookmarksDatabaseCleaner: bookmarksDatabaseCleaner ?? mockBookmarkDatabaseCleaner,
             fireproofing: fireproofing ?? mockFireproofing,
+            favicons: Favicons(),
             textZoomCoordinatorProvider: mockTextZoomCoordinatorProvider,
             autoconsentManagementProvider: mockAutoconsentManagementProvider,
             historyManager: mockHistoryManager,

@@ -67,7 +67,7 @@ class FavoritesViewModel: ObservableObject {
     init(isFocussedState: Bool,
          favoriteDataSource: NewTabPageFavoriteDataSource,
          faviconLoader: FavoritesFaviconLoading,
-         faviconsCache: FavoritesFaviconCaching = Favicons.shared,
+         faviconsCache: FavoritesFaviconCaching = Favicons(),
          pixelFiring: PixelFiring.Type = Pixel.self,
          dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
         self.isFocussedState = isFocussedState
@@ -193,7 +193,7 @@ private final class MissingFaviconWrapper: FavoritesFaviconLoading {
     }
 }
 
-extension Favicons: FavoritesFaviconCaching {
+extension Favicons {
     func populateFavicon(for domain: String, intoCache: FaviconsCacheType, fromCache: FaviconsCacheType?) {
         loadFavicon(forDomain: domain, intoCache: intoCache, fromCache: fromCache)
     }

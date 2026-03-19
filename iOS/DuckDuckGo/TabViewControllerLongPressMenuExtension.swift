@@ -120,6 +120,7 @@ extension TabViewController {
             autoconsentManagement: autoconsentManagement,
             websiteDataManager: websiteDataManager,
             fireproofing: fireproofing,
+            favicons: favicons,
             tabInteractionStateSource: tabInteractionStateSource,
             specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
             featureDiscovery: featureDiscovery,

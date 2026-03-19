@@ -51,7 +51,7 @@ struct FaviconsHelper {
 
         // Check cache and resource availability
         guard let cache = Favicons.Constants.caches[cacheType],
-              let resource = Favicons.shared.defaultResource(forDomain: domain) else {
+              let resource = Favicons().defaultResource(forDomain: domain) else {
             return createFallbackResult(domain: domain,
                                       useFakeFavicon: useFakeFavicon,
                                       preferredLetters: preferredFakeFaviconLetters)

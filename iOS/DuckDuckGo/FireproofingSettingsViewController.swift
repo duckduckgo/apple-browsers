@@ -37,12 +37,15 @@ class FireproofingSettingsViewController: UITableViewController {
     private var shouldShowRemoveAll = false
 
     private let fireproofing: Fireproofing
+    private let favicons: FaviconManaging
     private let websiteDataManager: WebsiteDataManaging
 
     init?(coder: NSCoder,
           fireproofing: Fireproofing,
+          favicons: FaviconManaging,
           websiteDataManager: WebsiteDataManaging) {
         self.fireproofing = fireproofing
+        self.favicons = favicons
         self.websiteDataManager = websiteDataManager
         super.init(coder: coder)
     }
@@ -160,7 +163,7 @@ class FireproofingSettingsViewController: UITableViewController {
         
         let domain = model.remove(at: indexPath.row)
         fireproofing.remove(domain: domain)
-        Favicons.shared.removeFireproofFavicon(forDomain: domain)
+        favicons.removeFireproofFavicon(forDomain: domain)
 
         if self.model.isEmpty {
             self.endEditing()

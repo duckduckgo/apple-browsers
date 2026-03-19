@@ -94,6 +94,14 @@ class FireExecutor: FireExecuting {
     private let fireWorkers: [FireExecutorWorker]
     private let tabManager: TabManaging
     private let downloadManager: DownloadManaging
+    private let websiteDataManager: WebsiteDataManaging
+    private let daxDialogsManager: DaxDialogsManaging
+    private let syncService: DDGSyncing
+    private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaning?
+    private let fireproofing: Fireproofing
+    private let favicons: FaviconManaging
+    private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
+    private let autoconsentManagementProvider: AutoconsentManagementProviding
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let dataClearingCapability: DataClearingCapable
@@ -118,6 +126,7 @@ class FireExecutor: FireExecuting {
          syncService: DDGSyncing,
          bookmarksDatabaseCleaner: BookmarkDatabaseCleaning,
          fireproofing: Fireproofing,
+         favicons: FaviconManaging,
          textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
          autoconsentManagementProvider: AutoconsentManagementProviding,
          historyManager: HistoryManaging,
@@ -133,6 +142,14 @@ class FireExecutor: FireExecuting {
          wideEvent: WideEventManaging? = nil) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
+        self.websiteDataManager = websiteDataManager
+        self.daxDialogsManager = daxDialogsManager
+        self.syncService = syncService
+        self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
+        self.fireproofing = fireproofing
+        self.favicons = favicons
+        self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
+        self.autoconsentManagementProvider = autoconsentManagementProvider
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
@@ -316,7 +333,7 @@ class FireExecutor: FireExecuting {
             let removeAllResult = tabManager.removeAll(browsingMode: nil)
             dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
             dataClearingWideEventService?.start(.clearFaviconCache)
-            let faviconResult = Favicons.shared.clearCache(.tabs)
+            let faviconResult = favicons.clearCache(.tabs)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         case .fireMode:
             tabManager.prepareCurrentTabForDataClearing(browsingMode: .fire)
@@ -345,7 +362,7 @@ class FireExecutor: FireExecuting {
             tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
 
             dataClearingWideEventService?.start(.clearFaviconCache)
-            let faviconResult = Favicons.shared.removeTabFavicons(forDomains: domains)
+            let faviconResult = favicons.removeTabFavicons(forDomains: domains)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         }
     }

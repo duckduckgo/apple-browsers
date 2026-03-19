@@ -359,7 +359,7 @@ class FireExecutor: FireExecuting {
             self.dataStoreWarmup = nil
         }
         
-        let pixel = timedPixel(for: scope)
+        let pixel = dataClearingTimedPixel(for: scope)
         
         await withTaskGroup(of: Void.self) { group in
             for worker in fireWorkers {
@@ -368,13 +368,13 @@ class FireExecutor: FireExecuting {
                 }
             }
         }
-        let params = pixelParams(for: scope, domains: domains)
+        let params = dataClearingPixelParams(for: scope, domains: domains)
         pixel?.fire(withAdditionalParameters: params)
 
         self.burnInProgress = false
     }
     
-    private func timedPixel(for scope: FireRequest.Scope) -> TimedPixel? {
+    private func dataClearingTimedPixel(for scope: FireRequest.Scope) -> TimedPixel? {
         switch scope {
         case .tab:
             return TimedPixel(.singleTabDataCleared)
@@ -387,7 +387,7 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func pixelParams(for scope: FireRequest.Scope, domains: [String]?) -> [String: String] {
+    private func dataClearingPixelParams(for scope: FireRequest.Scope, domains: [String]?) -> [String: String] {
         switch scope {
         case .tab(let viewModel):
             let tabType = viewModel.tab.isAITab ? "ai" : "web"

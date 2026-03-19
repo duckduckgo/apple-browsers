@@ -346,15 +346,21 @@ private struct QuitSurveyNegativeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header()
-            optionsPills()
 
-            if viewModel.shouldShowDomainSelector {
-                inlineDomainSection()
-            }
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    optionsPills()
 
-            if viewModel.shouldShowTextInput {
-                userTextInput()
+                    if viewModel.shouldShowDomainSelector {
+                        inlineDomainSection()
+                    }
+
+                    if viewModel.shouldShowTextInput {
+                        userTextInput()
+                    }
+                }
             }
+            .frame(maxHeight: maxScrollableHeight)
 
             footer()
         }
@@ -372,6 +378,14 @@ private struct QuitSurveyNegativeView: View {
         .onAppear {
             updateDialogHeight()
         }
+    }
+
+    /// Maximum height for the scrollable body so the total sheet height never exceeds the screen.
+    private var maxScrollableHeight: CGFloat {
+        let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
+        let fixedHeight = ComponentHeights.header + ComponentHeights.footer
+        let safeMargin: CGFloat = 20
+        return max(200, screenHeight - fixedHeight - safeMargin)
     }
 
     private var submitButtonTitle: String {
@@ -394,7 +408,9 @@ private struct QuitSurveyNegativeView: View {
             ? (domainSectionHeight > 0 ? domainSectionHeight : 0)
             : 0
 
-        return baseHeight + pillsHeight + textInputHeight + domainHeight
+        let naturalHeight = baseHeight + pillsHeight + textInputHeight + domainHeight
+        let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
+        return min(naturalHeight, screenHeight - 20)
     }
 
     private func updateDialogHeight() {

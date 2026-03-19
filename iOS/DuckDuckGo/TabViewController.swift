@@ -525,7 +525,8 @@ class TabViewController: UIViewController {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
-            pageContextHandler: pageContextHandler
+            pageContextHandler: pageContextHandler,
+            isFireTab: tabModel.fireTab
         )
         coordinator.delegate = self
         return coordinator

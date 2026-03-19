@@ -164,7 +164,7 @@ class EmailSignupViewController: UIViewController {
     // MARK: - Private
 
     private func setupWebView() {
-        let configuration =  WKWebViewConfiguration.persistent()
+        let configuration =  WKWebViewConfiguration.persistent(fireMode: false)
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)
         configuration.userContentController = userContentController

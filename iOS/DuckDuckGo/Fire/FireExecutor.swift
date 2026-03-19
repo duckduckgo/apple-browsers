@@ -171,7 +171,10 @@ class FireExecutor: FireExecuting {
                                  dataClearingWideEventService: dataClearingWideEventService),
             BookmarksFireWorker(syncService: syncService,
                                 bookmarksDatabaseCleaner: bookmarksDatabaseCleaner,
-                                dataClearingWideEventService: dataClearingWideEventService)
+                                dataClearingWideEventService: dataClearingWideEventService),
+            TextZoomFireWorker(fireproofing: fireproofing,
+                               textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                               dataClearingWideEventService: dataClearingWideEventService)
         ]
     }
 
@@ -389,10 +392,6 @@ class FireExecutor: FireExecuting {
     private func burnAllData() async {
         let pixel = TimedPixel(.forgetAllDataCleared)
 
-        dataClearingWideEventService?.start(.forgetTextZoom)
-        let textZoomResult = self.forgetTextZoom()
-        dataClearingWideEventService?.update(.forgetTextZoom, result: textZoomResult)
-
         dataClearingWideEventService?.start(.clearAllHistory)
         let historyResult = await historyManager.removeAllHistory()
         dataClearingWideEventService?.update(.clearAllHistory, result: historyResult)
@@ -416,11 +415,6 @@ class FireExecutor: FireExecuting {
         async let historyTask = historyManager.removeBrowsingHistory(tabID: tabViewModel.tab.uid)
         async let contextualChatTask = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
 
-        // Sync tasks
-        dataClearingWideEventService?.start(.forgetTextZoom)
-        let textZoomResult = forgetTextZoom(forDomains: domains)
-        dataClearingWideEventService?.update(.forgetTextZoom, result: textZoomResult)
-
         // Await async tasks
         let (historyResult, contextualChatResult) = await (historyTask, contextualChatTask)
         if let historyResult {
@@ -436,20 +430,6 @@ class FireExecutor: FireExecuting {
             PixelParameters.tabType: tabType,
             PixelParameters.domainsCount: "\(domains.count)"
         ])
-    }
-    
-    private func forgetTextZoom() -> Result<Void, Error> {
-        let allowedDomains = fireproofing.allowedDomains
-        let coordinator = textZoomCoordinatorProvider.coordinator(for: .normal) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
-        coordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
-        return .success(())
-    }
-
-    private func forgetTextZoom(forDomains domains: [String]) -> Result<Void, Error> {
-        let allowedDomains = fireproofing.allowedDomains
-        let coordinator = textZoomCoordinatorProvider.coordinator(for: .normal) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
-        coordinator.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: allowedDomains)
-        return .success(())
     }
     
     @MainActor

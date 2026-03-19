@@ -641,6 +641,7 @@
 		80A09D542F6B88BC00AACDEE /* AutoConsentFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D532F6B88B300AACDEE /* AutoConsentFireWorker.swift */; };
 		80A09D562F6B95E600AACDEE /* DaxDialogsFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D552F6B95D700AACDEE /* DaxDialogsFireWorker.swift */; };
 		80A09D582F6B96E700AACDEE /* BookmarksFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D572F6B96DD00AACDEE /* BookmarksFireWorker.swift */; };
+		80A09D5A2F6B97A700AACDEE /* TextZoomFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D592F6B978B00AACDEE /* TextZoomFireWorker.swift */; };
 		80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A198C62F1AB3A10015521B /* TabViewModel.swift */; };
 		80BADA432EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */; };
 		80C947FD2F53E819002EDB79 /* Tab+ConvenienceInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */; };
@@ -3011,6 +3012,7 @@
 		80A09D532F6B88B300AACDEE /* AutoConsentFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoConsentFireWorker.swift; sourceTree = "<group>"; };
 		80A09D552F6B95D700AACDEE /* DaxDialogsFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxDialogsFireWorker.swift; sourceTree = "<group>"; };
 		80A09D572F6B96DD00AACDEE /* BookmarksFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksFireWorker.swift; sourceTree = "<group>"; };
+		80A09D592F6B978B00AACDEE /* TextZoomFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextZoomFireWorker.swift; sourceTree = "<group>"; };
 		80A198C62F1AB3A10015521B /* TabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModel.swift; sourceTree = "<group>"; };
 		80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationSettingsStore.swift; sourceTree = "<group>"; };
 		80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+ConvenienceInitializer.swift"; sourceTree = "<group>"; };
@@ -6702,6 +6704,7 @@
 				80A09D572F6B96DD00AACDEE /* BookmarksFireWorker.swift */,
 				80A09D552F6B95D700AACDEE /* DaxDialogsFireWorker.swift */,
 				80A09D4F2F6B82F200AACDEE /* FireExecutorWorker.swift */,
+				80A09D592F6B978B00AACDEE /* TextZoomFireWorker.swift */,
 				80A09D512F6B853700AACDEE /* URLCacheFireWorker.swift */,
 				80A09D4D2F6B80B700AACDEE /* WebsiteDataFireWorker.swift */,
 			);
@@ -12638,6 +12641,7 @@
 				C1DA98EB2E7C653F00F8BED9 /* SyncRecoveryAlternativeView.swift in Sources */,
 				EE4BE0092A740BED00CD6AA8 /* ClearTextField.swift in Sources */,
 				C1E9B8EA2F0D36C000E845AA /* AIChatContextualWebViewController.swift in Sources */,
+				80A09D5A2F6B97A700AACDEE /* TextZoomFireWorker.swift in Sources */,
 				56D060282C380D83003BAEB5 /* OnboardingSuggestedSearchesProvider.swift in Sources */,
 				F44D279C27F331BB0037F371 /* AutofillLoginPromptView.swift in Sources */,
 				369E69282E5F4B9600F98A8F /* InactivityNotificationSchedulerService.swift in Sources */,

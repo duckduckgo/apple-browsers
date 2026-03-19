@@ -164,6 +164,8 @@ class FireExecutor: FireExecuting {
             URLCacheFireWorker(dataClearingWideEventService: dataClearingWideEventService),
             WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
                                   dataStore: dataStore,
+                                  dataClearingWideEventService: dataClearingWideEventService),
+            AutoConsentFireWorker(autoconsentManagementProvider: autoconsentManagementProvider,
                                   dataClearingWideEventService: dataClearingWideEventService)
         ]
     }
@@ -382,10 +384,6 @@ class FireExecutor: FireExecuting {
     private func burnAllData() async {
         let pixel = TimedPixel(.forgetAllDataCleared)
 
-        dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
-        let autoconsentResult = autoconsentManagementProvider.management(for: .normal).clearCache()
-        dataClearingWideEventService?.update(.clearAutoconsentManagementCache, result: autoconsentResult)
-
         dataClearingWideEventService?.start(.clearDaxDialogsHeldURLData)
         let daxDialogsResult = daxDialogsManager.clearHeldURLData()
         dataClearingWideEventService?.update(.clearDaxDialogsHeldURLData, result: daxDialogsResult)
@@ -424,10 +422,6 @@ class FireExecutor: FireExecuting {
         async let contextualChatTask = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
 
         // Sync tasks
-        dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
-        let autoconsentResult = autoconsentManagementProvider.management(for: tabViewModel.tab.autoconsentContext).clearCache(forDomains: domains)
-        dataClearingWideEventService?.update(.clearAutoconsentManagementCache, result: autoconsentResult)
-
         dataClearingWideEventService?.start(.forgetTextZoom)
         let textZoomResult = forgetTextZoom(forDomains: domains)
         dataClearingWideEventService?.update(.forgetTextZoom, result: textZoomResult)

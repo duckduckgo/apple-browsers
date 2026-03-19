@@ -27,7 +27,7 @@ final class TabBackgroundShapeView: NSView {
     var backgroundColor: NSColor = .clear {
         didSet {
             guard oldValue != backgroundColor else { return }
-            shapeLayer.fillColor = backgroundColor.cgColor
+            applyBackgroundColor()
         }
     }
 
@@ -54,7 +54,11 @@ final class TabBackgroundShapeView: NSView {
 
     // MARK: - Private
 
-    private let shapeLayer = CAShapeLayer()
+    private lazy var shapeLayer: CAShapeLayer = {
+        let output = CAShapeLayer()
+        output.masksToBounds = false
+        return output
+    }()
 
     private var backgroundRoundedCorners: [NSBezierPath.Corners] {
         isDragged ? [.topLeft, .topRight, .bottomLeft, .bottomRight] : [.bottomLeft, .bottomRight]
@@ -76,8 +80,12 @@ final class TabBackgroundShapeView: NSView {
 
     override func layout() {
         super.layout()
-
         refreshShapeBoundsAndPath()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyBackgroundColor()
     }
 }
 
@@ -85,13 +93,20 @@ final class TabBackgroundShapeView: NSView {
 
 private extension TabBackgroundShapeView {
 
-    private func refreshShapeBoundsAndPath() {
+    func applyBackgroundColor() {
+        NSAppearance.withAppAppearance {
+            shapeLayer.fillColor = backgroundColor.cgColor
+        }
+    }
+
+    func refreshShapeBoundsAndPath() {
         guard let layer else {
             return
         }
 
         if shapeLayer.superlayer == nil {
             layer.addSublayer(shapeLayer)
+            layer.masksToBounds = false
         }
 
         if shapeLayer.frame != bounds {
@@ -104,11 +119,11 @@ private extension TabBackgroundShapeView {
         }
     }
 
-    private func refreshShapePath() {
+    func refreshShapePath() {
         shapeLayer.path = buildBackgroundCGPath()
     }
 
-    private func buildBackgroundCGPath() -> CGPath? {
+    func buildBackgroundCGPath() -> CGPath? {
         guard bounds.width > 0, bounds.height > 0 else {
             return nil
         }

@@ -142,6 +142,10 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     var defaultOmnibarMode: DefaultOmnibarMode {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) else {
+            return .search
+        }
+
         guard let rawValue = keyValueStore.object(forKey: .defaultOmnibarModeKey) as? String,
               let mode = DefaultOmnibarMode(rawValue: rawValue) else {
             return .search
@@ -244,6 +248,10 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) else {
+            return
+        }
+
         keyValueStore.set(mode.rawValue, forKey: .defaultOmnibarModeKey)
         triggerSettingsChangedNotification()
         DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDefaultTogglePositionChanged,

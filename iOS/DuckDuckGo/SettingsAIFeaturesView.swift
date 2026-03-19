@@ -78,12 +78,14 @@ struct SettingsAIFeaturesView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
 
                         if viewModel.aiChatSearchInputEnabledBinding.wrappedValue {
-                            SettingsPickerCellView(
-                                label: UserText.settingsDefaultOmnibarModeHeader,
-                                options: DefaultOmnibarMode.allCases.map { Optional($0) },
-                                selectedOption: viewModel.defaultOmnibarModeBinding
-                            )
-                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            if viewModel.featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) {
+                                SettingsPickerCellView(
+                                    label: UserText.settingsDefaultOmnibarModeHeader,
+                                    options: DefaultOmnibarMode.allCases.map { Optional($0) },
+                                    selectedOption: viewModel.defaultOmnibarModeBinding
+                                )
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
                         }
                     } footer: {
                         Text(footerAttributedString)

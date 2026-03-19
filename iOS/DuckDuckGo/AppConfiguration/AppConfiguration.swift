@@ -33,9 +33,11 @@ struct AppConfiguration {
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
     private let appKeyValueStore: ThrowingKeyValueStoring
+    private let featureFlagger: FeatureFlagger
 
-    init(appKeyValueStore: ThrowingKeyValueStoring) {
+    init(appKeyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger) {
         self.appKeyValueStore = appKeyValueStore
+        self.featureFlagger = featureFlagger
     }
 
     func start(isBookmarksDBFilePresent: Bool?) throws {
@@ -77,6 +79,11 @@ struct AppConfiguration {
         let store = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
         let key = LegacyAiChatUserDefaultsKeys.defaultOmnibarModeKey
         guard store.object(forKey: key) == nil else { return }
+
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) else {
+            return
+        }
+
         let isExistingUser = StatisticsUserDefaults().hasInstallStatistics
         let defaultMode: DefaultOmnibarMode = isExistingUser ? .search : .lastUsed
         store.set(defaultMode.rawValue, forKey: key)

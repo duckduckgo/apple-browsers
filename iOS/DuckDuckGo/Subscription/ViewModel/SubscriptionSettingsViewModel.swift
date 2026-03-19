@@ -233,18 +233,18 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         Logger.subscription.log("Fetch and update subscription details")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
-        if loadingIndicator { state.isLoadingSubscriptionInfo = true }
+        state.isLoadingSubscriptionInfo = loadingIndicator
 
         do {
             guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: forceRefresh) else {
                 Logger.subscription.log("No subscription available — resetting subscription state")
-                if loadingIndicator { state.isLoadingSubscriptionInfo = false }
+                state.isLoadingSubscriptionInfo = false
                 state.subscriptionInfo = nil
                 state.subscriptionDetails = ""
                 state.cancelPendingDowngradeDetails = nil
                 return false
             }
-            if loadingIndicator { state.isLoadingSubscriptionInfo = false }
+            state.isLoadingSubscriptionInfo = false
             await updateSubscriptionsStatusMessage(subscription: subscription,
                                                    date: subscription.expiresOrRenewsAt,
                                                    product: subscription.productId,
@@ -252,7 +252,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return true
         } catch {
             Logger.subscription.error("\(#function) error: \(error, privacy: .public)")
-            if loadingIndicator { state.isLoadingSubscriptionInfo = false }
+            state.isLoadingSubscriptionInfo = false
             return false
         }
     }

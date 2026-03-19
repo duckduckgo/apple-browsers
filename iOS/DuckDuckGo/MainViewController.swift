@@ -4477,6 +4477,12 @@ extension MainViewController: TabManagerFireModeDelegate {
             await fireExecutor.burn(request: request, applicationState: .unknown)
         }
     }
+
+    func tabManagerDidChangeBrowsingMode(_ mode: BrowsingMode) {
+        Task {
+            await aiChatViewControllerManager.killSessionAndResetTimer()
+        }
+    }
 }
 
 extension MainViewController: FireExecutorDelegate {

@@ -100,11 +100,9 @@ private extension TabBackgroundView {
     func setupView() {
         wantsLayer = true
         clipsToBounds = false
-        layer?.masksToBounds = false
 
         backgroundShapeView.wantsLayer = true
         backgroundShapeView.clipsToBounds = false
-        backgroundShapeView.layer?.masksToBounds = false
         backgroundShapeView.tabRampSize = Metrics.tabRampSize
         backgroundShapeView.tabCornerRadius = Metrics.tabCornerRadius
 
@@ -117,6 +115,10 @@ private extension TabBackgroundView {
 
     func layoutBackground() {
         backgroundShapeView.frame = bounds
+
+        if let layer, layer.masksToBounds {
+            layer.masksToBounds = false
+        }
 
         guard let layer = backgroundShapeView.layer else {
             assertionFailure()

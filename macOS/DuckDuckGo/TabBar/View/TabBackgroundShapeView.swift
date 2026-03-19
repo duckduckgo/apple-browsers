@@ -54,7 +54,11 @@ final class TabBackgroundShapeView: NSView {
 
     // MARK: - Private
 
-    private let shapeLayer = CAShapeLayer()
+    private lazy var shapeLayer: CAShapeLayer = {
+        let output = CAShapeLayer()
+        output.masksToBounds = false
+        return output
+    }()
 
     private var backgroundRoundedCorners: [NSBezierPath.Corners] {
         isDragged ? [.topLeft, .topRight, .bottomLeft, .bottomRight] : [.bottomLeft, .bottomRight]
@@ -92,6 +96,7 @@ private extension TabBackgroundShapeView {
 
         if shapeLayer.superlayer == nil {
             layer.addSublayer(shapeLayer)
+            layer.masksToBounds = false
         }
 
         if shapeLayer.frame != bounds {

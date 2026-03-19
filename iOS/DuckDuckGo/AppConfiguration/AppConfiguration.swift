@@ -26,6 +26,7 @@ import Configuration
 import Persistence
 import WebKit
 import DuckSansFont
+import PrivacyConfig
 
 struct AppConfiguration {
 

@@ -165,8 +165,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                 }
 
                 await self?.fetchEmail()
-                // Use remoteFirst to ensure fresh data after subscription changes
-                await self?.updateSubscription(forceRefresh: true)
+                await self?.updateSubscription(forceRefresh: false)
             }
         }
 

@@ -228,37 +228,31 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         }
     }
 
+    @MainActor
     private func fetchAndUpdateSubscriptionDetails(forceRefresh: Bool, loadingIndicator: Bool) async -> Bool {
         Logger.subscription.log("Fetch and update subscription details")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
-        if loadingIndicator { self.displaySubscriptionLoader(true) }
+        if loadingIndicator { state.isLoadingSubscriptionInfo = true }
 
         do {
-            guard let subscription = try await self.subscriptionManager.getSubscription(forceRefresh: forceRefresh) else {
-                if loadingIndicator {
-                    Task { @MainActor in
-                        self.displaySubscriptionLoader(false)
-                    }
-                }
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: forceRefresh) else {
+                Logger.subscription.log("No subscription available — resetting subscription state")
+                if loadingIndicator { state.isLoadingSubscriptionInfo = false }
+                state.subscriptionInfo = nil
+                state.subscriptionDetails = ""
+                state.cancelPendingDowngradeDetails = nil
                 return false
             }
-            if loadingIndicator {
-                Task { @MainActor in
-                    self.displaySubscriptionLoader(false)
-                }
-            }
-
+            if loadingIndicator { state.isLoadingSubscriptionInfo = false }
             await updateSubscriptionsStatusMessage(subscription: subscription,
                                                    date: subscription.expiresOrRenewsAt,
                                                    product: subscription.productId,
                                                    billingPeriod: subscription.billingPeriod)
             return true
         } catch {
-            Logger.subscription.error("\(#function) error: \(error.localizedDescription)")
-            Task { @MainActor in
-                if loadingIndicator { self.displaySubscriptionLoader(true) }
-            }
+            Logger.subscription.error("\(#function) error: \(error, privacy: .public)")
+            if loadingIndicator { state.isLoadingSubscriptionInfo = false }
             return false
         }
     }
@@ -278,12 +272,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         } catch {
             Logger.subscription.error("\(#function) error: \(error.localizedDescription)")
             return false
-        }
-    }
-
-    private func displaySubscriptionLoader(_ show: Bool) {
-        DispatchQueue.main.async {
-            self.state.isLoadingSubscriptionInfo = show
         }
     }
 

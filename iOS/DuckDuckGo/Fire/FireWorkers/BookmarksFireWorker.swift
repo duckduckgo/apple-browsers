@@ -35,7 +35,7 @@ struct BookmarksFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnAllData() async {
+    func burnNormalModeData() async {
         if syncService.authState == .inactive {
             dataClearingWideEventService?.start(.clearBookmarkDatabase)
             bookmarksDatabaseCleaner?.cleanUpDatabaseNow()

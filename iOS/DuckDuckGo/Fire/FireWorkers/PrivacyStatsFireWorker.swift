@@ -29,7 +29,7 @@ struct PrivacyStatsFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnAllData() async {
+    func burnNormalModeData() async {
         dataClearingWideEventService?.start(.clearPrivacyStats)
         let result = await privacyStats?.clearPrivacyStats() ?? .success(())
         dataClearingWideEventService?.update(.clearPrivacyStats, result: result)

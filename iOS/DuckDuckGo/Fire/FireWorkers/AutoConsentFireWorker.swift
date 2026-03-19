@@ -29,7 +29,7 @@ struct AutoConsentFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnAllData() async {
+    func burnNormalModeData() async {
         dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
         let result = autoconsentManagementProvider.management(for: .normal).clearCache()
         dataClearingWideEventService?.update(.clearAutoconsentManagementCache, result: result)

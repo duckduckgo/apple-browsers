@@ -29,7 +29,7 @@ struct DaxDialogsFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnAllData() async {
+    func burnNormalModeData() async {
         dataClearingWideEventService?.start(.clearDaxDialogsHeldURLData)
         let result = daxDialogsManager.clearHeldURLData()
         dataClearingWideEventService?.update(.clearDaxDialogsHeldURLData, result: result)

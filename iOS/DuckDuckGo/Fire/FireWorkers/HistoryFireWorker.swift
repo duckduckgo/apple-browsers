@@ -31,7 +31,7 @@ struct HistoryFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnAllData() async {
+    func burnNormalModeData() async {
         dataClearingWideEventService?.start(.clearAllHistory)
         let result = await historyManager.removeAllHistory()
         dataClearingWideEventService?.update(.clearAllHistory, result: result)

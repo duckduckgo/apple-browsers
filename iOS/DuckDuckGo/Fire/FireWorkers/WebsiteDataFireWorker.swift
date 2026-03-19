@@ -35,7 +35,7 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnAllData() async {
+    func burnNormalModeData() async {
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
         let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
@@ -53,7 +53,7 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
     func burnTabData(tabViewModel: TabViewModel, domains: [String]) async {
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
+        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current() // TODO: - Fix this for fire tabs
 
         // Async tasks
         let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)

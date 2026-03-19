@@ -38,7 +38,7 @@ struct ContextualChatFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnAllData() async {
+    func burnNormalModeData() async {
         // Contextual chats are tied to specific tabs, not cleared during burn all
     }
 

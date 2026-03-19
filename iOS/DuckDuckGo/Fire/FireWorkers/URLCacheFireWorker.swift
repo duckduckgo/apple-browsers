@@ -28,7 +28,7 @@ struct URLCacheFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnAllData() async {
+    func burnNormalModeData() async {
         dataClearingWideEventService?.start(.clearURLCaches)
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
         dataClearingWideEventService?.update(.clearURLCaches, result: .success(()))

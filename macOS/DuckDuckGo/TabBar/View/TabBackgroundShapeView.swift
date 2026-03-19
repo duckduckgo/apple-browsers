@@ -27,7 +27,7 @@ final class TabBackgroundShapeView: NSView {
     var backgroundColor: NSColor = .clear {
         didSet {
             guard oldValue != backgroundColor else { return }
-            shapeLayer.fillColor = backgroundColor.cgColor
+            applyBackgroundColor()
         }
     }
 
@@ -80,8 +80,12 @@ final class TabBackgroundShapeView: NSView {
 
     override func layout() {
         super.layout()
-
         refreshShapeBoundsAndPath()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyBackgroundColor()
     }
 }
 
@@ -89,7 +93,13 @@ final class TabBackgroundShapeView: NSView {
 
 private extension TabBackgroundShapeView {
 
-    private func refreshShapeBoundsAndPath() {
+    func applyBackgroundColor() {
+        NSAppearance.withAppAppearance {
+            shapeLayer.fillColor = backgroundColor.cgColor
+        }
+    }
+
+    func refreshShapeBoundsAndPath() {
         guard let layer else {
             return
         }
@@ -109,11 +119,11 @@ private extension TabBackgroundShapeView {
         }
     }
 
-    private func refreshShapePath() {
+    func refreshShapePath() {
         shapeLayer.path = buildBackgroundCGPath()
     }
 
-    private func buildBackgroundCGPath() -> CGPath? {
+    func buildBackgroundCGPath() -> CGPath? {
         guard bounds.width > 0, bounds.height > 0 else {
             return nil
         }

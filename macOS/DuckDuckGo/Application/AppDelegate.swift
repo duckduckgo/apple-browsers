@@ -1530,7 +1530,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let handler = TerminationDeciderHandler(
             deciders: createTerminationDeciders(),
             replyToApplicationShouldTerminate: { [weak self] shouldTerminate in
-                self?.terminationHandler = nil
+                // Keep terminationHandler set after successful completion so the
+                // guard in applicationShouldTerminate blocks any subsequent calls.
+                // During Sparkle updates the system can fire a second terminate
+                // request right after reply:YES. If we cleared the handler, the
+                // decider chain would re-run against already-closed windows and
+                // overwrite the saved state with empty data.
+                if !shouldTerminate {
+                    self?.terminationHandler = nil
+                }
                 NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
             }
         )

@@ -419,10 +419,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Handle suggestion deletions
         suggestionsView.onSuggestionDeleted = { [weak self] suggestion in
-            guard let self else { return }
-            self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
-            Task { @MainActor in
-                _ = await self.historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+            guard let self, let window = self.view.window else { return }
+
+            let alert = NSAlert()
+            alert.messageText = UserText.removeRecentChatConfirmationTitle
+            alert.informativeText = UserText.removeRecentChatConfirmationMessage
+            alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
+            alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+
+            alert.beginSheetModal(for: window) { [weak self] response in
+                guard let self, response == .OK else { return }
+                self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
+                Task { @MainActor in
+                    _ = await self.historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+                }
             }
         }
 

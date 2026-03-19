@@ -2204,6 +2204,9 @@ struct UserText {
 
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
     static let removeRecentChatSuggestionTooltip = NSLocalizedString("remove.recent.chat.suggestion.tooltip", value: "Remove from recent chats", comment: "Tooltip for the button which removes a recent Duck.ai chat from the suggestions")
+    static let removeRecentChatConfirmationTitle = NSLocalizedString("remove.recent.chat.confirmation.title", value: "Remove Chat?", comment: "Title for the confirmation alert when removing a recent Duck.ai chat")
+    static let removeRecentChatConfirmationMessage = NSLocalizedString("remove.recent.chat.confirmation.message", value: "This chat will be removed from your recent chats.", comment: "Message for the confirmation alert when removing a recent Duck.ai chat")
+    static let removeRecentChatConfirmationButton = NSLocalizedString("remove.recent.chat.confirmation.button", value: "Remove", comment: "Button title to confirm removing a recent Duck.ai chat")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
     static let searchTheWeb = NSLocalizedString("suggestion.search.privately", value: "Search privately", comment: "Label shown on the search suggestion cell indicating the action will search the web")

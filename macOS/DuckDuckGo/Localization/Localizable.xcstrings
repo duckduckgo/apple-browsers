@@ -89994,6 +89994,42 @@
         }
       }
     },
+    "remove.recent.chat.confirmation.button" : {
+      "comment" : "Button title to confirm removing a recent Duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+    "remove.recent.chat.confirmation.message" : {
+      "comment" : "Message for the confirmation alert when removing a recent Duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This chat will be removed from your recent chats."
+          }
+        }
+      }
+    },
+    "remove.recent.chat.confirmation.title" : {
+      "comment" : "Title for the confirmation alert when removing a recent Duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Chat?"
+          }
+        }
+      }
+    },
     "remove.recent.chat.suggestion.tooltip" : {
       "comment" : "Tooltip for the button which removes a recent Duck.ai chat from the suggestions",
       "extractionState" : "extracted_with_value",

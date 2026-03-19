@@ -1258,8 +1258,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if isFirstLaunch {
             AppDelegate.firstLaunchDate = Date()
             if let build = Int(AppVersion.shared.buildNumber) {
-                var store: any KeyedStoring<UpdateControllerSettings> = UserDefaults.standard.keyedStoring()
-                store.installBuild = build
+                let store: any ThrowingKeyedStoring<UpdateControllerSettings> = keyValueStore.throwingKeyedStoring()
+                try? store.set(build, for: \.installBuild)
             }
         }
 

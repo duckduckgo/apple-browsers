@@ -30,7 +30,7 @@
                     "scope": {
                         "type": "string",
                         "description": "Scope of the clearing action",
-                        "enum": ["tab", "fireMode", "all"]
+                        "enum": ["tab", "fireMode", "normalMode", "all"]
                     },
                     "source": {
                         "type": "string",

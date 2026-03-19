@@ -23,6 +23,7 @@ import Foundation
 @MainActor
 class MockTabManager: TabManaging {
     var currentTabsModel: TabsModelManaging = TabsModel(desktop: false)
+    var allTabsModel: TabsModelReading = TabsModel(desktop: false)
     var currentBrowsingMode: BrowsingMode = .normal
     
     private(set) var prepareAllTabsExceptCurrentCalled = false
@@ -107,5 +108,10 @@ class MockTabManager: TabManaging {
     func setBrowsingMode(_ mode: BrowsingMode) {
         setBrowsingModeCalled = true
         setBrowsingModeCalledWith = mode
+    }
+
+    var tabsModelForModeReturnValue: TabsModelManaging = TabsModel(desktop: false)
+    func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
+        return tabsModelForModeReturnValue
     }
 }

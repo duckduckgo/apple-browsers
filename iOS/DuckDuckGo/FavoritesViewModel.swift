@@ -193,7 +193,7 @@ private final class MissingFaviconWrapper: FavoritesFaviconLoading {
     }
 }
 
-extension Favicons {
+extension FaviconManaging {
     func populateFavicon(for domain: String, intoCache: FaviconsCacheType, fromCache: FaviconsCacheType?) {
         loadFavicon(forDomain: domain, intoCache: intoCache, fromCache: fromCache)
     }

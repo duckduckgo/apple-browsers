@@ -222,12 +222,14 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconManaging {
 
     // MARK: - FaviconManaging stubs
 
-    func clearCache(_ cacheType: FaviconsCacheType, clearMemoryCache: Bool) {}
+    @discardableResult
+    func clearCache(_ cacheType: FaviconsCacheType, clearMemoryCache: Bool) -> Result<Void, Error> { .success(()) }
     func removeBookmarkFavicon(forDomain domain: String) {}
     func removeFireproofFavicon(forDomain domain: String) {}
     func removeTabFavicon(forDomain domain: String) {}
     func removeTabFavicon(forCacheKey key: String) {}
-    func removeTabFavicons(forDomains domains: [String]) {}
+    @discardableResult
+    func removeTabFavicons(forDomains domains: [String]) -> Result<Void, Error> { .success(()) }
     func loadFavicon(forDomain domain: String?, fromURL url: URL?, intoCache targetCacheType: FaviconsCacheType, fromCache: FaviconsCacheType?, queue: DispatchQueue?, completion: ((UIImage?) -> Void)?) {
         if let domain = domain {
             loadFaviconDomain = domain
@@ -238,7 +240,6 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconManaging {
     }
     func hasFavicon(for domain: String) -> Bool { false }
     func storeFavicon(_ imageData: Data, with url: URL?, for documentURL: URL) async throws {}
-    func populateFavicon(for domain: String, intoCache: FaviconsCacheType, fromCache: FaviconsCacheType?) {}
 
     func createBookmark() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)

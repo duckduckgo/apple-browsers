@@ -27,12 +27,14 @@ import os.log
 import Core
 
 protocol FaviconManaging: FaviconProviding, FavoritesFaviconCaching, FaviconStoring {
-    func clearCache(_ cacheType: FaviconsCacheType, clearMemoryCache: Bool)
+    @discardableResult
+    func clearCache(_ cacheType: FaviconsCacheType, clearMemoryCache: Bool) -> Result<Void, Error>
     func removeBookmarkFavicon(forDomain domain: String)
     func removeFireproofFavicon(forDomain domain: String)
     func removeTabFavicon(forDomain domain: String)
     func removeTabFavicon(forCacheKey key: String)
-    func removeTabFavicons(forDomains domains: [String])
+    @discardableResult
+    func removeTabFavicons(forDomains domains: [String]) -> Result<Void, Error>
     func loadFavicon(forDomain domain: String?,
                      fromURL url: URL?,
                      intoCache targetCacheType: FaviconsCacheType,
@@ -42,7 +44,8 @@ protocol FaviconManaging: FaviconProviding, FavoritesFaviconCaching, FaviconStor
 }
 
 extension FaviconManaging {
-    func clearCache(_ cacheType: FaviconsCacheType) {
+    @discardableResult
+    func clearCache(_ cacheType: FaviconsCacheType) -> Result<Void, Error> {
         clearCache(cacheType, clearMemoryCache: false)
     }
 

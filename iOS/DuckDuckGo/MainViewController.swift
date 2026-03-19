@@ -439,6 +439,7 @@ class MainViewController: UIViewController {
         
         tabManager.delegate = self
         tabManager.aiChatContentDelegate = self
+        tabManager.fireModeDelegate = self
         self.fireExecutor.delegate = self
         bindSyncService()
     }
@@ -4464,6 +4465,19 @@ extension MainViewController {
     }
 }
 
+extension MainViewController: TabManagerFireModeDelegate {
+
+    func tabManagerDidCloseLastFireTab() {
+        Task {
+            let request = FireRequest(options: [.data, .aiChats],
+                                      trigger: .fireModeAutoClear,
+                                      scope: .fireMode,
+                                      source: .browsing)
+            await fireExecutor.burn(request: request, applicationState: .unknown)
+        }
+    }
+}
+
 extension MainViewController: FireExecutorDelegate {
     
     func willStartBurning(fireRequest: FireRequest) {
@@ -4475,6 +4489,8 @@ extension MainViewController: FireExecutorDelegate {
         case .autoClearOnForeground:
             autoClearInProgress = true
             clearNavigationStack()
+        case .fireModeAutoClear:
+            break
         }
     }
     
@@ -4591,6 +4607,8 @@ extension MainViewController: FireExecutorDelegate {
                 refreshUIAfterClear()
             }
             autoClearShouldRefreshUIAfterClear = true
+        case .fireModeAutoClear:
+            break
         }
     }
 }

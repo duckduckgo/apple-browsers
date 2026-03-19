@@ -181,6 +181,8 @@ private extension FireRequest {
             return .autoClearOnLaunch
         case .autoClearOnForeground:
             return .autoClearOnForeground
+        case .fireModeAutoClear:
+            return .fireModeAutoClear
         }
     }
 

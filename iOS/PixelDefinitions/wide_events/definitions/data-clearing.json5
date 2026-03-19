@@ -25,7 +25,7 @@
                     "trigger": {
                         "type": "string",
                         "description": "What initiated the clearing flow",
-                        "enum": ["manualFire", "autoClearOnLaunch", "autoClearOnForeground"]
+                        "enum": ["manualFire", "autoClearOnLaunch", "autoClearOnForeground", "fireModeAutoClear"]
                     },
                     "scope": {
                         "type": "string",

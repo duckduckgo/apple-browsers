@@ -61,6 +61,11 @@ protocol TabControllerCacheDelegate: AnyObject {
     func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController)
 }
 
+@MainActor
+protocol TabManagerFireModeDelegate: AnyObject {
+    func tabManagerDidCloseLastFireTab()
+}
+
 protocol TrackerAnimationSuppressing {
     @MainActor func markTabAsExternalLaunch(_ tab: Tab)
     @MainActor func clearExternalLaunchFlags()
@@ -138,6 +143,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
+    weak var fireModeDelegate: TabManagerFireModeDelegate?
 
     @UserDefaultsWrapper(key: .faviconTabsCacheNeedsCleanup, defaultValue: true)
     var tabsCacheNeedsCleanup: Bool
@@ -493,6 +499,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         model.removeTabs(tabs)
         clean(tabs: tabs, clearTabHistory: true)
         _ = save()
+        notifyIfLastFireTabClosed(removedTabs: tabs)
     }
 
     @MainActor
@@ -501,6 +508,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
         _ = save()
+        notifyIfLastFireTabClosed(removedTabs: [tab])
     }
 
     @MainActor
@@ -518,6 +526,13 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             clean(tabs: [tab], clearTabHistory: clearTabHistory)
         }
         _ = save()
+    }
+
+    @MainActor
+    private func notifyIfLastFireTabClosed(removedTabs: [Tab]) {
+        guard removedTabs.contains(where: { $0.fireTab }),
+              tabsModel(for: .fire).tabs.isEmpty else { return }
+        fireModeDelegate?.tabManagerDidCloseLastFireTab()
     }
 
     @MainActor

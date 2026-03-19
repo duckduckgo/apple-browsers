@@ -279,6 +279,7 @@ extension DataClearingWideEventData {
         case manualFire
         case autoClearOnLaunch
         case autoClearOnForeground
+        case fireModeAutoClear
 
         // macOS triggers
         case manual

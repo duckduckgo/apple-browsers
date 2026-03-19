@@ -48,6 +48,7 @@ struct FireRequest {
         case manualFire              // User pressed Fire Button
         case autoClearOnLaunch       // Auto-clear during app launch
         case autoClearOnForeground   // Auto-clear after period of inactivity when returning to foreground
+        case fireModeAutoClear       // Auto-clear fire mode data when all fire tabs are closed
     }
     
     enum Scope {
@@ -422,7 +423,9 @@ class FireExecutor: FireExecuting {
     /// - The user setting autoClearAIChatHistory should be ignored
     /// - Returns: A boolean indicating if we should run the ai chats burn flow
     private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
-        let chosenThroughNewAutoClearUI = dataClearingCapability.isEnhancedDataClearingEnabled && request.trigger != .manualFire
+        let chosenThroughNewAutoClearUI = dataClearingCapability.isEnhancedDataClearingEnabled
+            && request.trigger != .manualFire
+            && request.trigger != .fireModeAutoClear
 
         var singleChatBurn: Bool = false
         if case .tab = request.scope { singleChatBurn = true }
@@ -443,7 +446,7 @@ class FireExecutor: FireExecuting {
             result = await burnTabAIHistory(tabViewModel: viewModel)
         case .fireMode, .normalMode:
             // TODO: - Implement
-            return
+            result = .success(())
         case .all:
             result = await burnAllAIHistory(trigger: request.trigger)
         }
@@ -479,7 +482,7 @@ class FireExecutor: FireExecuting {
 
     private func recordAIChatsClearDate(trigger: FireRequest.Trigger) async {
         switch trigger {
-        case .manualFire:
+        case .manualFire, .fireModeAutoClear:
             await aiChatSyncCleaner.recordLocalClear(date: Date())
         case .autoClearOnLaunch, .autoClearOnForeground:
             await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()

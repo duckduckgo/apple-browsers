@@ -92,20 +92,10 @@ class FireExecutor: FireExecuting {
     private let fireWorkers: [FireExecutorWorker]
     private let tabManager: TabManaging
     private let downloadManager: DownloadManaging
-    private let websiteDataManager: WebsiteDataManaging
-    private let daxDialogsManager: DaxDialogsManaging
-    private let syncService: DDGSyncing
-    private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaning?
-    private let fireproofing: Fireproofing
-    private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
-    private let autoconsentManagementProvider: AutoconsentManagementProviding
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let dataClearingCapability: DataClearingCapable
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let dataStore: (any DDGWebsiteDataStore)?
     private let appSettings: AppSettings
-    private let privacyStats: PrivacyStatsProviding?
     private let aiChatSyncCleaner: AIChatSyncCleaning
     let pixelsReporter: DataClearingPixelsReporter
     private let dataClearingWideEventService: DataClearingWideEventService?
@@ -141,23 +131,13 @@ class FireExecutor: FireExecuting {
          wideEvent: WideEventManaging? = nil) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
-        self.websiteDataManager = websiteDataManager
-        self.daxDialogsManager = daxDialogsManager
-        self.syncService = syncService
-        self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
-        self.fireproofing = fireproofing
-        self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
-        self.autoconsentManagementProvider = autoconsentManagementProvider
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
-        self.privacyConfigurationManager = privacyConfigurationManager
-        self.dataStore = dataStore
         self.historyCleanerProvider = historyCleanerProvider ??
         { return HistoryCleaner(featureFlagger: featureFlagger,
                                 privacyConfig: privacyConfigurationManager)}
         self.appSettings = appSettings
-        self.privacyStats = privacyStats
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
@@ -396,7 +376,7 @@ class FireExecutor: FireExecuting {
     
     private func timedPixel(for scope: FireRequest.Scope) -> TimedPixel? {
         switch scope {
-        case .tab(let viewModel):
+        case .tab:
             return TimedPixel(.singleTabDataCleared)
         case .fireMode:
             // TODO: - return new pixel

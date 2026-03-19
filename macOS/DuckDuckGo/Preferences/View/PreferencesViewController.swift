@@ -57,6 +57,7 @@ final class PreferencesViewController: NSViewController {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
         subscriptionManager: any SubscriptionManager,
@@ -83,6 +84,7 @@ final class PreferencesViewController: NSViewController {
                                         cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                                         aiChatPreferences: aiChatPreferences,
                                         aboutPreferences: aboutPreferences,
+                                        dockPreferences: dockPreferences,
                                         accessibilityPreferences: accessibilityPreferences,
                                         duckPlayerPreferences: duckPlayerPreferences,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)

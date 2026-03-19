@@ -1200,6 +1200,18 @@ struct UserText {
     static let isNotAddedToDock = NSLocalizedString("preferences.not-added-to-dock", value: "DuckDuckGo is not added to the Dock.", comment: "Indicate that the browser is not added to macOS system Dock")
     static let addToDock = NSLocalizedString("preferences.add-to-dock", value: "Add to Dock", comment: "Action button to add the app to the Dock")
     static let addDuckDuckGoToDock = NSLocalizedString("preferences.add-DuckDuckGo-to-dock", value: "Add DuckDuckGo To Dock", comment: "Action button to add the app to the Dock")
+    static let addToDockInstructions = NSLocalizedString("preferences.add-to-dock.instructions", value: "Get quick access to protected browsing. Add DuckDuckGo to your Dock.", comment: "Instructions for adding the app to the Dock")
+    static var addToDockInstructionsCaption: String {
+        if #available(macOS 12.0, *) {
+            return NSLocalizedString("preferences.add-to-dock.instructions-caption.markdown",
+                                     value: "Hold control and click the DuckDuckGo icon, then choose **Options > Keep in Dock**.",
+                                     comment: "Instructions for adding the app to the Dock. Contains markdown for bold text.")
+        } else {
+            return NSLocalizedString("preferences.add-to-dock.instructions-caption",
+                                     value: "Hold control and click the DuckDuckGo icon, then choose Options > Keep in Dock.",
+                                     comment: "Instructions for adding the app to the Dock.")
+        }
+    }
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")

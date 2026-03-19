@@ -81548,6 +81548,42 @@
         }
       }
     },
+    "preferences.add-to-dock.instructions" : {
+      "comment" : "Instructions for adding the app to the Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing. Add DuckDuckGo to your Dock."
+          }
+        }
+      }
+    },
+    "preferences.add-to-dock.instructions-caption" : {
+      "comment" : "Instructions for adding the app to the Dock.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold control and click the DuckDuckGo icon, then choose Options > Keep in Dock."
+          }
+        }
+      }
+    },
+    "preferences.add-to-dock.instructions-caption.markdown" : {
+      "comment" : "Instructions for adding the app to the Dock. Contains markdown for bold text.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold control and click the DuckDuckGo icon, then choose **Options > Keep in Dock**."
+          }
+        }
+      }
+    },
     "preferences.aiFeatures" : {
       "comment" : "Title of the option to show AI features in preferences",
       "extractionState" : "extracted_with_value",

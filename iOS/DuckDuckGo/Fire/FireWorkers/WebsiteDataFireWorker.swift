@@ -20,17 +20,21 @@
 import Core
 import BrowserServicesKit
 import WKAbstractions
+import WebKit
 
 struct WebsiteDataFireWorker: FireExecutorWorker {
     private let websiteDataManager: WebsiteDataManaging
     private let dataStore: (any DDGWebsiteDataStore)?
+    private let idManager: DataStoreIDManaging
     private let dataClearingWideEventService: DataClearingWideEventService?
     
     init(websiteDataManager: WebsiteDataManaging,
          dataStore: (any DDGWebsiteDataStore)?,
+         idManager: DataStoreIDManaging = DataStoreIDManager.shared,
          dataClearingWideEventService: DataClearingWideEventService?) {
         self.websiteDataManager = websiteDataManager
         self.dataStore = dataStore
+        self.idManager = idManager
         self.dataClearingWideEventService = dataClearingWideEventService
     }
 
@@ -38,7 +42,7 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
     func burnNormalModeData() async {
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
+        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current(fireMode: false)
         
         let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse)
         updateWideEventWithWebsiteDataResults(websiteDataResult)
@@ -46,14 +50,31 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
     
     @MainActor
     func burnFireModeData() async {
-        // TODO: - To be implemented
+        dataClearingWideEventService?.start(.clearWebsiteDataFireMode)
+        let result = await clearFireModeDataStoreAndInvalidate()
+        dataClearingWideEventService?.update(.clearWebsiteDataFireMode, result: result)
+    }
+    
+    @MainActor
+    private func clearFireModeDataStoreAndInvalidate() async -> Result<Void, Error> {
+        guard #available(iOS 17.0, *) else {
+            return .success(())
+        }
+        let currentId = idManager.currentFireModeID
+        idManager.invalidateCurrentFireModeID()
+        do {
+            try await WKWebsiteDataStore.remove(forIdentifier: currentId)
+            return .success(())
+        } catch {
+            return .failure(error)
+        }
     }
     
     @MainActor
     func burnTabData(tabViewModel: TabViewModel, domains: [String]) async {
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current() // TODO: - Fix this for fire tabs
+        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current(fireMode: tabViewModel.tab.fireTab)
 
         // Async tasks
         let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)

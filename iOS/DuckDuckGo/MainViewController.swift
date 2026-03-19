@@ -269,6 +269,7 @@ class MainViewController: UIViewController {
                                                   aiChatSettings: aiChatSettings,
                                                   productSurfaceTelemetry: productSurfaceTelemetry)
         manager.delegate = self
+        manager.isFireModeProvider = { [weak self] in self?.tabManager.currentBrowsingMode == .fire }
         return manager
     }()
 

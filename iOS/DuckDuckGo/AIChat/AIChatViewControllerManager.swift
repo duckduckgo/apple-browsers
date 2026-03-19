@@ -41,6 +41,7 @@ final class AIChatViewControllerManager {
     // MARK: - Public Properties
 
     weak var delegate: AIChatViewControllerManagerDelegate?
+    var isFireModeProvider: (() -> Bool)?
 
     // MARK: - Private Properties
 
@@ -334,7 +335,8 @@ final class AIChatViewControllerManager {
 
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
-        let configuration = WKWebViewConfiguration.persistent(fireMode: false) // TODO: - Customize based on current mode
+        let fireMode = isFireModeProvider?() ??  false
+        let configuration = WKWebViewConfiguration.persistent(fireMode: fireMode)
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self

@@ -40,6 +40,8 @@ public class UserDefaultsFireproofing: Fireproofing {
         public static let loginDetectionStateChanged = Foundation.Notification.Name("com.duckduckgo.ios.PreserveLogins.loginDetectionStateChanged")
     }
 
+    public init() {}
+
     @UserDefaultsWrapper(key: .fireproofingAllowedDomains, defaultValue: [])
     private(set) public var allowedDomains: [String]
 

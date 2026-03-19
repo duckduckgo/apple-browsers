@@ -80373,61 +80373,13 @@
       }
     },
     "preferences.about.update-info.appstore" : {
-      "comment" : "Informational message shown on the About screen for App Store builds. The placeholder %@ is replaced by a clickable 'App Store' link text.",
+      "comment" : "Informational message shown on the About screen for App Store builds. %1$@ is replaced by 'App Store', %2$@ is replaced by 'App Store menu', %3$@ is replaced by 'Settings'.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Halte DuckDuckGo auf dem neuesten Stand, indem du automatische Updates unter %@ > App Store-Menü > Einstellungen aktivierst."
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Keep DuckDuckGo up to date by enabling automatic updates in %@ > App Store menu > Settings."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantén DuckDuckGo al día activando las actualizaciones automáticas en %@ > menú de la App Store > configuración."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardez DuckDuckGo à jour en activant les mises à jour automatiques dans %@ > menu App Store > Réglages."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantieni DuckDuckGo aggiornato abilitando gli aggiornamenti automatici in %@ > Menu App Store > Impostazioni."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Houd DuckDuckGo up-to-date door automatische updates in te schakelen in %@ > App Store-menu > Instellingen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktualizuj DuckDuckGo, włączając automatyczne aktualizacje w %@ > menu App Store > Ustawienia."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantém o DuckDuckGo atualizado ao ativar as atualizações automáticas em %@ > menu da App Store > Definições."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чтобы всегда пользоваться актуальной версией DuckDuckGo, включите автоматическое обновление в разделе <strong>%@ > Меню App Store > Настройки</strong>."
+            "value" : "Keep DuckDuckGo up to date by enabling automatic updates in %1$@ > %2$@ > %3$@."
           }
         }
       }
@@ -80488,6 +80440,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "APP STORE"
+          }
+        }
+      }
+    },
+    "preferences.about.update-info.appstore.menu" : {
+      "comment" : "The 'App Store menu' text that appears within the App Store update info message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "App Store menu"
           }
         }
       }

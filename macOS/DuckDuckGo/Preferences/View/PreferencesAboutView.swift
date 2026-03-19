@@ -387,7 +387,9 @@ extension Preferences {
                 TextMenuItemCaption(UserText.aboutUpdateInfoSparkle)
             } else if buildType.isAppStoreBuild {
                 let linkText = UserText.aboutUpdateInfoAppStoreLink
-                let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText)
+                let menuText = UserText.aboutUpdateInfoAppStoreMenu
+                let settingsText = UserText.aboutUpdateInfoAppStoreSettings
+                let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText, menuText, settingsText)
                 HStack(spacing: 0) {
                     if #available(macOS 12.0, *) {
                         Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
@@ -404,6 +406,7 @@ extension Preferences {
 
         private static let boldWords = [
             UserText.aboutUpdateInfoAppStoreLink,
+            UserText.aboutUpdateInfoAppStoreMenu,
             UserText.aboutUpdateInfoAppStoreSettings
         ]
 

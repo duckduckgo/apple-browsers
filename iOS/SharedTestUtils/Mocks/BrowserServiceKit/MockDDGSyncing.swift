@@ -60,6 +60,9 @@ final class MockDDGSyncing: DDGSyncing {
         RegisteredDevice(id: "2", name: "Device 2", type: "mobile"),
         RegisteredDevice(id: "3", name: "Device 1", type: "desktop")]
     var disconnectCalled = false
+    var disconnectedDeviceIDs: [String] = []
+    var disconnectDeviceError: Error?
+    var onDisconnectDevice: ((String) -> Void)?
 
     var dataProvidersSource: DataProvidersSource?
 
@@ -103,6 +106,20 @@ final class MockDDGSyncing: DDGSyncing {
     func initializeIfNeeded() {
     }
 
+    func enableSyncFromPreservedAccount() async throws {
+    }
+
+    var removePreservedSyncAccountCallCount = 0
+    var removePreservedSyncAccountError: Error?
+    var onRemovePreservedSyncAccount: (() -> Void)?
+    func removePreservedSyncAccount() throws {
+        removePreservedSyncAccountCallCount += 1
+        onRemovePreservedSyncAccount?()
+        if let removePreservedSyncAccountError {
+            throw removePreservedSyncAccountError
+        }
+    }
+
     func createAccount(deviceName: String, deviceType: String) async throws {
     }
 
@@ -127,6 +144,11 @@ final class MockDDGSyncing: DDGSyncing {
     }
 
     func disconnect(deviceId: String) async throws {
+        disconnectedDeviceIDs.append(deviceId)
+        onDisconnectDevice?(deviceId)
+        if let disconnectDeviceError {
+            throw disconnectDeviceError
+        }
     }
 
     func fetchDevices() async throws -> [RegisteredDevice] {

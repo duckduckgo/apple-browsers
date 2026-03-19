@@ -21,8 +21,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 
-/// Horizontal toolbar with AI tool buttons: globe, image, [spacer], model picker chip, submit.
-/// All buttons except submit are non-functional stubs for Part 1.
+/// Horizontal toolbar with AI tool buttons: image, [spacer], model picker chip, submit.
 final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Constants
@@ -31,7 +30,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let verticalPadding: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
-        static let leftGroupSpacing: CGFloat = 4
         static let rightGroupSpacing: CGFloat = 8
         static let chipHeight: CGFloat = 32
         static let chipCornerRadius: CGFloat = 16
@@ -42,10 +40,10 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Callbacks
 
-    var onSearchTapped: (() -> Void)?
     var onAttachTapped: (() -> Void)?
     var onModelPickerTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
+    var onStopGeneratingTapped: (() -> Void)?
 
     // MARK: - State
 
@@ -54,72 +52,72 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isSubmitButtonHidden: Bool = false {
-        didSet { submitButton.isHidden = isSubmitButtonHidden }
+        didSet { updateGeneratingVisibility() }
+    }
+
+    var isGenerating: Bool = false {
+        didSet { updateGeneratingVisibility() }
     }
 
     var modelName: String = "4o-mini" {
-        didSet { modelChipLabel.text = modelName }
+        didSet { updateModelChipConfiguration() }
+    }
+
+    var modelPickerMenu: UIMenu? {
+        get { modelChipButton.menu }
+        set {
+            modelChipButton.menu = newValue
+            modelChipButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
+    var isModelChipHidden: Bool {
+        get { modelChipButton.isHidden }
+        set { modelChipButton.isHidden = newValue }
+    }
+
+    var isImageButtonHidden: Bool {
+        get { imageButton.isHidden }
+        set { imageButton.isHidden = newValue }
     }
 
     // MARK: - UI Components
 
-    private lazy var globeButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size16.globe,
-        accessibilityLabel: UserText.aiChatToolbarSearchButtonAccessibilityLabel,
-        action: #selector(searchTapped)
-    )
-
     private lazy var imageButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size16.image,
+        image: DesignSystemImages.Glyphs.Size24.attach,
         accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
         action: #selector(attachTapped)
     )
 
     private lazy var modelChipButton: UIButton = {
-        let button = UIButton(type: .system)
+        var config = UIButton.Configuration.plain()
+        config.title = modelName
+        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+        )
+        config.imagePlacement = .trailing
+        config.imagePadding = Constants.chipSpacing
+        config.contentInsets = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: Constants.chipHorizontalPadding,
+            bottom: 0,
+            trailing: Constants.chipHorizontalPadding
+        )
+        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var updated = attributes
+            updated.font = .systemFont(ofSize: Constants.chipFontSize, weight: .regular)
+            return updated
+        }
+        config.background.strokeColor = UIColor(designSystemColor: .lines)
+        config.background.strokeWidth = 1
+        config.cornerStyle = .capsule
+
+        let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(modelPickerTapped), for: .touchUpInside)
-
-        button.addSubview(modelChipLabel)
-        button.addSubview(modelChipChevron)
-
-        button.layer.cornerRadius = Constants.chipCornerRadius
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-        button.clipsToBounds = true
-
-        NSLayoutConstraint.activate([
-            button.heightAnchor.constraint(equalToConstant: Constants.chipHeight),
-            modelChipLabel.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: Constants.chipHorizontalPadding),
-            modelChipLabel.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            modelChipChevron.leadingAnchor.constraint(equalTo: modelChipLabel.trailingAnchor, constant: Constants.chipSpacing),
-            modelChipChevron.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -Constants.chipHorizontalPadding),
-            modelChipChevron.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            modelChipChevron.widthAnchor.constraint(equalToConstant: 12),
-            modelChipChevron.heightAnchor.constraint(equalToConstant: 12),
-        ])
+        button.heightAnchor.constraint(equalToConstant: Constants.chipHeight).isActive = true
 
         return button
-    }()
-
-    private lazy var modelChipLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = modelName
-        label.font = .systemFont(ofSize: Constants.chipFontSize, weight: .regular)
-        label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        return label
-    }()
-
-    private lazy var modelChipChevron: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "chevron.down")?.withConfiguration(
-            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
-        ))
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.tintColor = UIColor(designSystemColor: .textPrimary)
-        imageView.contentMode = .scaleAspectFit
-        return imageView
     }()
 
     private lazy var submitButton: UIButton = {
@@ -139,6 +137,25 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    private lazy var stopButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(DesignSystemImages.Glyphs.Size16.stopSquare, for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
+        button.layer.cornerRadius = 14
+        button.clipsToBounds = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityLabel = "Stop generating"
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
+        button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
+        button.isHidden = true
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+        ])
+        return button
+    }()
+
     // MARK: - Initialization
 
     override init(frame: CGRect) {
@@ -150,34 +167,22 @@ final class UnifiedToggleInputToolbarView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        modelChipButton.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-    }
-
     // MARK: - Setup
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [globeButton, imageButton])
-        leftGroup.axis = .horizontal
-        leftGroup.spacing = Constants.leftGroupSpacing
-        leftGroup.alignment = .center
-        leftGroup.translatesAutoresizingMaskIntoConstraints = false
-        leftGroup.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        leftGroup.layer.cornerRadius = 20
-        leftGroup.clipsToBounds = true
+        imageButton.translatesAutoresizingMaskIntoConstraints = false
 
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton])
+        let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
         rightGroup.translatesAutoresizingMaskIntoConstraints = false
 
-        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [imageButton, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -206,6 +211,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }
 
+    private func updateModelChipConfiguration() {
+        modelChipButton.configuration?.title = modelName
+    }
+
     private func updateSubmitButtonState() {
         submitButton.isEnabled = isSubmitEnabled
         submitButton.backgroundColor = isSubmitEnabled
@@ -218,8 +227,18 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Actions
 
-    @objc private func searchTapped() { onSearchTapped?() }
+    private func updateGeneratingVisibility() {
+        if isGenerating {
+            submitButton.isHidden = true
+            stopButton.isHidden = false
+        } else {
+            stopButton.isHidden = true
+            submitButton.isHidden = isSubmitButtonHidden
+        }
+    }
+
     @objc private func attachTapped() { onAttachTapped?() }
     @objc private func modelPickerTapped() { onModelPickerTapped?() }
     @objc private func submitTapped() { onSubmitTapped?() }
+    @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
 }

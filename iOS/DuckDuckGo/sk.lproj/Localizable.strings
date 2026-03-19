@@ -2694,11 +2694,26 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Zistite viac";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Nie, ďakujem";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Preskočiť";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ach, skôr ako zabudnem…";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Chceš obnoviť záložky, heslá a ďalšie údaje z predchádzajúcej synchronizácie DuckDuckGo?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Obnoviť moje veci";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Preskočiť";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Pokračujme tam, kde si skončil/a";
 
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Súkromne. Rýchlo. Menej reklám.";
@@ -2975,6 +2990,27 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otvoriť v inej aplikácii?";
+
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Prejsť späť";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Chcel/-a by si túto stránku otvoriť v Safari?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Žiaľ, stránku sa nepodarilo načítať.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Otvoriť v Safari";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Zostať na DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Niektoré funkcie webových stránok nemusia byť v tomto prehliadači kompatibilné.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Táto stránka sa chce otvoriť v Safari.";
 
 /* No comment provided by engineer. */
 "REBRANDED" = "REBRANDED";
@@ -4458,3 +4494,44 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Prepína na túto kartu";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Vráť sa na %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Vráť sa na...";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Vráť sa na %1$@, %2$@";
+
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Vyber, čo sa zobrazí po návrate po %@ nečinnosti.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 hod.";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d hod.";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 min.";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d min.";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sek.";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sek.";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Po nečinnosti";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Nová karta";

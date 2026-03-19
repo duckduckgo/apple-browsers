@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import DesignResourcesKitIcons
 import Foundation
 import PixelKit
 
@@ -59,7 +60,7 @@ final class PasswordsStatusBarMenu: NSObject {
     private func configureStatusItem() {
         guard let button = statusItem.button else { return }
 
-        button.image = NSImage(named: "LoginGlyph")
+        button.image = DesignSystemImages.Glyphs.Size16.keyLogin
         button.image?.isTemplate = true
         button.target = self
         button.action = #selector(statusBarButtonTapped)

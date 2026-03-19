@@ -29,102 +29,25 @@ final class DataClearingPixelsReporter {
     private var lastFireTime: CFTimeInterval?
     private let retriggerWindow: TimeInterval = 20.0
 
-    enum BurnPath: String {
-        case burnEntity = "burn_entity"
-        case burnAll = "burn_all"
-        case burnVisits =  "burn_visits"
-    }
-
     init(pixelFiring: PixelFiring? = PixelKit.shared, timeProvider: @escaping () -> CFTimeInterval = { CACurrentMediaTime() }) {
         self.pixelFiring = pixelFiring
         self.timeProvider = timeProvider
     }
 
-    // MARK: - Overall Flow Measurement
-
-    func fireCompletionPixel(from startTime: CFTimeInterval,
-                             dialogResult: FireDialogResult,
-                             path: BurnPath,
-                             autoClear: Bool) {
-        pixelFiring?.fire(
-            DataClearingPixels.fireCompletion(
-                duration: prepareDuration(from: startTime, to: timeProvider()),
-                option: prepare(dialogResult.clearingOption),
-                domains: prepare(dialogResult),
-                path: path.rawValue,
-                autoClear: String(autoClear)
-            ),
-            frequency: .standard
-        )
-    }
-
+    /// Fires a pixel if manual fire is triggered within 20 seconds of a previous manual fire.
+    ///
+    /// Only tracks manual fire triggers to detect user perceived failures
+    /// (users rapidly pressing the fire button, indicating potential clearing issues).
+    /// Auto-clear triggers are excluded as they follow system timing, not user behavior.
+    ///
+    /// - Parameter isManual: Whether this is a manual fire operation (vs auto-clear).
     @MainActor
-    func fireRetriggerPixelIfNeeded() {
+    func fireRetriggerPixelIfNeeded(isManual: Bool = true) {
+        guard isManual else { return }
         let now = timeProvider()
         if let lastFire = lastFireTime, (now - lastFire) <= retriggerWindow {
             pixelFiring?.fire(DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
         }
         lastFireTime = now
     }
-
-    // MARK: - Per-Action Quality Metrics
-
-    func fireDurationPixel(_ durationPixel: @escaping (Int) -> DataClearingPixels,
-                           from startTime: CFTimeInterval) {
-        pixelFiring?.fire(
-            durationPixel(prepareDuration(from: startTime, to: timeProvider())),
-            frequency: .standard
-        )
-    }
-
-    func fireDurationPixel(_ durationPixel: @escaping (String, Int) -> DataClearingPixels,
-                           from startTime: CFTimeInterval,
-                           entity: String) {
-        pixelFiring?.fire(
-            durationPixel(entity, prepareDuration(from: startTime, to: timeProvider())),
-            frequency: .standard
-        )
-    }
-
-    func fireErrorPixel(_ errorPixel: DataClearingPixels) {
-        pixelFiring?.fire(errorPixel, frequency: .dailyAndStandard)
-    }
-}
-
-// MARK: - Private Helpers
-
-private extension DataClearingPixelsReporter {
-
-    private func prepareDuration(from startTime: CFTimeInterval, to endTime: CFTimeInterval) -> Int {
-        Int((endTime - startTime) * 1000)
-    }
-
-    private func prepare(_ result: FireDialogResult) -> String {
-        var domains: [String] = []
-        if result.includeHistory {
-            domains.append("History")
-        }
-        if result.includeTabsAndWindows {
-            domains.append("TabsAndWindows")
-        }
-        if result.includeCookiesAndSiteData {
-            domains.append("CookiesAndSiteData")
-        }
-        if result.includeChatHistory {
-            domains.append("ChatHistory")
-        }
-        return domains.commaSeparatedString
-    }
-
-    private func prepare(_ option: FireDialogViewModel.ClearingOption) -> String {
-        option.description
-    }
-
-    private static func prepare(_ path: BurnPath) -> String {
-        path.rawValue
-    }
-}
-
-private extension Array where Element == String {
-    var commaSeparatedString: String { joined(separator: ",") }
 }

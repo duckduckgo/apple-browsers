@@ -100,7 +100,8 @@ extension AIChatMessageHandler {
             appVersion: appVersion,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
-            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow
+            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow,
+            supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts)
         )
     }
 

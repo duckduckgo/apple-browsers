@@ -27,6 +27,15 @@ final class TabsModelProviderTests: XCTestCase {
     private let exampleLink = Link(title: nil, url: URL(string: "https://example.com")!)
 
     // MARK: - Aggregate Count
+    
+    func testWhenNormalModelHasDefaultTabAndFireModelIsEmptyThenAggregateCountIsOne() throws {
+        let normalModel = TabsModel(desktop: false)
+        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        XCTAssertEqual(sut.aggregateTabsModel.count, 1)
+    }
 
     func testWhenBothModelsHaveTabsThenAggregateCountIsSumOfBoth() {
         let normalModel = TabsModel(tabs: [
@@ -82,7 +91,7 @@ final class TabsModelProviderTests: XCTestCase {
 
         let sut = makeSUT(normalModel: normalModel, fireModel: fireModel, persistence: persistence)
 
-        sut.save()
+        _ = sut.save()
 
         XCTAssertEqual(persistence.savedModels.count, 2)
         XCTAssertTrue(persistence.savedModels.contains { $0.key == .normal && $0.model === normalModel })
@@ -113,8 +122,9 @@ private final class MockTabsModelPersistence: TabsModelPersisting {
         nil
     }
 
-    func save(model: TabsModel, for key: TabsModelStorageKey) {
+    func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         savedModels.append(SavedModel(model: model, key: key))
+        return .success(())
     }
 
     func clear(for key: TabsModelStorageKey) {}

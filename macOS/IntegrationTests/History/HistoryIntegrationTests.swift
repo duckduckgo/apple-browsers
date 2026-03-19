@@ -60,7 +60,7 @@ class HistoryIntegrationTests: XCTestCase {
         }
 
         await withCheckedContinuation { continuation in
-            NSApp.delegateTyped.historyCoordinator.burnAll {
+            NSApp.delegateTyped.historyCoordinator.burnAll { _ in
                 continuation.resume(returning: ())
             }
         }

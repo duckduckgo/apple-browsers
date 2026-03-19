@@ -22,8 +22,8 @@ import UIComponents
 
 public struct OnboardingStepProgressView: View {
 
-    enum Copy {
-        public static var of: String {
+    private enum Copy {
+        static var of: String {
             NSLocalizedString("onboarding.highlights.browsers.progress.of", bundle: Bundle.module, value: "of", comment: "Delimiter for step/total dots in the rebranded onboarding")
         }
     }
@@ -56,7 +56,8 @@ public struct OnboardingStepProgressView: View {
                     selectedDotSize: stepProgressTheme.metrics.selectedDotSize,
                     unselectedDotSize: stepProgressTheme.metrics.unselectedDotSize,
                     selectedDotFillColor: stepProgressTheme.colors.selectedDot,
-                    unselectedDotFillColor: stepProgressTheme.colors.unselectedDot
+                    unselectedDotBeforeSelectedFillColor: stepProgressTheme.colors.selectedDot,
+                    unselectedDotAfterSelectedFillColor: stepProgressTheme.colors.unselectedDot
                 )
             )
             Text(verbatim: "\(clampedStep) \(Copy.of) \(clampedTotal)")
@@ -64,10 +65,7 @@ public struct OnboardingStepProgressView: View {
                 .multilineTextAlignment(stepProgressTheme.textAlignment)
                 .foregroundStyle(stepProgressTheme.colors.text)
         }
-        .padding(.leading, stepProgressTheme.metrics.contentInsets.leading)
-        .padding(.trailing, stepProgressTheme.metrics.contentInsets.trailing)
-        .padding(.top, stepProgressTheme.metrics.contentInsets.top)
-        .padding(.bottom, stepProgressTheme.metrics.contentInsets.bottom)
+        .padding(stepProgressTheme.metrics.contentInsets)
         .background(stepProgressTheme.colors.background)
         .clipShape(RoundedRectangle(cornerRadius: stepProgressTheme.metrics.cornerRadius))
         .overlay(

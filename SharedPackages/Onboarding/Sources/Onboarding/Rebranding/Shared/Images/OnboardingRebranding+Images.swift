@@ -47,6 +47,7 @@ public enum OnboardingRebrandingImages {
         public static let partialIcon = Image("Rebranding/Onboarding-Stop", bundle: .module)
         public static let unavailableIcon = Image("Rebranding/Onboarding-Cross", bundle: .module)
         public static let privateSearchIcon = Image("Rebranding/Comparison-PrivateSearch", bundle: .module)
+        public static let privateAIChatIcon = Image("Rebranding/Comparison-PrivateAIChat", bundle: .module)
         public static let blockTrackersIcon = Image("Rebranding/Comparison-BlockTrackers", bundle: .module)
         public static let blockCookiesIcon = Image("Rebranding/Comparison-BlockCookies", bundle: .module)
         public static let blockAdsIcon = Image("Rebranding/Comparison-BlockAds", bundle: .module)

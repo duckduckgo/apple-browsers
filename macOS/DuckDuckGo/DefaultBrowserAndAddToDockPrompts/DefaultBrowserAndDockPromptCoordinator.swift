@@ -95,7 +95,7 @@
 // - `bannerShownOccurrences`: Number of times banner shown
 // - `inactiveUserModalShownDate`: TimeInterval when inactive user modal was shown
 // - `isBannerPermanentlyDismissed`: User clicked "Never Ask Again"
-// - `debugSetDefaultAndAddToDockPromptCurrentDateKey`: Simulated date override (debug only)
+// - `DebugSimulatedDateStore`: Shared simulated date override (debug only, KeyValueStore)
 
 import Combine
 import SwiftUI
@@ -123,6 +123,17 @@ protocol DefaultBrowserAndDockPrompt {
     ///
     /// - Returns: The appropriate `DefaultBrowserAndDockPromptType` value, or `nil` if the user is not eligible for any prompt.
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? { get }
+
+    /// Currently eligible prompt type, or nil if none. Updated by `evaluateEligibility()`.
+    /// Used by Default Browser promos for `isEligiblePublisher`.
+    var eligiblePrompt: CurrentValueSubject<DefaultBrowserAndDockPromptPresentationType?, Never> { get }
+
+    /// Updates eligibility publisher. Call from `getPromptType()` or to refresh eligibility externally.
+    func evaluateEligibility()
+
+    /// Used by PromoService-backed Default Browser promos to resume their show() continuation with the provided result.
+    /// Emits (promptType, result) so delegates can filter by their own type.
+    var promptDismissedPublisher: AnyPublisher<(DefaultBrowserAndDockPromptPresentationType, PromoResult), Never> { get }
 
     /// Gets the prompt type based on the prompts scheduling time.
     ///
@@ -154,11 +165,13 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let isOnboardingCompleted: () -> Bool
     private let dateProvider: () -> Date
     private let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?
+    private let featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
 
     init(
         promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding,
         store: DefaultBrowserAndDockPromptStorage,
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?,
+        featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger,
         isOnboardingCompleted: @escaping () -> Bool,
         dockCustomization: DockCustomization = DockCustomizer(),
         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
@@ -175,6 +188,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
         self.notificationPresenter = notificationPresenter
+        self.featureFlagger = featureFlagger
     }
 
     /// **PROMPT ELIGIBILITY CHECKER**
@@ -218,6 +232,40 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         }
     }
 
+    // MARK: - PromoService publishers
+
+    /// Currently eligible prompt type, or nil if none. Updated by `evaluateEligibility()`.
+    /// Used by Default Browser promos for `isEligiblePublisher`.
+    let eligiblePrompt = CurrentValueSubject<DefaultBrowserAndDockPromptPresentationType?, Never>(nil)
+
+    private var activePrompt: DefaultBrowserAndDockPromptPresentationType?
+
+    /// Updates eligibility publisher. Call from `getPromptType()` or to refresh eligibility externally.
+    func evaluateEligibility() {
+        guard isOnboardingCompleted(), evaluatePromptEligibility != nil else {
+            return eligiblePrompt.send(nil)
+        }
+
+        if let activePrompt {
+            // Currently active prompt stays eligible as long as the previous checks pass.
+            // Other types are not eligible.
+            eligiblePrompt.send(activePrompt)
+        } else {
+            // If no currently active prompt, use decider for prompt type eligibility.
+            let decidedType = promptTypeDecider.promptType()
+            eligiblePrompt.send(decidedType)
+        }
+    }
+
+    /// Used by PromoService-backed Default Browser promos to resume their show() continuation with the provided result.
+    /// Emits (promptType, result) so delegates can filter by their own type.
+    var promptDismissedPublisher: AnyPublisher<(DefaultBrowserAndDockPromptPresentationType, PromoResult), Never> {
+        promptDismissedSubject.eraseToAnyPublisher()
+    }
+
+    /// Updates `promptDismissedPublisher`. Call from `confirmAction()` and `dismissAction()`.
+    private let promptDismissedSubject = PassthroughSubject<(DefaultBrowserAndDockPromptPresentationType, PromoResult), Never>()
+
     /// **MAIN DECISION POINT - Determines WHICH prompt to show and WHEN**
     ///
     /// Called by `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()` every time a window becomes key.
@@ -252,6 +300,8 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         guard let evaluatePromptEligibility else { return nil }
 
         let prompt = promptTypeDecider.promptType()
+        activePrompt = prompt
+        eligiblePrompt.send(prompt)
 
         // For the popover and inactive prompts, we mark them as shown when they appear on screen as we don't want to show in every window.
         switch prompt {
@@ -331,6 +381,8 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         setPromptSeen()
         fireConfirmActionPixel()
         setDefaultBrowserAndAddToDockIfNeeded()
+        promptDismissedSubject.send((prompt, .actioned))
+        activePrompt = nil
     }
 
     /// **PROMPT DISMISSED** (user clicked secondary button, close button, or status changed externally)
@@ -345,10 +397,23 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         case let .userInput(prompt, shouldHidePermanently):
             // User explicitly dismissed the prompt
             handleUserInputDismissAction(for: prompt, shouldHidePermanently: shouldHidePermanently)
+            if case .active(.banner) = prompt {
+                let result: PromoResult = shouldHidePermanently ? .ignored() : .ignored(cooldown: .days(featureFlagger.bannerRepeatIntervalDays))
+                promptDismissedSubject.send((prompt, result))
+            } else {
+                promptDismissedSubject.send((prompt, .ignored()))
+            }
         case let .statusUpdate(prompt: prompt):
             // System detected status change (default browser/dock) outside the prompt
             handleSystemUpdateDismissAction(for: prompt)
+            promptDismissedSubject.send((prompt, .noChange))
         }
+
+        // Clear active prompt tracking but do NOT update eligibility subject.
+        // Let the dismiss result flow through promptDismissedPublisher → show() continuation
+        // → PromoService.recordResultAndCleanup first. After recording, PromoService cancels
+        // the eligibility subscription, so any later eligibility change is harmless.
+        activePrompt = nil
     }
 
 }

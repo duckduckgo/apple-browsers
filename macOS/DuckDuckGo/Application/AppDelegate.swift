@@ -583,7 +583,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
+        wideEvent = WideEvent(
+            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
+        )
 
         aiChatSessionStore = AIChatSessionStore(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
@@ -847,6 +850,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
                                           pixelFiring: PixelKit.shared,
+                                          wideEventManaging: wideEvent,
                                           aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
 
         var appContentBlocking: AppContentBlocking?
@@ -936,6 +940,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(privacyConfigManager: privacyConfigurationManager,
                                                                                 keyValueStore: keyValueStore,
                                                                                 notificationPresenter: notificationPresenter,
+                                                                                uiHosting: { windowControllersManager.activeViewController },
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted })
 
         if AppVersion.runType.requiresEnvironment {
@@ -1262,6 +1267,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
+        AttributionXattrCanaryValidator().validateAndReport()
 
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
@@ -1282,7 +1288,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let dependencies = PromoDependencies(
                 keyValueStore: keyValueStore,
                 isExternallyActivated: urlEventHandlerResult.willOpenWindows,
-                activeRemoteMessageModel: activeRemoteMessageModel)
+                isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
+                activeRemoteMessageModel: activeRemoteMessageModel,
+                defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+                sessionRestoreCoordinator: sessionRestorePromptCoordinator
+            )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
         }
@@ -1398,6 +1408,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
+        fireDailyAIChatEnabledPixel()
 
         fireAutoconsentDailyPixel()
         fireThemeDailyPixel()
@@ -1444,6 +1455,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.fire(GeneralPixel.dailyFireWindowConfigurationFireAnimationEnabled(
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
         ), frequency: .daily, doNotEnforcePrefix: true)
+    }
+
+    private func fireDailyAIChatEnabledPixel() {
+        PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
     }
 
     private func fireAutoconsentDailyPixel() {
@@ -2010,7 +2025,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager,
-                                                aiChatSyncCleaner: aiChatSyncCleaner)
+                                                aiChatSyncCleaner: aiChatSyncCleaner,
+                                                wideEvent: wideEvent)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

@@ -2694,11 +2694,26 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Mere info";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Nej tak.";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Spring over";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Åh, før jeg glemmer det...";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Vil du gendanne dine bogmærker, adgangskoder og andet fra din tidligere DuckDuckGo-synkronisering?";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Gendan mine data";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Spring over";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Lad os fortsætte, hvor du slap";
 
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Privat. Hurtig. Færre annoncer.";
@@ -2975,6 +2990,27 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Åbn i en anden app?";
+
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Gå tilbage";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Vil du åbne denne side i Safari?";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Desværre kunne siden ikke indlæses.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Åbn i Safari";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Bliv på DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Nogle webstedsfunktioner er måske ikke kompatible med denne browser.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Dette websted vil åbne Safari.";
 
 /* No comment provided by engineer. */
 "REBRANDED" = "OMDØBT";
@@ -4458,3 +4494,44 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Skifter til denne fane";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Gå tilbage til %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Gå tilbage til ...";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Gå tilbage til %1$@, %2$@";
+
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Vælg, hvad du ser, når du vender tilbage efter inaktivitet i %@.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 time";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d timer";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minut";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minutter";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekund";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekunder";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Efter inaktivitet";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Sidst brugte fane";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Ny fane";

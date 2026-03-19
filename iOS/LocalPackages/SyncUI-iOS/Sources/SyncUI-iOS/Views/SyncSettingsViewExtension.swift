@@ -51,7 +51,7 @@ extension SyncSettingsView {
                         .daxBodyRegular()
                         .multilineTextAlignment(.center)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
-                    Button(UserText.syncWithAnotherDeviceButton, action: model.scanQRCode)
+                    Button(UserText.syncWithAnotherDeviceButton, action: model.beginPairingFlow)
                         .buttonStyle(PrimaryButtonStyle(disabled: !model.isAccountCreationAvailable))
                         .frame(maxWidth: 310)
                         .disabled(!model.isAccountCreationAvailable)
@@ -76,9 +76,7 @@ extension SyncSettingsView {
     func otherOptions() -> some View {
         Section {
             Button {
-                Task { @MainActor in
-                    await model.presentSyncWithSetUpSheetIfNeeded()
-                }
+                model.beginBackupFlow()
             } label: {
                 Text(UserText.syncAndBackUpThisDeviceLink)
                     .foregroundColor(Color(designSystemColor: .accent))
@@ -91,18 +89,14 @@ extension SyncSettingsView {
             .disabled(!model.isAccountCreationAvailable)
 
             Button {
-                Task { @MainActor in
-                    if await model.commonAuthenticate() {
-                        isRecoverSyncedDataSheetVisible = true
-                    }
-                }
+                model.beginRecoverFlow()
             } label: {
                 Text(UserText.recoverSyncedDataLink)
                     .foregroundColor(Color(designSystemColor: .accent))
             }
-            .sheet(isPresented: $isRecoverSyncedDataSheetVisible, content: {
+            .sheet(isPresented: $model.isRecoverSyncedDataSheetVisible, content: {
                 RecoverSyncedDataView(model: model, onCancel: {
-                    isRecoverSyncedDataSheetVisible = false
+                    model.isRecoverSyncedDataSheetVisible = false
                 })
             })
             .disabled(!model.isAccountRecoveryAvailable)
@@ -157,9 +151,25 @@ extension SyncSettingsView {
     @ViewBuilder
     func saveRecoveryPDF() -> some View {
         Section {
+            if model.isAutoRestoreFeatureAvailable {
+                NavigationLink(destination: AutoRestoreSettingsView(model: model)) {
+                    HStack {
+                        Text(UserText.autoRestoreSettingsRowLabel)
+                            .daxBodyRegular()
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Text(model.autoRestoreStatusText)
+                            .daxBodyRegular()
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
             Button(UserText.saveRecoveryPDFButton) {
                 model.saveRecoveryPDF()
             }
+        } header: {
+            Text(UserText.recoverySectionHeader)
         } footer: {
             Text(UserText.saveRecoveryPDFFooter)
         }
@@ -197,7 +207,7 @@ extension SyncSettingsView {
                     .padding()
             }
             devicesList()
-            Button(UserText.syncedDevicesSyncWithAnotherDeviceLabel, action: model.scanQRCode)
+            Button(UserText.syncedDevicesSyncWithAnotherDeviceLabel, action: model.beginPairingFlow)
                 .padding(.leading, 32)
                 .disabled(!model.isConnectingDevicesAvailable)
         } header: {

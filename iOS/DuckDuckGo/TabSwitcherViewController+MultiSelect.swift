@@ -134,9 +134,11 @@ extension TabSwitcherViewController {
         updateUIForSelectionMode()
     }
 
-    func transitionFromMultiSelect() {
+    func transitionFromMultiSelect(reloadCollectionView: Bool = true) {
         self.isEditing = false
-        collectionView.reloadData()
+        if reloadCollectionView {
+            collectionView.reloadData()
+        }
         updateUIForSelectionMode()
         refreshTitleViews()
     }
@@ -268,9 +270,11 @@ extension TabSwitcherViewController {
         } else {
             state = AppWidthObserver.shared.isLargeWidth
                 ? .largeSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
-                             containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                             containsWebPages: containsWebPages, showAIChat: showAIChatButton,
+                             canDismissOnEmpty: canDismissOnEmpty)
                 : .regularSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
-                               containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                               containsWebPages: containsWebPages, showAIChat: showAIChatButton,
+                               canDismissOnEmpty: canDismissOnEmpty)
         }
 
         barsHandler.update(state)
@@ -293,9 +297,9 @@ extension TabSwitcherViewController {
         let canAddBookmarks = selectedTabsContainsWebPages
         let canCloseOther = !selectedTabs.isEmpty && otherTabCount > 0
         let canBookmarkAll = selectedTabs.isEmpty && self.tabsModel.tabs.contains(where: { $0.link != nil })
-        let canShowDeselectAll = interfaceMode.isLarge && selectedTabs.count == tabsModel.count
-        let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabsModel.count
-        let canClose = interfaceMode.isLarge && selectedTabs.count > 0
+        let canShowDeselectAll = selectedTabs.count == tabsModel.count
+        let canShowSelectAll = selectedTabs.count < tabsModel.count
+        let canClose = selectedTabs.count > 0
 
         let items = [
 

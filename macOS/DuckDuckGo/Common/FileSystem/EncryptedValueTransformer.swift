@@ -66,7 +66,9 @@ final class EncryptedValueTransformer<T: NSSecureCoding & NSObject>: ValueTransf
             return data
         }
 
-        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: T.self, from: decryptedData as Data)
+        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: T.self, from: decryptedData as Data,
+                                                       requiresSecureCoding: true,
+                                                       decodingFailurePolicy: .setErrorAndReturn)
     }
 
     // The transformer name is calculated based on the generic class parameter.

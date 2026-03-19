@@ -62,13 +62,13 @@ final class FireMock: FireProtocol {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, includeChatHistory: Bool, completion: (@MainActor () -> Void)?) {
+    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, includeChatHistory: Bool, isAutoClear: Bool, dataClearingWideEventService: DataClearingWideEventService?, completion: (@MainActor () -> Void)?) {
         burnAllCalls.append(.init(isBurnOnExit: isBurnOnExit, includeCookiesAndSiteData: includeCookiesAndSiteData, includeChatHistory: includeChatHistory, url: url))
         completion?()
     }
 
     @MainActor
-    func burnEntity(_ entity: DuckDuckGo_Privacy_Browser.Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, includeChatHistory: Bool, completion: (@MainActor () -> Void)?) {
+    func burnEntity(_ entity: DuckDuckGo_Privacy_Browser.Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, includeChatHistory: Bool, dataClearingWideEventService: DataClearingWideEventService?, completion: (@MainActor () -> Void)?) {
         burnEntityCalls.append(.init(entity: entity, includingHistory: includingHistory, includeCookiesAndSiteData: includeCookiesAndSiteData, includeChatHistory: includeChatHistory))
         completion?()
     }
@@ -81,13 +81,15 @@ final class FireMock: FireProtocol {
                     clearSiteData: Bool,
                     clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL?,
+                    dataClearingWideEventService: DataClearingWideEventService?,
                     completion: (@MainActor () -> Void)? = nil) {
         burnVisitsCalls.append(.init(visits: visits, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, clearChatHistory: clearChatHistory, url: url))
         completion?()
     }
 
     @MainActor
-    func burnChatHistory() {
+    func burnChatHistory() async -> Result<Void, Error> {
         burnChatHistoryCalls.append(.init())
+        return .success(())
     }
 }

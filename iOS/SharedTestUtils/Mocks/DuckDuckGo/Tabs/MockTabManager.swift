@@ -23,6 +23,7 @@ import Foundation
 @MainActor
 class MockTabManager: TabManaging {
     var currentTabsModel: TabsModelManaging = TabsModel(desktop: false)
+    var currentBrowsingMode: DuckDuckGo.BrowsingMode = .normal
     
     private(set) var prepareAllTabsExceptCurrentCalled = false
     private(set) var prepareCurrentTabCalled = false
@@ -52,8 +53,9 @@ class MockTabManager: TabManaging {
         prepareCurrentTabCalled = true
     }
     
-    nonisolated func removeAll() {
+    nonisolated func removeAll() -> Result<Void, Error> {
         removeAllCalled = true
+        return .success(())
     }
 
     func viewModelForCurrentTab() -> DuckDuckGo.TabViewModel? {

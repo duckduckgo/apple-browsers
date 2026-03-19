@@ -19,13 +19,20 @@
 import PrivacyConfig
 
 enum TestFeatureFlag: String, FeatureFlagDescribing {
-    var defaultValue: Bool {
-        false
+    var defaultValue: FeatureFlagDefaultValue {
+        switch self {
+        case .overridableFlagInternalByDefault:
+            .internalOnly
+        case .overridableExperimentFlagWithCohortBByDefault:
+            .internalOnlyWithCohort(FakeExperimentCohort.cohortB)
+        default:
+            .disabled
+        }
     }
 
     var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .nonOverridableFlag, .overridableFlagDisabledByDefault, .overridableFlagEnabledByDefault:
+        case .nonOverridableFlag, .overridableFlagDisabledByDefault, .overridableFlagInternalByDefault:
             nil
         case .overridableExperimentFlagWithCohortBByDefault:
             FakeExperimentCohort.self
@@ -34,14 +41,14 @@ enum TestFeatureFlag: String, FeatureFlagDescribing {
 
     case nonOverridableFlag
     case overridableFlagDisabledByDefault
-    case overridableFlagEnabledByDefault
+    case overridableFlagInternalByDefault
     case overridableExperimentFlagWithCohortBByDefault
 
     var supportsLocalOverriding: Bool {
         switch self {
         case .nonOverridableFlag:
             return false
-        case .overridableFlagDisabledByDefault, .overridableFlagEnabledByDefault, .overridableExperimentFlagWithCohortBByDefault:
+        case .overridableFlagDisabledByDefault, .overridableFlagInternalByDefault, .overridableExperimentFlagWithCohortBByDefault:
             return true
         }
     }
@@ -49,13 +56,13 @@ enum TestFeatureFlag: String, FeatureFlagDescribing {
     var source: FeatureFlagSource {
         switch self {
         case .nonOverridableFlag:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .overridableFlagDisabledByDefault:
             return .disabled
-        case .overridableFlagEnabledByDefault:
-            return .internalOnly()
+        case .overridableFlagInternalByDefault:
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .overridableExperimentFlagWithCohortBByDefault:
-            return .internalOnly(FakeExperimentCohort.cohortB)
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         }
     }
 

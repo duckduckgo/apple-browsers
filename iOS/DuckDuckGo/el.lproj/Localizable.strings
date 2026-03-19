@@ -2694,11 +2694,26 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Μάθετε περισσότερα";
 
+/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "Όχι, ευχαριστώ";
+
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Παράλειψη";
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Πριν το ξεχάσω...";
+
+/* Body copy for the returning-user restore prompt */
+"onboarding.restore.prompt.body" = "Θέλετε να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία από τον προηγούμενο συγχρονισμό σας με το DuckDuckGo;";
+
+/* Primary CTA to start restoring data on returning-user restore prompt */
+"onboarding.restore.prompt.restore.cta" = "Επαναφορά των στοιχείων μου";
+
+/* Secondary CTA to skip restore on returning-user restore prompt */
+"onboarding.restore.prompt.skip.cta" = "Παράλειψη";
+
+/* Title for the returning-user restore prompt */
+"onboarding.restore.prompt.title" = "Ας συνεχίσουμε από εκεί που μείνατε";
 
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Ιδιωτικά. Γρήγορα. Λιγότερες διαφημίσεις.";
@@ -2975,6 +2990,27 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Άνοιγμα σε άλλη εφαρμογή;";
+
+/* Button to go back to the previous page after redirect loop */
+"prompt.x-safari-https.go-back" = "Επιστροφή";
+
+/* Alert message when a redirect loop is detected */
+"prompt.x-safari-https.loop.message" = "Θα θέλατε να ανοίξετε αυτήν τη σελίδα στο Safari;";
+
+/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
+"prompt.x-safari-https.loop.title" = "Δυστυχώς, η σελίδα δεν ήταν δυνατό να φορτώσει.";
+
+/* Button to open the page in Safari */
+"prompt.x-safari-https.open-in-safari" = "Ανοίξτε στο Safari";
+
+/* Button to stay in DuckDuckGo instead of opening Safari */
+"prompt.x-safari-https.stay" = "Μείνετε στο DuckDuckGo";
+
+/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.message" = "Ορισμένες λειτουργίες του ιστότοπου ενδέχεται να μην είναι συμβατές σε αυτό το πρόγραμμα περιήγησης.";
+
+/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
+"prompt.x-safari-https.try-open.title" = "Αυτός ο ιστότοπος θέλει να ανοίξει στο Safari.";
 
 /* No comment provided by engineer. */
 "REBRANDED" = "ΕΓΙΝΕ ΑΝΑΝΕΩΣΗ ΕΤΑΙΡΙΚΗΣ ΤΑΥΤΟΤΗΤΑΣ";
@@ -4458,3 +4494,44 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Αλλάζει σε αυτήν την καρτέλα";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Επιστροφή σε %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Επιστροφή σε…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Επιστροφή σε %1$@, %2$@";
+
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Επιλέξτε τι θα βλέπετε όταν επιστρέφετε μετά από %@ αδράνειας.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 ώρα";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d ώρες";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 λεπτό";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d λεπτά";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 δευτερόλεπτο";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d δευτερόλεπτα";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Μετά από αδράνεια";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Νέα καρτέλα";

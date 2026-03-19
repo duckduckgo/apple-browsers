@@ -144,7 +144,7 @@ struct LegacyDataImportViewModel {
 
     private var userReportText: String = ""
 
-#if DEBUG || REVIEW
+#if DEBUG
 
     // simulated test import failure
     struct TestImportError: DataImportError {
@@ -225,7 +225,7 @@ struct LegacyDataImportViewModel {
             return
         }
 
-#if DEBUG || REVIEW
+#if DEBUG
         // simulated test import failures
         guard dataTypes.compactMap({ testImportResults[$0] }).isEmpty else {
             importTask = .detachedWithProgress { [testImportResults] _ in

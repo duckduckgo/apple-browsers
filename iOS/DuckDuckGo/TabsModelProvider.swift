@@ -29,16 +29,21 @@ extension TabsModelReading {
     func indexOf(tab: Tab) -> Int? {
         return tabs.firstIndex { $0 === tab }
     }
+    
+    var isEmpty: Bool {
+        tabs.isEmpty
+    }
 }
 
 protocol TabsModelManaging: AnyObject, TabsModelReading {
     var shouldCreateFireTabs: Bool { get }
+    var allowsEmpty: Bool { get }
     var tabsPublisher: AnyPublisher<[Tab], Never> { get }
     var currentTab: Tab? { get }
     var nextTab: Tab? { get }
     var previousTab: Tab? { get }
     var tabBefore: Tab? { get }
-    var currentIndex: Int { get }
+    var currentIndex: Int? { get }
     var hasUnread: Bool { get }
     var hasActiveTabs: Bool { get }
     func select(tab: Tab)
@@ -57,7 +62,7 @@ protocol TabsModelProviding {
     var normalTabsModel: TabsModelManaging { get }
     var fireModeTabsModel: TabsModelManaging { get }
     var aggregateTabsModel: TabsModelReading { get }
-    func save()
+    func save() -> Result<Void, Error>
 }
 
 class TabsModelProvider: TabsModelProviding {
@@ -81,9 +86,17 @@ class TabsModelProvider: TabsModelProviding {
         self.aggregateTabsModel = AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel)
     }
     
-    func save() {
-        persistence.save(model: _normalTabsModel, for: .normal)
-        persistence.save(model: _fireModeTabsModel, for: .fire)
+    func save() -> Result<Void, Error> {
+        let normalResult = persistence.save(model: _normalTabsModel, for: .normal)
+        let fireResult = persistence.save(model: _fireModeTabsModel, for: .fire)
+
+        if case .failure(let error) = normalResult {
+            return .failure(error)
+        }
+        if case .failure(let error) = fireResult {
+            return .failure(error)
+        }
+        return .success(())
     }
 }
 

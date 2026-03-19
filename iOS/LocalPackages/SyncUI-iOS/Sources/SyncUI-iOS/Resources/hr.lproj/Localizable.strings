@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Za korištenje Sync & Backupa potrebna je lozinka uređaja.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Automatski vrati svoje podatke na ovom uređaju ako ponovno instaliraš aplikaciju.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Ako ponovno instaliraš aplikaciju DuckDuckGo, pitat ćemo te želiš li vratiti podatke na ovom uređaju.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Nastavi sesiju Sync & Backup kako bi vratio oznake, lozinke i još mnogo toga ili nastavi s novim postavljanjem.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Nastavi Sync & Backup";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Nastavi s postavljanjem";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Tvoja prethodna sesija Sync & Backup je spremna.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Ako ponovno instaliraš aplikaciju DuckDuckGo, pitat ćemo te želiš li vratiti podatke na ovom uređaju.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Vrati prilikom ponovne instalacije aplikacije";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Vraćanje prilikom ponovne instalacije aplikacije";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Isključeno";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Uključeno";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Vraćanje prilikom ponovne instalacije aplikacije";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Natrag";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Oporavak sinkroniziranih podataka";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Započnite";
+"recover.synced.data.sheet.button" = "Oporavak sinkroniziranih podataka";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Za vraćanje sinkroniziranih podataka trebat će ti šifra za oporavak koju si spremio prilikom prvog postavljanja sinkronizacije. Ta je šifra možda spremljena kao PDF na uređaju koji je izvorno korišten za postavljanje sinkronizacije.";
+"recover.synced.data.sheet.description" = "Trebat će ti kôd za oporavak koji si dobio prilikom postavljanja Sync & Backup. Možda si ga spremio kao PDF na uređaju koji si koristio.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Oporavak sinkroniziranih podataka";
+"recover.synced.data.sheet.title" = "Oporavi sinkronizirane podatke";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Ponovno povezivanje radi sinkronizacije tvojih oznaka, spremljenih prijava i ostalih uređaja.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Povezivanje u tijeku...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Obnavljanje podataka";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Ukloni uređaj";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Želiš li ukloniti uređaj?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Kôd za oporavak";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Šifra za oporavak kopirana je u međuspremnik";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kopiraj šifru";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Spremi kao PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Ako izgubiš pristup svojim uređajima, trebat će ti ova šifra za oporavak sinkroniziranih podataka.";
+"save.recovery.code.save.as.pdf.button" = "Preuzmi kao PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Svatko s pristupom ovoj šifri može pristupiti tvojim sinkroniziranim podacima, stoga ih čuvaj na sigurnom mjestu.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Spremi šifru za oporavak";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Spremi ovaj kôd kako bi mogao oporaviti svoje podatke ako izgubiš pristup ovom uređaju – čuvaj ga na sigurnom.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Jednostavno oporavi svoje podatke";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Spremi PDF za oporavak";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Postavke > Sinkronizacija i sigurnosno kopiranje kopija > Sinkronizacija s drugim uređajem";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Idi na Postavke";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Za korištenje Sync & Backupa potrebna je lozinka uređaja.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Zaštiti svoj uređaj za korištenje značajke Sync & Backup";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Oporavak";
 
 /* Sync & Backup Title */
 "sync.title" = "Sinkronizacija i sigurnosno kopiranje";

@@ -102,6 +102,18 @@ class MockDDGSyncing: DDGSyncing {
     func initializeIfNeeded() {
     }
 
+    func enableSyncFromPreservedAccount() async throws {
+    }
+
+    var removePreservedSyncAccountCallCount = 0
+    var removePreservedSyncAccountError: Error?
+    func removePreservedSyncAccount() throws {
+        removePreservedSyncAccountCallCount += 1
+        if let removePreservedSyncAccountError {
+            throw removePreservedSyncAccountError
+        }
+    }
+
     var createAccountCallback: ((String, String) -> Void)?
     var createAccountError: Error?
     func createAccount(deviceName: String, deviceType: String) async throws {

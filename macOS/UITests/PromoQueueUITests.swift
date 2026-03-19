@@ -26,7 +26,7 @@ final class PromoQueueUITests: UITestCase {
         app = XCUIApplication.setUp(featureFlags: ["promoQueue": true])
         app.enforceSingleWindow()
         app.resetPromoState()
-        app.dismissNextSteps()
+        app.dismissExternalPromos()
     }
 
     override func tearDown() {
@@ -132,10 +132,6 @@ final class PromoQueueUITests: UITestCase {
 private extension XCUIApplication {
     private typealias Identifiers = Utilities.AccessibilityIdentifiers.PromoQueue
 
-    var promoQueueMenu: XCUIElement {
-        debugMenu.menuItems[Identifiers.promoQueueDebugMenu]
-    }
-
     func fireTestTrigger() {
         typeKey("t", modifierFlags: [.command, .shift, .option, .control])
     }
@@ -147,34 +143,56 @@ private extension XCUIApplication {
 
     func resetPromoState() {
         closePromoIfNeeded()
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.resetAllPromoState].clickAfterExistenceTestSucceeds()
     }
 
     func advanceSimulatedDateByHour() {
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.advanceSimulatedDate1Hour].clickAfterExistenceTestSucceeds()
     }
 
     func advanceSimulatedDateByDay() {
-        openPromoQueueMenu()
+        debugMenu.click()
         promoQueueMenu.menuItems[Identifiers.advanceSimulatedDate1Day].clickAfterExistenceTestSucceeds()
     }
 
-    /// Dismisses Next Steps (external promo) and advances date to remove its cooldown,
+    /// Dismisses Remote Message and/or Next Steps promos, if visible, and advances date to remove global cooldown
     /// so test promos can be reliably triggered for each scenario.
-    func dismissNextSteps() {
-        guard nextSteps.exists else { return }
+    func dismissExternalPromos() {
+        let nextStepsDismissed = dismissNextSteps()
+        let remoteMessagesDismissed = dismissRemoteMessages()
+        if remoteMessagesDismissed || nextStepsDismissed {
+            advanceSimulatedDateByDay()
+        }
+    }
+
+    /// Dismisses Remote Messages (external promos) to avoid suppressing other promos for test scenarios.
+    /// Returns whether remote messages were dismissed.
+    func dismissRemoteMessages() -> Bool {
+        guard tabBarRemoteMessageCloseButton.exists || ntpRemoteMessageCloseButton.exists else {
+            return false
+        }
+        if tabBarRemoteMessageCloseButton.exists {
+            tabBarRemoteMessageCloseButton.click()
+        }
+        if ntpRemoteMessageCloseButton.exists {
+            ntpRemoteMessageCloseButton.click()
+        }
+        return true
+    }
+
+    /// Dismisses Next Steps (external promo) to avoid suppressing other promos for test scenarios.
+    /// Returns whether Next Steps were dismissed.
+    func dismissNextSteps() -> Bool {
+        guard nextSteps.exists else {
+            return false
+        }
         debugMenu
             .menuItems[Utilities.AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu]
             .menuItems[Utilities.AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem]
             .clickAfterExistenceTestSucceeds()
-        advanceSimulatedDateByDay()
-    }
-
-    private func openPromoQueueMenu() {
-        debugMenu.click()
-        promoQueueMenu.hover()
+        return true
     }
 
     var alertA: XCUIElement {
@@ -217,5 +235,17 @@ private extension XCUIElement {
 
     var nextSteps: XCUIElement {
         webViews.firstMatch.staticTexts["Next Steps"]
+    }
+
+    var tabBarRemoteMessageCloseButton: XCUIElement {
+        tabGroups.matching(identifier: "Tabs").images["Close"]
+    }
+
+    /// Button to dismiss a remote message
+    ///
+    /// This is not an ideal element identifier (it could match any "Dismiss" button in the webview)
+    /// but we have limited options to check for the presence of a remote message due to its dynamic content.
+    var ntpRemoteMessageCloseButton: XCUIElement {
+        webViews.firstMatch.buttons["Dismiss"].firstMatch
     }
 }

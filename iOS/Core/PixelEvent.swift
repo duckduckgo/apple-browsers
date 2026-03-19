@@ -859,6 +859,8 @@ extension Pixel {
         case debugWebsiteDataStoresNotClearedMultiple
         case debugWebsiteDataStoresNotClearedOne
         case debugWebsiteDataStoresCleared
+        case fireRemoveAllContainersAfterDelaySuccess
+        case fireRemoveAllContainersAfterDelayFailure
 
         case debugBookmarksMigratedMoreThanOnce
 
@@ -979,6 +981,28 @@ extension Pixel {
         case syncRecoveryAlternativeScanRecoveryCodeTapped
         case syncRecoveryAlternativeBackupThisDeviceTapped
         case syncRecoveryAlternativeDismissed
+
+        case syncAutoRestoreOnboardingPromptShownUnique
+        case syncAutoRestoreOnboardingRestoreTappedUnique
+        case syncAutoRestoreOnboardingSkipTappedUnique
+
+        case syncAutoRestoreToggleShown
+        case syncAutoRestoreToggleOptedOut
+
+        case syncAutoRestoreSettingsReadyShown
+        case syncAutoRestoreSettingsRestoreTapped
+        case syncAutoRestoreSettingsSkipRestoreTapped
+        case syncAutoRestoreSettingsCancelled
+        case syncAutoRestoreSettingsManualRecoveryShown
+
+        case syncAutoRestoreSettingsPageShown
+        case syncAutoRestoreSettingsPageToggleEnabled
+        case syncAutoRestoreSettingsPageToggleDisabled
+
+        case syncAutoRestoreSuccess
+        case syncAutoRestoreFailure
+        case syncAutoRestorePreservedAccountCleared
+        case syncAutoRestorePreservedAccountClearFailed
 
         case syncSetupBarcodeScreenShown
         case syncSetupBarcodeScannerSuccess
@@ -1439,6 +1463,7 @@ extension Pixel {
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
         case aiChatContextualAutoAttachDAU
+        case aiChatIsEnabledDaily
 
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
@@ -2424,6 +2449,8 @@ extension Pixel.Event {
         case .debugWebsiteDataStoresNotClearedMultiple: return "m_d_wkwebsitedatastoresnotcleared_multiple"
         case .debugWebsiteDataStoresNotClearedOne: return "m_d_wkwebsitedatastoresnotcleared_one"
         case .debugWebsiteDataStoresCleared: return "m_d_wkwebsitedatastorescleared"
+        case .fireRemoveAllContainersAfterDelaySuccess: return "m_fire_clear_website_data_remove_all_containers_after_delay_success"
+        case .fireRemoveAllContainersAfterDelayFailure: return "m_fire_clear_website_data_remove_all_containers_after_delay_failure"
 
         case .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration: return "m_debug_failed-to-create-app-configuration-during-aichat-settings-migration"
 
@@ -2600,6 +2627,28 @@ extension Pixel.Event {
         case .syncRecoveryAlternativeScanRecoveryCodeTapped: return "sync_recovery_alternative_scan_recovery_code_tapped"
         case .syncRecoveryAlternativeBackupThisDeviceTapped: return "sync_recovery_alternative_backup_this_device_tapped"
         case .syncRecoveryAlternativeDismissed: return "sync_recovery_alternative_dismissed"
+
+        case .syncAutoRestoreOnboardingPromptShownUnique: return "sync-auto-restore_onboarding_prompt_shown_unique"
+        case .syncAutoRestoreOnboardingRestoreTappedUnique: return "sync-auto-restore_onboarding_restore_tapped_unique"
+        case .syncAutoRestoreOnboardingSkipTappedUnique: return "sync-auto-restore_onboarding_skip_tapped_unique"
+
+        case .syncAutoRestoreToggleShown: return "sync-auto-restore_toggle_shown"
+        case .syncAutoRestoreToggleOptedOut: return "sync-auto-restore_toggle_opted_out"
+
+        case .syncAutoRestoreSettingsReadyShown: return "sync-auto-restore_settings_ready_shown"
+        case .syncAutoRestoreSettingsRestoreTapped: return "sync-auto-restore_settings_restore_tapped"
+        case .syncAutoRestoreSettingsSkipRestoreTapped: return "sync-auto-restore_settings_skip_restore_tapped"
+        case .syncAutoRestoreSettingsCancelled: return "sync-auto-restore_settings_cancelled"
+        case .syncAutoRestoreSettingsManualRecoveryShown: return "sync-auto-restore_settings_manual_recovery_shown"
+
+        case .syncAutoRestoreSettingsPageShown: return "sync-auto-restore_settings_page_shown"
+        case .syncAutoRestoreSettingsPageToggleEnabled: return "sync-auto-restore_settings_page_toggle_enabled"
+        case .syncAutoRestoreSettingsPageToggleDisabled: return "sync-auto-restore_settings_page_toggle_disabled"
+
+        case .syncAutoRestoreSuccess: return "sync-auto-restore_success"
+        case .syncAutoRestoreFailure: return "sync-auto-restore_failure"
+        case .syncAutoRestorePreservedAccountCleared: return "sync-auto-restore_preserved_account_cleared"
+        case .syncAutoRestorePreservedAccountClearFailed: return "sync-auto-restore_preserved_account_clear_failed"
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
@@ -2978,6 +3027,7 @@ extension Pixel.Event {
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
+        case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"

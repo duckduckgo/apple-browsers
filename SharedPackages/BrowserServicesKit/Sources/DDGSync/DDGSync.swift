@@ -58,7 +58,7 @@ public class DDGSync: DDGSyncing {
         $featureFlags.eraseToAnyPublisher()
     }
 
-    enum Constants {
+    public enum Constants {
         public static let syncEnabledKey = "com.duckduckgo.sync.enabled"
         public static let keychainAttrMigratedKey = "com.duckduckgo.sync.keychain.attr.migrated"
         static let aiChatHistoryEnabledKey = "com.duckduckgo.aichat.sync.chatHistoryEnabled"
@@ -105,12 +105,14 @@ public class DDGSync: DDGSyncing {
                             errorEvents: EventMapping<SyncError>,
                             privacyConfigurationManager: PrivacyConfigurationManaging,
                             keyValueStore: ThrowingKeyValueStoring,
-                            environment: ServerEnvironment = .production) {
+                            environment: ServerEnvironment = .production,
+                            shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool = { false }) {
         let dependencies = ProductionDependencies(
             serverEnvironment: environment,
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
-            errorEvents: errorEvents
+            errorEvents: errorEvents,
+            shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled
         )
         self.init(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
     }
@@ -376,10 +378,36 @@ public class DDGSync: DDGSyncing {
 
         // Proceed to initialization - if needed
         guard syncEnabled else {
-            if account != nil {
+            let shouldPreserveAccount = dependencies.shouldPreserveAccountWhenSyncDisabled()
+
+            let storedAccount: SyncAccount?
+            let accountReadFailed: Bool
+            do {
+                storedAccount = try dependencies.secureStore.account()
+                accountReadFailed = false
+            } catch {
+                dependencies.errorEvents.fire(.failedToLoadAccount, error: error)
+                storedAccount = nil
+                accountReadFailed = true
+            }
+
+            // Feature-flagged in the app layer (FeatureFlag.syncAutoRestore) and only true when the user opted in.
+            if shouldPreserveAccount, storedAccount != nil || accountReadFailed {
+                authState = .inactive
+                return
+            }
+
+            var didRemoveAccount = false
+            do {
+                try dependencies.secureStore.removeAccount()
+                didRemoveAccount = true
+            } catch {
+                dependencies.errorEvents.fire(.failedToRemoveAccount, error: error)
+            }
+
+            if didRemoveAccount, storedAccount != nil {
                 dependencies.errorEvents.fire(.accountRemoved(.syncEnabledNotSetOnKeyValueStore))
             }
-            try? dependencies.secureStore.removeAccount()
             authState = .inactive
             return
         }
@@ -408,6 +436,34 @@ public class DDGSync: DDGSyncing {
         } catch {
             dependencies.errorEvents.fire(.failedToSetupEngine, error: error)
         }
+    }
+
+    public func enableSyncFromPreservedAccount() async throws {
+        if isSyncEngineReady {
+            return
+        }
+
+        try dependencies.keyValueStore.set(true, forKey: Constants.syncEnabledKey)
+        authState = .initializing
+        initializeIfNeeded()
+
+        guard isSyncEngineReady else {
+            authState = .inactive
+            do {
+                try dependencies.keyValueStore.removeObject(forKey: Constants.syncEnabledKey)
+            } catch {
+                try? dependencies.keyValueStore.set(nil, forKey: Constants.syncEnabledKey)
+            }
+            throw SyncError.failedToSetupEngine
+        }
+
+        dependencies.scheduler.notifyAppLifecycleEvent()
+    }
+
+    public func removePreservedSyncAccount() throws {
+        guard authState == .inactive else { return }
+        guard try dependencies.secureStore.account() != nil else { return }
+        try removeAccount(reason: .userStartedFreshSetup)
     }
 
     private func updateAccount(_ account: SyncAccount) throws {
@@ -504,12 +560,24 @@ public class DDGSync: DDGSyncing {
         syncQueue?.customOperations = operations
     }
 
+    private var isSyncEngineReady: Bool {
+        (authState == .active || authState == .addingNewDevice)
+        && syncQueue != nil
+        && dependencies.scheduler.isEnabled
+    }
+
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
         isDataSyncingFeatureFlagEnabledCancellable?.cancel()
-        try syncQueue?.dataProviders.forEach { try $0.deregisterFeature() }
+        let providersToDeregister: [DataProviding]
+        if let activeProviders = syncQueue?.dataProviders, !activeProviders.isEmpty {
+            providersToDeregister = activeProviders
+        } else {
+            providersToDeregister = dataProvidersSource?.makeDataProviders() ?? []
+        }
+        try providersToDeregister.forEach { try $0.deregisterFeature() }
         syncQueue = nil
         authState = .inactive
         try dependencies.secureStore.removeAccount()

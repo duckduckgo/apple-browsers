@@ -1745,6 +1745,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 autoconsentPreferences: cookiePopupProtectionPreferences,
+                autoconsentManagement: autoconsentManagement,
                 darkReaderExcludedDomainsProvider: darkReaderSettings
             )
             self.webExtensionManager = webExtensionManager
@@ -1772,6 +1773,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
+            autoconsentManagement: autoconsentManagement,
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
         )
         self.webExtensionManager = webExtensionManager

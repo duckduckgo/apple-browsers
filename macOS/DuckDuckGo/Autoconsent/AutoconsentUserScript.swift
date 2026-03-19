@@ -661,22 +661,7 @@ extension AutoconsentUserScript {
             additionalParams["fromExtension"] = "0"
         }
 
-        if management.pixelCounter.isEmpty {
-            // Fire a summary pixel, containing counters of all other pixels, 2 minutes after
-            // the first event is received.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 60*2) { [additionalParams] in
-                PixelKit.fire(AutoconsentPixel.summary(events: self.management.pixelCounter), frequency: .standard, withAdditionalParameters: additionalParams)
-                self.management.pixelCounter = [:]
-                self.management.detectedByPatternsCache.removeAll()
-                self.management.detectedByBothCache.removeAll()
-                self.management.detectedOnlyRulesCache.removeAll()
-            }
-        }
-        // increment counter
-        management.pixelCounter[pixel.key, default: 0] += 1
-
-        // fire daily pixel if needed
-        PixelKit.fire(pixel, frequency: .daily, withAdditionalParameters: additionalParams)
+        management.firePixel(pixel: pixel, additionalParameters: additionalParams)
     }
 
     // MARK: - Reload Loop Detection

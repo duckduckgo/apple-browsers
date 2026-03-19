@@ -33,12 +33,13 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
+        autoconsentManagement: AutoconsentManaging,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
-        self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate()
+        self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate(management: autoconsentManagement)
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {

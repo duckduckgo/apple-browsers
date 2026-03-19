@@ -72,6 +72,7 @@ final class MainCoordinator {
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var webExtensionLoadTask: Task<Void, Never>?
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
+    private let autoconsentManagementProvider: AutoconsentManagementProviding
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -126,6 +127,7 @@ final class MainCoordinator {
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
         let autoconsentManagementProvider = AutoconsentManagementProvider()
+        self.autoconsentManagementProvider = autoconsentManagementProvider
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
@@ -328,6 +330,7 @@ final class MainCoordinator {
             mainViewController: controller,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
+            autoconsentManagement: autoconsentManagementProvider.management(for: .normal),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
         )
         self.webExtensionManager = webExtensionManager

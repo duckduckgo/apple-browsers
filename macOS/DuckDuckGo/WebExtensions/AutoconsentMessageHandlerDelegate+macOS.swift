@@ -24,6 +24,12 @@ import os.log
 @available(macOS 15.4, *)
 final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDelegate {
 
+    private let management: AutoconsentManagement
+
+    init(management: AutoconsentManagement) {
+        self.management = management
+    }
+
     func showCookiePopupAnimation(topUrl: URL, isCosmetic: Bool) {
         NotificationCenter.default.post(
             name: AutoconsentUserScript.newSitePopupHiddenNotification,
@@ -67,17 +73,25 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
     }
 
     func sendPixel(_ pixelInfo: PixelInfo) {
+        // Ignore summary pixels from extension - native handles aggregation
+        guard pixelInfo.name != "autoconsent_summary" else {
+            Logger.webExtensions.debug("macOS: Ignoring extension summary pixel - using native aggregation")
+            return
+        }
+
         guard let pixel = mapPixelNameToAutoconsentPixel(pixelInfo.name, params: pixelInfo.params) else {
             Logger.webExtensions.error("macOS: Unknown autoconsent pixel name: \(pixelInfo.name)")
             return
         }
 
-        let frequency: PixelKit.Frequency = pixelInfo.type == "daily" ? .daily : .standard
-        let additionalParams = processAdditionalParams(pixelInfo.params, isSummary: pixelInfo.name == "autoconsent_summary")
+        var additionalParams = processAdditionalParams(pixelInfo.params, isSummary: false)
+        if additionalParams["fromExtension"] == nil {
+            additionalParams["fromExtension"] = "1"
+        }
 
-        Logger.webExtensions.debug("macOS: Firing pixel \(pixelInfo.name) with frequency \(pixelInfo.type)")
+        Logger.webExtensions.debug("macOS: Firing pixel \(pixelInfo.name) via aggregation")
 
-        PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams)
+        management.firePixel(pixel: pixel, additionalParameters: additionalParams)
     }
 
     private func processAdditionalParams(_ params: [String: Any], isSummary: Bool) -> [String: String] {

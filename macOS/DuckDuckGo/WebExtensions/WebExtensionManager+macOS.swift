@@ -50,6 +50,7 @@ enum WebExtensionManagerFactory {
     static func makeManager(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
+        autoconsentManagement: AutoconsentManagement,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
@@ -63,6 +64,7 @@ enum WebExtensionManagerFactory {
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
+                autoconsentManagement: autoconsentManagement,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             )
         )

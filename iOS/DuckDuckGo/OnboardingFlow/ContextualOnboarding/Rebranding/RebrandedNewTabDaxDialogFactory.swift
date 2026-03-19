@@ -77,7 +77,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         return FadeInView {
             OnboardingRebranding.OnboardingTrySearchDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryASearch)
+        .applyContextualOnboardingBackground(backgroundType: .tryASearch, keyboardBehavior: .adjustForKeyboard())
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryAnonymousSearchMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTrySearchUnique)
@@ -105,7 +105,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         return FadeInView {
             OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP, keyboardBehavior: .adjustForKeyboard())
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
@@ -122,7 +122,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         FadeInView {
             OnboardingRebranding.OnboardingAddFavorite(message: message)
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP, keyboardBehavior: .adjustForKeyboard())
     }
 
 }
@@ -149,7 +149,7 @@ private extension RebrandedNewTabDaxDialogFactory {
             }
             .scrollIfNeeded()
         }
-        .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
+        .applyContextualOnboardingBackground(backgroundType: .endOfJourney, keyboardBehavior: .adjustForKeyboard())
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
@@ -214,7 +214,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                 }
             )
         }
-        .applyContextualOnboardingBackground(backgroundType: .privacyProTrial)
+        .applyContextualOnboardingBackground(backgroundType: .privacyProTrial, keyboardBehavior: .adjustForKeyboard())
         .onFirstAppear { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireImpressionPixel()
             self?.daxDialogsFlowCoordinator.subscriptionPromotionDialogSeen = true

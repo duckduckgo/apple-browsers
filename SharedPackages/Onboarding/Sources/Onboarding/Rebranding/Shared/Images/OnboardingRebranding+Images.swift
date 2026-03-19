@@ -30,7 +30,7 @@ public enum OnboardingRebrandingImages {
     }
 
     public enum Contextual {
-        public static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search", bundle: .module)
+        public static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search-tall", bundle: .module)
         public static let tryASiteBackground = Image("Rebranding/contextual-bg-try-site", bundle: .module)
         public static let searchDoneBackground = Image("Rebranding/contextual-bg-search-done", bundle: .module)
         public static let trackerBlockedBackground = Image("Rebranding/contextual-bg-trackers", bundle: .module)

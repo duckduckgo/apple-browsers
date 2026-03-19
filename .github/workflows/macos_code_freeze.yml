@@ -155,10 +155,27 @@ jobs:
       prerelease: true
     secrets: inherit
 
+  publish_release:
+    name: Publish DMG Release
+    needs: [ create_release_branch, tag_and_merge ]
+    uses: ./.github/workflows/macos_publish_dmg_release.yml
+    with:
+      asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+    secrets: inherit
+
   report_failure:
     name: Report Failure
-    needs: [ create_release_branch, run_tests, increment_build_number, prepare_release, tag_and_merge ]
-    if: always() && (needs.run_tests.result == 'failure' || needs.increment_build_number.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure')
+    needs: [ create_release_branch, run_tests, increment_build_number, prepare_release, tag_and_merge, publish_release ]
+    if: >
+      always() &&
+      (
+        needs.run_tests.result == 'failure' ||
+        needs.increment_build_number.result == 'failure' ||
+        needs.prepare_release.result == 'failure' ||
+        needs.tag_and_merge.result == 'failure' ||
+        needs.publish_release.result == 'failure'
+      )
     uses: ./.github/workflows/report_failed_release_workflow.yml
     with:
       asana-task-id: ${{ needs.create_release_branch.outputs.asana_task_id }}

@@ -142,7 +142,7 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
                     .resizable()
                     .background(
                         Circle()
-                            .fill(Color.white)
+                            .fill(checkboxFillerColor)
                             .frame(width: AddressBarPositionPickerMetrics.Radio.checkSize, height: AddressBarPositionPickerMetrics.Radio.checkSize)
                     )
                     .foregroundStyle(AddressBarPositionPickerMetrics.accentColor)
@@ -157,6 +157,10 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
 
         private var checkboxStrokeColor: Color {
             colorScheme == .light ? AddressBarPositionPickerMetrics.borderLightColor : AddressBarPositionPickerMetrics.borderDarkColor
+        }
+
+        private var checkboxFillerColor: Color {
+            colorScheme == .light ? .white : Color(baseColor: .gray90)
         }
 
         private var foregroundColor: Color {

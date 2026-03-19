@@ -342,6 +342,7 @@ private struct QuitSurveyNegativeView: View {
 
     @State private var pillsSectionHeight: CGFloat = 0
     @State private var domainSectionHeight: CGFloat = 0
+    @State private var footerHeight: CGFloat = ComponentHeights.footer
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -363,6 +364,13 @@ private struct QuitSurveyNegativeView: View {
             .frame(maxHeight: maxScrollableHeight)
 
             footer()
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onAppear { footerHeight = geometry.size.height }
+                            .onChange(of: geometry.size) { footerHeight = $0.height }
+                    }
+                )
         }
         .frame(width: QuitSurveyViewController.Constants.negativeWidth)
         .fixedSize(horizontal: false, vertical: true)
@@ -375,6 +383,9 @@ private struct QuitSurveyNegativeView: View {
         .onChange(of: domainSectionHeight) { _ in
             updateDialogHeight()
         }
+        .onChange(of: footerHeight) { _ in
+            updateDialogHeight()
+        }
         .onAppear {
             updateDialogHeight()
         }
@@ -383,7 +394,7 @@ private struct QuitSurveyNegativeView: View {
     /// Maximum height for the scrollable body so the total sheet height never exceeds the screen.
     private var maxScrollableHeight: CGFloat {
         let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
-        let fixedHeight = ComponentHeights.header + ComponentHeights.footer
+        let fixedHeight = ComponentHeights.header + footerHeight
         let safeMargin: CGFloat = 20
         return max(200, screenHeight - fixedHeight - safeMargin)
     }
@@ -401,7 +412,7 @@ private struct QuitSurveyNegativeView: View {
     }
 
     private func calculateTotalHeight() -> CGFloat {
-        let baseHeight = ComponentHeights.header + ComponentHeights.footer
+        let baseHeight = ComponentHeights.header + footerHeight
         let pillsHeight = pillsSectionHeight > 0 ? pillsSectionHeight : 80
         let textInputHeight = viewModel.shouldShowTextInput ? ComponentHeights.textInputSection : 0
         let domainHeight = viewModel.shouldShowDomainSelector

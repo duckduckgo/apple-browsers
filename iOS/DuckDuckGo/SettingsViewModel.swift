@@ -174,6 +174,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
+    var isDefaultOmnibarModeEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
+    }
+
     var isTabSwitcherTrackerCountEnabled: Bool {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }

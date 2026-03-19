@@ -78,7 +78,7 @@ struct SettingsAIFeaturesView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
 
                         if viewModel.aiChatSearchInputEnabledBinding.wrappedValue {
-                            if viewModel.featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) {
+                            if viewModel.isDefaultOmnibarModeEnabled {
                                 SettingsPickerCellView(
                                     label: UserText.settingsDefaultOmnibarModeHeader,
                                     options: DefaultOmnibarMode.allCases.map { Optional($0) },

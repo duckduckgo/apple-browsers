@@ -332,9 +332,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webViewLookUpAction,
                 .startupMetrics,
                 .promoQueue,
-                .websitesHistoryFirstTimeQuitSurvey,
-                .tabAnimations,
-                .promoQueue:
+                .websitesHistoryFirstTimeQuitSurvey:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,

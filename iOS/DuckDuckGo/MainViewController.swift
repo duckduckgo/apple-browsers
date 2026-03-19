@@ -4576,13 +4576,10 @@ extension MainViewController: FireExecutorDelegate {
     
     func didFinishBurningAIHistory(fireRequest: FireRequest) {
         switch fireRequest.scope {
-        case .all:
+        case .all, .fireMode, .normalMode:
             Task {
                 await aiChatViewControllerManager.killSessionAndResetTimer()
             }
-        case .fireMode, .normalMode:
-            // TODO: - Custom fire mode logic
-            return
         case .tab:
             // No custom logic for tab scope
             return

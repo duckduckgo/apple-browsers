@@ -25,6 +25,7 @@ import AIChat
 import PixelKit
 import PrivacyConfig
 import UserScript
+import WebKit
 import WKAbstractions
 
 struct FireRequest {
@@ -88,7 +89,7 @@ protocol FireExecuting {
 
 class FireExecutor: FireExecuting {
     
-    typealias HistoryCleanerProvider = () -> HistoryCleaning
+    typealias HistoryCleanerProvider = (WKWebsiteDataStore?) -> HistoryCleaning
     
     // MARK: - Variables
     private let fireWorkers: [FireExecutorWorker]
@@ -102,6 +103,7 @@ class FireExecutor: FireExecuting {
     let pixelsReporter: DataClearingPixelsReporter
     private let dataClearingWideEventService: DataClearingWideEventService?
     private let aiChatDeleter: AIChatDeleting
+    private let idManager: DataStoreIDManaging
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
@@ -130,21 +132,25 @@ class FireExecutor: FireExecuting {
          privacyStats: PrivacyStatsProviding? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning,
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
-         wideEvent: WideEventManaging? = nil) {
+         wideEvent: WideEventManaging? = nil,
+         idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
+        self.idManager = idManager
         self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
         self.historyCleanerProvider = historyCleanerProvider ??
-        { return HistoryCleaner(featureFlagger: featureFlagger,
-                                privacyConfig: privacyConfigurationManager)}
+        { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
+                                             privacyConfig: privacyConfigurationManager,
+                                             websiteDataStore: dataStore)}
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
         let aiChatDeleter = AIChatDeleter(historyCleanerProvider: self.historyCleanerProvider,
-                                          aiChatSyncCleaner: aiChatSyncCleaner)
+                                          aiChatSyncCleaner: aiChatSyncCleaner,
+                                          idManager: idManager)
         self.aiChatDeleter = aiChatDeleter
         self.fireWorkers = [
             URLCacheFireWorker(dataClearingWideEventService: dataClearingWideEventService),
@@ -444,17 +450,31 @@ class FireExecutor: FireExecuting {
         switch request.scope {
         case .tab(let viewModel):
             result = await burnTabAIHistory(tabViewModel: viewModel)
-        case .fireMode, .normalMode:
-            // TODO: - Implement
-            result = .success(())
+        case .fireMode:
+            if !request.options.contains(.data) { // Invalidating the fire mode datastore makes deleting chats redundant.
+                result = await burnFireModeAIHistory()
+            } else {
+                result = .success(())
+            }
+        case .normalMode:
+            result = await burnNormalModeAIHistory(trigger: request.trigger)
         case .all:
             result = await burnAllAIHistory(trigger: request.trigger)
         }
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
-    
+
     private func burnAllAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
-        let cleaner = historyCleanerProvider()
+        async let normalResult = burnNormalModeAIHistory(trigger: trigger)
+        async let fireResult = burnFireModeAIHistory()
+        let results = await (normalResult, fireResult)
+        if case .failure = results.0 { return results.0 }
+        if case .failure = results.1 { return results.1 }
+        return .success(())
+    }
+
+    private func burnNormalModeAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
+        let cleaner = historyCleanerProvider(nil)
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
@@ -470,10 +490,22 @@ class FireExecutor: FireExecuting {
         }
         return result
     }
-    
+
+    @MainActor
+    private func burnFireModeAIHistory() async -> Result<Void, Error> {
+        guard #available(iOS 17.0, *) else {
+            return .failure(AIChatDeleter.AIChatDeleterError.fireModeDataStoreUnavailable)
+        }
+
+        let fireDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
+        let cleaner = historyCleanerProvider(fireDataStore)
+        return await cleaner.cleanAIChatHistory()
+    }
+
+    @MainActor
     private func burnTabAIHistory(tabViewModel: TabViewModel) async -> Result<Void, Error> {
-        if let chatID = await tabViewModel.currentAIChatId {
-            return await aiChatDeleter.deleteChat(chatID: chatID)
+        if let chatID = tabViewModel.currentAIChatId {
+            return await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: tabViewModel.tab.fireTab)
         } else {
             Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
             return .success(())

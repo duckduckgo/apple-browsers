@@ -19,11 +19,15 @@
 
 import Core
 
-class DataStoreWarmupWorker: FireExecutorWorker {
+actor DataStoreWarmupWorker: FireExecutorWorker {
     
-    var applicationState: DataStoreWarmup.ApplicationState = .unknown
+    private(set) var applicationState: DataStoreWarmup.ApplicationState = .unknown
     private var normalDataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
     private var fireModeDataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
+    
+    func setApplicationState(_ applicationState: DataStoreWarmup.ApplicationState) {
+        self.applicationState = applicationState
+    }
 
     
     func burnNormalModeData() async {
@@ -35,7 +39,7 @@ class DataStoreWarmupWorker: FireExecutorWorker {
     }
     
     func burnTabData(tabViewModel: TabViewModel, domains: [String]) async {
-        if tabViewModel.tab.fireTab {
+        if await tabViewModel.tab.fireTab {
             await ensureFireModeStoreIsReady()
         } else {
             await ensureNormalStoreIsReady()

@@ -362,7 +362,7 @@ class FireExecutor: FireExecuting {
         }
         burnInProgress = true
 
-        dataStoreWarmupWorker.applicationState = applicationState
+        await dataStoreWarmupWorker.setApplicationState(applicationState)
         await dataStoreWarmupWorker.execute(scope: scope, domains: domains)
         
         let pixel = dataClearingTimedPixel(for: scope)

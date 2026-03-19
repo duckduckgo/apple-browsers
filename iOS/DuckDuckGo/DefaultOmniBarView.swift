@@ -600,6 +600,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
             activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
         }
+        let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
+        searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 

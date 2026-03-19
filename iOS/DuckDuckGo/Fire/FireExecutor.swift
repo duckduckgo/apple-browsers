@@ -89,7 +89,7 @@ class FireExecutor: FireExecuting {
     typealias HistoryCleanerProvider = () -> HistoryCleaning
     
     // MARK: - Variables
-    
+    private let fireWorkers: [FireExecutorWorker]
     private let tabManager: TabManaging
     private let downloadManager: DownloadManaging
     private let websiteDataManager: WebsiteDataManaging
@@ -160,6 +160,11 @@ class FireExecutor: FireExecuting {
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
+        let websiteDataWorker = WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
+                                                       dataStore: dataStore,
+                                                       dataClearingWideEventService: dataClearingWideEventService)
+        self.fireWorkers = [websiteDataWorker]
+
     }
 
     
@@ -350,6 +355,14 @@ class FireExecutor: FireExecuting {
             await dataStoreWarmup.ensureReady(applicationState: applicationState)
             self.dataStoreWarmup = nil
         }
+        
+        await withTaskGroup(of: Void.self) { group in
+            for worker in fireWorkers {
+                group.addTask {
+                    await worker.execute(scope: scope, domains: domains)
+                }
+            }
+        }
 
         switch scope {
         case .tab(let viewModel):
@@ -366,19 +379,10 @@ class FireExecutor: FireExecuting {
     
     @MainActor
     private func burnAllData() async {
+        let pixel = TimedPixel(.forgetAllDataCleared)
         dataClearingWideEventService?.start(.clearURLCaches)
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
         dataClearingWideEventService?.update(.clearURLCaches, result: .success(()))
-
-        let pixel = TimedPixel(.forgetAllDataCleared)
-
-        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
-        //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
-        let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse)
-        updateWideEventWithWebsiteDataResults(websiteDataResult)
-
-        pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.currentTabsModel.count)"]) // TODO: - Customize based on browsing mode
 
         dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
         let autoconsentResult = autoconsentManagementProvider.management(for: .normal).clearCache()
@@ -405,6 +409,7 @@ class FireExecutor: FireExecuting {
         dataClearingWideEventService?.start(.clearPrivacyStats)
         let privacyStatsResult = await privacyStats?.clearPrivacyStats() ?? .success(())
         dataClearingWideEventService?.update(.clearPrivacyStats, result: privacyStatsResult)
+        pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.tabsModel(for: .normal).count)"])
     }
     
     @MainActor
@@ -415,13 +420,8 @@ class FireExecutor: FireExecuting {
         }
 
         let timedPixel = TimedPixel(.singleTabDataCleared)
-
-        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
-        //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
-
+        
         // Async tasks
-        async let websiteDataTask = websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
         async let historyTask = historyManager.removeBrowsingHistory(tabID: tabViewModel.tab.uid)
         async let contextualChatTask = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
 
@@ -435,8 +435,7 @@ class FireExecutor: FireExecuting {
         dataClearingWideEventService?.update(.forgetTextZoom, result: textZoomResult)
 
         // Await async tasks
-        let (websiteDataResult, historyResult, contextualChatResult) = await (websiteDataTask, historyTask, contextualChatTask)
-        updateWideEventWithWebsiteDataResults(websiteDataResult)
+        let (historyResult, contextualChatResult) = await (historyTask, contextualChatTask)
         if let historyResult {
             dataClearingWideEventService?.update(.clearAllHistory, actionResult: historyResult)
         }
@@ -581,15 +580,5 @@ class FireExecutor: FireExecuting {
             }
         }
         return result
-    }
-
-    private func updateWideEventWithWebsiteDataResults(_ result: WebsiteDataClearingResult) {
-        dataClearingWideEventService?.update(.clearSafelyRemovableWebsiteData, actionResult: result.safelyRemovableData)
-        dataClearingWideEventService?.update(.clearFireproofableDataForNonFireproofDomains, actionResult: result.fireproofableData)
-        dataClearingWideEventService?.update(.clearCookiesForNonFireproofedDomains, actionResult: result.cookies)
-        dataClearingWideEventService?.update(.removeObservationsData, actionResult: result.observationsData)
-        if let removeContainersResult = result.removeAllContainersAfterDelay {
-            dataClearingWideEventService?.update(.removeAllContainersAfterDelay, actionResult: removeContainersResult)
-        }
     }
 }

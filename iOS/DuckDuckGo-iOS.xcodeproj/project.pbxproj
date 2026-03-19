@@ -644,6 +644,8 @@
 		80A09D5A2F6B97A700AACDEE /* TextZoomFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D592F6B978B00AACDEE /* TextZoomFireWorker.swift */; };
 		80A09D5C2F6B99CF00AACDEE /* HistoryFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D5B2F6B99C800AACDEE /* HistoryFireWorker.swift */; };
 		80A09D5E2F6B9B1900AACDEE /* PrivacyStatsFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D5D2F6B9B0F00AACDEE /* PrivacyStatsFireWorker.swift */; };
+		80A09D602F6BA03A00AACDEE /* ContextualChatFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D5F2F6BA03300AACDEE /* ContextualChatFireWorker.swift */; };
+		80A09D622F6BA07700AACDEE /* AIChatDeleter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D612F6BA07500AACDEE /* AIChatDeleter.swift */; };
 		80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A198C62F1AB3A10015521B /* TabViewModel.swift */; };
 		80BADA432EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */; };
 		80C947FD2F53E819002EDB79 /* Tab+ConvenienceInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */; };
@@ -3017,6 +3019,8 @@
 		80A09D592F6B978B00AACDEE /* TextZoomFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextZoomFireWorker.swift; sourceTree = "<group>"; };
 		80A09D5B2F6B99C800AACDEE /* HistoryFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryFireWorker.swift; sourceTree = "<group>"; };
 		80A09D5D2F6B9B0F00AACDEE /* PrivacyStatsFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsFireWorker.swift; sourceTree = "<group>"; };
+		80A09D5F2F6BA03300AACDEE /* ContextualChatFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualChatFireWorker.swift; sourceTree = "<group>"; };
+		80A09D612F6BA07500AACDEE /* AIChatDeleter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatDeleter.swift; sourceTree = "<group>"; };
 		80A198C62F1AB3A10015521B /* TabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModel.swift; sourceTree = "<group>"; };
 		80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationSettingsStore.swift; sourceTree = "<group>"; };
 		80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+ConvenienceInitializer.swift"; sourceTree = "<group>"; };
@@ -6689,6 +6693,7 @@
 				80DD30392F2839B3006E1A78 /* Animation */,
 				80A09D4C2F6B809700AACDEE /* FireWorkers */,
 				36F619572F68655A00CBF121 /* Statistics */,
+				80A09D612F6BA07500AACDEE /* AIChatDeleter.swift */,
 				806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */,
 				8065741C2ED917350001497A /* FireExecutor.swift */,
 				809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */,
@@ -6704,6 +6709,7 @@
 		80A09D4C2F6B809700AACDEE /* FireWorkers */ = {
 			isa = PBXGroup;
 			children = (
+				80A09D5F2F6BA03300AACDEE /* ContextualChatFireWorker.swift */,
 				80A09D532F6B88B300AACDEE /* AutoConsentFireWorker.swift */,
 				80A09D572F6B96DD00AACDEE /* BookmarksFireWorker.swift */,
 				80A09D552F6B95D700AACDEE /* DaxDialogsFireWorker.swift */,
@@ -12398,6 +12404,7 @@
 				984D035A24ACCC7D0066CFB8 /* TabViewCell.swift in Sources */,
 				9F74B7982D518FFF00A7F174 /* MaliciousSiteProtectionEventMapper.swift in Sources */,
 				D65625922C22D340006EF297 /* WebDuckPlayerNavigationHandler.swift in Sources */,
+				80A09D622F6BA07700AACDEE /* AIChatDeleter.swift in Sources */,
 				36A96A0A2E6606CF003D4529 /* LocalNotificationsPlaygroundView.swift in Sources */,
 				C17BA71F2D945A1600562138 /* AutofillCreditCardDetailsViewController.swift in Sources */,
 				C17BA7202D945A1600562138 /* AutofillCreditCardDetailsView.swift in Sources */,
@@ -12562,6 +12569,7 @@
 				85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */,
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
 				DA0001022F3D000100000002 /* DarkReaderFeatureSettings.swift in Sources */,
+				80A09D602F6BA03A00AACDEE /* ContextualChatFireWorker.swift in Sources */,
 				1EC8B1832F29139400F18679 /* WebExtensionManager+iOS.swift in Sources */,
 				1EC8B1842F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift in Sources */,
 				1EC8B1852F29139400F18679 /* TabViewController+WKWebExtensionTab.swift in Sources */,

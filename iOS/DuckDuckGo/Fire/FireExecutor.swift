@@ -109,6 +109,7 @@ class FireExecutor: FireExecuting {
     private let aiChatSyncCleaner: AIChatSyncCleaning
     let pixelsReporter: DataClearingPixelsReporter
     private let dataClearingWideEventService: DataClearingWideEventService?
+    private let aiChatDeleter: AIChatDeleting
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
@@ -160,6 +161,9 @@ class FireExecutor: FireExecuting {
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
+        let aiChatDeleter = AIChatDeleter(historyCleanerProvider: self.historyCleanerProvider,
+                                          aiChatSyncCleaner: aiChatSyncCleaner)
+        self.aiChatDeleter = aiChatDeleter
         self.fireWorkers = [
             URLCacheFireWorker(dataClearingWideEventService: dataClearingWideEventService),
             WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
@@ -178,7 +182,11 @@ class FireExecutor: FireExecuting {
             HistoryFireWorker(historyManager: historyManager,
                               dataClearingWideEventService: dataClearingWideEventService),
             PrivacyStatsFireWorker(privacyStats: privacyStats,
-                                   dataClearingWideEventService: dataClearingWideEventService)
+                                   dataClearingWideEventService: dataClearingWideEventService),
+            ContextualChatFireWorker(appSettings: appSettings,
+                                     tabManager: tabManager,
+                                     aiChatDeleter: aiChatDeleter,
+                                     dataClearingWideEventService: dataClearingWideEventService)
         ]
     }
 
@@ -407,42 +415,12 @@ class FireExecutor: FireExecuting {
 
         let timedPixel = TimedPixel(.singleTabDataCleared)
 
-        let contextualChatResult = await deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
-        if let contextualChatResult {
-            dataClearingWideEventService?.update(.deleteContextualAIChat, actionResult: contextualChatResult)
-        }
-
         // Fire completion pixel with timing
         let tabType = tabViewModel.tab.isAITab ? "ai" : "web"
         timedPixel.fire(withAdditionalParameters: [
             PixelParameters.tabType: tabType,
             PixelParameters.domainsCount: "\(domains.count)"
         ])
-    }
-    
-    @MainActor
-    private func deleteContextualChatIfNeeded(tabViewModel: TabViewModel) async -> ActionResult? {
-        guard appSettings.autoClearAIChatHistory else {
-            return nil
-        }
-
-        var interval = WideEvent.MeasuredInterval.startingNow()
-
-        guard let contextualChatID = tabViewModel.currentContextualChatId else {
-            interval.complete()
-            return ActionResult(result: .success(()), measuredInterval: interval)
-        }
-
-        let result = await deleteChat(chatID: contextualChatID)
-        switch result {
-        case .success:
-            tabManager.controller(for: tabViewModel.tab)?.aiChatContextualSheetCoordinator.clearActiveChat()
-        case .failure:
-            Logger.aiChat.debug("Failed to delete contextual ai chat")
-        }
-
-        interval.complete()
-        return ActionResult(result: result, measuredInterval: interval)
     }
     
     // MARK: - Clear AI History
@@ -503,7 +481,7 @@ class FireExecutor: FireExecuting {
     
     private func burnTabAIHistory(tabViewModel: TabViewModel) async -> Result<Void, Error> {
         if let chatID = await tabViewModel.currentAIChatId {
-            return await deleteChat(chatID: chatID)
+            return await aiChatDeleter.deleteChat(chatID: chatID)
         } else {
             Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
             return .success(())
@@ -519,21 +497,4 @@ class FireExecutor: FireExecuting {
         }
     }
 
-    @discardableResult
-    private func deleteChat(chatID: String) async -> Result<Void, Error> {
-        let cleaner = historyCleanerProvider()
-        let result = await cleaner.deleteAIChat(chatID: chatID)
-        switch result {
-        case .success:
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSingleDeleteSuccessful)
-            await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
-        case .failure(let error):
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSingleDeleteFailed)
-            Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
-            if let userScriptError = error as? UserScriptError {
-                userScriptError.fireLoadJSFailedPixelIfNeeded()
-            }
-        }
-        return result
-    }
 }

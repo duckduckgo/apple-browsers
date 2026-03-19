@@ -814,7 +814,6 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var performsAnimations: Bool = true
     override var isSelected: Bool {
         didSet {
-            NSLog("### Selected: \(isSelected)")
             if isSelected {
                 isDragged = false
             }

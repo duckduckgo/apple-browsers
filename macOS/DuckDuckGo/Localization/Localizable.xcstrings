@@ -80376,10 +80376,58 @@
       "comment" : "Informational message shown on the About screen for App Store builds. The placeholder %@ is replaced by a clickable 'App Store' link text.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte DuckDuckGo auf dem neuesten Stand, indem du automatische Updates unter %@ > App Store-Menü > Einstellungen aktivierst."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Keep DuckDuckGo up to date by enabling automatic updates in %@ > App Store menu > Settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén DuckDuckGo al día activando las actualizaciones automáticas en %@ > menú de la App Store > configuración."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardez DuckDuckGo à jour en activant les mises à jour automatiques dans %@ > menu App Store > Réglages."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantieni DuckDuckGo aggiornato abilitando gli aggiornamenti automatici in %@ > Menu App Store > Impostazioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd DuckDuckGo up-to-date door automatische updates in te schakelen in %@ > App Store-menu > Instellingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualizuj DuckDuckGo, włączając automatyczne aktualizacje w %@ > menu App Store > Ustawienia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém o DuckDuckGo atualizado ao ativar as atualizações automáticas em %@ > menu da App Store > Definições."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы всегда пользоваться актуальной версией DuckDuckGo, включите автоматическое обновление в разделе <strong>%@ > Меню App Store > Настройки</strong>."
           }
         }
       }
@@ -80388,10 +80436,58 @@
       "comment" : "The clickable 'App Store' text that appears within the App Store update info message",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "App Store"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
           }
         }
       }
@@ -80412,10 +80508,58 @@
       "comment" : "Informational message shown on the About screen for Sparkle (non-App Store) builds explaining that the app updates automatically",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine App wird beim Beenden automatisch aktualisiert, um sicherzustellen, dass du immer über die neuesten Fehlerbehebungen und Verbesserungen verfügst."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your app will update automatically when you quit to ensure you always have the latest fixes and improvements."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu aplicación se actualizará automáticamente cuando la cierres para asegurarte de que siempre tengas las últimas correcciones y mejoras."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre application se mettra à jour automatiquement lorsque vous la quitterez pour profiter toujours des correctifs et améliorations les plus récents."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'app si aggiornerà automaticamente quando la chiudi per assicurarti di avere sempre le correzioni e i miglioramenti più recenti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je app wordt automatisch bijgewerkt wanneer je stopt, zodat je altijd de nieuwste fixes en verbeteringen hebt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplikacja zaktualizuje się automatycznie po zamknięciu, dzięki czemu zawsze będziesz mieć najnowsze poprawki i ulepszenia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua aplicação será atualizada automaticamente quando saíres para garantir que tens sempre as correções e melhorias mais recentes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приложение будет обновляться автоматически после выхода из него, и на вашем устройстве всегда будет актуальная версия с последними доработками и исправлениями ошибок."
           }
         }
       }

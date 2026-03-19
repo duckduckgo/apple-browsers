@@ -423,7 +423,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
             let alert = NSAlert()
             alert.messageText = UserText.removeRecentChatConfirmationTitle
-            alert.informativeText = UserText.removeRecentChatConfirmationMessage
+            alert.informativeText = String(format: UserText.removeRecentChatConfirmationMessage, suggestion.title)
             alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
             alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
 

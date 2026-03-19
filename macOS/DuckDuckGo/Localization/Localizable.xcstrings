@@ -90007,13 +90007,13 @@
       }
     },
     "remove.recent.chat.confirmation.message" : {
-      "comment" : "Message for the confirmation alert when removing a recent Duck.ai chat",
+      "comment" : "Message for the confirmation alert when removing a recent Duck.ai chat. %@ is the chat title.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "This chat will be removed from your recent chats."
+            "value" : "Are you sure you want to remove \"%@\" from your recent chats?"
           }
         }
       }

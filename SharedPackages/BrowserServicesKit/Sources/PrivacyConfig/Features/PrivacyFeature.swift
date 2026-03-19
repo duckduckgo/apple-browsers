@@ -181,6 +181,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case semaphoreAlwaysVisible
 
     case tabAnimations
+
+    case addToDockAppStore
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

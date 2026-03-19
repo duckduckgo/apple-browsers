@@ -427,13 +427,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         switch aiChatSettings.defaultOmnibarMode {
         case .search: inputMode = .search
         case .duckAI: inputMode = .aiChat
-        case .lastUsed:
-            if let stored = UserDefaults.standard.string(forKey: SwitchBarHandler.StorageKey.toggleState),
-               let restored = TextEntryMode(rawValue: stored) {
-                inputMode = restored
-            } else {
-                inputMode = .search
-            }
+        case .lastUsed: inputMode = coordinator.toggleModeStorage.restore() ?? .search
         }
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept

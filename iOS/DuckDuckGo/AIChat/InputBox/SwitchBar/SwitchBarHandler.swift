@@ -82,14 +82,9 @@ extension SwitchBarHandling {
 // MARK: - SwitchBarHandler Implementation
 final class SwitchBarHandler: SwitchBarHandling {
 
-    // MARK: - Constants
-    enum StorageKey {
-        static let toggleState = "SwitchBarHandler.toggleState"
-    }
-
     // MARK: - Dependencies
     private let voiceSearchHelper: VoiceSearchHelperProtocol
-    private let storage: KeyValueStoring
+    private let toggleModeStorage: ToggleModeStoring
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
@@ -176,16 +171,16 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let devicePlatform: DevicePlatformProviding.Type
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
-         storage: KeyValueStoring,
          aiChatSettings: AIChatSettingsProvider,
+         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
-        self.storage = storage
         self.aiChatSettings = aiChatSettings
+        self.toggleModeStorage = toggleModeStorage
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
         self.featureFlagger = featureFlagger
@@ -312,12 +307,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     func saveToggleState() {
-        storage.set(currentToggleState.rawValue, forKey: StorageKey.toggleState)
+        toggleModeStorage.save(currentToggleState)
     }
 
     private func restoreToggleState() {
-        if let storedValue = storage.object(forKey: StorageKey.toggleState) as? String,
-           let restoredState = TextEntryMode(rawValue: storedValue) {
+        if let restoredState = toggleModeStorage.restore() {
             currentToggleState = restoredState
         }
     }

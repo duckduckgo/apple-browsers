@@ -26,12 +26,14 @@ import PersistenceTestingUtils
 
 final class SwitchBarHandlerTests: XCTestCase {
 
-    private enum StorageKey {
-        static let toggleState = "SwitchBarHandler.toggleState"
-    }
-
     private final class MockDevicePlatform: DevicePlatformProviding {
         static var isIphone: Bool = true
+    }
+
+    private final class MockToggleModeStorage: ToggleModeStoring {
+        var savedMode: TextEntryMode?
+        func save(_ mode: TextEntryMode) { savedMode = mode }
+        func restore() -> TextEntryMode? { savedMode }
     }
 
     private var sut: SwitchBarHandler!
@@ -39,6 +41,7 @@ final class SwitchBarHandlerTests: XCTestCase {
     private var mockStorage: MockKeyValueStore!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockAIChatSettings: MockAIChatSettingsProvider!
+    private var mockToggleModeStorage: MockToggleModeStorage!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -48,6 +51,7 @@ final class SwitchBarHandlerTests: XCTestCase {
         mockStorage = MockKeyValueStore()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         mockAIChatSettings = MockAIChatSettingsProvider()
+        mockToggleModeStorage = MockToggleModeStorage()
         cancellables = Set<AnyCancellable>()
         createSUT()
     }
@@ -59,14 +63,15 @@ final class SwitchBarHandlerTests: XCTestCase {
         mockStorage = nil
         mockFeatureFlagger = nil
         mockAIChatSettings = nil
+        mockToggleModeStorage = nil
         super.tearDown()
     }
 
     private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self, featureFlagger: FeatureFlagger? = nil) {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
-            storage: mockStorage,
             aiChatSettings: mockAIChatSettings,
+            toggleModeStorage: mockToggleModeStorage,
             sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
             featureFlagger: featureFlagger ?? mockFeatureFlagger,
             devicePlatform: devicePlatform,
@@ -132,7 +137,7 @@ final class SwitchBarHandlerTests: XCTestCase {
     }
 
     func testDefaultOmnibarMode_LastUsed_ShouldRestoreSearch() {
-        mockStorage.set(TextEntryMode.search.rawValue, forKey: StorageKey.toggleState)
+        mockToggleModeStorage.savedMode = .search
         mockAIChatSettings.defaultOmnibarMode = .lastUsed
         createSUT()
 
@@ -140,7 +145,7 @@ final class SwitchBarHandlerTests: XCTestCase {
     }
 
     func testDefaultOmnibarMode_LastUsed_ShouldRestoreAIChat() {
-        mockStorage.set(TextEntryMode.aiChat.rawValue, forKey: StorageKey.toggleState)
+        mockToggleModeStorage.savedMode = .aiChat
         mockAIChatSettings.defaultOmnibarMode = .lastUsed
         createSUT()
 
@@ -178,13 +183,13 @@ final class SwitchBarHandlerTests: XCTestCase {
     func testSaveToggleState_WhenSetToSearch_ShouldPersist() {
         sut.setToggleState(.search)
 
-        XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "search")
+        XCTAssertEqual(mockToggleModeStorage.savedMode, .search)
     }
 
     func testSaveToggleState_WhenSetToAIChat_ShouldPersist() {
         sut.setToggleState(.aiChat)
 
-        XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "aiChat")
+        XCTAssertEqual(mockToggleModeStorage.savedMode, .aiChat)
     }
 
     // MARK: - Toggle State Publisher Tests
@@ -206,7 +211,7 @@ final class SwitchBarHandlerTests: XCTestCase {
     func testToggleStatePublisher_InitialValue_ShouldBeCurrentState() {
         // Given: Handler with lastUsed mode and stored aiChat state
         mockAIChatSettings.defaultOmnibarMode = .lastUsed
-        mockStorage.set("aiChat", forKey: StorageKey.toggleState)
+        mockToggleModeStorage.savedMode = .aiChat
         createSUT()
 
         // When: Subscribing to toggle state publisher

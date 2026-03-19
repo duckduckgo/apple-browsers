@@ -318,7 +318,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
         let isFireTab = omniDelegate?.isCurrentTabFireTab() ?? false
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
-                                                storage: UserDefaults.standard, aiChatSettings: dependencies.aiChatSettings,
+                                                aiChatSettings: dependencies.aiChatSettings,
                                                 sessionStateMetrics: sessionStateMetrics,
                                                 isFireTab: isFireTab)
 

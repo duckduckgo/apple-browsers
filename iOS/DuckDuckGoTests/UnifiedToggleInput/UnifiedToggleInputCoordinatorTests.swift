@@ -28,12 +28,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var sut: UnifiedToggleInputCoordinator!
     private var mockDelegate: MockUnifiedToggleInputDelegate!
     private var mockPreferences: MockAIChatPreferences!
+    private var mockToggleModeStorage: MockToggleModeStorage!
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
         super.setUp()
         mockPreferences = MockAIChatPreferences()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
+        mockToggleModeStorage = MockToggleModeStorage()
+        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences, toggleModeStorage: mockToggleModeStorage)
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
     }
@@ -43,6 +45,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut = nil
         mockDelegate = nil
         mockPreferences = nil
+        mockToggleModeStorage = nil
         super.tearDown()
     }
 
@@ -949,7 +952,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_chipLabel_shownFromCacheBeforeFetch() {
         mockPreferences.selectedModelShortName = "Cached Model"
-        let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
+        let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences, toggleModeStorage: mockToggleModeStorage)
 
         XCTAssertEqual(coordinator.viewController.modelName, "Cached Model")
         XCTAssertNil(coordinator.viewController.modelPickerMenu)
@@ -1020,6 +1023,29 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - Toggle Mode Persistence
+
+    func test_updateInputMode_persistsMode() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertEqual(mockToggleModeStorage.savedMode, .aiChat)
+    }
+
+    func test_updateInputMode_persistsSearchMode() {
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.updateInputMode(.search, animated: false)
+
+        XCTAssertEqual(mockToggleModeStorage.savedMode, .search)
+    }
+
+    func test_didChangeMode_persistsMode() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didChangeMode: .aiChat)
+
+        XCTAssertEqual(mockToggleModeStorage.savedMode, .aiChat)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
@@ -1049,4 +1075,10 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
+}
+
+private final class MockToggleModeStorage: ToggleModeStoring {
+    var savedMode: TextEntryMode?
+    func save(_ mode: TextEntryMode) { savedMode = mode }
+    func restore() -> TextEntryMode? { savedMode }
 }

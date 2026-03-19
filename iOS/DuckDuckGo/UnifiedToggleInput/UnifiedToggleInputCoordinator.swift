@@ -162,6 +162,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         models.first(where: { $0.entityHasAccess })?.id
     }
 
+    let toggleModeStorage: ToggleModeStoring
     private var cancellables = Set<AnyCancellable>()
 
     private weak var boundUserScript: AIChatUserScript?
@@ -193,12 +194,14 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         isToggleEnabled: Bool,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-        subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager
+        subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
+        toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     ) {
         self.isToggleEnabled = isToggleEnabled
         self.modelsService = modelsService
         self.preferences = preferences
         self.subscriptionManager = subscriptionManager
+        self.toggleModeStorage = toggleModeStorage
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
         contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
@@ -350,9 +353,13 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
         let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
+        let didChange = inputMode != effectiveMode
         inputMode = effectiveMode
         viewController.setInputMode(effectiveMode, animated: animated)
         modeChangeSubject.send(effectiveMode)
+        if didChange {
+            toggleModeStorage.save(effectiveMode)
+        }
         if effectiveMode == .search {
             clearAttachments()
         }

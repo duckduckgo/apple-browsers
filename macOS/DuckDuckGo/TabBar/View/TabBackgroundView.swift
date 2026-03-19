@@ -114,7 +114,9 @@ private extension TabBackgroundView {
     }
 
     func layoutBackground() {
-        backgroundShapeView.frame = bounds
+        if backgroundShapeView.frame != bounds {
+            backgroundShapeView.frame = bounds
+        }
 
         guard let layer = backgroundShapeView.layer else {
             assertionFailure()
@@ -126,11 +128,17 @@ private extension TabBackgroundView {
             layer.anchorPoint = anchorPoint
         }
 
-        layer.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        let position = CGPoint(x: bounds.midX, y: bounds.midY)
+        if layer.position != position {
+            layer.position = position
+        }
     }
 
     func layoutOverlay() {
-        overlayView.frame = bounds.inset(by: Metrics.overlayInsets)
+        let overlayFrame = bounds.inset(by: Metrics.overlayInsets)
+        if overlayView.frame != overlayFrame {
+            overlayView.frame = overlayFrame
+        }
     }
 }
 
@@ -144,9 +152,15 @@ extension TabBackgroundView {
             return
         }
 
-        applyStateChange(state, entering: false, animated: animated)
+        let animateExit = animated && !shouldSkipExitAnimation(from: state, to: newState)
+        applyStateChange(state, entering: false, animated: animateExit)
         applyStateChange(newState, entering: true, animated: animated)
         state = newState
+    }
+
+    private func shouldSkipExitAnimation(from oldState: TabBackgroundState, to newState: TabBackgroundState) -> Bool {
+        // Optimization: no need to animate Highlight dismissal when transitioning directly to Selected
+        (oldState == .highlighted && newState == .selected)
     }
 
     private func applyStateChange(_ state: TabBackgroundState, entering: Bool, animated: Bool) {
@@ -181,9 +195,8 @@ private extension TabBackgroundView {
             return
         }
 
-        let duration = Animations.duration
-        let fromAlpha = layer.presentation()?.opacity ?? layer.opacity
-        let animation = CABasicAnimation.buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
+        let fromAlpha = currentOpacity(of: layer)
+        let animation = CABasicAnimation.buildFadeAnimation(duration: Animations.duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
 
         layer.add(animation, forKey: Animations.overlayKey)
         layer.opacity = toAlpha
@@ -203,8 +216,7 @@ private extension TabBackgroundView {
         }
 
         let duration = Animations.duration
-
-        let fromAlpha = layer.presentation()?.opacity ?? layer.opacity
+        let fromAlpha = currentOpacity(of: layer)
         let fadeAnimation: CABasicAnimation = .buildFadeAnimation(duration: duration, fromAlpha: fromAlpha, toAlpha: toAlpha)
 
         let translationAnimation: CABasicAnimation = visible
@@ -222,6 +234,13 @@ private extension TabBackgroundView {
         layer.add(group, forKey: Animations.shapeKey)
         layer.opacity = toAlpha
     }
+
+    func currentOpacity(of layer: CALayer) -> Float {
+        let isAnimated = layer.animationKeys() != nil
+        let opacity = isAnimated ? layer.presentation()?.opacity : layer.opacity
+
+        return opacity ?? layer.opacity
+    }
 }
 
 // MARK: - Rendering State
@@ -234,6 +253,11 @@ private enum TabBackgroundState {
 }
 
 private extension TabBackgroundState {
+
+    static func shouldAnimateExit(from oldState: TabBackgroundState, to newState: TabBackgroundState) -> Bool {
+        // Optimization: no need to animate Highlight dismissal when transitioning directly to Selected
+        !(oldState == .highlighted && newState == .selected)
+    }
 
     static func nextState(isMouseOver: Bool, isSelected: Bool, isDragged: Bool) -> TabBackgroundState {
         if isSelected {

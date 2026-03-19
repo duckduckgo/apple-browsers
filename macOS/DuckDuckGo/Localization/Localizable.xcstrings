@@ -80376,10 +80376,58 @@
       "comment" : "Informational message shown on the About screen for App Store builds. %1$@ is replaced by 'App Store', %2$@ is replaced by 'App Store menu', %3$@ is replaced by 'Settings'.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte DuckDuckGo auf dem neuesten Stand, indem du automatische Updates in %1$@ > %2$@ > %3$@ aktivierst."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Keep DuckDuckGo up to date by enabling automatic updates in %1$@ > %2$@ > %3$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén DuckDuckGo al día activando las actualizaciones automáticas en %1$@ > %2$@ > %3$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardez DuckDuckGo à jour en activant les mises à jour automatiques dans %1$@ > %2$@ > %3$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantieni DuckDuckGo aggiornato attivando gli aggiornamenti automatici in %1$@ > %2$@ > %3$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd DuckDuckGo up-to-date door automatische updates in te schakelen in %1$@ > %2$@ > %3$@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualizuj DuckDuckGo, włączając automatyczne aktualizacje w %1$@ > %2$@ > %3$@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém o DuckDuckGo atualizado ao ativar as atualizações automáticas em %1$@ > %2$@ > %3$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы всегда пользоваться актуальной версией DuckDuckGo, включите автоматическое обновление в разделе %1$@ > %2$@ > %3$@."
           }
         }
       }
@@ -80445,13 +80493,61 @@
       }
     },
     "preferences.about.update-info.appstore.menu" : {
-      "comment" : "The 'App Store menu' text that appears within the App Store update info message",
+      "comment" : "The 'App Store menu' text that appears bold within the App Store update info message",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store-Menü"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "App Store menu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menú de la App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu de l'App Store"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu dell'App Store"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store-menu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu App Store"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu da App Store"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Меню App Store"
           }
         }
       }
@@ -80460,10 +80556,58 @@
       "comment" : "The 'Settings' text that appears bold within the App Store update info message",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definições"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки"
           }
         }
       }

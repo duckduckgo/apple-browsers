@@ -4189,7 +4189,13 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
-            let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all, source: .tabSwitcher)
+            let request: FireRequest
+            switch tabSwitcher.selectedBrowsingMode {
+            case .fire:
+                request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .tabSwitcher)
+            case .normal:
+                request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
+            }
             await fireExecutor.burn(request: request, applicationState: .unknown)
             tabSwitcher.dismissIfPossible()
         }

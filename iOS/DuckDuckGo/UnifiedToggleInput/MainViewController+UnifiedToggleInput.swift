@@ -311,9 +311,11 @@ extension MainViewController {
             } else {
                 viewCoordinator.showAIChatTabChatHeader()
             }
+            /// Guard: layoutIfNeeded on view crashes during cold launch before the view is in a window
+            if viewIfLoaded?.window != nil {
+                view.layoutIfNeeded()
+            }
         }
-
-
     }
 
     private func installUnifiedInputContentViewController() {

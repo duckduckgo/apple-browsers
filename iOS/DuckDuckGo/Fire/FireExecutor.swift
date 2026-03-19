@@ -379,6 +379,8 @@ class FireExecutor: FireExecuting {
             self.dataStoreWarmup = nil
         }
         
+        let pixel = timedPixel(for: scope)
+        
         await withTaskGroup(of: Void.self) { group in
             for worker in fireWorkers {
                 group.addTask {
@@ -386,41 +388,38 @@ class FireExecutor: FireExecuting {
                 }
             }
         }
-
-        switch scope {
-        case .tab(let viewModel):
-            await burnTabData(tabViewModel: viewModel, domains: domains)
-        case .fireMode:
-            // TODO: - Implement
-            break
-        case .all:
-            await burnAllData()
-        }
+        let params = pixelParams(for: scope, domains: domains)
+        pixel?.fire(withAdditionalParameters: params)
 
         self.burnInProgress = false
     }
     
-    @MainActor
-    private func burnAllData() async {
-        let pixel = TimedPixel(.forgetAllDataCleared)
-        pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.tabsModel(for: .normal).count)"])
+    private func timedPixel(for scope: FireRequest.Scope) -> TimedPixel? {
+        switch scope {
+        case .tab(let viewModel):
+            return TimedPixel(.singleTabDataCleared)
+        case .fireMode:
+            // TODO: - return new pixel
+            return nil
+        case .all:
+            return TimedPixel(.forgetAllDataCleared)
+        }
     }
     
     @MainActor
-    private func burnTabData(tabViewModel: TabViewModel, domains: [String]?) async {
-        guard let domains else {
-            Logger.general.error("Expected domains to be present when burning tab scoped data")
-            return
+    private func pixelParams(for scope: FireRequest.Scope, domains: [String]?) -> [String: String] {
+        switch scope {
+        case .tab(let viewModel):
+            let tabType = viewModel.tab.isAITab ? "ai" : "web"
+            return [
+                PixelParameters.tabType: tabType,
+                PixelParameters.domainsCount: "\(domains?.count ?? 0)"
+            ]
+        case .fireMode:
+            return [PixelParameters.tabCount: "\(self.tabManager.tabsModel(for: .fire).count)"]
+        case .all:
+            return [PixelParameters.tabCount: "\(self.tabManager.allTabsModel.count)"]
         }
-
-        let timedPixel = TimedPixel(.singleTabDataCleared)
-
-        // Fire completion pixel with timing
-        let tabType = tabViewModel.tab.isAITab ? "ai" : "web"
-        timedPixel.fire(withAdditionalParameters: [
-            PixelParameters.tabType: tabType,
-            PixelParameters.domainsCount: "\(domains.count)"
-        ])
     }
     
     // MARK: - Clear AI History

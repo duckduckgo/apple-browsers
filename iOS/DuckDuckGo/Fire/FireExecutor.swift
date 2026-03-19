@@ -174,7 +174,9 @@ class FireExecutor: FireExecuting {
                                 dataClearingWideEventService: dataClearingWideEventService),
             TextZoomFireWorker(fireproofing: fireproofing,
                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
-                               dataClearingWideEventService: dataClearingWideEventService)
+                               dataClearingWideEventService: dataClearingWideEventService),
+            HistoryFireWorker(historyManager: historyManager,
+                              dataClearingWideEventService: dataClearingWideEventService)
         ]
     }
 
@@ -392,10 +394,6 @@ class FireExecutor: FireExecuting {
     private func burnAllData() async {
         let pixel = TimedPixel(.forgetAllDataCleared)
 
-        dataClearingWideEventService?.start(.clearAllHistory)
-        let historyResult = await historyManager.removeAllHistory()
-        dataClearingWideEventService?.update(.clearAllHistory, result: historyResult)
-
         dataClearingWideEventService?.start(.clearPrivacyStats)
         let privacyStatsResult = await privacyStats?.clearPrivacyStats() ?? .success(())
         dataClearingWideEventService?.update(.clearPrivacyStats, result: privacyStatsResult)
@@ -410,16 +408,8 @@ class FireExecutor: FireExecuting {
         }
 
         let timedPixel = TimedPixel(.singleTabDataCleared)
-        
-        // Async tasks
-        async let historyTask = historyManager.removeBrowsingHistory(tabID: tabViewModel.tab.uid)
-        async let contextualChatTask = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
 
-        // Await async tasks
-        let (historyResult, contextualChatResult) = await (historyTask, contextualChatTask)
-        if let historyResult {
-            dataClearingWideEventService?.update(.clearAllHistory, actionResult: historyResult)
-        }
+        let contextualChatResult = await deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
         if let contextualChatResult {
             dataClearingWideEventService?.update(.deleteContextualAIChat, actionResult: contextualChatResult)
         }

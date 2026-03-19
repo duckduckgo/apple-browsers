@@ -468,6 +468,8 @@ final class AIChatViewController: NSViewController {
         }
 
         if isChatFloating {
+            // Use a standalone panel instead of a sheet to prevent the open dialog
+            // from repositioning the narrow floating sidebar when centering itself.
             openPanel.begin(completionHandler: handler)
         } else {
             openPanel.beginSheetModal(for: window, completionHandler: handler)

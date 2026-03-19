@@ -67,7 +67,7 @@ class FavoritesViewModel: ObservableObject {
     init(isFocussedState: Bool,
          favoriteDataSource: NewTabPageFavoriteDataSource,
          faviconLoader: FavoritesFaviconLoading,
-         faviconsCache: FavoritesFaviconCaching = Favicons(),
+         faviconsCache: FavoritesFaviconCaching,
          pixelFiring: PixelFiring.Type = Pixel.self,
          dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
         self.isFocussedState = isFocussedState

@@ -27,6 +27,8 @@ import DesignResourcesKitIcons
 /// Enables dependency injection for testability.
 protocol SuggestionRowThemeProviding {
     var accentPrimaryColor: NSColor { get }
+    var selectedTintColor: NSColor { get }
+    var suggestionHighlightCornerRadius: CGFloat { get }
 }
 
 /// Default implementation that uses the app's theme manager.
@@ -37,6 +39,18 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
             color = NSApp.delegateTyped.themeManager.theme.palette.accentPrimary
         }
         return color
+    }
+
+    var selectedTintColor: NSColor {
+        var color: NSColor = NSColor(designSystemColor: .accentContentPrimary)
+        NSAppearance.withAppAppearance {
+            color = NSApp.delegateTyped.themeManager.theme.palette.accentContentPrimary
+        }
+        return color
+    }
+
+    var suggestionHighlightCornerRadius: CGFloat {
+        NSApp.delegateTyped.themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
     }
 }
 
@@ -52,10 +66,8 @@ final class AIChatSuggestionRowView: NSView {
         static let horizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 6
-        static let cornerRadius: CGFloat = 6
 
         // Colors matching SuggestionTableCellView
-        static let selectedTintColor: NSColor = .selectedSuggestionTint
         static let iconColor: NSColor = .suggestionIcon
         static let textColor: NSColor = NSColor(designSystemColor: .textPrimary)
     }
@@ -143,7 +155,7 @@ final class AIChatSuggestionRowView: NSView {
         wantsLayer = true
         layer?.masksToBounds = true
 
-        backgroundLayer.cornerRadius = Constants.cornerRadius
+        backgroundLayer.cornerRadius = themeProvider.suggestionHighlightCornerRadius
         layer?.insertSublayer(backgroundLayer, at: 0)
 
         deleteButton.target = self
@@ -200,11 +212,11 @@ final class AIChatSuggestionRowView: NSView {
 
         let isHighlighted = isSelected || isHovered
         if isHighlighted {
+            let tintColor = themeProvider.selectedTintColor
             backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
-            // Use white text/icons for contrast on colored background
-            titleLabel.textColor = Constants.selectedTintColor
-            iconImageView.contentTintColor = Constants.selectedTintColor
-            deleteButton.contentTintColor = Constants.selectedTintColor
+            titleLabel.textColor = tintColor
+            iconImageView.contentTintColor = tintColor
+            deleteButton.contentTintColor = tintColor
         } else {
             backgroundLayer.backgroundColor = NSColor.clear.cgColor
             titleLabel.textColor = Constants.textColor

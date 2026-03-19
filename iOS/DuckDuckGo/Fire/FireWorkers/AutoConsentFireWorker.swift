@@ -37,7 +37,9 @@ struct AutoConsentFireWorker: FireExecutorWorker {
 
     @MainActor
     func burnFireModeData() async {
-        // TODO: - Implement fire mode autoconsent cache clearing
+        dataClearingWideEventService?.start(.clearAutoconsentManagementCacheFireMode)
+        let result = autoconsentManagementProvider.management(for: .fireMode).clearCache()
+        dataClearingWideEventService?.update(.clearAutoconsentManagementCacheFireMode, result: result)
     }
 
     @MainActor

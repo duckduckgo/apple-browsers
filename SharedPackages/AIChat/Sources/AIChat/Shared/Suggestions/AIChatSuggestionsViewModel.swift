@@ -178,7 +178,6 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
     /// Removes a suggestion from the filtered list.
     /// - Parameter suggestion: The suggestion to remove.
     public func removeSuggestion(_ suggestion: AIChatSuggestion) {
-        print("chat deleted")
         filteredSuggestions.removeAll { $0.id == suggestion.id }
 
         // Adjust selection after removal

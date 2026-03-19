@@ -22,6 +22,7 @@ import Combine
 import UniformTypeIdentifiers
 import DesignResourcesKitIcons
 import AIChat
+import BrowserServicesKit
 import PixelKit
 
 /// A container view that properly handles hit testing when used with MouseBlockingBackgroundView.
@@ -95,6 +96,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var modelsCancellable: AnyCancellable?
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
+    private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
+        featureFlagger: NSApp.delegateTyped.featureFlagger,
+        privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager
+    )
 
     /// Current suggestions height - cached to avoid recalculation
     private(set) var suggestionsHeight: CGFloat = 0
@@ -414,7 +419,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Handle suggestion deletions
         suggestionsView.onSuggestionDeleted = { [weak self] suggestion in
-            self?.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
+            guard let self else { return }
+            self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
+            Task { @MainActor in
+                _ = await self.historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+            }
         }
 
         // Bind to view model with height change callback

@@ -196,4 +196,3 @@ private extension CGPath {
         return path
     }
 }
-

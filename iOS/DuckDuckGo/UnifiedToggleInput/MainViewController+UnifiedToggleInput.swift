@@ -390,10 +390,17 @@ extension MainViewController {
             }
             adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
         case .showOmnibarEditing(let height):
-            viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
+            let isTopPosition = unifiedToggleInputCoordinator?.cardPosition == .top
+            viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height, animated: isTopPosition)
             viewCoordinator.suggestionTrayContainer.isHidden = true
             if let coordinator = unifiedToggleInputCoordinator {
                 updateUnifiedInputContentVisibility(for: coordinator)
+                if isTopPosition {
+                    coordinator.animateOmnibarExpansion()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                        self?.viewCoordinator.navigationBarContainer.clipsToBounds = false
+                    }
+                }
             }
         case .showOmnibarInactive:
             viewCoordinator.restoreNavBarToToolbarForOmnibarInactive()

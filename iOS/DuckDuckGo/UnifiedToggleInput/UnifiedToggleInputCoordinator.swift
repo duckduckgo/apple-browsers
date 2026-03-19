@@ -337,8 +337,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
-        let height = omnibarEditingHeight()
-        intentSubject.send(.showOmnibarEditing(expandedHeight: height))
+        let expandedHeight = omnibarEditingHeight()
+
+        if cardPosition == .top {
+            viewController.setExpanded(false, animated: false)
+            viewController.showsDismissButton = false
+        }
+
+        intentSubject.send(.showOmnibarEditing(expandedHeight: expandedHeight))
 
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
@@ -347,6 +353,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 viewController.selectAllText()
             }
         }
+    }
+
+    func animateOmnibarExpansion() {
+        viewController.showsDismissButton = true
+        viewController.setExpanded(true, animated: true)
     }
 
     func omnibarEditingHeight() -> CGFloat {

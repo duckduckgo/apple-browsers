@@ -238,14 +238,16 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
+    func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat, animated: Bool) {
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
-        navigationBarCollectionView.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
-        unifiedToggleInputContainer.alpha = 0
+
+        navigationBarCollectionView.alpha = 0
+        unifiedToggleInputContainer.alpha = 1
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.backgroundColor = .clear
+
         if omnibarStatusBackgroundColor == nil {
             omnibarStatusBackgroundColor = statusBackground.backgroundColor
         }
@@ -258,13 +260,17 @@ class MainViewCoordinator {
             setNavBarContainerBottomToKeyboard()
         }
 
-        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
-            self.navigationBarCollectionView.alpha = 0
-            self.unifiedToggleInputContainer.alpha = 1
-            self.constraints.navigationBarContainerHeight.constant = expandedHeight
-            self.superview.layoutIfNeeded()
-        }
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
+
+        if animated {
+            navigationBarContainer.clipsToBounds = true
+            constraints.navigationBarContainerHeight.constant = expandedHeight
+        } else {
+            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+                self.constraints.navigationBarContainerHeight.constant = expandedHeight
+                self.navigationBarContainer.layoutIfNeeded()
+            }
+        }
     }
 
     @MainActor

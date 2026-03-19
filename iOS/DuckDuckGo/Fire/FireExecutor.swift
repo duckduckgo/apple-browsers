@@ -496,6 +496,9 @@ class FireExecutor: FireExecuting {
 
     @MainActor
     private func burnFireModeAIHistory() async -> Result<Void, Error> {
+        guard fireModeCapability.isFireModeEnabled else {
+            return .success(())
+        }
         guard #available(iOS 17.0, *) else {
             return .success(())
         }

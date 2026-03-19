@@ -584,6 +584,7 @@ final class FireExecutorTests: XCTestCase {
     
     func testBurnAIHistoryBothModesCallsDelegateOnSuccess() async {
         // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
         let executor = makeFireExecutor()
         mockHistoryCleaner.cleanAIChatHistoryResult = .success(())
         
@@ -598,6 +599,7 @@ final class FireExecutorTests: XCTestCase {
     
     func testBurnAIHistoryBothModesCallsDelegateOnFailure() async {
         // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
         let executor = makeFireExecutor()
         mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "test", code: 1))
         
@@ -775,6 +777,7 @@ final class FireExecutorTests: XCTestCase {
     // MARK: - Fire Mode AI History Tests
 
     func testWhenBurningAIHistoryWithFireModeScope_ThenCleanerIsCalledAndSyncIsNotRecorded() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
         let executor = makeFireExecutor()
 
         await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
@@ -786,7 +789,18 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockAIChatSyncCleaner.recordLocalClearDates.isEmpty, "Fire mode burns should not record sync")
     }
 
+    func testWhenBurningAIHistoryWithFireModeScopeAndFireModeDisabled_ThenFireModeAIHistoryIsSkipped() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0, "Fire mode AI history should not be burned when fire mode is disabled")
+    }
+
     func testWhenBurningAIHistoryWithAllScope_ThenBothNormalAndFireModeAreBurned() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
         let executor = makeFireExecutor()
 
         await executor.burn(request: makeFireRequest(options: .aiChats, scope: .all), applicationState: .unknown)
@@ -794,6 +808,16 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
         XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
         XCTAssertGreaterThanOrEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 2, "Should burn both normal and fire mode AI history")
+    }
+
+    func testWhenBurningAIHistoryWithAllScopeAndFireModeDisabled_ThenOnlyNormalModeIsBurned() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .all), applicationState: .unknown)
+
+        XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1, "Only normal mode AI history should be burned when fire mode is disabled")
     }
 
     func testWhenBurningAIHistoryWithNormalModeScope_ThenSyncIsRecorded() async {

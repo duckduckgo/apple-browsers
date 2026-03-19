@@ -81,7 +81,13 @@ jobs:
             echo "::warning::No Asana user found for ${primary_owner}"
           fi
 
-          task_name="Sparkle 🟡 [${{ steps.check.outputs.bump_type }}] ${{ steps.check.outputs.current_version }} → ${{ steps.check.outputs.latest_version }}"
+          case "${{ steps.check.outputs.bump_type }}" in
+            major) emoji="🔴" ;;
+            minor) emoji="🟡" ;;
+            *)     emoji="🟢" ;;
+          esac
+
+          task_name="Sparkle ${emoji} [${{ steps.check.outputs.bump_type }}] ${{ steps.check.outputs.current_version }} → ${{ steps.check.outputs.latest_version }}"
 
           response=$(curl -fLSs "https://app.asana.com/api/1.0/tasks" \
             --header "Accept: application/json" \

@@ -51,8 +51,6 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
     
     @MainActor
     func burnTabData(tabViewModel: TabViewModel, domains: [String]) async {
-        let timedPixel = TimedPixel(.singleTabDataCleared)
-
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
         let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()

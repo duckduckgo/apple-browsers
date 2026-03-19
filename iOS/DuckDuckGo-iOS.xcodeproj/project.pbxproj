@@ -637,6 +637,7 @@
 		809F9D172EE12CF600943E8A /* GranularFireConfirmationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D132EE12CF600943E8A /* GranularFireConfirmationViewModel.swift */; };
 		80A09D4E2F6B80B900AACDEE /* WebsiteDataFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D4D2F6B80B700AACDEE /* WebsiteDataFireWorker.swift */; };
 		80A09D502F6B82F400AACDEE /* FireExecutorWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D4F2F6B82F200AACDEE /* FireExecutorWorker.swift */; };
+		80A09D522F6B854400AACDEE /* URLCacheFireWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A09D512F6B853700AACDEE /* URLCacheFireWorker.swift */; };
 		80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A198C62F1AB3A10015521B /* TabViewModel.swift */; };
 		80BADA432EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */; };
 		80C947FD2F53E819002EDB79 /* Tab+ConvenienceInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */; };
@@ -3003,6 +3004,7 @@
 		809F9D132EE12CF600943E8A /* GranularFireConfirmationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GranularFireConfirmationViewModel.swift; sourceTree = "<group>"; };
 		80A09D4D2F6B80B700AACDEE /* WebsiteDataFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteDataFireWorker.swift; sourceTree = "<group>"; };
 		80A09D4F2F6B82F200AACDEE /* FireExecutorWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireExecutorWorker.swift; sourceTree = "<group>"; };
+		80A09D512F6B853700AACDEE /* URLCacheFireWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCacheFireWorker.swift; sourceTree = "<group>"; };
 		80A198C62F1AB3A10015521B /* TabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModel.swift; sourceTree = "<group>"; };
 		80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationSettingsStore.swift; sourceTree = "<group>"; };
 		80C947FC2F53E801002EDB79 /* Tab+ConvenienceInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+ConvenienceInitializer.swift"; sourceTree = "<group>"; };
@@ -6691,6 +6693,7 @@
 			isa = PBXGroup;
 			children = (
 				80A09D4F2F6B82F200AACDEE /* FireExecutorWorker.swift */,
+				80A09D512F6B853700AACDEE /* URLCacheFireWorker.swift */,
 				80A09D4D2F6B80B700AACDEE /* WebsiteDataFireWorker.swift */,
 			);
 			path = FireWorkers;
@@ -11860,6 +11863,7 @@
 				CBAD0F272D02EE4B006267B8 /* AfterInactivitySettingStorage.swift in Sources */,
 				CBAD0F2B2D02EE4E006267B8 /* AfterInactivityEffectiveOptionResolver.swift in Sources */,
 				CBAD0F3B2D02EE5B006267B8 /* IdleReturnCohort.swift in Sources */,
+				80A09D522F6B854400AACDEE /* URLCacheFireWorker.swift in Sources */,
 				CBAD0F2D2D02EE50006267B8 /* IdleReturnEligibilityManager.swift in Sources */,
 				2CCD716C578642B8BC760D55 /* NTPAfterIdleInstrumentation.swift in Sources */,
 				CBAD0F252D02EE49006267B8 /* LastBackgroundDateStore.swift in Sources */,

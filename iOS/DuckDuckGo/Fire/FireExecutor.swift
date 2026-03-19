@@ -160,11 +160,12 @@ class FireExecutor: FireExecuting {
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
-        let websiteDataWorker = WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
-                                                       dataStore: dataStore,
-                                                       dataClearingWideEventService: dataClearingWideEventService)
-        self.fireWorkers = [websiteDataWorker]
-
+        self.fireWorkers = [
+            URLCacheFireWorker(dataClearingWideEventService: dataClearingWideEventService),
+            WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
+                                  dataStore: dataStore,
+                                  dataClearingWideEventService: dataClearingWideEventService)
+        ]
     }
 
     
@@ -380,9 +381,6 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnAllData() async {
         let pixel = TimedPixel(.forgetAllDataCleared)
-        dataClearingWideEventService?.start(.clearURLCaches)
-        URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
-        dataClearingWideEventService?.update(.clearURLCaches, result: .success(()))
 
         dataClearingWideEventService?.start(.clearAutoconsentManagementCache)
         let autoconsentResult = autoconsentManagementProvider.management(for: .normal).clearCache()

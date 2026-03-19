@@ -251,7 +251,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                                                    billingPeriod: subscription.billingPeriod)
             return true
         } catch {
-            Logger.subscription.error("\(#function) error: \(error, privacy: .public)")
+            Logger.subscription.error("Failed to fetch subscription details: \(error, privacy: .public)")
             state.isLoadingSubscriptionInfo = false
             return false
         }
@@ -270,13 +270,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
             return true
         } catch {
-            Logger.subscription.error("\(#function) error: \(error.localizedDescription)")
+            Logger.subscription.error("Failed to fetch account email: \(error, privacy: .public)")
             return false
         }
     }
 
     func manageSubscription() {
-        Logger.subscription.log("User action: \(#function)")
+        Logger.subscription.log("User action: manageSubscription")
 
         guard let platform = state.subscriptionInfo?.platform else {
             assertionFailure("Invalid subscription platform")
@@ -552,7 +552,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                 }
             }
         } catch {
-            Logger.subscription.error("\(error.localizedDescription)")
+            Logger.subscription.error("Failed to get Stripe customer portal URL: \(error, privacy: .public)")
         }
         Task { @MainActor in
             self.displayStripeView(true)

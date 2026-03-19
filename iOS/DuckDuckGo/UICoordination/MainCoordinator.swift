@@ -63,6 +63,8 @@ final class MainCoordinator {
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let wideEvent: WideEventManaging
+    private let voiceSessionStateManager: VoiceSessionStateProviding
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
@@ -112,6 +114,8 @@ final class MainCoordinator {
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         self.wideEvent = wideEvent
+        self.voiceSessionStateManager = VoiceSessionStateManager()
+        self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
@@ -621,6 +625,10 @@ extension MainCoordinator: ShortcutItemHandling {
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn() {
+        if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+            return
+        }
+
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)

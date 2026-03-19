@@ -213,6 +213,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.sendToSyncSettings
         case .setAIChatHistoryEnabled:
             return handler.setAIChatHistoryEnabled
+        case .voiceSessionStarted:
+            return handler.voiceSessionStarted
+        case .voiceSessionEnded:
+            return handler.voiceSessionEnded
         default:
             return nil
         }

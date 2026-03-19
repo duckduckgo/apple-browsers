@@ -397,6 +397,7 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         }
 
         aiChatUserScript = userScripts.aiChatUserScript
+        aiChatUserScript?.setFireModeProvider(isFireModeProvider)
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
         aiChatUserScript?.webView = chatViewController?.webView

@@ -346,6 +346,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
             return
         }
 
+        userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.isFireTab ?? false }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
 

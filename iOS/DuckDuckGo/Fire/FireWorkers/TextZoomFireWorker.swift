@@ -44,7 +44,11 @@ struct TextZoomFireWorker: FireExecutorWorker {
 
     @MainActor
     func burnFireModeData() async {
-        // TODO: - Implement fire mode text zoom clearing
+        dataClearingWideEventService?.start(.forgetTextZoomFireMode)
+        let allowedDomains = fireproofing.allowedDomains
+        let coordinator = textZoomCoordinatorProvider.coordinator(for: .fireMode)
+        coordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
+        dataClearingWideEventService?.update(.forgetTextZoomFireMode, result: .success(()))
     }
 
     @MainActor

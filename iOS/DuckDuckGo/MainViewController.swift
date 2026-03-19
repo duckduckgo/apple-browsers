@@ -4340,6 +4340,8 @@ extension MainViewController {
             return 1
         case .fireMode:
             return tabManager.tabsModel(for: .fire).count
+        case .normalMode:
+            return tabManager.tabsModel(for: .normal).count
         case .all:
             return tabManager.allTabsModel.count
         }
@@ -4483,7 +4485,7 @@ extension MainViewController: FireExecutorDelegate {
             DailyPixel.fire(pixel: .forgetAllExecutedDaily, withAdditionalParameters: params)
         case .tab:
             DailyPixel.fireDailyAndCount(pixel: .singleTabBurnExecuted, withAdditionalParameters: params)
-        case .fireMode:
+        case .fireMode, .normalMode:
             // TODO: - Add fire mode burn pixel
             break
         }
@@ -4500,6 +4502,8 @@ extension MainViewController: FireExecutorDelegate {
                 tabs = tabManager.allTabsModel.tabs
             case .fireMode:
                 tabs = tabManager.tabsModel(for: .fire).tabs
+            case .normalMode:
+                tabs = tabManager.tabsModel(for: .normal).tabs
             case .tab:
                 tabs = []
             }
@@ -4515,7 +4519,7 @@ extension MainViewController: FireExecutorDelegate {
         guard fireRequest.trigger == .manualFire else { return }
                 
         switch fireRequest.scope {
-        case .all, .fireMode:
+        case .all, .fireMode, .normalMode:
             refreshUIAfterClear()
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
@@ -4547,7 +4551,7 @@ extension MainViewController: FireExecutorDelegate {
             Task {
                 await aiChatViewControllerManager.killSessionAndResetTimer()
             }
-        case .fireMode:
+        case .fireMode, .normalMode:
             // TODO: - Custom fire mode logic
             return
         case .tab:

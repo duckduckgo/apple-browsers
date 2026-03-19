@@ -193,6 +193,8 @@ private extension FireRequest {
             return .all
         case .fireMode:
             return .fireMode
+        case .normalMode:
+            return .normalMode
         }
     }
 

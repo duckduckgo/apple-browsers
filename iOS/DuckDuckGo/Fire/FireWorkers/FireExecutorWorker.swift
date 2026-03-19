@@ -39,6 +39,8 @@ extension FireExecutorWorker {
             await burnTabData(tabViewModel: viewModel, domains: domains)
         case .fireMode:
             await burnFireModeData()
+        case .normalMode:
+            await burnNormalModeData()
         case .all:
             async let fireModeTask: Void = burnFireModeData()
             async let normalTask: Void = burnNormalModeData()

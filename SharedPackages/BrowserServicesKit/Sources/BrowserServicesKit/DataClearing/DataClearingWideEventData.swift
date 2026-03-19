@@ -290,6 +290,7 @@ extension DataClearingWideEventData {
         case tab
         case all
         case fireMode
+        case normalMode
     }
 
     /// Entry point that triggered the data clearing flow (iOS only).

@@ -53,6 +53,7 @@ struct FireRequest {
     enum Scope {
         case tab(viewModel: TabViewModel)
         case fireMode
+        case normalMode
         case all
     }
     
@@ -294,6 +295,8 @@ class FireExecutor: FireExecuting {
             tabManager.prepareAllTabsExceptCurrentForDataClearing(browsingMode: nil)
         case .fireMode:
             tabManager.prepareAllTabsExceptCurrentForDataClearing(browsingMode: .fire)
+        case .normalMode:
+            tabManager.prepareAllTabsExceptCurrentForDataClearing(browsingMode: .normal)
         case .tab(let viewModel):
             // Only prepare the tab if it's not the current tab
             // Current tabs are prepared during burnTabs
@@ -318,6 +321,11 @@ class FireExecutor: FireExecuting {
             tabManager.prepareCurrentTabForDataClearing(browsingMode: .fire)
             dataClearingWideEventService?.start(.clearTabs)
             let removeAllResult = tabManager.removeAll(browsingMode: .fire)
+            dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
+        case .normalMode:
+            tabManager.prepareCurrentTabForDataClearing(browsingMode: .normal)
+            dataClearingWideEventService?.start(.clearTabs)
+            let removeAllResult = tabManager.removeAll(browsingMode: .normal)
             dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
         case .tab(let viewModel):
             guard let domains else {
@@ -375,7 +383,7 @@ class FireExecutor: FireExecuting {
         switch scope {
         case .tab:
             return TimedPixel(.singleTabDataCleared)
-        case .fireMode:
+        case .fireMode, .normalMode:
             // TODO: - return new pixel
             return nil
         case .all:
@@ -385,6 +393,7 @@ class FireExecutor: FireExecuting {
     
     @MainActor
     private func dataClearingPixelParams(for scope: FireRequest.Scope, domains: [String]?) -> [String: String] {
+        let tabsModel: TabsModelReading?
         switch scope {
         case .tab(let viewModel):
             let tabType = viewModel.tab.isAITab ? "ai" : "web"
@@ -393,10 +402,14 @@ class FireExecutor: FireExecuting {
                 PixelParameters.domainsCount: "\(domains?.count ?? 0)"
             ]
         case .fireMode:
-            return [PixelParameters.tabCount: "\(self.tabManager.tabsModel(for: .fire).count)"]
+            tabsModel = self.tabManager.tabsModel(for: .fire)
+        case .normalMode:
+            tabsModel = self.tabManager.tabsModel(for: .normal)
         case .all:
-            return [PixelParameters.tabCount: "\(self.tabManager.allTabsModel.count)"]
+            tabsModel = self.tabManager.allTabsModel
         }
+        return [PixelParameters.tabCount: "\(tabsModel?.count ?? 0)"]
+
     }
     
     // MARK: - Clear AI History
@@ -428,7 +441,7 @@ class FireExecutor: FireExecuting {
         switch request.scope {
         case .tab(let viewModel):
             result = await burnTabAIHistory(tabViewModel: viewModel)
-        case .fireMode:
+        case .fireMode, .normalMode:
             // TODO: - Implement
             return
         case .all:

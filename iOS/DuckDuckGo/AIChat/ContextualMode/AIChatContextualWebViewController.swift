@@ -114,6 +114,7 @@ final class AIChatContextualWebViewController: UIViewController {
     ///   - contentBlockingAssetsPublisher: Content blocking assets publisher
     ///   - featureDiscovery: Feature discovery
     ///   - featureFlagger: Feature flagger
+    ///   - isFireTab: Whether the web view should operate in fire (ephemeral) mode
     ///   - downloadHandler: Download handler for managing file downloads
     ///   - getPageContext: Closure to get page context (used by ContentHandler for JS getAIChatPageContext requests)
     ///   - pixelHandler: Pixel handler for contextual mode analytics

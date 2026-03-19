@@ -335,7 +335,7 @@ final class AIChatViewControllerManager {
 
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
-        let fireMode = isFireModeProvider?() ??  false
+        let fireMode = isFireModeProvider?() ?? false
         let configuration = WKWebViewConfiguration.persistent(fireMode: fireMode)
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)

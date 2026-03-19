@@ -499,7 +499,19 @@ class FireExecutor: FireExecuting {
 
         let fireDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
         let cleaner = historyCleanerProvider(fireDataStore)
-        return await cleaner.cleanAIChatHistory()
+        let result = await cleaner.cleanAIChatHistory()
+        switch result {
+        case .success:
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
+        case .failure(let error):
+            Logger.aiChat.debug("Failed to clear fire mode Duck.ai chat history: \(error.localizedDescription)")
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            }
+        }
+        return result
     }
 
     @MainActor

@@ -166,7 +166,9 @@ class FireExecutor: FireExecuting {
                                   dataStore: dataStore,
                                   dataClearingWideEventService: dataClearingWideEventService),
             AutoConsentFireWorker(autoconsentManagementProvider: autoconsentManagementProvider,
-                                  dataClearingWideEventService: dataClearingWideEventService)
+                                  dataClearingWideEventService: dataClearingWideEventService),
+            DaxDialogsFireWorker(daxDialogsManager: daxDialogsManager,
+                                 dataClearingWideEventService: dataClearingWideEventService)
         ]
     }
 
@@ -383,10 +385,6 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnAllData() async {
         let pixel = TimedPixel(.forgetAllDataCleared)
-
-        dataClearingWideEventService?.start(.clearDaxDialogsHeldURLData)
-        let daxDialogsResult = daxDialogsManager.clearHeldURLData()
-        dataClearingWideEventService?.update(.clearDaxDialogsHeldURLData, result: daxDialogsResult)
 
         if self.syncService.authState == .inactive {
             dataClearingWideEventService?.start(.clearBookmarkDatabase)

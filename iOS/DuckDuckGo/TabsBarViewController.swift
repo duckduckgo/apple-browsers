@@ -144,7 +144,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            guard let aiChatSettings, let tabsModel, let historyManager, let fireproofing, let keyValueStore, let daxDialogsManager else {
+            guard let aiChatSettings, let tabsModel, let tabManager, let historyManager, let fireproofing, let keyValueStore, let daxDialogsManager else {
                 assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
                 return
             }
@@ -157,9 +157,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,
-                tabViewModel: tabManager?.viewModelForCurrentTab(),
+                tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 daxDialogsManager: daxDialogsManager,
+                browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)

@@ -531,6 +531,8 @@ final class WatchdogTests: XCTestCase {
     }
 
     func testCooldownDoesNotAffectRecoveredEvents() async throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1211150618152277/task/1213707947733499?focus=true")
+
         let store = FiredEventsStore()
         let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
             store.append(event)

@@ -170,7 +170,7 @@ class FireproofingSettingsViewController: UITableViewController {
         }
 
         Task { @MainActor in
-            await websiteDataManager.removeCookies(forDomains: [domain], fromDataStore: DDGWebsiteDataStoreProvider.current())
+            await websiteDataManager.removeCookies(forDomains: [domain], fromDataStore: DDGWebsiteDataStoreProvider.current(fireMode: false))
         }
     }
     
@@ -229,7 +229,7 @@ class FireproofingSettingsViewController: UITableViewController {
             self?.refreshModel()
         }, confirmed: { [weak self] in
             Task { @MainActor in
-                await self?.websiteDataManager.removeCookies(forDomains: self?.model ?? [], fromDataStore: DDGWebsiteDataStoreProvider.current())
+                await self?.websiteDataManager.removeCookies(forDomains: self?.model ?? [], fromDataStore: DDGWebsiteDataStoreProvider.current(fireMode: false))
                 self?.fireproofing.clearAll()
                 self?.refreshModel()
                 self?.endEditing()

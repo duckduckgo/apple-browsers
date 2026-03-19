@@ -240,7 +240,7 @@ final class TabManagerExternalLaunchTests {
             legacyStore: MockKeyValueStore()
         )
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
-        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence)
+        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence, featureFlagger: featureFlagger)
         return TabManager(
             tabsModelProvider: modelProvider,
             previewsSource: previewsSource,

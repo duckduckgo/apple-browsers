@@ -152,6 +152,18 @@ public class DataClearingWideEventData: WideEventData {
     public var deleteContextualAIChatStatus: ActionStatus?
     public var deleteContextualAIChatError: WideEventErrorData?
 
+    public var clearWebsiteDataFireModeDuration: WideEvent.MeasuredInterval?
+    public var clearWebsiteDataFireModeStatus: ActionStatus?
+    public var clearWebsiteDataFireModeError: WideEventErrorData?
+
+    public var clearAutoconsentManagementCacheFireModeDuration: WideEvent.MeasuredInterval?
+    public var clearAutoconsentManagementCacheFireModeStatus: ActionStatus?
+    public var clearAutoconsentManagementCacheFireModeError: WideEventErrorData?
+
+    public var forgetTextZoomFireModeDuration: WideEvent.MeasuredInterval?
+    public var forgetTextZoomFireModeStatus: ActionStatus?
+    public var forgetTextZoomFireModeError: WideEventErrorData?
+
     // macOS-only actions
     public var clearPermissionsDuration: WideEvent.MeasuredInterval?
     public var clearPermissionsStatus: ActionStatus?
@@ -267,6 +279,7 @@ extension DataClearingWideEventData {
         case manualFire
         case autoClearOnLaunch
         case autoClearOnForeground
+        case fireModeAutoClear
 
         // macOS triggers
         case manual
@@ -277,6 +290,8 @@ extension DataClearingWideEventData {
     public enum Scope: String, Codable, CaseIterable {
         case tab
         case all
+        case fireMode
+        case normalMode
     }
 
     /// Entry point that triggered the data clearing flow (iOS only).
@@ -330,6 +345,9 @@ extension DataClearingWideEventData {
         case removeObservationsData = "clear_website_data.remove_observations_data"
         case removeAllContainersAfterDelay = "clear_website_data.remove_all_containers_after_delay"
         case deleteContextualAIChat = "delete_contextual_aiChat"
+        case clearWebsiteDataFireMode = "clear_website_data_fire_mode"
+        case clearAutoconsentManagementCacheFireMode = "clear_autoconsent_management_cache_fire_mode"
+        case forgetTextZoomFireMode = "forget_text_zoom_fire_mode"
 
         // macOS-only actions
         case clearPermissions = "clear_permissions"
@@ -363,6 +381,9 @@ extension DataClearingWideEventData {
             case .removeObservationsData: return \.removeObservationsDataDuration
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayDuration
             case .deleteContextualAIChat: return \.deleteContextualAIChatDuration
+            case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeDuration
+            case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeDuration
+            case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeDuration
             case .clearPermissions: return \.clearPermissionsDuration
             case .clearVisitedLinks: return \.clearVisitedLinksDuration
             case .clearRecentlyClosed: return \.clearRecentlyClosedDuration
@@ -396,6 +417,9 @@ extension DataClearingWideEventData {
             case .removeObservationsData: return \.removeObservationsDataStatus
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayStatus
             case .deleteContextualAIChat: return \.deleteContextualAIChatStatus
+            case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeStatus
+            case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeStatus
+            case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeStatus
             case .clearPermissions: return \.clearPermissionsStatus
             case .clearVisitedLinks: return \.clearVisitedLinksStatus
             case .clearRecentlyClosed: return \.clearRecentlyClosedStatus
@@ -429,6 +453,9 @@ extension DataClearingWideEventData {
             case .removeObservationsData: return \.removeObservationsDataError
             case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayError
             case .deleteContextualAIChat: return \.deleteContextualAIChatError
+            case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeError
+            case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeError
+            case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeError
             case .clearPermissions: return \.clearPermissionsError
             case .clearVisitedLinks: return \.clearVisitedLinksError
             case .clearRecentlyClosed: return \.clearRecentlyClosedError

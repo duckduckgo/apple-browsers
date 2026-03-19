@@ -305,6 +305,54 @@ class AddressBarUITests: UITestCase {
         XCTAssertTrue(addressBarValue.contains("localhost:8085"), "Address bar should preserve URL after reload")
     }
 
+    // MARK: - Suffix Visibility Tests
+
+    func testAddressBar_LosesFocus_SuffixIsHidden() throws {
+        // Navigate to a page so address bar deactivates
+        let testURL = UITests.simpleServedPage(titled: "Suffix Test")
+        app.activateAddressBar()
+        app.pasteURL(testURL, pressingEnter: true)
+
+        let pageContent = webView.staticTexts.containing(\.value, containing: "Suffix Test").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should load test page")
+
+        // Activate address bar and type a search phrase (which triggers "– Search DuckDuckGo" suffix)
+        let searchQuery = "test search query"
+        app.activateAddressBar()
+        addressBarTextField.typeText(searchQuery)
+
+        // Verify the suffix is shown while focused
+        let focusedValue = addressBarTextField.value as? String ?? ""
+        XCTAssertTrue(focusedValue.starts(with: searchQuery))
+        XCTAssertNotEqual(focusedValue, searchQuery, "Suffix should be visible while address bar is focused")
+
+        // Click on the webView to lose focus without committing
+        let webView = app.windows.firstMatch.webViews.firstMatch
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        webView.click()
+
+        // After losing focus, the passive text field should be visible and show the page URL without suffix
+        let passiveValue = app.addressBarValueActivatingIfNeeded(shouldActivate: false) ?? ""
+        XCTAssertEqual(passiveValue, searchQuery, "Search suffix should not be visible when address bar is not focused, got: \(passiveValue)")
+
+        // Now test with a URL input (which triggers "– Visit example.com" suffix)
+        let urlQuery = "example.com"
+        app.activateAddressBar()
+        addressBarTextField.typeText(urlQuery)
+
+        // Verify the suffix is shown while focused
+        let focusedURLValue = addressBarTextField.value as? String ?? ""
+        XCTAssertTrue(focusedURLValue.starts(with: urlQuery))
+        XCTAssertNotEqual(focusedURLValue, urlQuery, "Visit suffix should be visible while address bar is focused")
+
+        // Click on the webView to lose focus without committing
+        webView.click()
+
+        // After losing focus, the suffix should not be visible
+        let passiveURLValue = app.addressBarValueActivatingIfNeeded(shouldActivate: false) ?? ""
+        XCTAssertEqual(passiveURLValue, urlQuery, "Visit suffix should not be visible when address bar is not focused, got: \(passiveURLValue)")
+    }
+
     // MARK: - Edge Cases Tests
 
     func testAddressBar_EmptyInput_DoesNotNavigate() throws {

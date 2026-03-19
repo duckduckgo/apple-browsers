@@ -98,6 +98,7 @@ class FireExecutor: FireExecuting {
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let dataClearingCapability: DataClearingCapable
+    private let fireModeCapability: FireModeCapable
     private let appSettings: AppSettings
     private let aiChatSyncCleaner: AIChatSyncCleaning
     let pixelsReporter: DataClearingPixelsReporter
@@ -140,6 +141,7 @@ class FireExecutor: FireExecuting {
         self.featureFlagger = featureFlagger
         self.idManager = idManager
         self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
+        self.fireModeCapability = FireModeCapability.create(using: featureFlagger)
         self.historyCleanerProvider = historyCleanerProvider ??
         { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
                                              privacyConfig: privacyConfigurationManager,
@@ -369,14 +371,14 @@ class FireExecutor: FireExecuting {
         burnInProgress = true
 
         await dataStoreWarmupWorker.setApplicationState(applicationState)
-        await dataStoreWarmupWorker.execute(scope: scope, domains: domains)
+        await dataStoreWarmupWorker.execute(scope: scope, domains: domains, fireModeCapability: fireModeCapability)
         
         let pixel = dataClearingTimedPixel(for: scope)
         
         await withTaskGroup(of: Void.self) { group in
             for worker in fireWorkers {
                 group.addTask {
-                    await worker.execute(scope: scope, domains: domains)
+                    await worker.execute(scope: scope, domains: domains, fireModeCapability: self.fireModeCapability)
                 }
             }
         }
@@ -494,7 +496,7 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnFireModeAIHistory() async -> Result<Void, Error> {
         guard #available(iOS 17.0, *) else {
-            return .failure(AIChatDeleter.AIChatDeleterError.fireModeDataStoreUnavailable)
+            return .success(())
         }
 
         let fireDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)

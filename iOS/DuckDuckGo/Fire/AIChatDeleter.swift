@@ -30,10 +30,6 @@ protocol AIChatDeleting {
 
 struct AIChatDeleter: AIChatDeleting {
 
-    enum AIChatDeleterError: Error {
-        case fireModeDataStoreUnavailable
-    }
-
     private let historyCleanerProvider: (WKWebsiteDataStore?) -> HistoryCleaning
     private let aiChatSyncCleaner: AIChatSyncCleaning
     private let idManager: DataStoreIDManaging
@@ -52,7 +48,7 @@ struct AIChatDeleter: AIChatDeleting {
         let dataStore: WKWebsiteDataStore?
         if isFireMode {
             guard #available(iOS 17, *) else {
-                return .failure(AIChatDeleterError.fireModeDataStoreUnavailable)
+                return .success(())
             }
             dataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
         } else {

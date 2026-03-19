@@ -395,7 +395,8 @@ private struct QuitSurveyNegativeView: View {
     private var maxScrollableHeight: CGFloat {
         let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
         let fixedHeight = ComponentHeights.header + footerHeight
-        let safeMargin: CGFloat = 20
+        // 60pt accounts for the parent window title bar (~28pt) where the sheet is anchored + buffer
+        let safeMargin: CGFloat = 60
         return max(200, screenHeight - fixedHeight - safeMargin)
     }
 
@@ -421,7 +422,7 @@ private struct QuitSurveyNegativeView: View {
 
         let naturalHeight = baseHeight + pillsHeight + textInputHeight + domainHeight
         let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
-        return min(naturalHeight, screenHeight - 20)
+        return min(naturalHeight, screenHeight - 60)
     }
 
     private func updateDialogHeight() {

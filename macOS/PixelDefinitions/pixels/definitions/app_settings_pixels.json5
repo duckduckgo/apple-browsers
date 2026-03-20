@@ -27,5 +27,12 @@
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource", "themeChangeSource", "themeName"]
+    },
+    "m_mac_settings_add-to-dock_learn-more-clicked": {
+        "description": "Fired when Add to Dock Learn More link in settings is clicked",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion"]
     }
 }

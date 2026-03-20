@@ -23,6 +23,8 @@ import PrivacyConfig
 final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     private let featureFlagger: FeatureFlagger
     private let dockCustomizer: DockCustomization?
+    private let pixelFiring: PixelFiring?
+
     var windowControllersManager: WindowControllersManagerProtocol
 
     /// Whether the current build can add the app to the dock.
@@ -44,11 +46,13 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     init(featureFlagger: FeatureFlagger,
          dockCustomizer: DockCustomization?,
          supportsAddToDock: Bool,
-         windowControllersManager: WindowControllersManagerProtocol) {
+         windowControllersManager: WindowControllersManagerProtocol,
+         pixelFiring: PixelFiring?) {
         self.featureFlagger = featureFlagger
         self.dockCustomizer = dockCustomizer
         self.canAddToDock = dockCustomizer != nil && supportsAddToDock
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
     }
 
     func addToDock(from preferences: PreferencePaneIdentifier) {
@@ -70,6 +74,7 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     @MainActor
     func openAddToDockHelpURL() {
         openNewTab(with: .addToDockHelpURL)
+        pixelFiring?.fire(GeneralPixel.settingsAddToDockLearnMoreClicked, frequency: .dailyAndCount)
     }
 
     func refresh() {

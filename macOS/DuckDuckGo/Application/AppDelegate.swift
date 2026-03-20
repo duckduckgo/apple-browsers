@@ -840,7 +840,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
             supportsAddToDock: !buildType.isAppStoreBuild,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            pixelFiring: PixelKit.shared
         )
         accessibilityPreferences = AccessibilityPreferences()
         duckPlayer = DuckPlayer(

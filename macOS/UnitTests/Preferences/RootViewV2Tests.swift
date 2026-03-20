@@ -68,7 +68,8 @@ final class RootViewV2Tests: XCTestCase {
             dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
                                                   dockCustomizer: nil,
                                                   supportsAddToDock: false,
-                                                  windowControllersManager: windowControllersManager),
+                                                  windowControllersManager: windowControllersManager,
+                                                  pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),

@@ -70,7 +70,6 @@ final class MainViewController: NSViewController {
     private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
-    private var appearanceChangedCancellable: AnyCancellable?
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
 
@@ -339,7 +338,6 @@ final class MainViewController: NSViewController {
         subscribeToMouseTrackingArea()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
-        subscribeToAppearanceChanges()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
 
@@ -423,10 +421,6 @@ final class MainViewController: NSViewController {
     func windowDidResignKey() {
         browserTabViewController.windowDidResignKey()
         tabBarViewController.hideTabPreview()
-    }
-
-    func windowDidEndLiveResize() {
-        tabCollectionViewModel.newTabPageTabPreloader?.reloadTab()
     }
 
     func showBookmarkPromptIfNeeded() {
@@ -771,14 +765,6 @@ final class MainViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateBookmarksBarViewVisibility(visible: self!.shouldShowBookmarksBar)
-            }
-    }
-
-    private func subscribeToAppearanceChanges() {
-        appearanceChangedCancellable = NSApp.publisher(for: \.effectiveAppearance)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.tabCollectionViewModel.newTabPageTabPreloader?.reloadTab(force: true)
             }
     }
 

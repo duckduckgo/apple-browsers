@@ -337,3 +337,17 @@ private extension KeyValueStoring {
     }
 
 }
+
+extension DefaultOmnibarMode {
+
+    func resolvedTextEntryMode(lastUsedModeProvider: () -> TextEntryMode?) -> TextEntryMode {
+        switch self {
+        case .search:
+            return .search
+        case .duckAI:
+            return .aiChat
+        case .lastUsed:
+            return lastUsedModeProvider() ?? .search
+        }
+    }
+}

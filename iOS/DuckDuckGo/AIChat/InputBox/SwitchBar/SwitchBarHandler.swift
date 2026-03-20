@@ -94,6 +94,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
     private let featureFlagger: FeatureFlagger
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -182,6 +183,7 @@ final class SwitchBarHandler: SwitchBarHandling {
          sessionStateMetrics: SessionStateMetricsProviding,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
          isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
@@ -190,6 +192,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.sessionStateMetrics = sessionStateMetrics
         self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
+        self.voiceShortcutFeature = voiceShortcutFeature
         self.isFireTab = isFireTab
 
         // Set up app lifecycle observers to reset session flags
@@ -225,10 +228,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     func setToggleState(_ state: TextEntryMode) {
         // Only fire pixel if the state is actually changing
         let isStateChanging = currentToggleState != state
-        
+
         currentToggleState = state
         saveToggleState()
-        
+        updateButtonState(currentText: currentText)
+
         if isStateChanging {
             fireModeSwitchedPixel(to: state)
         }
@@ -268,7 +272,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     private func updateButtonState(currentText: String) {
         if !currentText.isEmpty {
             buttonState = .clearOnly
-        } else if voiceSearchHelper.isVoiceSearchEnabled {
+        } else if voiceSearchHelper.isVoiceSearchEnabled
+                    && !(currentToggleState == .aiChat && voiceShortcutFeature.isAvailable) {
             if isUsingFadeOutAnimation || !isTopBarPosition {
                 buttonState = .voiceOnly
             } else {

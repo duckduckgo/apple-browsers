@@ -34,6 +34,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
+    func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
 
@@ -144,7 +145,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            guard let aiChatSettings, let tabsModel, let historyManager, let fireproofing, let keyValueStore, let daxDialogsManager else {
+            guard let aiChatSettings, let tabsModel, let tabManager, let historyManager, let fireproofing, let keyValueStore, let daxDialogsManager else {
                 assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
                 return
             }
@@ -157,9 +158,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,
-                tabViewModel: tabManager?.viewModelForCurrentTab(),
+                tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 daxDialogsManager: daxDialogsManager,
+                browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
@@ -169,7 +171,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
 
         delegate?.tabsBarDidRequestFireEducationDialog(self)
-        showClearDataAlert()
+        delegate?.tabsBarDidRequestDismissContextualSheet(self) {
+            showClearDataAlert()
+        }
     }
 
     @IBAction func onNewTabPressed() {
@@ -428,7 +432,13 @@ extension MainViewController: TabsBarDelegate {
     }
     
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {
-        showTabSwitcher()
+        dismissContextualSheetIfNeeded {
+            self.showTabSwitcher()
+        }
+    }
+
+    func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {
+        dismissContextualSheetIfNeeded(completion: completion)
     }
 
 }

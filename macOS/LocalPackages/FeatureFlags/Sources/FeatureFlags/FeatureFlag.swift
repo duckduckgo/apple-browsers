@@ -155,6 +155,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
     case appStoreUpdateFlow
 
+    /// Hide manual update option — always use automatic updates
+    case automaticUpdatesOnly
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
@@ -300,6 +303,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the new Tab Animations (Milestone 1)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
     case tabAnimations
+
+    /// Enables the "Add to dock" onboarding step and setting for App Store builds
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725466401987?focus=true
+    case addToDockAppStore
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -337,7 +344,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
-             .tabAnimations:
+             .tabAnimations,
+             .addToDockAppStore:
             .internalOnly
         default:
             .disabled
@@ -395,6 +403,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpWebViewUserAgent,
                 .syncFeatureLevel3,
                 .appStoreUpdateFlow,
+                .automaticUpdatesOnly,
                 .unifiedURLPredictor,
                 .winBackOffer,
                 .syncCreditCards,
@@ -435,7 +444,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .promoQueue,
                 .semaphoreAlwaysVisible,
                 .websitesHistoryFirstTimeQuitSurvey,
-                .tabAnimations:
+                .tabAnimations,
+                .addToDockAppStore:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -541,6 +551,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .appStoreUpdateFlow:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
+        case .automaticUpdatesOnly:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.automaticUpdatesOnly))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .winBackOffer:
@@ -623,6 +635,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .tabAnimations:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
+        case .addToDockAppStore:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addToDockAppStore))
         }
     }
 }

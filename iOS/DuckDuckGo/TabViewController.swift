@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AVFoundation
 import WebKit
 import Core
 import Combine
@@ -525,7 +526,8 @@ class TabViewController: UIViewController {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
-            pageContextHandler: pageContextHandler
+            pageContextHandler: pageContextHandler,
+            isFireTab: tabModel.fireTab
         )
         coordinator.delegate = self
         return coordinator
@@ -2918,6 +2920,21 @@ extension TabViewController: WKUIDelegate {
                              inheritingAttribution: adClickAttributionLogic.state)
     }
 
+    func webView(_ webView: WKWebView,
+                 requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo,
+                 type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        guard origin.host.isDuckAIHost,
+              type == .microphone || type == .cameraAndMicrophone else {
+            decisionHandler(.prompt)
+            return
+        }
+
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        decisionHandler(status == .authorized ? .grant : .deny)
+    }
+
     func webViewDidClose(_ webView: WKWebView) {
         if openedByPage {
             delegate?.tabDidRequestClose(self)
@@ -3113,6 +3130,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
+        userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 

@@ -206,7 +206,6 @@ final class AIChatTabChatHeaderView: UIView {
 
     private func makeIconButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector) -> UIButton {
         let button: UIButton
-#if compiler(>=6.2)
         if #available(iOS 26, *) {
             var config = UIButton.Configuration.glass()
             config.image = image
@@ -215,9 +214,6 @@ final class AIChatTabChatHeaderView: UIView {
         } else {
             button = makeIconButtonLegacy(image: image)
         }
-#else
-        button = makeIconButtonLegacy(image: image)
-#endif
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = UIColor(designSystemColor: .icons)
         button.accessibilityLabel = accessibilityLabel
@@ -234,9 +230,7 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func updateButtonShadows() {
-#if compiler(>=6.2)
         if #available(iOS 26, *) { return }
-#endif
         let isDark = traitCollection.userInterfaceStyle == .dark
         for button in [settingsButton, newChatButton] {
             if isDark {

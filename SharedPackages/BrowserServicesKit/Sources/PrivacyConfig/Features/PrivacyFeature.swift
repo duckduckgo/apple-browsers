@@ -132,6 +132,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
     case appStoreUpdateFlow
 
+    /// Hide manual update option and always use automatic updates
+    case automaticUpdatesOnly
+
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
@@ -184,6 +187,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case semaphoreAlwaysVisible
 
     case tabAnimations
+
+    case addToDockAppStore
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -406,6 +411,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables page context feature on iPad
     case iPadPageContext
+
+    /// Enables voice chat shortcut in the focused address bar
+    case voiceShortcut
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

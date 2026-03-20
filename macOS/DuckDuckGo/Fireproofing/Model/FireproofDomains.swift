@@ -114,10 +114,7 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
     func add(domain: String, notify: Bool = true) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        guard let eTLDPlus1Domain = tld.eTLDplus1(domain) else {
-            // eTLD+1 domain not available, domain is probably invalid
-            return
-        }
+        let eTLDPlus1Domain = tld.eTLDplus1(domain) ?? domain
         guard !isFireproof(fireproofDomain: eTLDPlus1Domain) else {
             return
         }
@@ -167,12 +164,7 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
 
         let newDomain: String
         if changeToETLDPlus1 {
-            guard let eTLDPlus1Domain = tld.eTLDplus1(domain) else {
-                // eTLD+1 domain not available, domain is probably invalid
-                return
-            }
-
-            newDomain = eTLDPlus1Domain
+            newDomain = tld.eTLDplus1(domain) ?? domain
         } else {
             newDomain = domain
         }
@@ -207,10 +199,7 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
     }
 
     func isFireproof(fireproofDomain domain: String) -> Bool {
-        guard let eTLDPlus1Domain = tld.eTLDplus1(domain) else {
-            // eTLD+1 domain not available, domain is probably invalid
-            return false
-        }
+        let eTLDPlus1Domain = tld.eTLDplus1(domain) ?? domain
         return container.contains(domain: eTLDPlus1Domain)
     }
 

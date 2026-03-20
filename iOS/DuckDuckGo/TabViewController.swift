@@ -527,7 +527,8 @@ class TabViewController: UIViewController {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
-            pageContextHandler: pageContextHandler
+            pageContextHandler: pageContextHandler,
+            isFireTab: tabModel.fireTab
         )
         coordinator.delegate = self
         return coordinator
@@ -3117,6 +3118,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
+        userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 

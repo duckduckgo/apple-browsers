@@ -64,6 +64,7 @@ protocol TabControllerCacheDelegate: AnyObject {
 @MainActor
 protocol TabManagerFireModeDelegate: AnyObject {
     func tabManagerDidCloseLastFireTab()
+    func tabManagerDidChangeBrowsingMode(_ mode: BrowsingMode)
 }
 
 protocol TrackerAnimationSuppressing {
@@ -230,6 +231,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             return
         }
         _currentBrowsingMode = mode
+        fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
         // TODO: - Fire pixel
     }
 

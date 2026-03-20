@@ -334,7 +334,7 @@ final class AIChatViewControllerManager {
 
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
-        let configuration = WKWebViewConfiguration.persistent()
+        let configuration = WKWebViewConfiguration.persistent(fireMode: false) // TODO: - Customize based on current mode
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self

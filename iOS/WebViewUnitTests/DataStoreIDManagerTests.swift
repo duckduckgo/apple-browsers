@@ -48,4 +48,46 @@ class DataStoreIDManagerTests: XCTestCase {
         XCTAssertNil(manager.currentID)
     }
 
+    // MARK: - Fire Mode ID
+
+    func testWhenFireModeIDAccessedThenNewIDIsAllocated() {
+        let manager = DataStoreIDManager(store: MockKeyValueStore())
+        let id = manager.currentFireModeID
+        XCTAssertEqual(manager.currentFireModeID, id)
+    }
+
+    func testWhenFireModeIDInvalidatedThenNewIDIsAllocatedOnNextAccess() {
+        let manager = DataStoreIDManager(store: MockKeyValueStore())
+        let firstID = manager.currentFireModeID
+        manager.invalidateCurrentFireModeID()
+        let secondID = manager.currentFireModeID
+        XCTAssertNotEqual(firstID, secondID)
+    }
+
+    // MARK: - Pending Removal
+
+    func testWhenFireModeIDInvalidatedMultipleTimesThenAllAreTracked() {
+        let manager = DataStoreIDManager(store: MockKeyValueStore())
+        let firstID = manager.currentFireModeID
+        manager.invalidateCurrentFireModeID()
+
+        let secondID = manager.currentFireModeID
+        manager.invalidateCurrentFireModeID()
+
+        XCTAssertEqual(manager.pendingRemovalFireModeIDs.count, 2)
+        XCTAssertTrue(manager.pendingRemovalFireModeIDs.contains(firstID))
+        XCTAssertTrue(manager.pendingRemovalFireModeIDs.contains(secondID))
+    }
+
+    func testWhenOnePendingIDRemovedThenOthersRemain() {
+        let manager = DataStoreIDManager(store: MockKeyValueStore())
+        let firstID = manager.currentFireModeID
+        manager.invalidateCurrentFireModeID()
+
+        let secondID = manager.currentFireModeID
+        manager.invalidateCurrentFireModeID()
+
+        manager.removePendingRemovalFireModeID(firstID)
+        XCTAssertEqual(manager.pendingRemovalFireModeIDs, [secondID])
+    }
 }

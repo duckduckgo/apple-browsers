@@ -949,11 +949,9 @@ extension TabSwitcherViewController {
         refreshDisplayModeButton()
         
         titleBarView.tintColor = theme.barTintColor
-        #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
             titleBarView.backItem?.rightBarButtonItem?.hidesSharedBackground = true
         }
-        #endif
 
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)

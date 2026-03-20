@@ -693,7 +693,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
         XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
     }
-    
+
     func testWhenAutoClearAIChatHistoryDisabled_ThenContextualChatNotDeleted() async {
         // Given
         let contextualChatID = "contextual-chat-id-789"
@@ -707,5 +707,27 @@ final class FireExecutorTests: XCTestCase {
         // Then - Contextual chat should NOT be deleted because user setting is disabled
         XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
         XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
+    }
+    
+    // MARK: - Fire Mode Scope Tests
+
+    func testPrepareWithFireModeScopeCallsPrepareAllTabsWithFireBrowsingMode() {
+        let executor = makeFireExecutor()
+
+        executor.prepare(for: makeFireRequest(options: .tabs, scope: .fireMode))
+
+        XCTAssertTrue(mockTabManager.prepareAllTabsExceptCurrentCalled)
+        XCTAssertEqual(mockTabManager.prepareAllTabsExceptCurrentBrowsingMode, .fire)
+    }
+
+    func testBurnTabsWithFireModeScopeCallsPrepareCurrentAndRemoveAllWithFireBrowsingMode() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertTrue(mockTabManager.prepareCurrentTabCalled)
+        XCTAssertEqual(mockTabManager.prepareCurrentTabBrowsingMode, .fire)
+        XCTAssertTrue(mockTabManager.removeAllCalled)
+        XCTAssertEqual(mockTabManager.removeAllBrowsingMode, .fire)
     }
 }

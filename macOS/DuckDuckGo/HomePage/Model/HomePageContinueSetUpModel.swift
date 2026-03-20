@@ -85,7 +85,7 @@ extension HomePage.Models {
         @Published var visibleFeaturesMatrix: [[FeatureType]] = [[]]
 
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
-             dockCustomizer: DockCustomization = DockCustomizer(),
+             dockCustomizer: DockCustomization,
              dataImportProvider: DataImportStatusProviding,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),

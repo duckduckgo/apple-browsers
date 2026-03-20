@@ -172,7 +172,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?,
         featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger,
         isOnboardingCompleted: @escaping () -> Bool,
-        dockCustomization: DockCustomization = DockCustomizer(),
+        dockCustomization: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
         pixelFiring: PixelFiring? = PixelKit.shared,
         dateProvider: @escaping () -> Date = Date.init

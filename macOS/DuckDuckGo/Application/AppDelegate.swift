@@ -891,7 +891,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences,
                 syncErrorHandler: syncErrorHandler,
-                webExtensionAvailability: webExtensionAvailability
+                webExtensionAvailability: webExtensionAvailability,
+                dockCustomization: dockCustomization
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -923,7 +924,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
-            webExtensionAvailability: webExtensionAvailability
+            webExtensionAvailability: webExtensionAvailability,
+            dockCustomization: dockCustomization
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,

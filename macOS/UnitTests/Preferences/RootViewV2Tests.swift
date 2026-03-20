@@ -66,11 +66,7 @@ final class RootViewV2Tests: XCTestCase {
             ),
             aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
-                                                  dockCustomizer: {
-                                                      let mock = DockCustomizerMock()
-                                                      mock.supportsAddingToDock = false
-                                                      return mock
-                                                  }(),
+                                                  dockCustomizer: DockCustomizerMock(),
                                                   windowControllersManager: windowControllersManager,
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),

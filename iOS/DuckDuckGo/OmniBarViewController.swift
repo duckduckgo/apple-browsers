@@ -349,7 +349,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         textDidChange()
     }
     
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
         textFieldTapped = false
         self.textEntryMode = textEntryMode
         defer {

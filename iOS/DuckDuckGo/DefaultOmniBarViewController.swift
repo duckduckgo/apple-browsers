@@ -169,7 +169,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         handleIPadModeToggleTransition(to: mode)
     }
 
-    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
+    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
         animateNextEditingTransition = animated
 
         super.beginEditing(animated: animated, forTextEntryMode: textEntryMode)

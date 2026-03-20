@@ -36,7 +36,7 @@ protocol OmniBar: AnyObject {
     func refreshText(forUrl url: URL?, forceFullURL: Bool)
     func refreshFireMode(fireMode: Bool)
 
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode)
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?)
     func endEditing()
 
     func showSeparator()
@@ -86,9 +86,10 @@ protocol OmniBar: AnyObject {
 }
 
 extension OmniBar {
-    /// Convenience method that begins editing with the default `.search` text entry mode.
+    /// Convenience method that begins editing without an explicit text entry mode,
+    /// allowing the SwitchBarHandler to apply the user's default toggle position setting.
     func beginEditing(animated: Bool) {
-        beginEditing(animated: animated, forTextEntryMode: .search)
+        beginEditing(animated: animated, forTextEntryMode: nil)
     }
 
     func adjust(for position: AddressBarPosition) {

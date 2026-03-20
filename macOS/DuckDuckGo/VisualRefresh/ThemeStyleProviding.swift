@@ -86,7 +86,7 @@ struct ThemeStyle: ThemeStyleProviding {
 
     private static var displaysTabsAnimations: Bool?
     private static func displaysTabsAnimations(featureFlagger: FeatureFlagger) -> Bool {
-        let output = displaysTabsAnimations ?? featureFlagger.isFeatureOn(.tabAnimations)
+        let output = displaysTabsAnimations ?? AnimationsAvailabilityDecider(featureFlagger: featureFlagger).displaysTabsAnimations
         displaysTabsAnimations = output
         return output
     }

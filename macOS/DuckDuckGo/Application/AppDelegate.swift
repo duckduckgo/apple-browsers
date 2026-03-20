@@ -578,7 +578,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
-        displaysTabsAnimations = featureFlagger.isFeatureOn(.tabAnimations)
+        displaysTabsAnimations = AnimationsAvailabilityDecider(featureFlagger: featureFlagger).displaysTabsAnimations
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,

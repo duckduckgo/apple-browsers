@@ -77,6 +77,7 @@ protocol SwitchBarHandling: AnyObject {
 }
 
 extension SwitchBarHandling {
+    func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
 }
 

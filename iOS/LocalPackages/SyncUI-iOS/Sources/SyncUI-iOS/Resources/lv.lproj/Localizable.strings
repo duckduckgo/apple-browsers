@@ -134,9 +134,6 @@
 "fetch.favicons.option.title" = "Automātiski lejupielādēt ikonas";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Doties uz Iestatījumiem";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Paturēt izstrādi";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -288,9 +285,6 @@
 
 /* Scan or See Code View - Title */
 "scan.or.see.code.title" = "Kvadrātkoda skenēšana";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Aizsargā savu ierīci, lai izmantotu Sync & Backup";
 
 /* No comment provided by engineer. */
 "Switch to Production" = "Pārslēgties uz ražošanu";

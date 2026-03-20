@@ -1079,9 +1079,6 @@
 "Confirm" = "Potwierdź";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Wprowadzenie kontekstowe";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Niestandardowy adres URL: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "Domeny wykluczone w Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuj plik zakładek...";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Wysyłane z Twoją wiadomością do Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcje sztucznej inteligencji DuckDuckGo są prywatne i opcjonalne. Twoje dane nie są używane do trenowania AI.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Oglądasz w Duck Player!\nNie ma tu reklam ukierunkowanych.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Obowiązujący próg: %@ s (nadpisany)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Obowiązujący próg: domyślna konfiguracja (bez nadpisania)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrona poczty e-mail";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Wystąpił nieznany błąd";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Przełącza na tę kartę";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Wróć do karty %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Wróć do…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Wróć do karty %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "Sieć VPN została rozłączona z powodu wygasłej subskrypcji. Subskrybuj DuckDuckGo, aby ponownie połączyć się z siecią VPN.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Nie można uwierzytelnić. Sprawdź, czy Twoja subskrypcja jest aktywna, i spróbuj ponownie.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Nie można połączyć się z serwerem VPN. Spróbuj ponownie później.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Twoja subskrypcja wygasła. Subskrybuj ponownie, aby połączyć się z serwerem VPN.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Wystąpił nieoczekiwany błąd. Spróbuj ponownie. Jeśli ten problem będzie się powtarzał, przewiń do pozycji **Informacje** i dotknij opcji **Często zadawane pytania i pomoc techniczna**, aby uzyskać pomoc.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Nie udało się nawiązać połączenia DuckDuckGo VPN. Spróbuj ponownie później.";
 
@@ -2442,11 +2464,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "Serwer DNS";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Spróbuj ponownie później.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Nie udało się połączyć.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Nie udało się połączyć";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "Adres IP";
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Brak aktywnych subskrypcji";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Brak wykluczonych domen";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nie znaleziono istniejącej subskrypcji";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Jeszcze jedno.";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Prywatna. Szybka. Z mniejszą liczbą reklam.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "To DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Chcesz skorzystać z szybszej przeglądarki, która zapewni Ci ochronę?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Cześć!";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Chcesz przywrócić zakładki, hasła i nie tylko z poprzedniej synchronizacji DuckDuckGo?";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Kontynuuj od miejsca zakończenia";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Prywatna. Szybka. Z mniejszą liczbą reklam.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "To DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Chcesz skorzystać z szybszej przeglądarki, która zapewni Ci ochronę?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Cześć!";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Rozpocznij przeglądanie";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Rezygnacja...";
+
+/* No comment provided by engineer. */
+"Override" = "Nadpisz";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nie można uzyskać dostępu do modeli Duck.ai dostępnych wyłącznie dla subskrybentów";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Pokaż na pasku adresu";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Wybierz, co zobaczysz, gdy wrócisz po %@ braku aktywności.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 godzina";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d h";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minuta";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d min";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 s";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d s";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Po braku aktywności";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Ostatnio używana karta";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Nowa karta";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Wyszukiwanie i Duck.ai";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Pozycja paska adresu";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Eksperymentalne menu przeglądarki";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otwieraj łącza w powiązanych aplikacjach";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Plany subskrypcji";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Twoja subskrypcja została usunięta z tego urządzenia.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Anuluj obniżenie poziomu";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Twoja subskrypcja została usunięta z tego urządzenia.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@.";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Przełącza na tę kartę";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Wróć do karty %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Wróć do…";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Wróć do karty %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Wybierz, co zobaczysz, gdy wrócisz po %@ braku aktywności.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 godzina";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d h";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 minuta";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d min";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 s";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d s";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po braku aktywności";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Ostatnio używana karta";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nowa karta";

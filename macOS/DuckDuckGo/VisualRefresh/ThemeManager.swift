@@ -35,6 +35,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
+    private let displaysTabsAnimations: Bool
 
     @Published private(set) var appearance: ThemeAppearance
 
@@ -54,11 +55,12 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
     @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
 
-    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger) {
+    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
+        self.displaysTabsAnimations = displaysTabsAnimations
 
-        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
         self.appearance = appearancePreferences.themeAppearance
         self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
@@ -94,7 +96,7 @@ private extension ThemeManager {
 
     /// Relay the change to all of our observers
     func switchToTheme(named themeName: ThemeName) {
-        theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
+        theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
     }
 
     /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette

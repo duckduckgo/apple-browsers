@@ -695,7 +695,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarViewItem")
 
     enum Width {
-        static let minimum: CGFloat = 52
+        static let minimum: CGFloat = 54
         static let minimumSelected: CGFloat = 120
         static let maximum: CGFloat = 240
     }

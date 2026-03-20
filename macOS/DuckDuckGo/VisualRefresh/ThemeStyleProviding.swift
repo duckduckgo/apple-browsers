@@ -97,7 +97,7 @@ struct ThemeStyle: ThemeStyleProviding {
             iconsProvider: CurrentIconsProvider(),
             fireButtonSize: 32,
             navigationToolbarButtonsSpacing: 2,
-            tabBarButtonSize: 28,
+            tabBarButtonSize: 30,
             addToolbarShadow: true
         )
     }

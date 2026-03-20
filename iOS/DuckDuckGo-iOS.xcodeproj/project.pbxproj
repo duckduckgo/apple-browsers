@@ -774,6 +774,8 @@
 		854A012B2A54412600FCC628 /* ActivityViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854A012A2A54412600FCC628 /* ActivityViewController.swift */; };
 		854A012F2A5563A400FCC628 /* FindInPage.xib in Resources */ = {isa = PBXBuildFile; fileRef = 854A012E2A5563A400FCC628 /* FindInPage.xib */; };
 		854A01332A558B3A00FCC628 /* UIView+Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854A01322A558B3A00FCC628 /* UIView+Constraints.swift */; };
+		854D678D2F6D4BA8008707A3 /* TabSwitcherMenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854D678C2F6D4BA8008707A3 /* TabSwitcherMenuBuilder.swift */; };
+		854D678F2F6D4C71008707A3 /* TabSwitcherMenuBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854D678E2F6D4C71008707A3 /* TabSwitcherMenuBuilderTests.swift */; };
 		85514FFD2372DA0100DBC528 /* ios13-home-row.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 85514FFC2372DA0000DBC528 /* ios13-home-row.mp4 */; };
 		85582E0029D7409700E9AE35 /* SyncSettingsViewController+PDFRendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85582DFF29D7409700E9AE35 /* SyncSettingsViewController+PDFRendering.swift */; };
 		855D914D2063EF6A00C4B448 /* TabSwitcherTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */; };
@@ -3152,6 +3154,8 @@
 		854A012A2A54412600FCC628 /* ActivityViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActivityViewController.swift; sourceTree = "<group>"; };
 		854A012E2A5563A400FCC628 /* FindInPage.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FindInPage.xib; sourceTree = "<group>"; };
 		854A01322A558B3A00FCC628 /* UIView+Constraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Constraints.swift"; sourceTree = "<group>"; };
+		854D678C2F6D4BA8008707A3 /* TabSwitcherMenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherMenuBuilder.swift; sourceTree = "<group>"; };
+		854D678E2F6D4C71008707A3 /* TabSwitcherMenuBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherMenuBuilderTests.swift; sourceTree = "<group>"; };
 		85514FFC2372DA0000DBC528 /* ios13-home-row.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ios13-home-row.mp4"; sourceTree = "<group>"; };
 		85519124247468580010FDD0 /* TrackerRadarIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerRadarIntegrationTests.swift; sourceTree = "<group>"; };
 		8551912624746EDC0010FDD0 /* SnapshotHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SnapshotHelper.swift; path = fastlane/SnapshotHelper.swift; sourceTree = SOURCE_ROOT; };
@@ -9997,7 +10001,6 @@
 		F1386BA21E6846320062FC3C /* TabSwitcher */ = {
 			isa = PBXGroup;
 			children = (
-				856C5F2D2E0467EB00D64AF1 /* Transitions */,
 				80EB2C4A2F56980700C5AE20 /* TabCountBadge.swift */,
 				9872D204247DCAC100CEF398 /* TabPreviewsSource.swift */,
 				85DFEDF824CF3D0E00973FE7 /* TabsBarCell.swift */,
@@ -10005,13 +10008,15 @@
 				F1ED309B1EDC2EA400651986 /* TabSwitcher.storyboard */,
 				8569E16F2D52C993004A3CB7 /* TabSwitcherBarsStateHandler.swift */,
 				F1617C181E573EA800DEDCAF /* TabSwitcherDelegate.swift */,
+				854D678C2F6D4BA8008707A3 /* TabSwitcherMenuBuilder.swift */,
 				6FF9AD3E2CE63DC200C5A406 /* TabSwitcherOpenDailyPixel.swift */,
 				984D035B24AE15CD0066CFB8 /* TabSwitcherSettings.swift */,
-				F1617C121E572E0300DEDCAF /* TabSwitcherViewController.swift */,
 				AA1000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift */,
+				F1617C121E572E0300DEDCAF /* TabSwitcherViewController.swift */,
 				85F2FFCE2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift */,
 				856F28D62D3EC5FA00A88211 /* TabSwitcherViewController+MultiSelect.swift */,
 				984D035924ACCC7D0066CFB8 /* TabViewCell.swift */,
+				856C5F2D2E0467EB00D64AF1 /* Transitions */,
 			);
 			name = TabSwitcher;
 			sourceTree = "<group>";
@@ -10099,6 +10104,7 @@
 		F13B4BF71F18C9E800814661 /* Tabs */ = {
 			isa = PBXGroup;
 			children = (
+				854D678E2F6D4C71008707A3 /* TabSwitcherMenuBuilderTests.swift */,
 				5B4F88C32F465B70003999E2 /* TabExternalLaunchTests.swift */,
 				5B4F88C22F465B0D003999E2 /* TabManagerExternalLaunchTests.swift */,
 				8504E9E92D8883AE00FF1352 /* TabSwitcherBarsStateHandlerTests.swift */,
@@ -12507,6 +12513,7 @@
 				F1FDC9352BF51E41006B1435 /* VPNSettings+Environment.swift in Sources */,
 				C1ED4DB22E44B0B8003298A5 /* DaxEasterEggHandler.swift in Sources */,
 				9FF362BE2F3AC7A300824B30 /* RebrandedContextualDialogsDynamicMetrics.swift in Sources */,
+				854D678D2F6D4BA8008707A3 /* TabSwitcherMenuBuilder.swift in Sources */,
 				CBF259B32D47EE6F00AC63E4 /* KeyboardPresenter.swift in Sources */,
 				850ABD012AC3961100A733DF /* MainViewController+Segues.swift in Sources */,
 				9F880BEE2F331CDF00BF211E /* FadeInView.swift in Sources */,
@@ -12895,6 +12902,7 @@
 				EEFE9C732A603CE9005B0A26 /* NetworkProtectionStatusViewModelTests.swift in Sources */,
 				F13B4BF91F18CA0600814661 /* TabsModelTests.swift in Sources */,
 				98E564A82DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
+				854D678F2F6D4C71008707A3 /* TabSwitcherMenuBuilderTests.swift in Sources */,
 				987243142C5232B5007ECC76 /* BookmarksDatabaseSetupTests.swift in Sources */,
 				4B2DF8A62E64C67300FBF11E /* WideEventServiceTests.swift in Sources */,
 				56C23F652E0AD93600FD63C6 /* MockFeedbackSender.swift in Sources */,

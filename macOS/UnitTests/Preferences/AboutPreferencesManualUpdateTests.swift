@@ -74,19 +74,4 @@ final class AboutPreferencesManualUpdateTests: XCTestCase {
         XCTAssertFalse(aboutPreferences.shouldHideManualUpdateOption)
     }
 
-    // MARK: - shouldShowUpdateInfoMessage
-
-    func testShouldShowMessage_whenHidden() {
-        mockHandler.shouldHideManualUpdateOption = true
-        makeAboutPreferences()
-
-        XCTAssertTrue(aboutPreferences.shouldShowUpdateInfoMessage)
-    }
-
-    func testShouldNotShowMessage_whenNotHidden() {
-        mockHandler.shouldHideManualUpdateOption = false
-        makeAboutPreferences()
-
-        XCTAssertFalse(aboutPreferences.shouldShowUpdateInfoMessage)
-    }
 }

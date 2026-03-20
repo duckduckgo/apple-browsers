@@ -76,10 +76,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         manualUpdateRemovalHandler.shouldHideManualUpdateOption
     }
 
-    var shouldShowUpdateInfoMessage: Bool {
-        shouldHideManualUpdateOption
-    }
-
     var shouldShowUpdateStatus: Bool {
         if StandardApplicationBuildType().isSparkleBuild {
             // For Sparkle builds: always show update status regardless of feature flag

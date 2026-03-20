@@ -5120,6 +5120,9 @@ extension MainViewController {
         case .downloads:
             self.segueToDownloads()
 
+        case .duckAIVoice:
+            self.openAIChatInVoiceMode()
+
         default:
             assertionFailure("Unexpected case \(button)")
         }
@@ -5167,6 +5170,9 @@ extension MainViewController {
 
         case .zoom:
             showTextZoomEditorIfPossible()
+
+        case .duckAIVoice:
+            openAIChatInVoiceMode()
 
         default:
             assertionFailure("Unexpected case: \(button)")

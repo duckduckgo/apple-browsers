@@ -142,10 +142,8 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     /// Resolves the user's preferred default toggle mode from settings.
     func resolvedDefaultTextEntryMode() -> TextEntryMode {
-        switch dependencies.aiChatSettings.defaultOmnibarMode {
-        case .search: return .search
-        case .duckAI: return .aiChat
-        case .lastUsed: return toggleModeStorage.restore() ?? .search
+        dependencies.aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
+            toggleModeStorage.restore()
         }
     }
 

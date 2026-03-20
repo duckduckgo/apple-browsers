@@ -316,20 +316,9 @@ final class SwitchBarHandler: SwitchBarHandling {
         toggleModeStorage.save(currentToggleState)
     }
 
-    private func restoreToggleState() {
-        if let restoredState = toggleModeStorage.restore() {
-            currentToggleState = restoredState
-        }
-    }
-
     private func applyDefaultOmnibarMode() {
-        switch aiChatSettings.defaultOmnibarMode {
-        case .search:
-            currentToggleState = .search
-        case .duckAI:
-            currentToggleState = .aiChat
-        case .lastUsed:
-            restoreToggleState()
+        currentToggleState = aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
+            toggleModeStorage.restore()
         }
     }
     

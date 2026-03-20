@@ -117,7 +117,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
 
-    @MainActor
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
@@ -256,7 +255,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         }
     }
 
-    @MainActor
     private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,

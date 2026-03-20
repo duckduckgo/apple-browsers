@@ -433,6 +433,13 @@ final class AIChatViewController: NSViewController {
         aiTab.$userInteractionDialog
             .dropFirst()
             .sink { [weak self] userInteractionDialog in
+                guard let self else { return }
+
+                if let dialog = userInteractionDialog?.dialog, case .openPanel(let request) = dialog {
+                    self.showOpenPanel(with: request)
+                    return
+                }
+
                 NotificationCenter.default.post(
                     name: .aiChatSidebarUserInteractionDialogChanged,
                     object: self,
@@ -440,6 +447,33 @@ final class AIChatViewController: NSViewController {
                 )
             }
             .store(in: &cancellables)
+    }
+
+    private func showOpenPanel(with request: OpenPanelDialogRequest) {
+        guard let window = view.window else {
+            request.submit(nil)
+            return
+        }
+
+        let openPanel = NSOpenPanel()
+        openPanel.allowsMultipleSelection = request.parameters.allowsMultipleSelection
+
+        let handler: (NSApplication.ModalResponse) -> Void = { [weak request] response in
+            switch response {
+            case .OK:
+                request?.submit(openPanel.urls)
+            default:
+                request?.submit(nil)
+            }
+        }
+
+        if isChatFloating {
+            // Use a standalone panel instead of a sheet to prevent the open dialog
+            // from repositioning the narrow floating sidebar when centering itself.
+            openPanel.begin(completionHandler: handler)
+        } else {
+            openPanel.beginSheetModal(for: window, completionHandler: handler)
+        }
     }
 
     private func subscribeToPermissionAuthorizationQueries() {

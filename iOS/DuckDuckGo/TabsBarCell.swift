@@ -42,6 +42,7 @@ class TabsBarCell: UICollectionViewCell {
     var onRemove: (() -> Void)?
 
     private weak var model: Tab?
+    private var isFireModeEnabled = false
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -76,13 +77,18 @@ class TabsBarCell: UICollectionViewCell {
         
     }
 
-    func update(model: Tab, isCurrent: Bool, isNextCurrent: Bool, withTheme theme: Theme) {
+    func update(model: Tab,
+                isCurrent: Bool,
+                isNextCurrent: Bool,
+                isFireModeEnabled: Bool,
+                withTheme theme: Theme) {
         
         accessibilityElements = [label as Any, removeButton as Any]
         
         self.model?.removeObserver(self)
         
         self.model = model
+        self.isFireModeEnabled = isFireModeEnabled
         model.addObserver(self)
 
         label.primaryColor = theme.barTintColor
@@ -106,9 +112,8 @@ class TabsBarCell: UICollectionViewCell {
 
         if model.link == nil {
             faviconImage.loadFavicon(forDomain: URL.ddg.host, usingCache: .tabs)
-            label.text = UserText.homeTabTitle
-            label.accessibilityLabel = UserText.openHomeTab
-            removeButton.accessibilityLabel = UserText.closeHomeTab
+            updateEmptyTabLabel(for: model)
+            removeButton.accessibilityLabel = closeButtonAccessibilityLabel(for: model)
         } else if model.isAITab {
             let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
             faviconImage.image = DesignSystemImages.Color.Size24.aiChatGradient
@@ -122,6 +127,23 @@ class TabsBarCell: UICollectionViewCell {
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: model.link?.displayTitle ?? "", atAddress: model.link?.url.host ?? "")
         }
 
+    }
+    
+    private func updateEmptyTabLabel(for tab: Tab) {
+        if isFireModeEnabled {
+            label.text = tab.fireTab ? UserText.fireTabTitle : UserText.newTabTitle
+            label.accessibilityLabel = tab.fireTab ? UserText.openNewFireTab : UserText.openNewTab
+        } else {
+            label.text = UserText.homeTabTitle
+            label.accessibilityLabel = UserText.openHomeTab
+        }
+    }
+
+    private func closeButtonAccessibilityLabel(for tab: Tab) -> String {
+        if isFireModeEnabled {
+            return tab.fireTab ? UserText.closeFireTab : UserText.closeNewTab
+        }
+        return UserText.closeHomeTab
     }
     
 }

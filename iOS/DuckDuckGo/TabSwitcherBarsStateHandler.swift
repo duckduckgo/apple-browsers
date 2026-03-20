@@ -253,14 +253,12 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
             isBottomBarHidden = true
         }
 
-        #if compiler(>=6.2)
         if #available(iOS 26, *) {
             newItems.forEach {
                 $0.sharesBackground = false
                 $0.hidesSharedBackground = true
             }
         }
-        #endif
 
         bottomBarItems = newItems
     }
@@ -274,12 +272,10 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
         let barItem = UIBarButtonItem(customView: button)
-#if compiler(>=6.2)
         if #available(iOS 26.0, *) {
             barItem.sharesBackground = false
             barItem.hidesSharedBackground = true
         }
-#endif
 
         return barItem
     }

@@ -67,6 +67,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var aiChatSettings: AIChatSettingsProvider?
     var keyValueStore: ThrowingKeyValueStoring?
     var daxDialogsManager: DaxDialogsManaging?
+    var fireModeCapability: FireModeCapable?
     private weak var tabsModel: TabsModelManaging?
 
     private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
@@ -77,6 +78,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     
     var tabsCount: Int {
         return tabsModel?.count ?? 0
+    }
+    
+    var hasUnread: Bool {
+        return tabsModel?.hasUnread ?? false
     }
     
     var currentIndex: Int? {
@@ -139,7 +144,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            guard let aiChatSettings, let tabsModel, let historyManager, let fireproofing, let keyValueStore, let daxDialogsManager else {
+            guard let aiChatSettings, let tabsModel, let tabManager, let historyManager, let fireproofing, let keyValueStore, let daxDialogsManager else {
                 assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
                 return
             }
@@ -152,9 +157,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,
-                tabViewModel: tabManager?.viewModelForCurrentTab(),
+                tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 daxDialogsManager: daxDialogsManager,
+                browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
@@ -204,6 +210,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private func reloadData() {
         collectionView.reloadData()
         tabSwitcherButton.tabCount = tabsCount
+        tabSwitcherButton.isFireMode = (tabManager?.currentBrowsingMode ?? .normal) == .fire
+        tabSwitcherButton.hasUnread = hasUnread
     }
 
     func backgroundTabAdded() {
@@ -347,7 +355,8 @@ extension TabsBarViewController: UICollectionViewDataSource {
         }
         let isCurrent = indexPath.row == currentIndex
         let isNextCurrent = indexPath.row + 1 == currentIndex
-        cell.update(model: model, isCurrent: isCurrent, isNextCurrent: isNextCurrent, withTheme: ThemeManager.shared.currentTheme)
+        let isFireModeEnabled = fireModeCapability?.isFireModeEnabled ?? false
+        cell.update(model: model, isCurrent: isCurrent, isNextCurrent: isNextCurrent, isFireModeEnabled: isFireModeEnabled, withTheme: ThemeManager.shared.currentTheme)
         cell.onRemove = { [weak self, weak model] in
             guard let self = self, let model = model,
                 let tabIndex = self.tabsModel?.indexOf(tab: model)
@@ -380,6 +389,7 @@ extension MainViewController: TabsBarDelegate {
             return
         }
 
+        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         dismissOmniBar()
 
         // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.

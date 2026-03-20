@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import Foundation
@@ -63,7 +63,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "13.32.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "13.29.0"),
         .package(path: "../URLPredictor"),
     ],
     targets: [
@@ -95,6 +95,8 @@ let package = Package(
                 "Navigation"
             ],
             resources: [
+                .process("ContentBlocking/UserScripts/contentblockerrules.js"),
+                .process("ContentBlocking/UserScripts/surrogates.js"),
                 .process("SmarterEncryption/Store/HTTPSUpgrade.xcdatamodeld"),
                 .copy("../../PrivacyInfo.xcprivacy")
             ],

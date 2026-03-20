@@ -335,8 +335,8 @@ final class TabViewModel: NSObject {
     }
 
     private func subscribeToWebViewDidFinishNavigation() {
-        // When a web page finishes loading, wait for tracker detection
-        // and additions to `PrivacyDashboardTabExtension.$privacyInfo.$trackerInfo`.
+        // When a web page finishes loading, wait when the `ContentBlockerRulesUserScript` detects trackers
+        // and adds them to `PrivacyDashboardTabExtension.$privacyInfo.$trackerInfo`.
         // Map the `$trackerInfo` into a debounced Publisher and play trackers animations
         // if there were any trackers detected.
         tab.webViewDidFinishNavigationPublisher.map { [weak tab] in

@@ -93,8 +93,7 @@ private struct PickerOption: View {
                 // Equalize title block height between the two options.
                 .frame(minHeight: titleMinHeight, alignment: .top)
 
-                RadioIndicator(isSelected: isSelected, accentColor: accentColor)
-                    .frame(width: PickerMetrics.radioSize, height: PickerMetrics.radioSize)
+                OnboardingRebranding.RadioIndicator(isSelected: isSelected, accentColor: accentColor)
             }
             .frame(maxWidth: .infinity, alignment: .top)
         }
@@ -117,44 +116,10 @@ private struct PickerOption: View {
     }
 }
 
-private struct RadioIndicator: View {
-    let isSelected: Bool
-    let accentColor: Color
-
-    @Environment(\.onboardingTheme) private var onboardingTheme
-
-    var body: some View {
-        if isSelected {
-            ZStack {
-                Circle()
-                    .fill(accentColor)
-                Image(systemName: "checkmark")
-                    .font(onboardingTheme.typography.caption)
-                    .foregroundColor(PickerMetrics.radioCheckmarkColor)
-            }
-        } else {
-            Circle()
-                .fill(onboardingTheme.colorPalette.textPrimary.opacity(PickerMetrics.radioFillOpacity))
-                .overlay(
-                    Circle()
-                        .stroke(
-                            onboardingTheme.colorPalette.textPrimary.opacity(PickerMetrics.radioStrokeOpacity),
-                            lineWidth: PickerMetrics.radioStrokeWidth
-                        )
-                )
-        }
-    }
-}
-
 private enum PickerMetrics {
     static let optionsSpacing: CGFloat = 8
     static let contentSpacing: CGFloat = 8
     static let imageHeight: CGFloat = 72
-    static let radioSize: CGFloat = 24
-    static let radioFillOpacity: Double = 0.06
-    static let radioStrokeOpacity: Double = 0.3
-    static let radioStrokeWidth: CGFloat = 1.5
-    static let radioCheckmarkColor: Color = .white
 }
 
 private struct RebrandedOptionTitleHeightPreferenceKey: PreferenceKey {

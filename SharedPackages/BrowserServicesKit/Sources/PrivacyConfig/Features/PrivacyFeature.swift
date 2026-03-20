@@ -180,6 +180,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Startup Metrics Reporting
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
     case startupMetrics
+
+    case semaphoreAlwaysVisible
+
+    case tabAnimations
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -242,6 +246,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case suppressTrackerAnimationOnColdStart
 
     case customXSafariRedirectHandling
+
+    case crashReportOptInStatusResetting
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -281,6 +287,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
     case onboardingExperiment
+
+    case autofillPasswordsStatusBar
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -388,6 +396,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case sidebarResizable
 
+    case sidebarFloating
+
     /// Enables recent AI chats on the New Tab Page omnibar
     case ntpRecentChats
 
@@ -396,6 +406,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables page context feature on iPad
     case iPadPageContext
+
+    /// Enables voice chat shortcut in the focused address bar
+    case voiceShortcut
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

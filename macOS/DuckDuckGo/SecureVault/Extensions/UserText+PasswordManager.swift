@@ -200,8 +200,8 @@ extension UserText {
     static let deleteAllPasswordsPermissionText = NSLocalizedString("autofill.items.delete-all-passwords-permisson-text", value: "delete all passwords", comment: "Message displayed in system authentication dialog")
 
     // MARK: - Menu Bar Settings
-    static let passwordsMenuBarSection = NotLocalizedString("pm.menu-bar.section", value: "Menu Bar", comment: "Section header for menu bar settings in passwords preferences")
-    static let showPasswordsInMenuBar = NotLocalizedString("pm.menu-bar.show-passwords", value: "Show Passwords in menu bar", comment: "Toggle to show passwords icon in system menu bar")
-    static let hidePasswordsFromMenuBar = NotLocalizedString("pm.menu-bar.hide", value: "Don't Show in Menu Bar", comment: "Context menu option to hide passwords icon from system menu bar")
+    static let passwordsMenuBarSection = NSLocalizedString("pm.menu-bar.section", value: "Menu Bar", comment: "Section header for menu bar settings in passwords preferences")
+    static let showPasswordsInMenuBar = NSLocalizedString("pm.menu-bar.show-passwords", value: "Show passwords in menu bar", comment: "Toggle to show passwords icon in system menu bar")
+    static let hidePasswordsFromMenuBar = NSLocalizedString("pm.menu-bar.hide", value: "Don't Show in Menu Bar", comment: "Context menu option to hide passwords icon from system menu bar")
 
 }

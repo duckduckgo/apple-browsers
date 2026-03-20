@@ -355,10 +355,13 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213617478454569?focus=true
     case simplifiedSyncSetupExperiment
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
+    case duckAIVoiceShortcut
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
-    public var defaultValue: Bool {
+    public var defaultValue: FeatureFlagDefaultValue {
         switch self {
         case .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
@@ -385,9 +388,11 @@ extension FeatureFlag: FeatureFlagDescribing {
              .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
              .syncAutoRestore:
-            true
+            .enabled
+        case .crashReportOptInStatusResetting:
+            .internalOnly
         default:
-            false
+            .disabled
         }
     }
 
@@ -499,7 +504,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fireMode,
              .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
-             .simplifiedSyncSetupExperiment:
+             .simplifiedSyncSetupExperiment,
+             .duckAIVoiceShortcut:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -610,7 +616,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dbpClickActionDelayReductionOptimization:
             return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
         case .crashReportOptInStatusResetting:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .maliciousSiteProtection:
@@ -764,6 +770,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customXSafariRedirectHandling))
         case .simplifiedSyncSetupExperiment:
             return .remoteReleasable(.subfeature(SyncSubfeature.simplifiedSyncSetupExperiment))
+        case .duckAIVoiceShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.voiceShortcut))
         }
     }
 }

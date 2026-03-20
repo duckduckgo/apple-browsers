@@ -337,8 +337,9 @@ final class StatisticsLoader {
     }
 
     private func fireDockPixel() {
-        DispatchQueue.global().asyncAfter(deadline: .now() + Double.random(in: 0.5...5)) {
-            if DockCustomizer().isAddedToDock {
+        let delay = Double.random(in: 0.5...5)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            if Application.appDelegate.dockCustomization.isAddedToDock {
                 PixelKit.fire(GeneralPixel.serpAddedToDock,
                               includeAppVersionParameter: false)
             }

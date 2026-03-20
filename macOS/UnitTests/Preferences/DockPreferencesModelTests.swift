@@ -35,6 +35,7 @@ final class DockPreferencesModelTests: XCTestCase {
         try super.setUpWithError()
         mockFeatureFlagger = MockFeatureFlagger()
         mockDockCustomizer = MockDockCustomization()
+        mockDockCustomizer.supportsAddingToDock = true
         windowControllersManager = WindowControllersManagerMock()
         mockPixelFiring = PixelKitMock()
     }
@@ -49,33 +50,22 @@ final class DockPreferencesModelTests: XCTestCase {
 
     // MARK: - canAddToDock
 
-    func testWhenDockCustomizerIsProvidedAndSupportsAddToDockIsTrueThenCanAddToDockIsTrue() {
+    func testWhenSupportsAddingToDockIsTrueThenCanAddToDockIsTrue() {
+        mockDockCustomizer.supportsAddingToDock = true
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         XCTAssertTrue(model.canAddToDock)
     }
 
-    func testWhenDockCustomizerIsProvidedAndSupportsAddToDockIsFalseThenCanAddToDockIsFalse() {
+    func testWhenSupportsAddingToDockIsFalseThenCanAddToDockIsFalse() {
+        mockDockCustomizer.supportsAddingToDock = false
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: false,
-            windowControllersManager: windowControllersManager,
-            pixelFiring: nil
-        )
-        XCTAssertFalse(model.canAddToDock)
-    }
-
-    func testWhenDockCustomizerIsNilThenCanAddToDockIsFalse() {
-        let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
-            dockCustomizer: nil,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
@@ -89,7 +79,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
@@ -101,7 +90,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
@@ -115,7 +103,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
@@ -127,7 +114,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
@@ -138,7 +124,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
@@ -153,7 +138,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
@@ -166,7 +150,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
@@ -175,15 +158,16 @@ final class DockPreferencesModelTests: XCTestCase {
         XCTAssertTrue(model.isAddedToDock)
     }
 
-    func testWhenDockCustomizerIsNilThenAddToDockDoesNothing() {
+    func testWhenSupportsAddingToDockIsFalseThenAddToDockDoesNothing() {
+        mockDockCustomizer.supportsAddingToDock = false
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
-            dockCustomizer: nil,
-            supportsAddToDock: true,
+            dockCustomizer: mockDockCustomizer,
             windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         model.addToDock(from: .defaultBrowser)
+        XCTAssertFalse(mockDockCustomizer.addToDockCalled)
         XCTAssertFalse(model.isAddedToDock)
     }
 
@@ -198,7 +182,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: mockPixelFiring
         )
@@ -215,7 +198,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            supportsAddToDock: true,
             windowControllersManager: windowControllersManager,
             pixelFiring: mockPixelFiring
         )
@@ -225,10 +207,10 @@ final class DockPreferencesModelTests: XCTestCase {
 
     func testWhenLearnMoreClickedThenExpectedPixelIsFired() {
         mockPixelFiring.expectedFireCalls = [ExpectedFireCall(pixel: GeneralPixel.settingsAddToDockLearnMoreClicked, frequency: .dailyAndCount)]
+        mockDockCustomizer.supportsAddingToDock = false
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
-            dockCustomizer: nil,
-            supportsAddToDock: true,
+            dockCustomizer: mockDockCustomizer,
             windowControllersManager: windowControllersManager,
             pixelFiring: mockPixelFiring
         )
@@ -240,6 +222,7 @@ final class DockPreferencesModelTests: XCTestCase {
 // MARK: - MockDockCustomization
 
 private final class MockDockCustomization: DockCustomization {
+    var supportsAddingToDock: Bool = true
     var isAddedToDock: Bool = false
     var addToDockCalled: Bool = false
 
@@ -248,6 +231,7 @@ private final class MockDockCustomization: DockCustomization {
 
     @discardableResult
     func addToDock() -> Bool {
+        guard supportsAddingToDock else { return false }
         addToDockCalled = true
         return true
     }

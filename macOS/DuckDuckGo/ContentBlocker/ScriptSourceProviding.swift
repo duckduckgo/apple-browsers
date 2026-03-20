@@ -260,7 +260,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
-            dockCustomization: DockCustomizer(),
+            dockCustomization: Application.appDelegate.dockCustomization,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,

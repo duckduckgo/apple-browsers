@@ -177,7 +177,7 @@ final class MainMenu: NSMenu {
 
     private let featureFlagger: FeatureFlagger
     private let isLazyMenuRebuild: Bool
-    private let dockCustomizer: DockCustomization?
+    private let dockCustomizer: DockCustomization
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let internalUserDecider: InternalUserDecider
@@ -200,7 +200,7 @@ final class MainMenu: NSMenu {
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
-         dockCustomizer: DockCustomization? = nil,
+         dockCustomizer: DockCustomization,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
@@ -559,7 +559,7 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
-        addToDockMenuItem.isHidden = dockCustomizer?.isAddedToDock ?? true // always hidden in sandboxed build
+        addToDockMenuItem.isHidden = !dockCustomizer.supportsAddingToDock || dockCustomizer.isAddedToDock
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.

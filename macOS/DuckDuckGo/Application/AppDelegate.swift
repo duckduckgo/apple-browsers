@@ -204,7 +204,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
         syncService: syncService,
         pinningManager: pinningManager,
-        promoService: promoService
+        promoService: promoService,
+        dockCustomization: dockCustomization
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -382,8 +383,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController?
-    let dockStateChecker: DockStateChecking
-    var dockCustomization: DockCustomization?
+    let dockCustomization: DockCustomization
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
     static var firstLaunchDate: Date
@@ -418,7 +418,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    init(dockCustomization: DockCustomization?, dockStateChecker: DockStateChecking) {
+    init(dockCustomization: DockCustomization) {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -426,7 +426,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
-        self.dockStateChecker = dockStateChecker
         self.dockCustomization = dockCustomization
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
@@ -843,7 +842,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dockPreferences = DockPreferencesModel(
             featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
-            supportsAddToDock: !buildType.isAppStoreBuild,
             windowControllersManager: windowControllersManager,
             pixelFiring: PixelKit.shared
         )
@@ -955,7 +953,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 keyValueStore: keyValueStore,
                                                                                 notificationPresenter: notificationPresenter,
                                                                                 uiHosting: { windowControllersManager.activeViewController },
-                                                                                isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted })
+                                                                                isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
+                                                                                dockCustomization: dockCustomization)
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -1456,7 +1455,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily, doNotEnforcePrefix: true)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily, doNotEnforcePrefix: true)
-        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockStateChecker.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
+        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
     }
 
     private func fireDailyFireWindowConfigurationPixels() {

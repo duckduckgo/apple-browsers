@@ -118,8 +118,11 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: nil,
-                                                  supportsAddToDock: false,
+                                                  dockCustomizer: {
+                                                      let mock = DockCustomizerMock()
+                                                      mock.supportsAddingToDock = false
+                                                      return mock
+                                                  }(),
                                                   windowControllersManager: windowControllersManager,
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
@@ -152,8 +155,11 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: nil,
-                                                  supportsAddToDock: false,
+                                                  dockCustomizer: {
+                                                      let mock = DockCustomizerMock()
+                                                      mock.supportsAddingToDock = false
+                                                      return mock
+                                                  }(),
                                                   windowControllersManager: windowControllersManager,
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
@@ -196,8 +202,11 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: nil,
-                                                  supportsAddToDock: false,
+                                                  dockCustomizer: {
+                                                      let mock = DockCustomizerMock()
+                                                      mock.supportsAddingToDock = false
+                                                      return mock
+                                                  }(),
                                                   windowControllersManager: windowControllersManager,
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),

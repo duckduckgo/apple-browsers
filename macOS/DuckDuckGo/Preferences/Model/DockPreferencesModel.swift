@@ -22,12 +22,14 @@ import PrivacyConfig
 
 final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     private let featureFlagger: FeatureFlagger
-    private let dockCustomizer: DockCustomization?
+    private let dockCustomizer: DockCustomization
     private let pixelFiring: PixelFiring?
     let windowControllersManager: WindowControllersManagerProtocol
 
-    /// Whether the current build can add the app to the dock.
-    let canAddToDock: Bool
+    /// Whether the current build can add the app to the dock (programmatically).
+    var canAddToDock: Bool {
+        dockCustomizer.supportsAddingToDock
+    }
 
     /// Whether instructions can be shown for how to add the app to the dock manually.
     var canShowDockInstructions: Bool {
@@ -39,23 +41,21 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     @Published private var isBeingAddedToDock = false
 
     var isAddedToDock: Bool {
-        isBeingAddedToDock || dockCustomizer?.isAddedToDock == true
+        isBeingAddedToDock || dockCustomizer.isAddedToDock
     }
 
     init(featureFlagger: FeatureFlagger,
-         dockCustomizer: DockCustomization?,
-         supportsAddToDock: Bool,
+         dockCustomizer: DockCustomization,
          windowControllersManager: WindowControllersManagerProtocol,
          pixelFiring: PixelFiring?) {
         self.featureFlagger = featureFlagger
         self.dockCustomizer = dockCustomizer
-        self.canAddToDock = dockCustomizer != nil && supportsAddToDock
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
     }
 
     func addToDock(from preferences: PreferencePaneIdentifier) {
-        guard let dockCustomizer else { return }
+        guard dockCustomizer.supportsAddingToDock else { return }
         switch preferences {
         case .defaultBrowser:
             pixelFiring?.fire(GeneralPixel.userAddedToDockFromDefaultBrowserSection,

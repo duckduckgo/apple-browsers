@@ -82,7 +82,6 @@ final class BrowserTabViewController: NSViewController {
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager
     private let bookmarkDragDropManager: BookmarkDragDropManager
-    private let dockCustomizer = DockCustomizer()
     private let onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
 
     private let onboardingDialogFactory: ContextualDaxDialogsFactory

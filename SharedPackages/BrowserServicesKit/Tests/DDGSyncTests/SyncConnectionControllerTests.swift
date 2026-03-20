@@ -49,6 +49,7 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     var didFinishTransmittingRecoveryKeyCalled = { }
     var didReceiveRecoveryKeyCalled = { }
     var didRecognizeScannedCodeCalled = { }
+    var willPerformServerSyncOperationCalled = { }
     var didCreateSyncAccountCalled = { }
     var didCompleteAccountConnectionValue: Bool?
     var didCompleteLoginDevices: [RegisteredDevice]?
@@ -76,6 +77,7 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
 
     func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
         willPerformServerSyncOperationCallCount += 1
+        willPerformServerSyncOperationCalled()
         return shouldContinueServerSyncOperation
     }
 
@@ -284,15 +286,14 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.account = mockAccountManager
 
         delegate.shouldContinueServerSyncOperation = false
-        let didReceiveRecoveryKey = expectation(description: "Delegate notified recovery key received")
-        delegate.didReceiveRecoveryKeyCalled = {
-            didReceiveRecoveryKey.fulfill()
+        let willPerformServerOperation = expectation(description: "Delegate asked whether server operation should continue")
+        delegate.willPerformServerSyncOperationCalled = {
+            willPerformServerOperation.fulfill()
         }
 
         _ = try await controller.startConnectMode()
 
-        await fulfillment(of: [didReceiveRecoveryKey], timeout: 5)
-        await Task.yield()
+        await fulfillment(of: [willPerformServerOperation], timeout: 5)
 
         XCTAssertEqual(delegate.willPerformServerSyncOperationCallCount, 1)
         XCTAssertFalse(mockAccountManager.loginCalled)

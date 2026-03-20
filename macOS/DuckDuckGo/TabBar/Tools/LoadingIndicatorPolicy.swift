@@ -31,7 +31,7 @@ struct DefaultLoadingIndicatorPolicy: LoadingIndicatorPolicy {
             return false
         }
 
-        return !url.isDuckDuckGoSearch && !url.isDuckPlayer && url.navigationalScheme?.isHypertextScheme == true
+        return url.navigationalScheme?.isHypertextScheme == true
     }
 
     func shouldCrossfadeFavicon(newFavicon: NSImage?, oldFavicon: NSImage?, displaysPlaceholder: Bool) -> Bool {

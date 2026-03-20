@@ -1,7 +1,6 @@
 {
   "images" : [
     {
-      "filename" : "contextual-bg-try-search-tall-light.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -16,7 +15,6 @@
       "scale" : "1x"
     },
     {
-      "filename" : "contextual-bg-try-search-tall-light@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
@@ -31,7 +29,6 @@
       "scale" : "2x"
     },
     {
-      "filename" : "contextual-bg-try-search-tall-light@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     },

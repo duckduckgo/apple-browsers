@@ -358,6 +358,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
+  
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
+    case duckAIVoiceShortcut
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -506,7 +509,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
              .simplifiedSyncSetupExperiment,
-             .aiChatOmnibarDefaultPosition:
+             .aiChatOmnibarDefaultPosition,
+             .duckAIVoiceShortcut:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -773,6 +777,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.simplifiedSyncSetupExperiment))
         case .aiChatOmnibarDefaultPosition:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarDefaultPosition))
+        case .duckAIVoiceShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.voiceShortcut))
         }
     }
 }

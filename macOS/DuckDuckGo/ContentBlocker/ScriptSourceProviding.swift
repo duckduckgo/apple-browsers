@@ -42,7 +42,6 @@ protocol ScriptSourceProviding {
     var sessionKey: String? { get }
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
-    var newTabPageActionsManager: NewTabPageActionsManager? { get }
     var historyViewActionsManager: HistoryViewActionsManager? { get }
     var windowControllersManager: WindowControllersManagerProtocol { get }
     var currentCohorts: [ContentScopeExperimentData]? { get }
@@ -81,7 +80,6 @@ protocol ScriptSourceProviding {
         fireproofDomains: Application.appDelegate.fireproofDomains,
         fireCoordinator: Application.appDelegate.fireCoordinator,
         autoconsentManagement: Application.appDelegate.autoconsentManagement,
-        newTabPageActionsManager: nil,
         syncServiceProvider: { [weak appDelegate = Application.appDelegate] in
             return appDelegate?.syncService
         },
@@ -94,7 +92,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var contentBlockerRulesConfig: ContentBlockerUserScriptConfig?
     private(set) var surrogatesConfig: SurrogatesUserScriptConfig?
     private(set) var onboardingActionsManager: OnboardingActionsManaging?
-    private(set) var newTabPageActionsManager: NewTabPageActionsManager?
     private(set) var historyViewActionsManager: HistoryViewActionsManager?
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
@@ -119,8 +116,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let syncServiceProvider: () -> DDGSyncing?
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
+    let appearancePreferences: AppearancePreferences
 
-    @MainActor
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
@@ -142,7 +139,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
-         newTabPageActionsManager: NewTabPageActionsManager?,
          syncServiceProvider: @escaping () -> DDGSyncing?,
          syncErrorHandler: SyncErrorHandling,
          webExtensionAvailability: WebExtensionAvailabilityProviding?
@@ -166,8 +162,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
         self.webExtensionAvailability = webExtensionAvailability
+        self.appearancePreferences = appearancePreferences
 
-        self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
         self.sessionKey = generateSessionKey()
@@ -191,8 +187,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     }
 
     public func buildAutofillSource() -> AutofillUserScriptSourceProvider {
-        let privacyConfig = self.privacyConfigurationManager.privacyConfig
-        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
+        let privacyConfig = privacyConfigurationManager.privacyConfig
+        let themeVariant = appearancePreferences.themeName.rawValue
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                              properties: ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
@@ -261,7 +257,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         }
     }
 
-    @MainActor
     private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,

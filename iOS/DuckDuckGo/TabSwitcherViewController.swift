@@ -112,7 +112,7 @@ class TabSwitcherViewController: UIViewController {
     var isProcessingUpdates = false
     private var canUpdateCollection = true
 
-    let favicons: Favicons
+    let favicons: FaviconManaging
 
     var tabsStyle: TabsStyle = .list
     var interfaceMode: InterfaceMode = .regularSize
@@ -169,7 +169,7 @@ class TabSwitcherViewController: UIViewController {
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
                    featureFlagger: FeatureFlagger,
-                   favicons: Favicons = Favicons.shared,
+                   favicons: FaviconManaging,
                    tabManager: TabManager,
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
@@ -949,11 +949,9 @@ extension TabSwitcherViewController {
         refreshDisplayModeButton()
         
         titleBarView.tintColor = theme.barTintColor
-        #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
             titleBarView.backItem?.rightBarButtonItem?.hidesSharedBackground = true
         }
-        #endif
 
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)

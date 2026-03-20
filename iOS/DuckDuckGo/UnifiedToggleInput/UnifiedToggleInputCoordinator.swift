@@ -81,6 +81,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     let didSubmitPrompt = PassthroughSubject<String, Never>()
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
+    let didPressCustomizeResponsesButton = PassthroughSubject<Void, Never>()
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
@@ -208,6 +209,8 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController.delegate = self
         subscribeToGeneratingState()
         subscribeToStopGeneratingTap()
+        subscribeToCustomizeResponsesTap()
+        viewController.isCustomizeResponsesButtonHidden = true
 
         if let cachedLabel = preferences.selectedModelShortName {
             viewController.modelName = cachedLabel
@@ -263,6 +266,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
+        viewController.isCustomizeResponsesButtonHidden = false
         intentSubject.send(.showCollapsed)
     }
 
@@ -274,6 +278,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let renderState = computeRenderState()
 
         viewController.apply(renderState.viewConfig, animated: false)
+        viewController.isCustomizeResponsesButtonHidden = false
         fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {
@@ -304,6 +309,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
+        viewController.isCustomizeResponsesButtonHidden = true
         contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         intentSubject.send(.hide)
     }
@@ -321,6 +327,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
+        viewController.isCustomizeResponsesButtonHidden = true
         fetchModels()
 
         if let text = prefilledText, !text.isEmpty {
@@ -758,6 +765,16 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController.handler.stopGeneratingButtonTappedPublisher
             .sink { [weak self] in
                 self?.didPressStopGeneratingButton.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToCustomizeResponsesTap() {
+        viewController.handler.customizeResponsesButtonTappedPublisher
+            .sink { [weak self] in
+                guard let self else { return }
+                self.didPressCustomizeResponsesButton.send()
+                self.showCollapsed()
             }
             .store(in: &cancellables)
     }

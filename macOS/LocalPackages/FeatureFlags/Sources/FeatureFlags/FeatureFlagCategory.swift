@@ -98,8 +98,7 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .webNotifications
         case .webExtensions,
                 .forceDarkModeOnWebsites,
-                .embeddedExtension,
-                .embeddedRollout:
+                .embeddedExtension:
             return .webExtensions
         default:
             return .other

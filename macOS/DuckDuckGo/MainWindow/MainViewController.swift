@@ -377,7 +377,6 @@ final class MainViewController: NSViewController {
 
     override func viewDidAppear() {
         startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
-        initPreloader()
 
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
@@ -693,19 +692,6 @@ final class MainViewController: NSViewController {
         mainView.updateTrackingAreas()
 
         updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
-    }
-
-    private func initPreloader() {
-        guard tabCollectionViewModel.newTabPageTabPreloader == nil else {
-            return
-        }
-
-        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            let preloader = NewTabPageTabPreloader(viewSizeProvider: { [weak self] in
-                self?.browserTabViewController.view.bounds.size
-            })
-            tabCollectionViewModel.newTabPageTabPreloader = preloader
-        }
     }
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {

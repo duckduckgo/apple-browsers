@@ -1029,7 +1029,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore)
-        autoconsentEventCoordinator = Self.makeAutoconsentEventCoordinator(
+        autoconsentEventCoordinator = AutoconsentEventCoordinator(
             autoconsentStats: autoconsentStats,
             historyCoordinating: historyCoordinator,
             webExtensionAvailability: webExtensionAvailability
@@ -2140,61 +2140,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 
 }
 
-extension AppDelegate: UserScriptDependenciesProviding {
-    @MainActor
-    func makeNewTabPageActionsManager() -> NewTabPageActionsManager? {
-        guard let contentBlocking = privacyFeatures.contentBlocking as? AppContentBlocking else {
-            return nil
-        }
-
-        return NewTabPageActionsManager(
-            appearancePreferences: appearancePreferences,
-            visualizeFireAnimationDecider: visualizeFireSettingsDecider,
-            customizationModel: newTabPageCustomizationModel,
-            bookmarkManager: bookmarkManager,
-            faviconManager: faviconManager,
-            duckPlayerHistoryEntryTitleProvider: duckPlayer,
-            contentBlocking: contentBlocking,
-            trackerDataManager: contentBlocking.trackerDataManager,
-            activeRemoteMessageModel: activeRemoteMessageModel,
-            historyCoordinator: historyCoordinator,
-            fireproofDomains: fireproofDomains,
-            privacyStats: privacyStats,
-            autoconsentStats: autoconsentStats,
-            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
-            tld: tld,
-            fire: { @MainActor in self.fireCoordinator.fireViewModel.fire },
-            keyValueStore: keyValueStore,
-            featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager,
-            tabsPreferences: tabsPreferences,
-            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
-            protectionsReportModel: newTabPageProtectionsReportModel,
-            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
-            nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
-            subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
-            duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
-            syncService: syncService,
-            pinningManager: pinningManager,
-            promoService: promoService
-        )
-    }
-
-    private static func makeAutoconsentEventCoordinator(
-        autoconsentStats: AutoconsentStatsCollecting,
-        historyCoordinating: HistoryCoordinating,
-        webExtensionAvailability: WebExtensionAvailabilityProviding
-    ) -> AutoconsentEventCoordinator {
-        return AutoconsentEventCoordinator(
-            autoconsentStats: autoconsentStats,
-            historyCoordinating: historyCoordinating,
-            webExtensionAvailability: webExtensionAvailability
-        )
-    }
-}
+extension AppDelegate: UserScriptDependenciesProviding {}
 
 private extension FeatureFlagLocalOverrides {
 

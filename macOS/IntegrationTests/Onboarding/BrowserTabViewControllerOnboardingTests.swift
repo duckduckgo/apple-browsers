@@ -153,8 +153,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         autoreleasepool {
             featureFlagger = MockFeatureFlagger()
             featureFlagger.featuresStub = [
-                FeatureFlag.contextualOnboarding.rawValue: true,
-                FeatureFlag.newTabPagePerTab.rawValue: true
+                FeatureFlag.contextualOnboarding.rawValue: true
             ]
             pixelReporter = CapturingOnboardingPixelReporter()
             dialogProvider = MockDialogsProvider()
@@ -224,7 +223,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.featuresStub = [FeatureFlag.newTabPagePerTab.rawValue: true]
+        featureFlagger.featuresStub = [:]
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 

@@ -419,9 +419,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
     /// Global switch to disable New Tab Page search box
     case omnibar
 
-    /// Global switch to control shared or independent New Tab Page
-    case newTabPagePerTab
-
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
 

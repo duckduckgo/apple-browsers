@@ -33,9 +33,6 @@ extension ContentBlockerRulesIdentifier.Difference {
 }
 
 protocol UserScriptDependenciesProviding: AnyObject {
-    @MainActor
-    func makeNewTabPageActionsManager() -> NewTabPageActionsManager?
-
     var syncService: DDGSyncing? { get }
 }
 
@@ -76,9 +73,6 @@ final class UserContentUpdating {
     /// is `true` we ensure that `ScriptSourceProvider` is initialized with a correct
     /// value of `newTabPageActionsManager`.
     @Published private var isDependenciesProviderInitialized: Bool = false
-
-    @MainActor
-    private lazy var newTabPageActionsManager: NewTabPageActionsManager? = userScriptDependenciesProvider?.makeNewTabPageActionsManager()
 
     @MainActor
     private lazy var syncServiceProvider: () -> DDGSyncing? = { [weak userScriptDependenciesProvider] in
@@ -150,7 +144,6 @@ final class UserContentUpdating {
                                                       fireproofDomains: fireproofDomains,
                                                       fireCoordinator: fireCoordinator,
                                                       autoconsentManagement: autoconsentManagement,
-                                                      newTabPageActionsManager: self?.newTabPageActionsManager,
                                                       syncServiceProvider: self?.syncServiceProvider ?? { nil },
                                                       syncErrorHandler: syncErrorHandler,
                                                       webExtensionAvailability: webExtensionAvailability)

@@ -116,6 +116,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let syncServiceProvider: () -> DDGSyncing?
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
+    let appearancePreferences: AppearancePreferences
 
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -161,6 +162,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
         self.webExtensionAvailability = webExtensionAvailability
+        self.appearancePreferences = appearancePreferences
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
@@ -185,8 +187,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     }
 
     public func buildAutofillSource() -> AutofillUserScriptSourceProvider {
-        let privacyConfig = self.privacyConfigurationManager.privacyConfig
-        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
+        let privacyConfig = privacyConfigurationManager.privacyConfig
+        let themeVariant = appearancePreferences.themeName.rawValue
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                              properties: ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,

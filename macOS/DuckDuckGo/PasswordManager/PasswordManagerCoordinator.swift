@@ -72,7 +72,10 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
     let bitwardenManagement: BWManagement?
 
     var isEnabled: Bool {
-        return bitwardenManagement?.status != .disabled
+        guard let bitwardenManagement else {
+            return false
+        }
+        return bitwardenManagement.status != .disabled
     }
 
     var name: String {

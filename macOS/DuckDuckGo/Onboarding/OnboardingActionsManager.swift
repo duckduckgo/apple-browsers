@@ -108,7 +108,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         let order = "v3"
         let platform = OnboardingPlatform(name: "macos")
         if applicationBuildType.isAppStoreBuild {
-            systemSettings = SystemSettings(rows: ["import"])
+            let rows = [
+                featureFlagger.isFeatureOn(.addToDockAppStore) ? "dock-instructions" : nil,
+                "import",
+            ].compactMap { $0 }
+            systemSettings = SystemSettings(rows: rows)
         } else {
             systemSettings = SystemSettings(rows: ["dock", "import"])
         }

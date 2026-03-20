@@ -231,6 +231,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.handler.setContextualModePixelHandler(pixelHandler)
     }
 
+    func setFireModeProvider(_ provider: (() -> Bool)?) {
+        handler.isFireModeProvider = provider
+    }
+
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {

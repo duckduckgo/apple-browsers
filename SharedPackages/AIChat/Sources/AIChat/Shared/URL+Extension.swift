@@ -30,6 +30,9 @@ extension URL {
         static let revokeAccessPath = "/revoke-duckai-access"
     }
 
+    static var duckDuckGoHost: String { DuckDuckGo.host }
+    static var duckAIHost: String { DuckDuckGo.aiHost }
+
     /**
      Returns a new URL with the given query item added or replaced.  If the query item's value
      is nil or empty after trimming whitespace, the original URL is returned.
@@ -129,5 +132,12 @@ extension URL {
         }
 
         return bangValues.contains { value.hasPrefix($0) }
+    }
+}
+
+extension String {
+    /// Returns `true` if the string matches a Duck AI host (`duck.ai` or `duckduckgo.com` and its subdomains).
+    public var isDuckAIHost: Bool {
+        self == URL.duckAIHost || self == URL.duckDuckGoHost || hasSuffix(".\(URL.duckDuckGoHost)")
     }
 }

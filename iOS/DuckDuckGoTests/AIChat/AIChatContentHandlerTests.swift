@@ -590,6 +590,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 // swiftlint:disable inclusive_language
 final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     var displayMode: AIChatDisplayMode?
+    var isFireModeProvider: (() -> Bool)?
 
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {}
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {}

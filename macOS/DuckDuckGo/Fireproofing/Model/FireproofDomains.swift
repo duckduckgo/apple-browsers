@@ -154,8 +154,8 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
               let url = URL(trimmedAddressBarString: trimmed),
-              url.navigationalScheme?.isHypertextScheme == true,
-              let eTLDPlus1Domain = tld.eTLDplus1(url.host) else { return nil }
+              url.navigationalScheme?.isHypertextScheme == true else { return nil }
+        let eTLDPlus1Domain = tld.eTLDplus1(url.host) ?? url.host
         return eTLDPlus1Domain
     }
 
@@ -190,10 +190,7 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
 
     func isFireproof(cookieDomain: String) -> Bool {
         let domainWithoutDotPrefix = cookieDomain.dropping(prefix: ".")
-        guard let eTLDPlus1Domain = tld.eTLDplus1(domainWithoutDotPrefix) else {
-            // eTLD+1 domain not available, domain is probably invalid
-            return false
-        }
+        let eTLDPlus1Domain = tld.eTLDplus1(domainWithoutDotPrefix) ?? domainWithoutDotPrefix
 
         return container.contains(domain: eTLDPlus1Domain)
     }

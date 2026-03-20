@@ -179,7 +179,7 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
         XCTAssertTrue(actions.contains(title: UserText.tabSwitcherCloseOtherTabs(withCount: 2)))
     }
 
-    func testLongPressMenu_homePageTab_hidesShareBookmarkAndSelect() {
+    func testLongPressMenu_homePageTab_hidesShareAndBookmarkButShowsSelect() {
         let state = TabSwitcherLongPressMenuState(
             pressedCount: 1, totalCount: 3,
             pressedContainsWebPages: false, isEditing: false, title: ""
@@ -189,7 +189,8 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
 
         XCTAssertFalse(actions.contains(title: UserText.shareLinks(withCount: 1)))
         XCTAssertFalse(actions.contains(title: UserText.bookmarkSelectedTabs(withCount: 1)))
-        XCTAssertFalse(actions.contains(title: UserText.tabSwitcherSelectTabs(withCount: 1)))
+        // Select is available for home page tabs too — long-press is valid to enter selection mode
+        XCTAssertTrue(actions.contains(title: UserText.tabSwitcherSelectTabs(withCount: 1)))
         XCTAssertTrue(actions.contains(title: UserText.closeTabs(withCount: 1)))
     }
 
@@ -460,14 +461,15 @@ class TabSwitcherLongPressMenuStateTests: XCTestCase {
 
     // MARK: canSelect
 
-    func testWhenNotEditingAndSingleWebPageTabThenCanSelect() {
-        let state = makeState(pressedCount: 1, pressedContainsWebPages: true, isEditing: false)
+    func testWhenNotEditingAndSingleTabThenCanSelect() {
+        let state = makeState(pressedCount: 1, isEditing: false)
         XCTAssertTrue(state.canSelect)
     }
 
-    func testWhenNotEditingAndSingleHomePageTabThenCannotSelect() {
+    func testWhenNotEditingAndSingleHomePageTabThenCanSelect() {
+        // Home page tabs can also enter selection mode via long-press
         let state = makeState(pressedCount: 1, pressedContainsWebPages: false, isEditing: false)
-        XCTAssertFalse(state.canSelect)
+        XCTAssertTrue(state.canSelect)
     }
 
     func testWhenEditingThenCannotSelect() {

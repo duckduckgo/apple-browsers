@@ -52,11 +52,13 @@ struct TabSwitcherLongPressMenuState {
 
     var canShare: Bool { pressedContainsWebPages }
     var canAddBookmarks: Bool { pressedContainsWebPages }
-    // Show "Select" only for a single web-page tab when not already in selection mode.
+    // Show "Select" for any single tab when not already in selection mode.
+    // The "not if it's the home page in selection mode" comment in the original code referred
+    // to hiding the option when isEditing is already true — covered by !isEditing.
     // See: https://app.asana.com/0/1209499866654340/1209424833903137
     // See: https://app.asana.com/0/1209499866654340/1209424833902043
     // See: https://app.asana.com/0/1209499866654340/1209503836757555
-    var canSelect: Bool { !isEditing && pressedCount == 1 && pressedContainsWebPages }
+    var canSelect: Bool { !isEditing && pressedCount == 1 }
     var canCloseOthers: Bool { pressedCount < totalCount }
 }
 

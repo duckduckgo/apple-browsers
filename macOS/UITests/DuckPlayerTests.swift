@@ -277,10 +277,12 @@ class DuckPlayerTests: UITestCase {
 
         // Wait for the Duck Player overlay to appear and click "Watch in Duck Player"
         let watchInDuckPlayerLink = app.links.containing(.staticText, identifier: Self.watchOnDuckPlayerLink).firstMatch
-        XCTAssertTrue(
-            watchInDuckPlayerLink.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Duck Player overlay did not appear"
-        )
+
+        guard watchInDuckPlayerLink.waitForExistence(timeout: UITests.Timeouts.elementExistence) else {
+            XCTAssertTrue(app.staticTexts["Sign in to confirm you’re not a bot"].exists,
+                          "If Duck Player overlay did not appear – YouTube bot confirmation should be visible")
+            throw XCTSkip("Duck Player overlay did not appear")
+        }
         watchInDuckPlayerLink.click()
 
         sleep(2)

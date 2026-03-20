@@ -370,38 +370,73 @@ class PrivacyDashboardUITests: UITestCase {
         // Click "Start the test" button
         let startTestButton = webView.buttons.containing(\.title, containing: "Start the test").firstMatch
         XCTAssertTrue(startTestButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Start the test button should be available")
-        startTestButton.click()
-
-        // Wait for "Download the results" button to become enabled
         let downloadResultsButton = webView.buttons.containing(\.title, containing: "Download the results").firstMatch
-        XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.elementExistence), "Download the results button should become available after test completion")
 
-        // Check for existing files before downloading
-        let existingFiles = getExistingRequestBlockingFiles()
+        func runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: String) throws -> RequestBlockingResults {
+            startTestButton.click()
+            XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Download the results button should become available after test completion")
 
-        // Click download button
-        downloadResultsButton.click()
+            let existingFiles = getExistingRequestBlockingFiles()
+            downloadResultsButton.click()
 
-        // Wait for new file to appear
-        guard let filePath = waitForNewRequestBlockingFile(excluding: existingFiles) else {
-            XCTFail("Downloaded request-blocking-results.json file not found in Downloads directory")
-            return
+            guard let filePath = waitForNewRequestBlockingFile(excluding: existingFiles) else {
+                XCTFail(fileNotFoundMessage)
+                throw XCTSkip("request blocking results file not found")
+            }
+            trackForCleanup(filePath)
+
+            Logger.log("Reading file at \(filePath)")
+            let jsonData = try readFileViaLocalServer(filePath: filePath)
+            Logger.log("Result: \(String(data: jsonData, encoding: .utf8) ?? "Data of \(jsonData.count)")")
+            return try JSONDecoder().decode(RequestBlockingResults.self, from: jsonData)
         }
-        trackForCleanup(filePath)
 
-        // Parse and validate the JSON file via local server
-        Logger.log("Reading file at \(filePath)")
-        let jsonData = try readFileViaLocalServer(filePath: filePath)
-        Logger.log("Result: \(String(data: jsonData, encoding: .utf8) ?? "Data of \(jsonData.count)")")
-        let results = try JSONDecoder().decode(RequestBlockingResults.self, from: jsonData)
+        func loadedTrackers(from results: RequestBlockingResults) -> [RequestResult] {
+            results.results.filter { $0.status == "loaded" }
+        }
 
-        // Validate that no trackers are "loaded" (they should be blocked)
-        let loadedTrackers = results.results.filter { $0.status == "loaded" }
-        XCTAssertTrue(loadedTrackers.isEmpty, "No trackers should be loaded - found loaded trackers: \(loadedTrackers.map { $0.id })")
+        func getBlockedTrackers(from results: RequestBlockingResults) -> [RequestResult] {
+            results.results.filter { $0.status == "failed" || $0.status == "not loaded" }
+        }
 
-        // Verify we have some blocked/failed requests
-        let blockedTrackers = results.results.filter { $0.status == "failed" || $0.status == "not loaded" }
-        XCTAssertFalse(blockedTrackers.isEmpty, "Should have some blocked/failed requests indicating tracker blocking is working")
+        let initialResults = try runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: "Downloaded request-blocking-results.json file not found in Downloads directory")
+
+        // Determine the actual protection state after the first run before asserting on the first result set.
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
+        privacyButton.click()
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        let disableProtectionsCheckbox = privacyDashboard.switches["Disable Protections"]
+        let protectionsInitiallyEnabled: Bool
+        if disableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            protectionsInitiallyEnabled = true
+            app.typeKey(.escape, modifierFlags: [])
+            XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
+        } else {
+            let enableProtectionsCheckbox = privacyDashboard.switches["Enable Protections"]
+            XCTAssertTrue(enableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Enable Protections checkbox should be available when protections are disabled")
+            protectionsInitiallyEnabled = false
+            enableProtectionsCheckbox.click()
+            XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should disappear after enabling protections")
+            XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Start the test button should become enabled after enabling protections")
+        }
+
+        let initialLoadedTrackers = loadedTrackers(from: initialResults)
+        var blockedTrackers = getBlockedTrackers(from: initialResults)
+
+        if protectionsInitiallyEnabled {
+            XCTAssertTrue(initialLoadedTrackers.isEmpty, "No trackers should be loaded when protections start enabled - found loaded trackers: \(initialLoadedTrackers.map { $0.id })")
+            XCTAssertFalse(blockedTrackers.isEmpty, "Should have some blocked/failed requests indicating tracker blocking is working")
+        } else {
+            XCTAssertFalse(initialLoadedTrackers.isEmpty, "Trackers should be loaded when protections start disabled - found loaded trackers: \(initialLoadedTrackers.map { $0.id })")
+
+            let enabledResults = try runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: "Downloaded enabled request-blocking-results.json file not found in Downloads directory")
+            let loadedTrackersWithProtectionsEnabled = loadedTrackers(from: enabledResults)
+            blockedTrackers = getBlockedTrackers(from: enabledResults)
+
+            XCTAssertTrue(loadedTrackersWithProtectionsEnabled.isEmpty, "No trackers should be loaded after enabling protections - found loaded trackers: \(loadedTrackersWithProtectionsEnabled.map { $0.id })")
+            XCTAssertFalse(blockedTrackers.isEmpty, "Should have some blocked/failed requests after enabling protections")
+        }
 
         // PART 2: Test with protections disabled
 
@@ -413,7 +448,6 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
 
         // Find and click "Disable Protections" checkbox
-        let disableProtectionsCheckbox = privacyDashboard.switches["Disable Protections"]
         XCTAssertTrue(disableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Disable Protections checkbox should be available")
         disableProtectionsCheckbox.click()
 
@@ -427,36 +461,14 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Start the test button should become enabled within reasonable time after disabling protections")
 
         // Start the test again with protections disabled
-        startTestButton.click()
-
-        // Wait for "Download the results" button to become enabled again
-        XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Download the results button should become enabled after test completion")
-
-        // Check for existing files before second download (including first downloaded file)
-        let existingFilesBeforeSecond = getExistingRequestBlockingFiles()
-
-        // Click download button for disabled protections results
-        downloadResultsButton.click()
-
-        // Wait for new file to appear (excluding all existing files including the first one)
-        guard let secondFilePath = waitForNewRequestBlockingFile(excluding: existingFilesBeforeSecond) else {
-            XCTFail("Second downloaded request-blocking-results.json file not found in Downloads directory")
-            return
-        }
-        trackForCleanup(secondFilePath)
-
-        // Parse and validate the second JSON file (with protections disabled) via local server
-        Logger.log("Reading file at \(secondFilePath)")
-        let secondJsonData = try readFileViaLocalServer(filePath: secondFilePath)
-        Logger.log("Result: \(String(data: secondJsonData, encoding: .utf8) ?? "Data of \(secondJsonData.count)")")
-        let secondResults = try JSONDecoder().decode(RequestBlockingResults.self, from: secondJsonData)
+        let secondResults = try runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: "Second downloaded request-blocking-results.json file not found in Downloads directory")
 
         // Validate that trackers ARE "loaded" now (protections disabled)
-        let loadedTrackersDisabled = secondResults.results.filter { $0.status == "loaded" }
+        let loadedTrackersDisabled = loadedTrackers(from: secondResults)
         XCTAssertFalse(loadedTrackersDisabled.isEmpty, "Some trackers should be loaded when protections are disabled - found loaded trackers: \(loadedTrackersDisabled.map { $0.id })")
 
         // Verify fewer requests are blocked/failed when protections are disabled
-        let blockedTrackersDisabled = secondResults.results.filter { $0.status == "failed" || $0.status == "not loaded" }
+        let blockedTrackersDisabled = getBlockedTrackers(from: secondResults)
         XCTAssertTrue(blockedTrackersDisabled.count < blockedTrackers.count, "Fewer trackers should be blocked when protections are disabled (enabled: \(blockedTrackers.count), disabled: \(blockedTrackersDisabled.count))")
 
         // PART 3: Re-enable protections and verify blocking works again
@@ -470,6 +482,7 @@ class PrivacyDashboardUITests: UITestCase {
 
         // Find and click "Enable Protections" checkbox (it should be unchecked now)
         let enableProtectionsCheckbox = privacyDashboard.switches["Enable Protections"]
+        XCTAssertTrue(enableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Enable Protections checkbox should be available")
         enableProtectionsCheckbox.click()
 
         // Wait for privacy dashboard to disappear (indicating page reload)
@@ -479,36 +492,14 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Start the test button should become enabled again after re-enabling protections")
 
         // Start the test again with protections re-enabled
-        startTestButton.click()
-
-        // Wait for "Download the results" button to become enabled again
-        XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Download the results button should become enabled after test completion with protections re-enabled")
-
-        // Check for existing files before third download
-        let existingFilesBeforeThird = getExistingRequestBlockingFiles()
-
-        // Click download button for re-enabled protections results
-        downloadResultsButton.click()
-
-        // Wait for new file to appear (excluding all existing files)
-        guard let thirdFilePath = waitForNewRequestBlockingFile(excluding: existingFilesBeforeThird) else {
-            XCTFail("Third downloaded request-blocking-results.json file not found in Downloads directory")
-            return
-        }
-        trackForCleanup(thirdFilePath)
-
-        // Parse and validate the third JSON file (with protections re-enabled) via local server
-        Logger.log("Reading file at \(thirdFilePath)")
-        let thirdJsonData = try readFileViaLocalServer(filePath: thirdFilePath)
-        Logger.log("Result: \(String(data: thirdJsonData, encoding: .utf8) ?? "Data of \(thirdJsonData.count)")")
-        let thirdResults = try JSONDecoder().decode(RequestBlockingResults.self, from: thirdJsonData)
+        let thirdResults = try runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: "Third downloaded request-blocking-results.json file not found in Downloads directory")
 
         // Validate that trackers are NOT "loaded" again (protections re-enabled)
-        let loadedTrackersReEnabled = thirdResults.results.filter { $0.status == "loaded" }
+        let loadedTrackersReEnabled = loadedTrackers(from: thirdResults)
         XCTAssertTrue(loadedTrackersReEnabled.isEmpty, "No trackers should be loaded when protections are re-enabled - found loaded trackers: \(loadedTrackersReEnabled.map { $0.id })")
 
         // Verify more requests are blocked/failed when protections are re-enabled (should be similar to first test)
-        let blockedTrackersReEnabled = thirdResults.results.filter { $0.status == "failed" || $0.status == "not loaded" }
+        let blockedTrackersReEnabled = getBlockedTrackers(from: thirdResults)
         XCTAssertTrue(blockedTrackersReEnabled.count > blockedTrackersDisabled.count, "More trackers should be blocked when protections are re-enabled (disabled: \(blockedTrackersDisabled.count), re-enabled: \(blockedTrackersReEnabled.count))")
 
         // Verify re-enabled results are similar to original enabled results

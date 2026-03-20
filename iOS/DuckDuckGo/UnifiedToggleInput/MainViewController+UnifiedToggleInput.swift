@@ -84,14 +84,8 @@ extension MainViewController {
         coordinator.attachmentsChangePublisher
             .sink { [weak self] in
                 guard let self, let coordinator = unifiedToggleInputCoordinator else { return }
-                if coordinator.isAITabExpanded {
+                if coordinator.isAITabExpanded || coordinator.isOmnibarSession {
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
-                } else if coordinator.isOmnibarSession {
-                    let height = coordinator.omnibarEditingHeight()
-                    UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
-                        self.viewCoordinator.constraints.navigationBarContainerHeight.constant = height
-                        self.viewCoordinator.superview.layoutIfNeeded()
-                    }
                 }
             }
             .store(in: &unifiedToggleInputCancellables)
@@ -109,11 +103,8 @@ extension MainViewController {
     }
 
     private func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        let height = coordinator.omnibarEditingHeight()
-        viewCoordinator.constraints.navigationBarContainerHeight.constant = height
-        UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.viewCoordinator.navigationBarContainer.layoutIfNeeded()
-        }
+        updateUnifiedInputContentVisibility(for: coordinator)
+        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
         updateFloatingSubmitVisibility()
     }
@@ -293,7 +284,7 @@ extension MainViewController {
             )
         } else {
             viewCoordinator.updateUnifiedToggleInputColors(
-                isExpanded: false,
+                isExpanded: renderState.isExpanded,
                 inputView: coordinator.viewController.view
             )
         }
@@ -408,7 +399,7 @@ extension MainViewController {
             viewCoordinator.restoreNavBarToToolbarForOmnibarInactive()
             recomputeOmnibarEditingHeightIfNeeded()
         case .showOmnibarActive:
-            viewCoordinator.restoreNavBarToKeyboardForOmnibarActive()
+            viewCoordinator.restoreNavBarToToolbarForOmnibarInactive()
             recomputeOmnibarEditingHeightIfNeeded()
         case .hideOmnibarEditing:
             viewCoordinator.hideUnifiedToggleInputOmnibar()

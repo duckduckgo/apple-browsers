@@ -208,9 +208,6 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
 
-    env:
-      RUNS_ON: macos-26 # keep this in sync with runs-on above
-
     steps:
 
     - name: Check out the code
@@ -239,7 +236,7 @@ jobs:
   notify-failure:
     name: Notify on failure
     if: ${{ always() && contains(join(needs.*.result, ','), 'failure') && github.ref_name == 'main' }}
-    needs: [build-end-to-end-tests, end-to-end-tests, end-to-end-single-flow]
+    needs: [build-end-to-end-tests, end-to-end-tests]
     runs-on: ubuntu-latest
 
     steps:

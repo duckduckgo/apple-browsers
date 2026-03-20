@@ -52,9 +52,11 @@ struct TabSwitcherLongPressMenuState {
 
     var canShare: Bool { pressedContainsWebPages }
     var canAddBookmarks: Bool { pressedContainsWebPages }
-    // Keep the original logic verbatim; note (pressedContainsWebPages || !isEditing) is always
-    // true when !isEditing, but preserved to match the intended design documented in Asana.
-    var canSelect: Bool { !isEditing && pressedCount == 1 && (pressedContainsWebPages || !isEditing) }
+    // Show "Select" only for a single web-page tab when not already in selection mode.
+    // See: https://app.asana.com/0/1209499866654340/1209424833903137
+    // See: https://app.asana.com/0/1209499866654340/1209424833902043
+    // See: https://app.asana.com/0/1209499866654340/1209503836757555
+    var canSelect: Bool { !isEditing && pressedCount == 1 && pressedContainsWebPages }
     var canCloseOthers: Bool { pressedCount < totalCount }
 }
 

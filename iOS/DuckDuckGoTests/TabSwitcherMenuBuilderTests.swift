@@ -240,6 +240,7 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
 
     // MARK: - Action wiring
 
+    @available(iOS 16, *)
     func testMultiSelectMenu_onDeselectAllCalled() {
         var called = false
         let actions = TabSwitcherMultiSelectMenuActions(
@@ -257,6 +258,7 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
         XCTAssertTrue(called)
     }
 
+    @available(iOS 16, *)
     func testLongPressMenu_onShareCalled() {
         var called = false
         let actions = TabSwitcherLongPressMenuActions(
@@ -458,9 +460,14 @@ class TabSwitcherLongPressMenuStateTests: XCTestCase {
 
     // MARK: canSelect
 
-    func testWhenNotEditingAndSingleTabThenCanSelect() {
-        let state = makeState(pressedCount: 1, isEditing: false)
+    func testWhenNotEditingAndSingleWebPageTabThenCanSelect() {
+        let state = makeState(pressedCount: 1, pressedContainsWebPages: true, isEditing: false)
         XCTAssertTrue(state.canSelect)
+    }
+
+    func testWhenNotEditingAndSingleHomePageTabThenCannotSelect() {
+        let state = makeState(pressedCount: 1, pressedContainsWebPages: false, isEditing: false)
+        XCTAssertFalse(state.canSelect)
     }
 
     func testWhenEditingThenCannotSelect() {

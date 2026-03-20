@@ -327,10 +327,6 @@ extension TabSwitcherViewController {
             // If there's a single web page tab use the hostname, failing that don't provide a title
             : tabs.first?.link?.url.host?.droppingWwwPrefix() ?? ""
 
-        // Show selection if it's a single tab, but NOT if it's the home page in selection mode ¯\_(ツ)_/¯
-        // See point 3: https://app.asana.com/0/1209499866654340/1209424833903137
-        // See point 4: https://app.asana.com/0/1209499866654340/1209424833902043
-        // Also: https://app.asana.com/0/1209499866654340/1209503836757555
         let state = TabSwitcherLongPressMenuState(
             pressedCount: tabs.count,
             totalCount: tabsModel.count,

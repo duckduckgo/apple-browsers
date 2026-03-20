@@ -67,6 +67,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          appSettings: AppSettings,
+         faviconsCache: FavoritesFaviconCaching,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          appWidthObserver: AppWidthObserver = .shared) {
@@ -78,10 +79,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
 
-        newTabPageViewModel = NewTabPageViewModel()
+        newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
-                                            faviconLoader: faviconLoader)
+                                            faviconLoader: faviconLoader,
+                                            faviconsCache: faviconsCache)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,

@@ -110,6 +110,7 @@ class SuggestionTrayViewController: UIViewController {
         let newTabDialogFactory: NewTabDaxDialogsProvider
         let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
+        let faviconsCache: FavoritesFaviconCaching
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
@@ -303,6 +304,7 @@ class SuggestionTrayViewController: UIViewController {
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
             appSettings: dependencies.appSettings,
+            faviconsCache: dependencies.faviconsCache,
             internalUserCommands: dependencies.internalUserCommands
         )
 

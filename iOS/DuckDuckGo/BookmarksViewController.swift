@@ -48,7 +48,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     @IBOutlet var emptyStateContainer: UIView!
 
     private let bookmarksDatabase: CoreDataDatabase
-    private let favicons: Favicons
+    private let favicons: FaviconManaging
     private let syncService: DDGSyncing
     private let syncDataProviders: SyncDataProviders
     private let appSettings: AppSettings
@@ -184,7 +184,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                    bookmarksDatabase: CoreDataDatabase,
                    bookmarksSearch: BookmarksStringSearch,
                    parentID: NSManagedObjectID? = nil,
-                   favicons: Favicons = Favicons.shared,
+                   favicons: FaviconManaging,
                    syncService: DDGSyncing,
                    syncDataProviders: SyncDataProviders,
                    appSettings: AppSettings,
@@ -339,6 +339,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                      bookmarksDatabase: self.bookmarksDatabase,
                                                      bookmarksSearch: self.searchDataSource.searchEngine,
                                                      parentID: parent.objectID,
+                                                     favicons: self.favicons,
                                                      syncService: self.syncService,
                                                      syncDataProviders: self.syncDataProviders,
                                                      appSettings: self.appSettings,

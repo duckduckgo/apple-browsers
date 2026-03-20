@@ -701,7 +701,6 @@ private extension UnifiedToggleInputView {
 extension UnifiedToggleInputView {
 
     private func makeDismissButton() -> UIButton {
-        #if compiler(>=6.2)
         if #available(iOS 26, *) {
             var config = UIButton.Configuration.glass()
             config.image = UIImage(systemName: "xmark")
@@ -711,7 +710,6 @@ extension UnifiedToggleInputView {
             button.addTarget(self, action: #selector(handleDismissTap), for: .primaryActionTriggered)
             return button
         }
-        #endif
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         let image = UIImage(systemName: "xmark")?

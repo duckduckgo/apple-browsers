@@ -123,6 +123,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isModelChipHidden = newValue }
     }
 
+    var isCustomizeResponsesButtonHidden: Bool {
+        get { toolsToolbar.isCustomizeResponsesButtonHidden }
+        set { toolsToolbar.isCustomizeResponsesButtonHidden = newValue }
+    }
+
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
     /// so that sibling views (e.g. the content container) animate in sync.
     /// The owning view controller sets this.
@@ -562,6 +567,9 @@ private extension UnifiedToggleInputView {
         }
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
+        }
+        toolsToolbar.onCustomizeResponsesTapped = { [weak self] in
+            self?.handler.customizeResponsesButtonTapped()
         }
         toolsToolbar.onAttachTapped = { [weak self] in
             self?.onAttachTapped?()

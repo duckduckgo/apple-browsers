@@ -127,31 +127,35 @@ final class UserContentUpdating {
             .eraseToAnyPublisher()
 
         let makeValue: (Update) async -> NewContent = { [weak self] rulesUpdate in
-            let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
-                                                      privacyConfigurationManager: privacyConfigurationManager,
-                                                      webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                      cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                                                      duckPlayer: duckPlayer,
-                                                      contentBlockingManager: contentBlockerRulesManager,
-                                                      trackerDataManager: trackerDataManager,
-                                                      experimentManager: experimentManager(),
-                                                      tld: tld,
-                                                      featureFlagger: featureFlagger,
-                                                      onboardingNavigationDelegate: onboardingNavigationDelegate,
-                                                      appearancePreferences: appearancePreferences,
-                                                      themeManager: themeManager,
-                                                      startupPreferences: startupPreferences,
-                                                      windowControllersManager: windowControllersManager,
-                                                      bookmarkManager: bookmarkManager,
-                                                      pinningManager: pinningManager,
-                                                      historyCoordinator: historyCoordinator,
-                                                      fireproofDomains: fireproofDomains,
-                                                      fireCoordinator: fireCoordinator,
-                                                      autoconsentManagement: autoconsentManagement,
-                                                      syncServiceProvider: self?.syncServiceProvider ?? { nil },
-                                                      syncErrorHandler: syncErrorHandler,
-                                                      webExtensionAvailability: webExtensionAvailability)
-            return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
+            let syncServiceProvider = self?.syncServiceProvider ?? { nil }
+            let newContentTask = Task.detached(priority: .utility) {
+                let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
+                                                          privacyConfigurationManager: privacyConfigurationManager,
+                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                          cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                                                          duckPlayer: duckPlayer,
+                                                          contentBlockingManager: contentBlockerRulesManager,
+                                                          trackerDataManager: trackerDataManager,
+                                                          experimentManager: experimentManager(),
+                                                          tld: tld,
+                                                          featureFlagger: featureFlagger,
+                                                          onboardingNavigationDelegate: onboardingNavigationDelegate,
+                                                          appearancePreferences: appearancePreferences,
+                                                          themeManager: themeManager,
+                                                          startupPreferences: startupPreferences,
+                                                          windowControllersManager: windowControllersManager,
+                                                          bookmarkManager: bookmarkManager,
+                                                          pinningManager: pinningManager,
+                                                          historyCoordinator: historyCoordinator,
+                                                          fireproofDomains: fireproofDomains,
+                                                          fireCoordinator: fireCoordinator,
+                                                          autoconsentManagement: autoconsentManagement,
+                                                          syncServiceProvider: syncServiceProvider,
+                                                          syncErrorHandler: syncErrorHandler,
+                                                          webExtensionAvailability: webExtensionAvailability)
+                return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
+            }
+            return await newContentTask.value
         }
 
         let updatesStream = AsyncStream { continuation in

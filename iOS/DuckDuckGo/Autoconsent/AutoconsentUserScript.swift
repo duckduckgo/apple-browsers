@@ -496,7 +496,8 @@ extension AutoconsentUserScript {
 
         // Add fromExtension=0 when web extensions are available but autoconsent extension is not
         if webExtensionAvailability?.isAvailable == true &&
-           webExtensionAvailability?.isAutoconsentExtensionAvailable == false {
+           webExtensionAvailability?.isAutoconsentExtensionAvailable == false &&
+           config.isSubfeatureEnabled(WebExtensionsSubfeature.embeddedRollout, defaultValue: true) {
             additionalParams["fromExtension"] = "0"
         }
 

@@ -55,6 +55,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case openSettingsAction
         case toggleSidebarAction
         case syncStatusChanged(AIChatSyncHandler.SyncStatus)
+        case customizeResponsesAction
 
         var methodName: String {
             switch self {
@@ -72,6 +73,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitToggleSidebarAction"
             case .syncStatusChanged:
                 return "submitSyncStatusChanged"
+            case .customizeResponsesAction:
+                return "submitCustomizeResponsesAction"
             }
         }
 
@@ -257,6 +260,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         inputBoxHandler?.didPressStopGeneratingButton
             .sink(receiveValue: { [weak self] _ in self?.push(.promptInterruption) })
+            .store(in: &inputBoxCancellables)
+
+        inputBoxHandler?.didPressCustomizeResponsesButton
+            .sink(receiveValue: { [weak self] _ in self?.push(.customizeResponsesAction) })
             .store(in: &inputBoxCancellables)
 
         handler.setAIChatInputBoxHandler(inputBoxHandler)

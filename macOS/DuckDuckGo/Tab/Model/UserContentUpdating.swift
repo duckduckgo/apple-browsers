@@ -175,10 +175,13 @@ final class UserContentUpdating {
         }
             .map { await makeValue($0) }
 
-        updatesTask = Task {
+        updatesTask = Task.detached { [weak self] in
             // DefaultScriptSourceProvider instance should be created once per rules/config change and fed into UserScripts initialization
             for await value in updatesStream {
-                bufferedValue = value
+                guard let self else { return }
+                await MainActor.run {
+                    self.bufferedValue = value
+                }
             }
         }
     }

@@ -65,13 +65,6 @@ private enum AddressBarPositionPickerMetrics {
     static let borderDarkColor = Color.white.opacity(0.18)
 
     static let accentColor = Color(singleUseColor: .rebranding(.accentPrimary))
-
-    enum Radio {
-        static let size: CGFloat = 24.0
-        static let checkSize: CGFloat = 16.0
-        static let strokeInset: CGFloat = 0.75
-        static let strokeWidth: CGFloat = 1.5
-    }
 }
 
 extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker {

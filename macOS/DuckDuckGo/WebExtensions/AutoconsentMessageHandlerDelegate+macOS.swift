@@ -73,17 +73,24 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
     }
 
     func sendPixel(_ pixelInfo: PixelInfo) {
-        // Ignore summary pixels from extension - native handles aggregation
-        guard pixelInfo.name != "autoconsent_summary" else {
-            Logger.webExtensions.debug("macOS: Ignoring extension summary pixel - using native aggregation")
-            return
-        }
-
         guard let pixel = mapPixelNameToAutoconsentPixel(pixelInfo.name, params: pixelInfo.params) else {
             Logger.webExtensions.error("macOS: Unknown autoconsent pixel name: \(pixelInfo.name)")
             return
         }
 
+        // Summary pixel uses direct firing (old behavior)
+        if pixelInfo.name == "autoconsent_summary" {
+            let frequency: PixelKit.Frequency = pixelInfo.type == "daily" ? .daily : .standard
+            var additionalParams = processAdditionalParams(pixelInfo.params, isSummary: true)
+            additionalParams["extensionDbg"] = "1"
+
+            Logger.webExtensions.debug("macOS: Firing summary pixel with frequency \(pixelInfo.type)")
+
+            PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams)
+            return
+        }
+
+        // Other pixels go through native aggregation
         var additionalParams = processAdditionalParams(pixelInfo.params, isSummary: false)
         if additionalParams["fromExtension"] == nil {
             additionalParams["fromExtension"] = "1"

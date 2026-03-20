@@ -858,7 +858,6 @@ final class BrowserTabViewController: NSViewController {
                 return
             }
             // present contextual onboarding dialog if needed
-            // Skip for new tab pages only when using per-tab webviews (handled in onNewTabPageDidPresent)
             self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab

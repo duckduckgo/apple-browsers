@@ -313,15 +313,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let currentTabId = mainVC.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
 
         let tabMetadata: [AIChatTabMetadata] = allTabs.compactMap { tab in
-            guard case .url(let url, _, _) = tab.content,
-                  !url.isDuckAIURL,
-                  !url.isDuckDuckGoSearch else { return nil }
-            let favicon = faviconData(for: url)
+            guard case .url(let url, _, _) = tab.content else { return nil }
             return AIChatTabMetadata(
                 tabId: tab.uuid,
                 title: tab.title ?? url.host ?? "",
                 url: url.absoluteString,
-                favicon: favicon,
+                favicon: faviconData(for: url),
                 isCurrentTab: tab.uuid == currentTabId
             )
         }

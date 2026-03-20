@@ -63,6 +63,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode?
     private(set) var selectedTextEntryMode: TextEntryMode = .search
+    private let toggleModeStorage: ToggleModeStoring
 
     // MARK: - Animation
 
@@ -133,8 +134,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.textField
     }
 
-    init(dependencies: OmnibarDependencyProvider) {
+    init(dependencies: OmnibarDependencyProvider, toggleModeStorage: ToggleModeStoring = ToggleModeStorage()) {
         self.dependencies = dependencies
+        self.toggleModeStorage = toggleModeStorage
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -143,7 +145,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         switch dependencies.aiChatSettings.defaultOmnibarMode {
         case .search: return .search
         case .duckAI: return .aiChat
-        case .lastUsed: return ToggleModeStorage().restore() ?? .search
+        case .lastUsed: return toggleModeStorage.restore() ?? .search
         }
     }
 
@@ -269,11 +271,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
         expandableBarView?.onSearchModePressed = { [weak self] in
             self?.setSelectedTextEntryMode(.search)
-            ToggleModeStorage().save(.search)
+            self?.toggleModeStorage.save(.search)
         }
         expandableBarView?.onAIChatModePressed = { [weak self] in
             self?.setSelectedTextEntryMode(.aiChat)
-            ToggleModeStorage().save(.aiChat)
+            self?.toggleModeStorage.save(.aiChat)
         }
         expandableBarView?.onAIChatSendPressed = { [weak self] in
             self?.onAIChatSendPressed()

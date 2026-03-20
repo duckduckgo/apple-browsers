@@ -36,7 +36,7 @@ final class MockOmniBar: OmniBar {
     
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {}
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {}
     func endEditing() { }
     func showSeparator() { }
     func hideSeparator() { }

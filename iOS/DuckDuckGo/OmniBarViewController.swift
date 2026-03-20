@@ -269,9 +269,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
         expandableBarView?.onSearchModePressed = { [weak self] in
             self?.setSelectedTextEntryMode(.search)
+            ToggleModeStorage().save(.search)
         }
         expandableBarView?.onAIChatModePressed = { [weak self] in
             self?.setSelectedTextEntryMode(.aiChat)
+            ToggleModeStorage().save(.aiChat)
         }
         expandableBarView?.onAIChatSendPressed = { [weak self] in
             self?.onAIChatSendPressed()

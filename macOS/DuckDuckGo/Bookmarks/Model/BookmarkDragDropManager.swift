@@ -60,7 +60,8 @@ final class BookmarkDragDropManager {
                 return .copy
             }
 
-            if let string = info.draggingPasteboard.string(forType: .string),
+            let pasteboard = info.draggingPasteboard
+            if let string = pasteboard.string(forType: .string) ?? pasteboard.string(forType: .URL) ?? pasteboard.string(forType: .fileURL),
                 URL(trimmedAddressBarString: string.trimmingWhitespace()) != nil {
                 return .copy
             }
@@ -190,7 +191,7 @@ final class BookmarkDragDropManager {
             if let webViewItem = item.draggedWebViewValues() {
                 url = webViewItem.url
                 title = webViewItem.title ?? self.title(forTabWith: webViewItem.url, in: window) ?? titleFromUrlDroppingSchemeIfNeeded(url)
-            } else if let draggedString = item.string(forType: .string),
+            } else if let draggedString = item.string(forType: .string) ?? item.string(forType: .URL) ?? item.string(forType: .fileURL),
                       let draggedURL = URL(trimmedAddressBarString: draggedString.trimmingWhitespace()) {
                 url = draggedURL
                 title = self.title(forTabWith: draggedURL, in: window) ?? titleFromUrlDroppingSchemeIfNeeded(url)

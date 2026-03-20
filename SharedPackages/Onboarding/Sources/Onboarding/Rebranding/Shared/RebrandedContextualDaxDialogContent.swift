@@ -197,13 +197,13 @@ private extension OnboardingRebranding {
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
                     StyledAttributedText(title)
-                        .font(theme.typography.contextualTitle)
+                        .font(theme.typography.contextual.title)
                         .multilineTextAlignment(titleAlignment)
                         .frame(maxWidth: .infinity, alignment: Alignment(titleAlignment))
                 }
                 let messageAlignment = messageTextAlignment ?? theme.contextualOnboardingMetrics.contextualBodyTextAlignment
                 StyledAttributedText(message)
-                    .font(theme.typography.contextualBody)
+                    .font(theme.typography.contextual.body)
                     .multilineTextAlignment(messageAlignment)
                     .frame(maxWidth: .infinity, alignment: Alignment(messageAlignment))
             }

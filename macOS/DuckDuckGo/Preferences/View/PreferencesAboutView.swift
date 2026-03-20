@@ -63,10 +63,8 @@ extension Preferences {
                     let buildType = StandardApplicationBuildType()
                     if buildType.isSparkleBuild {
                         if model.shouldHideManualUpdateOption {
-                            if model.shouldShowUpdateInfoMessage {
-                                UpdateInfoMessage()
-                                    .padding(.top, 4)
-                            }
+                            UpdateInfoMessage()
+                                .padding(.top, 4)
                         } else {
                             UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
                         }

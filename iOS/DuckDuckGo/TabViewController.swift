@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AVFoundation
 import WebKit
 import Core
 import Combine
@@ -2917,6 +2918,21 @@ extension TabViewController: WKUIDelegate {
                              didRequestNewWebViewWithConfiguration: configuration,
                              for: navigationAction,
                              inheritingAttribution: adClickAttributionLogic.state)
+    }
+
+    func webView(_ webView: WKWebView,
+                 requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo,
+                 type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        guard origin.host.isDuckAIHost,
+              type == .microphone || type == .cameraAndMicrophone else {
+            decisionHandler(.prompt)
+            return
+        }
+
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        decisionHandler(status == .authorized ? .grant : .deny)
     }
 
     func webViewDidClose(_ webView: WKWebView) {

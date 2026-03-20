@@ -387,7 +387,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .iPadDuckaiOnTab,
              .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
-             .syncAutoRestore:
+             .syncAutoRestore,
+             .aiChatOmnibarDefaultPosition:
             .enabled
         case .crashReportOptInStatusResetting:
             .internalOnly

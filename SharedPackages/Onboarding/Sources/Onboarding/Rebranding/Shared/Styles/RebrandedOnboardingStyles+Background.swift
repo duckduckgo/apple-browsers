@@ -73,12 +73,10 @@ extension OnboardingRebranding.OnboardingStyles {
 
         private let backgroundType: ContextualOnboardingBackgroundType
         private let imageOffsetY: CGFloat
-        private let contentInsetOffKeyboard: CGFloat
 
         init(backgroundType: ContextualOnboardingBackgroundType, imageOffsetY: CGFloat, keyboardBehavior: KeyboardBehavior) {
             self.backgroundType = backgroundType
             self.imageOffsetY = imageOffsetY
-            self.contentInsetOffKeyboard = keyboardBehavior.contentInset
             _keyboardResponder = StateObject(wrappedValue: KeyboardResponder(isEnabled: keyboardBehavior.isEnabled))
         }
 
@@ -139,7 +137,7 @@ extension OnboardingRebranding.OnboardingStyles {
             guard keyboardResponder.keyboardFrame.height > 0 else { return imageOffsetY }
 
             // Early exit if image frame hasn't been captured yet
-            guard !imageGlobalFrame.isEmpty else { return imageOffsetY }
+            guard imageGlobalFrame != .zero else { return imageOffsetY }
 
             let keyboardFrame = keyboardResponder.keyboardFrame
 
@@ -153,12 +151,12 @@ extension OnboardingRebranding.OnboardingStyles {
                 return imageOffsetY
             }
 
-            // Calculate where the image currently is (bottom edge in global coordinates)
-            let currentImageBottom = imageGlobalFrame.maxY
+            // Calculate where the image currently is (bottom edge in global coordinates) + offset the image
+            let currentImageBottom = imageGlobalFrame.maxY - imageOffsetY
 
             // Calculate where we want the image to be (just above keyboard with inset)
             // The inset allows the image to extend slightly behind the keyboard's rounded corners
-            let targetImageBottom = keyboardFrame.minY + contentInsetOffKeyboard
+            let targetImageBottom = keyboardFrame.minY + imageOffsetY
 
             // Calculate how much to move the image (positive values would move it down)
             let offset = targetImageBottom - currentImageBottom
@@ -170,7 +168,7 @@ extension OnboardingRebranding.OnboardingStyles {
         }
 
         #if os(iOS)
-        private static let maxHeightMetricsBuilder = MetricBuilder<CGFloat?>(default: nil).iPad(242).iPhone(landscape: 242)
+        private static let maxHeightMetricsBuilder = MetricBuilder<CGFloat?>(default: nil).iPad(290).iPhone(landscape: 290)
         // iPhone excludes .bottom to prevent background from being covered by the address bar when it is positioned at the bottom
         private static let ignoreSafeAreaEdgesBuilder = MetricBuilder<Edge.Set>(default: [.horizontal]).iPad([.bottom, .horizontal])
         #endif
@@ -270,8 +268,8 @@ public struct BackgroundAnimationContext {
 public enum KeyboardBehavior: Equatable {
     /// Adjusts the background image position when the keyboard appears to keep it visible.
     /// The image will move up so its bottom edge sits at the keyboard's top edge plus the inset.
-    /// - Parameter inset: Distance in points to extend the image behind the keyboard's rounded corners. Defaults to 20pt.
-    case adjustForKeyboard(inset: CGFloat = 20)
+    /// - Parameter inset: Distance in points to extend the image behind the keyboard's rounded corners. Defaults to 90px.
+    case adjustForKeyboard(inset: CGFloat = 90)
 
     /// Does not adjust for keyboard - background remains in its original position.
     case ignoreKeyboard
@@ -313,7 +311,7 @@ public extension View {
         if let animationContext {
             self.modifier(OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(backgroundType: backgroundType, animation: animationContext.animation, delay: animationContext.delay, keyboardBehavior: keyboardBehavior))
         } else {
-            self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: 0, keyboardBehavior: keyboardBehavior))
+            self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: keyboardBehavior.contentInset, keyboardBehavior: keyboardBehavior))
         }
     }
 

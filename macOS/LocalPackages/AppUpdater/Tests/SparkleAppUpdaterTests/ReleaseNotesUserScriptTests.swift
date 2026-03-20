@@ -275,6 +275,7 @@ private final class CapturingPixelFiring: PixelFiring {
 
     func fire(_ event: PixelKitEvent,
               frequency: PixelKit.Frequency,
+              includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,
               onComplete: @escaping PixelKit.CompletionBlock) {
         firedEvents.append(event)

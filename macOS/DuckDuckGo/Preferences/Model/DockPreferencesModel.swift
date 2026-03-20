@@ -24,8 +24,7 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     private let featureFlagger: FeatureFlagger
     private let dockCustomizer: DockCustomization?
     private let pixelFiring: PixelFiring?
-
-    var windowControllersManager: WindowControllersManagerProtocol
+    let windowControllersManager: WindowControllersManagerProtocol
 
     /// Whether the current build can add the app to the dock.
     let canAddToDock: Bool
@@ -59,11 +58,13 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
         guard let dockCustomizer else { return }
         switch preferences {
         case .defaultBrowser:
-            PixelKit.fire(GeneralPixel.userAddedToDockFromDefaultBrowserSection,
-                          includeAppVersionParameter: false)
+            pixelFiring?.fire(GeneralPixel.userAddedToDockFromDefaultBrowserSection,
+                              frequency: .standard,
+                              includeAppVersionParameter: false)
         case .general:
-            PixelKit.fire(GeneralPixel.userAddedToDockFromSettings,
-                          includeAppVersionParameter: false)
+            pixelFiring?.fire(GeneralPixel.userAddedToDockFromSettings,
+                             frequency: .standard,
+                             includeAppVersionParameter: false)
         default:
             break
         }

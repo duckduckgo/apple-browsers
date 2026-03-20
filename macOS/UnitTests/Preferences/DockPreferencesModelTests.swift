@@ -189,6 +189,40 @@ final class DockPreferencesModelTests: XCTestCase {
 
     // MARK: - Pixels
 
+    func testWhenAddToDockCalledFromDefaultBrowserSettingsThenExpectedPixelIsFired() {
+        mockPixelFiring.expectedFireCalls = [
+            ExpectedFireCall(pixel: GeneralPixel.userAddedToDockFromDefaultBrowserSection,
+                             frequency: .standard,
+                             includeAppVersionParameter: false)
+        ]
+        let model = DockPreferencesModel(
+            featureFlagger: mockFeatureFlagger,
+            dockCustomizer: mockDockCustomizer,
+            supportsAddToDock: true,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: mockPixelFiring
+        )
+        model.addToDock(from: .defaultBrowser)
+        mockPixelFiring.verifyExpectations()
+    }
+
+    func testWhenAddToDockCalledFromGeneralSettingsThenExpectedPixelIsFired() {
+        mockPixelFiring.expectedFireCalls = [
+            ExpectedFireCall(pixel: GeneralPixel.userAddedToDockFromSettings,
+                             frequency: .standard,
+                             includeAppVersionParameter: false)
+        ]
+        let model = DockPreferencesModel(
+            featureFlagger: mockFeatureFlagger,
+            dockCustomizer: mockDockCustomizer,
+            supportsAddToDock: true,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: mockPixelFiring
+        )
+        model.addToDock(from: .general)
+        mockPixelFiring.verifyExpectations()
+    }
+
     func testWhenLearnMoreClickedThenExpectedPixelIsFired() {
         mockPixelFiring.expectedFireCalls = [ExpectedFireCall(pixel: GeneralPixel.settingsAddToDockLearnMoreClicked, frequency: .dailyAndCount)]
         let model = DockPreferencesModel(

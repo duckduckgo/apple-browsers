@@ -176,6 +176,7 @@ final class MainMenu: NSMenu {
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
 
     private let featureFlagger: FeatureFlagger
+    private let isLazyMenuRebuild: Bool
     private let dockCustomizer: DockCustomization?
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
@@ -215,6 +216,7 @@ final class MainMenu: NSMenu {
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager()) {
 
         self.featureFlagger = featureFlagger
+        self.isLazyMenuRebuild = featureFlagger.isFeatureOn(.lazyMenuRebuild)
         self.internalUserDecider = internalUserDecider
         self.appearancePreferences = appearancePreferences
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -246,7 +248,7 @@ final class MainMenu: NSMenu {
         subscribeToBookmarkList(bookmarkManager: bookmarkManager)
         subscribeToFavicons(faviconManager: faviconManager)
 
-        if featureFlagger.isFeatureOn(.lazyMenuRebuild) {
+        if isLazyMenuRebuild {
             bookmarksMenu.delegate = self
             favoritesMenu.delegate = self
         }
@@ -629,7 +631,7 @@ final class MainMenu: NSMenu {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loaded in
                 guard let self, loaded else { return }
-                if self.featureFlagger.isFeatureOn(.lazyMenuRebuild) {
+                if self.isLazyMenuRebuild {
                     self.bookmarkFaviconsNeedUpdate = true
                 } else {
                     self.updateFavicons(in: bookmarksMenu)
@@ -661,7 +663,7 @@ final class MainMenu: NSMenu {
             }
             .sink { [weak self] favorites, topLevel in
                 guard let self else { return }
-                if self.featureFlagger.isFeatureOn(.lazyMenuRebuild) {
+                if self.isLazyMenuRebuild {
                     Task { @MainActor [weak self] in
                         guard let self else { return }
                         self.pendingFavoriteViewModels = favorites
@@ -669,9 +671,9 @@ final class MainMenu: NSMenu {
                         self.bookmarksMenuNeedsRebuild = true
                     }
                 } else {
-                    Task { @MainActor in
-                        self.updateBookmarksMenu(favoriteViewModels: favorites,
-                                                 topLevelBookmarkViewModels: topLevel)
+                    Task { @MainActor [weak self] in
+                        self?.updateBookmarksMenu(favoriteViewModels: favorites,
+                                                  topLevelBookmarkViewModels: topLevel)
                     }
                 }
             }
@@ -689,7 +691,7 @@ final class MainMenu: NSMenu {
     // Nested recursing functions cause body length
     @MainActor
     func updateBookmarksMenu(favoriteViewModels: [BookmarkViewModel], topLevelBookmarkViewModels: [BookmarkViewModel]) {
-        let isLazy = featureFlagger.isFeatureOn(.lazyMenuRebuild)
+        let isLazy = isLazyMenuRebuild
         if isLazy {
             folderDelegates.removeAll()
         }
@@ -1416,7 +1418,7 @@ extension NSMenu {
 extension MainMenu: NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         guard menu === bookmarksMenu || menu === favoritesMenu else { return }
-        guard featureFlagger.isFeatureOn(.lazyMenuRebuild) else { return }
+        guard isLazyMenuRebuild else { return }
 
         if bookmarksMenuNeedsRebuild {
             updateBookmarksMenu(

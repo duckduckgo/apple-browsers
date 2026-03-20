@@ -180,12 +180,14 @@ public struct AIChatTabMetadata: Codable {
     public let title: String
     public let url: String
     public let favicon: [AIChatPageContextData.PageContextFavicon]
+    public let isCurrentTab: Bool
 
-    public init(tabId: String, title: String, url: String, favicon: [AIChatPageContextData.PageContextFavicon]) {
+    public init(tabId: String, title: String, url: String, favicon: [AIChatPageContextData.PageContextFavicon], isCurrentTab: Bool = false) {
         self.tabId = tabId
         self.title = title
         self.url = url
         self.favicon = favicon
+        self.isCurrentTab = isCurrentTab
     }
 }
 

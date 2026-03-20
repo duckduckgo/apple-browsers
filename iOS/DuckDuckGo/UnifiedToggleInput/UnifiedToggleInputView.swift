@@ -236,15 +236,11 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var expandedShadow0Color: CGColor {
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor.white.withAlphaComponent(0.08).cgColor
-            : UIColor(designSystemColor: .shadowSecondary).cgColor
+        UIColor(designSystemColor: .shadowSecondary).cgColor
     }
 
     private var expandedShadow1Color: CGColor {
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor.white.withAlphaComponent(0.12).cgColor
-            : UIColor(designSystemColor: .shadowTertiary).cgColor
+        UIColor(designSystemColor: .shadowTertiary).cgColor
     }
 
     // MARK: - Constraints
@@ -284,11 +280,12 @@ final class UnifiedToggleInputView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let path = UIBezierPath(rect: bounds).cgPath
+        let cardFrame = cardView.frame
+        let cardPath = UIBezierPath(roundedRect: cardFrame, cornerRadius: cardView.layer.cornerRadius).cgPath
         for shadow in [expandedShadow0, expandedShadow1] {
             shadow.bounds = bounds
             shadow.position = CGPoint(x: bounds.midX, y: bounds.midY)
-            shadow.shadowPath = path
+            shadow.shadowPath = cardPath
         }
     }
 
@@ -396,6 +393,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = expanded ? expandedCorners : allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
+
         cardView.layer.borderWidth = showToolbar ? 0.5 : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
 
@@ -479,8 +477,6 @@ final class UnifiedToggleInputView: UIView {
         toolbarHeightConstraint.constant = showToolbar ? 56 : 0
         cardView.layer.borderWidth = showToolbar ? 0.5 : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
-        expandedShadow0.isHidden = !showToolbar
-        expandedShadow1.isHidden = !showToolbar
         updateAttachmentsStripLayout()
 
         guard animated else {

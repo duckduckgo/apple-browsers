@@ -115,7 +115,13 @@ final class ModalPromptCoordinationService {
 
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ App Launched from standard source.")
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ Onboarding has been seen.")
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ No Modal is currently presented.")
+        if isOmniBarEditing {
+            Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ OmniBar editing sheet is presented; evaluating modal prompts (may present on top).")
+        } else if presented?.isBeingDismissed == true {
+            Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ A modal is being dismissed; evaluating modal prompts.")
+        } else {
+            Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ No modal is currently presented.")
+        }
         modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
     }
 

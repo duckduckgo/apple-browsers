@@ -330,7 +330,7 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     var isVoiceSearchEnabled: Bool = false
     var hasUserInteractedWithText: Bool = false
     var isCurrentTextValidURL: Bool = false
-    var buttonState: SwitchBarButtonState = .idle
+    var buttonState: SwitchBarButtonState = .noButtons
     var isTopBarPosition: Bool = true
     var isToggleEnabled: Bool = false
     var isFireTab: Bool = false

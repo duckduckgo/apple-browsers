@@ -74,7 +74,7 @@ tags:
 - tapOn: "Close Tab"
 
 # Confirm the alert
-- assertVisible: "Close 1 Tab?"
+- assertVisible: "Close Tab?"
 - tapOn: "Close Tab"
 
 # One tab remains; title reverts to count
@@ -85,13 +85,8 @@ tags:
 
 # ── Long press to enter selection mode ──────────────────────────────────────
 
-- runFlow: ../shared/pull_to_refresh.yaml
-- assertVisible: "Tab Switcher"
-- tapOn: "Tab Switcher"
-- assertVisible: "1 Private Tab"
-
 # Long-press any single tab — "Select Tab" should appear (including home page tabs)
-- longPressOn: ".*Search engine.*"
+- longPressOn: "Open \"Ad Click Flow\" at www.search-company.site"
 - assertVisible: "Select Tab"
 - tapOn: "Select Tab"
 

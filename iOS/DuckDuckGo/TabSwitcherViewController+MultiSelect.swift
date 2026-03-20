@@ -202,6 +202,7 @@ extension TabSwitcherViewController {
         DailyPixel.fire(pixel: .tabSwitcherDeselectAllDaily)
         collectionView.reloadData()
         updateUIForSelectionMode()
+        refreshTitleViews()
     }
 
     func selectAllTabs() {
@@ -212,6 +213,7 @@ extension TabSwitcherViewController {
             collectionView.selectItem(at: IndexPath(row: $0, section: 0), animated: true, scrollPosition: [])
         }
         updateUIForSelectionMode()
+        refreshTitleViews()
     }
 
     func shareTabs(_ tabs: [Tab]) {
@@ -447,6 +449,7 @@ extension TabSwitcherViewController {
             (collectionView.cellForItem(at: path) as? TabViewCell)?.refreshSelectionAppearance()
         }
         updateUIForSelectionMode()
+        refreshTitleViews()
     }
 
     func longPressMenuCloseTabs(indexPaths: [IndexPath]) {

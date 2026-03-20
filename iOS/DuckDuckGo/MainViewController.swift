@@ -1447,7 +1447,9 @@ class MainViewController: UIViewController {
         }
 
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
-            omniBar.beginEditing(animated: true)
+            if !aiChatAddressBarExperience.shouldShowModeToggle {
+                omniBar.beginEditing(animated: true)
+            }
         }
 
         syncService.scheduler.requestSyncImmediately()
@@ -2276,7 +2278,8 @@ class MainViewController: UIViewController {
             ViewHighlighter.hideAll()
         }
         daxDialogsManager.fireButtonPulseCancelled()
-        hideSuggestionTray()
+        // Reset omnibar editing state before creating a new tab.
+        dismissOmniBar()
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
 

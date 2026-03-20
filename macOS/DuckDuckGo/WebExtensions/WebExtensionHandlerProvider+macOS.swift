@@ -32,12 +32,11 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
-        autoconsentManagement: AutoconsentManagement,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
-        self.autoconsentMessageHandler = MacOSAutoconsentMessageHandlerDelegate(management: autoconsentManagement)
+        self.autoconsentMessageHandler = MacOSAutoconsentMessageHandlerDelegate()
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
     }
 

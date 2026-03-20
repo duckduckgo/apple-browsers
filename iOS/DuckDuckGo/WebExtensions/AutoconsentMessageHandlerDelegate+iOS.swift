@@ -25,12 +25,6 @@ import os.log
 @available(iOS 18.4, *)
 final class IOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDelegate {
 
-    private let management: AutoconsentManaging
-
-    init(management: AutoconsentManaging) {
-        self.management = management
-    }
-
     func showCookiePopupAnimation(topUrl: URL, isCosmetic: Bool) {
         NotificationCenter.default.post(
             name: .newSiteCookiesManaged,
@@ -64,29 +58,12 @@ final class IOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDeleg
             return
         }
 
-        // Summary pixel uses direct firing (old behavior)
-        if pixelInfo.name == "autoconsent_summary" {
-            let frequency: PixelKit.Frequency = pixelInfo.type == "daily" ? .daily : .standard
-            var additionalParams = processAdditionalParams(pixelInfo.params, isSummary: true)
-            additionalParams["extensionDbg"] = "1"
+        let frequency: PixelKit.Frequency = pixelInfo.type == "daily" ? .daily : .standard
+        let additionalParams = processAdditionalParams(pixelInfo.params, isSummary: pixelInfo.name == "autoconsent_summary")
 
-            Logger.webExtensions.debug("iOS: Firing summary pixel with frequency \(pixelInfo.type)")
+        Logger.webExtensions.debug("iOS: Firing pixel \(pixelInfo.name) with frequency \(pixelInfo.type)")
 
-            PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams, includeAppVersionParameter: true)
-            return
-        }
-
-        // Other pixels go through native aggregation
-        var additionalParams = processAdditionalParams(pixelInfo.params, isSummary: false)
-        if additionalParams["fromExtension"] == nil {
-            additionalParams["fromExtension"] = "1"
-        }
-
-        Logger.webExtensions.debug("iOS: Firing pixel \(pixelInfo.name) via aggregation")
-
-        Task { @MainActor in
-            management.firePixel(pixel: pixel, additionalParameters: additionalParams)
-        }
+        PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams, includeAppVersionParameter: true)
     }
 
     private func processAdditionalParams(_ params: [String: Any], isSummary: Bool) -> [String: String] {

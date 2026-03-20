@@ -34,13 +34,16 @@ public final class HistoryCleaner: HistoryCleaning {
     private var coordinator: Coordinator?
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfigurationManaging
+    private let websiteDataStore: WKWebsiteDataStore
     private var contentScopeUserScript: ContentScopeUserScript?
     private var aiChatDataClearingUserScript: AIChatDataClearingUserScript?
 
     public init(featureFlagger: FeatureFlagger,
-                privacyConfig: PrivacyConfigurationManaging) {
+                privacyConfig: PrivacyConfigurationManaging,
+                websiteDataStore: WKWebsiteDataStore? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
+        self.websiteDataStore = websiteDataStore ?? .default()
     }
 
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
@@ -141,7 +144,7 @@ public final class HistoryCleaner: HistoryCleaning {
 
         let configuration = WKWebViewConfiguration()
         configuration.userContentController = userContentController
-        configuration.websiteDataStore = .default()
+        configuration.websiteDataStore = websiteDataStore
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         let coordinator = Coordinator(cleaner: self)

@@ -1259,6 +1259,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if isFirstLaunch {
             AppDelegate.firstLaunchDate = Date()
+            if let build = Int(AppVersion.shared.buildNumber) {
+                let store: any ThrowingKeyedStoring<UpdateControllerSettings> = keyValueStore.throwingKeyedStoring()
+                try? store.set(build, for: \.installBuild)
+            }
         }
 
         setupWebExtensions()

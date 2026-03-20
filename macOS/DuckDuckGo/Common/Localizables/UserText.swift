@@ -1316,6 +1316,12 @@ struct UserText {
         return String(format: localized, url)
     }
 
+    static let aboutUpdateInfoSparkle = NSLocalizedString("preferences.about.update-info.sparkle", value: "Your app will update automatically when you quit to ensure you always have the latest fixes and improvements.", comment: "Informational message shown on the About screen for Sparkle (non-App Store) builds explaining that the app updates automatically")
+    static let aboutUpdateInfoAppStore = NSLocalizedString("preferences.about.update-info.appstore", value: "Keep DuckDuckGo up to date by enabling automatic updates in %1$@ > %2$@ > %3$@.", comment: "Informational message shown on the About screen for App Store builds. %1$@ is replaced by 'App Store', %2$@ is replaced by 'App Store menu', %3$@ is replaced by 'Settings'.")
+    static let aboutUpdateInfoAppStoreLink = NSLocalizedString("preferences.about.update-info.appstore.link", value: "App Store", comment: "The clickable 'App Store' text that appears within the App Store update info message")
+    static let aboutUpdateInfoAppStoreMenu = NSLocalizedString("preferences.about.update-info.appstore.menu", value: "App Store menu", comment: "The 'App Store menu' text that appears bold within the App Store update info message")
+    static let aboutUpdateInfoAppStoreSettings = NSLocalizedString("preferences.about.update-info.appstore.settings", value: "Settings", comment: "The 'Settings' text that appears bold within the App Store update info message")
+
     static let sendFeedback = NSLocalizedString("preferences.about.send-feedback", value: "Send Feedback", comment: "Feedback button in the about preferences page")
 
     static let feedbackDisclaimer = NSLocalizedString("feedback.disclaimer", value: "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version.", comment: "Disclaimer in breakage form - a form that users can submit to say that a website is not working properly in DuckDuckGo")

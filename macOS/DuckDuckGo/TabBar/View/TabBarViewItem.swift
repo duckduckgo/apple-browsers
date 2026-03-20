@@ -1332,11 +1332,9 @@ extension TabBarViewItem: NSMenuDelegate {
 
         // Menu Items
         // New, Duplicate, Pin, Mute Section
-        if featureFlagger.isFeatureOn(.tabAnimations) {
-            addNewToTheRightMenuItem(to: menu)
-        }
-
+        addNewToTheRightMenuItem(to: menu)
         addDuplicateMenuItem(to: menu)
+
         if !isBurner {
             addPinMenuItem(to: menu)
         }

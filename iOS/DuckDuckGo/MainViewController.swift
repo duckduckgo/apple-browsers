@@ -1916,11 +1916,19 @@ class MainViewController: UIViewController {
            let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController {
             let defaultMode = omniBarVC.resolvedDefaultTextEntryMode()
             if omniBarVC.selectedTextEntryMode != defaultMode {
-                omniBarVC.setSelectedTextEntryMode(defaultMode)
+                omniBarVC.applyTextEntryMode(defaultMode, animated: false)
             }
         }
 
         refreshOmniBar()
+    }
+
+    private var isIPadModeToggleInAIChatMode: Bool {
+        guard aiChatAddressBarExperience.shouldShowModeToggle,
+              let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else {
+            return false
+        }
+        return omniBarVC.selectedTextEntryMode == .aiChat
     }
 
     private func hideNotificationBarIfBrokenSitePromptShown(afterRefresh: Bool = false) {
@@ -3043,6 +3051,11 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQueryUpdated(_ updatedQuery: String) {
+        if isIPadModeToggleInAIChatMode {
+            hideSuggestionTray()
+            return
+        }
+
         if updatedQuery.isEmpty {
             if newTabPageViewController != nil || !omniBar.isTextFieldEditing {
                 hideSuggestionTray()

@@ -157,6 +157,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        selectedTextEntryMode = resolvedDefaultTextEntryMode()
         configureTextField()
         registerNotifications()
         assignActions()
@@ -711,14 +712,20 @@ class OmniBarViewController: UIViewController, OmniBar {
             expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
             expandable.selectedModeToggleState = selectedTextEntryMode
 
-            let isAddressBarSelected = textField.isEditing || expandable.isSearchAreaExpanded
+            let isAddressBarSelected = textField.isFirstResponder || expandable.aiChatTextView.isFirstResponder
             let shouldShowModeToggle = state.showAIChatModeToggle && isAddressBarSelected
+
+            // Ensure expanded state does not persist when nothing is focused (e.g. tab switches).
+            if !isAddressBarSelected && expandable.isSearchAreaExpanded {
+                expandable.setSearchAreaExpanded(false, animated: false)
+            }
+
             expandable.isModeToggleHidden = !shouldShowModeToggle
             if shouldShowModeToggle {
                 barView.isAIChatButtonHidden = true
             }
 
-            let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
+            let shouldExpand = isAddressBarSelected && selectedTextEntryMode == .aiChat
             expandable.setSearchAreaExpanded(shouldExpand, animated: false)
 
             expandable.updateLeftIconForMode(shouldShowModeToggle ? selectedTextEntryMode : .search)
@@ -936,11 +943,15 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+        applyTextEntryMode(mode, animated: true)
+    }
+
+    func applyTextEntryMode(_ mode: TextEntryMode, animated: Bool) {
         selectedTextEntryMode = mode
         updateTextFieldPlaceholderForSelectedMode()
 
         if state.showAIChatModeToggle {
-            expandableBarView?.setSearchAreaExpanded(mode == .aiChat, animated: true)
+            expandableBarView?.setSearchAreaExpanded(mode == .aiChat, animated: animated)
             expandableBarView?.updateLeftIconForMode(mode)
         }
     }

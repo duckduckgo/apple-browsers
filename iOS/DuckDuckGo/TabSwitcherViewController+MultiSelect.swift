@@ -476,4 +476,3 @@ extension TabSwitcherViewController {
     }
 
 }
-

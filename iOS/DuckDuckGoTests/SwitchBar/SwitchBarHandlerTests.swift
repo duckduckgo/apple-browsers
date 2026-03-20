@@ -163,6 +163,7 @@ final class SwitchBarHandlerTests: XCTestCase {
         mockAIChatSettings.defaultOmnibarMode = .lastUsed
         createSUT()
         sut.setToggleState(.aiChat)
+        sut.saveToggleState()
 
         createSUT()
 
@@ -182,14 +183,22 @@ final class SwitchBarHandlerTests: XCTestCase {
 
     func testSaveToggleState_WhenSetToSearch_ShouldPersist() {
         sut.setToggleState(.search)
+        sut.saveToggleState()
 
         XCTAssertEqual(mockToggleModeStorage.savedMode, .search)
     }
 
     func testSaveToggleState_WhenSetToAIChat_ShouldPersist() {
         sut.setToggleState(.aiChat)
+        sut.saveToggleState()
 
         XCTAssertEqual(mockToggleModeStorage.savedMode, .aiChat)
+    }
+
+    func testSetToggleState_ShouldNotPersistAutomatically() {
+        sut.setToggleState(.aiChat)
+
+        XCTAssertNil(mockToggleModeStorage.savedMode)
     }
 
     // MARK: - Toggle State Publisher Tests
@@ -345,6 +354,7 @@ final class SwitchBarHandlerTests: XCTestCase {
         XCTAssertEqual(sut.currentToggleState, .search) // Default when no stored value
 
         sut.setToggleState(.aiChat)
+        sut.saveToggleState()
         XCTAssertEqual(sut.currentToggleState, .aiChat)
 
         // Create new instance to test persistence

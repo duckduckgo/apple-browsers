@@ -130,6 +130,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         updateButtonState()
     }
 
+    func saveToggleState() {
+        // Unified path handles persistence via ToggleModeStorage in the coordinator
+    }
+
     func clearText() {
         updateCurrentText("")
     }

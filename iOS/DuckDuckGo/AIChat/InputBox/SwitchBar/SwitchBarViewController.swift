@@ -252,6 +252,7 @@ class SwitchBarViewController: UIViewController {
     private func segmentedPickerSelectionChanged(_ selectedItem: ImageSegmentedPickerItem) {
         let newMode: TextEntryMode = pickerItems.first == selectedItem ? .search : .aiChat
         switchBarHandler.setToggleState(newMode)
+        switchBarHandler.saveToggleState()
     }
     
     // MARK: - Scroll Progress

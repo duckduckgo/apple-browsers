@@ -66,6 +66,7 @@ protocol SwitchBarHandling: AnyObject {
     func updateCurrentText(_ text: String)
     func submitText(_ text: String)
     func setToggleState(_ state: TextEntryMode)
+    func saveToggleState()
     func clearText()
     func microphoneButtonTapped()
     func markUserInteraction()
@@ -222,10 +223,9 @@ final class SwitchBarHandler: SwitchBarHandling {
     func setToggleState(_ state: TextEntryMode) {
         // Only fire pixel if the state is actually changing
         let isStateChanging = currentToggleState != state
-        
+
         currentToggleState = state
-        saveToggleState()
-        
+
         if isStateChanging {
             fireModeSwitchedPixel(to: state)
         }

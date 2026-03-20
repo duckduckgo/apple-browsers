@@ -611,6 +611,7 @@ extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegat
 
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didSwipeToMode mode: TextEntryMode) {
         switchBarHandler.setToggleState(mode)
+        switchBarHandler.saveToggleState()
     }
 
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didUpdateScrollProgress progress: CGFloat) {
@@ -627,6 +628,7 @@ extension OmniBarEditingStateViewController: FadeOutContainerViewControllerDeleg
 
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
         switchBarHandler.setToggleState(mode)
+        switchBarHandler.saveToggleState()
     }
 
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {

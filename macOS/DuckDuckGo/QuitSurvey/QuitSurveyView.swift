@@ -228,6 +228,7 @@ private struct DomainToggleRow: View {
             Toggle("", isOn: $isSelected)
                 .toggleStyle(.checkbox)
                 .labelsHidden()
+                .accessibilityLabel(entry.title ?? entry.domain)
 
             if let favicon = entry.favicon {
                 Image(nsImage: favicon)

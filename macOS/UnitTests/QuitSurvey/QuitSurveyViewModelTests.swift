@@ -87,7 +87,7 @@ private func makeViewModel(
 @MainActor
 final class QuitSurveyViewModelTests: XCTestCase {
 
-    func testRecentDomainsReturnsLast5UniqueHostsSortedByMostRecent() {
+    func testRecentDomainsIsEmptyIfFFisNotEnabledAndHistoryIsNotEmpty() {
         let now = Date()
         let historyCoordinating = HistoryCoordinatingMock()
         historyCoordinating.history = [
@@ -107,6 +107,31 @@ final class QuitSurveyViewModelTests: XCTestCase {
             onQuit: {}
         )
 
+        XCTAssertEqual(viewModel.recentDomains, [])
+    }
+
+    func testRecentDomainsReturnsLast5UniqueHostsSortedByMostRecent() {
+        let now = Date()
+        let historyCoordinating = HistoryCoordinatingMock()
+        historyCoordinating.history = [
+            makeEntry(host: "a.com", lastVisit: now.addingTimeInterval(-1)),
+            makeEntry(host: "b.com", lastVisit: now.addingTimeInterval(-2)),
+            makeEntry(host: "c.com", lastVisit: now.addingTimeInterval(-3)),
+            makeEntry(host: "d.com", lastVisit: now.addingTimeInterval(-4)),
+            makeEntry(host: "e.com", lastVisit: now.addingTimeInterval(-5)),
+            makeEntry(host: "f.com", lastVisit: now.addingTimeInterval(-6)),
+            makeEntry(host: "a.com", lastVisit: now.addingTimeInterval(-7)), // duplicate
+        ]
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.websitesHistoryFirstTimeQuitSurvey]
+
+        let viewModel = QuitSurveyViewModel(
+            persistor: nil,
+            featureFlagger: featureFlagger,
+            historyCoordinating: historyCoordinating,
+            onQuit: {}
+        )
+
         XCTAssertEqual(viewModel.recentDomains.map(\.domain), ["a.com", "b.com", "c.com", "d.com", "e.com"])
     }
 
@@ -115,10 +140,12 @@ final class QuitSurveyViewModelTests: XCTestCase {
         historyCoordinating.history = [
             makeEntry(url: URL(string: "https://example.com/page?user=secret&token=abc")!, lastVisit: Date()),
         ]
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.websitesHistoryFirstTimeQuitSurvey]
 
         let viewModel = QuitSurveyViewModel(
             persistor: nil,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             historyCoordinating: historyCoordinating,
             onQuit: {}
         )
@@ -131,10 +158,12 @@ final class QuitSurveyViewModelTests: XCTestCase {
         historyCoordinating.history = [
             makeEntry(url: URL(string: "https://example.com/page#section-with-id")!, lastVisit: Date()),
         ]
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.websitesHistoryFirstTimeQuitSurvey]
 
         let viewModel = QuitSurveyViewModel(
             persistor: nil,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             historyCoordinating: historyCoordinating,
             onQuit: {}
         )
@@ -149,10 +178,12 @@ final class QuitSurveyViewModelTests: XCTestCase {
             makeEntry(url: URL(string: "https://example.com/page1?q=1")!, lastVisit: now.addingTimeInterval(-1)),
             makeEntry(url: URL(string: "https://example.com/page2?q=2")!, lastVisit: now.addingTimeInterval(-2)),
         ]
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.websitesHistoryFirstTimeQuitSurvey]
 
         let viewModel = QuitSurveyViewModel(
             persistor: nil,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             historyCoordinating: historyCoordinating,
             onQuit: {}
         )

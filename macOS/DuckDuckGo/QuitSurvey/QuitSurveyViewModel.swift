@@ -153,11 +153,16 @@ final class QuitSurveyViewModel: ObservableObject {
         let otherOptions = Self.allOptions.filter { $0.id != Self.websitesDidntWorkOption.id }
         let randomOptions = Array(otherOptions.shuffled().prefix(7))
         self.availableOptions = (randomOptions + [Self.websitesDidntWorkOption]).shuffled() + [Self.somethingElseOption]
-        self.recentDomains = Self.fetchRecentDomainEntries(from: historyCoordinating, faviconManaging: faviconManaging)
+        self.recentDomains = Self.fetchRecentDomainEntries(from: historyCoordinating,
+                                                           faviconManaging: faviconManaging,
+                                                           featureFlagger: featureFlagger)
         fireSurveyShown()
     }
 
-    private static func fetchRecentDomainEntries(from history: HistoryCoordinating?, faviconManaging: FaviconManagement?) -> [QuitSurveyDomainEntry] {
+    private static func fetchRecentDomainEntries(from history: HistoryCoordinating?,
+                                                 faviconManaging: FaviconManagement?,
+                                                 featureFlagger: FeatureFlagger) -> [QuitSurveyDomainEntry] {
+        guard featureFlagger.isFeatureOn(.websitesHistoryFirstTimeQuitSurvey) else { return [] }
         guard let entries = history?.history else { return [] }
         var seen = Set<String>()
         return entries

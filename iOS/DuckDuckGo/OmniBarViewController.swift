@@ -138,6 +138,15 @@ class OmniBarViewController: UIViewController, OmniBar {
         super.init(nibName: nil, bundle: nil)
     }
 
+    /// Resolves the user's preferred default toggle mode from settings.
+    func resolvedDefaultTextEntryMode() -> TextEntryMode {
+        switch dependencies.aiChatSettings.defaultOmnibarMode {
+        case .search: return .search
+        case .duckAI: return .aiChat
+        case .lastUsed: return ToggleModeStorage().restore() ?? .search
+        }
+    }
+
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")

@@ -1913,9 +1913,11 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.endEditing()
 
         if aiChatAddressBarExperience.shouldShowModeToggle,
-           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController,
-           omniBarVC.selectedTextEntryMode == .aiChat {
-            omniBarVC.setSelectedTextEntryMode(.search)
+           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController {
+            let defaultMode = omniBarVC.resolvedDefaultTextEntryMode()
+            if omniBarVC.selectedTextEntryMode != defaultMode {
+                omniBarVC.setSelectedTextEntryMode(defaultMode)
+            }
         }
 
         refreshOmniBar()

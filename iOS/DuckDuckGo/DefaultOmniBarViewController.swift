@@ -385,7 +385,7 @@ extension DefaultOmniBarViewController {
         isSuppressingKeyboardTransfer = true
         // Collapse instantly to avoid a visual flash when navigation starts.
         omniBarView.setSearchAreaExpanded(false, animated: false)
-        setSelectedTextEntryMode(.search)
+        setSelectedTextEntryMode(resolvedDefaultTextEntryMode())
         endEditing()
         isSuppressingKeyboardTransfer = false
     }

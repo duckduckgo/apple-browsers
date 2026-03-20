@@ -23,17 +23,22 @@ import PrivacyConfig
 final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     private let featureFlagger: FeatureFlagger
     private let dockCustomizer: DockCustomization?
-    @Published private var addedToDock = false
     var windowControllersManager: WindowControllersManagerProtocol
 
+    /// Whether the current build can add the app to the dock.
     let canAddToDock: Bool
 
+    /// Whether instructions can be shown for how to add the app to the dock manually.
     var canShowDockInstructions: Bool {
         featureFlagger.isFeatureOn(.addToDockAppStore)
     }
 
+    /// Whether the app is being added to the dock.
+    /// Used to optimistically update settings when adding the app to the dock.
+    @Published private var isBeingAddedToDock = false
+
     var isAddedToDock: Bool {
-        addedToDock || dockCustomizer?.isAddedToDock == true
+        isBeingAddedToDock || dockCustomizer?.isAddedToDock == true
     }
 
     init(featureFlagger: FeatureFlagger,
@@ -59,7 +64,7 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
             break
         }
         dockCustomizer.addToDock()
-        addedToDock = true
+        isBeingAddedToDock = true
     }
 
     @MainActor
@@ -68,7 +73,7 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     }
 
     func refresh() {
-        addedToDock = false
+        isBeingAddedToDock = false
     }
 }
 

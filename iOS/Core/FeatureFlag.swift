@@ -335,6 +335,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
     case embeddedExtension
 
+    case embeddedRollout
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213278892205657?focus=true
     case forceDarkModeOnWebsites
 
@@ -495,6 +497,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .onboardingRebranding,
              .webExtensions,
              .embeddedExtension,
+             .embeddedRollout,
              .forceDarkModeOnWebsites,
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
@@ -752,6 +755,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
+        case .embeddedRollout:
+            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedRollout))
         case .forceDarkModeOnWebsites:
             return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
         case .autofillOnboardingExperiment:

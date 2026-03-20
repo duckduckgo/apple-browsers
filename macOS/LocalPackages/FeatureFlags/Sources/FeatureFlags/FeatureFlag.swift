@@ -59,6 +59,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
 
+    case embeddedRollout
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
 
@@ -357,6 +359,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncSeamlessAccountSwitching,
                 .webExtensions,
                 .embeddedExtension,
+                .embeddedRollout,
                 .forceDarkModeOnWebsites,
                 .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
@@ -468,6 +471,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
+        case .embeddedRollout:
+            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedRollout))
         case .forceDarkModeOnWebsites:
             return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
         case .syncSeamlessAccountSwitching:

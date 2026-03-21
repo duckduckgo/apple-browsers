@@ -1079,9 +1079,6 @@
 "Confirm" = "Vahvista";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontekstuaalinen perehdytys";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Mukautettu URL-osoite: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "Dark Readerin poissulkemat verkkotunnukset (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Tuo kirjanmerkkitiedosto...";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Lähetetty viestisi mukana Duck.ai:lle";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Katsot Duck Playerissa!\nTäällä ei ole kohdennettuja mainoksia.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Voimassa oleva kynnysarvo: %@ s (ohitus)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Voimassa oleva kynnysarvo: konfiguraation oletusarvo (ei ohitusta)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Sähköpostisuojaus";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Tapahtui tuntematon virhe";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Siirtyy tälle välilehdelle";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Palaa välilehdelle %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Palaa kohtaan…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Palaa kohtaan %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN katkaistu vanhentuneen tilauksen takia. Tilaa DuckDuckGo, jotta voit yhdistää VPN:n uudelleen.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Todentaminen ei onnistu. Tarkista, että tilauksesi on aktiivinen, ja yritä uudelleen.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "VPN-palvelimeen ei saada yhteyttä. Yritä myöhemmin uudelleen.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Tilauksesi on päättynyt. Tilaa uudelleen, jotta voit muodostaa yhteyden VPN-palvelimeen.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Tapahtui odottamaton virhe. Yritä uudelleen. Jos ongelma jatkuu, vieritä **Tietoja**-kohtaan ja avaa **Usein kysytyt kysymykset ja tuki**, niin saat apua.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN ei onnistunut muodostamaan yhteyttä. Yritä myöhemmin uudelleen.";
 
@@ -2442,11 +2464,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS-palvelin";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Yritä myöhemmin uudelleen.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Yhteyden muodostaminen epäonnistui.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Yhteyden muodostaminen epäonnistui";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP-osoite";
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Ei aktiivisia tilauksia";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Ei poissuljettuja verkkotunnuksia";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Olemassa olevaa tilausta ei löytynyt";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ai niin, melkein unohdin...";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Yksityinen. Nopea. Vähemmän mainoksia.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Tämä on DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Oletko valmis käyttämään nopeampaa selainta, joka pitää sinut suojattuna?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Hei!";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Haluatko palauttaa kirjanmerkit, salasanat ja muita tietoja edellisestä DuckDuckGo-synkronoinnistasi?";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Jatketaan siitä, mihin jäit";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Yksityinen. Nopea. Vähemmän mainoksia.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Tämä on DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Oletko valmis käyttämään nopeampaa selainta, joka pitää sinut suojattuna?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Hei!";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Aloita selailu";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Kieltäytyminen...";
+
+/* No comment provided by engineer. */
+"Override" = "Ohitus";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "En voi käyttää tilaajille tarkoitettuja Duck.ai-malleja.";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Näytä osoitekentässä";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Valitse, mitä näet, kun palaat %@ käyttämättömyyden jälkeen.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 tunti";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d tuntia";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minuutti";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minuuttia";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekunti";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekuntia";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Toimettomuuden jälkeen";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Viimeksi käytetty välilehti";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Uusi välilehti";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Haku ja Duck.ai";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Osoitepalkin sijainti";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Kokeellinen selainvalikko";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Avaa linkit liittyvissä sovelluksissa";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Tilaussopimukset";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Tilauksesi on poistettu tältä laitteelta.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Peruuta tason alennus";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Tilauksesi on poistettu tältä laitteelta.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Sopimuksesi alenee tasolle %1$@ alkaen %2$@.";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Siirtyy tälle välilehdelle";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Palaa välilehdelle %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Palaa kohtaan…";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Palaa kohtaan %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Valitse, mitä näet, kun palaat %@ käyttämättömyyden jälkeen.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 tunti";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d tuntia";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 minuutti";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d minuuttia";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 sekunti";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d sekuntia";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Toimettomuuden jälkeen";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Viimeksi käytetty välilehti";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Uusi välilehti";

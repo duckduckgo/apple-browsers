@@ -20,7 +20,24 @@ import Combine
 import Foundation
 import os.log
 import Common
+import History
 import PixelKit
+import PrivacyConfig
+import PrivacyDashboard
+import AppKit
+
+// MARK: - Domain Entry Model
+
+struct QuitSurveyDomainEntry: Identifiable, Hashable {
+    let domain: String
+    let title: String?
+    let favicon: NSImage?
+
+    var id: String { domain }
+
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.domain == rhs.domain }
+    func hash(into hasher: inout Hasher) { hasher.combine(domain) }
+}
 
 // MARK: - Survey Option Model
 
@@ -57,13 +74,16 @@ final class QuitSurveyViewModel: ObservableObject {
     @Published var feedbackText: String = ""
     @Published private(set) var autoQuitCountdown: Int = 5
     @Published private(set) var isSubmitting: Bool = false
+    @Published private(set) var selectedDomains: Set<String> = []
+    @Published var otherDomainText: String = ""
+    @Published private(set) var isOtherDomainSelected: Bool = false
 
     // MARK: - Configuration
 
     private static let allOptions: [QuitSurveyOption] = [
         QuitSurveyOption(id: "pages-froze", text: UserText.quitSurveyOptionPagesFroze),
         QuitSurveyOption(id: "pages-loaded-slowly", text: UserText.quitSurveyOptionPagesLoadedSlowly),
-        QuitSurveyOption(id: "websites-didnt-work", text: UserText.quitSurveyOptionWebsitesDidntWork),
+        QuitSurveyOption(id: websitesDidntWorkOptionId, text: UserText.quitSurveyOptionWebsitesDidntWork),
         QuitSurveyOption(id: "browser-crashed", text: UserText.quitSurveyOptionBrowserCrashed),
         QuitSurveyOption(id: "tabs-opened-slowly", text: UserText.quitSurveyOptionTabsOpenedSlowly),
         QuitSurveyOption(id: "slowed-my-computer", text: UserText.quitSurveyOptionSlowedMyComputer),
@@ -77,17 +97,24 @@ final class QuitSurveyViewModel: ObservableObject {
         QuitSurveyOption(id: "privacy-concerns", text: UserText.quitSurveyOptionPrivacyConcerns),
         QuitSurveyOption(id: "just-trying-it-out", text: UserText.quitSurveyOptionJustTryingItOut),
         QuitSurveyOption(id: "sign-in-hassles", text: UserText.quitSurveyOptionSignInHassles),
-        QuitSurveyOption(id: "no-extensions", text: UserText.quitSurveyOptionNoExtensions),
+
         QuitSurveyOption(id: "no-website-translations", text: UserText.quitSurveyOptionNoWebsiteTranslations),
         QuitSurveyOption(id: "issue-importing-my-stuff", text: UserText.quitSurveyOptionIssueImportingMyStuff)
     ]
 
+    static let websitesDidntWorkOptionId = "websites-didnt-work"
+    private static let websitesDidntWorkOption = QuitSurveyOption(id: websitesDidntWorkOptionId, text: UserText.quitSurveyOptionWebsitesDidntWork)
     private static let somethingElseOption = QuitSurveyOption(id: "something-else", text: UserText.quitSurveyOptionSomethingElse)
 
+    static let domainSelectorTriggerIds: Set<String> = [websitesDidntWorkOptionId, "pages-froze", "pages-loaded-slowly"]
+
     let availableOptions: [QuitSurveyOption]
+    let recentDomains: [QuitSurveyDomainEntry]
 
     private let feedbackSender: FeedbackSenderImplementing
     private var persistor: QuitSurveyPersistor?
+    private let featureFlagger: FeatureFlagger
+    private let pixelFiring: PixelFiring?
     private let onQuit: () -> Void
     private var autoQuitTimer: Timer?
 
@@ -101,21 +128,56 @@ final class QuitSurveyViewModel: ObservableObject {
         !selectedOptions.isEmpty || !feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    var shouldShowDomainSelector: Bool {
+        featureFlagger.isFeatureOn(.websitesHistoryFirstTimeQuitSurvey)
+            && !selectedOptions.isDisjoint(with: Self.domainSelectorTriggerIds)
+            && !recentDomains.isEmpty
+    }
+
     // MARK: - Initialization
 
     init(
         feedbackSender: FeedbackSenderImplementing = FeedbackSender(),
         persistor: QuitSurveyPersistor? = nil,
+        featureFlagger: FeatureFlagger,
+        pixelFiring: PixelFiring? = PixelKit.shared,
+        historyCoordinating: HistoryCoordinating? = nil,
+        faviconManaging: FaviconManagement? = nil,
         onQuit: @escaping () -> Void
     ) {
         self.feedbackSender = feedbackSender
         self.persistor = persistor
+        self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
         self.onQuit = onQuit
-
-        // Select 8 random options + "Something else"
-        let randomOptions = Array(Self.allOptions.shuffled().prefix(8))
-        self.availableOptions = randomOptions + [Self.somethingElseOption]
+        let otherOptions = Self.allOptions.filter { $0.id != Self.websitesDidntWorkOption.id }
+        let randomOptions = Array(otherOptions.shuffled().prefix(7))
+        self.availableOptions = (randomOptions + [Self.websitesDidntWorkOption]).shuffled() + [Self.somethingElseOption]
+        self.recentDomains = Self.fetchRecentDomainEntries(from: historyCoordinating,
+                                                           faviconManaging: faviconManaging,
+                                                           featureFlagger: featureFlagger)
         fireSurveyShown()
+    }
+
+    private static func fetchRecentDomainEntries(from history: HistoryCoordinating?,
+                                                 faviconManaging: FaviconManagement?,
+                                                 featureFlagger: FeatureFlagger) -> [QuitSurveyDomainEntry] {
+        guard featureFlagger.isFeatureOn(.websitesHistoryFirstTimeQuitSurvey) else { return [] }
+        guard let entries = history?.history else { return [] }
+        var seen = Set<String>()
+        return entries
+            .sorted { $0.lastVisit > $1.lastVisit }
+            .compactMap { entry -> (HistoryEntry, String)? in
+                guard let host = entry.url.trimmingQueryItemsAndFragment().host else { return nil }
+                return (entry, host)
+            }
+            .filter { seen.insert($0.1).inserted }
+            .prefix(5)
+            .map { (entry, domain) in
+                let title = entry.title.flatMap { $0.isEmpty ? nil : $0 }
+                let favicon = faviconManaging?.getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: .small)?.image
+                return QuitSurveyDomainEntry(domain: domain, title: title, favicon: favicon)
+            }
     }
 
     // MARK: - Actions
@@ -135,30 +197,71 @@ final class QuitSurveyViewModel: ObservableObject {
         stopAutoQuitTimer()
         selectedOptions.removeAll()
         feedbackText = ""
+        clearDomainState()
         state = .initialQuestion
     }
 
     func toggleOption(_ optionId: String) {
         if selectedOptions.contains(optionId) {
             selectedOptions.remove(optionId)
+            if Self.domainSelectorTriggerIds.contains(optionId) && !shouldShowDomainSelector {
+                clearDomainState()
+            }
         } else {
             selectedOptions.insert(optionId)
+        }
+    }
+
+    private func clearDomainState() {
+        selectedDomains.removeAll()
+        isOtherDomainSelected = false
+        otherDomainText = ""
+    }
+
+    func toggleDomain(_ domain: String) {
+        if selectedDomains.contains(domain) {
+            selectedDomains.remove(domain)
+        } else {
+            selectedDomains.insert(domain)
+        }
+    }
+
+    func toggleOtherDomain() {
+        isOtherDomainSelected.toggle()
+        if !isOtherDomainSelected {
+            otherDomainText = ""
         }
     }
 
     func submitFeedback() {
         isSubmitting = true
 
+        var effectiveDomains = selectedDomains
+        let rawOther = otherDomainText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedURL = URL(string: rawOther).flatMap { $0.host != nil ? $0 : nil }
+            ?? URL(string: "https://\(rawOther)")
+        let trimmedOther = (resolvedURL?.trimmingQueryItemsAndFragment().host ?? rawOther)
+            .replacingOccurrences(of: ",", with: "")
+        if isOtherDomainSelected && !trimmedOther.isEmpty {
+            effectiveDomains.insert(trimmedOther)
+        }
+
+        let domainsPrefix = effectiveDomains.isEmpty
+            ? ""
+            : "Affected domains: \(effectiveDomains.sorted().joined(separator: ", "))\n\n"
+        let combinedText = domainsPrefix + feedbackText
+
         let feedback = Feedback.from(
             selectedPillIds: Array(selectedOptions),
-            text: feedbackText,
+            text: combinedText,
             appVersion: AppVersion.shared.versionNumber,
             category: .firstTimeQuitSurvey,
             problemCategory: Self.firstTimeQuitSurveyCategory
         )
 
         let reasons = getReasonsForPixel()
-        fireThumbsDownPixelSubmission(reasons: reasons)
+        let affectedDomains = effectiveDomains.isEmpty ? nil : effectiveDomains.sorted().joined(separator: ",")
+        fireThumbsDownPixelSubmission(reasons: reasons, affectedDomains: affectedDomains)
 
         // Store reasons for the return user pixel (fired on next app launch)
         persistor?.pendingReturnUserReasons = reasons
@@ -184,19 +287,19 @@ final class QuitSurveyViewModel: ObservableObject {
     // MARK: - Pixels
 
     private func fireSurveyShown() {
-        PixelKit.fire(QuitSurveyPixels.quitSurveyShown)
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyShown)
     }
 
     private func fireSurveyThumbsUp() {
-        PixelKit.fire(QuitSurveyPixels.quitSurveyThumbsUp)
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsUp)
     }
 
     private func fireSurveyThumbsDown() {
-        PixelKit.fire(QuitSurveyPixels.quitSurveyThumbsDown)
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsDown)
     }
 
-    private func fireThumbsDownPixelSubmission(reasons: String) {
-        PixelKit.fire(QuitSurveyPixels.quitSurveyThumbsDownSubmission(reasons: reasons))
+    private func fireThumbsDownPixelSubmission(reasons: String, affectedDomains: String?) {
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsDownSubmission(reasons: reasons, affectedDomains: affectedDomains))
     }
 
     /// This methods calculates the parameters for the thumbs down submission pixel.

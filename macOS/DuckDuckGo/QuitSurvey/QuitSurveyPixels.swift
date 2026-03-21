@@ -29,11 +29,12 @@ enum QuitSurveyPixelName: String {
 
 enum QuitSurveyPixels: PixelKitEvent {
     private static let reasonsKey = "reasons"
+    private static let affectedDomainsKey = "affected_domains"
 
     case quitSurveyShown
     case quitSurveyThumbsUp
     case quitSurveyThumbsDown
-    case quitSurveyThumbsDownSubmission(reasons: String)
+    case quitSurveyThumbsDownSubmission(reasons: String, affectedDomains: String?)
     case quitSurveyReturnUser(reasons: String)
 
     var name: String {
@@ -55,7 +56,13 @@ enum QuitSurveyPixels: PixelKitEvent {
         switch self {
         case .quitSurveyShown, .quitSurveyThumbsUp, .quitSurveyThumbsDown:
             return nil
-        case let .quitSurveyThumbsDownSubmission(reasons), let .quitSurveyReturnUser(reasons):
+        case let .quitSurveyThumbsDownSubmission(reasons, affectedDomains):
+            var params = [QuitSurveyPixels.reasonsKey: reasons]
+            if let domains = affectedDomains, !domains.isEmpty {
+                params[QuitSurveyPixels.affectedDomainsKey] = domains
+            }
+            return params
+        case let .quitSurveyReturnUser(reasons):
             return [QuitSurveyPixels.reasonsKey: reasons]
         }
     }

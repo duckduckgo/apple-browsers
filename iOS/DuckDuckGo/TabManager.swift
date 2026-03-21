@@ -33,10 +33,12 @@ import WebExtensions
 
 protocol TabManaging {
     var currentTabsModel: TabsModelManaging { get }
+    var allTabsModel: TabsModelReading { get }
     var currentBrowsingMode: BrowsingMode { get }
-    @MainActor func prepareAllTabsExceptCurrentForDataClearing()
-    @MainActor func prepareCurrentTabForDataClearing()
-    func removeAll() -> Result<Void, Error>
+    func tabsModel(for mode: BrowsingMode) -> TabsModelManaging
+    @MainActor func prepareAllTabsExceptCurrentForDataClearing(browsingMode: BrowsingMode?)
+    @MainActor func prepareCurrentTabForDataClearing(browsingMode: BrowsingMode?)
+    @MainActor func removeAll(browsingMode: BrowsingMode?) -> Result<Void, Error>
     @MainActor func viewModelForCurrentTab() -> TabViewModel?
     @MainActor func prepareTab(_ tab: Tab)
     @MainActor func isCurrentTab(_ tab: Tab) -> Bool
@@ -57,6 +59,12 @@ protocol TabControllerCacheDelegate: AnyObject {
     /// Called when a background tab's WebKit process terminated and its controller was evicted
     /// from the cache. The tab still exists in the model; a replacement will be created on next activation.
     func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController)
+}
+
+@MainActor
+protocol TabManagerFireModeDelegate: AnyObject {
+    func tabManagerDidCloseLastFireTab()
+    func tabManagerDidChangeBrowsingMode(_ mode: BrowsingMode)
 }
 
 protocol TrackerAnimationSuppressing {
@@ -118,6 +126,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
     private let autoconsentManagementProvider: AutoconsentManagementProviding
     private let fireproofing: Fireproofing
+    private let favicons: FaviconManaging
     private let websiteDataManager: WebsiteDataManaging
     private let appSettings: AppSettings
     private let maliciousSiteProtectionManager: MaliciousSiteProtectionManaging
@@ -136,6 +145,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
+    weak var fireModeDelegate: TabManagerFireModeDelegate?
 
     @UserDefaultsWrapper(key: .faviconTabsCacheNeedsCleanup, defaultValue: true)
     var tabsCacheNeedsCleanup: Bool
@@ -161,6 +171,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          autoconsentManagementProvider: AutoconsentManagementProviding,
          websiteDataManager: WebsiteDataManaging,
          fireproofing: Fireproofing,
+         favicons: FaviconManaging,
          maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          featureDiscovery: FeatureDiscovery,
@@ -194,6 +205,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.autoconsentManagementProvider = autoconsentManagementProvider
         self.websiteDataManager = websiteDataManager
         self.fireproofing = fireproofing
+        self.favicons = favicons
         self.maliciousSiteProtectionManager = maliciousSiteProtectionManager
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.featureDiscovery = featureDiscovery
@@ -219,6 +231,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             return
         }
         _currentBrowsingMode = mode
+        fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
         // TODO: - Fire pixel
     }
 
@@ -271,6 +284,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoconsentManagement: autoconsentManagement,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
+                                                              favicons: favicons,
                                                               tabInteractionStateSource: interactionStateSource,
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
@@ -379,6 +393,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoconsentManagement: autoconsentManagement,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
+                                                              favicons: favicons,
                                                               tabInteractionStateSource: interactionStateSource,
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
@@ -485,20 +500,25 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     /// Warning! This will leave the underlying tabs empty.  This is intentional so that the the
     ///  Tab Switcher's UICollectionView 'delete items' function doesn't complain about mis-matching
     ///   number of items.
+    @MainActor
     func bulkRemoveTabs(_ tabs: [Tab], in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         model.removeTabs(tabs)
         clean(tabs: tabs, clearTabHistory: true)
         _ = save()
+        notifyIfLastFireTabClosed(removedTabs: tabs)
     }
 
+    @MainActor
     func remove(tab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
         _ = save()
+        notifyIfLastFireTabClosed(removedTabs: [tab])
     }
 
+    @MainActor
     func replace(tab: Tab, withNewTab newTab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
         // In normal mode, removing the last tab auto-inserts a blank tab, so we skip
@@ -515,35 +535,19 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         _ = save()
     }
 
+    @MainActor
+    private func notifyIfLastFireTabClosed(removedTabs: [Tab]) {
+        guard removedTabs.contains(where: { $0.fireTab }),
+              tabsModel(for: .fire).tabs.isEmpty else { return }
+        fireModeDelegate?.tabManagerDidCloseLastFireTab()
+    }
+
+    @MainActor
     private func removeFromCache(_ controller: TabViewController) {
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
         }
         controller.dismiss()
-    }
-
-    func removeAll() -> Result<Void, Error> {
-        // TODO: - Handle fire mode burns
-        let tabIDs = currentTabsModel.tabs.map { $0.uid }
-        let previewsResult = previewsSource.removeAllPreviews()
-        currentTabsModel.clearAll()
-        for controller in tabControllerCache {
-            removeFromCache(controller)
-        }
-        let interactionResult = interactionStateSource?.removeAll(excluding: [])
-        removeTabHistory(for: tabIDs)
-        let saveResult = save()
-
-        if case .failure(let error) = previewsResult {
-            return .failure(error)
-        }
-        if let interactionResult = interactionResult, case .failure(let error) = interactionResult {
-            return .failure(error)
-        }
-        if case .failure(let error) = saveResult {
-            return .failure(error)
-        }
-        return .success(())
     }
 
     func removeLeftoverInteractionStates() {
@@ -565,14 +569,20 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return tabsModelProvider.save()
     }
 
+    /// Prepares all tabs for upcoming data clearing, skipping the current tab
+    /// - Parameter browsingMode: If provided, only prepares tabs matching the given mode. Otherwise, prepares all tabs.
     @MainActor
-    func prepareAllTabsExceptCurrentForDataClearing() {
-        tabControllerCache.filter { $0 !== current() }.forEach { $0.prepareForDataClearing() }
+    func prepareAllTabsExceptCurrentForDataClearing(browsingMode: BrowsingMode? = nil) {
+        tabControllerCache
+            .filter { $0 !== current() && (browsingMode == nil || $0.tabModel.mode == browsingMode) }
+            .forEach { $0.prepareForDataClearing() }
     }
     
     @MainActor
-    func prepareCurrentTabForDataClearing() {
-        current()?.prepareForDataClearing()
+    func prepareCurrentTabForDataClearing(browsingMode: BrowsingMode? = nil) {
+        guard let current = current(),
+              browsingMode == nil || current.tabModel.mode == browsingMode else { return }
+        current.prepareForDataClearing()
     }
     
     @MainActor
@@ -627,7 +637,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             // filter images that don't have a corresponding tab
             let toDelete = imageDomainURLs.filter { !tabLinksHashed.contains($0) }
             toDelete.forEach {
-                Favicons.shared.removeTabFavicon(forCacheKey: $0)
+                self.favicons.removeTabFavicon(forCacheKey: $0)
             }
 
             self.tabsCacheNeedsCleanup = false
@@ -636,6 +646,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     // MARK: - Tab Cleanup
     
+    @MainActor
     private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
@@ -655,6 +666,77 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         Task {
             await historyManager.removeTabHistory(for: tabIDs)
         }
+    }
+}
+
+// MARK: - Tabs Removal
+
+extension TabManager {
+    
+    private struct TabsRemovalData {
+        let tabsToDelete: [Tab]
+        let tabsToPreserve: [Tab]
+        let tabControllersToDelete: [TabViewController]
+        let tabIDsToDelete: Set<String>
+        let tabIDsToPreserve: Set<String>
+        
+        init(tabsToDelete: [Tab], tabsToPreserve: [Tab], tabControllersToDelete: [TabViewController]) {
+            self.tabsToDelete = tabsToDelete
+            self.tabsToPreserve = tabsToPreserve
+            self.tabControllersToDelete = tabControllersToDelete
+            self.tabIDsToDelete = Set(tabsToDelete.map { $0.uid })
+            self.tabIDsToPreserve = Set(tabsToPreserve.map { $0.uid })
+        }
+    }
+    
+    @MainActor
+    func removeAll(browsingMode: BrowsingMode? = nil) -> Result<Void, Error> {
+        let tabsData = tabsRemovalData(browsingMode: browsingMode)
+
+        let previewsResult = previewsSource.removePreviewsWithIdNotIn(tabsData.tabIDsToPreserve)
+        tabsModelProvider.clearTabs(for: browsingMode)
+
+        for controller in tabsData.tabControllersToDelete {
+            removeFromCache(controller)
+        }
+
+        let interactionResult = interactionStateSource?.removeAll(excluding: tabsData.tabsToPreserve)
+        removeTabHistory(for: Array(tabsData.tabIDsToDelete))
+        let saveResult = save()
+
+        if case .failure(let error) = previewsResult {
+            return .failure(error)
+        }
+        if let interactionResult = interactionResult, case .failure(let error) = interactionResult {
+            return .failure(error)
+        }
+        if case .failure(let error) = saveResult {
+            return .failure(error)
+        }
+        return .success(())
+    }
+    
+    private func tabsRemovalData(browsingMode: BrowsingMode?) -> TabsRemovalData {
+        let tabsToDelete: [Tab]
+        let tabsToPreserve: [Tab]
+        let tabControllersToDelete: [TabViewController]
+        switch browsingMode {
+        case .fire:
+            tabsToDelete = tabsModel(for: .fire).tabs
+            tabControllersToDelete = tabControllerCache.filter { $0.tabModel.mode == .fire }
+            tabsToPreserve = tabsModel(for: .normal).tabs
+        case .normal:
+            tabsToDelete = tabsModel(for: .normal).tabs
+            tabControllersToDelete = tabControllerCache.filter { $0.tabModel.mode == .normal }
+            tabsToPreserve = tabsModel(for: .fire).tabs
+        case nil:
+            tabsToDelete = allTabsModel.tabs
+            tabControllersToDelete = tabControllerCache
+            tabsToPreserve = []
+        }
+        return .init(tabsToDelete: tabsToDelete,
+                     tabsToPreserve: tabsToPreserve,
+                     tabControllersToDelete: tabControllersToDelete)
     }
 }
 
@@ -684,7 +766,7 @@ extension TabManager {
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
             ])
             Task(priority: .utility) {
-                await previewsSource.removePreviewsWithIdNotIn(Set(allTabsModel.tabs.map { $0.uid }))
+                _ = previewsSource.removePreviewsWithIdNotIn(Set(allTabsModel.tabs.map { $0.uid }))
             }
         }
     }

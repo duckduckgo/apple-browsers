@@ -46,6 +46,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let tabManager: TabManager
     let syncPausedStateManager: any SyncPausedStateManaging
     let fireproofing: Fireproofing
+    let favicons: FaviconManaging
     let websiteDataManager: WebsiteDataManaging
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let keyValueStore: ThrowingKeyValueStoring
@@ -65,6 +66,7 @@ class SettingsLegacyViewProvider: ObservableObject {
          tabManager: TabManager,
          syncPausedStateManager: any SyncPausedStateManaging,
          fireproofing: Fireproofing,
+         favicons: FaviconManaging,
          websiteDataManager: WebsiteDataManaging,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          keyValueStore: ThrowingKeyValueStoring,
@@ -83,6 +85,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.tabManager = tabManager
         self.syncPausedStateManager = syncPausedStateManager
         self.fireproofing = fireproofing
+        self.favicons = favicons
         self.websiteDataManager = websiteDataManager
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.keyValueStore = keyValueStore
@@ -127,7 +130,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     private func instantiateFireproofingController() -> UIViewController {
         let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
         return storyboard.instantiateViewController(identifier: "FireProofSites") { coder in
-            return FireproofingSettingsViewController(coder: coder, fireproofing: self.fireproofing, websiteDataManager: self.websiteDataManager)
+            return FireproofingSettingsViewController(coder: coder, fireproofing: self.fireproofing, favicons: self.favicons, websiteDataManager: self.websiteDataManager)
         }
     }
 

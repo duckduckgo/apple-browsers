@@ -1,0 +1,122 @@
+name: Check Sparkle Update
+
+on:
+  schedule:
+    - cron: '0 1 * * 5'  # Every Friday at 01:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-update:
+    runs-on: macos-15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for Sparkle update
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/sparkle/check_sparkle_update.sh
+
+      - name: Check for existing update PR
+        id: dedupe
+        if: steps.check.outputs.update_available == 'true'
+        run: |
+          branch="automation/sparkle-update-${{ steps.check.outputs.latest_version }}"
+          if git ls-remote --exit-code --heads origin "${branch}" >/dev/null 2>&1; then
+            echo "Branch ${branch} already exists — skipping task and PR creation."
+            echo "should_create=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_create=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve SPM packages
+        if: steps.dedupe.outputs.should_create == 'true'
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -workspace DuckDuckGo.xcworkspace \
+            -scheme "macOS Browser"
+
+      - name: Create draft Pull Request
+        id: create-pr
+        if: steps.dedupe.outputs.should_create == 'true'
+        uses: peter-evans/create-pull-request@88bf0de51c7487d91e1abbb4899332e602c58bbf
+        with:
+          commit-message: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
+          committer: Dax the Duck <dax@duckduckgo.com>
+          author: Dax the Duck <dax@duckduckgo.com>
+          branch: automation/sparkle-update-${{ steps.check.outputs.latest_version }}
+          title: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
+          body: |
+            Updates Sparkle from `${{ steps.check.outputs.current_version }}` to `${{ steps.check.outputs.latest_version }}` (${{ steps.check.outputs.bump_type }} update).
+
+            [Compare changes on GitHub](https://github.com/sparkle-project/Sparkle/compare/${{ steps.check.outputs.current_version }}...${{ steps.check.outputs.latest_version }})
+
+            ---
+
+            ${{ steps.check.outputs.release_notes }}
+          labels: dependencies,macOS${{ steps.check.outputs.bump_type == 'major' && ',breaking' || '' }}
+          draft: true
+
+      - name: Create Asana task
+        id: create-asana-task
+        if: steps.create-pr.outputs.pull-request-url
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        run: |
+          sparkle_owners="diegoreymendez jotaemepereira"
+          primary_owner="${sparkle_owners%% *}"
+          mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml")
+
+          asana_user_id=$(echo "$mapping" | grep "^${primary_owner}:" | awk '{print $2}' | tr -d '"') || true
+
+          assignee_field=""
+          if [[ -n "$asana_user_id" && "$asana_user_id" != "null" ]]; then
+            assignee_field="\"assignee\": \"${asana_user_id}\","
+          else
+            echo "::warning::No Asana user found for ${primary_owner}"
+          fi
+
+          case "${{ steps.check.outputs.bump_type }}" in
+            major) emoji="🔴" ;;
+            minor) emoji="🟡" ;;
+            *)     emoji="🟢" ;;
+          esac
+
+          task_name="Sparkle ${emoji} [${{ steps.check.outputs.bump_type }}] ${{ steps.check.outputs.current_version }} → ${{ steps.check.outputs.latest_version }}"
+
+          response=$(curl -fLSs "https://app.asana.com/api/1.0/tasks" \
+            --header "Accept: application/json" \
+            --header "Authorization: Bearer ${ASANA_ACCESS_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "{
+              \"data\": {
+                ${assignee_field}
+                \"parent\": \"1212461351428211\",
+                \"name\": \"${task_name}\",
+                \"notes\": \"PR: ${{ steps.create-pr.outputs.pull-request-url }}\"
+              }
+            }")
+
+          task_id=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['gid'])")
+          echo "task_url=https://app.asana.com/0/0/${task_id}/f" >> "$GITHUB_OUTPUT"
+
+      - name: Add Asana task URL to PR and mark ready for review
+        if: steps.create-asana-task.outputs.task_url
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr_number="${{ steps.create-pr.outputs.pull-request-number }}"
+
+          {
+            echo "Task/Issue URL: ${{ steps.create-asana-task.outputs.task_url }}"
+            echo
+            gh pr view "$pr_number" --json body --jq '.body'
+          } | gh pr edit "$pr_number" --body-file -
+
+          gh pr ready "$pr_number"
+          gh pr edit "$pr_number" --add-reviewer diegoreymendez,jotaemepereira

@@ -54,7 +54,7 @@ public extension OnboardingRebranding.OnboardingStyles {
 
             var body: some View {
                 configuration.label
-                    .font(typography.small)
+                    .font(typography.contextual.controlSmall)
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)

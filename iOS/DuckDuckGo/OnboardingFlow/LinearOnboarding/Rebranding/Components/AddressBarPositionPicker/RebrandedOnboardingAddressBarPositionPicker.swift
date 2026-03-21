@@ -65,13 +65,6 @@ private enum AddressBarPositionPickerMetrics {
     static let borderDarkColor = Color.white.opacity(0.18)
 
     static let accentColor = Color(singleUseColor: .rebranding(.accentPrimary))
-
-    enum Radio {
-        static let size: CGFloat = 24.0
-        static let checkSize: CGFloat = 16.0
-        static let strokeInset: CGFloat = 0.75
-        static let strokeWidth: CGFloat = 1.5
-    }
 }
 
 extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker {
@@ -101,7 +94,7 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
 
                     Spacer()
 
-                    RadioIndicator(isSelected: isSelected)
+                    OnboardingRebranding.RadioIndicator(isSelected: isSelected, accentColor: AddressBarPositionPickerMetrics.accentColor)
                 }
             }
             .overlay {
@@ -119,57 +112,6 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
             }
         }
 
-    }
-
-    struct RadioIndicator: View {
-        @Environment(\.colorScheme) private var colorScheme
-        let isSelected: Bool
-
-        var body: some View {
-            Circle()
-                .frame(width: AddressBarPositionPickerMetrics.Radio.size, height: AddressBarPositionPickerMetrics.Radio.size)
-                .foregroundColor(foregroundColor)
-                .overlay {
-                    selectionOverlay
-                }
-        }
-
-        @ViewBuilder
-        private var selectionOverlay: some View {
-            if isSelected {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSolid)
-                    .renderingMode(.template)
-                    .resizable()
-                    .background(
-                        Circle()
-                            .fill(checkboxFillerColor)
-                            .frame(width: AddressBarPositionPickerMetrics.Radio.checkSize, height: AddressBarPositionPickerMetrics.Radio.checkSize)
-                    )
-                    .foregroundStyle(AddressBarPositionPickerMetrics.accentColor)
-                    .frame(width: AddressBarPositionPickerMetrics.Radio.size, height: AddressBarPositionPickerMetrics.Radio.size)
-                    .clipShape(Circle())
-            } else {
-                Circle()
-                    .inset(by: AddressBarPositionPickerMetrics.Radio.strokeInset)
-                    .stroke(checkboxStrokeColor, lineWidth: AddressBarPositionPickerMetrics.Radio.strokeWidth)
-            }
-        }
-
-        private var checkboxStrokeColor: Color {
-            colorScheme == .light ? AddressBarPositionPickerMetrics.borderLightColor : AddressBarPositionPickerMetrics.borderDarkColor
-        }
-
-        private var checkboxFillerColor: Color {
-            colorScheme == .light ? .white : Color(baseColor: .gray90)
-        }
-
-        private var foregroundColor: Color {
-            if isSelected {
-                AddressBarPositionPickerMetrics.accentColor
-            } else {
-                Color(designSystemColor: .controlsFillPrimary)
-            }
-        }
     }
 
 }

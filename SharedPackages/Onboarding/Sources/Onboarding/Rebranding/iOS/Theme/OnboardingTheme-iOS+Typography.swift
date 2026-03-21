@@ -26,7 +26,22 @@ public extension OnboardingTheme {
         /// Contextual-specific typography extension point.
         /// Intentionally empty for now while contextual flow continues using shared tokens.
         public struct Contextual: Equatable {
-            public init() {}
+            /// Standard title style for contextual Flow.
+            public let title: Font
+            /// Standard body style for contextual Flow.
+            public let body: Font
+            /// Standard style for list button for contextual Flow.
+            public let controlSmall: Font
+
+            public init(
+                title: Font,
+                body: Font,
+                controlSmall: Font
+            ) {
+                self.title = title
+                self.body = body
+                self.controlSmall = controlSmall
+            }
         }
 
         /// Typography tokens used by linear onboarding flow.
@@ -67,10 +82,6 @@ public extension OnboardingTheme {
         public let title: Font
         /// Primary body text style.
         public let body: Font
-        /// Standard title style for contextual Flow.
-        public let contextualTitle: Font
-        /// Standard body style for contextual Flow.
-        public let contextualBody: Font
         /// Step progress text style.
         public let progressIndicator: Font
         /// List row title style (E.g Address Bar position picker title).
@@ -91,21 +102,17 @@ public extension OnboardingTheme {
             largeTitle: Font,
             title: Font,
             body: Font,
-            contextualTitle: Font,
-            contextualBody: Font,
             progressIndicator: Font,
             row: Font,
             rowDetails: Font,
             small: Font,
             caption: Font,
-            contextual: Contextual = .init(),
+            contextual: Contextual,
             linear: Linear? = nil
         ) {
             self.largeTitle = largeTitle
             self.title = title
             self.body = body
-            self.contextualTitle = contextualTitle
-            self.contextualBody = contextualBody
             self.progressIndicator = progressIndicator
             self.row = row
             self.rowDetails = rowDetails
@@ -135,13 +142,16 @@ public extension OnboardingTheme.Typography {
         largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .medium),
         title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
         body: makeFont(size: 18, family: .duckSansProduct, weight: .regular),
-        contextualTitle: makeFont(size: 20, family: .duckSansDisplay, weight: .bold),
-        contextualBody: makeFont(size: 16, family: .duckSansProduct, weight: .regular),
         progressIndicator: makeFont(size: 12, family: .duckSansProduct, weight: .regular),
         row: makeFont(size: 16, family: .duckSansProduct, weight: .medium),
         rowDetails: makeFont(size: 14, family: .duckSansProduct, weight: .regular),
         small: makeFont(size: 14, family: .duckSansProduct, weight: .regular),
         caption: makeFont(size: 10, family: .duckSansProduct, weight: .bold),
+        contextual: .init(
+            title: makeFont(size: 20, family: .duckSansDisplay, weight: .bold),
+            body: makeFont(size: 16, family: .duckSansProduct, weight: .regular),
+            controlSmall: makeFont(size: 15, family: .duckSansProduct, weight: .bold)
+        ),
         linear: .init(
             largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .medium),
             title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
@@ -157,13 +167,16 @@ public extension OnboardingTheme.Typography {
         largeTitle: .system(size: 44, weight: .medium),
         title: .system(size: 24, weight: .bold),
         body: .system(size: 18, weight: .regular),
-        contextualTitle: .system(size: 20, weight: .bold),
-        contextualBody: .system(size: 16, weight: .regular),
         progressIndicator: .system(size: 12, weight: .regular),
         row: .system(size: 16, weight: .medium),
         rowDetails: .system(size: 14, weight: .regular),
         small: .system(size: 14, weight: .regular),
         caption: .system(size: 10, weight: .bold),
+        contextual: .init(
+            title: .system(size: 20, weight: .bold),
+            body: .system(size: 16, weight: .regular),
+            controlSmall: .system(size: 15, weight: .bold)
+        ),
         linear: .init(
             largeTitle: .system(size: 44, weight: .medium),
             title: .system(size: 24, weight: .bold),

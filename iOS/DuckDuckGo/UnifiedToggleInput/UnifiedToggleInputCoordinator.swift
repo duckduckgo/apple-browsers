@@ -707,18 +707,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            let takePhotoAction = UIAlertAction(title: UserText.aiChatAttachmentOptionTakePhoto, style: .default) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: UserText.aiChatAttachmentOptionTakePhoto, style: .default) { [weak self] _ in
                 self?.presentCamera(from: root)
-            }
-            takePhotoAction.setValue(UIImage(systemName: "camera"), forKey: "image")
-            sheet.addAction(takePhotoAction)
+            })
         }
 
-        let choosePhotoAction = UIAlertAction(title: UserText.aiChatAttachmentOptionChoosePhoto, style: .default) { [weak self] _ in
+        sheet.addAction(UIAlertAction(title: UserText.aiChatAttachmentOptionChoosePhoto, style: .default) { [weak self] _ in
             self?.presentPhotoPicker(from: root, remaining: remaining)
-        }
-        choosePhotoAction.setValue(UIImage(systemName: "photo.on.rectangle"), forKey: "image")
-        sheet.addAction(choosePhotoAction)
+        })
 
         sheet.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
 

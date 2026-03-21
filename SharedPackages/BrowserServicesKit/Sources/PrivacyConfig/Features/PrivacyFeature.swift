@@ -181,6 +181,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
     case startupMetrics
 
+    /// Enables showing browsing history domains in the first-time quit survey
+    case websitesHistoryFirstTimeQuitSurvey
+
     case semaphoreAlwaysVisible
 
     case tabAnimations
@@ -421,9 +424,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
     /// Global switch to disable New Tab Page search box
     case omnibar
 
-    /// Global switch to control shared or independent New Tab Page
-    case newTabPagePerTab
-
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
 
@@ -646,6 +646,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
     case embeddedExtension = "embedded"
+    case embeddedRollout
 }
 
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {

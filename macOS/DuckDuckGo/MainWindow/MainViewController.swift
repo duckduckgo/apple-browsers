@@ -70,7 +70,6 @@ final class MainViewController: NSViewController {
     private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
-    private var appearanceChangedCancellable: AnyCancellable?
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
 
@@ -339,7 +338,6 @@ final class MainViewController: NSViewController {
         subscribeToMouseTrackingArea()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
-        subscribeToAppearanceChanges()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
 
@@ -377,7 +375,6 @@ final class MainViewController: NSViewController {
 
     override func viewDidAppear() {
         startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
-        initPreloader()
 
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
@@ -424,10 +421,6 @@ final class MainViewController: NSViewController {
     func windowDidResignKey() {
         browserTabViewController.windowDidResignKey()
         tabBarViewController.hideTabPreview()
-    }
-
-    func windowDidEndLiveResize() {
-        tabCollectionViewModel.newTabPageTabPreloader?.reloadTab()
     }
 
     func showBookmarkPromptIfNeeded() {
@@ -695,19 +688,6 @@ final class MainViewController: NSViewController {
         updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
     }
 
-    private func initPreloader() {
-        guard tabCollectionViewModel.newTabPageTabPreloader == nil else {
-            return
-        }
-
-        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            let preloader = NewTabPageTabPreloader(viewSizeProvider: { [weak self] in
-                self?.browserTabViewController.view.bounds.size
-            })
-            tabCollectionViewModel.newTabPageTabPreloader = preloader
-        }
-    }
-
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
             if theme.addToolbarShadow {
@@ -785,14 +765,6 @@ final class MainViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateBookmarksBarViewVisibility(visible: self!.shouldShowBookmarksBar)
-            }
-    }
-
-    private func subscribeToAppearanceChanges() {
-        appearanceChangedCancellable = NSApp.publisher(for: \.effectiveAppearance)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.tabCollectionViewModel.newTabPageTabPreloader?.reloadTab(force: true)
             }
     }
 

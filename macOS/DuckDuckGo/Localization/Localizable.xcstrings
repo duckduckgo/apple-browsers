@@ -86528,6 +86528,246 @@
         }
       }
     },
+    "quit-survey.affected-domains.footnote" : {
+      "comment" : "Footnote explaining domain list source in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle die zuletzt besuchten Domains aus deinem lokalen Browserverlauf aus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select recent domains from your local browsing history"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecciona dominios recientes de tu historial de navegación local"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionner les domaines récents de votre historique de navigation local"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleziona i domini recenti dalla cronologia di navigazione locale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecteer recente domeinen uit je lokale browsergeschiedenis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz ostatnie domeny z Twojej lokalnej historii przeglądania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleciona domínios recentes no teu histórico de navegação local"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите сайты из недавней локальной истории просмотров."
+          }
+        }
+      }
+    },
+    "quit-survey.affected-domains.other" : {
+      "comment" : "Other option in quit survey domain list",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anderes"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Other"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anders"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прочее"
+          }
+        }
+      }
+    },
+    "quit-survey.affected-domains.other-placeholder" : {
+      "comment" : "Placeholder for the other domain text field in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website-Adresse eingeben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enter a website address"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduce una dirección web"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisis une adresse de site web"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci un indirizzo web"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voer een websiteadres in"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wprowadź adres witryny internetowej"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduzir um endereço do Website"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите адрес сайта"
+          }
+        }
+      }
+    },
+    "quit-survey.affected-domains.title" : {
+      "comment" : "Title for quit survey domain selection screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Websites haben Probleme? (optional)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Which websites have issues? (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué sitios web no funcionan correctamente? (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quels sites rencontrent des problèmes ? (facultatif)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali siti web presentano problemi? (facoltativo)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke websites hebben problemen? (optioneel)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z jakimi witrynami są związane problemy? (opcjonalnie)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que Websites têm problemas? (opcional)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На каких сайтах возникли проблемы? (Необязательно)"
+          }
+        }
+      }
+    },
     "quit-survey.auto-quit-message" : {
       "comment" : "Message indicating browser will auto-quit. %d is the number of seconds remaining",
       "extractionState" : "extracted_with_value",
@@ -86655,55 +86895,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Berichte, die an DuckDuckGo gesendet werden, sind 100% anonym und enthalten nur deine Nachricht, die DuckDuckGo-Browser-Version und deine macOS-Version."
+            "value" : "Berichte, die an DuckDuckGo gesendet werden, sind 100% anonym und enthalten lediglich deine oben getroffene Auswahl, deine Nachricht, die Browserversion und die macOS-Version. Bitte gib in deinem Feedback keine personenbezogenen Daten an."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version."
+            "value" : "Reports sent to DuckDuckGo are 100% anonymous and only include your selections above, your message, browser version, and macOS version. Please do not include any personal or identifying information in your feedback."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los informes enviados a DuckDuckGo son 100% anónimos y solo incluyen tu mensaje, la versión de navegador de DuckDuckGo y tu versión de macOS."
+            "value" : "Los informes enviados a DuckDuckGo son 100 % anónimos y solo incluyen tus selecciones anteriores, tu mensaje, la versión del navegador y la versión de macOS. No incluyas información personal o identificativa en tus comentarios."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les rapports envoyés à DuckDuckGo sont 100% anonymes et n'incluent que votre message, la version du navigateur DuckDuckGo et la version de votre macOS."
+            "value" : "Les rapports envoyés à DuckDuckGo sont 100 % anonymes et n'incluent que vos sélections ci-dessus, votre message, la version de votre navigateur et la version de macOS. Veuillez ne pas inclure d'informations personnelles ou permettant de vous identifier dans vos commentaires."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I report inviati a DuckDuckGo sono anonimi al 100% e includono solo il tuo messaggio, la versione del browser DuckDuckGo e la tua versione macOS."
+            "value" : "I rapporti inviati a DuckDuckGo sono anonimi al 100% e includono solo le selezioni sopra, il messaggio, la versione del browser e la versione macOS. Non includere nell'opinione informazioni personali o identificative."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rapporten die naar DuckDuckGo worden verzonden, zijn 100% anoniem en bevatten alleen je bericht, de versie van de DuckDuckGo-browser en je versie van macOS."
+            "value" : "Rapporten die naar DuckDuckGo worden gestuurd zijn 100% anoniem en bevatten alleen je bovenstaande selecties, je bericht, browserversie en macOS-versie. Vermeld geen persoonlijke of identificeerbare informatie in je feedback."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raporty wysyłane do DuckDuckGo są w 100% anonimowe i zawierają jedynie wiadomość, wersję przeglądarki DuckDuckGo oraz wersję systemu macOS."
+            "value" : "Raporty wysyłane do DuckDuckGo są w 100% anonimowe i zawierają tylko pozycje wybrane powyżej, Twoją wiadomość, wersję przeglądarki i wersję systemu macOS. Nie zamieszczaj w opinii żadnych danych osobowych ani umożliwiających identyfikację."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Os relatórios enviados para a DuckDuckGo são 100% anónimos e incluem apenas a tua mensagem, a versão do navegador DuckDuckGo e a versão do teu macOS."
+            "value" : "Os relatórios enviados para a DuckDuckGo são 100% anónimos e incluem apenas as tuas seleções acima, a tua mensagem, a versão do navegador e a versão do macOS. Não incluas informações pessoais ou identificáveis no teu feedback."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отчеты, отправляемые в DuckDuckGo, на 100% анонимны. В отчет входит только написанное вами сообщение и сведения о версии браузера DuckDuckGo и операционной системы (macOS)."
+            "value" : "Отчеты, отправляемые в DuckDuckGo, на 100% анонимны. В отчет входят только ссылки на выбранные сайты, ваше сообщение и сведения о версии браузера и операционной системы (macOS). Не указывайте персональные данные или информацию, по которой можно установить вашу личность."
           }
         }
       }
@@ -86835,55 +87075,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welche Probleme hast du erlebt?"
+            "value" : "Hilf uns zu verstehen, was wir falsch gemacht haben"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Which issues did you experience?"
+            "value" : "Help us understand how we missed the mark"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Qué problemas has experimentado?"
+            "value" : "Ayúdanos a entender en qué fallamos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quels problèmes avez-vous rencontrés ?"
+            "value" : "Aidez-nous à comprendre comment nous avons manqué notre objectif"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quali problemi hai riscontrato?"
+            "value" : "Aiutaci a capire in che cosa abbiamo sbagliato"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welke problemen heb je ervaren?"
+            "value" : "Help ons begrijpen hoe we de plank hebben misgeslagen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jakie problemy wystąpiły?"
+            "value" : "Podaj powód negatywnej oceny"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Que problemas encontraste?"
+            "value" : "Ajuda-nos a perceber como falhámos o alvo"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "С какими проблемами вы столкнулись?"
+            "value" : "Уточните, что вас не устроило"
           }
         }
       }
@@ -88210,7 +88450,7 @@
     },
     "quit-survey.option.no-extensions" : {
       "comment" : "Quit survey feedback option - features/extensions",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -89835,55 +90075,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bitte gib dein Feedback hier ein ..."
+            "value" : "Bitte beschreibe die aufgetretenen Probleme …"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Share your thoughts..."
+            "value" : "Please describe the issues you experienced…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Comparte tu opinión..."
+            "value" : "Describe los problemas que has tenido..."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Partagez vos impressions..."
+            "value" : "Veuillez décrire les problèmes que vous avez rencontrés…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Condividi i tuoi pensieri..."
+            "value" : "Descrivi i problemi riscontrati…"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deel je gedachten..."
+            "value" : "Beschrijf de problemen die je hebt ondervonden…"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Podziel się swoimi przemyśleniami..."
+            "value" : "Opisz napotkane problemy…"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Partilha as tuas opiniões…"
+            "value" : "Descreve os problemas que encontraste…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Поделитесь своими впечатлениями..."
+            "value" : "Опишите проблемы…"
           }
         }
       }

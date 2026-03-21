@@ -616,6 +616,24 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.addArrangedSubview(container)
     }
 
+    /// Adds a child view controller with its trailing edge pinned to the sidebar,
+    /// so non-web content (bookmarks, settings, etc.) doesn't extend behind it.
+    ///
+    /// The child is added as a direct subview of `browserTabView` (not inside
+    /// `containerStackView`) so that `findContentSubview` can locate it via
+    /// `subviews.last` for tab preview snapshot rendering.
+    private func addAndLayoutChildBesideSidebar(_ vc: NSViewController) {
+        addChild(vc)
+        vc.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(vc.view)
+        NSLayoutConstraint.activate([
+            vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            vc.view.topAnchor.constraint(equalTo: view.topAnchor),
+            vc.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            vc.view.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor),
+        ])
+    }
+
     private func removeExistingDialog() {
         containerStackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
             containerStackView.removeArrangedSubview($0)
@@ -756,7 +774,7 @@ final class BrowserTabViewController: NSViewController {
         let tabContent = tabContent ?? tabViewModel.tabContent
         switch tabContent {
         case .newtab:
-            return featureFlagger.isFeatureOn(.newTabPagePerTab) ? tabViewModel.tab.webView : newTabPageWebViewModel.webView
+            return newTabPageWebViewModel.webView
         case .webExtensionUrl(let url):
             if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
                let context = webExtensionManager.extensionContext(for: url),
@@ -840,11 +858,7 @@ final class BrowserTabViewController: NSViewController {
                 return
             }
             // present contextual onboarding dialog if needed
-            // Skip for new tab pages only when using per-tab webviews (handled in onNewTabPageDidPresent)
-            let isNewTabPageWithPerTabWebViews = tabViewModel?.tab.content == .newtab && featureFlagger.isFeatureOn(.newTabPagePerTab)
-            if !isNewTabPageWithPerTabWebViews {
-                self.presentContextualOnboarding()
-            }
+            self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab
         }.store(in: &tabViewModelCancellables)
@@ -1055,7 +1069,7 @@ final class BrowserTabViewController: NSViewController {
         switch tabViewModel?.tab.content {
         case .bookmarks:
             removeAllTabContent()
-            addAndLayoutChild(bookmarksViewControllerCreatingIfNeeded())
+            addAndLayoutChildBesideSidebar(bookmarksViewControllerCreatingIfNeeded())
 
         case let .settings(pane):
             showTabContentForSettings(pane: pane)
@@ -1071,7 +1085,7 @@ final class BrowserTabViewController: NSViewController {
             // We only use HTML New Tab Page in regular windows for now
             if tabCollectionViewModel.isBurner {
                 removeAllTabContent()
-                addAndLayoutChild(burnerHomePageViewControllerCreatingIfNeeded())
+                addAndLayoutChildBesideSidebar(burnerHomePageViewControllerCreatingIfNeeded())
             } else {
                 updateTabIfNeeded(tabViewModel: tabViewModel)
             }
@@ -1083,7 +1097,7 @@ final class BrowserTabViewController: NSViewController {
             removeAllTabContent()
             let dataBrokerProtectionViewController = dataBrokerProtectionHomeViewControllerCreatingIfNeeded()
             self.previouslySelectedTab = tabCollectionViewModel.selectedTab
-            addAndLayoutChild(dataBrokerProtectionViewController)
+            addAndLayoutChildBesideSidebar(dataBrokerProtectionViewController)
 
         case .webExtensionUrl:
             updateTabIfNeeded(tabViewModel: tabViewModel)
@@ -1105,31 +1119,21 @@ final class BrowserTabViewController: NSViewController {
 
     func onNewTabPageWillPresent() {
         guard tabViewModel?.tabContent == .newtab else { return }
-
-        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            tabViewModel?.tab.newTabPage?.onNewTabPageWillPresent()
-        } else {
-            newTabPageLoadMetrics.onNTPWillPresent()
-        }
+        newTabPageLoadMetrics.onNTPWillPresent()
     }
 
     func onNewTabPageDidPresent() {
         guard tabViewModel?.tabContent == .newtab else { return }
 
-        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            tabViewModel?.tab.newTabPage?.onNewTabPageDidPresent()
-            presentContextualOnboarding()
-        } else {
-            // If web view is loaded, update load metrics.
-            // Otherwise NewTabPageWebViewModel's delegate callback will update load metrics when loading is finished.
-            if !newTabPageWebViewModel.webView.isLoading {
-                newTabPageLoadMetrics.onNTPDidPresent()
-            }
+        // If web view is loaded, update load metrics.
+        // Otherwise NewTabPageWebViewModel's delegate callback will update load metrics when loading is finished.
+        if !newTabPageWebViewModel.webView.isLoading {
+            newTabPageLoadMetrics.onNTPDidPresent()
         }
     }
 
     func onNewTabPageAlreadyPresented() {
-        guard !featureFlagger.isFeatureOn(.newTabPagePerTab), tabViewModel?.tabContent == .newtab else { return }
+        guard tabViewModel?.tabContent == .newtab else { return }
 
         newTabPageLoadMetrics.onNTPAlreadyPresented()
     }
@@ -1143,7 +1147,7 @@ final class BrowserTabViewController: NSViewController {
             preferencesViewController.model.selectPane(pane)
         }
         if preferencesViewController.parent !== self {
-            addAndLayoutChild(preferencesViewController)
+            addAndLayoutChildBesideSidebar(preferencesViewController)
         }
     }
 

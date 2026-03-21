@@ -22,8 +22,6 @@ import Combine
 import Common
 import Foundation
 import Navigation
-import Persistence
-import PixelKit
 import WebKit
 
 public struct ReleaseNotesValues: Codable {
@@ -112,7 +110,7 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
     @MainActor
     public func navigationDidFinish(_ navigation: Navigation) {
         guard AppVersion.runType != .uiTests, navigation.url == releaseNotesURL else { return }
-        if updateController.latestUpdate?.needsLatestReleaseNote == true {
+        if updateController.needsLatestReleaseNote {
             updateController.checkForUpdateSkippingRollout()
         }
     }
@@ -140,44 +138,15 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: any SparkleUpdateControlling, pixelFiring: PixelFiring?, keyValueStore: ThrowingKeyValueStoring) {
+    init(from updateController: any SparkleUpdateControlling) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
-        // Fall back to cached release notes if necessary
-        // This happens when there's no connectivity,
-        // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
-            let settings = keyValueStore.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
-            if let cached = try? settings.pendingUpdateInfo {
-                let releaseTitle = Update.releaseDateFormatter().string(from: cached.date)
-
-                let cachedVersion = "\(cached.version) (\(cached.build))"
-                let status = {
-                    if currentVersion == cachedVersion {
-                        return ReleaseNotesValues.Status.loaded
-                    } else if case .updateCycleNotStarted = updateController.updateProgress {
-                        return .loading
-                    } else {
-                        return updateController.updateProgress.toStatus
-                    }
-                }()
-
-                self.init(status: status,
-                          currentVersion: currentVersion,
-                          latestVersion: cachedVersion,
-                          lastUpdate: lastUpdate,
-                          releaseTitle: releaseTitle,
-                          releaseNotes: cached.releaseNotes,
-                          releaseNotesSubscription: cached.releaseNotesSubscription,
-                          downloadProgress: 0.00,
-                          automaticUpdate: updateController.areAutomaticUpdatesEnabled)
-                return
-            }
-
-            pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
-
-            self.init(status: .loadingError,
+            // When the update cycle is actively running we're still loading;
+            // otherwise treat missing update info as a loading error.
+            let status: Status = updateController.updateProgress.isIdle ? .loadingError : .loading
+            self.init(status: status,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,
                       automaticUpdate: updateController.areAutomaticUpdatesEnabled)

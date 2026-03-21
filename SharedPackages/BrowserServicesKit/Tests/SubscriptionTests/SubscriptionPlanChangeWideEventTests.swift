@@ -33,8 +33,11 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
         setupMockPixelKit()
-        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
-                              featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true))
+        wideEvent = WideEvent(
+            useMockRequests: true,
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
+            featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+        )
         firedPixels.removeAll()
     }
 

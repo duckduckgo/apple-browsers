@@ -23,6 +23,7 @@ import Persistence
 import Core
 import UIKit
 import AIChat
+import PrivacyConfig
 import enum Common.DevicePlatform
 
 // MARK: - TextEntryMode Enum
@@ -42,6 +43,8 @@ protocol SwitchBarHandling: AnyObject {
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
     var isTopBarPosition: Bool { get }
+    var isToggleEnabled: Bool { get }
+    var isFireTab: Bool { get }
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
@@ -51,6 +54,7 @@ protocol SwitchBarHandling: AnyObject {
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
+    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { get }
@@ -66,7 +70,13 @@ protocol SwitchBarHandling: AnyObject {
     func microphoneButtonTapped()
     func markUserInteraction()
     func clearButtonTapped()
+    func searchGoToButtonTapped()
+    func stopGeneratingButtonTapped()
     func updateBarPosition(isTop: Bool)
+}
+
+extension SwitchBarHandling {
+    func stopGeneratingButtonTapped() {}
 }
 
 // MARK: - SwitchBarHandler Implementation
@@ -83,6 +93,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
+    private let featureFlagger: FeatureFlagger
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -96,13 +108,21 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static var hasUsedAIChatInSession = false
 
     private(set) var isTopBarPosition: Bool = true
+    let isFireTab: Bool
+
+    var isToggleEnabled: Bool {
+        return true
+    }
 
     var isUsingExpandedBottomBarHeight: Bool {
         isUsingFadeOutAnimation && !isTopBarPosition
     }
 
     var isUsingFadeOutAnimation: Bool {
-        devicePlatform.isIphone
+        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
+            return devicePlatform.isIphone
+        }
+        return false
     }
 
     var isVoiceSearchEnabled: Bool {
@@ -141,6 +161,10 @@ final class SwitchBarHandler: SwitchBarHandling {
         clearButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> {
+        searchGoToButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> {
         $buttonState.eraseToAnyPublisher()
     }
@@ -148,6 +172,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
+    private let searchGoToButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
     private let devicePlatform: DevicePlatformProviding.Type
 
@@ -156,13 +181,19 @@ final class SwitchBarHandler: SwitchBarHandling {
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
+         isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
+        self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
+        self.voiceShortcutFeature = voiceShortcutFeature
+        self.isFireTab = isFireTab
 
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
@@ -197,10 +228,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     func setToggleState(_ state: TextEntryMode) {
         // Only fire pixel if the state is actually changing
         let isStateChanging = currentToggleState != state
-        
+
         currentToggleState = state
         saveToggleState()
-        
+        updateButtonState(currentText: currentText)
+
         if isStateChanging {
             fireModeSwitchedPixel(to: state)
         }
@@ -232,11 +264,16 @@ final class SwitchBarHandler: SwitchBarHandling {
     func clearButtonTapped() {
         clearButtonTappedSubject.send(())
     }
-    
+
+    func searchGoToButtonTapped() {
+        searchGoToButtonTappedSubject.send(())
+    }
+
     private func updateButtonState(currentText: String) {
         if !currentText.isEmpty {
             buttonState = .clearOnly
-        } else if voiceSearchHelper.isVoiceSearchEnabled {
+        } else if voiceSearchHelper.isVoiceSearchEnabled
+                    && !(currentToggleState == .aiChat && voiceShortcutFeature.isAvailable) {
             if isUsingFadeOutAnimation || !isTopBarPosition {
                 buttonState = .voiceOnly
             } else {

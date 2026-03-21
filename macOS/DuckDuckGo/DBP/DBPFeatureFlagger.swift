@@ -48,6 +48,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
+    var isWebViewUserAgentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
+    }
+
     var isWideEventPOSTEndpointOn: Bool {
         featureFlagger.isFeatureOn(.wideEventPostEndpoint)
     }
@@ -76,11 +80,12 @@ extension DBPFeatureFlagger: WideEventFeatureFlagProviding {
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
         switch flag {
         case .postEndpoint:
-#if DEBUG || REVIEW || ALPHA
-            return false
-#else
-            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-#endif
+            let buildType = StandardApplicationBuildType()
+            if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
+                return false
+            } else {
+                return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+            }
         }
     }
 }

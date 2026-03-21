@@ -1773,7 +1773,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Close Duck.ai Sidebar"
+            "value" : "Close Duck.ai sidebar"
           }
         },
         "es" : {
@@ -1953,7 +1953,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open New Duck.ai Tab"
+            "value" : "Open new Duck.ai tab"
           }
         },
         "es" : {
@@ -2073,7 +2073,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Duck.ai Sidebar"
+            "value" : "Open Duck.ai sidebar"
           }
         },
         "es" : {
@@ -2356,6 +2356,306 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задать вопрос (конфиденциально)"
+          }
+        }
+      }
+    },
+    "aichat.chrome.hide-duckai-button" : {
+      "comment" : "Context menu item to hide the Duck.ai title button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcut ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Duck.ai Shortcut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar acceso directo a Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le raccourci Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi scorciatoia Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snelkoppeling voor Duck.ai verbergen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj skrót Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar atalho do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть ярлык Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.chrome.hide-sidebar-button" : {
+      "comment" : "Context menu item to hide the Duck.ai sidebar toggle button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seitenleisten-Button ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Sidebar Button"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar botón de barra lateral"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le bouton de la barre latérale"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi il pulsante della barra laterale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Knop zijbalk verbergen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj przycisk na pasku bocznym"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar botão da barra lateral"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть кнопку боковой панели"
+          }
+        }
+      }
+    },
+    "aichat.chrome.open-ai-settings" : {
+      "comment" : "Context menu item to open AI Features settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Einstellungen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open AI Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir ajustes de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les réglages IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le impostazioni AI"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-instellingen openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz ustawienia AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir definições de IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки ИИ"
+          }
+        }
+      }
+    },
+    "aichat.chrome.show-duckai-button" : {
+      "comment" : "Context menu item to show the Duck.ai title button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcut anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai Shortcut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar el acceso directo de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le raccourci Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra scorciatoia Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snelkoppeling voor Duck.ai weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż skrót Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar atalho Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать ярлык Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.chrome.show-sidebar-button" : {
+      "comment" : "Context menu item to show the Duck.ai sidebar toggle button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seitenleiste-Button anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Sidebar Button"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar botón de barra lateral"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le bouton de la barre latérale"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra il pulsante della barra laterale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Knop zijbalk tonen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż przycisk paska bocznego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar botão da barra lateral"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать кнопку боковой панели"
           }
         }
       }
@@ -2720,6 +3020,66 @@
         }
       }
     },
+    "aichat.model-picker.advanced-models-section-header" : {
+      "comment" : "Section header in the model picker menu for advanced models when user has an active subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortschrittliche Modelle"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced Models"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelos avanzados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modèles avancés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelli avanzati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geavanceerde modellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaawansowane modele"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelos Avançados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продвинутые модели"
+          }
+        }
+      }
+    },
     "aichat.model-picker.advanced-section-header" : {
       "comment" : "Section header in the model picker menu for premium models that require a subscription",
       "extractionState" : "extracted_with_value",
@@ -2776,6 +3136,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Расширенные модели — подписка на DuckDuckGo"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.basic-models-section-header" : {
+      "comment" : "Section header in the model picker menu for basic/free models when user has an active subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basismodelle"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Basic Models"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelos básicos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modèles de base"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelli base"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basismodellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modele podstawowe"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelos Básicos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Базовые модели"
           }
         }
       }
@@ -3267,55 +3687,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In Fenster verschieben"
+            "value" : "In ein separates Fenster verschieben"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Move to window"
+            "value" : "Move to separate window"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mover a la ventana"
+            "value" : "Mover a una ventana diferente"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Déplacer vers une fenêtre"
+            "value" : "Déplacer vers une fenêtre séparée"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vai alla finestra"
+            "value" : "Sposta in una finestra separata"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verplaatsen naar venster"
+            "value" : "Verplaatsen naar een afzonderlijk venster"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przejdź do okna"
+            "value" : "Przenieś do osobnego okna"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mover para a janela"
+            "value" : "Mover para uma janela separada"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открепить и вынести в окно"
+            "value" : "Перейти в отдельное окно"
           }
         }
       }
@@ -26251,6 +26671,66 @@
         }
       }
     },
+    "duckai.show-duckai-button-in-tab-bar.label" : {
+      "comment" : "Label for showing Duck.ai shortcut in tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcut in der Tab-Leiste anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai shortcut in the tab bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar el acceso directo a Duck.ai en la barra de pestañas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le raccourci Duck.ai dans la barre d'onglets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la scorciatoia Duck.ai nella barra delle schede"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-snelkoppeling tonen in de tabbalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż skrót Duck.ai w pasku kart"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar atalho do Duck.ai na barra de separadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать ярлык Duck.ai на панели вкладок"
+          }
+        }
+      }
+    },
     "duckai.show-in-address-bar-when-typing.label" : {
       "comment" : "Label for showing 'Ask Duck.ai' option when typing in address bar",
       "extractionState" : "extracted_with_value",
@@ -26787,6 +27267,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать ярлык Duck.ai в адресной строке"
+          }
+        }
+      }
+    },
+    "duckai.show-sidebar-button-in-tab-bar.label" : {
+      "comment" : "Label for showing Duck.ai sidebar button in tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seitenleisten-Button in der Tab-Leiste anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show sidebar button in the tab bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar el botón de la barra lateral en la barra de pestañas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le bouton de la barre latérale dans la barre d'onglets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra il pulsante della barra laterale nella barra delle schede"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Knop zijbalk tonen in de tabbalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż przycisk paska bocznego w pasku kart"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar botão da barra lateral na barra de separadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать кнопку боковой панели на панели вкладок"
           }
         }
       }
@@ -75069,6 +75609,186 @@
         }
       }
     },
+    "pm.menu-bar.hide" : {
+      "comment" : "Context menu option to hide passwords icon from system menu bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht in der Menüleiste anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't Show in Menu Bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No mostrar en la barra de menú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas afficher dans la barre de menu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non mostrare nella barra dei menu"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet weergeven in menubalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie pokazuj w pasku menu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não mostrar na barra de menus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не показывать в строке меню"
+          }
+        }
+      }
+    },
+    "pm.menu-bar.section" : {
+      "comment" : "Section header for menu bar settings in passwords preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menüleiste"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Menu Bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barra de menú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barre de menu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barra dei menu"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menubalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasek menu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barra de menus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Панель меню"
+          }
+        }
+      }
+    },
+    "pm.menu-bar.show-passwords" : {
+      "comment" : "Toggle to show passwords icon in system menu bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwörter in der Menüleiste anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show passwords in menu bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar contraseñas en la barra de menús"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher les mots de passe dans la barre de menu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra le password nella barra del menu"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toon wachtwoorden in de menubalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż hasła w pasku menu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar palavras-passe na barra de menus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать пароли в строке меню"
+          }
+        }
+      }
+    },
     "pm.month" : {
       "comment" : "Label for Month title",
       "extractionState" : "extracted_with_value",
@@ -80164,6 +80884,306 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Чтобы пользоваться новейшей версией DuckDuckGo, обновите операционную систему до macOS %@ или более поздней версии. Вы также можете продолжить пользоваться текущей версией браузера – просто она больше не будет обновляться."
+          }
+        }
+      }
+    },
+    "preferences.about.update-info.appstore" : {
+      "comment" : "Informational message shown on the About screen for App Store builds. %1$@ is replaced by 'App Store', %2$@ is replaced by 'App Store menu', %3$@ is replaced by 'Settings'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte DuckDuckGo auf dem neuesten Stand, indem du automatische Updates in %1$@ > %2$@ > %3$@ aktivierst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep DuckDuckGo up to date by enabling automatic updates in %1$@ > %2$@ > %3$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén DuckDuckGo al día activando las actualizaciones automáticas en %1$@ > %2$@ > %3$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardez DuckDuckGo à jour en activant les mises à jour automatiques dans %1$@ > %2$@ > %3$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantieni DuckDuckGo aggiornato attivando gli aggiornamenti automatici in %1$@ > %2$@ > %3$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd DuckDuckGo up-to-date door automatische updates in te schakelen in %1$@ > %2$@ > %3$@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualizuj DuckDuckGo, włączając automatyczne aktualizacje w %1$@ > %2$@ > %3$@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém o DuckDuckGo atualizado ao ativar as atualizações automáticas em %1$@ > %2$@ > %3$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы всегда пользоваться актуальной версией DuckDuckGo, включите автоматическое обновление в разделе %1$@ > %2$@ > %3$@."
+          }
+        }
+      }
+    },
+    "preferences.about.update-info.appstore.link" : {
+      "comment" : "The clickable 'App Store' text that appears within the App Store update info message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "App Store"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE"
+          }
+        }
+      }
+    },
+    "preferences.about.update-info.appstore.menu" : {
+      "comment" : "The 'App Store menu' text that appears bold within the App Store update info message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store-Menü"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "App Store menu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menú de la App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu de l'App Store"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu dell'App Store"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store-menu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu App Store"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu da App Store"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Меню App Store"
+          }
+        }
+      }
+    },
+    "preferences.about.update-info.appstore.settings" : {
+      "comment" : "The 'Settings' text that appears bold within the App Store update info message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definições"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки"
+          }
+        }
+      }
+    },
+    "preferences.about.update-info.sparkle" : {
+      "comment" : "Informational message shown on the About screen for Sparkle (non-App Store) builds explaining that the app updates automatically",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine App wird beim Beenden automatisch aktualisiert, um sicherzustellen, dass du immer über die neuesten Fehlerbehebungen und Verbesserungen verfügst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your app will update automatically when you quit to ensure you always have the latest fixes and improvements."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu aplicación se actualizará automáticamente cuando la cierres para asegurarte de que siempre tengas las últimas correcciones y mejoras."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre application se mettra à jour automatiquement lorsque vous la quitterez pour profiter toujours des correctifs et améliorations les plus récents."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'app si aggiornerà automaticamente quando la chiudi per assicurarti di avere sempre le correzioni e i miglioramenti più recenti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je app wordt automatisch bijgewerkt wanneer je stopt, zodat je altijd de nieuwste fixes en verbeteringen hebt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplikacja zaktualizuje się automatycznie po zamknięciu, dzięki czemu zawsze będziesz mieć najnowsze poprawki i ulepszenia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua aplicação será atualizada automaticamente quando saíres para garantir que tens sempre as correções e melhorias mais recentes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приложение будет обновляться автоматически после выхода из него, и на вашем устройстве всегда будет актуальная версия с последними доработками и исправлениями ошибок."
           }
         }
       }
@@ -85508,6 +86528,246 @@
         }
       }
     },
+    "quit-survey.affected-domains.footnote" : {
+      "comment" : "Footnote explaining domain list source in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle die zuletzt besuchten Domains aus deinem lokalen Browserverlauf aus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select recent domains from your local browsing history"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecciona dominios recientes de tu historial de navegación local"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionner les domaines récents de votre historique de navigation local"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleziona i domini recenti dalla cronologia di navigazione locale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecteer recente domeinen uit je lokale browsergeschiedenis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz ostatnie domeny z Twojej lokalnej historii przeglądania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleciona domínios recentes no teu histórico de navegação local"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите сайты из недавней локальной истории просмотров."
+          }
+        }
+      }
+    },
+    "quit-survey.affected-domains.other" : {
+      "comment" : "Other option in quit survey domain list",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anderes"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Other"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anders"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прочее"
+          }
+        }
+      }
+    },
+    "quit-survey.affected-domains.other-placeholder" : {
+      "comment" : "Placeholder for the other domain text field in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website-Adresse eingeben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enter a website address"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduce una dirección web"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisis une adresse de site web"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci un indirizzo web"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voer een websiteadres in"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wprowadź adres witryny internetowej"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduzir um endereço do Website"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите адрес сайта"
+          }
+        }
+      }
+    },
+    "quit-survey.affected-domains.title" : {
+      "comment" : "Title for quit survey domain selection screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Websites haben Probleme? (optional)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Which websites have issues? (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué sitios web no funcionan correctamente? (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quels sites rencontrent des problèmes ? (facultatif)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali siti web presentano problemi? (facoltativo)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke websites hebben problemen? (optioneel)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z jakimi witrynami są związane problemy? (opcjonalnie)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que Websites têm problemas? (opcional)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На каких сайтах возникли проблемы? (Необязательно)"
+          }
+        }
+      }
+    },
     "quit-survey.auto-quit-message" : {
       "comment" : "Message indicating browser will auto-quit. %d is the number of seconds remaining",
       "extractionState" : "extracted_with_value",
@@ -85635,55 +86895,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Berichte, die an DuckDuckGo gesendet werden, sind 100% anonym und enthalten nur deine Nachricht, die DuckDuckGo-Browser-Version und deine macOS-Version."
+            "value" : "Berichte, die an DuckDuckGo gesendet werden, sind 100% anonym und enthalten lediglich deine oben getroffene Auswahl, deine Nachricht, die Browserversion und die macOS-Version. Bitte gib in deinem Feedback keine personenbezogenen Daten an."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version."
+            "value" : "Reports sent to DuckDuckGo are 100% anonymous and only include your selections above, your message, browser version, and macOS version. Please do not include any personal or identifying information in your feedback."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los informes enviados a DuckDuckGo son 100% anónimos y solo incluyen tu mensaje, la versión de navegador de DuckDuckGo y tu versión de macOS."
+            "value" : "Los informes enviados a DuckDuckGo son 100 % anónimos y solo incluyen tus selecciones anteriores, tu mensaje, la versión del navegador y la versión de macOS. No incluyas información personal o identificativa en tus comentarios."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les rapports envoyés à DuckDuckGo sont 100% anonymes et n'incluent que votre message, la version du navigateur DuckDuckGo et la version de votre macOS."
+            "value" : "Les rapports envoyés à DuckDuckGo sont 100 % anonymes et n'incluent que vos sélections ci-dessus, votre message, la version de votre navigateur et la version de macOS. Veuillez ne pas inclure d'informations personnelles ou permettant de vous identifier dans vos commentaires."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I report inviati a DuckDuckGo sono anonimi al 100% e includono solo il tuo messaggio, la versione del browser DuckDuckGo e la tua versione macOS."
+            "value" : "I rapporti inviati a DuckDuckGo sono anonimi al 100% e includono solo le selezioni sopra, il messaggio, la versione del browser e la versione macOS. Non includere nell'opinione informazioni personali o identificative."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rapporten die naar DuckDuckGo worden verzonden, zijn 100% anoniem en bevatten alleen je bericht, de versie van de DuckDuckGo-browser en je versie van macOS."
+            "value" : "Rapporten die naar DuckDuckGo worden gestuurd zijn 100% anoniem en bevatten alleen je bovenstaande selecties, je bericht, browserversie en macOS-versie. Vermeld geen persoonlijke of identificeerbare informatie in je feedback."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raporty wysyłane do DuckDuckGo są w 100% anonimowe i zawierają jedynie wiadomość, wersję przeglądarki DuckDuckGo oraz wersję systemu macOS."
+            "value" : "Raporty wysyłane do DuckDuckGo są w 100% anonimowe i zawierają tylko pozycje wybrane powyżej, Twoją wiadomość, wersję przeglądarki i wersję systemu macOS. Nie zamieszczaj w opinii żadnych danych osobowych ani umożliwiających identyfikację."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Os relatórios enviados para a DuckDuckGo são 100% anónimos e incluem apenas a tua mensagem, a versão do navegador DuckDuckGo e a versão do teu macOS."
+            "value" : "Os relatórios enviados para a DuckDuckGo são 100% anónimos e incluem apenas as tuas seleções acima, a tua mensagem, a versão do navegador e a versão do macOS. Não incluas informações pessoais ou identificáveis no teu feedback."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отчеты, отправляемые в DuckDuckGo, на 100% анонимны. В отчет входит только написанное вами сообщение и сведения о версии браузера DuckDuckGo и операционной системы (macOS)."
+            "value" : "Отчеты, отправляемые в DuckDuckGo, на 100% анонимны. В отчет входят только ссылки на выбранные сайты, ваше сообщение и сведения о версии браузера и операционной системы (macOS). Не указывайте персональные данные или информацию, по которой можно установить вашу личность."
           }
         }
       }
@@ -85815,55 +87075,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welche Probleme hast du erlebt?"
+            "value" : "Hilf uns zu verstehen, was wir falsch gemacht haben"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Which issues did you experience?"
+            "value" : "Help us understand how we missed the mark"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Qué problemas has experimentado?"
+            "value" : "Ayúdanos a entender en qué fallamos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quels problèmes avez-vous rencontrés ?"
+            "value" : "Aidez-nous à comprendre comment nous avons manqué notre objectif"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quali problemi hai riscontrato?"
+            "value" : "Aiutaci a capire in che cosa abbiamo sbagliato"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welke problemen heb je ervaren?"
+            "value" : "Help ons begrijpen hoe we de plank hebben misgeslagen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jakie problemy wystąpiły?"
+            "value" : "Podaj powód negatywnej oceny"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Que problemas encontraste?"
+            "value" : "Ajuda-nos a perceber como falhámos o alvo"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "С какими проблемами вы столкнулись?"
+            "value" : "Уточните, что вас не устроило"
           }
         }
       }
@@ -87190,7 +88450,7 @@
     },
     "quit-survey.option.no-extensions" : {
       "comment" : "Quit survey feedback option - features/extensions",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -88815,55 +90075,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bitte gib dein Feedback hier ein ..."
+            "value" : "Bitte beschreibe die aufgetretenen Probleme …"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Share your thoughts..."
+            "value" : "Please describe the issues you experienced…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Comparte tu opinión..."
+            "value" : "Describe los problemas que has tenido..."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Partagez vos impressions..."
+            "value" : "Veuillez décrire les problèmes que vous avez rencontrés…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Condividi i tuoi pensieri..."
+            "value" : "Descrivi i problemi riscontrati…"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deel je gedachten..."
+            "value" : "Beschrijf de problemen die je hebt ondervonden…"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Podziel się swoimi przemyśleniami..."
+            "value" : "Opisz napotkane problemy…"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Partilha as tuas opiniões…"
+            "value" : "Descreve os problemas que encontraste…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Поделитесь своими впечатлениями..."
+            "value" : "Опишите проблемы…"
           }
         }
       }

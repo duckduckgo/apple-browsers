@@ -133,18 +133,21 @@ private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         return FadeInView {
-            OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-                cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                dismissAction: { [weak self] in
-                    self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                    onCompletion(true)
-                },
-                onManualDismiss: { [weak self] in
-                    self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
-                    onManualDismiss()
-                }
-            )
+            ScrollView(.vertical, showsIndicators: false) {
+                OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                    message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                    dismissAction: { [weak self] in
+                        self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                        onCompletion(true)
+                    },
+                    onManualDismiss: { [weak self] in
+                        self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+                        onManualDismiss()
+                    }
+                )
+            }
+            .scrollIfNeeded()
         }
         .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
         .onFirstAppear { [weak self] in
@@ -183,7 +186,7 @@ private extension RebrandedNewTabDaxDialogFactory {
 
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
         let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
-        let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.skip
+        let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
 
         return FadeInView {
             OnboardingRebranding.OnboardingSubscriptionPromoDialog(

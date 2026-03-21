@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AVFoundation
 import WebKit
 import Core
 import Combine
@@ -129,7 +130,7 @@ class TabViewController: UIViewController {
     var daxEasterEggHandler: DaxEasterEggHandling?
     var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
 
-    let favicons = Favicons.shared
+    let favicons: FaviconManaging
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
@@ -248,7 +249,7 @@ class TabViewController: UIViewController {
     let bookmarksDatabase: CoreDataDatabase
     lazy var faviconUpdater = FireproofFaviconUpdater(bookmarksDatabase: bookmarksDatabase,
                                                       tab: tabModel,
-                                                      favicons: Favicons.shared,
+                                                      favicons: favicons,
                                                       sharedSecureVault: sharedSecureVault)
 
     private let refreshControl = UIRefreshControl()
@@ -414,6 +415,7 @@ class TabViewController: UIViewController {
                                    autoconsentManagement: AutoconsentManaging,
                                    websiteDataManager: WebsiteDataManaging,
                                    fireproofing: Fireproofing,
+                                   favicons: FaviconManaging,
                                    tabInteractionStateSource: TabInteractionStateSource?,
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
@@ -446,6 +448,7 @@ class TabViewController: UIViewController {
                               textZoomCoordinator: textZoomCoordinator,
                               autoconsentManagement: autoconsentManagement,
                               fireproofing: fireproofing,
+                              favicons: favicons,
                               websiteDataManager: websiteDataManager,
                               tabInteractionStateSource: tabInteractionStateSource,
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
@@ -525,7 +528,8 @@ class TabViewController: UIViewController {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
-            pageContextHandler: pageContextHandler
+            pageContextHandler: pageContextHandler,
+            isFireTab: tabModel.fireTab
         )
         coordinator.delegate = self
         return coordinator
@@ -552,6 +556,7 @@ class TabViewController: UIViewController {
                    textZoomCoordinator: TextZoomCoordinating,
                    autoconsentManagement: AutoconsentManaging,
                    fireproofing: Fireproofing,
+                   favicons: FaviconManaging,
                    websiteDataManager: WebsiteDataManaging,
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
@@ -586,6 +591,7 @@ class TabViewController: UIViewController {
         self.textZoomCoordinator = textZoomCoordinator
         self.autoconsentManagement = autoconsentManagement
         self.fireproofing = fireproofing
+        self.favicons = favicons
         self.websiteDataManager = websiteDataManager
         self.tabInteractionStateSource = tabInteractionStateSource
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
@@ -603,7 +609,6 @@ class TabViewController: UIViewController {
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
-                                                         featureFlagger: featureFlagger,
                                                          productSurfaceTelemetry: productSurfaceTelemetry)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
@@ -642,7 +647,7 @@ class TabViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing)
+        fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing, favicons: favicons)
         initAttributionLogic()
         decorate()
         addTextZoomObserver()
@@ -1042,7 +1047,7 @@ class TabViewController: UIViewController {
         switch keyPath {
 
         case #keyPath(WKWebView.isLoading):
-            if webView.isLoading {
+            if webView.isLoading, isTabCurrentlyPresented() {
                 delegate?.showBars()
             }
             if #available(iOS 18.4, *) {
@@ -1050,7 +1055,9 @@ class TabViewController: UIViewController {
             }
 
         case #keyPath(WKWebView.estimatedProgress):
-            progressWorker.progressDidChange(webView.estimatedProgress)
+            if isTabCurrentlyPresented() {
+                progressWorker.progressDidChange(webView.estimatedProgress)
+            }
 
         case #keyPath(WKWebView.url):
             // A short delay is required here, because the URL takes some time
@@ -2281,7 +2288,7 @@ extension TabViewController: WKNavigationDelegate {
                         NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     }
 
-                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL && featureFlagger.isFeatureOn(.aiChatAtb)
+                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL
                     if !shouldSkipSearchAtbForDuckAI {
                         let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
                                                                             application: UIApplication.shared)
@@ -2574,8 +2581,8 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(keyboardWillHide),
-                                               name: UIResponder.keyboardWillHideNotification,
+                                               selector: #selector(keyboardDidHide),
+                                               name: UIResponder.keyboardDidHideNotification,
                                                object: nil)
     }
 
@@ -2586,7 +2593,7 @@ extension TabViewController: WKNavigationDelegate {
 
         NotificationCenter.default.removeObserver(
             self,
-            name: UIResponder.keyboardWillHideNotification,
+            name: UIResponder.keyboardDidHideNotification,
             object: nil
         )
     }
@@ -2612,7 +2619,7 @@ extension TabViewController: WKNavigationDelegate {
         ActionMessageView.present(message: UserText.autofillSettingsReportNotWorkingSentConfirmation)
     }
 
-    @objc private func keyboardWillHide(_ notification: Notification) {
+    @objc private func keyboardDidHide(_ notification: Notification) {
         if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
             autofillUserScript?.cancelAllPendingReplies()
             cleanupInputAccessoryView()
@@ -2917,6 +2924,21 @@ extension TabViewController: WKUIDelegate {
                              inheritingAttribution: adClickAttributionLogic.state)
     }
 
+    func webView(_ webView: WKWebView,
+                 requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo,
+                 type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        guard origin.host.isDuckAIHost,
+              type == .microphone || type == .cameraAndMicrophone else {
+            decisionHandler(.prompt)
+            return
+        }
+
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        decisionHandler(status == .authorized ? .grant : .deny)
+    }
+
     func webViewDidClose(_ webView: WKWebView) {
         if openedByPage {
             delegate?.tabDidRequestClose(self)
@@ -3018,6 +3040,13 @@ extension TabViewController: UIGestureRecognizerDelegate {
             return false
         }
 
+        // Don't delay tap gestures that are inside the onboarding dialog
+        if let daxContextualOnboardingController,
+           let otherView = otherRecognizer.view,
+           otherView.isDescendant(of: daxContextualOnboardingController.view) {
+            return false
+        }
+
         if gestureRecognizer == showBarsTapGestureRecogniser,
             otherRecognizer is UITapGestureRecognizer {
             return true
@@ -3105,6 +3134,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
+        userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 
@@ -3887,7 +3917,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
 
                         self.showLoginDetails(with: newCredential.account, source: .viewSavedLoginPrompt)
                     })
-                    Favicons.shared.loadFavicon(forDomain: newCredential.account.domain, intoCache: .fireproof, fromCache: .tabs)
+                    self.favicons.loadFavicon(forDomain: newCredential.account.domain, intoCache: .fireproof, fromCache: .tabs)
                 }
 
                 guard let domain = newCredential.account.domain else { return }

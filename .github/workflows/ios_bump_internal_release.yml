@@ -32,7 +32,7 @@ jobs:
   validate_input_conditions:
 
     name: Validate Input Conditions
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 10
 
     env:
@@ -93,7 +93,7 @@ jobs:
 
     name: Increment Build Number
     needs: [ validate_input_conditions, run_tests ]
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 10
 
     outputs:

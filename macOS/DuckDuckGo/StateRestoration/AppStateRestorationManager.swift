@@ -144,8 +144,8 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         return state
     }
 
-    func clearLastSessionState() {
-        service.clearState(sync: true)
+    func clearLastSessionState() -> Result<Void, Error> {
+        return service.clearState(sync: true)
     }
 
     // Cleans all stored snapshots except snapshots listed in the state
@@ -187,7 +187,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         appDidTerminateAsExpected = true
         sessionRestorePromptCoordinator.applicationWillTerminate()
         if isInInitialState {
-            service.clearState(sync: true)
+            _ = service.clearState(sync: true)
         } else {
             persistAppState(sync: true)
         }
@@ -231,14 +231,9 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
 
     private func detectUnexpectedAppTermination(didRestoreRegularTabs: Bool) {
 #if DEBUG
-        guard AppVersion.runType != .normal else {
-            return
-        }
-#endif
-#if REVIEW
-        guard AppVersion.runType != .uiTests || ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") else {
-            return
-        }
+        guard AppVersion.runType != .normal else { return }
+#else
+        guard AppVersion.runType != .uiTests || ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") else { return }
 #endif
 
         let didCloseUnexpectedly = !appDidTerminateAsExpected

@@ -63,7 +63,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
-        var newTabPageShownPixelSender: NewTabPageShownPixelSender
         var aiChatSessionStore: AIChatSessionStoring
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
@@ -150,7 +149,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSessionStore: AIChatSessionStoring? = nil,
-                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
                      themeManager: ThemeManaging? = nil
     ) {
@@ -216,7 +214,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
-                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
                   themeManager: themeManager ?? NSApp.delegateTyped.themeManager
         )
@@ -267,7 +264,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSessionStore: AIChatSessionStoring,
-         newTabPageShownPixelSender: NewTabPageShownPixelSender,
          tabCrashAggregator: TabCrashAggregator,
          themeManager: ThemeManaging
     ) {
@@ -277,7 +273,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.fireproofDomains = fireproofDomains
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.featureFlagger = featureFlagger
-        self.navigationDelegate = DistributedNavigationDelegate(isPerformanceReportingEnabled: featureFlagger.isFeatureOn(.webKitPerformanceReporting))
+        self.navigationDelegate = DistributedNavigationDelegate()
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
         self.privacyFeatures = privacyFeatures
@@ -350,7 +346,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           featureFlagger: featureFlagger,
                                                           contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                           aiChatMenuConfiguration: aiChatMenuConfiguration,
-                                                          newTabPageShownPixelSender: newTabPageShownPixelSender,
                                                           aiChatSessionStore: aiChatSessionStore,
                                                           tabCrashAggregator: tabCrashAggregator,
                                                           tabsPreferences: tabsPreferences,
@@ -957,12 +952,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func startOnboarding() {
         userInteractionDialog = nil
 
-#if DEBUG || REVIEW
         if AppVersion.runType == .uiTestsOnboarding {
             setContent(.onboarding)
             return
         }
-#endif
         if #available(macOS 12.0, *) {
             Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         }
@@ -1107,9 +1100,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         switch content.urlForWebView {
         case .some(let url) where url.isFileURL:
-#if APPSTORE
-            guard url.isWritableLocation() else { fallthrough }
-#endif
+            guard !NSApp.isSandboxed || url.isWritableLocation() else { fallthrough }
 
             // request file system access before restoration
             webView.navigator(distributedNavigationDelegate: navigationDelegate)

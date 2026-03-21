@@ -21,4 +21,6 @@ public enum AIChatURLParameters {
     public static let autoSubmitPromptQueryName = "prompt"
     public static let autoSubmitPromptQueryValue = "1"
     public static let toolChoiceName = "toolChoice"
+    public static let modeName = "mode"
+    public static let voiceModeValue = "voice"
 }

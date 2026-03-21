@@ -1,7 +1,7 @@
 {
   "name": "SmartBackgroundChecks",
   "url": "smartbackgroundchecks.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "parent": "peoplefinders.com",
   "addedDatetime": 1678082400000,
   "optOutUrl": "https://www.smartbackgroundchecks.com/optout",
@@ -18,29 +18,27 @@
         {
           "actionType": "extract",
           "id": "2e04c4da-5f4b-4ab3-bd9e-4d4300d51f63",
-          "selector": ".card-block",
+          "selector": "//div[contains(@class, 'card-block') and not(.//text()[contains(., 'Paid Results')])]",
           "noResultsFound": "//h1[contains(text(), '0 Results')]",
           "profile": {
             "name": {
-              "selector": ".name-list-title",
-              "beforeText": "- "
+              "selector": ".name-list-title"
             },
             "age": {
-              "selector": ".name-list-title",
+              "selector": ".//h2/span[@class='h2SubTitle']",
               "afterText": "- Age"
             },
             "addressCityState": {
-              "selector": ".name-list-title",
+              "selector": ".//h2/span[@class='h2SubTitle']",
               "beforeText": "- Age",
               "afterText": "-"
             },
             "addressCityStateList": {
-              "selector": ".//div[@class='p-1 w-100 lh-20px']",
-              "afterText": "Used to live in:",
-              "beforeText": "Relatives and Associates"
+              "selector": ".//div[contains(text(),'Used to live in')]",
+              "separator": "/Used to live in |, /"
             },
             "relativesList": {
-              "selector": ".//div[contains(text(), 'Relatives')]/following-sibling::h3//a",
+              "selector": ".//div[contains(text(), 'Related to')]/span//a",
               "findElements": true
             },
             "profileUrl": {

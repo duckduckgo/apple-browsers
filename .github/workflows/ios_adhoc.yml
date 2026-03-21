@@ -26,18 +26,20 @@ on:
 
 jobs:
   make-adhoc:
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     name: Make ad-hoc build
 
     env:
-      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
+      RUNS_ON: macos-26-xlarge # keep this in sync with runs-on above
 
     steps:
 
-      - name: Register SSH keys for access to certificates
+      - name: Register SSH keys for private repos
         uses: webfactory/ssh-agent@v0.9.1
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+            ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
       - name: Check out the code
         uses: actions/checkout@v4

@@ -509,4 +509,18 @@ final class DDGSyncTests: XCTestCase {
 
         XCTAssertEqual(syncService.authState, .inactive)
     }
+
+    func testWhenRemovePreservedSyncAccountAndSyncIsActiveThenItDoesNothing() throws {
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .active)
+        XCTAssertNotNil((dependencies.secureStore as! SecureStorageStub).theAccount)
+
+        try syncService.removePreservedSyncAccount()
+
+        XCTAssertEqual(syncService.authState, .active)
+        XCTAssertNotNil((dependencies.secureStore as! SecureStorageStub).theAccount)
+        XCTAssertEqual((dependencies.errorEvents as! MockErrorHandler).handledErrors, [])
+    }
 }

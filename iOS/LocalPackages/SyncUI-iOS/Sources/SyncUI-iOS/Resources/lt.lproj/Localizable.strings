@@ -1,5 +1,38 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Norint naudoti „Sync & Backup“, reikalingas įrenginio slaptažodis.";
+/* Auto-Restore - Description */
+"auto.restore.description" = "Automatiškai atkuriami duomenys šiame įrenginyje iš naujo įdiegus programą.";
+
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "Jei iš naujo įdiegsi programą „DuckDuckGo“, paklausime, ar nori atkurti duomenis šiame įrenginyje.";
+
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Tęsk „Sync & Backup“ seansą, kad atkurtum savo žymes, slaptažodžius ir kt., arba tęsk ir atlik naują sąranką.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Tęsti „Sync & Backup“";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Tęsti sąranką";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Jūsų ankstesnis „Sync & Backup“ seansas paruoštas.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Jei iš naujo įdiegsi programą „DuckDuckGo“, paklausime, ar nori atkurti duomenis šiame įrenginyje.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Atkurti iš naujo įdiegus programą";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Atkurti iš naujo įdiegus programą";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Išjungti";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Įjungti";
+
+/* Auto-Restore - Toggle Label */
+"auto.restore.toggle.label" = "Atkurti iš naujo įdiegus programą";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Atgal";
@@ -158,13 +191,22 @@
 "recover.synced.data.link" = "Atkurti sinchronizuotus duomenis";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Pradėti";
+"recover.synced.data.sheet.button" = "Atkurti sinchronizuotus duomenis";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Norėdami atkurti sinchronizuotus duomenis, turėsite naudoti atkūrimo kodą, kurį išsaugojote pirmą kartą nustatydami sinchronizavimą. Šis kodas galėjo būti išsaugotas kaip PDF failas įrenginyje, kurį iš pradžių naudojote sinchronizavimui nustatyti.";
+"recover.synced.data.sheet.description" = "Reikės atkūrimo kodo, kurį gavai, kai nustatei „Sync & Backup“. Galbūt išsaugojote jį kaip PDF failą naudojamame įrenginyje.";
 
 /* Recover Synced Data Sheet - Title */
-"recover.synced.data.sheet.title" = "Atkurti sinchronizuotus duomenis";
+"recover.synced.data.sheet.title" = "Sinchronizuotų duomenų atkūrimas";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Pakartotinai prisijungiama, kad būtų sinchronizuotos žymės, išsaugoti prisijungimai ir kiti įrenginiai.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Jungiamasi...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Duomenų atkūrimas";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Pašalinti įrenginį";
@@ -175,6 +217,9 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Pašalinti įrenginį?";
 
+/* Save Recovery Code Sheet - Card Title */
+"save.recovery.code.card.title" = "Atkūrimo kodas";
+
 /* Save Recovery Code Sheet - Copy Code Toast */
 "save.recovery.code.code.copied.button" = "Atkūrimo kodas nukopijuotas į mainų sritį";
 
@@ -182,16 +227,16 @@
 "save.recovery.code.copy.code.button" = "Kopijuoti kodą";
 
 /* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Išsaugoti kaip PDF";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Jei neteksite prieigos prie savo įrenginių, šio kodo reikės norint atkurti sinchronizuotus duomenis.";
+"save.recovery.code.save.as.pdf.button" = "Atsisiųsti kaip PDF";
 
 /* Save Recovery Code Sheet - Footer */
 "save.recovery.code.sheet.footer" = "Kiekvienas, turintis prieigą prie šio kodo, gali pasiekti jūsų sinchronizuotus duomenis, todėl prašome laikyti juos saugioje vietoje.";
 
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Išsaugoti atkūrimo kodą";
+/* Recovery Code Sheet - Description */
+"save.recovery.key.body" = "Išsaugokite šį kodą, kad galėtumėte atkurti savo duomenis, jei prarasite prieigą prie šio įrenginio. Laikykite jį saugioje vietoje.";
+
+/* Recovery Code Sheet - Title */
+"save.recovery.key.title" = "Lengvas duomenų atkūrimas";
 
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Išsaugoti atkūrimo PDF";
@@ -273,6 +318,18 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Nustatymai > Sinchronizavimas ir atsarginė kopijos kūrimas > Sinchronizuoti su kitu įrenginiu";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Eikite į „Nustatymai“";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Norint naudoti „Sync & Backup“, reikalingas įrenginio slaptažodis.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Apsaugokite savo įrenginį, kad galėtumėte naudoti „Sync & Backup“";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Atkūrimas";
 
 /* Sync & Backup Title */
 "sync.title" = "Sinchronizuoti ir kurti atsarginę kopiją";

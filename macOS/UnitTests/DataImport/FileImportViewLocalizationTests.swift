@@ -90,14 +90,14 @@ class FileImportViewLocalizationTests: XCTestCase {
                                    items[1.../* 0 == format */].filter { if case .string = $0 { true } else { false } }.count,
                                    "\(locale).\(source.rawValue).\(dataType.rawValue).strings")
 
-#if CI
-                    customAssert = { condition, message, file, line in
-                        XCTAssert(condition(), "\(locale).\(source.rawValue).\(dataType.rawValue).InstructionsView.assert: " + message(), file: file, line: line)
+                    if !(ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true) {
+                        customAssert = { condition, message, file, line in
+                            XCTAssert(condition(), "\(locale).\(source.rawValue).\(dataType.rawValue).InstructionsView.assert: " + message(), file: file, line: line)
+                        }
+                        customAssertionFailure = { message, file, line in
+                            XCTFail("\(locale).\(source.rawValue).\(dataType.rawValue).InstructionsView.assertionFailure: " + message(), file: file, line: line)
+                        }
                     }
-                    customAssertionFailure = { message, file, line in
-                        XCTFail("\(locale).\(source.rawValue).\(dataType.rawValue).InstructionsView.assertionFailure: " + message(), file: file, line: line)
-                    }
-#endif
                     _=InstructionsView {
                         items
                     } // should not assert

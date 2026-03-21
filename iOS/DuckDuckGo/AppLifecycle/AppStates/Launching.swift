@@ -40,7 +40,8 @@ struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
-    private let fireproofing = UserDefaultsFireproofing.xshared
+    private let fireproofing: Fireproofing = UserDefaultsFireproofing()
+    private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings: AIChatSettings
@@ -59,6 +60,8 @@ struct Launching: LaunchingHandling {
 
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
+
+        favicons = Favicons(fireproofing: fireproofing)
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
@@ -93,7 +96,8 @@ struct Launching: LaunchingHandling {
 
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                      faviconStoring: favicons)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()
         let webExtensionAvailability = WebExtensionAvailability(
@@ -156,7 +160,6 @@ struct Launching: LaunchingHandling {
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager
         )
 
@@ -219,6 +222,7 @@ struct Launching: LaunchingHandling {
                                               contentScopeExperimentManager: contentScopeExperimentsManager,
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
+                                              favicons: favicons,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                               didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
@@ -232,7 +236,8 @@ struct Launching: LaunchingHandling {
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,
-                                              sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault)
+                                              sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
+                                              wideEvent: AppDependencyProvider.shared.wideEvent)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

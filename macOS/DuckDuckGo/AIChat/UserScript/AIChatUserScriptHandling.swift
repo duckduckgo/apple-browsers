@@ -51,6 +51,8 @@ protocol AIChatUserScriptHandling {
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
     var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> { get }
 
@@ -80,16 +82,20 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
+    public let pageContextConsumedPublisher: AnyPublisher<Void, Never>
+    public let pageContextRemovedPublisher: AnyPublisher<Void, Never>
     public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
     public let syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
+    private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
+    private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
     private var syncObserverCancellable: AnyCancellable?
-    private let storage: AIChatPreferencesStorage
+    private var storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
@@ -125,6 +131,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
+        self.pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
+        self.pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
         self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
         self.syncStatusPublisher = syncStatusSubject.eraseToAnyPublisher()
 
@@ -300,6 +308,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: storage.shouldAutomaticallySendPageContext)
         }()
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
+
+        if !payload.enabled {
+            pageContextRemovedSubject.send()
+        }
+
         return nil
     }
 
@@ -386,6 +399,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let reason: String
             switch error {
             case SyncError.accountNotFound:
+                reason = "sync off"
+            case SyncError.unauthenticatedWhileLoggedIn:
                 reason = "sync off"
             case SyncError.noToken:
                 reason = "token unavailable"
@@ -578,6 +593,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         case .userDidSubmitFirstPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
+            pageContextConsumedSubject.send()
             pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
@@ -585,14 +601,34 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         case .userDidSubmitPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
+            pageContextConsumedSubject.send()
             pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
+        case .userDidAcceptTermsAndConditions:
+            handleTermsAccepted()
+            completion?()
         default:
             completion?()
             return
         }
+    }
+
+    private func handleTermsAccepted() {
+        let alreadyAccepted = storage.hasAcceptedTermsAndConditions
+
+        if alreadyAccepted {
+            let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
+            let pixel: AIChatPixel = syncIsOn
+                ? .aiChatTermsAcceptedDuplicateSyncOn
+                : .aiChatTermsAcceptedDuplicateSyncOff
+            Task { @MainActor [weak self] in
+                self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
+            }
+        }
+
+        storage.hasAcceptedTermsAndConditions = true
     }
 
     private func refreshAtbs(completion: (() -> Void)? = nil) {

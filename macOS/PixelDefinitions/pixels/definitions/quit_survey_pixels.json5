@@ -33,6 +33,11 @@
                 "key": "reasons",
                 "description": "Comma-separated list of reason IDs with their selection state: 1=selected, 0=not selected, -1=not shown",
                 "type": "string"
+            },
+            {
+                "key": "affected_domains",
+                "description": "Comma-separated list of domain hostnames the user identified as not working (e.g. 'example.com,another.com'). Only present when the user selected 'websites-didnt-work' and chose at least one domain.",
+                "type": "string"
             }
         ]
     },

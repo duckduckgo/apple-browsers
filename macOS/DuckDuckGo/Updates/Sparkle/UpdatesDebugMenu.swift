@@ -33,15 +33,21 @@ final class UpdatesDebugMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
-            NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
+            let buildType = StandardApplicationBuildType()
+            if buildType.isSparkleBuild && (buildType.isDebugBuild || buildType.isReviewBuild) {
+                NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
+                    .targetting(self)
+                NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
+                    .targetting(self)
+                NSMenuItem(title: "Set up Sparkle testing environment…", action: #selector(setupSparkleTestingEnvironment))
+                    .targetting(self)
+                NSMenuItem.separator()
+            }
+            NSMenuItem(title: "Simulate New User", action: #selector(simulateNewUser))
                 .targetting(self)
-            NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
-                .targetting(self)
-            NSMenuItem(title: "Set up Sparkle testing environment…", action: #selector(setupSparkleTestingEnvironment))
+            NSMenuItem(title: "Simulate Legacy User", action: #selector(simulateLegacyUser))
                 .targetting(self)
             NSMenuItem.separator()
-#endif
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                 .targetting(self)
             NSMenuItem.separator()
@@ -58,6 +64,26 @@ final class UpdatesDebugMenu: NSMenu {
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc func simulateNewUser() {
+        try? settings.set(1, for: \.installBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Simulating New User"
+        alert.informativeText = "Install build metadata has been set. Close and reopen Settings for changes to take effect."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    @objc func simulateLegacyUser() {
+        try? settings.removeValue(for: \.installBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Simulating Legacy User"
+        alert.informativeText = "Install build metadata has been cleared. Close and reopen Settings for changes to take effect."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     @objc func testUpdateSuccessOnNextLaunch() {
@@ -77,7 +103,6 @@ final class UpdatesDebugMenu: NSMenu {
         presenter.showUpdateNotification(for: .updated)
     }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     // MARK: - Custom Feed URL
 
     private var customFeedURL: String? {
@@ -236,11 +261,9 @@ final class UpdatesDebugMenu: NSMenu {
         // Return base64-encoded signature
         return signature.base64EncodedString()
     }
-#endif
 
 }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
 // MARK: - Sparkle Testing Resources
 
 private enum SparkleTestingResources {
@@ -483,4 +506,3 @@ private enum SparkleTestingResources {
     """#
 
 }
-#endif

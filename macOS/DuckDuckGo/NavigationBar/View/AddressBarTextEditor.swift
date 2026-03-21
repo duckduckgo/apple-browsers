@@ -98,17 +98,10 @@ final class AddressBarTextEditor: NSTextView {
         set {}
     }
 
-#if swift(>=5.9)
     override var inlinePredictionType: NSTextInputTraitType {
         get { .no }
         set {}
     }
-#else
-    @objc var inlinePredictionType: NSTextInputTraitType {
-        get { .no }
-        set {}
-    }
-#endif
 
     override var usesFindPanel: Bool {
         get { false }

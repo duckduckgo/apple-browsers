@@ -63,13 +63,13 @@ final class MainViewController: NSViewController {
     let downloadManager: FileDownloadManagerProtocol
     let isBurner: Bool
     let pinningManager: PinningManager
+    let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
-    private var appearanceChangedCancellable: AnyCancellable?
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
 
@@ -138,6 +138,7 @@ final class MainViewController: NSViewController {
          sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
          winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
          pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
+         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
          memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor,
          startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler
     ) {
@@ -157,6 +158,7 @@ final class MainViewController: NSViewController {
         self.tabsPreferences = tabsPreferences
         self.duckPlayer = duckPlayer
         self.pinningManager = pinningManager
+        self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -164,6 +166,7 @@ final class MainViewController: NSViewController {
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
             featureFlagger: featureFlagger,
+            aiChatMenuConfig: aiChatMenuConfig,
             tabDragAndDropManager: tabDragAndDropManager,
             autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
         )
@@ -335,7 +338,6 @@ final class MainViewController: NSViewController {
         subscribeToMouseTrackingArea()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
-        subscribeToAppearanceChanges()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
 
@@ -373,7 +375,6 @@ final class MainViewController: NSViewController {
 
     override func viewDidAppear() {
         startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
-        initPreloader()
 
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
@@ -411,9 +412,7 @@ final class MainViewController: NSViewController {
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
-        if !isInPopUpWindow {
-            // Evaluate and potentially show default browser/dock prompt
-            // See showSetAsDefaultAndAddToDockIfNeeded() for full flow documentation
+        if !featureFlagger.isFeatureOn(.promoQueue) {
             showSetAsDefaultAndAddToDockIfNeeded()
         }
         showWinBackOfferIfNeeded()
@@ -422,10 +421,6 @@ final class MainViewController: NSViewController {
     func windowDidResignKey() {
         browserTabViewController.windowDidResignKey()
         tabBarViewController.hideTabPreview()
-    }
-
-    func windowDidEndLiveResize() {
-        tabCollectionViewModel.newTabPageTabPreloader?.reloadTab()
     }
 
     func showBookmarkPromptIfNeeded() {
@@ -548,6 +543,17 @@ final class MainViewController: NSViewController {
                 aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
             }
         }
+    }
+
+    func openNewDuckAIChatTab() {
+        let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
+            ? .currentTab
+            : .newTab(selected: true)
+        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
+    }
+
+    func toggleDuckAISidebar() {
+        aiChatCoordinator.toggleSidebar()
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {
@@ -682,19 +688,6 @@ final class MainViewController: NSViewController {
         updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
     }
 
-    private func initPreloader() {
-        guard tabCollectionViewModel.newTabPageTabPreloader == nil else {
-            return
-        }
-
-        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            let preloader = NewTabPageTabPreloader(viewSizeProvider: { [weak self] in
-                self?.browserTabViewController.view.bounds.size
-            })
-            tabCollectionViewModel.newTabPageTabPreloader = preloader
-        }
-    }
-
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
             if theme.addToolbarShadow {
@@ -772,14 +765,6 @@ final class MainViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateBookmarksBarViewVisibility(visible: self!.shouldShowBookmarksBar)
-            }
-    }
-
-    private func subscribeToAppearanceChanges() {
-        appearanceChangedCancellable = NSApp.publisher(for: \.effectiveAppearance)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.tabCollectionViewModel.newTabPageTabPreloader?.reloadTab(force: true)
             }
     }
 
@@ -939,7 +924,7 @@ final class MainViewController: NSViewController {
         )
     }
 
-    private func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
+    func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
         guard isViewLoaded && view.window?.isKeyWindow == true else {
             return nil
         }
@@ -951,7 +936,7 @@ final class MainViewController: NSViewController {
         }
     }
 
-    private func getSourceWindowToShowInactiveUserModal() -> NSWindow? {
+    func getSourceWindowToShowInactiveUserModal() -> NSWindow? {
         guard isViewLoaded && view.window?.isKeyWindow == true else {
             return nil
         }
@@ -972,7 +957,7 @@ final class MainViewController: NSViewController {
     /// **See also:**
     /// - `DefaultBrowserAndDockPromptPresenter.getBanner()` - creates the banner view controller
     /// - `hideBanner()` - removes the banner from view
-    private func showMessageBanner(banner: BannerMessageViewController) {
+    func showMessageBanner(banner: BannerMessageViewController) {
         if mainView.isBannerViewShown { return } // If view is being shown already we do not want to show it.
 
         addAndLayoutChild(banner, into: mainView.bannerContainerView)
@@ -1336,6 +1321,22 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion) {
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
+    }
+}
+
+// MARK: - DefaultBrowserAndDockPromptUIHosting
+
+extension MainViewController: DefaultBrowserAndDockPromptUIHosting {
+    func providePopoverAnchor() -> NSView? {
+        getSourceViewToShowSetAsDefaultAndAddToDockPopover()
+    }
+
+    func addSetAsDefaultBanner(_ banner: BannerMessageViewController) {
+        showMessageBanner(banner: banner)
+    }
+
+    func provideModalAnchor() -> NSWindow? {
+        getSourceWindowToShowInactiveUserModal()
     }
 }
 

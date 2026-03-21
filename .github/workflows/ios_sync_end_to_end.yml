@@ -16,13 +16,18 @@ concurrency:
 jobs:
   build-for-sync-end-to-end-tests:
     name: Build for Sync End To End Tests
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 30
 
     env:
-      RUNS_ON: macos-15
+      RUNS_ON: macos-26
 
     steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
     - name: Check out the code
       uses: actions/checkout@v4
       with:
@@ -59,7 +64,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "18.6,18.2"
+        preferred-versions: "26.2"
 
     - name: Build for tests
       run: |
@@ -104,10 +109,10 @@ jobs:
   sync-end-to-end-tests:
     name: Sync End To End Tests
     needs: build-for-sync-end-to-end-tests
-    runs-on: macos-15
+    runs-on: macos-26
 
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     timeout-minutes: 240
 

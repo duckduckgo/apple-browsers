@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import Common
 import Foundation
+import LetsMove
 import PrivacyConfig
 
 @objc(Application)
@@ -47,8 +48,9 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
         NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
 
         let buildType = StandardApplicationBuildType()
-        let dockCustomization = buildType.isSparkleBuild ? DockCustomizer() : nil
-        let delegate = AppDelegate(dockCustomization: dockCustomization)
+        let dockCustomizer = DockCustomizer()
+        let dockCustomization: DockCustomization? = buildType.isSparkleBuild ? dockCustomizer : nil
+        let delegate = AppDelegate(dockCustomization: dockCustomization, dockStateChecker: dockCustomizer)
         self.delegate = delegate
         Application.appDelegate = delegate
 
@@ -89,10 +91,22 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
         self.helpMenu = mainMenu.helpMenu
         self.windowsMenu = mainMenu.windowsMenu
         self.servicesMenu = mainMenu.servicesMenu
+
+        // This assertion is used to ensure that the sandboxed status is consistent across all targets.
+        assert(NSApp.isSandboxed == AppVersion.isAppStoreBuild, "NSApp.isSandboxed and AppVersion.isAppStoreBuild must match")
     }
 
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
+    }
+
+    override func run() {
+        let buildType = StandardApplicationBuildType()
+        if !buildType.isAppStoreBuild && !buildType.isDebugBuild {
+            PFMoveToApplicationsFolderIfNecessary(/*allowAlertSilencing:*/ true)
+        }
+
+        super.run()
     }
 
     @objc(_crashOnException:)

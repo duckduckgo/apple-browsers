@@ -144,6 +144,7 @@ public extension DesignSystemImages {
             public static var creditCardCheck: DesignSystemImage { .init(resource: .creditCardCheckColor24) }
             public static var defaultBrowserMobile: DesignSystemImage { .init(resource: .defaultBrowserMobileColor24) }
             public static var deviceAll: DesignSystemImage { .init(resource: .deviceAllColor24) }
+            public static var deviceLaptopInstall: DesignSystemImage { .init(resource: .deviceLaptopInstallColor24) }
             public static var document: DesignSystemImage { .init(resource: .documentColor24) }
             public static var downloads: DesignSystemImage { .init(resource: .downloadsColor24) }
             public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGoColor24) }
@@ -218,6 +219,7 @@ public extension DesignSystemImages {
 
         public enum Size96 {
             public static var announcement: DesignSystemImage { .init(resource: .announcement96) }
+            public static var fireTab: DesignSystemImage { .init(resource: .fireTabColor96) }
         }
 
         public enum Size128 {

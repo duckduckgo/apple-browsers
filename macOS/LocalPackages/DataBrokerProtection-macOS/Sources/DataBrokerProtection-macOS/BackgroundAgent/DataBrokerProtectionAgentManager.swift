@@ -43,7 +43,8 @@ public class DataBrokerProtectionAgentManagerProvider {
                                     privacyConfigurationManager: PrivacyConfigurationManaging,
                                     featureFlagger: DBPFeatureFlagging,
                                     wideEvent: WideEventManaging,
-                                    vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
+                                    vpnBypassService: VPNBypassFeatureProvider,
+                                    applicationNameForUserAgent: String?) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
             return nil
@@ -158,6 +159,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
+            applicationNameForUserAgent: applicationNameForUserAgent,
             vpnBypassService: vpnBypassService,
             wideEvent: wideEvent,
             isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated })
@@ -293,6 +295,8 @@ public final class DataBrokerProtectionAgentManager {
             await fireMonitoringPixels()
             Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
             sweepWideEvents()
+            let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+            operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
             await checkForEmailConfirmationData()
 
             startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)

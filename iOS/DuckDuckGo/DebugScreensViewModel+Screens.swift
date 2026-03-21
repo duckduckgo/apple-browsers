@@ -34,6 +34,13 @@ extension DebugScreensViewModel {
     var screens: [DebugScreen] {
         return [
             // MARK: Actions
+            .action(title: "Clear WebKit Cache", { _ in
+                WKWebsiteDataStore.default().removeData(
+                    ofTypes: [WKWebsiteDataTypeDiskCache,
+                              WKWebsiteDataTypeMemoryCache,
+                              WKWebsiteDataTypeOfflineWebApplicationCache],
+                    modifiedSince: .distantPast) { }
+            }),
             .action(title: "Reset Autoconsent Prompt", { _ in
                 AppUserDefaults().clearAutoconsentUserSetting()
             }),
@@ -117,7 +124,7 @@ extension DebugScreensViewModel {
                 configuration.processPool = WKProcessPool()
 
                 let ddgURL = URL(string: "https://duckduckgo.com/")!
-                let tab = d.tabManager.model.safeGetTabAt(d.tabManager.model.currentIndex)
+                let tab = d.tabManager.currentTabsModel.currentTab
                 let url = tab?.link?.url ?? ddgURL
                 return BareBonesBrowserView(initialURL: url,
                                             homeURL: ddgURL,
@@ -153,7 +160,7 @@ extension DebugScreensViewModel {
                 return self.debugStoryboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
                     ImageCacheDebugViewController(coder: coder,
                                                   bookmarksDatabase: d.bookmarksDatabase,
-                                                  tabsModel: d.tabManager.model,
+                                                  tabsModel: d.tabManager.allTabsModel,
                                                   fireproofing: d.fireproofing)
                 }
             }),
@@ -161,6 +168,7 @@ extension DebugScreensViewModel {
                 return self.debugStoryboard.instantiateViewController(identifier: "SyncDebugViewController") { coder in
                     SyncDebugViewController(coder: coder,
                                             sync: d.syncService,
+                                            keyValueStore: d.keyValueStore,
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
@@ -241,13 +249,15 @@ extension DebugScreensViewModel {
                         OnboardingIntroViewController.rebranded(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager
+                            daxDialogsManager: d.daxDialogManager,
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
                         )
                     } else {
                         OnboardingIntroViewController.legacy(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager
+                            daxDialogsManager: d.daxDialogManager,
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
                         )
                     }
                     controller.delegate = capturedController

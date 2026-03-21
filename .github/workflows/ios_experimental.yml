@@ -42,10 +42,12 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Register SSH keys for access to certificates
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check for active upload job
       env:
@@ -111,8 +113,6 @@ jobs:
     - name: Select Xcode
       if: steps.check-upload.outputs.should_skip != 'true'
       uses: ./.github/actions/select-xcode-version
-      with:
-        xcode-version: "26.1"
 
     - name: Setup Ruby and dependencies
       if: steps.check-upload.outputs.should_skip != 'true'

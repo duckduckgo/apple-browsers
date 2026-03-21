@@ -32,6 +32,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     let isUsingFadeOutAnimation: Bool = false
     let isCurrentTextValidURL: Bool = false
     let modeParameters: [String: String] = [:]
+    var isFireTab: Bool = false // TODO: - Handle injecting and updating this. And customizing the new tinput view for fire tabs.
 
     // MARK: - SwitchBarHandling — Dynamic State
 
@@ -40,7 +41,19 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
 
+    var isGenerating: Bool = false {
+        didSet { updateButtonState() }
+    }
+
+    var isExpanded: Bool = false {
+        didSet { updateButtonState() }
+    }
+
     var isVoiceSearchEnabled: Bool {
+        didSet { updateButtonState() }
+    }
+
+    var isToggleEnabled: Bool {
         didSet { updateButtonState() }
     }
 
@@ -81,10 +94,26 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         clearButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let searchGoToButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> {
+        searchGoToButtonTappedSubject.eraseToAnyPublisher()
+    }
+
+    private let stopGeneratingButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var stopGeneratingButtonTappedPublisher: AnyPublisher<Void, Never> {
+        stopGeneratingButtonTappedSubject.eraseToAnyPublisher()
+    }
+
+    private let customizeResponsesButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesButtonTappedPublisher: AnyPublisher<Void, Never> {
+        customizeResponsesButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
-    init(isVoiceSearchEnabled: Bool) {
+    init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
         self.isVoiceSearchEnabled = isVoiceSearchEnabled
+        self.isToggleEnabled = isToggleEnabled
         updateButtonState()
     }
 
@@ -103,6 +132,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     func setToggleState(_ state: TextEntryMode) {
         currentToggleState = state
+        updateButtonState()
     }
 
     func clearText() {
@@ -121,13 +151,31 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         clearButtonTappedSubject.send()
     }
 
+    func searchGoToButtonTapped() {
+        searchGoToButtonTappedSubject.send()
+    }
+
+    func stopGeneratingButtonTapped() {
+        stopGeneratingButtonTappedSubject.send()
+    }
+
+    func customizeResponsesButtonTapped() {
+        customizeResponsesButtonTappedSubject.send()
+    }
+
     func updateBarPosition(isTop: Bool) {}
 
     // MARK: - Private
 
     private func updateButtonState() {
-        if !currentText.isEmpty {
+        if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
+            buttonState = .stopGeneratingAndSearchGoTo
+        } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
+            buttonState = .stopGeneratingOnly
+        } else if !currentText.isEmpty {
             buttonState = .clearOnly
+        } else if !isToggleEnabled && currentToggleState == .aiChat {
+            buttonState = isVoiceSearchEnabled ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if isVoiceSearchEnabled {
             buttonState = .voiceOnly
         } else {

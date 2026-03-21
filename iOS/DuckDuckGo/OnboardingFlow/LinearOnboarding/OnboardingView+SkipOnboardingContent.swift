@@ -28,8 +28,6 @@ extension OnboardingView {
 
         typealias Copy = UserText.Onboarding.Skip
 
-        @Environment(\.onboardingTheme) private var onboardingTheme
-
         private var animateTitle: Binding<Bool>
         private var animateMessage: Binding<Bool>
         private var showCTA: Binding<Bool>
@@ -54,37 +52,36 @@ extension OnboardingView {
         }
 
         var body: some View {
-            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                        withAnimation {
-                            animateMessage.wrappedValue = true
-                        }
+            VStack(spacing: 24.0) {
+                AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
+                    withAnimation {
+                        animateMessage.wrappedValue = true
                     }
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.center)
-                    .font(onboardingTheme.typography.title)
-
-                    AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
-                        withAnimation {
-                            showCTA.wrappedValue = true
-                        }
-                    }
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.center)
-                    .font(onboardingTheme.typography.body)
                 }
+                .foregroundColor(.primary)
+                .font(Font.system(size: 20, weight: .bold))
 
-                VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
+                    withAnimation {
+                        showCTA.wrappedValue = true
+                    }
+                }
+                .foregroundColor(.primary)
+                .font(Font.system(size: 16))
+
+                VStack {
                     Button(action: startBrowsingAction) {
                         Text(Copy.confirmSkipOnboardingCTA)
                     }
                     .buttonStyle(PrimaryButtonStyle())
 
-                    Button(action: resumeOnboardingAction) {
-                        Text(Copy.resumeOnboardingCTA)
-                    }
-                    .buttonStyle(SecondaryFillButtonStyle())
+                    OnboardingBorderedButton(
+                        maxHeight: 50.0,
+                        content: {
+                            Text(Copy.resumeOnboardingCTA)
+                        },
+                        action: resumeOnboardingAction
+                    )
                 }
                 .visibility(showCTA.wrappedValue ? .visible : .invisible)
             }

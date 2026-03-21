@@ -16,18 +16,13 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
-import Subscription
-import PixelKit
 import Networking
+import PixelKit
+import Subscription
 
-// swiftlint:disable private_over_fileprivate
-#if APPSTORE
-fileprivate let appDistribution = "store"
-#else
-fileprivate let appDistribution = "direct"
-#endif
-// swiftlint:enable private_over_fileprivate
+private let appDistribution = AppVersion.isAppStoreBuild ? "store" : "direct"
 
 enum SubscriptionPixel: PixelKitEvent {
     // Subscription

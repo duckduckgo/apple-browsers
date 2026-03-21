@@ -42,6 +42,13 @@ final class AutoconsentPreferencesAdapter: AutoconsentPreferencesProviding {
 @available(iOS 18.4, *)
 public enum WebExtensionManagerFactory {
 
+    private static var extensionsDirectory: URL {
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Application Support directory not found")
+        }
+        return appSupport.appendingPathComponent("WebExtensions", isDirectory: true)
+    }
+
     @MainActor
     static func makeManager(
         mainViewController: MainViewController,
@@ -54,7 +61,7 @@ public enum WebExtensionManagerFactory {
         return WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
-            storageProvider: WebExtensionStorageProvider(),
+            storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             pixelFiring: iOSWebExtensionPixelFiring(),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,

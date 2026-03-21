@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '0 4 * * *' # run at 4 AM UTC
   workflow_dispatch:
+    inputs:
+      test-flow:
+        description: 'Single Maestro flow to run, relative to .maestro/ (e.g. release_tests/tabs.yaml). Leave empty to run the full suite.'
+        required: false
+        default: ''
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,13 +21,18 @@ concurrency:
 jobs:
   build-end-to-end-tests:
     name: Build End to End Tests
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 30
 
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
     - name: Check out the code
       uses: actions/checkout@v4
       with:
@@ -59,7 +69,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "18.6,18.2"
+        preferred-versions: "26.2"
 
     - name: Build for tests
       run: |
@@ -104,11 +114,12 @@ jobs:
   end-to-end-tests:
     name: End to end Tests
     needs: build-end-to-end-tests
-    runs-on: macos-15
+    if: inputs.test-flow == ''
+    runs-on: macos-26
     timeout-minutes: 300
 
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     strategy:
       matrix:
@@ -136,10 +147,6 @@ jobs:
           - test-tag: device_info
             exclude-tags: ipad
             device-model: iPhone-16
-          - test-tag: unified_toggle_input
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
           # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
           - test-tag: device_info
             exclude-tags: iphone
@@ -193,6 +200,38 @@ jobs:
         pixel-name: m_ci_apple_duration_ios_e2e_tests_${{ matrix.test-tag }}
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
+
+  end-to-end-single-flow:
+    name: End to end Tests (single flow)
+    needs: build-end-to-end-tests
+    if: inputs.test-flow != ''
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+
+    - name: Check out the code
+      uses: actions/checkout@v4
+
+    - name: Retrieve Binary
+      uses: actions/download-artifact@v4
+      with:
+        name: duckduckgo-ios-app
+        path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+
+    - name: Run single flow (${{ inputs.test-flow }})
+      uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
+      with:
+        api-key: ${{ secrets.ROBIN_API_KEY }}
+        project-id: ${{ vars.ROBIN_PROJECT_KEY }}
+        name: single_flow_${{ github.sha }}
+        timeout: 60
+        app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+        workspace: .maestro/${{ inputs.test-flow }}
+        env: ONBOARDING_COMPLETED=true
+        device-os: iOS-18-2
+        device-model: iPhone-16
+        device-name: iPhone
 
   notify-failure:
     name: Notify on failure

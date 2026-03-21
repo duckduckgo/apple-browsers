@@ -195,7 +195,7 @@ final class MainView: NSView {
 
         // Find the "Search with %@" item and replace %@ with DuckDuckGo
         for item in menu.items {
-            guard !item.isSeparatorItem else { break }
+            guard !item.isSeparatorItem else { continue }
             if item.title.contains(providerDisplayName) {
                 item.title = item.title.replacingOccurrences(of: providerDisplayName, with: "DuckDuckGo")
                 break

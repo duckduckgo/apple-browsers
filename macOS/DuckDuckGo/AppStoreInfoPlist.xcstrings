@@ -16,7 +16,7 @@
     },
     "NSAppDataUsageDescription" : {
       "comment" : "Privacy - Other Application Data Usage Description",
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {

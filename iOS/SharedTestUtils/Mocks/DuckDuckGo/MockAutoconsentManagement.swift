@@ -38,20 +38,22 @@ final class MockAutoconsentManagement: AutoconsentManaging {
 
     private(set) var clearCacheCallCount = 0
 
-    func clearCache() {
+    func clearCache() -> Result<Void, Error> {
         clearCacheCallCount += 1
         sitesNotifiedCache.removeAll()
         detectedByPatternsCache.removeAll()
         detectedByBothCache.removeAll()
         detectedOnlyRulesCache.removeAll()
+        return .success(())
     }
 
     private(set) var clearCacheForDomainsCallCount = 0
     private(set) var lastClearedDomains: [String]?
 
-    func clearCache(forDomains domains: [String]) {
+    func clearCache(forDomains domains: [String]) -> Result<Void, Error> {
         clearCacheForDomainsCallCount += 1
         lastClearedDomains = domains
+        return .success(())
     }
 
 }

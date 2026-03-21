@@ -42,26 +42,42 @@ final class NavigationActionBarViewModel: ObservableObject {
     var isTopBarPosition: Bool {
         switchBarHandler.isTopBarPosition
     }
+    
+    var isFireTab: Bool {
+        switchBarHandler.isFireTab
+    }
 
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
+    // MARK: - Voice Mode
+    let isVoiceModeFeatureEnabled: Bool
+
+    var shouldShowVoiceModeButton: Bool {
+        isVoiceModeFeatureEnabled && !isSearchMode && !hasText
+    }
+
     // MARK: - Action Callbacks
     let onMicrophoneTapped: () -> Void
     let onNewLineTapped: () -> Void
     let onSearchTapped: () -> Void
+    let onVoiceModeTapped: () -> Void
 
     // MARK: - Initialization
     init(switchBarHandler: SwitchBarHandling,
+         isVoiceModeFeatureEnabled: Bool = false,
          onMicrophoneTapped: @escaping () -> Void = {},
          onNewLineTapped: @escaping () -> Void = {},
-         onSearchTapped: @escaping () -> Void = {}) {
+         onSearchTapped: @escaping () -> Void = {},
+         onVoiceModeTapped: @escaping () -> Void = {}) {
 
         self.switchBarHandler = switchBarHandler
+        self.isVoiceModeFeatureEnabled = isVoiceModeFeatureEnabled
         self.onMicrophoneTapped = onMicrophoneTapped
         self.onNewLineTapped = onNewLineTapped
         self.onSearchTapped = onSearchTapped
+        self.onVoiceModeTapped = onVoiceModeTapped
 
         setupBindings()
         updateInitialState()
@@ -142,4 +158,13 @@ final class NavigationActionBarViewModel: ObservableObject {
 
         return hasText && !hasUserInteractedWithText
     }
+
+    func searchButtonTapped() {
+        if shouldShowVoiceModeButton {
+            onVoiceModeTapped()
+        } else {
+            onSearchTapped()
+        }
+    }
+
 }

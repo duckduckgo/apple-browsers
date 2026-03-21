@@ -36,11 +36,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: macos-15
-      timeout-minutes: 30
+      runs-on: macos-26
+      timeout-minutes: 45
 
       env:
-        RUNS_ON: macos-15 # keep this in sync with runs-on above
+        RUNS_ON: macos-26 # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -48,6 +48,11 @@ jobs:
         pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
       steps:
+
+      - name: Register SSH keys for private repos
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
       - name: Check out the code
         uses: actions/checkout@v4
@@ -101,7 +106,11 @@ jobs:
 
       - name: Run tests
         id: run-unit-tests
-        run: set -o pipefail && swift test --enable-swift-testing | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+        run: >
+          set -o pipefail && swift test --enable-swift-testing
+          | tee -a build-log.txt
+          | grep -vE "CoreData: error:|CoreData: XPC:"
+          | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -203,14 +212,19 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: macos-15
-      timeout-minutes: 30
+      runs-on: macos-26
+      timeout-minutes: 45
 
       env:
-        RUNS_ON: macos-15 # keep this in sync with runs-on above
+        RUNS_ON: macos-26 # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
+
+      - name: Register SSH keys for private repos
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
       - name: Check out the code
         uses: actions/checkout@v4
@@ -248,7 +262,7 @@ jobs:
         id: select-simulator
         uses: ./.github/actions/select-ios-simulator
         with:
-          preferred-versions: "18.6,18.2"
+          preferred-versions: "26.2"
 
       - name: Resolve package dependencies
         run: |

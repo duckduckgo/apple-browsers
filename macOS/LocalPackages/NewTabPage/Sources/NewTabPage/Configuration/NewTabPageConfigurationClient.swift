@@ -65,6 +65,12 @@ public enum NewTabPageConfigurationEvent: Equatable {
 
 public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
+    public enum Environment: String {
+        case development
+        case production
+    }
+
+    private let environment: Environment
     private var cancellables = Set<AnyCancellable>()
     private let sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding
     private let sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding
@@ -76,6 +82,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let stateProvider: NewTabPageStateProviding
 
     public init(
+        environment: Environment,
         sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding,
         sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding,
         omnibarConfigProvider: NewTabPageOmnibarConfigProviding,
@@ -85,6 +92,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
         stateProvider: NewTabPageStateProviding
     ) {
+        self.environment = environment
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
         self.sectionsVisibilityProvider = sectionsVisibilityProvider
         self.omnibarConfigProvider = omnibarConfigProvider
@@ -277,12 +285,6 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-#if DEBUG || REVIEW
-        let env = "development"
-#else
-        let env = "production"
-#endif
-
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
@@ -294,7 +296,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let config = NewTabPageDataModel.NewTabPageConfiguration(
             widgets: widgets,
             widgetConfigs: widgetConfigs,
-            env: env,
+            env: environment.rawValue,
             locale: Bundle.main.preferredLocalizations.first ?? "en",
             platform: .init(name: "macos"),
             settings: .init(customizerDrawer: .init(state: .enabled)),

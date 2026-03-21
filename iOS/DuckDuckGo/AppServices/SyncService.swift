@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Bookmarks
 import Combine
 import Core
 import DDGSync
@@ -43,7 +44,10 @@ final class SyncService {
     init(bookmarksDatabase: CoreDataDatabase,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
-         application: UIApplication = UIApplication.shared) {
+         faviconStoring: FaviconStoring,
+         application: UIApplication = UIApplication.shared,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         autoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager) {
         self.application = application
 
 #if CI
@@ -68,9 +72,9 @@ final class SyncService {
             settingHandlers: [FavoritesDisplayModeSyncHandler()],
             favoritesDisplayModeStorage: FavoritesDisplayModeStorage(),
             syncErrorHandler: syncErrorHandler,
-            faviconStoring: Favicons.shared,
+            faviconStoring: faviconStoring,
             tld: AppDependencyProvider.shared.storageCache.tld,
-            featureFlagger: AppDependencyProvider.shared.featureFlagger
+            featureFlagger: featureFlagger
         )
 
         sync = DDGSync(
@@ -78,12 +82,15 @@ final class SyncService {
             errorEvents: SyncErrorHandler(),
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
-            environment: environment
+            environment: environment,
+            shouldPreserveAccountWhenSyncDisabled: {
+                autoRestoreDecisionManager.shouldPreserveAccountWhenSyncDisabled()
+            }
         )
 
         aiChatSyncCleaner = AIChatSyncCleaner(sync: sync,
-                                               keyValueStore: keyValueStore,
-                                               featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: AppDependencyProvider.shared.featureFlagger),
+                                              keyValueStore: keyValueStore,
+                                              featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
                                               httpRequestErrorHandler: { error in
             errorHandler.handleAiChatsError(error)
         })
@@ -110,6 +117,10 @@ final class SyncService {
         sync.initializeIfNeeded()
         syncDataProviders.setUpDatabaseCleanersIfNeeded(syncService: sync)
         sync.scheduler.notifyAppLifecycleEvent()
+    }
+
+    func enableSyncFromPreservedAccount() async throws {
+        try await sync.enableSyncFromPreservedAccount()
     }
 
     // MARK: - Suspend

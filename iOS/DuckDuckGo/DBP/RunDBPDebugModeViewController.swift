@@ -555,6 +555,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         emailConfirmationDataService: emailConfirmationDataService,
                         captchaService: captchaService,
                         featureFlagger: featureFlagger,
+                        applicationNameForUserAgent: nil,
                         stageDurationCalculator: FakeStageDurationCalculator(),
                         pixelHandler: fakePixelHandler,
                         executionConfig: executionConfig
@@ -686,6 +687,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
+                    applicationNameForUserAgent: nil,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
@@ -858,6 +860,7 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
+                    applicationNameForUserAgent: nil,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,

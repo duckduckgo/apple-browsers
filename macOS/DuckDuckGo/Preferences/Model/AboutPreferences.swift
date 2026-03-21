@@ -35,16 +35,21 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let supportedOSChecker: SupportedOSChecking
     private var cancellables = Set<AnyCancellable>()
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
+    private let manualUpdateRemovalHandler: ManualUpdateRemovalHandling
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger,
+         manualUpdateRemovalHandler: ManualUpdateRemovalHandling? = nil,
          windowControllersManager: WindowControllersManagerProtocol,
          keyValueStore: ThrowingKeyValueStoring,
          supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
-        self.settings = keyValueStore.throwingKeyedStoring()
+        let settings: any ThrowingKeyedStoring<UpdateControllerSettings> = keyValueStore.throwingKeyedStoring()
+        self.settings = settings
+        self.manualUpdateRemovalHandler = manualUpdateRemovalHandler
+            ?? ManualUpdateRemovalHandler(settings: settings, featureFlagger: featureFlagger)
         self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         internalUserDecider.isInternalUserPublisher
@@ -67,14 +72,18 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
+    var shouldHideManualUpdateOption: Bool {
+        manualUpdateRemovalHandler.shouldHideManualUpdateOption
+    }
+
     var shouldShowUpdateStatus: Bool {
-        #if SPARKLE
-        // For Sparkle builds: always show update status regardless of feature flag
-        return true
-        #else
-        // For App Store builds: only show update status if feature flag is enabled
-        return featureFlagger.isFeatureOn(.appStoreUpdateFlow)
-        #endif
+        if StandardApplicationBuildType().isSparkleBuild {
+            // For Sparkle builds: always show update status regardless of feature flag
+            return true
+        } else {
+            // For App Store builds: only show update status if feature flag is enabled
+            return featureFlagger.isFeatureOn(.appStoreUpdateFlow)
+        }
     }
 
     @Published var updateState = UpdateState.upToDate
@@ -182,11 +191,9 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         (updateController as? any SparkleUpdateControlling)?.isAtRestartCheckpoint ?? false
     }
 
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     var customFeedURL: String? {
         return try? settings.debugSparkleCustomFeedURL
     }
-#endif
 
     private var cancellable: AnyCancellable?
 

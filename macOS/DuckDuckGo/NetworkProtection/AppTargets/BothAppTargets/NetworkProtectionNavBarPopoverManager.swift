@@ -205,21 +205,18 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 return statusViewSubmenu()
             }
 
-#if APPSTORE
-            let isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never> = {
-                let initialValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage)
-                    && !vpnAppState.isUsingSystemExtension
-
-                let publisher = vpnAppState.isUsingSystemExtensionPublisher
-                    .map { [featureFlagger] value in
-                        featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !value
-                    }.eraseToAnyPublisher()
-
-                return CurrentValuePublisher(initialValue: initialValue, publisher: publisher)
-            }()
-#else
-            let isExtensionUpdateOfferedPublisher = CurrentValuePublisher(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
-#endif
+            let isExtensionUpdateOfferedPublisher = if NSApp.isSandboxed {
+                CurrentValuePublisher(initialValue:
+                    featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !vpnAppState.isUsingSystemExtension,
+                                      publisher: {
+                    vpnAppState.isUsingSystemExtensionPublisher
+                        .map { [featureFlagger] value in
+                            featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !value
+                        }.eraseToAnyPublisher()
+                }())
+            } else {
+                CurrentValuePublisher(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
+            }
 
             let statusViewModel = NetworkProtectionStatusView.Model(
                 controller: controller,

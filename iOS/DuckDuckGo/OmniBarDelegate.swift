@@ -119,13 +119,19 @@ protocol OmniBarDelegate: AnyObject {
 
     // MARK: - Escape Hatch
     func escapeHatchForEditingState() -> EscapeHatchModel?
-    func onSwitchTabToIndex(_ index: Int)
+    func onSwitchToTab(_ tab: Tab)
 
     // MARK: - Toggle
     func onToggleModeSwitched()
 
     /// When true, the omnibar editing-state transition uses the new behaviour (opaque from frame 0, single logo). Gated by showNTPAfterIdleReturn.
     func useNewOmnibarTransitionBehaviour() -> Bool
+    
+    // MARK: - Voice Mode
+    func onDuckAIVoiceModeRequested()
+
+    // MARK: - Fire Mode
+    func isCurrentTabFireTab() -> Bool
 }
 
 extension OmniBarDelegate {
@@ -206,7 +212,7 @@ extension OmniBarDelegate {
         completion()
     }
 
-    func onSwitchTabToIndex(_ index: Int) {}
+    func onSwitchToTab(_ tab: Tab) {}
 
     func onToggleModeSwitched() {}
 
@@ -217,4 +223,6 @@ extension OmniBarDelegate {
     func useNewOmnibarTransitionBehaviour() -> Bool {
         false
     }
+
+    func onDuckAIVoiceModeRequested() {}
 }

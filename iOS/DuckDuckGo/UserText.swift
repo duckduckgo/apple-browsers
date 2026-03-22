@@ -691,8 +691,13 @@ public struct UserText {
     }
     static let netPVPNNotificationsTitle = NSLocalizedString("network.protection.vpn.notifications.title", value: "VPN Notifications", comment: "Title for the VPN Notifications management screen.")
     static let netPStatusViewShareFeedback = NSLocalizedString("network.protection.status.menu.share.feedback", value: "Share Feedback", comment: "The status view 'Share Feedback' button which is shown inline on the status view after the temporary free use footer text")
-    static let netPStatusViewErrorConnectionFailedTitle = NSLocalizedString("network.protection.status.view.error.connection.failed.title", value: "Failed to Connect.", comment: "Generic connection failed error title shown in NetworkProtection's status view.")
-    static let netPStatusViewErrorConnectionFailedMessage = NSLocalizedString("network.protection.status.view.error.connection.failed.message", value: "Please try again later.", comment: "Generic connection failed error message shown in NetworkProtection's status view.")
+    static let netPStatusViewErrorConnectionFailedTitle = NSLocalizedString("network.protection.status.view.error.connection.failed.title", value: "Failed to Connect", comment: "Connection failed error title shown in NetworkProtection's status view.")
+
+    // MARK: - VPN Error Messages
+    static let vpnErrorAuthenticationFailed = NSLocalizedString("network.protection.error.authentication.failed", value: "Unable to authenticate. Please check your subscription is active, and try again.", comment: "Error shown when VPN cannot authenticate the user")
+    static let vpnErrorConnectionFailed = NSLocalizedString("network.protection.error.connection.failed", value: "Unable to connect to a VPN server. Please try again later.", comment: "Error shown when VPN fails to connect to a server")
+    static let vpnErrorSubscriptionExpired = NSLocalizedString("network.protection.error.subscription.expired", value: "Your subscription has ended. Please subscribe again to connect to a VPN server.", comment: "Error shown when the user's subscription has expired")
+    static let vpnErrorUnknown = NSLocalizedString("network.protection.error.unknown", value: "An unexpected error occurred. Please try again. If this issue continues, scroll to **About** and tap **FAQs and Support** for help.", comment: "Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations.")
     static let netPPreferredLocationSettingTitle = NSLocalizedString("network.protection.vpn.preferred.location.title", value: "Preferred Location", comment: "Title for the Preferred Location VPN Settings item.")
     static let netPPreferredLocationNearest = NSLocalizedString("network.protection.vpn.preferred.location.nearest", value: "Nearest Location", comment: "Label for the Preferred Location VPN Settings item when the nearest available location is selected.")
     static let netPVPNLocationTitle = NSLocalizedString("network.protection.vpn.location.title", value: "VPN Location", comment: "Title for the VPN Location screen.")

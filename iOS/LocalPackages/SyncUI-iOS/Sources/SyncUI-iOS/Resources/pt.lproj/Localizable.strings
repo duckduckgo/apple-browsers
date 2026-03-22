@@ -134,9 +134,6 @@
 "fetch.favicons.option.title" = "Transferir automaticamente os ícones";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Aceder às Definições";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Manter desenvolvimento";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -288,9 +285,6 @@
 
 /* Scan or See Code View - Title */
 "scan.or.see.code.title" = "Ler código QR";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Protege o teu dispositivo para usares o Sync & Backup";
 
 /* No comment provided by engineer. */
 "Switch to Production" = "Mudar para produção";

@@ -20,7 +20,7 @@
 import XCTest
 import DDGSync
 import Combine
-import DuckDuckGo
+@testable import DuckDuckGo
 @testable import Core
 
 final class SyncErrorHandlerSyncPausedAlertsTests: XCTestCase {

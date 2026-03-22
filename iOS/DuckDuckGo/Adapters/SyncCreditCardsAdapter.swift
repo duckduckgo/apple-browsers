@@ -1,8 +1,8 @@
 //
-//  SyncCredentialsAdapter.swift
+//  SyncCreditCardsAdapter.swift
 //  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,33 +21,35 @@ import BrowserServicesKit
 import Combine
 import Common
 import DDGSync
+import Foundation
 import Persistence
+import PrivacyConfig
 import SecureStorage
 import SyncDataProviders
+import os.log
+import Core
 
-public final class SyncCredentialsAdapter {
+public final class SyncCreditCardsAdapter {
 
-    public private(set) var provider: CredentialsProvider?
-    public let databaseCleaner: CredentialsDatabaseCleaner
+    public private(set) var provider: CreditCardsProvider?
+    public let databaseCleaner: CreditCardsDatabaseCleaner
     public let syncDidCompletePublisher: AnyPublisher<Void, Never>
-    public static let syncCredentialsPausedStateChanged = SyncBookmarksAdapter.syncBookmarksPausedStateChanged
-    public static let credentialsSyncLimitReached = Notification.Name("com.duckduckgo.app.SyncCredentialsLimitReached")
+    public static let syncCreditCardsPausedStateChanged =  SyncBookmarksAdapter.syncBookmarksPausedStateChanged
+    public static let creditCardsSyncLimitReached = Notification.Name("com.duckduckgo.app.SyncCreditCardsLimitReached")
     let syncErrorHandler: SyncErrorHandling
-    let credentialIdentityStoreManager: AutofillCredentialIdentityStoreManaging
+    private var featureAvailabilityCancellable: AnyCancellable?
 
     public init(secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
                 secureVaultErrorReporter: SecureVaultReporting,
-                syncErrorHandler: SyncErrorHandling,
-                tld: TLD) {
+                syncErrorHandler: SyncErrorHandling) {
         syncDidCompletePublisher = syncDidCompleteSubject.eraseToAnyPublisher()
         self.secureVaultErrorReporter = secureVaultErrorReporter
         self.syncErrorHandler = syncErrorHandler
-        databaseCleaner = CredentialsDatabaseCleaner(
+        databaseCleaner = CreditCardsDatabaseCleaner(
             secureVaultFactory: secureVaultFactory,
             secureVaultErrorReporter: secureVaultErrorReporter,
-            errorEvents: CredentialsCleanupErrorHandling()
+            errorEvents: CreditCardsCleanupErrorHandling()
         )
-        credentialIdentityStoreManager = AutofillCredentialIdentityStoreManager(reporter: secureVaultErrorReporter, tld: tld)
     }
 
     public func cleanUpDatabaseAndUpdateSchedule(shouldEnable: Bool) {
@@ -62,41 +64,44 @@ public final class SyncCredentialsAdapter {
     public func setUpProviderIfNeeded(
         secureVaultFactory: AutofillVaultFactory,
         metadataStore: SyncMetadataStore,
-        metricsEventsHandler: EventMapping<MetricsEvent>? = nil
+        metricsEventsHandler: EventMapping<MetricsEvent>? = nil,
+        privacyConfigurationManager: PrivacyConfigurationManaging
     ) {
         guard provider == nil else {
             return
         }
 
         do {
-            let provider = try CredentialsProvider(
+            let provider = try CreditCardsProvider(
                 secureVaultFactory: secureVaultFactory,
                 secureVaultErrorReporter: secureVaultErrorReporter,
                 metadataStore: metadataStore,
                 metricsEvents: metricsEventsHandler,
                 syncDidUpdateData: { [weak self] in
                     self?.syncDidCompleteSubject.send()
-                    self?.syncErrorHandler.syncCredentialsSucceded()
+                    self?.syncErrorHandler.syncCreditCardsSucceded()
                 },
-                syncDidFinish: { [weak self] credentialsInput in
-                    if let credentialsInput, !credentialsInput.modifiedAccounts.isEmpty || !credentialsInput.deletedAccounts.isEmpty {
-                        Task {
-                            await self?.credentialIdentityStoreManager.updateCredentialStoreWith(updatedAccounts: credentialsInput.modifiedAccounts, deletedAccounts: credentialsInput.deletedAccounts)
-                        }
-                    }
-                }
+                syncDidFinish: { _ in }
             )
             syncErrorCancellable = provider.syncErrorPublisher
                 .sink { [weak self] error in
-                    self?.syncErrorHandler.handleCredentialError(error)
+                    self?.syncErrorHandler.handleCreditCardsError(error)
                 }
 
             self.provider = provider
 
+            featureAvailabilityCancellable = privacyConfigurationManager.updatesPublisher
+                .prepend(())
+                .receive(on: DispatchQueue.main)
+                .sink { [weak provider] in
+                    let isEnabled = privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards)
+                    provider?.setSyncFeatureEnabled(isEnabled)
+                }
+
         } catch let error as NSError {
             let processedErrors = CoreDataErrorsParser.parse(error: error)
             let params = processedErrors.errorPixelParameters
-            Pixel.fire(pixel: .syncCredentialsProviderInitializationFailed, error: error, withAdditionalParameters: params)
+            Pixel.fire(pixel: .syncCreditCardsProviderInitializationFailed, error: error, withAdditionalParameters: params)
        }
     }
 

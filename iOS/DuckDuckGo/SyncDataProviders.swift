@@ -26,6 +26,7 @@ import Persistence
 import PrivacyConfig
 import SecureStorage
 import SyncDataProviders
+import Core
 
 public class SyncDataProviders: DataProvidersSource {
     public let bookmarksAdapter: SyncBookmarksAdapter

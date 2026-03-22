@@ -20,6 +20,7 @@
 import Common
 import SyncDataProviders
 import Foundation
+import Core
 
 public class SyncMetricsEventsHandler: EventMapping<MetricsEvent> {
 

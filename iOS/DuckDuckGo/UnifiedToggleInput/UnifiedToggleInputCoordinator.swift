@@ -896,6 +896,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         updateInputMode(mode, animated: false)
     }
 
+    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
+        guard displayState == .aiTab(.collapsed) else { return }
+        delegate?.unifiedToggleInputDidRequestVoiceSearch()
+    }
+
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {
         showExpanded(inputMode: .search)
     }

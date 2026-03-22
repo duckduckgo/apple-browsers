@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Common
 import Persistence
+import Core
 
 public class CreditCardsCleanupErrorHandling: EventMapping<CreditCardsCleanupError> {
 

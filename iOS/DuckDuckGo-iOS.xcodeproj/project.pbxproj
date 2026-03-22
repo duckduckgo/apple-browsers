@@ -5778,17 +5778,6 @@
 			path = ChatHistory;
 			sourceTree = "<group>";
 		};
-		31B2F10D2C92FEB000CD30E3 /* MarketplaceAdPostback */ = {
-			isa = PBXGroup;
-			children = (
-				31B2F10E2C92FECC00CD30E3 /* MarketplaceAdPostbackManager.swift */,
-				31B2F1122C92FEF500CD30E3 /* MarketplaceAdPostbackUpdater.swift */,
-				31B2F1102C92FEE000CD30E3 /* MarketplaceAdPostback.swift */,
-				317F5F972C94A9EB0081666F /* MarketplaceAdPostbackStorage.swift */,
-			);
-			name = MarketplaceAdPostback;
-			sourceTree = "<group>";
-		};
 		31B5E8C32E1D564000EECC1E /* FlowManagers */ = {
 			isa = PBXGroup;
 			children = (
@@ -6185,6 +6174,17 @@
 				566B73742BECE53D00FF1959 /* SyncPausedStateManaging.swift */,
 			);
 			name = Sync;
+			sourceTree = "<group>";
+		};
+		4B104AF42F70461A00843054 /* MarketplaceAdPostback */ = {
+			isa = PBXGroup;
+			children = (
+				31B2F10E2C92FECC00CD30E3 /* MarketplaceAdPostbackManager.swift */,
+				31B2F1122C92FEF500CD30E3 /* MarketplaceAdPostbackUpdater.swift */,
+				31B2F1102C92FEE000CD30E3 /* MarketplaceAdPostback.swift */,
+				317F5F972C94A9EB0081666F /* MarketplaceAdPostbackStorage.swift */,
+			);
+			path = MarketplaceAdPostback;
 			sourceTree = "<group>";
 		};
 		4B274F5E2AFEAEB3003F0745 /* Widget */ = {
@@ -6988,6 +6988,7 @@
 				F1C5ECFA1E37B15B00C599A4 /* Main */,
 				7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */,
 				9F254AA92CF47CD30063B308 /* MaliciousSiteProtection */,
+				4B104AF42F70461A00843054 /* MarketplaceAdPostback */,
 				9F0B19AA2EA5DF78001FA867 /* ModalPromptCoordination */,
 				EECD94B22A28B8580085C66E /* NetworkProtection */,
 				F13B4BF31F18C73A00814661 /* NewTabPage */,
@@ -10148,7 +10149,6 @@
 				F143C2E71E4A4CD400CFDE3A /* Info.plist */,
 				98B001AE251EABB40090EC07 /* InfoPlist.strings */,
 				F18608DE1E5E648100361C30 /* Javascript */,
-				31B2F10D2C92FEB000CD30E3 /* MarketplaceAdPostback */,
 				EE7A92852AC6DE2500832A36 /* NetworkProtection */,
 				CBAA195B27C3982A00A4BD49 /* PrivacyFeatures.swift */,
 				CBAA195627BFDD9800A4BD49 /* SmarterEncryption */,

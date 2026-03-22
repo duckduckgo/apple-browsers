@@ -200,10 +200,10 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     @objc private func setAsLogoButtonTapped() {
         if isCurrentLogoStored {
             logoStore.clearLogo()
-            Pixel.fire(pixel: .daxEasterEggLogoResetToDefault)
+            DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoResetToDefault)
         } else if let urlString = imageURL?.absoluteString {
             logoStore.setLogo(url: urlString)
-            Pixel.fire(pixel: .daxEasterEggLogoSetAsPermanent)
+            DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoSetAsPermanent)
         }
         dismiss(animated: true)
     }

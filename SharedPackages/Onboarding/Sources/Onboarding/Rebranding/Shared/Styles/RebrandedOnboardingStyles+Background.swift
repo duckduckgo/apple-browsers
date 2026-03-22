@@ -37,7 +37,7 @@ public enum ContextualOnboardingBackgroundType {
         case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog:
             return .bottomTrailing
         case .endOfJourney, .privacyProTrial:
-            return .center
+            return .bottom
         }
     }
 
@@ -61,6 +61,12 @@ public enum ContextualOnboardingBackgroundType {
     }
 }
 
+private enum ContextualBackgroundStyleMetrics {
+    static let referenceBackgroundImageHeight: CGFloat = 290
+    static let referenceBackgroundImageOffset: CGFloat = 90
+    static let backgroundImageKeyboardAnimation = Animation.easeOut(duration: 0.16)
+}
+
 extension OnboardingRebranding.OnboardingStyles {
 
     struct ContextualBackgroundStyle: ViewModifier {
@@ -72,16 +78,17 @@ extension OnboardingRebranding.OnboardingStyles {
         @State private var imageGlobalFrame: CGRect = .zero
 
         private let backgroundType: ContextualOnboardingBackgroundType
+        private let keyboardBehavior: KeyboardBehavior
         private let imageOffsetY: CGFloat
 
         init(backgroundType: ContextualOnboardingBackgroundType, imageOffsetY: CGFloat, keyboardBehavior: KeyboardBehavior) {
             self.backgroundType = backgroundType
+            self.keyboardBehavior = keyboardBehavior
             self.imageOffsetY = imageOffsetY
             _keyboardResponder = StateObject(wrappedValue: KeyboardResponder(isEnabled: keyboardBehavior.isEnabled))
         }
 
         func body(content: Content) -> some View {
-            GeometryReader { geometry in
                 ZStack {
                     theme.colorPalette.background
                         .ignoresSafeArea()
@@ -90,32 +97,31 @@ extension OnboardingRebranding.OnboardingStyles {
                         Color.clear
                             .ignoresSafeArea()
 
-                        backgroundType.image
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxHeight: maxHeightMetrics)
-                            .background(
-                                GeometryReader { proxy in
-                                    Color.clear
-                                        .preference(key: BackgroundIllustrationHeightPreferenceKey.self, value: proxy.size.height)
-                                        .preference(key: BackgroundIllustrationFramePreferenceKey.self, value: proxy.frame(in: .global))
-                                        .onPreferenceChange(BackgroundIllustrationFramePreferenceKey.self) { frame in
-                                            imageGlobalFrame = frame
-                                        }
-                                }
-                            )
-                            .offset(y: calculateImageOffset(for: geometry))
-                            .animation(.easeOut(duration: 0.16), value: keyboardResponder.keyboardFrame)
+                            backgroundType.image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: maxHeightMetrics)
+                                .background(
+                                    GeometryReader { proxy in
+                                        Color.clear
+                                            .preference(key: BackgroundIllustrationHeightPreferenceKey.self, value: proxy.size.height)
+                                            .preference(key: BackgroundIllustrationFramePreferenceKey.self, value: proxy.frame(in: .global))
+                                    }
+                                )
+                                .offset(y: calculateImageOffset())
+                                .animation(ContextualBackgroundStyleMetrics.backgroundImageKeyboardAnimation, value: keyboardResponder.keyboardFrame)
+
                     }
                     .frame(maxWidth: .infinity, alignment: backgroundType.alignment)
                     .clipped()
                     .ignoresSafeArea(edges: ignoresSafeAreaEdges)
+                    .onPreferenceChange(BackgroundIllustrationFramePreferenceKey.self) { frame in
+                        imageGlobalFrame = frame
+                    }
 
                     content
                 }
-                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
-            }
-            .ignoresSafeArea(.keyboard)
+                .ignoresSafeArea(.keyboard)
         }
 
         // Calculates the vertical offset needed to adjust the background image when the keyboard appears.
@@ -128,13 +134,19 @@ extension OnboardingRebranding.OnboardingStyles {
         // Example scenario:
         //   - Image bottom at Y=730 (imageGlobalFrame.maxY)
         //   - Keyboard top at Y=600 (keyboardFrame.minY)
-        //   - Inset = 20
-        //   - Target position: 600 + 20 = 620
-        //   - Offset needed: 620 - 730 = -110 (move up 110 points)
-        private func calculateImageOffset(for geometry: GeometryProxy) -> CGFloat {
+        //   - Offset = From reference image
+        //   - Target position = 600 + offset
+        //   - Offset needed: 600 + offset - 730
+        private func calculateImageOffset() -> CGFloat {
             #if os(iOS)
+            // If screen does not respond to keyboard notifications, return default imageOffsetY
+            guard keyboardBehavior.isEnabled else { return imageOffsetY }
+
+            // Inset of the image calculated from the reference image + reference offset scaled for actual image size.
+            let keyboardImageOffsetY = ContextualBackgroundStyleMetrics.referenceBackgroundImageOffset * imageGlobalFrame.size.height / ContextualBackgroundStyleMetrics.referenceBackgroundImageHeight
+
             // Early exit if no keyboard is visible
-            guard keyboardResponder.keyboardFrame.height > 0 else { return imageOffsetY }
+            guard keyboardResponder.keyboardFrame.height > 0 else { return keyboardImageOffsetY }
 
             // Early exit if image frame hasn't been captured yet
             guard imageGlobalFrame != .zero else { return imageOffsetY }
@@ -151,14 +163,16 @@ extension OnboardingRebranding.OnboardingStyles {
                 return imageOffsetY
             }
 
-            // Calculate where the image currently is (bottom edge in global coordinates) + offset the image
-            let currentImageBottom = imageGlobalFrame.maxY - imageOffsetY
+            // Calculate where the image currently is (bottom edge in global coordinates) + image offset Y.
+            // The image illustration is a tall version used to have the image extends behind the rounded corner of the keyboards.
+            // The Y offset is subtracted from the image maxY because otherwise when the keyboard comes up the difference between keyboard minY and image maxY would consider the portion of the image that is pushed beyond the view and it would be lifted too much.
+            let currentImageBottom = imageGlobalFrame.maxY - keyboardImageOffsetY
 
-            // Calculate where we want the image to be (just above keyboard with inset)
-            // The inset allows the image to extend slightly behind the keyboard's rounded corners
-            let targetImageBottom = keyboardFrame.minY + imageOffsetY
+            // Calculate where we want the image to be (just above keyboard with offset)
+            // The offset allows the image to extend slightly behind the keyboard's rounded corners
+            let targetImageBottom = keyboardFrame.minY + keyboardImageOffsetY
 
-            // Calculate how much to move the image (positive values would move it down)
+            // Calculate how much to move the image
             let offset = targetImageBottom - currentImageBottom
 
             return offset
@@ -267,24 +281,14 @@ public struct BackgroundAnimationContext {
 /// Defines how the contextual onboarding background should respond to keyboard appearance.
 public enum KeyboardBehavior: Equatable {
     /// Adjusts the background image position when the keyboard appears to keep it visible.
-    /// The image will move up so its bottom edge sits at the keyboard's top edge plus the inset.
-    /// - Parameter inset: Distance in points to extend the image behind the keyboard's rounded corners. Defaults to 90px.
-    case adjustForKeyboard(inset: CGFloat = 90)
+    /// The image will move up so its bottom edge sits at the keyboard's top edge plus an offset calculated dynamically based on the image size.
+    case adjustForKeyboard
 
     /// Does not adjust for keyboard - background remains in its original position.
     case ignoreKeyboard
 
     var isEnabled: Bool {
         self != .ignoreKeyboard
-    }
-
-    var contentInset: CGFloat {
-        switch self {
-        case .adjustForKeyboard(inset: let inset):
-            return inset
-        case .ignoreKeyboard:
-            return 0
-        }
     }
 }
 
@@ -311,7 +315,7 @@ public extension View {
         if let animationContext {
             self.modifier(OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(backgroundType: backgroundType, animation: animationContext.animation, delay: animationContext.delay, keyboardBehavior: keyboardBehavior))
         } else {
-            self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: keyboardBehavior.contentInset, keyboardBehavior: keyboardBehavior))
+            self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: 0, keyboardBehavior: keyboardBehavior))
         }
     }
 

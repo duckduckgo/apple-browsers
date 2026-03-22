@@ -170,6 +170,7 @@ class TabViewController: UIViewController {
         return handler
     }()
     private var lastUpgradedURL: URL?
+    private var httpsUpgradeTask: Task<Void, Never>?
     private var lastError: Error?
     private var lastHttpStatusCode: Int?
     private var shouldReloadOnError = false
@@ -1010,6 +1011,9 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        httpsUpgradeTask?.cancel()
+        httpsUpgradeTask = nil
+
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
         delegate = nil
@@ -2480,8 +2484,9 @@ extension TabViewController: WKNavigationDelegate {
     private func upgradeToHttps(url: URL,
                                 allowPolicy: WKNavigationActionPolicy,
                                 completion: @escaping (WKNavigationActionPolicy) -> Void) {
-        Task {
+        httpsUpgradeTask = Task {
             let result = await PrivacyFeatures.httpsUpgrade.upgrade(url: url)
+            guard !Task.isCancelled else { return }
             switch result {
             case let .success(upgradedUrl):
                 if lastUpgradedURL != upgradedUrl {

@@ -39,13 +39,9 @@ protocol FaviconProviding {
 
 }
 
-extension Favicons: FaviconProviding {
-
-    func loadFavicon(forDomain domain: String, fromURL url: URL?, intoCache cacheType: FaviconsCacheType, completion: ((UIImage?) -> Void)?) {
-        self.loadFavicon(forDomain: domain, fromURL: url, intoCache: cacheType, fromCache: nil, completion: completion)
-    }
-
-}
+// Favicons conforms to FaviconProviding via FaviconManaging.
+// The loadFavicon(forDomain:fromURL:intoCache:completion:) requirement is satisfied
+// by the default implementation in the FaviconManaging protocol extension.
 
 class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
 
@@ -58,13 +54,13 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     let context: NSManagedObjectContext
     var secureVault: (any AutofillSecureVault)?
     let tab: TabNotifying
-    let favicons: FaviconProviding
+    let favicons: FaviconManaging
 
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
 
     init(bookmarksDatabase: CoreDataDatabase,
          tab: TabNotifying,
-         favicons: FaviconProviding,
+         favicons: FaviconManaging,
          sharedSecureVault: (any AutofillSecureVault)? = nil) {
         self.context = bookmarksDatabase.makeContext(concurrencyType: .mainQueueConcurrencyType)
         self.tab = tab
@@ -184,7 +180,7 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
         Task { @MainActor in
             let autofillLoginExists = await autofillLoginExists(for: domain)
             guard !autofillLoginExists else { return }
-            Favicons.shared.removeBookmarkFavicon(forDomain: domain)
+            favicons.removeBookmarkFavicon(forDomain: domain)
         }
     }
 

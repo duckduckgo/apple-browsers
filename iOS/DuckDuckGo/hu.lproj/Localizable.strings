@@ -1079,9 +1079,6 @@
 "Confirm" = "Megerősítés";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontextusfüggő bevezetés";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Egyéni URL: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "Sötét olvasó által kizárt tartományok (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Könyvjelzőfájl importálása…";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Üzeneteddel együtt elküldve a Duck.ai-nak";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "A DuckDuckGo AI-funkciói privátak és opcionálisak. Az adataidat nem használjuk fel az AI tanítására.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "A Duck Playerben nézed!\nItt nincsenek célzott hirdetések.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Effektív küszöbérték: %@ s (felülbírálás)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Effektív küszöbérték: konfiguráció alapértelmezés (felülbírálás nélkül)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-mail védelem";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Ismeretlen hiba történt";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Erre a lapra vált";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Visszalépés erre: %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Visszalépés…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Visszalépés erre: %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "A VPN-kapcsolat megszakadt, mert lejárt az előfizetésed. Fizess elő a DuckDuckGóra, hogy újra csatlakozhass a VPN-hez.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Nem sikerült a hitelesítés. Ellenőrizd, hogy aktív-e az előfizetésed, és próbálkozz újra.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Nem sikerült VPN-szerverhez csatlakozni. Próbálkozz újra később.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Az előfizetésed lejárt. Fizess elő újra, hogy VPN-szerverhez csatlakozhass.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Váratlan hiba történt. Próbálkozz újra. Ha a probléma továbbra is fennáll, görgess a **Névjegy** menüpontra, és segítségért koppints a **GYIK és segítségnyújtás** lehetőségre.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "A DuckDuckGo VPN nem tudott csatlakozni. Próbálkozz újra később.";
 
@@ -2442,11 +2464,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS-kiszolgáló";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Próbálkozz újra később.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Nem sikerült csatlakozni.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Nem sikerült csatlakozni";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP-cím";
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Nincsenek aktív előfizetéseid";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Nincsenek kizárt tartományok";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nem található meglévő előfizetés";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ó, mielőtt elfelejtem…";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privát. Gyors. Kevesebb hirdetés.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Ez a DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Felkészültél egy gyorsabb böngészőre, amely védelmet nyújt neked?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Szia!";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Szeretnéd visszaállítani a könyvjelzőidet, a jelszavaidat és az egyéb dolgokat az előző DuckDuckGo-szinkronizálásból?";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Folytassuk ott, ahol abbahagytad";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Privát. Gyors. Kevesebb hirdetés.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Ez a DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Felkészültél egy gyorsabb böngészőre, amely védelmet nyújt neked?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Szia!";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Böngészés indítása";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Leiratkozás…";
+
+/* No comment provided by engineer. */
+"Override" = "Felülbírálás";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nem tudok hozzáférni a csak előfizetőknek szóló Duck.ai modellekhez";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Megjelenítés a címsorban";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Válaszd ki, mit jelenjen meg, ha %@ inaktivitás után visszatérsz.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 óra";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d óra";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 perc";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d perc";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 másodperc";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d másodperc";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Inaktivitás után";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Utoljára használt lap";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Új lap";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Keresés és Duck.ai";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Címsor elhelyezkedése";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Kísérleti böngészési menü";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Hivatkozások megnyitása társított alkalmazásokban";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Előfizetési csomagok";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Az előfizetésed el lett távolítva erről az eszközről.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Kisebb csomagra váltás visszavonása";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Az előfizetésed el lett távolítva erről az eszközről.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "A csomagod %2$@ dátummal %1$@ előfizetésre vált.";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Erre a lapra vált";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Visszalépés erre: %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Visszalépés…";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Visszalépés erre: %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Válaszd ki, mit jelenjen meg, ha %@ inaktivitás után visszatérsz.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 óra";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d óra";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 perc";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d perc";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 másodperc";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d másodperc";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Inaktivitás után";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Utoljára használt lap";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Új lap";

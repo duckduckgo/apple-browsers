@@ -1079,9 +1079,6 @@
 "Confirm" = "Επιβεβαίωση";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Προσθήκη με βάση το περιεχόμενο";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Προσαρμοσμένη διεύθυνση URL: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "Εξαιρούμενοι τομείς από το Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Εισαγωγή αρχείου σελιδοδεικτών...";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Αποστέλλεται με το μήνυμά σας στο Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Παρακολουθείτε στο Duck Player!\nΚαμία στοχευμένη διαφήμιση εδώ.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Ισχύον όριο: %@ s (παράκαμψη)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Ισχύον όριο: προεπιλογή διαμόρφωσης (χωρίς παράκαμψη)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Προστασία email";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Έχει προκύψει κάποιο άγνωστο σφάλμα";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Αλλάζει σε αυτήν την καρτέλα";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Επιστροφή σε %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Επιστροφή σε…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Επιστροφή σε %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "Το VPN αποσυνδέθηκε λόγω λήξης της συνδρομής. Εγγραφείτε στο DuckDuckGo για να συνδέσετε εκ νέου το VPN.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Δεν είναι δυνατή η επαλήθευση ταυτότητας. Ελέγξτε ότι η συνδρομή σας είναι ενεργή και προσπαθήστε ξανά.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Δεν είναι δυνατή η σύνδεση σε διακομιστή VPN. Προσπαθήστε πάλι αργότερα.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Η συνδρομή σας έχει λήξει. Εγγραφείτε ξανά για να συνδεθείτε σε διακομιστή VPN.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Προέκυψε μη αναμενόμενο σφάλμα. Προσπαθήστε ξανά. Εάν αυτό το πρόβλημα συνεχιστεί, κάντε κύλιση στην επιλογή **Πληροφορίες** και πατήστε **Συχνές ερωτήσεις και υποστήριξη** για βοήθεια.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Η σύνδεση του DuckDuckGo VPN απέτυχε. Ξαναδοκιμάστε αργότερα.";
 
@@ -2442,11 +2464,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "Διακομιστής DNS";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Ξαναδοκιμάστε αργότερα.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Αποτυχία σύνδεσης.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Αποτυχία σύνδεσης";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "Διεύθυνση IP";
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Δεν υπάρχουν ενεργές συνδρομές";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Δεν υπάρχουν εξαιρούμενοι τομείς";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Δεν βρέθηκε υπάρχουσα συνδρομή";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Πριν το ξεχάσω...";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Ιδιωτικά. Γρήγορα. Λιγότερες διαφημίσεις.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Αυτό είναι το DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Είστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης που σας διατηρεί προστατευμένους;";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Γεια σας.";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Θέλετε να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία από τον προηγούμενο συγχρονισμό σας με το DuckDuckGo;";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Ας συνεχίσουμε από εκεί που μείνατε";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Ιδιωτικά. Γρήγορα. Λιγότερες διαφημίσεις.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Αυτό είναι το DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Είστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης που σας διατηρεί προστατευμένους;";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Γεια σας.";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Έναρξη περιήγησης";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Εξαίρεση...";
+
+/* No comment provided by engineer. */
+"Override" = "Παράκαμψη";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Δεν είναι δυνατή η πρόσβαση στα μοντέλα Duck.ai μόνο για συνδρομητές";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Εμφάνιση στη Γραμμή διευθύνσεων";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Επιλέξτε τι θα βλέπετε όταν επιστρέφετε μετά από %@ αδράνειας.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 ώρα";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d ώρες";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 λεπτό";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d λεπτά";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 δευτερόλεπτο";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d δευτερόλεπτα";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Μετά από αδράνεια";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Νέα καρτέλα";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Αναζήτηση και Duck.ai";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Θέση γραμμής διευθύνσεων";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Πειραματικό μενού προγράμματος περιήγησης";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ανοίξτε τους συνδέσμους στις σχετικές εφαρμογές";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Προγράμματα συνδρομής";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Η συνδρομή σας έχει αφαιρεθεί από αυτήν τη συσκευή.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Ακύρωση υποβάθμισης";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Η συνδρομή σας έχει αφαιρεθεί από αυτήν τη συσκευή.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Το πρόγραμμά σας θα υποβαθμιστεί σε %1$@ στις %2$@.";
@@ -3847,13 +3902,13 @@
 "subscription.plans.title" = "Προγράμματα συνδρομής";
 
 /* Progress view title when completing a plan change with the backend */
-"subscription.progress.view.complete.plan.change" = "Ολοκλήρωση αλλαγής σχεδίου...";
+"subscription.progress.view.complete.plan.change" = "Ολοκλήρωση αλλαγής προγράμματος...";
 
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Ολοκλήρωση της αγοράς...";
 
 /* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
-"subscription.progress.view.plan.change.in.progress" = "Αλλαγή σχεδίου σε εξέλιξη...";
+"subscription.progress.view.plan.change.in.progress" = "Αλλαγή προγράμματος σε εξέλιξη...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Αγορά σε εξέλιξη...";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Αλλάζει σε αυτήν την καρτέλα";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Επιστροφή σε %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Επιστροφή σε…";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Επιστροφή σε %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Επιλέξτε τι θα βλέπετε όταν επιστρέφετε μετά από %@ αδράνειας.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 ώρα";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d ώρες";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 λεπτό";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d λεπτά";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 δευτερόλεπτο";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d δευτερόλεπτα";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Μετά από αδράνεια";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Νέα καρτέλα";

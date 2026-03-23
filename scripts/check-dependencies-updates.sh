@@ -86,6 +86,19 @@ if [[ "$NO_COLOR" == true ]]; then
     MAJOR="[MAJOR]"; MINOR="[MINOR]"; PATCH="[PATCH]"; UPTODATE="[OK]"
 fi
 
+# Packages managed by dedicated CI workflows (excluded from this checker)
+EXCLUDED_REPOS=(
+    "sparkle-project/sparkle"  # Managed by .github/workflows/macos_check_sparkle_update.yml
+)
+
+is_excluded() {
+    local repo_id="$1"
+    for excluded in "${EXCLUDED_REPOS[@]}"; do
+        [[ "$repo_id" == "$excluded" ]] && return 0
+    done
+    return 1
+}
+
 # Temp files
 DIRECT_DEPS_FILE="/tmp/spm_direct_deps_$$"
 UPDATE_TYPES_FILE="/tmp/spm_update_types_$$"
@@ -496,12 +509,23 @@ main() {
     # Filter to direct dependencies only
     rm -rf "$FILTERED_PKGS_FILE"
     if [[ "$SHOW_ALL" == true ]]; then
-        verbose "Showing all dependencies (no filtering)"
-        cp "$RESOLVED_PKGS_FILE" "$FILTERED_PKGS_FILE"
+        verbose "Showing all dependencies (filtering exclusions only)"
+        while IFS='|' read -r url version; do
+            [[ -z "$url" ]] && continue
+            local repo_id
+            repo_id=$(get_repo_id "$url")
+            is_excluded "$repo_id" && continue
+            echo "${url}|${version}" >> "$FILTERED_PKGS_FILE"
+        done < "$RESOLVED_PKGS_FILE"
     else
         verbose "Filtering resolved packages to direct dependencies only"
         while IFS='|' read -r url version; do
             [[ -z "$url" ]] && continue
+            local repo_id
+            repo_id=$(get_repo_id "$url")
+            if is_excluded "$repo_id"; then
+                continue
+            fi
             if is_direct_dependency "$url"; then
                 verbose "  Direct dependency: $(get_package_name "$url") ($version)"
                 echo "${url}|${version}" >> "$FILTERED_PKGS_FILE"

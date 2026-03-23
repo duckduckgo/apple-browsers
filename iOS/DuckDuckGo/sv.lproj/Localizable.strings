@@ -1079,9 +1079,6 @@
 "Confirm" = "Bekräfta";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontextuell onboarding";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Anpassad URL: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "Exkluderade domäner från Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importera bokmärkesfil ...";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Skickat med ditt meddelande till Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGos AI-funktioner är privata och valfria. Dina data används inte för att träna AI.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Du tittar i Duck Player!\nHär finns inga riktade annonser.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Effektiv tröskel: %@ s (åsidosättning)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Effektiv tröskel: konfigurationsstandard (ingen åsidosättning)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-postskydd";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Ett okänt fel har inträffat";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Växlar till denna flik";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Gå tillbaka till %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Återgå till…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Gå tillbaka till %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN har kopplats från på grund av att abonnemanget har gått ut. Prenumerera på DuckDuckGo för att återansluta VPN-tjänsten.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Det gick inte att autentisera. Kontrollera att ditt abonnemang är aktivt och försök igen.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Det gick inte att ansluta till en VPN-server. Försök igen senare.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Ditt abonnemang har gått ut. Abonnera igen för att ansluta till en VPN-server.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Ett oväntat fel uppstod. Försök igen. Om problemet kvarstår kan du bläddra till **Om** och trycka på **Vanliga frågor och support** för hjälp.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN kunde inte ansluta. Försök igen senare.";
 
@@ -2442,10 +2464,7 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS-server";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Försök igen senare.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
+/* Connection failed error title shown in NetworkProtection's status view. */
 "network.protection.status.view.error.connection.failed.title" = "Det gick inte att ansluta.";
 
 /* IP Address label shown in NetworkProtection's status view. */
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Inga aktiva abonnemang";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Inga uteslutna domäner";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Inget befintligt abonnemang hittades";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Innan jag glömmer ...";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privat. Snabbt. Färre annonser.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Det är DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Är du redo för en snabbare webbläsare som också skyddar dig?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Hej!";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vill du återställa dina bokmärken, lösenord med mera från din tidigare DuckDuckGo-synkronisering?";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Vi fortsätter där du slutade";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Privat. Snabbt. Färre annonser.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Det är DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Är du redo för en snabbare webbläsare som också skyddar dig?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Hej!";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Börja bläddra";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Väljer bort ...";
+
+/* No comment provided by engineer. */
+"Override" = "Åsidosättning";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Det går inte att komma åt Duck.ai-modellerna för prenumeranter";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Visa i adressfältet";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Välj vad du ser när du återgår efter %@ av inaktivitet.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 timme";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d timmar";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minut";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minuter";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekund";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekunder";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Efter inaktivitet";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Senast använda flik";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Ny flik";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Sök & Duck.ai";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adressfältsläge";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Experimentell webbläsarmeny";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Öppna länkar i associerade appar";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Abonnemangstyper";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Ditt abonnemang har tagits bort från den här enheten.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Avbryt nedgradering";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Ditt abonnemang har tagits bort från den här enheten.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Din plan kommer att nedgraderas till %1$@ den %2$@.";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Växlar till denna flik";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Gå tillbaka till %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Återgå till…";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Gå tillbaka till %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Välj vad du ser när du återgår efter %@ av inaktivitet.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 timme";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d timmar";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 minut";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d minuter";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 sekund";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d sekunder";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Efter inaktivitet";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Senast använda flik";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Ny flik";

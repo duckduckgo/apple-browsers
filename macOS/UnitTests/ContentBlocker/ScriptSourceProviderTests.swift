@@ -98,7 +98,6 @@ final class ScriptSourceProviderTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             fireCoordinator: fireCoordinator,
             autoconsentManagement: AutoconsentManagement(),
-            newTabPageActionsManager: nil,
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
             webExtensionAvailability: nil

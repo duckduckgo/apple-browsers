@@ -134,9 +134,6 @@
 "fetch.favicons.option.title" = "Simgeleri Otomatik İndir";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Ayarlar'a gidin";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Geliştirmeye Devam Et";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -288,9 +285,6 @@
 
 /* Scan or See Code View - Title */
 "scan.or.see.code.title" = "QR Kodunu Tara";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Sync & Backup'ı kullanmak için cihazınızı güvenli hale getirin";
 
 /* No comment provided by engineer. */
 "Switch to Production" = "Üretime Geç";

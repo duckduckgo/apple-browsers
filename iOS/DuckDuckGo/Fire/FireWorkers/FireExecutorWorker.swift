@@ -29,7 +29,7 @@ extension FireExecutorWorker {
     /// For `.all`, both `burnNormalModeData` and `burnFireModeData` run concurrently
     /// since clearing all data means clearing data from both normal and fire browsing modes.
     @MainActor
-    func execute(scope: FireRequest.Scope, domains: [String]?) async {
+    func execute(scope: FireRequest.Scope, domains: [String]?, fireModeCapability: FireModeCapable) async {
         switch scope {
         case .tab(let viewModel):
             guard let domains else {
@@ -38,13 +38,18 @@ extension FireExecutorWorker {
             }
             await burnTabData(tabViewModel: viewModel, domains: domains)
         case .fireMode:
+            guard fireModeCapability.isFireModeEnabled else { return }
             await burnFireModeData()
         case .normalMode:
             await burnNormalModeData()
         case .all:
-            async let fireModeTask: Void = burnFireModeData()
-            async let normalTask: Void = burnNormalModeData()
-            _ = await (fireModeTask, normalTask)
+            if fireModeCapability.isFireModeEnabled {
+                async let fireModeTask: Void = burnFireModeData()
+                async let normalTask: Void = burnNormalModeData()
+                _ = await (fireModeTask, normalTask)
+            } else {
+                await burnNormalModeData()
+            }
         }
     }
 

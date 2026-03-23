@@ -40,6 +40,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Callbacks
 
+    var onCustomizeResponsesTapped: (() -> Void)?
     var onAttachTapped: (() -> Void)?
     var onModelPickerTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
@@ -81,7 +82,18 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { imageButton.isHidden = newValue }
     }
 
+    var isCustomizeResponsesButtonHidden: Bool {
+        get { customizeResponsesButton.isHidden }
+        set { customizeResponsesButton.isHidden = newValue }
+    }
+
     // MARK: - UI Components
+
+    private lazy var customizeResponsesButton: UIButton = makeToolButton(
+        image: DesignSystemImages.Glyphs.Size24.options,
+        accessibilityLabel: UserText.aiChatToolbarCustomizeResponsesButtonAccessibilityLabel,
+        action: #selector(customizeResponsesTapped)
+    )
 
     private lazy var imageButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size24.attach,
@@ -170,7 +182,11 @@ final class UnifiedToggleInputToolbarView: UIView {
     // MARK: - Setup
 
     private func setupUI() {
-        imageButton.translatesAutoresizingMaskIntoConstraints = false
+        let leftGroup = UIStackView(arrangedSubviews: [customizeResponsesButton, imageButton])
+        leftGroup.axis = .horizontal
+        leftGroup.spacing = 0
+        leftGroup.alignment = .center
+        leftGroup.translatesAutoresizingMaskIntoConstraints = false
 
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
@@ -182,7 +198,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         rightGroup.alignment = .center
         rightGroup.translatesAutoresizingMaskIntoConstraints = false
 
-        let outerStack = UIStackView(arrangedSubviews: [imageButton, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -237,6 +253,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    @objc private func customizeResponsesTapped() { onCustomizeResponsesTapped?() }
     @objc private func attachTapped() { onAttachTapped?() }
     @objc private func modelPickerTapped() { onModelPickerTapped?() }
     @objc private func submitTapped() { onSubmitTapped?() }

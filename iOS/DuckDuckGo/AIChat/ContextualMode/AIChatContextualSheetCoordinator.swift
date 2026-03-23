@@ -63,6 +63,7 @@ final class AIChatContextualSheetCoordinator {
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
     private let debugSettings: AIChatDebugSettingsHandling
+    private let isFireTab: Bool
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
@@ -99,6 +100,7 @@ final class AIChatContextualSheetCoordinator {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          pageContextHandler: AIChatPageContextHandling,
+         isFireTab: Bool = false,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.voiceSearchHelper = voiceSearchHelper
@@ -108,6 +110,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.pageContextHandler = pageContextHandler
+        self.isFireTab = isFireTab
         self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
         self.sessionState = AIChatContextualChatSessionState(
@@ -242,6 +245,7 @@ private extension AIChatContextualSheetCoordinator {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
+            isFireTab: isFireTab,
             downloadHandler: downloadHandler,
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }

@@ -47,6 +47,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let isFireTab: Bool
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
@@ -113,6 +114,7 @@ final class AIChatContextualWebViewController: UIViewController {
     ///   - contentBlockingAssetsPublisher: Content blocking assets publisher
     ///   - featureDiscovery: Feature discovery
     ///   - featureFlagger: Feature flagger
+    ///   - isFireTab: Whether the web view should operate in fire (ephemeral) mode
     ///   - downloadHandler: Download handler for managing file downloads
     ///   - getPageContext: Closure to get page context (used by ContentHandler for JS getAIChatPageContext requests)
     ///   - pixelHandler: Pixel handler for contextual mode analytics
@@ -121,6 +123,7 @@ final class AIChatContextualWebViewController: UIViewController {
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
+         isFireTab: Bool = false,
          downloadHandler: DownloadHandling,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
          pixelHandler: AIChatContextualModePixelFiring,
@@ -131,6 +134,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.isFireTab = isFireTab
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
@@ -249,7 +253,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
-        let configuration = WKWebViewConfiguration.persistent(fireMode: false) // TODO: - Customize based on tab
+        let configuration = WKWebViewConfiguration.persistent(fireMode: isFireTab)
         let userContentController = UserContentController(
             assetsPublisher: contentBlockingAssetsPublisher,
             privacyConfigurationManager: privacyConfigurationManager
@@ -343,6 +347,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
             return
         }
 
+        userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.isFireTab ?? false }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
 

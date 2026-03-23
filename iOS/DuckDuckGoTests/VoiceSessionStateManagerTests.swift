@@ -21,17 +21,18 @@ import Foundation
 import Testing
 @testable import DuckDuckGo
 
-@available(iOS 16, *)
-@Suite("VoiceSessionStateManager", .timeLimit(.minutes(1)))
+@Suite("VoiceSessionStateManager")
 struct VoiceSessionStateManagerTests {
 
-    @Test("Initially voice session is not active")
+    @available(iOS 16, *)
+    @Test("Initially voice session is not active", .timeLimit(.minutes(1)))
     func initialState() {
         let sut = VoiceSessionStateManager()
         #expect(!sut.isVoiceSessionActive)
     }
 
-    @Test("Voice session becomes active after voiceSessionStarted notification")
+    @available(iOS 16, *)
+    @Test("Voice session becomes active after voiceSessionStarted notification", .timeLimit(.minutes(1)))
     func voiceSessionStarted() {
         let notificationCenter = NotificationCenter()
         let sut = VoiceSessionStateManager(notificationCenter: notificationCenter)
@@ -41,7 +42,8 @@ struct VoiceSessionStateManagerTests {
         #expect(sut.isVoiceSessionActive)
     }
 
-    @Test("Voice session becomes inactive after voiceSessionEnded notification")
+    @available(iOS 16, *)
+    @Test("Voice session becomes inactive after voiceSessionEnded notification", .timeLimit(.minutes(1)))
     func voiceSessionEnded() {
         let notificationCenter = NotificationCenter()
         let sut = VoiceSessionStateManager(notificationCenter: notificationCenter)
@@ -52,7 +54,8 @@ struct VoiceSessionStateManagerTests {
         #expect(!sut.isVoiceSessionActive)
     }
 
-    @Test("Multiple start/end cycles work correctly")
+    @available(iOS 16, *)
+    @Test("Multiple start/end cycles work correctly", .timeLimit(.minutes(1)))
     func multipleCycles() {
         let notificationCenter = NotificationCenter()
         let sut = VoiceSessionStateManager(notificationCenter: notificationCenter)
@@ -67,7 +70,8 @@ struct VoiceSessionStateManagerTests {
         #expect(sut.isVoiceSessionActive)
     }
 
-    @Test("End notification without start keeps state inactive")
+    @available(iOS 16, *)
+    @Test("End notification without start keeps state inactive", .timeLimit(.minutes(1)))
     func endWithoutStart() {
         let notificationCenter = NotificationCenter()
         let sut = VoiceSessionStateManager(notificationCenter: notificationCenter)

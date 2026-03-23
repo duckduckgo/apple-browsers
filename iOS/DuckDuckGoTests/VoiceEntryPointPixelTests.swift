@@ -19,24 +19,27 @@
 
 import Testing
 @testable import Core
+@testable import DuckDuckGo
 
-@available(iOS 16, *)
-@Suite("Voice Entry Point Pixels", .timeLimit(.minutes(1)))
+@Suite("Voice Entry Point Pixels")
 struct VoiceEntryPointPixelTests {
 
-    @Test("voiceEntryPointTapped pixel has correct name")
+    @available(iOS 16, *)
+    @Test("voiceEntryPointTapped pixel has correct name", .timeLimit(.minutes(1)))
     func voiceEntryPointTappedName() {
         let pixel = Pixel.Event.voiceEntryPointTapped
         #expect(pixel.name == "m_aichat_voice_entry_point_tapped")
     }
 
-    @Test("voiceSessionStarted pixel has correct name")
+    @available(iOS 16, *)
+    @Test("voiceSessionStarted pixel has correct name", .timeLimit(.minutes(1)))
     func voiceSessionStartedName() {
         let pixel = Pixel.Event.voiceSessionStarted
         #expect(pixel.name == "m_aichat_voice_session_started")
     }
 
-    @Test("VoiceEntryPointSource has correct raw values")
+    @available(iOS 16, *)
+    @Test("VoiceEntryPointSource has correct raw values", .timeLimit(.minutes(1)))
     func sourceRawValues() {
         #expect(VoiceEntryPointSource.ntp.rawValue == "ntp")
         #expect(VoiceEntryPointSource.toolbar.rawValue == "toolbar")

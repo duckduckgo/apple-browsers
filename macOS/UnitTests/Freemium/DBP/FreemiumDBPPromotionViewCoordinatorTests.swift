@@ -36,6 +36,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var cancellables: Set<AnyCancellable> = []
     private var contextualOnboardingSubject: PassthroughSubject<Bool, Never>!
+    private var currentDate: Date!
 
     override func setUpWithError() throws {
         mockUserStateManager = MockFreemiumDBPUserStateManager()
@@ -44,6 +45,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         mockPresenter = MockFreemiumDBPPresenter()
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         contextualOnboardingSubject = PassthroughSubject<Bool, Never>()
+        currentDate = Date()
 
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
@@ -51,7 +53,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
             freemiumDBPPresenter: mockPresenter,
             notificationCenter: notificationCenter,
             dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher(),
+            dateProvider: { [unowned self] in currentDate }
         )
     }
 
@@ -67,6 +70,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         mockPixelHandler = nil
         cancellables = []
         contextualOnboardingSubject = nil
+        currentDate = nil
     }
 
     func testInitialPromotionVisibility_whenFeatureIsAvailable_andNotDismissed() {
@@ -444,6 +448,52 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.viewModel?.title, currentViewModel?.title)
+    }
+
+    func testWhenFourthNTPImpressionIsRecordedThenBannerBecomesSuppressed() async throws {
+        // Given
+        try await waitForViewModelUpdate()
+
+        // When
+        sut.recordNTPImpression()
+        sut.recordNTPImpression()
+        sut.recordNTPImpression()
+        sut.recordNTPImpression()
+
+        // Then
+        XCTAssertEqual(mockUserStateManager.ntpImpressionCount, 4)
+        XCTAssertEqual(mockUserStateManager.bannerSuppressionStartDate, currentDate)
+        XCTAssertFalse(sut.isHomePagePromotionVisible)
+    }
+
+    func testWhenBannerIsSuppressedThenNTPImpressionDoesNotIncrementDuringSuppressionWindow() async throws {
+        // Given
+        try await waitForViewModelUpdate()
+        mockUserStateManager.ntpImpressionCount = 4
+        mockUserStateManager.bannerSuppressionStartDate = currentDate
+
+        // When
+        sut.recordNTPImpression()
+
+        // Then
+        XCTAssertEqual(mockUserStateManager.ntpImpressionCount, 4)
+        XCTAssertEqual(mockUserStateManager.bannerSuppressionStartDate, currentDate)
+        XCTAssertFalse(sut.isHomePagePromotionVisible)
+    }
+
+    func testWhenSuppressionWindowHasElapsedThenBannerShowsAgainAndImpressionCountResets() async throws {
+        // Given
+        try await waitForViewModelUpdate()
+        mockUserStateManager.ntpImpressionCount = 4
+        mockUserStateManager.bannerSuppressionStartDate = currentDate.addingTimeInterval(-.days(29))
+
+        // When
+        sut.recordNTPImpression()
+
+        // Then
+        XCTAssertEqual(mockUserStateManager.ntpImpressionCount, 1)
+        XCTAssertNil(mockUserStateManager.bannerSuppressionStartDate)
+        XCTAssertTrue(sut.isHomePagePromotionVisible)
     }
 
     // MARK: - Helpers

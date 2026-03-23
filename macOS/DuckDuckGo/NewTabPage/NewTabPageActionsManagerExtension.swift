@@ -159,6 +159,8 @@ extension NewTabPageActionsManager {
             dockCustomization: dockCustomization
         )
         if let promoService {
+            let freemiumDBPDelegate = FreemiumDBPPromoDelegate(provider: freemiumDBPBannerProvider)
+            promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: freemiumDBPDelegate)
             let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
             promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)
         }

@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Foundation
 import NewTabPage
 
 final class NewTabPageFreemiumDBPBannerProvider: NewTabPageFreemiumDBPBannerProviding {
@@ -71,5 +72,30 @@ extension NewTabPageDataModel.FreemiumPIRBannerMessage {
             descriptionText: promotionViewModel.description,
             actionText: promotionViewModel.proceedButtonText
         )
+    }
+}
+
+final class FreemiumDBPPromoDelegate: ExternalPromoDelegate {
+
+    private let provider: NewTabPageFreemiumDBPBannerProviding
+    private let visibilitySubject: CurrentValueSubject<Bool, Never>
+    private var cancellables = Set<AnyCancellable>()
+
+    var isVisible: Bool { visibilitySubject.value }
+    var isVisiblePublisher: AnyPublisher<Bool, Never> { visibilitySubject.eraseToAnyPublisher() }
+    var resultWhenHidden: PromoResult { .noChange }
+
+    init(provider: NewTabPageFreemiumDBPBannerProviding) {
+        self.provider = provider
+        self.visibilitySubject = CurrentValueSubject(provider.bannerMessage != nil)
+
+        provider.bannerMessagePublisher
+            .map { $0 != nil }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] visible in
+                self?.visibilitySubject.send(visible)
+            }
+            .store(in: &cancellables)
     }
 }

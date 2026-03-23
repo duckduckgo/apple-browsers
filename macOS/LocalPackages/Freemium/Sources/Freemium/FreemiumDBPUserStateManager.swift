@@ -64,6 +64,12 @@ public protocol FreemiumDBPUserStateManager {
     /// The results of the user's first scan, stored as a `FreemiumDBPMatchResults` object.
     var firstScanResults: FreemiumDBPMatchResults? { get set }
 
+    /// The number of consecutive New Tab Page impressions recorded for the freemium DBP banner.
+    var ntpImpressionCount: Int { get set }
+
+    /// The timestamp at which the banner entered its temporary suppression window.
+    var bannerSuppressionStartDate: Date? { get set }
+
     /// A Date value that stores the timestamp of when the user upgraded from Freemium to a Paid Subscription
     var upgradeToSubscriptionTimestamp: Date? { get set }
 
@@ -84,6 +90,8 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         static let didDismissHomePagePromotion = "macos.browser.freemium.dbp.did.post.dismiss.home.page.promotion"
         static let firstProfileSavedTimestamp = "macos.browser.freemium.dbp.first.profile.saved.timestamp"
         static let firstScanResults = "macos.browser.freemium.dbp.first.scan.results"
+        static let ntpImpressionCount = "macos.browser.freemium.dbp.ntp.impression.count"
+        static let bannerSuppressionStartDate = "macos.browser.freemium.dbp.banner.suppression.start.date"
         static let upgradeToSubscriptionTimestamp = "macos.browser.freemium.dbp.upgrade.to.subscription.timestamp"
     }
 
@@ -156,6 +164,30 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         }
     }
 
+    /// Tracks the number of consecutive New Tab Page impressions for the banner.
+    ///
+    /// - Uses the `UserDefaults` key: `macos.browser.freemium.dbp.ntp.impression.count`.
+    public var ntpImpressionCount: Int {
+        get {
+            userDefaults.integer(forKey: Keys.ntpImpressionCount)
+        }
+        set {
+            userDefaults.set(newValue, forKey: Keys.ntpImpressionCount)
+        }
+    }
+
+    /// Tracks when the banner entered its temporary suppression window.
+    ///
+    /// - Uses the `UserDefaults` key: `macos.browser.freemium.dbp.banner.suppression.start.date`.
+    public var bannerSuppressionStartDate: Date? {
+        get {
+            userDefaults.value(forKey: Keys.bannerSuppressionStartDate) as? Date
+        }
+        set {
+            userDefaults.set(newValue, forKey: Keys.bannerSuppressionStartDate)
+        }
+    }
+
     /// Tracks whether the user has dismissed the homepage promotion.
     ///
     /// - Uses the `UserDefaults` key: `macos.browser.freemium.dbp.did.post.dismiss.home.page.promotion`.
@@ -199,6 +231,8 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         userDefaults.removeObject(forKey: Keys.didPostFirstProfileSavedNotification)
         userDefaults.removeObject(forKey: Keys.didPostResultsNotification)
         userDefaults.removeObject(forKey: Keys.firstScanResults)
+        userDefaults.removeObject(forKey: Keys.ntpImpressionCount)
+        userDefaults.removeObject(forKey: Keys.bannerSuppressionStartDate)
         userDefaults.removeObject(forKey: Keys.didDismissHomePagePromotion)
         userDefaults.removeObject(forKey: Keys.upgradeToSubscriptionTimestamp)
     }

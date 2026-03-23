@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Navigation
 import BrowserServicesKit
@@ -2203,10 +2204,10 @@ struct UserText {
     static let homePagePromotionFreemiumDBPPostScanEngagementButtonTitle = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.button.title", value: "View Results", comment: "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button")
 
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
-    static let removeRecentChatSuggestionTooltip = NSLocalizedString("remove.recent.chat.suggestion.tooltip", value: "Remove from recent chats", comment: "Tooltip for the button which removes a recent Duck.ai chat from the suggestions")
-    static let removeRecentChatConfirmationTitle = NSLocalizedString("remove.recent.chat.confirmation.title", value: "Remove Chat?", comment: "Title for the confirmation alert when removing a recent Duck.ai chat")
-    static let removeRecentChatConfirmationMessage = NSLocalizedString("remove.recent.chat.confirmation.message", value: "Are you sure you want to remove \"%@\" from your recent chats?", comment: "Message for the confirmation alert when removing a recent Duck.ai chat. %@ is the chat title.")
-    static let removeRecentChatConfirmationButton = NSLocalizedString("remove.recent.chat.confirmation.button", value: "Remove", comment: "Button title to confirm removing a recent Duck.ai chat")
+    static let removeRecentChatSuggestionTooltip = NotLocalizedString("remove.recent.chat.suggestion.tooltip", value: "Remove from recent chats", comment: "Tooltip for the button which removes a recent Duck.ai chat from the suggestions")
+    static let removeRecentChatConfirmationTitle = NotLocalizedString("remove.recent.chat.confirmation.title", value: "Remove Chat?", comment: "Title for the confirmation alert when removing a recent Duck.ai chat")
+    static let removeRecentChatConfirmationMessage = NotLocalizedString("remove.recent.chat.confirmation.message", value: "Are you sure you want to remove \"%@\" from your recent chats?", comment: "Message for the confirmation alert when removing a recent Duck.ai chat. %@ is the chat title.")
+    static let removeRecentChatConfirmationButton = NotLocalizedString("remove.recent.chat.confirmation.button", value: "Remove", comment: "Button title to confirm removing a recent Duck.ai chat")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
     static let searchTheWeb = NSLocalizedString("suggestion.search.privately", value: "Search privately", comment: "Label shown on the search suggestion cell indicating the action will search the web")

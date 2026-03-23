@@ -825,6 +825,13 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         } else {
             currentSelection = indexPath.row
             Pixel.fire(pixel: .tabSwitcherSwitchTabs)
+            if let tab = tabsModel.get(tabAt: indexPath.row) {
+                if tab.isAITab {
+                    DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToAITab)
+                } else {
+                    DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToWebTab)
+                }
+            }
             dismissIfPossible()
         }
     }

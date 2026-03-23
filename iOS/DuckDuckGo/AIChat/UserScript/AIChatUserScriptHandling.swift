@@ -413,6 +413,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: nil)
+        Pixel.fire(pixel: .voiceSessionStarted)
         return nil
     }
 

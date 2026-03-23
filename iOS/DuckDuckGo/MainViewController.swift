@@ -2767,6 +2767,7 @@ class MainViewController: UIViewController {
     }
 
     func onDuckAIVoiceModeRequested() {
+        Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.ntp.rawValue])
         openAIChatInVoiceMode()
     }
 
@@ -5121,6 +5122,7 @@ extension MainViewController {
             self.segueToDownloads()
 
         case .duckAIVoice:
+            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue])
             self.openAIChatInVoiceMode()
 
         default:
@@ -5172,6 +5174,7 @@ extension MainViewController {
             showTextZoomEditorIfPossible()
 
         case .duckAIVoice:
+            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue])
             openAIChatInVoiceMode()
 
         default:

@@ -1497,9 +1497,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
         // Fire error page shown pixel when error page is actually loaded
         if error.code == WKError.Code.webContentProcessTerminated {
-            PixelKit.fire(ErrorPagePixel.errorPageShownWebkitTermination)
+            PixelKit.fire(ErrorPagePixel.errorPageShownWebkitTermination, frequency: .dailyAndStandard)
         } else {
-            PixelKit.fire(ErrorPagePixel.errorPageShownOther(error: error))
+            PixelKit.fire(ErrorPagePixel.errorPageShownOther(error: error), frequency: .dailyAndStandard)
         }
 
         if alternate {

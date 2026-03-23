@@ -499,6 +499,7 @@ class MainViewController: UIViewController {
             remoteMessagingImageLoader: remoteMessagingImageLoader,
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
             appSettings: appSettings,
+            subscriptionManager: subscriptionManager,
             internalUserCommands: internalUserCommands)
     }()
 
@@ -1423,6 +1424,7 @@ class MainViewController: UIViewController {
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
+                                                  subscriptionManager: subscriptionManager,
                                                   internalUserCommands: internalUserCommands,
                                                   narrowLayoutInLandscape: narrowLayoutInLandscape
         )

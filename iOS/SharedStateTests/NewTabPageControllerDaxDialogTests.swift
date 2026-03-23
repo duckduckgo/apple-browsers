@@ -27,6 +27,8 @@ import Persistence
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
+import SubscriptionTestingUtilities
+
 @testable import Configuration
 
 private class MockURLBasedDebugCommands: URLBasedDebugCommands {
@@ -62,6 +64,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
+            subscriptionManager: SubscriptionManagerMock(),
             internalUserCommands: MockURLBasedDebugCommands()
         )
 

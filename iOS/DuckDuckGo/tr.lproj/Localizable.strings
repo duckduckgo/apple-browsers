@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Özellikleri";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Fotoğraf Seç";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Fotoğraf Çek";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Mevcut yer imleri çoğaltılmayacaktır.";
 
@@ -2736,6 +2742,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Merhaba.";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Biliyor muydunuz?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Önceki DuckDuckGo senkronizasyonundan yer işaretleri, şifreler ve daha fazlasını geri yüklemek mi istiyorsunuz?";

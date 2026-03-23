@@ -1514,6 +1514,12 @@ extension MainViewController {
         WindowsManager.openNewWindow(with: tab)
     }
 
+    @objc func newTabNextToActive(_ sender: Any?) {
+        guard let (tab, _) = getActiveTabAndIndex() else { return }
+
+        tabCollectionViewModel.insertNewTab(after: tab, with: .newtab, selected: true)
+    }
+
     @objc func duplicateTab(_ sender: Any?) {
         guard let (_, index) = getActiveTabAndIndex() else { return }
 

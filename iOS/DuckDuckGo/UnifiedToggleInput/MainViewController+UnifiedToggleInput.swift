@@ -439,11 +439,6 @@ extension MainViewController: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
         handleUnifiedToggleInputSearchSubmission(query)
     }
-
-    func unifiedToggleInputDidRequestVoiceSearch() {
-        let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
-        handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
-    }
 }
 
 // MARK: - UnifiedInputContentContainerViewControllerDelegate

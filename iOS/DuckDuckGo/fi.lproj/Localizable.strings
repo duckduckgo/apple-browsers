@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Tekoälyominaisuudet";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Valitse kuva";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Ota kuva";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Olemassa olevia kirjanmerkkejä ei kopioida.";
 
@@ -2736,6 +2742,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hei!";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Tiesitkö?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Haluatko palauttaa kirjanmerkit, salasanat ja muita tietoja edellisestä DuckDuckGo-synkronoinnistasi?";

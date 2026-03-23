@@ -410,6 +410,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let startupProfiler: StartupProfiler
     private var startupMetricsReporter: PerformanceMetricsReporter?
 
+    let displaysTabsAnimations: Bool
+
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
 
@@ -577,6 +579,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        displaysTabsAnimations = AnimationsAvailabilityDecider(featureFlagger: featureFlagger).displaysTabsAnimations
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
@@ -788,7 +792,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {

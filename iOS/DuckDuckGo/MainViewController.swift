@@ -441,7 +441,8 @@ class MainViewController: UIViewController {
 
         super.init(nibName: nil, bundle: nil)
 
-        resetOnboarding()
+        // TODO: Temporary. Remove this before merging Onboarding Rebnrading Ship Review
+        //resetOnboarding()
 
         tabManager.delegate = self
         tabManager.aiChatContentDelegate = self

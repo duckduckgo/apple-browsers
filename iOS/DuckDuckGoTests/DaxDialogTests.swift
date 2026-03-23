@@ -957,6 +957,8 @@ final class DaxDialog: XCTestCase {
         XCTAssertNotEqual(result, .subscriptionPromotion)
     }
 
+    // MARK: - Subscription Promotion Dialog Seen
+
     func testWhenSubscriptionPromotionDialogSeenIsSet_ThenSettingsValueIsUpdated() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
@@ -1143,9 +1145,9 @@ final class DaxDialog: XCTestCase {
 }
 
 final class MockOnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping {
-    
+
     var proceedButtonText = ""
-    
+
     var shouldDisplayValue: Bool = false
 
     var shouldDisplay: Bool {

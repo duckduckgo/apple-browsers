@@ -262,6 +262,7 @@ final class TabManagerExternalLaunchTests {
             autoconsentManagementProvider: MockAutoconsentManagementProvider(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),
+            favicons: Favicons(),
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             featureDiscovery: MockFeatureDiscovery(),

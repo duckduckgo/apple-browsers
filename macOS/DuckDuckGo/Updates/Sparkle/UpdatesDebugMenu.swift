@@ -43,6 +43,11 @@ final class UpdatesDebugMenu: NSMenu {
                     .targetting(self)
                 NSMenuItem.separator()
             }
+            NSMenuItem(title: "Simulate New User", action: #selector(simulateNewUser))
+                .targetting(self)
+            NSMenuItem(title: "Simulate Legacy User", action: #selector(simulateLegacyUser))
+                .targetting(self)
+            NSMenuItem.separator()
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                 .targetting(self)
             NSMenuItem.separator()
@@ -59,6 +64,26 @@ final class UpdatesDebugMenu: NSMenu {
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc func simulateNewUser() {
+        try? settings.set(1, for: \.installBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Simulating New User"
+        alert.informativeText = "Install build metadata has been set. Close and reopen Settings for changes to take effect."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    @objc func simulateLegacyUser() {
+        try? settings.removeValue(for: \.installBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Simulating Legacy User"
+        alert.informativeText = "Install build metadata has been cleared. Close and reopen Settings for changes to take effect."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     @objc func testUpdateSuccessOnNextLaunch() {

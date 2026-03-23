@@ -299,6 +299,7 @@ final class TabManagerTests: XCTestCase {
                           autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                           websiteDataManager: MockWebsiteDataManager(),
                           fireproofing: MockFireproofing(),
+                          favicons: Favicons(),
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                           featureDiscovery: MockFeatureDiscovery(),

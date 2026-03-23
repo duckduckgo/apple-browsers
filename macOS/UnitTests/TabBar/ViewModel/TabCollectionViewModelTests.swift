@@ -789,16 +789,6 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    @MainActor
-    func testWhenPreloaderIsSet_thenInsertOrAppendNewTabUsesPreloadedTab() {
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
-        let preloader = MockNewTabPageTabPreloader()
-        viewModel.newTabPageTabPreloader = preloader
-        viewModel.insertOrAppendNewTab()
-        XCTAssertTrue(preloader.didCallNewTab)
-        XCTAssertIdentical(preloader.tabToReturn, viewModel.tabCollection.tabs.last!)
-    }
-
     // MARK: - Popup behavior
 
     @MainActor

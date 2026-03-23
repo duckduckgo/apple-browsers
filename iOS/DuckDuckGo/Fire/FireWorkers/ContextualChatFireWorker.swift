@@ -60,7 +60,7 @@ struct ContextualChatFireWorker: FireExecutorWorker {
             return
         }
 
-        let result = await aiChatDeleter.deleteChat(chatID: contextualChatID)
+        let result = await aiChatDeleter.deleteChat(chatID: contextualChatID, isFireMode: tabViewModel.tab.fireTab)
         switch result {
         case .success:
             tabManager.controller(for: tabViewModel.tab)?.aiChatContextualSheetCoordinator.clearActiveChat()

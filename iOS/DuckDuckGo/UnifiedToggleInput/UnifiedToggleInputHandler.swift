@@ -104,6 +104,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         stopGeneratingButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let customizeResponsesButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesButtonTappedPublisher: AnyPublisher<Void, Never> {
+        customizeResponsesButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
     init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
@@ -152,6 +157,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     func stopGeneratingButtonTapped() {
         stopGeneratingButtonTappedSubject.send()
+    }
+
+    func customizeResponsesButtonTapped() {
+        customizeResponsesButtonTappedSubject.send()
     }
 
     func updateBarPosition(isTop: Bool) {}

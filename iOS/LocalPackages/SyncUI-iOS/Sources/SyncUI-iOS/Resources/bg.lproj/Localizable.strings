@@ -134,9 +134,6 @@
 "fetch.favicons.option.title" = "Автоматично изтегляне на икони";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Влезте в Настройки";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Продължаване на разработката";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -288,9 +285,6 @@
 
 /* Scan or See Code View - Title */
 "scan.or.see.code.title" = "Сканиране на QR код";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Защитете устройството си, за да използвате Sync & Backup";
 
 /* No comment provided by engineer. */
 "Switch to Production" = "Превключване към производство";

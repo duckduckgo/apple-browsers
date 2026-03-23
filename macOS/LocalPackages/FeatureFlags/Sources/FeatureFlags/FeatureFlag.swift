@@ -297,6 +297,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the new Tab Animations (Milestone 1)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
     case tabAnimations
+
+    /// Enables removing individual AI chat suggestions from the omnibar
+    case aiChatRemoveSuggestion
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -333,7 +336,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
-             .tabAnimations:
+             .tabAnimations,
+             .aiChatRemoveSuggestion:
             .internalOnly
         default:
             .disabled
@@ -430,7 +434,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webViewLookUpAction,
                 .promoQueue,
                 .semaphoreAlwaysVisible,
-                .tabAnimations:
+                .tabAnimations,
+                .aiChatRemoveSuggestion:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -616,6 +621,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.promoQueue))
         case .tabAnimations:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
+        case .aiChatRemoveSuggestion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion))
         }
     }
 }

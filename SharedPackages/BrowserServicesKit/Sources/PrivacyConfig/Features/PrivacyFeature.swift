@@ -403,6 +403,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables page context feature on iPad
     case iPadPageContext
+
+    /// Enables removing individual AI chat suggestions
+    case removeSuggestion
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

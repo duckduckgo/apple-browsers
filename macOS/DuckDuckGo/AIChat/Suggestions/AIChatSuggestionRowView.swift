@@ -128,6 +128,7 @@ final class AIChatSuggestionRowView: NSView {
         }
     }
 
+    var canDelete: Bool = false
     var onClick: (() -> Void)?
     var onDelete: (() -> Void)?
     var onMouseMoved: (() -> Void)?
@@ -224,7 +225,7 @@ final class AIChatSuggestionRowView: NSView {
             deleteButton.contentTintColor = Constants.iconColor
         }
 
-        deleteButton.isHidden = !isHighlighted
+        deleteButton.isHidden = !canDelete || !isHighlighted
 
         CATransaction.commit()
     }

@@ -335,12 +335,12 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webViewLookUpAction,
                 .startupMetrics,
                 .promoQueue,
-                .websitesHistoryFirstTimeQuitSurvey:
+                .websitesHistoryFirstTimeQuitSurvey,
+                .tabAnimations:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
-             .tabAnimations,
              .addToDockAppStore:
             .internalOnly
         default:

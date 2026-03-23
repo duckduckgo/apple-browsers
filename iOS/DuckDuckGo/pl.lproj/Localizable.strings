@@ -2737,6 +2737,9 @@
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Cześć!";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Czy wiesz, że?";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Chcesz przywrócić zakładki, hasła i nie tylko z poprzedniej synchronizacji DuckDuckGo?";
 

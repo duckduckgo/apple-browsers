@@ -89,7 +89,7 @@ enum FireButtonAnimationType: String, CaseIterable, Identifiable, CustomStringCo
         case .fireRisingLegacy, .waterSwirl, .airstream:
             return 1.3
         case .none:
-            return 0
+            return 1.0 // Safety net to avoid division by 0 if preloading behaviour is ever refactored and 'Double(composition.duration) / speed' is executed.
         }
     }
     

@@ -105,7 +105,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration {
         let systemSettings: SystemSettings
-        let order = "v3"
+        let order = applicationBuildType.isDebugBuild || applicationBuildType.isReviewBuild ? "v4" : "v3"
         let platform = OnboardingPlatform(name: "macos")
         if applicationBuildType.isAppStoreBuild {
             let rows = [

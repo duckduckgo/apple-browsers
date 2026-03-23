@@ -223,6 +223,42 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(managerWithFlagsOn.configuration, expectedConfig)
     }
 
+    func testReturnsExpectedOnboardingConfig_WhenDebugBuild_OrderIsV4() {
+        // Given
+        applicationBuildType.isDebugBuild = true
+        let debugManager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: MockFeatureFlagger(),
+            applicationBuildType: applicationBuildType
+        )
+
+        // Then
+        XCTAssertEqual(debugManager.configuration.order, "v4")
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenReviewBuild_OrderIsV4() {
+        // Given
+        applicationBuildType.isReviewBuild = true
+        let reviewManager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: MockFeatureFlagger(),
+            applicationBuildType: applicationBuildType
+        )
+
+        // Then
+        XCTAssertEqual(reviewManager.configuration.order, "v4")
+    }
+
     func testOnOnboardingStarted_UserInteractionIsPrevented() {
         // Given
         navigationDelegate.preventUserInteraction = false

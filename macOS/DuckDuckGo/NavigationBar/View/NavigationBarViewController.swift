@@ -1102,10 +1102,10 @@ final class NavigationBarViewController: NSViewController {
     private func setupBackgroundViewsAndColors() {
         let colorsProvider = theme.colorsProvider
 
-        if theme.areNavigationBarCornersRound {
+        if let topCornerRadius = theme.navigationBarStyleProvider.topCornerRadius {
             backgroundBaseColorView.backgroundColor = colorsProvider.baseBackgroundColor
             backgroundColorView.backgroundColor = colorsProvider.navigationBackgroundColor
-            backgroundColorView.cornerRadius = 10
+            backgroundColorView.cornerRadius = topCornerRadius
             backgroundColorView.maskedCorners = [
                 .layerMinXMaxYCorner,
                 .layerMaxXMaxYCorner

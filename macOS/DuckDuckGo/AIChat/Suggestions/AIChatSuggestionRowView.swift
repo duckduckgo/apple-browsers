@@ -288,7 +288,8 @@ final class AIChatSuggestionRowView: NSView {
     override func mouseUp(with event: NSEvent) {
         let locationInView = convert(event.locationInWindow, from: nil)
         let locationInDeleteButton = deleteButton.convert(event.locationInWindow, from: nil)
-        if bounds.contains(locationInView) && !deleteButton.bounds.contains(locationInDeleteButton) {
+        let isDeleteButtonClick = !deleteButton.isHidden && deleteButton.bounds.contains(locationInDeleteButton)
+        if bounds.contains(locationInView) && !isDeleteButtonClick {
             onClick?()
         }
         // Reset selection state after click (the view will likely be dismissed)

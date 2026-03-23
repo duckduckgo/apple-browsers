@@ -79,7 +79,7 @@ extension OnboardingRebranding.OnboardingStyles {
                     backgroundType.image
                         .resizable()
                         .scaledToFit()
-                        .frame(maxHeight: backgroundType.alignment == .center ? nil : maxHeightMetrics) // Center-aligned backgrounds have no height constraint to prevent cropping on iPad and landscape
+                        .frame(maxHeight: maxHeightMetrics)
                         .background(
                             GeometryReader { proxy in
                                 Color.clear

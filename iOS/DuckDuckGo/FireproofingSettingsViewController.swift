@@ -37,12 +37,15 @@ class FireproofingSettingsViewController: UITableViewController {
     private var shouldShowRemoveAll = false
 
     private let fireproofing: Fireproofing
+    private let favicons: FaviconManaging
     private let websiteDataManager: WebsiteDataManaging
 
     init?(coder: NSCoder,
           fireproofing: Fireproofing,
+          favicons: FaviconManaging,
           websiteDataManager: WebsiteDataManaging) {
         self.fireproofing = fireproofing
+        self.favicons = favicons
         self.websiteDataManager = websiteDataManager
         super.init(coder: coder)
     }
@@ -160,7 +163,7 @@ class FireproofingSettingsViewController: UITableViewController {
         
         let domain = model.remove(at: indexPath.row)
         fireproofing.remove(domain: domain)
-        Favicons.shared.removeFireproofFavicon(forDomain: domain)
+        favicons.removeFireproofFavicon(forDomain: domain)
 
         if self.model.isEmpty {
             self.endEditing()
@@ -170,7 +173,7 @@ class FireproofingSettingsViewController: UITableViewController {
         }
 
         Task { @MainActor in
-            await websiteDataManager.removeCookies(forDomains: [domain], fromDataStore: DDGWebsiteDataStoreProvider.current())
+            await websiteDataManager.removeCookies(forDomains: [domain], fromDataStore: DDGWebsiteDataStoreProvider.current(fireMode: false))
         }
     }
     
@@ -229,7 +232,7 @@ class FireproofingSettingsViewController: UITableViewController {
             self?.refreshModel()
         }, confirmed: { [weak self] in
             Task { @MainActor in
-                await self?.websiteDataManager.removeCookies(forDomains: self?.model ?? [], fromDataStore: DDGWebsiteDataStoreProvider.current())
+                await self?.websiteDataManager.removeCookies(forDomains: self?.model ?? [], fromDataStore: DDGWebsiteDataStoreProvider.current(fireMode: false))
                 self?.fireproofing.clearAll()
                 self?.refreshModel()
                 self?.endEditing()

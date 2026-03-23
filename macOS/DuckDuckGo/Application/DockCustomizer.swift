@@ -22,9 +22,11 @@ import Common
 import os.log
 import Persistence
 
-protocol DockCustomization {
+protocol DockStateChecking {
     var isAddedToDock: Bool { get }
+}
 
+protocol DockCustomization: DockStateChecking {
     @discardableResult
     func addToDock() -> Bool
 
@@ -45,6 +47,7 @@ final class DockCustomizer: DockCustomization {
         static let wasNotificationShownToUser = "was-dock-notification.show-to-users"
     }
 
+    private let applicationBuildType: ApplicationBuildType
     private let positionProvider: DockPositionProviding
     private let keyValueStore: KeyValueStoring
 
@@ -54,16 +57,20 @@ final class DockCustomizer: DockCustomization {
     }
     private var cancellables = Set<AnyCancellable>()
 
-    init(positionProvider: DockPositionProviding = DockPositionProvider(),
+    init(applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
+         positionProvider: DockPositionProviding = DockPositionProvider(),
          keyValueStore: KeyValueStoring = UserDefaults.standard) {
+        self.applicationBuildType = applicationBuildType
         self.positionProvider = positionProvider
         self.keyValueStore = keyValueStore
 
-        shouldShowNotificationPrivate = shouldShowNotification
-        startTimer()
+        if !applicationBuildType.isAppStoreBuild {
+            shouldShowNotificationPrivate = shouldShowNotification
+            startTimer()
+        }
     }
 
-    private var dockPlistURL: URL = URL(fileURLWithPath: NSString(string: "~/Library/Preferences/com.apple.dock.plist").expandingTildeInPath)
+    private var dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("Preferences/com.apple.dock.plist")
 
     private var dockPlistDict: [String: AnyObject]? {
         return NSDictionary(contentsOf: dockPlistURL) as? [String: AnyObject]
@@ -119,6 +126,10 @@ final class DockCustomizer: DockCustomization {
     // to restart after a brief delay to apply the changes.
     @discardableResult
     func addToDock() -> Bool {
+        guard !applicationBuildType.isAppStoreBuild else {
+            return false
+        }
+
         let appPath = Bundle.main.bundleURL.path
         guard !isAddedToDock,
               let bundleIdentifier = Bundle.main.bundleIdentifier,

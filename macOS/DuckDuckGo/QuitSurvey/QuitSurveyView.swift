@@ -18,8 +18,10 @@
 
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PrivacyConfig
 import SwiftUI
 import SwiftUIExtensions
+import History
 
 // MARK: - View Controller
 
@@ -52,11 +54,17 @@ struct QuitSurveyFlowView: View {
 
     init(
         persistor: QuitSurveyPersistor?,
+        featureFlagger: FeatureFlagger,
+        historyCoordinating: HistoryCoordinating? = nil,
+        faviconManaging: FaviconManagement? = nil,
         onQuit: @escaping () -> Void,
         onResize: ((CGFloat, CGFloat) -> Void)? = nil
     ) {
         self._viewModel = StateObject(wrappedValue: QuitSurveyViewModel(
             persistor: persistor,
+            featureFlagger: featureFlagger,
+            historyCoordinating: historyCoordinating,
+            faviconManaging: faviconManaging,
             onQuit: onQuit
         ))
         self.onResize = onResize
@@ -209,6 +217,84 @@ private struct QuitSurveyOptionRow: View {
     }
 }
 
+// MARK: - Domain Toggle Row
+
+private struct DomainToggleRow: View {
+    let entry: QuitSurveyDomainEntry
+    @Binding var isSelected: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 6) {
+            Toggle("", isOn: $isSelected)
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+                .accessibilityLabel(entry.title ?? entry.domain)
+
+            if let favicon = entry.favicon {
+                Image(nsImage: favicon)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
+            } else {
+                Image(systemName: "globe")
+                    .frame(width: 16, height: 16)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+            }
+
+            VStack(alignment: .leading, spacing: 1) {
+                if let title = entry.title {
+                    Text(title)
+                        .systemLabel()
+                        .lineLimit(1)
+                    Text(entry.domain)
+                        .caption2()
+                        .lineLimit(1)
+                } else {
+                    Text(entry.domain)
+                        .systemLabel()
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { isSelected.toggle() }
+    }
+}
+
+// MARK: - Other Domain Row
+
+private struct OtherDomainRow: View {
+    @ObservedObject var viewModel: QuitSurveyViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle(isOn: Binding(
+                get: { viewModel.isOtherDomainSelected },
+                set: { _ in viewModel.toggleOtherDomain() }
+            )) {
+                HStack(spacing: 8) {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size12.globe)
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
+
+                    Text(UserText.quitSurveyAffectedDomainsOther)
+                        .systemLabel()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .toggleStyle(.checkbox)
+
+            if viewModel.isOtherDomainSelected {
+                TextField(UserText.quitSurveyAffectedDomainsOtherPlaceholder, text: $viewModel.otherDomainText)
+                    .textFieldStyle(.roundedBorder)
+                    .padding(.leading, 24 + 8 + 16) // align with text after checkbox + favicon
+            }
+        }
+    }
+}
+
 // MARK: - Positive Response View
 
 private struct QuitSurveyPositiveView: View {
@@ -256,17 +342,36 @@ private struct QuitSurveyNegativeView: View {
     var onResize: ((CGFloat, CGFloat) -> Void)?
 
     @State private var pillsSectionHeight: CGFloat = 0
+    @State private var domainSectionHeight: CGFloat = 0
+    @State private var footerHeight: CGFloat = ComponentHeights.footer
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header()
-            optionsPills()
 
-            if viewModel.shouldShowTextInput {
-                userTextInput()
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    optionsPills()
+
+                    if viewModel.shouldShowDomainSelector {
+                        inlineDomainSection()
+                    }
+
+                    if viewModel.shouldShowTextInput {
+                        userTextInput()
+                    }
+                }
             }
+            .frame(maxHeight: maxScrollableHeight)
 
             footer()
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onAppear { footerHeight = geometry.size.height }
+                            .onChange(of: geometry.size) { footerHeight = $0.height }
+                    }
+                )
         }
         .frame(width: QuitSurveyViewController.Constants.negativeWidth)
         .fixedSize(horizontal: false, vertical: true)
@@ -276,9 +381,28 @@ private struct QuitSurveyNegativeView: View {
         .onChange(of: pillsSectionHeight) { _ in
             updateDialogHeight()
         }
+        .onChange(of: domainSectionHeight) { _ in
+            updateDialogHeight()
+        }
+        .onChange(of: footerHeight) { _ in
+            updateDialogHeight()
+        }
         .onAppear {
             updateDialogHeight()
         }
+    }
+
+    /// Maximum height for the scrollable body so the total sheet height never exceeds the screen.
+    private var maxScrollableHeight: CGFloat {
+        let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
+        let fixedHeight = ComponentHeights.header + footerHeight
+        // 60pt accounts for the parent window title bar (~28pt) where the sheet is anchored + buffer
+        let safeMargin: CGFloat = 60
+        return max(200, screenHeight - fixedHeight - safeMargin)
+    }
+
+    private var submitButtonTitle: String {
+        viewModel.isSubmitting ? UserText.quitSurveySubmitting : UserText.quitSurveySubmitAndQuit
     }
 
     // MARK: - Height Calculation
@@ -290,11 +414,16 @@ private struct QuitSurveyNegativeView: View {
     }
 
     private func calculateTotalHeight() -> CGFloat {
-        let baseHeight = ComponentHeights.header + ComponentHeights.footer
+        let baseHeight = ComponentHeights.header + footerHeight
         let pillsHeight = pillsSectionHeight > 0 ? pillsSectionHeight : 80
         let textInputHeight = viewModel.shouldShowTextInput ? ComponentHeights.textInputSection : 0
+        let domainHeight = viewModel.shouldShowDomainSelector
+            ? (domainSectionHeight > 0 ? domainSectionHeight : 0)
+            : 0
 
-        return baseHeight + pillsHeight + textInputHeight
+        let naturalHeight = baseHeight + pillsHeight + textInputHeight + domainHeight
+        let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
+        return min(naturalHeight, screenHeight - 60)
     }
 
     private func updateDialogHeight() {
@@ -401,6 +530,37 @@ private struct QuitSurveyNegativeView: View {
         .padding(.bottom, 8)
     }
 
+    private func inlineDomainSection() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(UserText.quitSurveyAffectedDomainsTitle)
+                .systemLabel()
+
+            Text(UserText.quitSurveyAffectedDomainsFootnote)
+                .caption2()
+                .multilineTextAlignment(.leading)
+
+            ForEach(viewModel.recentDomains) { entry in
+                DomainToggleRow(
+                    entry: entry,
+                    isSelected: Binding(
+                        get: { viewModel.selectedDomains.contains(entry.domain) },
+                        set: { _ in viewModel.toggleDomain(entry.domain) }
+                    )
+                )
+            }
+            OtherDomainRow(viewModel: viewModel)
+        }
+        .padding([.leading, .trailing], 24)
+        .padding(.bottom, 24)
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { domainSectionHeight = geometry.size.height }
+                    .onChange(of: geometry.size) { domainSectionHeight = $0.height }
+            }
+        )
+    }
+
     private func footer() -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Divider()
@@ -422,7 +582,7 @@ private struct QuitSurveyNegativeView: View {
                             .controlSize(.small)
                             .progressViewStyle(.circular)
                     }
-                    Text(viewModel.isSubmitting ? UserText.quitSurveySubmitting : UserText.quitSurveySubmitAndQuit)
+                    Text(submitButtonTitle)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -440,7 +600,7 @@ private struct QuitSurveyNegativeView: View {
 struct QuitSurveyView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            QuitSurveyFlowView(persistor: nil, onQuit: {})
+            QuitSurveyFlowView(persistor: nil, featureFlagger: MockFeatureFlagger(), onQuit: {})
                 .frame(width: 400, height: 200)
                 .previewDisplayName("Initial Question")
         }

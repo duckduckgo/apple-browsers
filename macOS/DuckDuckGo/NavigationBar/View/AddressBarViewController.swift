@@ -827,6 +827,9 @@ final class AddressBarViewController: NSViewController {
         } else if isFirstResponder {
             isFirstResponder = false
 
+            // Remove suffix when address bar loses focus
+            addressBarTextField.refreshStyle()
+
             // Restore internal text field labels when address bar loses focus
             if #available(macOS 26.0, *), featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) {
                 restoreInternalTextFieldLabels(in: addressBarTextField)

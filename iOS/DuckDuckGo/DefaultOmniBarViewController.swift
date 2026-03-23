@@ -75,6 +75,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         super.viewDidLoad()
 
         omniBarView.duckAITextViewDelegate = self
+        omniBarView.isVoiceModeEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             self?.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
         }
@@ -87,6 +88,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     override func onAIChatSendPressed() {
+        let text = omniBarView.aiChatTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if text.isEmpty && omniBarView.isVoiceModeEnabled {
+            omniDelegate?.onDuckAIVoiceModeRequested()
+            return
+        }
         submitIPadDuckAIText(from: omniBarView.aiChatTextView)
     }
 
@@ -518,6 +524,13 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
 
     func onToggleModeSwitched() {
         omniDelegate?.onToggleModeSwitched()
+    }
+
+    func onVoiceModeRequested() {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+            self.omniDelegate?.onDuckAIVoiceModeRequested()
+        }
     }
 }
 

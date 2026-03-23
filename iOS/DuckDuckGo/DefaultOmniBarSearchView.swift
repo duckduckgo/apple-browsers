@@ -103,7 +103,6 @@ final class DefaultOmniBarSearchView: UIView {
         textField.tintColor = fireMode
         ? UIColor(singleUseColor: .fireModeAccent)
         : UIColor(designSystemColor: .accent)
-        self.overrideUserInterfaceStyle = fireMode ? .dark : .unspecified
     }
 
     private func setUpSubviews() {

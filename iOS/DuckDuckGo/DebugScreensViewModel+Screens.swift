@@ -34,6 +34,13 @@ extension DebugScreensViewModel {
     var screens: [DebugScreen] {
         return [
             // MARK: Actions
+            .action(title: "Clear WebKit Cache", { _ in
+                WKWebsiteDataStore.default().removeData(
+                    ofTypes: [WKWebsiteDataTypeDiskCache,
+                              WKWebsiteDataTypeMemoryCache,
+                              WKWebsiteDataTypeOfflineWebApplicationCache],
+                    modifiedSince: .distantPast) { }
+            }),
             .action(title: "Reset Autoconsent Prompt", { _ in
                 AppUserDefaults().clearAutoconsentUserSetting()
             }),

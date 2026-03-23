@@ -179,6 +179,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var leftSideStackLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var rightSideStackView: NSStackView!
     private var duckAIChromeControlContainer: ColorView?
+    var duckAISplitButtonContainer: NSView? { duckAIChromeControlContainer }
     private var duckAIChromeBlurView: NSVisualEffectView?
     private var duckAIChromeTitleButton: MouseOverButton?
     private var duckAIChromeSidebarButton: MouseOverButton?

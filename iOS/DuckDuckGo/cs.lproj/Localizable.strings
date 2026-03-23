@@ -1079,9 +1079,6 @@
 "Confirm" = "Potvrdit";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontextový onboarding";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Vlastní URL: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "Domény vyloučené z Dark Readeru (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importovat soubor se záložkami...";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Odesláno s tvojí zprávou pro Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkce AI u DuckDuckGo jsou soukromé a volitelné. Tvoje data se nepoužívají k trénování umělé inteligence.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Sleduješ v přehrávači Duck Player!\nNejsou zde žádné cílené reklamy.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Efektivní prahová hodnota: %@ s (přepsat)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Efektivní prahová hodnota: výchozí konfigurace (bez přepsání)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrana e-mailu";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Vyskytla se neznámá chyba";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Přepne na tuto kartu";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Zpět na %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Zpět na...";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Zpět na %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN byla odpojená, protože platnost předplatného vypršela. Pro opětovné připojení k VPN si DuckDuckGo předplať.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Nelze se autentizovat. Zkontroluj prosím, zda je tvoje předplatné aktivní, a zkus to znovu.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Nelze se připojit k VPN serveru. Zkus to znovu později.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Tvoje předplatné skončilo. Pro připojení k VPN serveru si prosím znovu obnov předplatné.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Došlo k neočekávané chybě. Zkus to znovu. Pokud tento problém přetrvává, přejdi na **O aplikaci** a klepni na **Často kladené otázky a podpora**, kde najdeš pomoc.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "VPN DuckDuckGo se nepodařilo připojit. Zkus to znovu později.";
 
@@ -2442,11 +2464,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS server";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Zkus to znovu později.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Připojení se nezdařilo.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Připojení se nezdařilo";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP adresa";
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Žádná aktivní předplatná";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Žádné vyloučené domény";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Žádná existující předplatná nebyla nalezena";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Než to zapomenu...";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Soukromý. Rychlý. S méně reklamami.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "To je vyhledávač DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Jsi připravený na rychlejší prohlížeč, který tě ochrání?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Zdravíme tě.";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Chceš obnovit záložky, hesla a další data z předchozí synchronizace DuckDuckGo?";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Pojďme pokračovat, kde jsi skončil(a)";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Soukromý. Rychlý. S méně reklamami.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "To je vyhledávač DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Jsi připravený na rychlejší prohlížeč, který tě ochrání?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Zdravíme tě.";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Spustit procházení";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Odhlášení...";
+
+/* No comment provided by engineer. */
+"Override" = "Přepsat";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nemám přístup k modelům Duck.ai, které jsou jen pro předplatitele";
@@ -3010,7 +3038,7 @@
 "prompt.x-safari-https.try-open.message" = "Některé funkce webových stránek nemusí být v tomto prohlížeči kompatibilní.";
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Tento web chce být otevřen v Safari.";
+"prompt.x-safari-https.try-open.title" = "Tento web chce být otevřen v Safari.";
 
 /* No comment provided by engineer. */
 "REBRANDED" = "REBRANDED";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Zobrazit v adresním řádku";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Vyber, co uvidíš, když se vrátíš po %@ neaktivity.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 hodina";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d hodin(y)";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minuta";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minut(y)";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekunda";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekund(y)";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Po nečinnosti";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Nová karta";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Vyhledávání a Duck.ai";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Pozice adresního řádku";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Experimentální nabídka prohlížeče";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otevřít odkazy v přidružených aplikacích";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Plány předplatného";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Tvoje předplatné bylo z tohohle zařízení odstraněno.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Zrušit snížení tarifu";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Tvoje předplatné bylo z tohohle zařízení odstraněno.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Tvůj tarif se %2$@ změní na %1$@.";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Přepne na tuto kartu";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Zpět na %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Zpět na...";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Zpět na %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Vyber, co uvidíš, když se vrátíš po %@ neaktivity.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 hodina";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d hodin(y)";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 minuta";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d minut(y)";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 sekunda";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d sekund(y)";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po nečinnosti";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nová karta";

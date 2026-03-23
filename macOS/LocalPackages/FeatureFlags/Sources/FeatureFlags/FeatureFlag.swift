@@ -305,6 +305,7 @@ public enum FeatureFlag: String, CaseIterable {
     case addToDockAppStore
 
     /// Enables removing individual AI chat suggestions from the omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
     case aiChatRemoveSuggestion
 }
 

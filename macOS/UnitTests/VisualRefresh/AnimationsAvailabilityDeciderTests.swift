@@ -22,21 +22,30 @@ import XCTest
 
 final class AnimationsAvailabilityDeciderTests: XCTestCase {
 
-    func testAnimationsAreDisabledBelowMacOs13() {
+    func testAnimationsAreDisabledBelowMacOs12() {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.tabAnimations]
 
-        for majorVersion in [10, 11, 12] {
+        for majorVersion in [10, 11] {
             let decider = AnimationsAvailabilityDecider(featureFlagger: flagger, osVersion: OperatingSystemVersion(majorVersion: majorVersion, minorVersion: 0, patchVersion: 0))
             XCTAssertFalse(decider.displaysTabsAnimations)
         }
     }
 
-    func testAnimationsAreEnabledOnOrAboveMacOs13() {
+    func testAnimationsAreDisabledWhenFeatureFlagIsOffOnOrAboveMacOs12() {
+        let flagger = MockFeatureFlagger()
+
+        for majorVersion in [12, 13, 14, 15, 26] {
+            let decider = AnimationsAvailabilityDecider(featureFlagger: flagger, osVersion: OperatingSystemVersion(majorVersion: majorVersion, minorVersion: 0, patchVersion: 0))
+            XCTAssertFalse(decider.displaysTabsAnimations)
+        }
+    }
+
+    func testAnimationsAreEnabledOnOrAboveMacOs12() {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.tabAnimations]
 
-        for majorVersion in [13, 14, 15, 26] {
+        for majorVersion in [12, 13, 14, 15, 26] {
             let decider = AnimationsAvailabilityDecider(featureFlagger: flagger, osVersion: OperatingSystemVersion(majorVersion: majorVersion, minorVersion: 0, patchVersion: 0))
             XCTAssertTrue(decider.displaysTabsAnimations)
         }

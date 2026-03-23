@@ -31,6 +31,6 @@ struct AnimationsAvailabilityDecider {
     }
 
     var displaysTabsAnimations: Bool {
-        featureFlagger.isFeatureOn(.tabAnimations) && osMajorVersion >= 13
+        featureFlagger.isFeatureOn(.tabAnimations) && osMajorVersion >= 12
     }
 }

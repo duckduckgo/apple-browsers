@@ -31,6 +31,7 @@ extension Preferences {
     struct AboutView: View {
         @ObservedObject var model: AboutPreferences
         @State private var areAutomaticUpdatesEnabled: Bool = true
+        @State private var isCustomFeedWarningDismissed = false
 
         var autoUpdatesEnabled: Bool {
             let buildType = StandardApplicationBuildType()
@@ -61,12 +62,22 @@ extension Preferences {
 
                     let buildType = StandardApplicationBuildType()
                     if buildType.isSparkleBuild {
-                        UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
+                        if model.shouldHideManualUpdateOption {
+                            UpdateInfoMessage()
+                                .padding(.top, 4)
+                        } else {
+                            UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
+                        }
 
                         if buildType.isDebugBuild || buildType.isReviewBuild {
-                            Spacer(minLength: 20)
-                            customFeedURLWarning
+                            if !isCustomFeedWarningDismissed {
+                                Spacer(minLength: 20)
+                                customFeedURLWarning(onDismiss: { isCustomFeedWarningDismissed = true })
+                            }
                         }
+                    } else if buildType.isAppStoreBuild {
+                        UpdateInfoMessage()
+                            .padding(.top, 4)
                     }
                 }
             }.task {
@@ -88,7 +99,7 @@ extension Preferences {
         /// feed URL set, which could lead to confusion when testing updates or when the
         /// app doesn't behave as expected with production updates.
         @ViewBuilder
-        private var customFeedURLWarning: some View {
+        private func customFeedURLWarning(onDismiss: @escaping () -> Void) -> some View {
             if let customURL = model.customFeedURL {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -103,6 +114,12 @@ extension Preferences {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    Spacer()
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -353,6 +370,87 @@ extension Preferences {
                 }
                 .buttonStyle(UpdateButtonStyle(enabled: true))
             }
+        }
+    }
+
+    struct UpdateInfoMessage: View {
+        private let buildType: ApplicationBuildType
+
+        init(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
+            self.buildType = buildType
+        }
+
+        var body: some View {
+            if buildType.isSparkleBuild {
+                TextMenuItemCaption(UserText.aboutUpdateInfoSparkle)
+            } else if buildType.isAppStoreBuild {
+                let linkText = UserText.aboutUpdateInfoAppStoreLink
+                let menuText = UserText.aboutUpdateInfoAppStoreMenu
+                let settingsText = UserText.aboutUpdateInfoAppStoreSettings
+                let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText, menuText, settingsText)
+                HStack(spacing: 0) {
+                    if #available(macOS 12.0, *) {
+                        Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
+                    }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundColor(Color(.greyText))
+            }
+        }
+
+        private static let boldWords = [
+            UserText.aboutUpdateInfoAppStoreLink,
+            UserText.aboutUpdateInfoAppStoreMenu,
+            UserText.aboutUpdateInfoAppStoreSettings
+        ]
+
+        @available(macOS 12, *)
+        private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
+            var attributed = AttributedString(fullText)
+            if let range = attributed.range(of: linkText) {
+                attributed[range].link = .appStore
+            }
+            for word in Self.boldWords {
+                if let range = attributed.range(of: word) {
+                    attributed[range].inlinePresentationIntent = .stronglyEmphasized
+                }
+            }
+            return attributed
+        }
+
+        private func appStoreLegacyAttributedText(fullText: String, linkText: String) -> NSAttributedString {
+            let attributedString = NSMutableAttributedString(string: fullText)
+
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineSpacing = 0
+            paragraphStyle.paragraphSpacing = 0
+
+            let defaultAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+                .foregroundColor: NSColor(Color(.greyText)),
+                .paragraphStyle: paragraphStyle
+            ]
+            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
+
+            if let range = fullText.range(of: linkText) {
+                let nsRange = NSRange(range, in: fullText)
+                attributedString.addAttribute(.link, value: URL.appStore, range: nsRange)
+                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
+                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
+            }
+
+            let boldFont = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+            for word in Self.boldWords {
+                if let range = fullText.range(of: word) {
+                    attributedString.addAttribute(.font, value: boldFont, range: NSRange(range, in: fullText))
+                }
+            }
+
+            return attributedString
         }
     }
 

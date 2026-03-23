@@ -1079,9 +1079,6 @@
 "Confirm" = "Onayla";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Bağlamsal İlk Katılım";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Özel URL: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "Dark Reader Hariç Tutulan Alan Adları (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Yer İşaretleri Dosyasını İçe Aktar...";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Duck.ai'a mesajınızla gönderildi";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI özellikleri gizli ve isteğe bağlıdır. Verileriniz yapay zekayı eğitmek için kullanılmaz.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Duck Player'da izliyorsunuz!\nBurada hedefli reklam yok.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Etkin eşik: %@ s (geçersiz kılma)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Etkin eşik: yapılandırma varsayılanı (geçersiz kılma yok)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-posta Koruması";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Bilinmeyen bir hata oluştu";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Bu sekmeye geçer";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "%@ sekmesine geri dönün";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Geri dön:";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "%1$@, %2$@ bölümüne dönün";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "Abonelik süresi dolduğu için VPN bağlantısı kesildi. VPN'i yeniden bağlamak için DuckDuckGo'ya abone olun.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Kimlik doğrulama başarısız oldu. Lütfen aboneliğinizin aktif olup olmadığını kontrol edin ve tekrar deneyin.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "VPN sunucusuna bağlanılamıyor. Lütfen daha sonra tekrar deneyin.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Aboneliğiniz sona erdi. Bir VPN sunucusuna bağlanmak için lütfen tekrar abone olun.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin. Bu sorun devam ederse, **Hakkımızda** bölümüne gidin ve yardım için **SSS ve Destek** seçeneğine dokunun.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN bağlanamadı. Lütfen daha sonra tekrar deneyin.";
 
@@ -2442,11 +2464,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS Sunucusu";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Lütfen daha sonra tekrar deneyin.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Bağlanılamadı.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Bağlanılamadı";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP Adresi";
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Aktif abonelik yok";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Hariç tutulan alan adı yok";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Abonelik bulunamadı";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ah, unutmadan...";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Gizli. Hızlı. Daha az reklam.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "DuckDuckGo Search İşte Bu!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Sizi koruyan daha hızlı bir tarayıcıya hazır mısınız?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Merhaba.";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Önceki DuckDuckGo senkronizasyonundan yer işaretleri, şifreler ve daha fazlasını geri yüklemek mi istiyorsunuz?";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Kaldığınız yerden devam edelim";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Gizli. Hızlı. Daha az reklam.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "DuckDuckGo Search İşte Bu!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Sizi koruyan daha hızlı bir tarayıcıya hazır mısınız?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Merhaba.";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Gezinmeye Başla";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Kapsam Dışı Kalınıyor...";
+
+/* No comment provided by engineer. */
+"Override" = "Geçersiz kılma";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Abonelere özel Duck.ai modellerine erişilemiyor.";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Adres Çubuğunda Göster";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "%@ boyunca işlem yapılmadığında ne göreceğinizi seçin.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 saat";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d saat";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 dakika";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d dakika";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 saniye";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d saniye";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Hareketsizlik Sonrası";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Son Kullanılan Sekme";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Yeni Sekme";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Arama ve Duck.ai";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adres Çubuğu Konumu";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Deneysel Tarayıcı Menüsü";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Bağlantıları İlişkili Uygulamalarda Aç";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Abonelik Planları";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Aboneliğiniz bu cihazdan kaldırıldı.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Düşürmeyi İptal Et";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Aboneliğiniz bu cihazdan kaldırıldı.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Planınız %2$@ tarihinde %1$@ planına düşürülecek.";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Bu sekmeye geçer";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "%@ sekmesine geri dönün";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Geri dön:";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "%1$@, %2$@ bölümüne dönün";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "%@ boyunca işlem yapılmadığında ne göreceğinizi seçin.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 saat";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d saat";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 dakika";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d dakika";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 saniye";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d saniye";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Hareketsizlik Sonrası";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Son Kullanılan Sekme";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Yeni Sekme";

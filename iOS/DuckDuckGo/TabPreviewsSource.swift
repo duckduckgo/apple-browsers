@@ -26,7 +26,7 @@ protocol TabPreviewsSource: AnyObject {
     func update(preview: UIImage, forTab tab: Tab)
     func removePreview(forTab tab: Tab)
     func removeAllPreviews() -> Result<Void, Error>
-    func removePreviewsWithIdNotIn(_ ids: Set<String>) async
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) -> Result<Void, Error>
     func totalStoredPreviews() -> Int?
     func preview(for tab: Tab) -> UIImage?
 
@@ -203,16 +203,32 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         return UIImage(data: data)
     }
 
-    func removePreviewsWithIdNotIn(_ ids: Set<String>) async {
-        guard let directory = previewStoreDir else { return }
-        let contents = try? FileManager.default.contentsOfDirectory(atPath: directory.path)
-        contents?.forEach {
-            let id = $0.dropping(suffix: ".png")
-            if !ids.contains(id) {
-                cache[id] = nil
-                let previewUrl = directory.appending($0)
-                try? FileManager.default.removeItem(at: previewUrl)
-            }
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) -> Result<Void, Error> {
+        guard let directory = previewStoreDir else { return .success(()) }
+        guard !ids.isEmpty else {
+            return removeAllPreviews()
         }
+        var encounteredError: Error?
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            contents.forEach {
+                let id = $0.dropping(suffix: ".png")
+                if !ids.contains(id) {
+                    cache[id] = nil
+                    let previewUrl = directory.appending($0)
+                    do {
+                        try FileManager.default.removeItem(at: previewUrl)
+                    } catch {
+                        encounteredError = error
+                    }
+                }
+            }
+        } catch {
+            encounteredError = error
+        }
+        if let error = encounteredError {
+            return .failure(error)
+        }
+        return .success(())
     }
 }

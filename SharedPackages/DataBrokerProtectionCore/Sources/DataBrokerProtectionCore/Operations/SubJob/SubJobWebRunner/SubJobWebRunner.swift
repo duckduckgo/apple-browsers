@@ -235,14 +235,20 @@ public extension SubJobWebRunning {
 
     func complete(_ value: ReturnValue) {
         self.firePostLoadingDurationPixel(hasError: false)
-        self.continuation?.resume(returning: value)
+
+        guard let continuation else { return }
+
         self.continuation = nil
+        continuation.resume(returning: value)
     }
 
     func failed(with error: Error) {
         self.firePostLoadingDurationPixel(hasError: true)
-        self.continuation?.resume(throwing: error)
+
+        guard let continuation else { return }
+
         self.continuation = nil
+        continuation.resume(throwing: error)
     }
 
     func initialize(handler: WebViewHandler?,

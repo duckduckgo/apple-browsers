@@ -26,6 +26,9 @@ protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
     func load(_ query: String?, autoSend: Bool, payload: Any?, tools: [AIChatRAGTool]?, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?)
 
+    /// Loads AIChat in voice mode.
+    func loadVoiceMode()
+
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
 
@@ -57,6 +60,12 @@ extension TabViewController: AITabController {
         load(url: queryURL)
     }
     
+    /// Loads AIChat in voice mode.
+    func loadVoiceMode() {
+        let url = aiChatContentHandler.buildVoiceModeURL()
+        load(url: url)
+    }
+
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() {
         aiChatContentHandler.submitStartChatAction()

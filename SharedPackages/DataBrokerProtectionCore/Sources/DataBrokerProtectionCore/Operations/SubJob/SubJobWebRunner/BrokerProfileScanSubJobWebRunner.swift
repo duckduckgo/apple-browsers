@@ -114,6 +114,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                         try await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
                     } catch {
                         failed(with: error)
+                        return
                     }
 
                     do {

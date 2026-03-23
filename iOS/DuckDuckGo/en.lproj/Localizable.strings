@@ -2188,6 +2188,18 @@ https://duckduckgo.com/mac";
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN disconnected due to expired subscription. Subscribe to DuckDuckGo to reconnect the VPN.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Unable to authenticate. Please check your subscription is active, and try again.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Unable to connect to a VPN server. Please try again later.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Your subscription has ended. Please subscribe again to connect to a VPN server.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "An unexpected error occurred. Please try again. If this issue continues, scroll to **About** and tap **FAQs and Support** for help.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN failed to connect. Please try again later.";
 
@@ -2284,11 +2296,8 @@ https://duckduckgo.com/mac";
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS Server";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Please try again later.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Failed to Connect.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Failed to Connect";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP Address";

@@ -115,6 +115,7 @@ extension TabSwitcherViewController {
                 tabViewModel: nil,
                 pixelSource: .tabSwitcher,
                 daxDialogsManager: daxDialogsManager,
+                browsingMode: selectedBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAll(fireRequest)
                 },

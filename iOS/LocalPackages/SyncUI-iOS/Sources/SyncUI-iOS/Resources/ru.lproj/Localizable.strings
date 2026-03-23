@@ -134,9 +134,6 @@
 "fetch.favicons.option.title" = "Автоматическая загрузка значков";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Открыть «Настройки»";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Остаться на стадии разработки";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -288,9 +285,6 @@
 
 /* Scan or See Code View - Title */
 "scan.or.see.code.title" = "Сканирование QR-кода";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Защитите устройство для работы функции Sync & Backup";
 
 /* No comment provided by engineer. */
 "Switch to Production" = "Переключиться на производство";

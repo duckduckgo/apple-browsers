@@ -46,7 +46,6 @@ protocol TabCollectionViewModelDelegate: AnyObject {
 final class TabCollectionViewModel: NSObject {
 
     weak var delegate: TabCollectionViewModelDelegate?
-    var newTabPageTabPreloader: NewTabPageTabPreloading?
     weak var windowControllersManager: WindowControllersManagerProtocol?
 
     /// Local tabs collection
@@ -510,9 +509,6 @@ final class TabCollectionViewModel: NSObject {
     }
 
     private func makeTab(for content: Tab.TabContent) -> Tab {
-        if !isBurner, content == .newtab, let preloaded = newTabPageTabPreloader?.newTab() {
-            return preloaded
-        }
         return Tab(content: content, shouldLoadInBackground: true, burnerMode: burnerMode)
     }
 

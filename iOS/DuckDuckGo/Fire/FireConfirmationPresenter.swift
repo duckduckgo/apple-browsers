@@ -41,13 +41,14 @@ struct FireConfirmationPresenter {
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
                                  daxDialogsManager: DaxDialogsManaging,
+                                 browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
         if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, onConfirm: onConfirm, onCancel: onCancel)
+            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
         } else {
-            presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, pixelSource: pixelSource, onConfirm: onConfirm, onCancel: onCancel)
+            presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, pixelSource: pixelSource, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
         }
     }
     
@@ -57,6 +58,7 @@ struct FireConfirmationPresenter {
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
                                  daxDialogsManager: DaxDialogsManaging,
+                                 browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         guard let window = UIApplication.shared.firstKeyWindow else {
@@ -64,9 +66,9 @@ struct FireConfirmationPresenter {
             return
         }
         if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, onConfirm: onConfirm, onCancel: onCancel)
+            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
         } else {
-            presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, pixelSource: pixelSource, onConfirm: onConfirm, onCancel: onCancel)
+            presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, pixelSource: pixelSource, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
         }
     }
     
@@ -79,11 +81,13 @@ struct FireConfirmationPresenter {
                                                    tabViewModel: TabViewModel?,
                                                    pixelSource: FireRequest.Source,
                                                    daxDialogsManager: DaxDialogsManaging,
+                                                   browsingMode: BrowsingMode,
                                                    onConfirm: @escaping (FireRequest) -> Void,
                                                    onCancel: @escaping () -> Void) {
             let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                             source: pixelSource,
                                                             daxDialogsManager: daxDialogsManager,
+                                                            browsingMode: browsingMode,
                 onConfirm: { [weak viewController] fireOptions in
                     viewController?.dismiss(animated: true) {
                         onConfirm(fireOptions)
@@ -244,13 +248,15 @@ struct FireConfirmationPresenter {
                                                 from source: AnyObject,
                                                 sourceRect: CGRect,
                                                 pixelSource: FireRequest.Source,
+                                                browsingMode: BrowsingMode,
                                                 onConfirm: @escaping (FireRequest) -> Void,
                                                 onCancel: @escaping () -> Void) {
         
         let alert = ForgetDataAlert.buildAlert(cancelHandler: {
             onCancel()
         }, forgetTabsAndDataHandler: {
-            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: pixelSource)
+            let scope: FireRequest.Scope = browsingMode == .fire ? .fireMode : .all
+            let request = FireRequest(options: .all, trigger: .manualFire, scope: scope, source: pixelSource)
             onConfirm(request)
         })
         if let view = source as? UIView {

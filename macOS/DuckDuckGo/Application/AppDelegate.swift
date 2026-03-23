@@ -381,6 +381,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController?
+    let dockStateChecker: DockStateChecking
     var dockCustomization: DockCustomization?
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
@@ -414,7 +415,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    init(dockCustomization: DockCustomization?) {
+    init(dockCustomization: DockCustomization?, dockStateChecker: DockStateChecking) {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -422,6 +423,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
+        self.dockStateChecker = dockStateChecker
         self.dockCustomization = dockCustomization
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
@@ -1027,7 +1029,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore)
-        autoconsentEventCoordinator = Self.makeAutoconsentEventCoordinator(
+        autoconsentEventCoordinator = AutoconsentEventCoordinator(
             autoconsentStats: autoconsentStats,
             historyCoordinating: historyCoordinator,
             webExtensionAvailability: webExtensionAvailability
@@ -1257,6 +1259,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if isFirstLaunch {
             AppDelegate.firstLaunchDate = Date()
+            if let build = Int(AppVersion.shared.buildNumber) {
+                let store: any ThrowingKeyedStoring<UpdateControllerSettings> = keyValueStore.throwingKeyedStoring()
+                try? store.set(build, for: \.installBuild)
+            }
         }
 
         setupWebExtensions()
@@ -1438,9 +1444,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily, doNotEnforcePrefix: true)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily, doNotEnforcePrefix: true)
-        if let dockCustomization {
-            PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
-        }
+        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockStateChecker.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
     }
 
     private func fireDailyFireWindowConfigurationPixels() {
@@ -1537,7 +1541,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let handler = TerminationDeciderHandler(
             deciders: createTerminationDeciders(),
             replyToApplicationShouldTerminate: { [weak self] shouldTerminate in
-                self?.terminationHandler = nil
+                // Keep terminationHandler set after successful completion so the
+                // guard in applicationShouldTerminate blocks any subsequent calls.
+                // During Sparkle updates the system can fire a second terminate
+                // request right after reply:YES. If we cleared the handler, the
+                // decider chain would re-run against already-closed windows and
+                // overwrite the saved state with empty data.
+                if !shouldTerminate {
+                    self?.terminationHandler = nil
+                }
                 NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
             }
         )
@@ -1566,7 +1578,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
                 showQuitSurvey: { [weak self] in
                     guard let self else { return }
-                    let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
+                    let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor, featureFlagger: self.featureFlagger, historyCoordinating: self.historyCoordinator, faviconManaging: self.faviconManager)
                     await presenter.showSurvey()
                 }
             ),
@@ -2128,61 +2140,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 
 }
 
-extension AppDelegate: UserScriptDependenciesProviding {
-    @MainActor
-    func makeNewTabPageActionsManager() -> NewTabPageActionsManager? {
-        guard let contentBlocking = privacyFeatures.contentBlocking as? AppContentBlocking else {
-            return nil
-        }
-
-        return NewTabPageActionsManager(
-            appearancePreferences: appearancePreferences,
-            visualizeFireAnimationDecider: visualizeFireSettingsDecider,
-            customizationModel: newTabPageCustomizationModel,
-            bookmarkManager: bookmarkManager,
-            faviconManager: faviconManager,
-            duckPlayerHistoryEntryTitleProvider: duckPlayer,
-            contentBlocking: contentBlocking,
-            trackerDataManager: contentBlocking.trackerDataManager,
-            activeRemoteMessageModel: activeRemoteMessageModel,
-            historyCoordinator: historyCoordinator,
-            fireproofDomains: fireproofDomains,
-            privacyStats: privacyStats,
-            autoconsentStats: autoconsentStats,
-            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
-            tld: tld,
-            fire: { @MainActor in self.fireCoordinator.fireViewModel.fire },
-            keyValueStore: keyValueStore,
-            featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager,
-            tabsPreferences: tabsPreferences,
-            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
-            protectionsReportModel: newTabPageProtectionsReportModel,
-            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
-            nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
-            subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
-            duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
-            syncService: syncService,
-            pinningManager: pinningManager,
-            promoService: promoService
-        )
-    }
-
-    private static func makeAutoconsentEventCoordinator(
-        autoconsentStats: AutoconsentStatsCollecting,
-        historyCoordinating: HistoryCoordinating,
-        webExtensionAvailability: WebExtensionAvailabilityProviding
-    ) -> AutoconsentEventCoordinator {
-        return AutoconsentEventCoordinator(
-            autoconsentStats: autoconsentStats,
-            historyCoordinating: historyCoordinating,
-            webExtensionAvailability: webExtensionAvailability
-        )
-    }
-}
+extension AppDelegate: UserScriptDependenciesProviding {}
 
 private extension FeatureFlagLocalOverrides {
 

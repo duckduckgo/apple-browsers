@@ -19537,7 +19537,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
 			requirement = {
 				kind = exactVersion;
-				version = 1.18.7;
+				version = 1.18.9;
 			};
 		};
 		B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {

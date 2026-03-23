@@ -134,9 +134,6 @@
 "fetch.favicons.option.title" = "Automaattisesti ladattavat kuvakkeet";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Siirry kohtaan Asetukset";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Säilytä kehitys";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -288,9 +285,6 @@
 
 /* Scan or See Code View - Title */
 "scan.or.see.code.title" = "Skannaa QR-koodi";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Suojaa laitteesi käyttääksesi Sync & Backup -ominaisuutta";
 
 /* No comment provided by engineer. */
 "Switch to Production" = "Siirry tuotantoon";

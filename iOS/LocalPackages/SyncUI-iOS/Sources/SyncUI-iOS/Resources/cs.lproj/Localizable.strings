@@ -134,9 +134,6 @@
 "fetch.favicons.option.title" = "Automatické stahování ikon";
 
 /* No comment provided by engineer. */
-"Go to Settings" = "Přejdi do Nastavení";
-
-/* No comment provided by engineer. */
 "Keep Development" = "Nechat vývojovou verzi";
 
 /* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
@@ -288,9 +285,6 @@
 
 /* Scan or See Code View - Title */
 "scan.or.see.code.title" = "Skenování QR kódu";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Zabezpeč své zařízení, ať můžeš používat funkci Sync & Backup";
 
 /* No comment provided by engineer. */
 "Switch to Production" = "Přepnout na produkční verzi";

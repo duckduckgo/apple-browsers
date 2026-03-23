@@ -278,6 +278,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }()
 
     var onAIChatSendPressed: (() -> Void)?
+    var isVoiceModeEnabled: Bool = false
 
     let aiChatTextView: UITextView = {
         let textView = UITextView()
@@ -600,6 +601,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
             activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
         }
+        let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
+        searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
@@ -1092,10 +1095,17 @@ extension DefaultOmniBarView {
 
     func updateAIChatSendButton(hasText: Bool) {
         if hasText {
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            aiChatSendButton.backgroundColor = UIColor(designSystemColor: .accent)
+            aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
+            aiChatSendButton.isEnabled = true
+        } else if isVoiceModeEnabled {
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
             aiChatSendButton.backgroundColor = UIColor(designSystemColor: .accent)
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else {
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
             aiChatSendButton.backgroundColor = .clear
             aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
             aiChatSendButton.isEnabled = false

@@ -147,6 +147,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                                          showWebView: showWebView)
                     } catch {
                         failed(with: error)
+                        return
                     }
 
                     if let optOutStep = context.dataBroker.optOutStep() {

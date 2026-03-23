@@ -289,13 +289,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
-    // MARK: - VC Delegate: Voice
-
-    func test_voiceTap_callsDelegateVoiceMethod() {
-        sut.unifiedToggleInputVCDidTapVoice(sut.viewController)
-        XCTAssertTrue(mockDelegate.didRequestVoiceSearch)
-    }
-
     // MARK: - VC Delegate: Dismiss
 
     func test_dismissTap_deactivatesOmnibarEditing() {
@@ -762,6 +755,51 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - Customize Responses Button
+
+    func test_customizeResponsesTap_forwardsPublisher() {
+        let exp = expectation(description: "didPressCustomizeResponsesButton fires")
+        sut.didPressCustomizeResponsesButton
+            .sink { exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.viewController.handler.customizeResponsesButtonTapped()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_customizeResponsesTap_collapsesInput() {
+        sut.showExpanded()
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+
+        sut.viewController.handler.customizeResponsesButtonTapped()
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
+    }
+
+    func test_customizeResponsesButton_hiddenInitially() {
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_visibleOnAITab() {
+        sut.showCollapsed()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_hiddenWhenHidden() {
+        sut.showCollapsed()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+
+        sut.hide()
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_hiddenInOmnibar() {
+        sut.activateFromOmnibar()
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
     // MARK: - Model Selection: persistedModelId
 
     func test_persistedModelId_returnsPreferencesValue() {
@@ -1035,7 +1073,6 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedModelId: String?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedQuery: String?
-    var didRequestVoiceSearch = false
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedPrompt = prompt
@@ -1043,7 +1080,6 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
-    func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearch = true }
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

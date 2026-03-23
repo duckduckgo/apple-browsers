@@ -27,7 +27,7 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
-            .font(onboardingTheme.typography.contextualBody)
+            .font(onboardingTheme.typography.contextual.body)
             .foregroundColor(onboardingTheme.colorPalette.primaryButtonTextColor)
             .padding(.vertical)
             .padding(.horizontal, nil)

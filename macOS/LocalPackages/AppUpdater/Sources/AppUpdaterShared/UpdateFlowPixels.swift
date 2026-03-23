@@ -118,6 +118,9 @@ public enum UpdateFlowPixels: PixelKitEvent {
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
 
+    // Daily configuration pixel
+    case updateConfigurationDaily(configuration: String)
+
     // Release notes pixel
     case releaseNotesLoadingError
 
@@ -149,6 +152,8 @@ public enum UpdateFlowPixels: PixelKitEvent {
             return "updater_did_find_update"
         case .updaterDidDownloadUpdate:
             return "updater_did_download_update"
+        case .updateConfigurationDaily:
+            return "m_mac_update_configuration"
         case .releaseNotesLoadingError:
             return "m_mac_release_notes_loading_error"
         }
@@ -192,6 +197,8 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 "targetBuild": targetBuild,
                 "osVersion": osVersion
             ]
+        case .updateConfigurationDaily(let configuration):
+            return ["configuration": configuration]
         case .updaterAborted(let reason):
             return ["reason": reason]
         case .updateNotificationShown,
@@ -235,6 +242,7 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 .updaterAttemptToRestartWithoutResumeBlock,
                 .updaterAborted,
                 .updaterDidFindUpdate,
+                .updateConfigurationDaily,
                 .updaterDidDownloadUpdate,
                 .releaseNotesLoadingError:
             return [.pixelSource]

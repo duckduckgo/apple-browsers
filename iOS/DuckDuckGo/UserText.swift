@@ -2368,6 +2368,7 @@ public struct UserText {
     public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")
+            static let delayedTitle = NSLocalizedString("onboarding.privacypro.promo.title.delayed", value: "Did you know?", comment: "The title of the delayed subscription promotion dialog shown to users who skipped onboarding")
 
             // MARK: - Message Components
 

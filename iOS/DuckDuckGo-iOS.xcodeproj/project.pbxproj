@@ -774,6 +774,7 @@
 		854A012B2A54412600FCC628 /* ActivityViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854A012A2A54412600FCC628 /* ActivityViewController.swift */; };
 		854A012F2A5563A400FCC628 /* FindInPage.xib in Resources */ = {isa = PBXBuildFile; fileRef = 854A012E2A5563A400FCC628 /* FindInPage.xib */; };
 		854A01332A558B3A00FCC628 /* UIView+Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854A01322A558B3A00FCC628 /* UIView+Constraints.swift */; };
+		854D67932F6DDFCA008707A3 /* ScreenTimeDataCleaner in Frameworks */ = {isa = PBXBuildFile; productRef = 854D67922F6DDFCA008707A3 /* ScreenTimeDataCleaner */; };
 		85514FFD2372DA0100DBC528 /* ios13-home-row.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 85514FFC2372DA0000DBC528 /* ios13-home-row.mp4 */; };
 		85582E0029D7409700E9AE35 /* SyncSettingsViewController+PDFRendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85582DFF29D7409700E9AE35 /* SyncSettingsViewController+PDFRendering.swift */; };
 		855D914D2063EF6A00C4B448 /* TabSwitcherTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */; };
@@ -3154,6 +3155,7 @@
 		854A012A2A54412600FCC628 /* ActivityViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActivityViewController.swift; sourceTree = "<group>"; };
 		854A012E2A5563A400FCC628 /* FindInPage.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FindInPage.xib; sourceTree = "<group>"; };
 		854A01322A558B3A00FCC628 /* UIView+Constraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Constraints.swift"; sourceTree = "<group>"; };
+		854D67902F6DDE59008707A3 /* ScreenTimeDataCleaner */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = ScreenTimeDataCleaner; path = ../SharedPackages/ScreenTimeDataCleaner; sourceTree = SOURCE_ROOT; };
 		85514FFC2372DA0000DBC528 /* ios13-home-row.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ios13-home-row.mp4"; sourceTree = "<group>"; };
 		85519124247468580010FDD0 /* TrackerRadarIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerRadarIntegrationTests.swift; sourceTree = "<group>"; };
 		8551912624746EDC0010FDD0 /* SnapshotHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SnapshotHelper.swift; path = fastlane/SnapshotHelper.swift; sourceTree = SOURCE_ROOT; };
@@ -4993,6 +4995,7 @@
 				F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */,
 				BBD9C3972E9D73610060A6E8 /* SERPSettings in Frameworks */,
 				7B2CCBA52D11ABBA00FE5852 /* VPNWidgetSupport in Frameworks */,
+				854D67932F6DDFCA008707A3 /* ScreenTimeDataCleaner in Frameworks */,
 				F19B98672EAFA799000FF209 /* AttributedMetric in Frameworks */,
 				4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */,
 				9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */,
@@ -5877,6 +5880,7 @@
 		31E69A60280F4BAD00478327 /* LocalPackages */ = {
 			isa = PBXGroup;
 			children = (
+				854D67902F6DDE59008707A3 /* ScreenTimeDataCleaner */,
 				1EC8B18B2F29147000F18679 /* WebExtensions */,
 				9F292C522F342B1200441F7A /* MetricBuilder */,
 				BBD9C3942E9D71F50060A6E8 /* SERPSettings */,
@@ -10900,6 +10904,7 @@
 				1EC8B1892F29145C00F18679 /* WebExtensions */,
 				9FB71C972F342B4F000AD042 /* MetricBuilder */,
 				9FADFC492F5FC56400CA16F7 /* DuckSansFont */,
+				854D67922F6DDFCA008707A3 /* ScreenTimeDataCleaner */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -11328,6 +11333,7 @@
 				BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "LocalPackages/DuckUI" */,
 				7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */,
 				9FADFC482F5FC56400CA16F7 /* XCRemoteSwiftPackageReference "native-apps-ducksans" */,
+				854D67912F6DDFCA008707A3 /* XCLocalSwiftPackageReference "../SharedPackages/ScreenTimeDataCleaner" */,
 			);
 			productRefGroup = 84E341931E2F7EFB00BDBA6F /* Products */;
 			projectDirPath = "";
@@ -17148,6 +17154,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/AutomationServer;
 		};
+		854D67912F6DDFCA008707A3 /* XCLocalSwiftPackageReference "../SharedPackages/ScreenTimeDataCleaner" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/ScreenTimeDataCleaner;
+		};
 		BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "LocalPackages/DuckUI" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/DuckUI;
@@ -17568,6 +17578,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 84EFBCCA2D817CB500706739 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
 			productName = SnapshotTesting;
+		};
+		854D67922F6DDFCA008707A3 /* ScreenTimeDataCleaner */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ScreenTimeDataCleaner;
 		};
 		856086602DE47E5600AA3DC7 /* DesignResourcesKitIcons */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -41,16 +41,27 @@ public enum DDGWebsiteDataStoreProvider {
 
     // Don't call this in tests.
     @MainActor
-    public static func current(dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> any DDGWebsiteDataStore {
+    public static func current(fireMode: Bool, dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> any DDGWebsiteDataStore {
         guard !ProcessInfo().arguments.contains("testing") else {
             fatalError("Don't call this from tests")
         }
-
+        if fireMode {
+            return fireModeDataStore(dataStoreIDManager: dataStoreIDManager)
+        }
         if #available(iOS 17, *), let id = dataStoreIDManager.currentID {
             return WebsiteDataStoreWrapper(wrapped: WKWebsiteDataStore(forIdentifier: id))
         } else {
             return WebsiteDataStoreWrapper(wrapped: WKWebsiteDataStore.default())
         }
+    }
+    
+    @MainActor
+    private static func fireModeDataStore(dataStoreIDManager: DataStoreIDManaging) -> any DDGWebsiteDataStore {
+        guard #available(iOS 17, *) else {
+            assertionFailure("Fire mode data store requested on an old iOS version")
+            return WebsiteDataStoreWrapper(wrapped: WKWebsiteDataStore.default())
+        }
+        return WebsiteDataStoreWrapper(wrapped: WKWebsiteDataStore(forIdentifier: dataStoreIDManager.currentFireModeID))
     }
 
 }

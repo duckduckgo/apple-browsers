@@ -23,7 +23,7 @@ import Persistence
 extension WKWebViewConfiguration {
 
     @MainActor
-    public static func persistent(fireMode: Bool = false, idManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WKWebViewConfiguration { // TODO: - Make fireMode required to force proper usage
+    public static func persistent(fireMode: Bool, idManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WKWebViewConfiguration {
         let config = configuration(persistsData: true)
         
         if #available(iOS 17, *), fireMode {

@@ -244,8 +244,10 @@ extension XCUIApplication {
 
     /// Activates the address bar if needed and returns its current value
     /// - Returns: The current value of the address bar as a string
-    func addressBarValueActivatingIfNeeded() -> String? {
-        activateAddressBar()
+    func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true) -> String? {
+        if shouldActivate {
+            activateAddressBar()
+        }
         return addressBar.value as? String
     }
 

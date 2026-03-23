@@ -87,6 +87,7 @@ final class MainCoordinator {
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          aiChatSettings: AIChatSettings,
          fireproofing: Fireproofing,
+         favicons: FaviconManaging,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
@@ -117,7 +118,7 @@ final class MainCoordinator {
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
-        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
+        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence, featureFlagger: featureFlagger)
         let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
         reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
         let daxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: featureFlagger,
@@ -156,6 +157,7 @@ final class MainCoordinator {
                                 autoconsentManagementProvider: autoconsentManagementProvider,
                                 websiteDataManager: websiteDataManager,
                                 fireproofing: fireproofing,
+                                favicons: favicons,
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
@@ -174,6 +176,7 @@ final class MainCoordinator {
                                         syncService: syncService.sync,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         fireproofing: fireproofing,
+                                        favicons: favicons,
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         autoconsentManagementProvider: autoconsentManagementProvider,
                                         historyManager: historyManager,
@@ -216,6 +219,7 @@ final class MainCoordinator {
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
+                                        favicons: favicons,
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
@@ -396,6 +400,7 @@ final class MainCoordinator {
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
                                          tabsPersistence: TabsModelPersisting,
+                                         featureFlagger: FeatureFlagger,
                                          appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModelProviding {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
         let normalModel: TabsModel
@@ -416,7 +421,8 @@ final class MainCoordinator {
         }
         return TabsModelProvider(normalTabsModel: normalModel,
                                  fireModeTabsModel: fireModel,
-                                 persistence: tabsPersistence)
+                                 persistence: tabsPersistence,
+                                 featureFlagger: featureFlagger)
     }
 
     private static func makeTextZoomCoordinatorProvider() -> TextZoomCoordinatorProvider {

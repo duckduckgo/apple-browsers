@@ -28,6 +28,7 @@ struct FireproofingWorking {
 
     weak var controller: UIViewController?
     let fireproofing: Fireproofing
+    let favicons: FaviconManaging
 
     func handleLoginDetection(detectedURL: URL?, currentURL: URL?, isAutofillEnabled: Bool, saveLoginPromptLastDismissed: Date?, saveLoginPromptIsPresenting: Bool, shouldShowAutofillExtensionPrompt: Bool) -> Bool {
         guard let detectedURL = detectedURL, let currentURL = currentURL else { return false }
@@ -84,14 +85,14 @@ struct FireproofingWorking {
     private func addDomain(_ domain: String) {
         guard let controller = controller else { return }
         fireproofing.addToAllowed(domain: domain)
-        Favicons.shared.loadFavicon(forDomain: domain, intoCache: .fireproof, fromCache: .tabs)
+        favicons.loadFavicon(forDomain: domain, intoCache: .fireproof, fromCache: .tabs)
         FireproofingAlert.showFireproofEnabledMessage(usingController: controller, worker: self, forDomain: domain)
     }
 
     private func removeDomain(_ domain: String) {
         guard let controller = controller else { return }
         fireproofing.remove(domain: domain)
-        Favicons.shared.removeFireproofFavicon(forDomain: domain)
+        favicons.removeFireproofFavicon(forDomain: domain)
         FireproofingAlert.showFireproofDisabledMessage(usingController: controller, worker: self, forDomain: domain)
     }
 

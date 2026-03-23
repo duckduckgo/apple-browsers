@@ -27,7 +27,7 @@ extension OnboardingRebranding.OnboardingView {
 
         private enum Design {
             static let borderWidth: CGFloat = 321
-            static let borderHeight: CGFloat = 128
+            static let borderHeight: CGFloat = 127
             static let videoWidth: CGFloat = 300
             static let videoHeight: CGFloat = 120
             static let borderHorizontalPadding: CGFloat = -6

@@ -34,6 +34,8 @@ import Combine
 protocol TabBarRemoteMessagePresenting: AnyObject {
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel { get }
     var rightSideStackView: NSStackView! { get }
+    var fireButton: MouseOverAnimationButton! { get }
+    var duckAISplitButtonContainer: NSView? { get }
     var tabBarRemoteMessagePopover: NSPopover? { get set }
     var tabBarRemoteMessagePopoverHoverTimer: Timer? { get set }
     var feedbackBarButtonHostingController: NSHostingController<TabBarRemoteMessageView>? { get set }
@@ -106,9 +108,19 @@ extension TabBarRemoteMessagePresenting {
 
         feedbackBarButtonHostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        // Insert the hosting controller's view into the stack view just before the fire button
-        let index = max(0, rightSideStackView.arrangedSubviews.count - 1)
+        // Insert before the fire button group (Duck.ai split button + fire button)
+        let anchorView: NSView? = duckAISplitButtonContainer ?? fireButton
+        let index = anchorView.flatMap { rightSideStackView.arrangedSubviews.firstIndex(of: $0) }
+            ?? max(0, rightSideStackView.arrangedSubviews.count - 1)
         rightSideStackView.insertArrangedSubview(feedbackBarButtonHostingController.view, at: index)
+
+        // Match the custom spacing used between Duck.ai and fire button
+        if let duckAISplitButtonContainer {
+            let customSpacing = rightSideStackView.customSpacing(after: duckAISplitButtonContainer)
+            if customSpacing > 0 {
+                rightSideStackView.setCustomSpacing(customSpacing, after: feedbackBarButtonHostingController.view)
+            }
+        }
 
         NSLayoutConstraint.activate([
             feedbackBarButtonHostingController.view.centerYAnchor.constraint(equalTo: rightSideStackView.centerYAnchor)

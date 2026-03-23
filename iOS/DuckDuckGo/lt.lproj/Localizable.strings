@@ -1079,9 +1079,6 @@
 "Confirm" = "Patvirtinti";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontekstinis supažindinimas";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Pasirinktinis URL: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "„Dark Reader“ domenų išimtys (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuoti žymės failą...";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Išsiųstas su jūsų žinute Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "„DuckDuckGo“ DI funkcijos yra privačios ir neprivalomos. Tavo duomenys nenaudojami dirbtinio intelekto mokymui.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Tu žiūri „Duck Player“!\nČia nėra tikslinių reklamų.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Taikomas slenkstis: %@ s (perrašyti)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Taikomas slenkstis: numatytoji konfigūracija (be perrašymo)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "El. pašto apsauga";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Atsirado nežinoma klaida";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Perjungia į šį skirtuką";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Grįžti į %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Grįžti į...";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Grįžti į %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN atjungtas dėl pasibaigusios prenumeratos. Prenumeruokite „DuckDuckGo“, kad iš naujo prisijungtumėte prie VPN.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Nepavyko autentifikuoti. Patikrink, ar prenumerata galioja, ir bandyk dar kartą.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Nepavyko prisijungti prie VPN serverio. Bandyk vėliau.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Tavo prenumerata baigėsi. Norint prisijungti prie VPN serverio, reikia vėl užsiprenumeruoti.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Įvyko netikėta klaida. Bandyk dar kartą. Jei problema išlieka, slink žemyn iki **Apie** ir paliesk **DUK ir palaikymas**, kad gautum pagalbos.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "„DuckDuckGo“ VPN nepavyko prisijungti. Bandykite dar kartą vėliau.";
 
@@ -2442,11 +2464,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS serveris";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Bandykite dar kartą vėliau.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Nepavyko prisijungti.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Nepavyko prisijungti";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP adresas";
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Nėra aktyvių prenumeratų";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Nėra neįtrauktų domenų";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nerasta jokių esamų prenumeratų";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oi, kol nepamiršau...";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privati. Sparti. Mažiau reklamų.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Tai – „DuckDuckGo Search“!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Pasiruošę greitesnei naršyklei, kuri jus apsaugo?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Sveiki.";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Ar nori atkurti žymes, slaptažodžius ir kt. iš ankstesnės „DuckDuckGo“ sinchronizacijos?";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Pradėkime nuo ten, kur baigei";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Privati. Sparti. Mažiau reklamų.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Tai – „DuckDuckGo Search“!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Pasiruošę greitesnei naršyklei, kuri jus apsaugo?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Sveiki.";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Pradėti naršyti";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Atsisakoma...";
+
+/* No comment provided by engineer. */
+"Override" = "Perrašyti";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nepavyksta pasiekti tik prenumeratoriams skirtų „Duck.ai“ modelių.";
@@ -3004,7 +3032,7 @@
 "prompt.x-safari-https.open-in-safari" = "Atverti „Safari“ naršyklėje";
 
 /* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Likti „DuckDuckGo“";
+"prompt.x-safari-https.stay" = "Likti DuckDuckGo";
 
 /* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.message" = "Kai kurios interneto svetainės funkcijos šioje naršyklėje gali būti nesuderinamos.";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Rodyti adreso juostoje";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Pasirinkite, ką matysite grįžę po %@ neaktyvumo.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 val.";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d val.";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 min.";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d min.";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sek.";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sek.";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Po neaktyvumo";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Paskutinį kartą naudotas skirtukas";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Nauja kortelė";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Paieška ir „Duck.ai“";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreso juostos padėtis";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Eksperimentinis naršyklės meniu";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atidaryti nuorodas susijusiose programose";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Prenumeratos planai";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Tavo prenumerata buvo pašalinta iš šio įrenginio.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Atšaukti plano keitimą į žemesnio lygio";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Tavo prenumerata buvo pašalinta iš šio įrenginio.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Jūsų planas bus sumažintas iki %1$@ nuo %2$@.";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Perjungia į šį skirtuką";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Grįžti į %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Grįžti į...";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Grįžti į %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Pasirinkite, ką matysite grįžę po %@ neaktyvumo.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 val.";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d val.";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 min.";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d min.";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 sek.";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d sek.";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po neaktyvumo";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Paskutinį kartą naudotas skirtukas";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nauja kortelė";

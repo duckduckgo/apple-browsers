@@ -23,22 +23,47 @@ public extension OnboardingTheme {
 
     /// Typography tokens used by onboarding content.
     struct Typography: Equatable {
-        /// Standard title style for contextual Flow.
-        public let contextualTitle: Font
-        /// Standard body style for contextual Flow.
-        public let contextualBody: Font
-        /// Small text and button label style.
-        public let small: Font
+        /// Contextual-specific typography extension point.
+        /// Intentionally empty for now while contextual flow continues using shared tokens.
+        public struct Contextual: Equatable {
+            /// Standard title style for contextual Flow.
+            public let title: Font
+            /// Standard body style for contextual Flow.
+            public let body: Font
+            /// Standard style for list button for contextual Flow.
+            public let controlSmall: Font
+
+            public init(
+                title: Font,
+                body: Font,
+                controlSmall: Font
+            ) {
+                self.title = title
+                self.body = body
+                self.controlSmall = controlSmall
+            }
+        }
+
+        /// Typography used by contextual onboarding flow.
+        public let contextual: Contextual
 
         /// Creates a typography token set for onboarding.
         public init(
-            title: Font,
-            body: Font,
-            small: Font
+            contextual: Contextual,
         ) {
-            self.contextualTitle = title
-            self.contextualBody = body
-            self.small = small
+            self.contextual = contextual
+        }
+
+        public init(
+            contextualTitle: Font,
+            contextualBody: Font,
+            contextualControlSmall: Font
+        ) {
+            self.contextual = Contextual(
+                title: contextualTitle,
+                body: contextualBody,
+                controlSmall: contextualControlSmall
+            )
         }
     }
 
@@ -50,16 +75,16 @@ public extension OnboardingTheme.Typography {
 
     /// Typography preset using DuckSans families.
     static let duckSans = OnboardingTheme.Typography(
-        title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
-        body: makeFont(size: 18, family: .duckSansProduct, weight: .regular),
-        small: makeFont(size: 15, family: .duckSansProduct, weight: .regular)
+        contextualTitle: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
+        contextualBody: makeFont(size: 18, family: .duckSansProduct, weight: .regular),
+        contextualControlSmall: makeFont(size: 15, family: .duckSansProduct, weight: .bold)
     )
 
     /// System font fallback preset, useful for testing and previews.
     static let system = OnboardingTheme.Typography(
-        title: .system(size: 24, weight: .bold),
-        body: .system(size: 18, weight: .regular),
-        small: .system(size: 15, weight: .regular)
+        contextualTitle: .system(size: 24, weight: .bold),
+        contextualBody: .system(size: 18, weight: .regular),
+        contextualControlSmall: .system(size: 15, weight: .bold)
     )
 
 }

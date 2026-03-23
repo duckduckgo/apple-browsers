@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import Common
+import Persistence
 
 public final class PixelKit {
     /// `true` if a request is fired, `false` otherwise
@@ -120,7 +121,7 @@ public final class PixelKit {
         _ onComplete: @escaping CompletionBlock) -> Void
 
     public static let duckDuckGoMorePrivacyInfo = URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/atb/")!
-    private let defaults: UserDefaults
+    private let defaults: ThrowingKeyValueStoring
 
     private let logger = Logger(subsystem: "PixelKit", category: "PixelKit")
 
@@ -152,7 +153,7 @@ public final class PixelKit {
                              defaultHeaders: [String: String],
                              dailyPixelCalendar: Calendar? = nil,
                              dateGenerator: @escaping () -> Date = Date.init,
-                             defaults: UserDefaults,
+                             defaults: ThrowingKeyValueStoring,
                              fireRequest: @escaping FireRequest) {
         shared = PixelKit(dryRun: dryRun,
                           appVersion: appVersion,
@@ -176,7 +177,7 @@ public final class PixelKit {
                 defaultHeaders: [String: String],
                 dailyPixelCalendar: Calendar? = nil,
                 dateGenerator: @escaping () -> Date = Date.init,
-                defaults: UserDefaults,
+                defaults: ThrowingKeyValueStoring,
                 fireRequest: @escaping FireRequest) {
 
         self.dryRun = dryRun
@@ -653,9 +654,9 @@ public final class PixelKit {
     }
 
     public func pixelLastFireDate(pixelName: String) -> Date? {
-        var date = defaults.object(forKey: userDefaultsKeyName(forPixelName: pixelName)) as? Date
+        var date = try? defaults.object(forKey: userDefaultsKeyName(forPixelName: pixelName)) as? Date
         if date == nil {
-            date = defaults.object(forKey: legacyUserDefaultsKeyName(forPixelName: pixelName)) as? Date
+            date = try? defaults.object(forKey: legacyUserDefaultsKeyName(forPixelName: pixelName)) as? Date
         }
         return date
     }
@@ -665,7 +666,7 @@ public final class PixelKit {
     }
 
     private func updatePixelLastFireDate(pixelName: String) {
-        defaults.set(dateGenerator(), forKey: userDefaultsKeyName(forPixelName: pixelName))
+        try? defaults.set(dateGenerator(), forKey: userDefaultsKeyName(forPixelName: pixelName))
     }
 
     private func pixelHasBeenFiredToday(_ name: String) -> Bool {
@@ -678,11 +679,17 @@ public final class PixelKit {
             return false
         }
 
-        if let lastFireDate = pixelLastFireDate(pixelName: name) {
-            return pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
+        do {
+            let key = userDefaultsKeyName(forPixelName: name)
+            let legacyKey = legacyUserDefaultsKeyName(forPixelName: name)
+            if let lastFireDate = try defaults.object(forKey: key) as? Date
+                ?? (try defaults.object(forKey: legacyKey) as? Date) {
+                return pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
+            }
+            return false
+        } catch {
+            return true
         }
-
-        return false
     }
 
     private func pixelHasBeenFiredEver(_ name: String) -> Bool {
@@ -693,13 +700,16 @@ public final class PixelKit {
         guard let name = Self.shared?.userDefaultsKeyName(forPixelName: pixel.name) else {
             return
         }
-        self.defaults.removeObject(forKey: name)
+        try? self.defaults.removeObject(forKey: name)
     }
 
     public func clearFrequencyHistoryForAllPixels() {
-        for (key, _) in self.defaults.dictionaryRepresentation() {
+        guard let defaults = self.defaults as? DictionaryRepresentable else {
+            return
+        }
+        for (key, _) in defaults.dictionaryRepresentation() {
             if key.hasPrefix(Self.storageKeyPrefixLegacy) || key.hasPrefix(Self.storageKeyPrefix) {
-                self.defaults.removeObject(forKey: key)
+                try? self.defaults.removeObject(forKey: key)
                 self.logger.debug("🚮 Removing from storage \(key, privacy: .public)")
             }
         }

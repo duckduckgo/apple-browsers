@@ -27,6 +27,7 @@ import UIKit
 import NetworkExtension
 import Networking
 import os.log
+import Persistence
 import PixelKit
 import Subscription
 import VPN
@@ -503,7 +504,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     @MainActor
     @objc init() {
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
-        Self.setupPixelKit()
+        let vpnFileStoreDirectory = Self.vpnFileStoreDirectory()
+        Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
+        Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
 
@@ -671,13 +674,25 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         .store(in: &cancellables)
     }
 
-    private static func setupPixelKit() {
+    private static func setupPixelKit(vpnFileStoreDirectory: URL?) {
+        let pixelKitDefaults: ThrowingKeyValueStoring
+        if let vpnFileStoreDirectory,
+           let fileStore = try? KeyValueFileStore(
+               location: vpnFileStoreDirectory,
+               name: "pixelkit",
+               writeOptions: [.atomic, .noFileProtection]
+           ) {
+            pixelKitDefaults = fileStore
+        } else {
+            pixelKitDefaults = UserDefaults.networkProtectionGroupDefaults
+        }
+
         PixelKit.setUp(
             dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
             appVersion: AppVersion.shared.versionNumber,
             source: (UIDevice.current.userInterfaceIdiom == .phone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS).rawValue,
             defaultHeaders: [:],
-            defaults: .networkProtectionGroupDefaults
+            defaults: pixelKitDefaults
         ) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
             let url = URL.pixelUrl(forPixelNamed: pixelName)
             let apiHeaders = APIRequestV2.HeadersV2(userAgent: Pixel.defaultPixelUserAgent, additionalHeaders: headers)
@@ -694,6 +709,29 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     onComplete(false, error)
                 }
             }
+        }
+    }
+
+    private static func vpnFileStoreDirectory() -> URL? {
+        let vpnGroupName = "\(Global.groupIdPrefix).netp"
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: vpnGroupName) else {
+            return nil
+        }
+
+        let directory = containerURL.appendingPathComponent("vpn", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    private static func configureDailyPixelFileStore(vpnFileStoreDirectory: URL?) {
+        guard let vpnFileStoreDirectory else { return }
+
+        if let dailyPixelFileStore = try? KeyValueFileStore(
+            location: vpnFileStoreDirectory,
+            name: "daily-pixel",
+            writeOptions: [.atomic, .noFileProtection]
+        ) {
+            DailyPixel.storage = dailyPixelFileStore
         }
     }
 

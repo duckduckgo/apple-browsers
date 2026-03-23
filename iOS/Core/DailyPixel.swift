@@ -50,7 +50,7 @@ public final class DailyPixel {
 
     }
 
-    public static let storage: UserDefaults = UserDefaults(suiteName: Constant.dailyPixelStorageIdentifier)!
+    public static var storage: ThrowingKeyValueStoring = UserDefaults(suiteName: Constant.dailyPixelStorageIdentifier)!
 
     /// Sends a given Pixel once per day.
     /// This is useful in situations where pixels receive spikes in volume, as the daily pixel can be used to determine how many users are actually affected.
@@ -60,7 +60,7 @@ public final class DailyPixel {
                             withAdditionalParameters params: [String: String] = [:],
                             includedParameters: [Pixel.QueryParameters] = [.appVersion],
                             pixelFiring: PixelFiring.Type = Pixel.self,
-                            dailyPixelStore: KeyValueStoring = DailyPixel.storage,
+                            dailyPixelStore: ThrowingKeyValueStoring = DailyPixel.storage,
                             onComplete: @escaping (Swift.Error?) -> Void = { _ in }) {
         var key: String = pixel.name
 
@@ -91,7 +91,7 @@ public final class DailyPixel {
                                          withAdditionalParameters params: [String: String] = [:],
                                          includedParameters: [Pixel.QueryParameters] = [.appVersion],
                                          pixelFiring: PixelFiring.Type = Pixel.self,
-                                         dailyPixelStore: KeyValueStoring = DailyPixel.storage,
+                                         dailyPixelStore: ThrowingKeyValueStoring = DailyPixel.storage,
                                          onDailyComplete: @escaping (Swift.Error?) -> Void = { _ in },
                                          onCountComplete: @escaping (Swift.Error?) -> Void = { _ in }) {
         let key: String = pixel.name
@@ -119,15 +119,19 @@ public final class DailyPixel {
         )
     }
 
-    private static func updatePixelLastFireDate(forKey key: String, dailyPixelStore: KeyValueStoring) {
-        dailyPixelStore.set(Date(), forKey: key)
+    private static func updatePixelLastFireDate(forKey key: String, dailyPixelStore: ThrowingKeyValueStoring) {
+        try? dailyPixelStore.set(Date(), forKey: key)
     }
 
-    private static func hasBeenFiredToday(forKey key: String, dailyPixelStore: KeyValueStoring) -> Bool {
-        if let lastFireDate = dailyPixelStore.object(forKey: key) as? Date {
-            return Date().isSameDay(lastFireDate)
+    private static func hasBeenFiredToday(forKey key: String, dailyPixelStore: ThrowingKeyValueStoring) -> Bool {
+        do {
+            if let lastFireDate = try dailyPixelStore.object(forKey: key) as? Date {
+                return Date().isSameDay(lastFireDate)
+            }
+            return false
+        } catch {
+            return true
         }
-        return false
     }
 
     private static func createSortedStringOfValues(from dict: [String: String], maxLength: Int = 50) -> String {

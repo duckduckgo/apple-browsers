@@ -431,7 +431,8 @@ let package = Package(
         .target(
             name: "PixelKit",
             dependencies: [
-                "Common"
+                "Common",
+                "Persistence"
             ],
             exclude: [
                 "README.md"

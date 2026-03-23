@@ -33,6 +33,7 @@ public struct AnimatableTypingText: View {
     private var onTypingFinished: (() -> Void)?
 
     @StateObject private var model: AnimatableTypingTextModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(
         _ text: NSAttributedString,
@@ -72,7 +73,7 @@ public struct AnimatableTypingText: View {
             }
         }
         .onChange(of: startAnimating.wrappedValue, perform: { shouldAnimate in
-            if skipAnimation.wrappedValue {
+            if skipAnimation.wrappedValue || reduceMotion {
                 model.skip()
                 return
             }
@@ -88,8 +89,13 @@ public struct AnimatableTypingText: View {
                 model.skip()
             }
         })
+        .onChange(of: reduceMotion) { shouldReduce in
+            if shouldReduce {
+                model.skip()
+            }
+        }
         .onAppear {
-            if skipAnimation.wrappedValue {
+            if skipAnimation.wrappedValue || reduceMotion {
                 model.skip()
             } else if startAnimating.wrappedValue {
                 model.startAnimating()

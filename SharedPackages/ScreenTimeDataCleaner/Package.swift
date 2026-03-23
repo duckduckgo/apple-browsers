@@ -15,13 +15,11 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../BrowserServicesKit"),
     ],
     targets: [
         .target(
             name: "ScreenTimeDataCleaner",
             dependencies: [
-                .product(name: "WKAbstractions", package: "BrowserServicesKit"),
             ]
         ),
     ]

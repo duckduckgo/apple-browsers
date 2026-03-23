@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import WKAbstractions
 import WebKit
 
 @available(iOS 26, macOS 26, *)

@@ -112,7 +112,7 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
         group.enter()
 
         Task {
-            cookies = await DDGWebsiteDataStoreProvider.current().httpCookieStore.allCookies()
+            cookies = await DDGWebsiteDataStoreProvider.current(fireMode: false).httpCookieStore.allCookies()
             group.leave()
         }
 

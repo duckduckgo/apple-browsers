@@ -76,7 +76,8 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .sync
         case .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
-                .appStoreUpdateFlow:
+                .appStoreUpdateFlow,
+                .automaticUpdatesOnly:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,

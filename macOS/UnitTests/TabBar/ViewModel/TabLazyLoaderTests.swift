@@ -340,13 +340,14 @@ class TabLazyLoaderTests: XCTestCase {
         XCTAssertEqual(isLazyLoadingPausedEvents, [false, true, false])
     }
 
+    @MainActor
     func waitForLoadingDidFinishEvent<DataSource>(
         _ lazyLoader: TabLazyLoader<DataSource>,
         and otherExpectations: [XCTestExpectation] = [],
         expectedDidFinishValue expectedValue: Bool = true,
         file: StaticString = #file,
         line: UInt = #line,
-        _ block: () async -> Void
+        _ block: () -> Void
     ) async {
 
         let expectation = self.expectation(description: "loadingDidFinish")
@@ -356,7 +357,7 @@ class TabLazyLoaderTests: XCTestCase {
             expectation.fulfill()
         }
 
-        await block()
+        block()
 
         await fulfillment(of: otherExpectations + [expectation], timeout: 2)
         cancellable.cancel()

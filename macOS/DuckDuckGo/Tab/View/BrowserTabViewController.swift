@@ -774,7 +774,7 @@ final class BrowserTabViewController: NSViewController {
         let tabContent = tabContent ?? tabViewModel.tabContent
         switch tabContent {
         case .newtab:
-            return featureFlagger.isFeatureOn(.newTabPagePerTab) ? tabViewModel.tab.webView : newTabPageWebViewModel.webView
+            return newTabPageWebViewModel.webView
         case .webExtensionUrl(let url):
             if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
                let context = webExtensionManager.extensionContext(for: url),
@@ -858,11 +858,7 @@ final class BrowserTabViewController: NSViewController {
                 return
             }
             // present contextual onboarding dialog if needed
-            // Skip for new tab pages only when using per-tab webviews (handled in onNewTabPageDidPresent)
-            let isNewTabPageWithPerTabWebViews = tabViewModel?.tab.content == .newtab && featureFlagger.isFeatureOn(.newTabPagePerTab)
-            if !isNewTabPageWithPerTabWebViews {
-                self.presentContextualOnboarding()
-            }
+            self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab
         }.store(in: &tabViewModelCancellables)
@@ -1123,31 +1119,21 @@ final class BrowserTabViewController: NSViewController {
 
     func onNewTabPageWillPresent() {
         guard tabViewModel?.tabContent == .newtab else { return }
-
-        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            tabViewModel?.tab.newTabPage?.onNewTabPageWillPresent()
-        } else {
-            newTabPageLoadMetrics.onNTPWillPresent()
-        }
+        newTabPageLoadMetrics.onNTPWillPresent()
     }
 
     func onNewTabPageDidPresent() {
         guard tabViewModel?.tabContent == .newtab else { return }
 
-        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            tabViewModel?.tab.newTabPage?.onNewTabPageDidPresent()
-            presentContextualOnboarding()
-        } else {
-            // If web view is loaded, update load metrics.
-            // Otherwise NewTabPageWebViewModel's delegate callback will update load metrics when loading is finished.
-            if !newTabPageWebViewModel.webView.isLoading {
-                newTabPageLoadMetrics.onNTPDidPresent()
-            }
+        // If web view is loaded, update load metrics.
+        // Otherwise NewTabPageWebViewModel's delegate callback will update load metrics when loading is finished.
+        if !newTabPageWebViewModel.webView.isLoading {
+            newTabPageLoadMetrics.onNTPDidPresent()
         }
     }
 
     func onNewTabPageAlreadyPresented() {
-        guard !featureFlagger.isFeatureOn(.newTabPagePerTab), tabViewModel?.tabContent == .newtab else { return }
+        guard tabViewModel?.tabContent == .newtab else { return }
 
         newTabPageLoadMetrics.onNTPAlreadyPresented()
     }

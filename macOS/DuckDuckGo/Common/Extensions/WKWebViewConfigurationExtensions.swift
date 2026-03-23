@@ -65,7 +65,7 @@ extension WKWebViewConfiguration {
         if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
             let featureFlagger = NSApp.delegateTyped.featureFlagger
             setURLSchemeHandler(
-                DuckURLSchemeHandler(featureFlagger: featureFlagger, isNTPSpecialPageSupported: featureFlagger.isFeatureOn(.newTabPagePerTab)),
+                DuckURLSchemeHandler(featureFlagger: featureFlagger),
                 forURLScheme: URL.NavigationalScheme.duck.rawValue
             )
         }

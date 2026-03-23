@@ -69,6 +69,27 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         }
     }
     
+    func testWhenBurnFireModesCalledThenOnConfirmIsCalledWithCorrectRequest() {
+        // Given
+        var capturedRequest: FireRequest?
+        let sut = makeSUT(tabViewModel: nil, browsingMode: .fire, onConfirm: { request in
+            capturedRequest = request
+        })
+        
+        // When
+        sut.burnAllTabs()
+        
+        // Then
+        XCTAssertNotNil(capturedRequest)
+        XCTAssertEqual(capturedRequest?.options, .all)
+        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
+        if case .fireMode = capturedRequest?.scope {
+            // Expected scope
+        } else {
+            XCTFail("Expected scope to be .fireMode")
+        }
+    }
+    
     // MARK: - burnThisTab Tests
     
     func testWhenBurnThisTabCalledWithTabViewModelThenOnConfirmIsCalledWithCorrectRequest() {
@@ -175,6 +196,19 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationNewTabsInfo)
     }
     
+    // MARK: - subtitle Tests - Fire Mode
+    
+    func testWhenBrowsingModeIsFireThenSubtitleIsNil() {
+        // Given
+        let tabViewModel = createTabViewModel()
+        
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel, browsingMode: .fire)
+        
+        // Then
+        XCTAssertNil(sut.subtitle)
+    }
+    
     // MARK: - subtitle Tests - AI Tab
     
     func testAITabSubtitle() {
@@ -272,6 +306,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     private func makeSUT(tabViewModel: TabViewModel?,
                          source: FireRequest.Source = .browsing,
                          daxDialogsManager: DaxDialogsManaging = DummyDaxDialogsManager(),
+                         browsingMode: BrowsingMode = .normal,
                          onConfirm: @escaping (FireRequest) -> Void = { _ in },
                          onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {
         return ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
@@ -280,6 +315,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                                                keyValueStore: mockKeyValueStore,
                                                appSettings: mockAppSettings,
                                                daxDialogsManager: daxDialogsManager,
+                                               browsingMode: browsingMode,
                                                onConfirm: onConfirm,
                                                onCancel: onCancel)
     }

@@ -144,6 +144,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonHidden = newValue }
     }
 
+    var isCustomizeResponsesButtonHidden: Bool {
+        get { inputBarView.isCustomizeResponsesButtonHidden }
+        set { inputBarView.isCustomizeResponsesButtonHidden = newValue }
+    }
+
     var isAttachmentsFull: Bool {
         inputBarView.isAttachmentsFull
     }

@@ -46,16 +46,14 @@ final class NewTabPageStateProvider: NewTabPageStateProviding {
             .tabsChanged
             .receive(on: DispatchQueue.main)
             .filter { _ in
-                featureFlagger.isFeatureOn(.newTabPageTabIDs) &&
-                !featureFlagger.isFeatureOn(.newTabPagePerTab)
+                featureFlagger.isFeatureOn(.newTabPageTabIDs)
             }
             .eraseToAnyPublisher()
     }
 
     @MainActor
     func getState() -> [NewTabPage.WindowNewTabPageStateData]? {
-        guard featureFlagger.isFeatureOn(.newTabPageTabIDs) &&
-                !featureFlagger.isFeatureOn(.newTabPagePerTab) else {
+        guard featureFlagger.isFeatureOn(.newTabPageTabIDs) else {
             return nil
         }
 

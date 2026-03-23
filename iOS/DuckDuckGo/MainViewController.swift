@@ -1969,11 +1969,11 @@ class MainViewController: UIViewController {
         forceNavigationBarPositioningOnPadOS26()
     }
 
-    var forceNavigationBarPositioningDebouncer = Debouncer()
+    private var forceNavigationBarPositioningDebouncer = Debouncer()
     private func forceNavigationBarPositioningOnPadOS26() {
         guard #available(iOS 26, *), isPad else { return }
-        forceNavigationBarPositioningDebouncer.debounce(for: 0.1) {
-            self.viewCoordinator.navigationBarContainer.superview?.setNeedsUpdateConstraints()
+        forceNavigationBarPositioningDebouncer.debounce(for: 0.1) { [weak self] in
+            self?.viewCoordinator.navigationBarContainer.superview?.setNeedsUpdateConstraints()
         }
     }
 

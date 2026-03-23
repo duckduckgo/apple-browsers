@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-functies";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Foto kiezen";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Maak een foto";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Bestaande bladwijzers worden niet gedupliceerd.";
 

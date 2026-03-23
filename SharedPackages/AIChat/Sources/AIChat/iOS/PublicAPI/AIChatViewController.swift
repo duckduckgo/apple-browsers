@@ -141,6 +141,13 @@ extension AIChatViewController {
     public func reload() {
         webViewController?.reload()
     }
+
+    public func loadVoiceMode() {
+        if webViewController == nil {
+            addWebViewController()
+        }
+        webViewController?.loadVoiceMode()
+    }
 }
 
 // MARK: - Views Setup

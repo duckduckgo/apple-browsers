@@ -762,6 +762,51 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - Customize Responses Button
+
+    func test_customizeResponsesTap_forwardsPublisher() {
+        let exp = expectation(description: "didPressCustomizeResponsesButton fires")
+        sut.didPressCustomizeResponsesButton
+            .sink { exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.viewController.handler.customizeResponsesButtonTapped()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_customizeResponsesTap_collapsesInput() {
+        sut.showExpanded()
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+
+        sut.viewController.handler.customizeResponsesButtonTapped()
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
+    }
+
+    func test_customizeResponsesButton_hiddenInitially() {
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_visibleOnAITab() {
+        sut.showCollapsed()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_hiddenWhenHidden() {
+        sut.showCollapsed()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+
+        sut.hide()
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_hiddenInOmnibar() {
+        sut.activateFromOmnibar()
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
     // MARK: - Model Selection: persistedModelId
 
     func test_persistedModelId_returnsPreferencesValue() {

@@ -34,6 +34,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
+    func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
 
@@ -170,7 +171,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
 
         delegate?.tabsBarDidRequestFireEducationDialog(self)
-        showClearDataAlert()
+        delegate?.tabsBarDidRequestDismissContextualSheet(self) {
+            showClearDataAlert()
+        }
     }
 
     @IBAction func onNewTabPressed() {
@@ -429,7 +432,13 @@ extension MainViewController: TabsBarDelegate {
     }
     
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {
-        showTabSwitcher()
+        dismissContextualSheetIfNeeded {
+            self.showTabSwitcher()
+        }
+    }
+
+    func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {
+        dismissContextualSheetIfNeeded(completion: completion)
     }
 
 }

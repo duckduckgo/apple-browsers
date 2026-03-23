@@ -1079,9 +1079,6 @@
 "Confirm" = "Apstiprināt";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontekstuālā ievadīšana";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
@@ -1212,6 +1209,9 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Pielāgots URL: %@";
+
+/* No comment provided by engineer. */
+"Dark Reader Excluded Domains (%@)" = "Dark Reader izslēgtie domēni (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importēt grāmatzīmes failu...";
@@ -1453,14 +1453,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Nosūtīts kopā ar tavu ziņojumu uz Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
 
@@ -1650,6 +1642,12 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Tu skaties Duck Player!\nŠeit nav mērķtiecīgu reklāmu.";
 
+/* No comment provided by engineer. */
+"Effective threshold: %@ s (override)" = "Efektīvais slieksnis: %@ s (pārrakstīšana)";
+
+/* No comment provided by engineer. */
+"Effective threshold: config default (no override)" = "Efektīvais slieksnis: konfigurācijas noklusējuma iestatījums (bez pārrakstīšanas)";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-pasta aizsardzība";
 
@@ -1763,6 +1761,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Radās nezināma kļūda";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Pārslēdzas uz šo cilni";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Atgriezties pie %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Atgriezties pie…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Atgriezties pie %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2346,6 +2356,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN atvienots, jo ir beidzies abonements. Abonē DuckDuckGo, lai atkārtoti izveidotu savienojumu ar VPN.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Nevar autentificēties. Lūdzu, pārbaudi, vai tavs abonements ir aktīvs, un mēģini vēlreiz.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Nevar izveidot savienojumu ar VPN serveri. Lūdzu, vēlāk mēģini vēlreiz.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Tavs abonements ir beidzies Lūdzu, abonē vēlreiz, lai izveidotu savienojumu ar VPN serveri.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Radās negaidīta kļūda. Lūdzu, mēģini vēlreiz. Ja problēma joprojām pastāv, ritini līdz **Par** un pieskaries **BUJ un atbalsts**, lai saņemtu palīdzību.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Neizdevās izveidot savienojumu ar DuckDuckGo VPN. Lūdzu, mēģini vēlreiz vēlāk.";
 
@@ -2442,10 +2464,7 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS serveris";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Lūdzu, mēģini vēlreiz vēlāk.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
+/* Connection failed error title shown in NetworkProtection's status view. */
 "network.protection.status.view.error.connection.failed.title" = "Neizdevās izveidot savienojumu.";
 
 /* IP Address label shown in NetworkProtection's status view. */
@@ -2573,6 +2592,9 @@
 
 /* No comment provided by engineer. */
 "No active subscriptions" = "Nav aktīvu abonementu";
+
+/* No comment provided by engineer. */
+"No excluded domains" = "Nav izslēgtu domēnu";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nav atrasts neviens esošs abonements";
@@ -2703,6 +2725,18 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Un, starp citu...";
 
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privāti. Ātri. Mazāk reklāmu.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Tā ir DuckDuckGo Search meklēšana!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Vai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Sveiki!";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vai vēlies atjaunot grāmatzīmes, paroles un citus datus no iepriekšējās DuckDuckGo sinhronizācijas?";
 
@@ -2714,15 +2748,6 @@
 
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Turpināsim no vietas, kur beidzi";
-
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Privāti. Ātri. Mazāk reklāmu.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Tā ir DuckDuckGo Search meklēšana!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Vai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Sveiki!";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Sākt pārlūkošanu";
@@ -2783,6 +2808,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Izvēlas atteikties...";
+
+/* No comment provided by engineer. */
+"Override" = "Ignorēt";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nevaru piekļūt tikai abonentiem paredzētajiem Duck.ai modeļiem.";
@@ -3141,6 +3169,36 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Rādīt adreses joslā";
 
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Izvēlies, ko redzēt, atgriežoties pēc %@ neaktivitātes perioda.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 stunda";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d stundas";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minūte";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minūtes";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekunde";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekundes";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Pēc neaktivitātes perioda";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Pēdējā lietotā cilne";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Jauna cilne";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Meklēšana & Duck.ai";
 
@@ -3188,9 +3246,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreses joslas pozīcija";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Eksperimentāla pārlūka izvēlne";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
@@ -3744,11 +3799,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Abonēšanas plāni";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Tavs abonements ir noņemts no šīs ierīces.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Atcelt samazināšanu";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Tavs abonements ir noņemts no šīs ierīces.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Tavs plāns tiks pazemināts uz %1$@, sākot ar %2$@.";
@@ -4494,44 +4549,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Pārslēdzas uz šo cilni";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Atgriezties pie %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Atgriezties pie…";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Atgriezties pie %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Izvēlies, ko redzēt, atgriežoties pēc %@ neaktivitātes perioda.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 stunda";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d stundas";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 minūte";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d minūtes";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 sekunde";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d sekundes";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Pēc neaktivitātes perioda";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Pēdējā lietotā cilne";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Jauna cilne";

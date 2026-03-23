@@ -174,6 +174,7 @@ extension TabViewController {
             autoconsentManagement: MockAutoconsentManagement(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),
+            favicons: Favicons(),
             tabInteractionStateSource: MockTabInteractionStateSource(),
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),

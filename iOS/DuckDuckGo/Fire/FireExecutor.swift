@@ -95,6 +95,7 @@ class FireExecutor: FireExecuting {
     private let fireWorkers: [FireExecutorWorker]
     private let tabManager: TabManaging
     private let downloadManager: DownloadManaging
+    private let favicons: FaviconManaging
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let dataClearingCapability: DataClearingCapable
@@ -121,6 +122,7 @@ class FireExecutor: FireExecuting {
          syncService: DDGSyncing,
          bookmarksDatabaseCleaner: BookmarkDatabaseCleaning,
          fireproofing: Fireproofing,
+         favicons: FaviconManaging,
          textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
          autoconsentManagementProvider: AutoconsentManagementProviding,
          historyManager: HistoryManaging,
@@ -137,6 +139,7 @@ class FireExecutor: FireExecuting {
          idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
+        self.favicons = favicons
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.idManager = idManager
@@ -324,7 +327,7 @@ class FireExecutor: FireExecuting {
             let removeAllResult = tabManager.removeAll(browsingMode: nil)
             dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
             dataClearingWideEventService?.start(.clearFaviconCache)
-            let faviconResult = Favicons.shared.clearCache(.tabs)
+            let faviconResult = favicons.clearCache(.tabs)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         case .fireMode:
             tabManager.prepareCurrentTabForDataClearing(browsingMode: .fire)
@@ -353,7 +356,7 @@ class FireExecutor: FireExecuting {
             tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
 
             dataClearingWideEventService?.start(.clearFaviconCache)
-            let faviconResult = Favicons.shared.removeTabFavicons(forDomains: domains)
+            let faviconResult = favicons.removeTabFavicons(forDomains: domains)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         }
     }

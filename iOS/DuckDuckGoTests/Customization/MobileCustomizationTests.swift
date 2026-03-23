@@ -198,7 +198,7 @@ final class MobileCustomizationTests {
 
     // MARK: - Duck.ai Voice toolbar button FF gating
 
-    @Test("duckAIVoice not in toolbar options when voice shortcut FF is off")
+    @Test("duckAIVoice not in toolbar options when voice shortcut FF is off", .timeLimit(.seconds(5)))
     func duckAIVoiceNotInToolbarOptionsWhenFFOff() {
         let keyValueStore = MockThrowingKeyValueStore()
         let customization = MobileCustomization(keyValueStore: keyValueStore,
@@ -209,7 +209,7 @@ final class MobileCustomizationTests {
         #expect(!customization.toolbarButtonOptions.contains(.duckAIVoice))
     }
 
-    @Test("duckAIVoice in toolbar options when voice shortcut FF is on")
+    @Test("duckAIVoice in toolbar options when voice shortcut FF is on", .timeLimit(.seconds(5)))
     func duckAIVoiceInToolbarOptionsWhenFFOn() {
         let keyValueStore = MockThrowingKeyValueStore()
         let customization = MobileCustomization(keyValueStore: keyValueStore,
@@ -220,7 +220,7 @@ final class MobileCustomizationTests {
         #expect(customization.toolbarButtonOptions.contains(.duckAIVoice))
     }
 
-    @Test("Saved duckAIVoice falls back to default when FF is off")
+    @Test("Saved duckAIVoice falls back to default when FF is off", .timeLimit(.seconds(5)))
     func savedDuckAIVoiceFallsBackWhenFFOff() {
         let keyValueStore = MockThrowingKeyValueStore()
 
@@ -242,7 +242,7 @@ final class MobileCustomizationTests {
         #expect(customizationOff.state.currentToolbarButton == MobileCustomization.toolbarDefault)
     }
 
-    @Test("duckAIVoice has non-nil icons")
+    @Test("duckAIVoice has non-nil icons", .timeLimit(.seconds(5)))
     func duckAIVoiceHasIcons() {
         #expect(MobileCustomization.Button.duckAIVoice.largeIcon != nil)
         #expect(MobileCustomization.Button.duckAIVoice.smallIcon != nil)

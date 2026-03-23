@@ -21,7 +21,7 @@ import Foundation
 import Testing
 @testable import DuckDuckGo
 
-@Suite("VoiceSessionStateManager")
+@Suite("VoiceSessionStateManager", .timeLimit(.seconds(5)))
 struct VoiceSessionStateManagerTests {
 
     @Test("Initially voice session is not active")

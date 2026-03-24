@@ -948,7 +948,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             let isFocused = textField.isFirstResponder || (expandableBarView?.aiChatTextView.isFirstResponder == true)
             let shouldExpand = isFocused && mode == .aiChat
             expandableBarView?.setSearchAreaExpanded(shouldExpand, animated: true)
-            expandableBarView?.updateLeftIconForMode(mode)
+            expandableBarView?.updateLeftIconForMode(isFocused ? mode : .search)
         }
     }
 

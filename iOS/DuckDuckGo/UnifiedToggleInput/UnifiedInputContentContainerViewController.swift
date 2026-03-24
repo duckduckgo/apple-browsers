@@ -471,6 +471,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     // MARK: - Action Handlers
 
     private func handleMicrophoneButtonTapped() {
+        guard view.window != nil, view.superview?.isHidden != true else { return }
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self else { return }
             if permission {

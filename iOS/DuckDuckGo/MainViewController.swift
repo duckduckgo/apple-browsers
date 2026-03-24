@@ -3046,6 +3046,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+        commitToggleStateToCurrentTab()
         openAIChat(query, autoSend: true, tools: tools)
     }
 
@@ -3095,6 +3096,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
+        commitToggleStateToCurrentTab()
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -3664,7 +3666,12 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onTextEntryModeDidChange(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+    }
+
+    /// Saves the current omnibar toggle state to the tab on submission.
+    private func commitToggleStateToCurrentTab() {
+        guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else { return }
+        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = omniBarVC.selectedTextEntryMode
     }
     
     func isCurrentTabFireTab() -> Bool {

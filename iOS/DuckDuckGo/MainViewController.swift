@@ -499,6 +499,7 @@ class MainViewController: UIViewController {
             remoteMessagingImageLoader: remoteMessagingImageLoader,
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
             appSettings: appSettings,
+            subscriptionManager: subscriptionManager,
             internalUserCommands: internalUserCommands)
     }()
 
@@ -1423,6 +1424,7 @@ class MainViewController: UIViewController {
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
+                                                  subscriptionManager: subscriptionManager,
                                                   internalUserCommands: internalUserCommands,
                                                   narrowLayoutInLandscape: narrowLayoutInLandscape
         )
@@ -2767,6 +2769,7 @@ class MainViewController: UIViewController {
     }
 
     func onDuckAIVoiceModeRequested() {
+        Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.ntp.rawValue])
         openAIChatInVoiceMode()
     }
 
@@ -5120,6 +5123,10 @@ extension MainViewController {
         case .downloads:
             self.segueToDownloads()
 
+        case .duckAIVoice:
+            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue])
+            self.openAIChatInVoiceMode()
+
         default:
             assertionFailure("Unexpected case \(button)")
         }
@@ -5167,6 +5174,10 @@ extension MainViewController {
 
         case .zoom:
             showTextZoomEditorIfPossible()
+
+        case .duckAIVoice:
+            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue])
+            openAIChatInVoiceMode()
 
         default:
             assertionFailure("Unexpected case: \(button)")

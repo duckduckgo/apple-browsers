@@ -270,6 +270,7 @@ public extension DesignSystemImages {
             public static var viewGridSolid: DesignSystemImage { .init(resource: .viewGridSolid16) }
             public static var viewList: DesignSystemImage { .init(resource: .viewList16) }
             public static var viewListSolid: DesignSystemImage { .init(resource: .viewListSolid16) }
+            public static var voice: DesignSystemImage { .init(resource: .voice16) }
             public static var vpnOn: DesignSystemImage { .init(resource: .vpnOn16) }
             public static var vpnOff: DesignSystemImage { .init(resource: .vpnOff16) }
             public static var wand: DesignSystemImage { .init(resource: .wand16) }

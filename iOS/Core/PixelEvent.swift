@@ -1435,6 +1435,9 @@ extension Pixel {
         case openAIChatFromIconShortcut
         case openAIChatFromTabManager
 
+        case voiceEntryPointTapped
+        case voiceSessionStarted
+
         case aiChatSettingsVoiceTurnedOff
         case aiChatSettingsVoiceTurnedOn
         case aiChatSettingsAddressBarTurnedOff
@@ -2999,6 +3002,8 @@ extension Pixel.Event {
         case .browsingMenuAIChatWebPage: return "m_aichat_menu_webpage"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
         case .openAIChatFromTabManager: return "m_aichat_tabmanager_icon"
+        case .voiceEntryPointTapped: return "m_aichat_voice_entry_point_tapped"
+        case .voiceSessionStarted: return "m_aichat_voice_session_started"
         case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"
         case .aiChatSettingsVoiceTurnedOn: return "m_aichat_settings_voice_turned_on"
         case .aiChatSettingsAddressBarTurnedOff: return "m_aichat_settings_address_bar_turned_off"

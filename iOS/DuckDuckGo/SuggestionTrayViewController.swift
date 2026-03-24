@@ -28,6 +28,7 @@ import PrivacyConfig
 import UIComponents
 import RemoteMessaging
 import AIChat
+import Subscription
 
 class SuggestionTrayViewController: UIViewController {
     
@@ -115,6 +116,7 @@ class SuggestionTrayViewController: UIViewController {
         let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
         let appSettings: AppSettings
+        let subscriptionManager: any SubscriptionManager
         let internalUserCommands: URLBasedDebugCommands
     }
 
@@ -305,6 +307,7 @@ class SuggestionTrayViewController: UIViewController {
             remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
             appSettings: dependencies.appSettings,
             faviconsCache: dependencies.faviconsCache,
+            subscriptionManager: dependencies.subscriptionManager,
             internalUserCommands: dependencies.internalUserCommands
         )
 

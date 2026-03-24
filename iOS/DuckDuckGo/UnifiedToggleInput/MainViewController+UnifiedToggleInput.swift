@@ -119,7 +119,10 @@ extension MainViewController {
     }
 
     private func handleAITabModeChange(_: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        updateUnifiedInputContentVisibility(for: coordinator)
+        UIView.performWithoutAnimation {
+            updateUnifiedInputContentVisibility(for: coordinator)
+            viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+        }
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
 
         if keyboardShowing,

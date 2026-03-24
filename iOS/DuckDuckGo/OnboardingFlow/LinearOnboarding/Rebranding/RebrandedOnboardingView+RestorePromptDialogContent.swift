@@ -63,9 +63,8 @@ extension OnboardingRebranding.OnboardingView {
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
-                message:
-                    AnyView(
-                        Text(Copy.body)
+                message: AnyView(
+                        AnimatableTypingText(Copy.body)
                             .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                             .font(onboardingTheme.typography.body)
                             .multilineTextAlignment(.center)

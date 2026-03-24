@@ -65,7 +65,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(UserText.AddToDockOnboarding.Promo.introMessage)
+                    AnimatableTypingText(UserText.AddToDockOnboarding.Promo.introMessage)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)

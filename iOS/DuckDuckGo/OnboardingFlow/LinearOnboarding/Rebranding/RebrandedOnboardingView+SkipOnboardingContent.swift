@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIKit
 import DuckUI
 import Onboarding
 
@@ -48,7 +49,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(Self.styledMessage())
+                    AnimatableTypingText(Self.styledMessage())
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
                         .font(onboardingTheme.typography.body)
@@ -75,14 +76,15 @@ extension OnboardingRebranding.OnboardingView {
             )
         }
 
-        /// Builds the message with bold applied to "Fire Button" via SwiftUI's
-        /// attribute system so the theme's body font applies uniformly.
-        private static func styledMessage() -> AttributedString {
-            var attributed = AttributedString(UserText.Onboarding.Skip.message)
-            if let range = attributed.range(of: fireButtonCopy) {
-                attributed[range].inlinePresentationIntent = .stronglyEmphasized
+        /// Builds the message with bold applied to "Fire Button".
+        private static func styledMessage() -> NSAttributedString {
+            let fullText = UserText.Onboarding.Skip.message
+            let mutable = NSMutableAttributedString(string: fullText)
+            if let range = fullText.range(of: fireButtonCopy) {
+                let nsRange = NSRange(range, in: fullText)
+                mutable.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: UIFont.labelFontSize), range: nsRange)
             }
-            return attributed
+            return mutable
         }
 
     }

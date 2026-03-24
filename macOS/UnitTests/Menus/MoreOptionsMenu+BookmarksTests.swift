@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -24,7 +25,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenBookmarkSubmenuIsInitThenBookmarkAllTabsKeyIsCmdShiftD() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(isPopup: false), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(isPopup: false), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(), featureFlagger: MockFeatureFlagger())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -39,7 +40,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
         // GIVEN
         let tab1 = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
         let tab2 = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui))
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [tab1, tab2])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [tab1, tab2])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(), featureFlagger: MockFeatureFlagger())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -51,7 +52,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenTabCollectionCannotBookmarkAllTabsThenBookmarkAllTabsMenuItemIsDisabled() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(), featureFlagger: MockFeatureFlagger())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))

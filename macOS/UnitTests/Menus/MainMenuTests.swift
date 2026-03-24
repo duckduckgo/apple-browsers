@@ -497,6 +497,101 @@ class MainMenuTests: XCTestCase {
     }
 }
 
+// MARK: - LazyBookmarkFolderMenuDelegateTests
+
+@MainActor
+class LazyBookmarkFolderMenuDelegateTests: XCTestCase {
+
+    func testMenuIsEmptyBeforeFirstOpen() {
+        // GIVEN
+        let bookmark = Bookmark(id: "1", url: "https://example.com", title: "Example", isFavorite: false)
+        let viewModel = BookmarkViewModel(entity: bookmark)
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [viewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // THEN
+        XCTAssertEqual(menu.items.count, 1)
+    }
+
+    func testMenuIsPopulatedAfterFirstOpen() {
+        // GIVEN
+        let bookmark = Bookmark(id: "1", url: "https://example.com", title: "Example Bookmark", isFavorite: false)
+        let viewModel = BookmarkViewModel(entity: bookmark)
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [viewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu)
+
+        // THEN
+        XCTAssertFalse(menu.items.isEmpty)
+        XCTAssertEqual(menu.items.first?.title, "Example Bookmark")
+    }
+
+    func testMenuIsNotRebuiltOnSecondOpen() {
+        // GIVEN
+        let bookmark = Bookmark(id: "1", url: "https://example.com", title: "Example", isFavorite: false)
+        let viewModel = BookmarkViewModel(entity: bookmark)
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [viewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu) // first open
+        let countAfterFirstOpen = menu.items.count
+        menu.addItem(NSMenuItem(title: "sentinel", action: nil, keyEquivalent: ""))
+        delegate.menuNeedsUpdate(menu) // second open — should not rebuild
+
+        // THEN
+        XCTAssertEqual(menu.items.count, countAfterFirstOpen + 1, "Sentinel should still be present — menu was not rebuilt")
+    }
+
+    func testEmptyFolderHasNoSubmenu() {
+        // GIVEN
+        let folder = BookmarkFolder(id: "1", title: "Empty Folder")
+        // no children added
+        let folderViewModel = BookmarkViewModel(entity: folder)
+
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [folderViewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu)
+
+        // THEN
+        let folderItem = menu.items.first
+        XCTAssertNil(folderItem?.submenu, "Empty folder should not have a submenu")
+    }
+
+    func testFolderChildrenGetLazySubmenus() {
+        // GIVEN
+        let childBookmark = Bookmark(id: "2", url: "https://child.com", title: "Child", isFavorite: false)
+        let folder = BookmarkFolder(id: "f1", title: "My Folder", children: [childBookmark])
+        let folderViewModel = BookmarkViewModel(entity: folder)
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [folderViewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu)
+
+        // THEN
+        let folderItem = menu.items.first
+        let subMenu = folderItem?.submenu
+        XCTAssertNotNil(subMenu, "Folder menu item should have a submenu")
+        XCTAssertEqual(subMenu?.items.count, 1, "Submenu should contain exactly one placeholder item")
+        XCTAssertNotNil(subMenu?.delegate, "Submenu should have a delegate for lazy population")
+    }
+}
+
 class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false

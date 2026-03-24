@@ -23,6 +23,7 @@ import Bookmarks
 import BrowserServicesKit
 import Core
 import RemoteMessaging
+import Subscription
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
@@ -68,6 +69,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
+         subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          appWidthObserver: AppWidthObserver = .shared) {

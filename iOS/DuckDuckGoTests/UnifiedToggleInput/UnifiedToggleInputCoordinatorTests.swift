@@ -289,13 +289,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
-    // MARK: - VC Delegate: Voice
-
-    func test_voiceTap_callsDelegateVoiceMethod() {
-        sut.unifiedToggleInputVCDidTapVoice(sut.viewController)
-        XCTAssertTrue(mockDelegate.didRequestVoiceSearch)
-    }
-
     // MARK: - VC Delegate: Dismiss
 
     func test_dismissTap_deactivatesOmnibarEditing() {
@@ -1080,7 +1073,6 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedModelId: String?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedQuery: String?
-    var didRequestVoiceSearch = false
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedPrompt = prompt
@@ -1088,7 +1080,6 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
-    func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearch = true }
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

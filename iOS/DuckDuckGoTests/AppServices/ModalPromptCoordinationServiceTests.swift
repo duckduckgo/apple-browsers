@@ -211,6 +211,7 @@ final class ModalPromptCoordinationServiceTests {
         "Check Provider Priority Order",
         arguments: [
             ProviderPriority.winBackOffer,
+            .subscriptionPromo,
             .newAddressBarPicker,
             .defaultBrowser,
             .whatsNew
@@ -225,6 +226,7 @@ final class ModalPromptCoordinationServiceTests {
             newAddressBarPicker: MockModalPromptProvider(shouldReturnPrompt: priority == .newAddressBarPicker),
             defaultBrowser: MockModalPromptProvider(shouldReturnPrompt: priority == .defaultBrowser),
             winBackOffer: MockModalPromptProvider(shouldReturnPrompt: priority == .winBackOffer),
+            subscriptionPromo: MockModalPromptProvider(shouldReturnPrompt: priority == .subscriptionPromo),
             whatsNew: MockModalPromptProvider(shouldReturnPrompt: priority == .whatsNew),
         )
 
@@ -261,6 +263,7 @@ extension ModalPromptProviders {
     func provider(for priority: ProviderPriority) -> ModalPromptProvider? {
         switch priority {
         case .winBackOffer: return winBackOffer
+        case .subscriptionPromo: return subscriptionPromo
         case .defaultBrowser: return defaultBrowser
         case .newAddressBarPicker: return newAddressBarPicker
         case .whatsNew: return whatsNew
@@ -271,15 +274,17 @@ extension ModalPromptProviders {
 
 enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
     case winBackOffer = 0
-    case newAddressBarPicker = 1
-    case defaultBrowser = 2
-    case whatsNew = 3
+    case subscriptionPromo = 1
+    case newAddressBarPicker = 2
+    case defaultBrowser = 3
+    case whatsNew = 4
 
     var index: Int { rawValue }
 
     var description: String {
         switch self {
         case .winBackOffer: return "WinBackOffer"
+        case .subscriptionPromo: return "SubscriptionPromo"
         case .newAddressBarPicker: return "NewAddressBarPicker"
         case .defaultBrowser: return "DefaultBrowser"
         case .whatsNew: return "WhatsNew"

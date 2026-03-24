@@ -230,6 +230,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 self.updatePlaceholderVisibility()
             }
             .store(in: &cancellables)
+
+        omnibarController.$isImageGenerationMode
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isImageGen in
+                self?.placeholderLabel.stringValue = isImageGen
+                    ? UserText.aiChatImageGenPlaceholder
+                    : UserText.aiChatOmnibarPlaceholder
+            }
+            .store(in: &cancellables)
     }
 
     @objc func textDidChange(_ notification: Notification) {

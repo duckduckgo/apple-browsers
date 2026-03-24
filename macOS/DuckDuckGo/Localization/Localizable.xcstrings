@@ -2900,6 +2900,30 @@
         }
       }
     },
+    "aichat.image-gen-button.tooltip" : {
+      "comment" : "Tooltip for the image generation toggle button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Generate image"
+          }
+        }
+      }
+    },
+    "aichat.image-upload-button.image-gen-label" : {
+      "comment" : "Label for the image upload button when image generation mode is active",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Start with an image"
+          }
+        }
+      }
+    },
     "aichat.image-upload-button.tooltip" : {
       "comment" : "Tooltip for the image upload button in AI chat omnibar",
       "extractionState" : "extracted_with_value",
@@ -3196,6 +3220,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Базовые модели"
+          }
+        }
+      }
+    },
+    "aichat.omnibar.image-gen-placeholder" : {
+      "comment" : "Placeholder text in AI chat input when image generation mode is active",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Describe the image you want to create"
           }
         }
       }

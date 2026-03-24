@@ -38,6 +38,7 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
 @MainActor
 final class AIChatOmnibarController {
     @Published private(set) var currentText: String = ""
+    @Published private(set) var isImageGenerationMode: Bool = false
     weak var delegate: AIChatOmnibarControllerDelegate?
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
@@ -82,6 +83,15 @@ final class AIChatOmnibarController {
     /// Whether the omnibar tools (customize, search toggle, image upload) are enabled.
     var isOmnibarToolsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarTools)
+    }
+
+    /// Whether the image generation button is available.
+    var isImageGenerationEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatImageGeneration)
+    }
+
+    func toggleImageGenerationMode() {
+        isImageGenerationMode.toggle()
     }
 
     /// Publisher that emits when the omnibar tools enabled state changes.
@@ -259,6 +269,12 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
+    /// The model ID to use for the current submission.
+    /// Returns "image-generation" when image generation mode is active, otherwise the user's selected model.
+    var effectiveModelId: String? {
+        isImageGenerationMode ? "image-generation" : currentModelId
+    }
+
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
@@ -276,6 +292,7 @@ final class AIChatOmnibarController {
 
     func cleanup() {
         currentText = ""
+        isImageGenerationMode = false
         hasBeenActivated = false
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -373,6 +390,9 @@ final class AIChatOmnibarController {
 
         PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
+        // Capture mode before async work — cleanup() may reset it
+        let modelId = effectiveModelId
+
         Task { @MainActor in
             // Wait for any pending image resizes to complete
             await waitForAttachmentsReady?()
@@ -390,10 +410,10 @@ final class AIChatOmnibarController {
                 behavior: .currentTab
             )
             // Re-set prompt after tab opener to include images and model selection (tab opener overwrites with a plain query)
-            let modelId = self.currentModelId
             let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, images: images, modelId: modelId)
             promptHandler.setData(prompt)
 
+            self.isImageGenerationMode = false
             onAttachmentsClearRequested?()
             delegate?.aiChatOmnibarControllerDidSubmit(self)
         }

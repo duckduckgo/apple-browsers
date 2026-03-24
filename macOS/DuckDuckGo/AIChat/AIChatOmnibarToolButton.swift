@@ -40,6 +40,18 @@ final class AIChatOmnibarToolButton: NSView {
         return imageView
     }()
 
+    private let textLabel: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.lineBreakMode = .byTruncatingTail
+        label.isHidden = true
+        return label
+    }()
+
+    private var iconCenterXConstraint: NSLayoutConstraint?
+    private var iconLeadingConstraint: NSLayoutConstraint?
+
     private let backgroundLayer = CALayer()
 
     weak var target: AnyObject?
@@ -53,6 +65,18 @@ final class AIChatOmnibarToolButton: NSView {
     var tintColor: NSColor? {
         didSet {
             updateAppearance()
+        }
+    }
+
+    /// Optional text label shown next to the icon. When set, the button expands horizontally.
+    var label: String? {
+        didSet {
+            let hasLabel = label != nil && !label!.isEmpty
+            textLabel.stringValue = label ?? ""
+            textLabel.isHidden = !hasLabel
+            iconCenterXConstraint?.isActive = !hasLabel
+            iconLeadingConstraint?.isActive = hasLabel
+            invalidateIntrinsicContentSize()
         }
     }
 
@@ -96,7 +120,11 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: Constants.buttonSize, height: Constants.buttonSize)
+        if let label, !label.isEmpty {
+            let labelWidth = textLabel.intrinsicContentSize.width
+            return NSSize(width: Constants.iconSize + labelWidth + 12, height: Constants.buttonSize)
+        }
+        return NSSize(width: Constants.buttonSize, height: Constants.buttonSize)
     }
 
     override init(frame frameRect: NSRect) {
@@ -128,19 +156,26 @@ final class AIChatOmnibarToolButton: NSView {
         wantsLayer = true
         setAccessibilityRole(.button)
 
-        // Setup background layer (circular)
-        backgroundLayer.cornerRadius = Constants.buttonSize / 2
+        // Setup background layer (shape updated in layout())
         backgroundLayer.opacity = 0
         layer?.insertSublayer(backgroundLayer, at: 0)
 
         // Setup icon image view
         addSubview(iconImageView)
+        addSubview(textLabel)
+
+        iconCenterXConstraint = iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor)
+        iconCenterXConstraint?.isActive = true
+        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6)
+        iconLeadingConstraint?.isActive = false
 
         NSLayoutConstraint.activate([
-            iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
+            textLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 4),
+            textLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
 
         updateAppearance()
@@ -149,14 +184,22 @@ final class AIChatOmnibarToolButton: NSView {
 
     override func layout() {
         super.layout()
-        // Center the background layer
-        let layerSize = CGSize(width: Constants.buttonSize, height: Constants.buttonSize)
-        backgroundLayer.frame = CGRect(
-            x: (bounds.width - layerSize.width) / 2,
-            y: (bounds.height - layerSize.height) / 2,
-            width: layerSize.width,
-            height: layerSize.height
-        )
+        let hasLabel = label != nil && !label!.isEmpty
+        if hasLabel {
+            // Full-width rounded rect when label is shown
+            backgroundLayer.frame = bounds
+            backgroundLayer.cornerRadius = bounds.height / 2
+        } else {
+            // Centered circle when icon-only
+            let layerSize = CGSize(width: Constants.buttonSize, height: Constants.buttonSize)
+            backgroundLayer.frame = CGRect(
+                x: (bounds.width - layerSize.width) / 2,
+                y: (bounds.height - layerSize.height) / 2,
+                width: layerSize.width,
+                height: layerSize.height
+            )
+            backgroundLayer.cornerRadius = Constants.buttonSize / 2
+        }
     }
 
     private func updateAppearance() {
@@ -167,6 +210,7 @@ final class AIChatOmnibarToolButton: NSView {
             guard isEnabled else {
                 backgroundLayer.opacity = 0
                 iconImageView.contentTintColor = NSColor.secondaryLabelColor
+                textLabel.textColor = NSColor.secondaryLabelColor
                 CATransaction.commit()
                 return
             }
@@ -174,22 +218,25 @@ final class AIChatOmnibarToolButton: NSView {
             // For toggle buttons, skip the pressed effect - just show toggled or normal state
             let showPressedEffect = isMouseDown && !togglesOnClick
 
+            let effectiveTint: NSColor?
             if showPressedEffect {
                 backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
-                iconImageView.contentTintColor = isToggled ? toggledTintColor : tintColor
+                effectiveTint = isToggled ? toggledTintColor : tintColor
             } else if isToggled {
                 backgroundLayer.backgroundColor = toggledBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
-                iconImageView.contentTintColor = toggledTintColor
+                effectiveTint = toggledTintColor
             } else if isHovered {
                 backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
-                iconImageView.contentTintColor = tintColor
+                effectiveTint = tintColor
             } else {
                 backgroundLayer.opacity = 0
-                iconImageView.contentTintColor = tintColor
+                effectiveTint = tintColor
             }
+            iconImageView.contentTintColor = effectiveTint
+            textLabel.textColor = effectiveTint ?? .labelColor
         }
 
         CATransaction.commit()

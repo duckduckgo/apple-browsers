@@ -202,10 +202,12 @@ extension MainViewController {
             viewCoordinator.showAITabChrome()
             if !coordinator.isAITabState {
                 let hasExistingChat = tab.url?.duckAIChatID != nil
-                if hasExistingChat || hadSubmittedPrompt {
-                    coordinator.showCollapsed()
-                } else {
-                    coordinator.showExpanded(inputMode: .aiChat)
+                coordinator.showCollapsed()
+                if !hasExistingChat && !hadSubmittedPrompt {
+                    DispatchQueue.main.async { [weak coordinator] in
+                        guard let coordinator, coordinator.isAITabState else { return }
+                        coordinator.showExpanded(inputMode: .aiChat)
+                    }
                 }
             }
             updateUnifiedInputContentVisibility(for: coordinator)

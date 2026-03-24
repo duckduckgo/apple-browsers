@@ -153,6 +153,7 @@ class SettingsLegacyViewProvider: ObservableObject {
             daxDialogManager: self.daxDialogsManager,
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
+            continuedProcessingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,

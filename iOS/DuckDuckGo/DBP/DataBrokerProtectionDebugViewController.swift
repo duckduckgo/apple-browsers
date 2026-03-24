@@ -150,6 +150,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
     private weak var debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
+    private weak var continuedProcessingDelegate: DBPIOSInterface.ContinuedProcessingDelegate?
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
@@ -210,9 +211,11 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     required init?(coder: NSCoder,
                    databaseDelegate: DBPIOSInterface.DatabaseDelegate?,
                    debuggingDelegate: DBPIOSInterface.DebuggingDelegate?,
+                   continuedProcessingDelegate: DBPIOSInterface.ContinuedProcessingDelegate?,
                    runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?) {
         self.databaseDelegate = databaseDelegate
         self.debuggingDelegate = debuggingDelegate
+        self.continuedProcessingDelegate = continuedProcessingDelegate
         self.runPrerequisitesDelegate = runPrequisitesDelegate
         self.healthOverviewPresenter = HealthOverviewSectionPresenter(runPrerequisitesDelegate: runPrequisitesDelegate,
                                                                       debuggingDelegate: debuggingDelegate,
@@ -777,7 +780,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             let dbBrowser = DebugDatabaseBrowserViewController(databaseDelegate: databaseDelegate)
             self.navigationController?.pushViewController(dbBrowser, animated: true)
         case .saveProfile:
-            let saveProfileViewController = DebugSaveProfileViewController(databaseDelegate: databaseDelegate)
+            let saveProfileViewController = DebugSaveProfileViewController(continuedProcessingDelegate: continuedProcessingDelegate)
             self.navigationController?.pushViewController(saveProfileViewController, animated: true)
         case .deleteAllData:
             presentDeleteAllDataAlertController()

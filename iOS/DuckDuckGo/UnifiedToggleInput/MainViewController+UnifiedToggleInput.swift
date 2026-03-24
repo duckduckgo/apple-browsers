@@ -36,6 +36,10 @@ extension MainViewController {
         let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
+        coordinator.onAnimatedDismissToOmnibar = { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
+        }
         self.unifiedToggleInputCoordinator = coordinator
 
         installUnifiedToggleInputViewController(coordinator.viewController)
@@ -319,7 +323,7 @@ extension MainViewController {
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
-                coordinator.deactivateToOmnibar()
+                self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
             }
@@ -383,16 +387,21 @@ extension MainViewController {
             }
             adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
         case .showOmnibarEditing(let height):
-            let isTopPosition = unifiedToggleInputCoordinator?.cardPosition == .top
-            viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height, animated: isTopPosition)
+            viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
             viewCoordinator.suggestionTrayContainer.isHidden = true
+            let isTopPosition = unifiedToggleInputCoordinator?.cardPosition == .top
             if let coordinator = unifiedToggleInputCoordinator {
                 updateUnifiedInputContentVisibility(for: coordinator)
-                if isTopPosition {
-                    coordinator.animateOmnibarExpansion()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                        self?.viewCoordinator.navigationBarContainer.clipsToBounds = false
+                if isTopPosition && coordinator.isToggleEnabled {
+                    let targetHeight = coordinator.pendingExpandedHeight
+                    coordinator.pendingExpandedHeight = nil
+                    coordinator.animateOmnibarExpansion { [weak self] in
+                        guard let self, let targetHeight else { return }
+                        self.viewCoordinator.constraints.navigationBarContainerHeight.constant = targetHeight
+                        self.viewCoordinator.superview.layoutIfNeeded()
                     }
+                } else if isTopPosition {
+                    coordinator.viewController.animateDismissReveal()
                 }
             }
         case .showOmnibarInactive:
@@ -421,6 +430,27 @@ extension MainViewController {
               coordinator.isOmnibarSession else { return }
         let height = coordinator.omnibarEditingHeight()
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
+    }
+
+    private func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
+        let isTopPosition = coordinator.cardPosition == .top
+        if isTopPosition && coordinator.isToggleEnabled {
+            coordinator.viewController.animateToggleHide(additionalAnimations: { [weak self] in
+                guard let self else { return }
+                self.viewCoordinator.constraints.navigationBarContainerHeight.constant = self.viewCoordinator.standardNavigationBarContainerHeight
+                self.viewCoordinator.superview.layoutIfNeeded()
+            }, completion: { [weak self] in
+                guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                coordinator.deactivateToOmnibarWithoutViewReset()
+            })
+        } else if isTopPosition {
+            coordinator.viewController.animateDismissHide(completion: { [weak self] in
+                guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                coordinator.deactivateToOmnibarWithoutViewReset()
+            })
+        } else {
+            coordinator.deactivateToOmnibar()
+        }
     }
 }
 

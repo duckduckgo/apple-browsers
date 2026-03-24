@@ -141,6 +141,9 @@ final class UnifiedToggleInputView: UIView {
         didSet {
             guard showsDismissButton != oldValue else { return }
             dismissButton.isHidden = !showsDismissButton
+            if showsDismissButton {
+                dismissButton.alpha = 1
+            }
             updateCardTrailingConstraint()
         }
     }
@@ -363,7 +366,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func setExpanded(_ expanded: Bool, animated: Bool) {
-        guard expanded != isExpanded else { return }
+        guard expanded != isExpanded else {
+            return
+        }
         isExpanded = expanded
         handler.isExpanded = expanded
 
@@ -423,12 +428,187 @@ final class UnifiedToggleInputView: UIView {
                 animations: {
                     changes()
                     self.layoutIfNeeded()
+                },
+                completion: { _ in
                 }
             )
         } else {
             changes()
             layoutIfNeeded()
         }
+    }
+
+    func setExpandedWithToggleHidden(_ expanded: Bool) {
+        guard expanded != isExpanded else { return }
+        isExpanded = expanded
+        handler.isExpanded = expanded
+
+        let hMargin: CGFloat = (expanded && !showsDismissButton && !usesOmnibarMargins) ? 0 : Constants.cardHorizontalMargin
+        let vMargin: CGFloat = (expanded && !usesOmnibarMargins) ? 0 : Constants.cardVerticalMargin
+
+        textEntryView.isExpandable = expanded
+        updateCardTrailingConstraint()
+
+        expandedShadow0.isHidden = !expanded
+        expandedShadow1.isHidden = !expanded
+        if expanded {
+            let shadowGoesDown = cardPosition == .top || usesOmnibarMargins
+            expandedShadow0.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 8 : -8)
+            expandedShadow1.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 2 : -2)
+        }
+        cardView.layer.shadowOpacity = expanded ? 0 : 1.0
+        cardCollapsedHeightConstraint.isActive = !expanded
+
+        let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        let expandedCorners: CACornerMask = (cardPosition == .top || usesOmnibarMargins) ? allCorners : [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        cardView.layer.maskedCorners = expanded ? expandedCorners : allCorners
+        cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
+
+        cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
+        cardTopConstraint.constant = vMargin
+        cardLeadingConstraint.constant = hMargin
+        cardTrailingConstraint.constant = -hMargin
+        cardBottomConstraint.constant = -vMargin
+
+        toggleTopConstraint.constant = 0
+        toggleHeightConstraint.constant = 0
+        toggleView.alpha = 0
+        inputTopConstraint.constant = 0
+        toolbarHeightConstraint.constant = 0
+        toolsToolbar.alpha = 0
+        updateAttachmentsStripLayout()
+
+        layoutIfNeeded()
+    }
+
+    private func applyDebugColors() {
+        #if DEBUG
+        backgroundColor = .systemRed.withAlphaComponent(0.3)
+        cardView.backgroundColor = .systemBlue.withAlphaComponent(0.3)
+        toggleView.backgroundColor = .systemGreen.withAlphaComponent(0.5)
+        textEntryView.backgroundColor = .systemOrange.withAlphaComponent(0.3)
+        toolsToolbar.backgroundColor = .systemPurple.withAlphaComponent(0.3)
+        #endif
+    }
+
+    private func removeDebugColors() {
+        #if DEBUG
+        backgroundColor = .clear
+        cardView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        toggleView.backgroundColor = .clear
+        textEntryView.backgroundColor = .clear
+        toolsToolbar.backgroundColor = .clear
+        #endif
+    }
+
+    func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        guard isExpanded, isToggleEnabled else {
+            completion?()
+            return
+        }
+
+        dismissButton.alpha = 0
+        showsDismissButton = true
+        updateCardTrailingConstraint()
+
+        UIView.animate(
+            withDuration: Constants.animationDuration,
+            delay: 0,
+            options: .curveEaseInOut,
+            animations: {
+                self.cardView.layer.cornerRadius = Constants.cardCornerRadiusExpanded
+                self.toggleTopConstraint.constant = Constants.toggleTopPadding
+                self.toggleHeightConstraint.constant = Constants.toggleHeight
+                self.toggleView.alpha = 1
+                self.inputTopConstraint.constant = Constants.toggleBottomPadding
+                self.dismissButton.alpha = 1
+                additionalAnimations?()
+                self.layoutIfNeeded()
+            },
+            completion: { _ in
+                completion?()
+            }
+        )
+    }
+
+    func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        guard isExpanded, isToggleEnabled else {
+            completion?()
+            return
+        }
+
+        cardTrailingConstraintWithDismiss.isActive = false
+        cardTrailingConstraint.isActive = true
+
+        UIView.animate(
+            withDuration: Constants.animationDuration,
+            delay: 0,
+            options: .curveEaseInOut,
+            animations: {
+                self.cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
+                self.toggleTopConstraint.constant = 0
+                self.toggleHeightConstraint.constant = 0
+                self.toggleView.alpha = 0
+                self.inputTopConstraint.constant = 0
+                self.dismissButton.alpha = 0
+                additionalAnimations?()
+                self.layoutIfNeeded()
+            },
+            completion: { _ in
+                self.showsDismissButton = false
+                completion?()
+            }
+        )
+    }
+
+    func animateDismissReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        guard isExpanded else {
+            completion?()
+            return
+        }
+
+        dismissButton.alpha = 0
+        showsDismissButton = true
+        updateCardTrailingConstraint()
+
+        UIView.animate(
+            withDuration: Constants.animationDuration,
+            delay: 0,
+            options: .curveEaseInOut,
+            animations: {
+                self.dismissButton.alpha = 1
+                additionalAnimations?()
+                self.layoutIfNeeded()
+            },
+            completion: { _ in
+                completion?()
+            }
+        )
+    }
+
+    func animateDismissHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        guard isExpanded else {
+            completion?()
+            return
+        }
+
+        cardTrailingConstraintWithDismiss.isActive = false
+        cardTrailingConstraint.isActive = true
+
+        UIView.animate(
+            withDuration: Constants.animationDuration,
+            delay: 0,
+            options: .curveEaseInOut,
+            animations: {
+                self.dismissButton.alpha = 0
+                additionalAnimations?()
+                self.layoutIfNeeded()
+            },
+            completion: { _ in
+                self.showsDismissButton = false
+                completion?()
+            }
+        )
     }
 
     func setInactiveCardAppearance(_ inactive: Bool) {

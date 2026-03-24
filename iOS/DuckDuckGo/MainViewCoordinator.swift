@@ -197,7 +197,7 @@ class MainViewCoordinator {
     }
 
     @MainActor
-    func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat, animated: Bool) {
+    func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
@@ -212,20 +212,14 @@ class MainViewCoordinator {
         }
         let inlineBackground = UIColor(designSystemColor: .panel)
         statusBackground.backgroundColor = inlineBackground
-        navigationBarContainer.backgroundColor = inlineBackground
         suggestionTrayContainer.backgroundColor = inlineBackground
+
+        navigationBarContainer.backgroundColor = inlineBackground
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
 
-        if animated {
-            navigationBarContainer.clipsToBounds = true
-            constraints.navigationBarContainerHeight.constant = expandedHeight
-        } else {
-            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
-                self.constraints.navigationBarContainerHeight.constant = expandedHeight
-                self.navigationBarContainer.layoutIfNeeded()
-            }
-        }
+        constraints.navigationBarContainerHeight.constant = expandedHeight
+        superview.layoutIfNeeded()
     }
 
     func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {

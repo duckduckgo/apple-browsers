@@ -177,7 +177,14 @@ public class Tab: NSObject, NSCoding {
         let isExternalLaunch = false
         let shouldSuppressTrackerAnimationOnFirstLoad = false
         let preferredTextEntryModeRaw = decoder.decodeObject(forKey: NSCodingKeys.preferredTextEntryMode) as? String
-        let preferredTextEntryMode = preferredTextEntryModeRaw.flatMap(TextEntryMode.init(rawValue:)) ?? .search
+        let preferredTextEntryMode: TextEntryMode
+        if let raw = preferredTextEntryModeRaw, let mode = TextEntryMode(rawValue: raw) {
+            preferredTextEntryMode = mode
+        } else {
+            // Legacy tab without stored mode — infer from URL
+            let isDuckAI = link?.url.isDuckAIURL(debugSettings: AIChatDebugSettings()) ?? false
+            preferredTextEntryMode = isDuckAI ? .aiChat : .search
+        }
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 

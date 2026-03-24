@@ -1859,6 +1859,9 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
+            if let tabModel = tabManager.currentTabsModel.currentTab {
+                viewCoordinator.omniBar.setSelectedTextEntryMode(tabModel.preferredTextEntryMode)
+            }
             updateBrowsingMenuHeaderDataSource()
             if let tab = currentTab {
                 refreshUnifiedToggleInput(for: tab)
@@ -1890,7 +1893,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.startBrowsing()
         }
 
-        // Mode is already set by refreshState → resolvedDefaultTextEntryMode()
+        viewCoordinator.omniBar.setSelectedTextEntryMode(tab.tabModel.preferredTextEntryMode)
         refreshUnifiedToggleInput(for: tab)
         updateBrowsingMenuHeaderDataSource()
     }
@@ -1926,15 +1929,6 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
-
-        if aiChatAddressBarExperience.shouldShowModeToggle,
-           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController {
-            let defaultMode = omniBarVC.resolvedDefaultTextEntryMode()
-            if omniBarVC.selectedTextEntryMode != defaultMode {
-                omniBarVC.setSelectedTextEntryMode(defaultMode)
-            }
-        }
-
         refreshOmniBar()
     }
 

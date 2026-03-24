@@ -673,7 +673,6 @@ class OmniBarViewController: UIViewController, OmniBar {
                 let isExpanded = expandableBarView?.isSearchAreaExpanded == true
                 let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
                 if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
-                    selectedTextEntryMode = resolvedDefaultTextEntryMode()
                     updateTextFieldPlaceholderForSelectedMode()
                 }
             }
@@ -940,7 +939,9 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+        guard selectedTextEntryMode != mode else { return }
         selectedTextEntryMode = mode
+        expandableBarView?.selectedModeToggleState = mode
         updateTextFieldPlaceholderForSelectedMode()
 
         if state.showAIChatModeToggle {

@@ -448,8 +448,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .promoQueue,
                 .semaphoreAlwaysVisible,
                 .tabAnimations,
-                .addToDockAppStore,
-                .aiChatRemoveSuggestion:
+                .aiChatRemoveSuggestion,
                 .lazyMenuRebuild,
                 .websitesHistoryFirstTimeQuitSurvey,
                 .addToDockAppStore:

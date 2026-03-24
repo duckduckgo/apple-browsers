@@ -57,6 +57,13 @@ extension Preferences {
             firePinnedTabsPixel(newMode)
         }
 
+        private var addToDockDemoVideoSheetBinding: Binding<Bool> {
+            Binding(
+                get: { dockModel.isPresentingAddToDockDemoVideo },
+                set: { dockModel.isPresentingAddToDockDemoVideo = $0 }
+            )
+        }
+
         var body: some View {
             PreferencePane(UserText.general) {
 
@@ -316,6 +323,9 @@ extension Preferences {
                         }
                     }
                 }
+            }
+            .sheet(isPresented: addToDockDemoVideoSheetBinding) {
+                AddToDockDemoVideoSheet(isPresented: addToDockDemoVideoSheetBinding)
             }
         }
     }

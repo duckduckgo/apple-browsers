@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import Combine
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -30,6 +29,13 @@ extension Preferences {
         @ObservedObject var defaultBrowserModel: DefaultBrowserPreferences
         @ObservedObject var dockModel: DockPreferencesModel
         let protectionStatus: PrivacyProtectionStatus?
+
+        private var addToDockDemoVideoSheetBinding: Binding<Bool> {
+            Binding(
+                get: { dockModel.isPresentingAddToDockDemoVideo },
+                set: { dockModel.isPresentingAddToDockDemoVideo = $0 }
+            )
+        }
 
         var body: some View {
             PreferencePane(UserText.defaultBrowser, spacing: 4) {
@@ -120,6 +126,9 @@ extension Preferences {
                         }
                     }
                 }
+            }
+            .sheet(isPresented: addToDockDemoVideoSheetBinding) {
+                AddToDockDemoVideoSheet(isPresented: addToDockDemoVideoSheetBinding)
             }
         }
     }

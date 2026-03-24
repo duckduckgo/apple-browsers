@@ -135,7 +135,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
-    let addToDockDemoVideoPresenter: AddToDockDemoVideoPresenting
     let dockPreferences: DockPreferencesModel
     let accessibilityPreferences: AccessibilityPreferences
     let duckPlayer: DuckPlayer
@@ -840,12 +839,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager,
             keyValueStore: UserDefaults.standard
         )
-        addToDockDemoVideoPresenter = AddToDockDemoVideoPresenter()
         dockPreferences = DockPreferencesModel(
             featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
-            pixelFiring: PixelKit.shared,
-            addToDockDemoVideoPresenter: addToDockDemoVideoPresenter
+            pixelFiring: PixelKit.shared
         )
         accessibilityPreferences = AccessibilityPreferences()
         duckPlayer = DuckPlayer(

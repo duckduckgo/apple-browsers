@@ -119,8 +119,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  pixelFiring: nil,
-                                                  addToDockDemoVideoPresenter: MockAddToDockDemoVideoPresenter()),
+                                                  pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),
@@ -152,8 +151,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  pixelFiring: nil,
-                                                  addToDockDemoVideoPresenter: MockAddToDockDemoVideoPresenter()),
+                                                  pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),
@@ -195,8 +193,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  pixelFiring: nil,
-                                                  addToDockDemoVideoPresenter: MockAddToDockDemoVideoPresenter()),
+                                                  pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),

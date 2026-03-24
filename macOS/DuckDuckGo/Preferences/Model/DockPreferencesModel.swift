@@ -24,7 +24,9 @@ final class DockPreferencesModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let dockCustomizer: DockCustomization
     private let pixelFiring: PixelFiring?
-    private let addToDockDemoVideoPresenter: AddToDockDemoVideoPresenting
+
+    /// Whether the Add to Dock demo video sheet is presented (General or Default Browser pane).
+    @Published var isPresentingAddToDockDemoVideo = false
 
     /// Whether the current build can add the app to the dock (programmatically).
     var canAddToDock: Bool {
@@ -46,12 +48,10 @@ final class DockPreferencesModel: ObservableObject {
 
     init(featureFlagger: FeatureFlagger,
          dockCustomizer: DockCustomization,
-         pixelFiring: PixelFiring?,
-         addToDockDemoVideoPresenter: AddToDockDemoVideoPresenting) {
+         pixelFiring: PixelFiring?) {
         self.featureFlagger = featureFlagger
         self.dockCustomizer = dockCustomizer
         self.pixelFiring = pixelFiring
-        self.addToDockDemoVideoPresenter = addToDockDemoVideoPresenter
     }
 
     func addToDock(from preferences: PreferencePaneIdentifier) {
@@ -75,7 +75,7 @@ final class DockPreferencesModel: ObservableObject {
     @MainActor
     func showAddToDockDemoVideo() {
         pixelFiring?.fire(GeneralPixel.settingsAddToDockShowMeHowClicked, frequency: .dailyAndCount)
-        addToDockDemoVideoPresenter.presentAddToDockDemoVideo()
+        isPresentingAddToDockDemoVideo = true
     }
 
     func refresh() {

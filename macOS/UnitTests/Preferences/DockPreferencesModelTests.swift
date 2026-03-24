@@ -29,7 +29,6 @@ final class DockPreferencesModelTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockDockCustomizer: MockDockCustomization!
     private var mockPixelFiring: PixelKitMock!
-    private let noopAddToDockDemoVideoPresenter = MockAddToDockDemoVideoPresenter()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -53,8 +52,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         XCTAssertTrue(model.canAddToDock)
     }
@@ -64,8 +62,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         XCTAssertFalse(model.canAddToDock)
     }
@@ -77,8 +74,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         XCTAssertTrue(model.canShowDockInstructions)
     }
@@ -88,8 +84,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         XCTAssertFalse(model.canShowDockInstructions)
     }
@@ -101,8 +96,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         XCTAssertFalse(model.isAddedToDock)
     }
@@ -112,8 +106,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         XCTAssertTrue(model.isAddedToDock)
     }
@@ -122,8 +115,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         model.addToDock(from: .defaultBrowser)
         XCTAssertTrue(mockDockCustomizer.addToDockCalled)
@@ -136,8 +128,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         model.addToDock(from: .defaultBrowser)
         XCTAssertTrue(mockDockCustomizer.addToDockCalled)
@@ -148,8 +139,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         model.addToDock(from: .general)
         XCTAssertTrue(mockDockCustomizer.addToDockCalled)
@@ -161,8 +151,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: nil
         )
         model.addToDock(from: .defaultBrowser)
         XCTAssertFalse(mockDockCustomizer.addToDockCalled)
@@ -180,8 +169,7 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: mockPixelFiring,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: mockPixelFiring
         )
         model.addToDock(from: .defaultBrowser)
         mockPixelFiring.verifyExpectations()
@@ -196,25 +184,23 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: mockPixelFiring,
-            addToDockDemoVideoPresenter: noopAddToDockDemoVideoPresenter
+            pixelFiring: mockPixelFiring
         )
         model.addToDock(from: .general)
         mockPixelFiring.verifyExpectations()
     }
 
-    func testWhenShowMeHowClickedThenExpectedPixelIsFiredAndPresenterIsCalled() {
-        let mockPresenter = MockAddToDockDemoVideoPresenter()
+    func testWhenShowMeHowClickedThenExpectedPixelIsFiredAndSheetFlagIsSet() {
         mockPixelFiring.expectedFireCalls = [ExpectedFireCall(pixel: GeneralPixel.settingsAddToDockShowMeHowClicked, frequency: .dailyAndCount)]
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            pixelFiring: mockPixelFiring,
-            addToDockDemoVideoPresenter: mockPresenter
+            pixelFiring: mockPixelFiring
         )
+        XCTAssertFalse(model.isPresentingAddToDockDemoVideo)
         model.showAddToDockDemoVideo()
         mockPixelFiring.verifyExpectations()
-        XCTAssertEqual(mockPresenter.presentAddToDockDemoVideoCallCount, 1)
+        XCTAssertTrue(model.isPresentingAddToDockDemoVideo)
     }
 }
 

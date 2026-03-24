@@ -189,8 +189,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
                 dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
                                                       dockCustomizer: DockCustomizerMock(),
-                                                      pixelFiring: nil,
-                                                      addToDockDemoVideoPresenter: BrowserTabViewControllerOnboardingTestsMockAddToDockDemoVideoPresenter()),
+                                                      pixelFiring: nil),
                 accessibilityPreferences: AccessibilityPreferences(),
                 duckPlayer: DuckPlayer(
                     preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
@@ -670,8 +669,3 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
      func resetData() { }
  }
-
-private final class BrowserTabViewControllerOnboardingTestsMockAddToDockDemoVideoPresenter: AddToDockDemoVideoPresenting {
-    @MainActor
-    func presentAddToDockDemoVideo() {}
-}

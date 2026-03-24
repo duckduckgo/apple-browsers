@@ -149,7 +149,7 @@ private extension RebrandedNewTabDaxDialogFactory {
             }
             .scrollIfNeeded()
         }
-        .applyContextualOnboardingBackground(backgroundType: .endOfJourney, keyboardBehavior: .adjustForKeyboard)
+        .applyContextualOnboardingBackground(backgroundType: .endOfJourneyNTP, keyboardBehavior: .adjustForKeyboard)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)

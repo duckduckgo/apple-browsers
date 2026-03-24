@@ -131,6 +131,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
     case privacyProOnboardingPromotion
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
+    case subscriptionPromoForReinstallers
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
@@ -387,7 +390,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .iPadDuckaiOnTab,
              .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
-             .syncAutoRestore:
+             .syncAutoRestore,
+             .subscriptionPromoForReinstallers:
             .enabled
         case .crashReportOptInStatusResetting:
             .internalOnly
@@ -435,6 +439,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .maliciousSiteProtection,
              .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
+             .subscriptionPromoForReinstallers,
              .duckPlayerNativeUI,
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
@@ -629,6 +634,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.experimentalAddressBar))
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .subscriptionPromoForReinstallers:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoForReinstallers))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:

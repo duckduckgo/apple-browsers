@@ -29,6 +29,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     private var pixelReporterMock: OnboardingPixelReporterMock!
     private var onboardingManagerMock: OnboardingManagerMock!
     private var systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager!
+    private var tutorialSettingsMock: MockTutorialSettings!
     private var appIconProvider: (() -> AppIcon)!
     private var addressBarPositionProvider: (() -> AddressBarPosition)!
 
@@ -39,6 +40,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         pixelReporterMock = OnboardingPixelReporterMock()
         onboardingManagerMock = OnboardingManagerMock()
         systemSettingsPiPTutorialManager = MockSystemSettingsPiPTutorialManager()
+        tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         appIconProvider = { .defaultAppIcon }
         addressBarPositionProvider = { .top }
     }
@@ -49,6 +51,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         pixelReporterMock = nil
         onboardingManagerMock = nil
         systemSettingsPiPTutorialManager = nil
+        tutorialSettingsMock = nil
         appIconProvider = nil
         addressBarPositionProvider = nil
         super.tearDown()
@@ -579,13 +582,26 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true), onboardingSearchExperienceProvider: mockSearchExperienceProvider)
         XCTAssertFalse(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+        
+        // WHEN
+        sut.confirmSkipOnboardingAction()
+        
+        // THEN
+        XCTAssertTrue(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+        XCTAssertEqual(mockSearchExperienceProvider.lastStoredValue, true)
+    }
+
+    func testWhenConfirmSkipOnboardingActionIsCalledThenHasSkippedOnboardingIsSetToTrue() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
+        XCTAssertFalse(tutorialSettingsMock.hasSkippedOnboarding)
 
         // WHEN
         sut.confirmSkipOnboardingAction()
 
         // THEN
-        XCTAssertTrue(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
-        XCTAssertEqual(mockSearchExperienceProvider.lastStoredValue, true)
+        XCTAssertTrue(tutorialSettingsMock.hasSkippedOnboarding)
     }
 
     func testWhenStartOnboardingActionResumingTrueIsCalledThenPixelReporterMeasureResumeOnboardingCTA() {
@@ -842,7 +858,8 @@ extension OnboardingIntroViewModelTests {
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: appIconProvider,
             addressBarPositionProvider: addressBarPositionProvider,
-            restorePromptHandler: restorePromptHandler
+            restorePromptHandler: restorePromptHandler,
+            tutorialSettings: tutorialSettingsMock
         )
     }
 }

@@ -1,5 +1,5 @@
 {
-  "originHash" : "b471b2b24a91ed63c0fa7eaf2209368843913246c680e5acd98e400bccfd7e29",
+  "originHash" : "286e584e6b40ee4f24c461d35548062d6678144226cb7eb20e5cae4ac9485d88",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -92,15 +92,6 @@
       }
     },
     {
-      "identity" : "lrucache",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nicklockwood/LRUCache.git",
-      "state" : {
-        "revision" : "cb5b2bd0da83ad29c0bec762d39f41c8ad0eaf3e",
-        "version" : "1.2.1"
-      }
-    },
-    {
       "identity" : "native-apps-ducksans",
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:duckduckgo/native-apps-ducksans.git",
@@ -164,15 +155,6 @@
       }
     },
     {
-      "identity" : "swift-atomics",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-atomics.git",
-      "state" : {
-        "revision" : "b601256eab081c0f92f059e12818ac1d4f178ff7",
-        "version" : "1.3.0"
-      }
-    },
-    {
       "identity" : "swift-clocks",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-clocks.git",
@@ -222,8 +204,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
       "state" : {
-        "revision" : "a8b7c5e0ed33d8ab8887d1654d9b59f2cbad529b",
-        "version" : "1.18.7"
+        "revision" : "bf8d8c27f0f0c6d5e77bff0db76ab68f2050d15d",
+        "version" : "1.18.9"
       }
     },
     {
@@ -249,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup",
       "state" : {
-        "revision" : "c1f3348d1845302b8e99b1c0787d9417ffa11053",
-        "version" : "2.11.2"
+        "revision" : "dba183c96b2da4e4b80bb31b1e2e59cb9542b8fc",
+        "version" : "2.13.0"
       }
     },
     {

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Navigation
 import BrowserServicesKit
@@ -342,6 +343,7 @@ struct UserText {
 
     // MARK: -
 
+    static let newTabToTheRight = NSLocalizedString("new-tab-on-right.tab", value: "New Tab on Right", comment: "Menu item. Adds a New Tab to the Right of the Active one")
     static let duplicateTab = NSLocalizedString("duplicate.tab", value: "Duplicate Tab", comment: "Menu item. Duplicate as a verb")
     static let pinTab = NSLocalizedString("pin.tab", value: "Pin Tab", comment: "Menu item. Pin as a verb")
     static let unpinTab = NSLocalizedString("unpin.tab", value: "Unpin Tab", comment: "Menu item. Unpin as a verb")
@@ -1203,6 +1205,18 @@ struct UserText {
     static let isNotAddedToDock = NSLocalizedString("preferences.not-added-to-dock", value: "DuckDuckGo is not added to the Dock.", comment: "Indicate that the browser is not added to macOS system Dock")
     static let addToDock = NSLocalizedString("preferences.add-to-dock", value: "Add to Dock", comment: "Action button to add the app to the Dock")
     static let addDuckDuckGoToDock = NSLocalizedString("preferences.add-DuckDuckGo-to-dock", value: "Add DuckDuckGo To Dock", comment: "Action button to add the app to the Dock")
+    static let addToDockInstructions = NSLocalizedString("preferences.add-to-dock.instructions", value: "Get quick access to protected browsing. Add DuckDuckGo to your Dock.", comment: "Instructions for adding the app to the Dock")
+    static var addToDockInstructionsCaption: String {
+        if #available(macOS 12.0, *) {
+            return NSLocalizedString("preferences.add-to-dock.instructions-caption.markdown",
+                                     value: "Hold control and click the DuckDuckGo icon, then choose **Options > Keep in Dock**.",
+                                     comment: "Instructions for adding the app to the Dock. Contains markdown for bold text.")
+        } else {
+            return NSLocalizedString("preferences.add-to-dock.instructions-caption",
+                                     value: "Hold control and click the DuckDuckGo icon, then choose Options > Keep in Dock.",
+                                     comment: "Instructions for adding the app to the Dock.")
+        }
+    }
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
@@ -2212,6 +2226,10 @@ struct UserText {
     static let homePagePromotionFreemiumDBPPostScanEngagementButtonTitle = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.button.title", value: "View Results", comment: "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button")
 
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
+    static let removeRecentChatSuggestionTooltip = NotLocalizedString("remove.recent.chat.suggestion.tooltip", value: "Remove from recent chats", comment: "Tooltip for the button which removes a recent Duck.ai chat from the suggestions")
+    static let removeRecentChatConfirmationTitle = NotLocalizedString("remove.recent.chat.confirmation.title", value: "Remove Chat?", comment: "Title for the confirmation alert when removing a recent Duck.ai chat")
+    static let removeRecentChatConfirmationMessage = NotLocalizedString("remove.recent.chat.confirmation.message", value: "Are you sure you want to remove \"%@\" from your recent chats?", comment: "Message for the confirmation alert when removing a recent Duck.ai chat. %@ is the chat title.")
+    static let removeRecentChatConfirmationButton = NotLocalizedString("remove.recent.chat.confirmation.button", value: "Remove", comment: "Button title to confirm removing a recent Duck.ai chat")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
     static let searchTheWeb = NSLocalizedString("suggestion.search.privately", value: "Search privately", comment: "Label shown on the search suggestion cell indicating the action will search the web")

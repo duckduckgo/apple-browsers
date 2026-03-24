@@ -52,6 +52,30 @@ final class DockCustomizerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testWhenAppStoreBuildThenSupportsAddingToDockIsFalse() {
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = true
+
+        let sut = DockCustomizer(
+            applicationBuildType: buildType,
+            keyValueStore: keyValueStore
+        )
+
+        XCTAssertFalse(sut.supportsAddingToDock)
+    }
+
+    func testWhenNotAppStoreBuildThenSupportsAddingToDockIsTrue() {
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = false
+
+        let sut = DockCustomizer(
+            applicationBuildType: buildType,
+            keyValueStore: keyValueStore
+        )
+
+        XCTAssertTrue(sut.supportsAddingToDock)
+    }
+
     func testWhenAppStoreBuildThenNotificationTimerIsNotStarted() {
         let buildType = ApplicationBuildTypeMock()
         buildType.isAppStoreBuild = true

@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automaticky obnovit data v tomto zařízení, když aplikaci přeinstaluješ.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Pokud přeinstaluješ aplikaci DuckDuckGo, zeptáme se tě, jestli chceš obnovit data na tomto zařízení.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Obnov svou relaci Sync & Backup a obnovíš si záložky, hesla a další položky, anebo pokračuj v nastavování od nuly.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Aktivní";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Automatická obnova data při opakované instalaci aplikace. Data Sync & Backup nelze obnovit po 18 měsících nečinnosti.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Obnovit při přeinstalaci aplikace";
@@ -132,9 +132,6 @@
 
 /* Options - Fetch Favicons Title */
 "fetch.favicons.option.title" = "Automatické stahování ikon";
-
-/* No comment provided by engineer. */
-"Go to Settings" = "Přejdi do Nastavení";
 
 /* No comment provided by engineer. */
 "Keep Development" = "Nechat vývojovou verzi";
@@ -241,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Uložit PDF pro obnovení";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Pokud zařízení ztratíš, budeš tenhle kód potřebovat k obnovení synchronizovaných dat.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Použij tento kód k případnému obnovení dat, pokud ztratíš přístup k tomuto zařízení. Data Sync & Backup nelze obnovit po 18 měsících nečinnosti. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Zadat textový kód ručně";
@@ -288,9 +285,6 @@
 
 /* Scan or See Code View - Title */
 "scan.or.see.code.title" = "Skenování QR kódu";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Zabezpeč své zařízení, ať můžeš používat funkci Sync & Backup";
 
 /* No comment provided by engineer. */
 "Switch to Production" = "Přepnout na produkční verzi";

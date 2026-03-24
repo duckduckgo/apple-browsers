@@ -1,0 +1,97 @@
+# tab-switcher-selection.yaml
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Load first site
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+# Open a second tab via tab switcher
+- runFlow: ../shared/pull_to_refresh.yaml
+- assertVisible: "Tab Switcher"
+- tapOn: "Tab Switcher"
+- tapOn: "New Tab"
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://www.search-company.site"
+- pressKey: Enter
+- assertVisible: ".*Search engine.*"
+
+# ── Enter selection mode via Edit menu ──────────────────────────────────────
+
+- runFlow: ../shared/pull_to_refresh.yaml
+- assertVisible: "Tab Switcher"
+- tapOn: "Tab Switcher"
+- assertVisible: "2 Private Tabs"
+
+# Enter selection mode
+- tapOn: "Edit"
+- tapOn: "Select Tabs"
+
+# Title should show the tab count (regression: was blank with fire mode enabled)
+- assertVisible: "2 Private Tabs"
+
+# ── Select All / Deselect All ────────────────────────────────────────────────
+
+# Top-right shows "Select All" when nothing is selected
+- assertVisible: "Select All"
+- tapOn: "Select All"
+
+# Title updates to selected count
+- assertVisible: "2 Selected"
+
+# Top-right flips to "Deselect All" when everything is selected
+- assertVisible: "Deselect All"
+- tapOn: "Deselect All"
+
+# Back to nothing selected — title reverts to tab count
+- assertVisible: "2 Private Tabs"
+- assertVisible: "Select All"
+
+# ── Close selected tabs via More Menu ───────────────────────────────────────
+
+# Select one tab
+- tapOn: ".*Privacy Test Pages.*"
+- assertVisible: "1 Selected"
+
+# Open selection menu and close the selected tab
+- tapOn: "More Menu"
+- tapOn: "Close Tab"
+
+# Confirm the alert
+- assertVisible: "Close Tab?"
+- tapOn: "Close Tab"
+
+# One tab remains; title reverts to count
+- assertVisible: "1 Private Tab"
+
+# Exit selection mode
+- tapOn: "Done"
+
+# ── Long press to enter selection mode ──────────────────────────────────────
+
+# Long-press any single tab — "Select Tab" should appear (including home page tabs)
+- longPressOn: "Open \"Ad Click Flow\" at www.search-company.site"
+- assertVisible: "Select Tab"
+- tapOn: "Select Tab"
+
+# Now in selection mode with one tab pre-selected
+- assertVisible: "1 Selected"
+
+# Exit
+- tapOn: "Done"

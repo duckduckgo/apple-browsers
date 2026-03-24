@@ -395,13 +395,20 @@ extension MainViewController {
                 if isTopPosition && coordinator.isToggleEnabled {
                     let targetHeight = coordinator.pendingExpandedHeight
                     coordinator.pendingExpandedHeight = nil
+                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
                     coordinator.animateOmnibarExpansion { [weak self] in
-                        guard let self, let targetHeight else { return }
-                        self.viewCoordinator.constraints.navigationBarContainerHeight.constant = targetHeight
-                        self.viewCoordinator.superview.layoutIfNeeded()
+                        guard let self else { return }
+                        if let targetHeight {
+                            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = targetHeight
+                            self.viewCoordinator.superview.layoutIfNeeded()
+                        }
+                        self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                     }
                 } else if isTopPosition {
-                    coordinator.viewController.animateDismissReveal()
+                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                    coordinator.viewController.animateDismissReveal(additionalAnimations: { [weak self] in
+                        self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                    })
                 }
             }
         case .showOmnibarInactive:
@@ -414,6 +421,7 @@ extension MainViewController {
             viewCoordinator.hideUnifiedToggleInputOmnibar()
             viewCoordinator.hideUnifiedInputContent()
             hideSuggestionTray()
+            viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
             viewCoordinator.suggestionTrayContainer.isHidden = false
         case .hide:
             unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
@@ -439,13 +447,20 @@ extension MainViewController {
                 guard let self else { return }
                 self.viewCoordinator.constraints.navigationBarContainerHeight.constant = self.viewCoordinator.standardNavigationBarContainerHeight
                 self.viewCoordinator.superview.layoutIfNeeded()
+                self.viewCoordinator.unifiedInputContentContainer.alpha = 0
             }, completion: { [weak self] in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                self.viewCoordinator.unifiedInputContentContainer.isHidden = true
+                self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 coordinator.deactivateToOmnibarWithoutViewReset()
             })
         } else if isTopPosition {
-            coordinator.viewController.animateDismissHide(completion: { [weak self] in
+            coordinator.viewController.animateDismissHide(additionalAnimations: { [weak self] in
+                self?.viewCoordinator.unifiedInputContentContainer.alpha = 0
+            }, completion: { [weak self] in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                self.viewCoordinator.unifiedInputContentContainer.isHidden = true
+                self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 coordinator.deactivateToOmnibarWithoutViewReset()
             })
         } else {
@@ -479,6 +494,11 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
         handleUnifiedToggleInputSearchSubmission(query)
+    }
+
+    func unifiedToggleInputDidRequestVoiceSearch() {
+        let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
+        handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
     }
 }
 

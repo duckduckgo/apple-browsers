@@ -50,6 +50,8 @@ enum OnboardingBubbleAnimationMetrics {
     static let contentFadeOutDelay: TimeInterval = 0.15
     /// How long to wait before fading in new content (includes bubble resize duration plus buffer)
     static let contentFadeInDelay: TimeInterval = 0.3
+    /// Duration of the default SwiftUI fade-in animation applied when showing bubble content
+    static let contentFadeInAnimationDuration: TimeInterval = 0.35
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -92,6 +94,7 @@ extension OnboardingRebranding.OnboardingView {
         private let metrics: Metrics
         private let message: AnyView?
         private let content: AnyView?
+        private let showMessage: Binding<Bool>
         private let title: Title
         private let actions: Actions
 
@@ -102,18 +105,22 @@ extension OnboardingRebranding.OnboardingView {
         ///   - message: An optional subtitle or description displayed below the title.
         ///   - content: An optional main content area (e.g. an illustration, picker, or comparison table)
         ///              displayed above the action buttons.
+        ///   - showMessage: Controls the visibility of the message view. Defaults to `.constant(true)`.
+        ///                  Pass a `Binding<Bool>` to reveal the message after the title animation completes.
         ///   - title: A view builder producing the primary heading.
         ///   - actions: A view builder producing the call-to-action buttons.
         init(
             metrics: Metrics,
             message: AnyView? = nil,
             content: AnyView? = nil,
+            showMessage: Binding<Bool> = .constant(true),
             @ViewBuilder title: () -> Title,
             @ViewBuilder actions: () -> Actions
         ) {
             self.metrics = metrics
             self.message = message
             self.content = content
+            self.showMessage = showMessage
             self.title = title()
             self.actions = actions()
         }
@@ -125,6 +132,8 @@ extension OnboardingRebranding.OnboardingView {
 
                     if let message {
                         message
+                            .opacity(showMessage.wrappedValue ? 1 : 0)
+                            .animation(.easeIn(duration: 0.25), value: showMessage.wrappedValue)
                     }
                 }
 
@@ -467,6 +476,7 @@ extension OnboardingRebranding {
 
         private var addressBarPositionView: some View {
             AddressBarPositionContent(
+                showContent: $showBubbleContent,
                 action: {
                     animateContentTransition {
                         model.selectAddressBarPositionAction()
@@ -477,6 +487,7 @@ extension OnboardingRebranding {
 
         private var searchExperienceSelectionView: some View {
             SearchExperienceContent(
+                showContent: $showBubbleContent,
                 action: {
                     animateContentTransition {
                         model.selectSearchExperienceAction()

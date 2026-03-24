@@ -26,15 +26,19 @@ extension OnboardingRebranding.OnboardingView {
     struct AddressBarPositionContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
+        @State private var shouldStartTyping = false
+        @Binding private var showContent: Bool
         private let action: () -> Void
 
-        init(action: @escaping () -> Void) {
+        init(showContent: Binding<Bool>, action: @escaping () -> Void) {
+            self._showContent = showContent
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                Text(UserText.Onboarding.AddressBarPosition.title)
+                TypingText(UserText.Onboarding.AddressBarPosition.title,
+                           startAnimating: $shouldStartTyping)
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
                     .multilineTextAlignment(.center)
@@ -46,6 +50,15 @@ extension OnboardingRebranding.OnboardingView {
                         Text(verbatim: UserText.Onboarding.AddressBarPosition.cta)
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+                }
+            }
+            .onChange(of: showContent) { isVisible in
+                if isVisible {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                        shouldStartTyping = true
+                    }
+                } else {
+                    shouldStartTyping = false
                 }
             }
         }

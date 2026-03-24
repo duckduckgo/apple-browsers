@@ -29,6 +29,8 @@ extension OnboardingRebranding.OnboardingView {
 
         @Environment(\.onboardingTheme) private var onboardingTheme
 
+        @State private var showMessage = false
+
         private let startBrowsingAction: () -> Void
         private let resumeOnboardingAction: () -> Void
 
@@ -49,13 +51,16 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    AnimatableTypingText(Self.styledMessage())
+                    Text(Self.styledMessage())
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
                         .font(onboardingTheme.typography.body)
                 ),
+                showMessage: $showMessage,
                 title: {
-                    Text(UserText.Onboarding.Skip.title)
+                    TypingText(UserText.Onboarding.Skip.title, onTypingFinished: {
+                        withAnimation { showMessage = true }
+                    })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
                         .font(onboardingTheme.typography.title)
@@ -77,14 +82,14 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         /// Builds the message with bold applied to "Fire Button".
-        private static func styledMessage() -> NSAttributedString {
+        private static func styledMessage() -> AttributedString {
             let fullText = UserText.Onboarding.Skip.message
             let mutable = NSMutableAttributedString(string: fullText)
             if let range = fullText.range(of: fireButtonCopy) {
                 let nsRange = NSRange(range, in: fullText)
                 mutable.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: UIFont.labelFontSize), range: nsRange)
             }
-            return mutable
+            return AttributedString(mutable)
         }
 
     }

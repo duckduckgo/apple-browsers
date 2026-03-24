@@ -32,6 +32,9 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var showAddToDockTutorial = false
+        @State private var shouldStartTypingTitle = false
+        @State private var shouldStartTypingMessage = false
+        @State private var showMessage = false
         @Binding var showContent: Bool
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
@@ -48,7 +51,8 @@ extension OnboardingRebranding.OnboardingView {
 
         var body: some View {
             if showAddToDockTutorial {
-                RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
+                RebrandedOnboardingView.AddToDockTutorialContent(showContent: $showContent,
+                                                                 cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
                     dismissAction(true)
                 }
             } else {
@@ -65,7 +69,8 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    AnimatableTypingText(UserText.AddToDockOnboarding.Promo.introMessage)
+                    TypingText(UserText.AddToDockOnboarding.Promo.introMessage,
+                               startAnimating: $shouldStartTypingMessage)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
@@ -73,8 +78,14 @@ extension OnboardingRebranding.OnboardingView {
                 content: AnyView(
                     addToDockPromoView
                 ),
+                showMessage: $showMessage,
                 title: {
-                    Text(UserText.AddToDockOnboarding.Promo.title)
+                    TypingText(UserText.AddToDockOnboarding.Promo.title,
+                               startAnimating: $shouldStartTypingTitle,
+                               onTypingFinished: {
+                                   withAnimation { showMessage = true }
+                                   shouldStartTypingMessage = true
+                               })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)
@@ -98,6 +109,17 @@ extension OnboardingRebranding.OnboardingView {
         private var addToDockPromoView: some View {
             RebrandedOnboardingView.AddToDockPromoView()
                 .padding(.vertical)
+                .onChange(of: showContent) { isVisible in
+                    if isVisible {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                            shouldStartTypingTitle = true
+                        }
+                    } else {
+                        shouldStartTypingTitle = false
+                        shouldStartTypingMessage = false
+                        showMessage = false
+                    }
+                }
         }
 
         /// Handles the transition from promo to tutorial with proper animation timing.
@@ -145,13 +167,21 @@ extension OnboardingRebranding.OnboardingView {
         let title = UserText.AddToDockOnboarding.Tutorial.title
         let message = UserText.AddToDockOnboarding.Tutorial.message
 
+        let showContent: Binding<Bool>
         let cta: String
         let dismissAction: () -> Void
+
+        init(showContent: Binding<Bool>, cta: String, dismissAction: @escaping () -> Void) {
+            self.showContent = showContent
+            self.cta = cta
+            self.dismissAction = dismissAction
+        }
 
         var body: some View {
             RebrandedOnboardingView.AddToDockTutorialView(
                 title: title,
                 message: message,
+                showContent: showContent,
                 cta: cta,
                 action: dismissAction
             )

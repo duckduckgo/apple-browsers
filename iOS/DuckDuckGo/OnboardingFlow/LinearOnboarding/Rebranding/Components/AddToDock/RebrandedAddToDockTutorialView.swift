@@ -36,17 +36,23 @@ extension OnboardingRebranding.OnboardingView {
             static let borderVerticalPadding: CGFloat = -1
         }
 
+        @State private var shouldStartTyping = false
+        @State private var showMessage = false
+
         private let title: String
         private let message: String
+        private let showContent: Binding<Bool>
         private let cta: String
         private let action: () -> Void
 
         init(title: String,
              message: String,
+             showContent: Binding<Bool>,
              cta: String,
              action: @escaping () -> Void) {
             self.title = title
             self.message = message
+            self.showContent = showContent
             self.cta = cta
             self.action = action
         }
@@ -60,7 +66,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    AnimatableTypingText(message)
+                    Text(message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
@@ -68,8 +74,11 @@ extension OnboardingRebranding.OnboardingView {
                 content: AnyView(
                     videoContent
                 ),
+                showMessage: $showMessage,
                 title: {
-                    Text(title)
+                    TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: {
+                        withAnimation { showMessage = true }
+                    })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)
@@ -81,6 +90,16 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
             )
+            .onChange(of: showContent.wrappedValue) { isVisible in
+                if isVisible {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                        shouldStartTyping = true
+                    }
+                } else {
+                    shouldStartTyping = false
+                    showMessage = false
+                }
+            }
         }
 
         private var videoContent: some View {

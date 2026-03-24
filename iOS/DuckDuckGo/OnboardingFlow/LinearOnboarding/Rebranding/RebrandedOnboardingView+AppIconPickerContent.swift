@@ -26,6 +26,8 @@ extension OnboardingRebranding.OnboardingView {
     struct AppIconPickerContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
         
+        @State private var shouldStartTyping = false
+        @State private var showMessage = false
         private var showContent: Binding<Bool>
         private let action: () -> Void
 
@@ -44,7 +46,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    AnimatableTypingText(UserText.Onboarding.AppIconSelection.message)
+                    Text(UserText.Onboarding.AppIconSelection.message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
@@ -52,8 +54,11 @@ extension OnboardingRebranding.OnboardingView {
                 content: AnyView(
                     RebrandedOnboardingView.AppIconPicker()
                 ),
+                showMessage: $showMessage,
                 title: {
-                    Text(UserText.Onboarding.AppIconSelection.title)
+                    TypingText(UserText.Onboarding.AppIconSelection.title,
+                               startAnimating: $shouldStartTyping,
+                               onTypingFinished: { withAnimation { showMessage = true } })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)
@@ -65,6 +70,16 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
             )
+            .onChange(of: showContent.wrappedValue) { isVisible in
+                if isVisible {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                        shouldStartTyping = true
+                    }
+                } else {
+                    shouldStartTyping = false
+                    showMessage = false
+                }
+            }
         }
     }
 }

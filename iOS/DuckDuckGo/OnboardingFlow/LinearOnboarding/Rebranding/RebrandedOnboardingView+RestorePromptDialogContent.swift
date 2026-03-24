@@ -33,6 +33,7 @@ extension OnboardingRebranding.OnboardingView {
         private let skipAction: () -> Void
 
         @State private var showSkipOnboarding = false
+        @State private var shouldStartTyping = false
         @Binding var showContent: Bool
 
         init(
@@ -64,10 +65,10 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                        AnimatableTypingText(Copy.body)
-                            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                            .font(onboardingTheme.typography.body)
-                            .multilineTextAlignment(.center)
+                    TypingText(Copy.body, startAnimating: $shouldStartTyping)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
                 ),
                 title: {
                     Text(Copy.title)
@@ -91,6 +92,15 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
+            .onChange(of: showContent) { isVisible in
+                if isVisible {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                        shouldStartTyping = true
+                    }
+                } else {
+                    shouldStartTyping = false
+                }
+            }
         }
 
         /// Handles the transition from restore dialog to skip onboarding dialog with proper animation timing.

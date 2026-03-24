@@ -25,17 +25,21 @@ extension OnboardingRebranding.OnboardingView {
     struct SearchExperienceContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
+        @State private var shouldStartTyping = false
+        @Binding private var showContent: Bool
         private let action: () -> Void
 
         @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
-        init(action: @escaping () -> Void) {
+        init(showContent: Binding<Bool>, action: @escaping () -> Void) {
+            self._showContent = showContent
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                Text(UserText.Onboarding.SearchExperience.title)
+                TypingText(UserText.Onboarding.SearchExperience.title,
+                           startAnimating: $shouldStartTyping)
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
                     .multilineTextAlignment(.center)
@@ -55,6 +59,15 @@ extension OnboardingRebranding.OnboardingView {
                         Text(UserText.Onboarding.SearchExperience.cta)
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+                }
+            }
+            .onChange(of: showContent) { isVisible in
+                if isVisible {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                        shouldStartTyping = true
+                    }
+                } else {
+                    shouldStartTyping = false
                 }
             }
         }

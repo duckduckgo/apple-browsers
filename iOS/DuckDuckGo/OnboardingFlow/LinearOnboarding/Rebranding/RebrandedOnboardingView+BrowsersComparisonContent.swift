@@ -27,6 +27,7 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @Binding var showContent: Bool
+        @State private var shouldStartTyping = false
         private let title: String
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
@@ -45,7 +46,7 @@ extension OnboardingRebranding.OnboardingView {
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                Text(title)
+                TypingText(title, startAnimating: $shouldStartTyping)
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
                     .multilineTextAlignment(.center)
@@ -64,6 +65,15 @@ extension OnboardingRebranding.OnboardingView {
                         }
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
+                }
+            }
+            .onChange(of: showContent) { isVisible in
+                if isVisible {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                        shouldStartTyping = true
+                    }
+                } else {
+                    shouldStartTyping = false
                 }
             }
         }

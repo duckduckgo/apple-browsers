@@ -33,6 +33,8 @@ extension OnboardingRebranding.OnboardingView {
         private let skipAction: () -> Void
 
         @State private var showSkipOnboarding = false
+        @State private var shouldStartTyping = false
+        @State private var showMessage = false
         @Binding var showContent: Bool
 
         init(
@@ -68,13 +70,16 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    AnimatableTypingText(message)
+                    Text(message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
                 ),
+                showMessage: $showMessage,
                 title: {
-                    Text(title)
+                    TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: {
+                        withAnimation { showMessage = true }
+                    })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)
@@ -95,6 +100,16 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
+            .onChange(of: showContent) { isVisible in
+                if isVisible {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                        shouldStartTyping = true
+                    }
+                } else {
+                    shouldStartTyping = false
+                    showMessage = false
+                }
+            }
         }
 
         /// Handles the transition from intro to skip onboarding dialog with proper animation timing.

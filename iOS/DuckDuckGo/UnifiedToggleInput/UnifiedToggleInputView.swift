@@ -481,34 +481,14 @@ final class UnifiedToggleInputView: UIView {
         layoutIfNeeded()
     }
 
-    private func applyDebugColors() {
-        #if DEBUG
-        backgroundColor = .systemRed.withAlphaComponent(0.3)
-        cardView.backgroundColor = .systemBlue.withAlphaComponent(0.3)
-        toggleView.backgroundColor = .systemGreen.withAlphaComponent(0.5)
-        textEntryView.backgroundColor = .systemOrange.withAlphaComponent(0.3)
-        toolsToolbar.backgroundColor = .systemPurple.withAlphaComponent(0.3)
-        #endif
-    }
-
-    private func removeDebugColors() {
-        #if DEBUG
-        backgroundColor = .clear
-        cardView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        toggleView.backgroundColor = .clear
-        textEntryView.backgroundColor = .clear
-        toolsToolbar.backgroundColor = .clear
-        #endif
-    }
-
     func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
         guard isExpanded, isToggleEnabled else {
             completion?()
             return
         }
 
-        dismissButton.alpha = 0
         showsDismissButton = true
+        dismissButton.alpha = 0
         updateCardTrailingConstraint()
 
         UIView.animate(
@@ -567,8 +547,8 @@ final class UnifiedToggleInputView: UIView {
             return
         }
 
-        dismissButton.alpha = 0
         showsDismissButton = true
+        dismissButton.alpha = 0
         updateCardTrailingConstraint()
 
         UIView.animate(

@@ -107,15 +107,15 @@ extension Preferences {
                             HStack(alignment: .top) {
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.addToTaskbar)
                                     .foregroundColor(Color(.linkBlue))
-                                VStack(alignment: .leading) {
-                                    Text(UserText.addToDockInstructions)
-                                        .padding(.bottom, 8)
-                                    TextMenuItemCaption(UserText.addToDockInstructionsCaption)
-                                    TextButton(UserText.addToDockShowMeHow) {
-                                        dockModel.showAddToDockDemoVideo()
-                                    }
+                                Text(UserText.addToDockInstructions)
+                            }
+                            VStack(alignment: .leading, spacing: 1) {
+                                TextMenuItemCaption(UserText.addToDockInstructionsCaption)
+                                TextButton(UserText.addToDockShowMeHow) {
+                                    dockModel.showAddToDockDemoVideo()
                                 }
                             }
+                            .padding(.leading, 24)
                         }
                     }
                 }

@@ -409,20 +409,20 @@ class TabSwitcherMultiSelectMenuStateTests: XCTestCase {
     func testWhenNoTabsAndNothingSelectedThenHasNoItems() {
         let state = makeState(selectedCount: 0, totalCount: 0,
                               selectedContainsWebPages: false, allContainsWebPages: false)
-        XCTAssertFalse(state.hasAnyItems)
+        XCTAssertFalse(state.canShowSelectionMenu)
     }
 
     func testWhenTabsExistAndNothingSelectedThenHasItems() {
         // canShowSelectAll = true (0 < 3), canBookmarkAll depends on allContainsWebPages
         let state = makeState(selectedCount: 0, totalCount: 3,
                               selectedContainsWebPages: false, allContainsWebPages: false)
-        XCTAssertTrue(state.hasAnyItems) // canShowSelectAll is true
+        XCTAssertTrue(state.canShowSelectionMenu) // canShowSelectAll is true
     }
 
     func testWhenAllTabsSelectedThenHasItems() {
         let state = makeState(selectedCount: 3, totalCount: 3,
                               selectedContainsWebPages: false, allContainsWebPages: false)
-        XCTAssertTrue(state.hasAnyItems) // canShowDeselectAll + canClose are true
+        XCTAssertTrue(state.canShowSelectionMenu) // canShowDeselectAll + canClose are true
     }
 
     // MARK: - Helpers

@@ -300,7 +300,7 @@ extension TabSwitcherViewController {
             selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
             allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil })
         )
-        canShowSelectionMenu = state.hasAnyItems
+        canShowSelectionMenu = state.canShowSelectionMenu
         return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(
             onDeselectAll: { [weak self] in self?.deselectAllTabs() },
             onSelectAll: { [weak self] in self?.selectAllTabs() },

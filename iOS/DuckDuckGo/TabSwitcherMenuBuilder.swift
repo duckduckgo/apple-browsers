@@ -37,7 +37,7 @@ struct TabSwitcherMultiSelectMenuState {
     var canBookmarkAll: Bool { selectedCount == 0 && allContainsWebPages }
     var canClose: Bool { selectedCount > 0 }
 
-    var hasAnyItems: Bool {
+    var canShowSelectionMenu: Bool {
         canShowDeselectAll || canShowSelectAll || canShare || canAddBookmarks ||
         canCloseOther || canBookmarkAll || canClose
     }

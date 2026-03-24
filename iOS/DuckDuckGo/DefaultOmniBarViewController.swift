@@ -175,7 +175,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         handleIPadModeToggleTransition(to: mode)
     }
 
-    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
+    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
         animateNextEditingTransition = animated
 
         super.beginEditing(animated: animated, forTextEntryMode: textEntryMode)
@@ -274,23 +274,25 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
 
-        let capturedTextEntryMode = textEntryMode
+        let capturedTextEntryMode: TextEntryMode? = textEntryMode
 
         if let omniDelegate {
             omniDelegate.dismissContextualSheetIfNeeded { [weak self] in
                 guard let self else { return }
-                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, explicitTextEntryMode: capturedTextEntryMode, animated: animated)
             }
         } else {
-            present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+            present(for: textField, suggestionsDependencies: suggestionsDependencies, explicitTextEntryMode: capturedTextEntryMode, animated: animated)
         }
     }
 
-    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
+    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, explicitTextEntryMode: TextEntryMode?, animated: Bool) {
         guard editingStateViewController == nil else { return }
 
         let switchBarHandler = createSwitchBarHandler(for: textField)
-        switchBarHandler.setToggleState(textEntryMode)
+        if let explicitTextEntryMode {
+            switchBarHandler.setToggleState(explicitTextEntryMode)
+        }
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let escapeHatch = omniDelegate?.escapeHatchForEditingState()
@@ -322,7 +324,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
         let isFireTab = omniDelegate?.isCurrentTabFireTab() ?? false
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
-                                                storage: UserDefaults.standard, aiChatSettings: dependencies.aiChatSettings,
+                                                aiChatSettings: dependencies.aiChatSettings,
                                                 sessionStateMetrics: sessionStateMetrics,
                                                 isFireTab: isFireTab)
 

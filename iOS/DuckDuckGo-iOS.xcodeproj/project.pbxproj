@@ -163,6 +163,7 @@
 		315E14AA2DF77BCD00419C8A /* SwitchBarHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */; };
 		315E14AB2DF77BCD00419C8A /* SwitchBarTextEntryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315E14A42DF77BCD00419C8A /* SwitchBarTextEntryViewController.swift */; };
 		315E14AD2DF77BCD00419C8A /* SwitchBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */; };
+		FD555C0BE82E630360DC2E5A /* ToggleModeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6090D90640A2B1A529EDBAAB /* ToggleModeStorage.swift */; };
 		3161D13227AC161B00285CF6 /* DownloadMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3161D13127AC161B00285CF6 /* DownloadMetadata.swift */; };
 		31669B9A28020A460071CC18 /* SaveLoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31669B9928020A460071CC18 /* SaveLoginViewModel.swift */; };
 		316790E52C9352190090B0A2 /* MarketplaceAdPostbackManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316790E42C9352190090B0A2 /* MarketplaceAdPostbackManagerTests.swift */; };
@@ -2631,6 +2632,7 @@
 		315E14A42DF77BCD00419C8A /* SwitchBarTextEntryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarTextEntryViewController.swift; sourceTree = "<group>"; };
 		315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarHandler.swift; sourceTree = "<group>"; };
 		315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarViewController.swift; sourceTree = "<group>"; };
+		6090D90640A2B1A529EDBAAB /* ToggleModeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleModeStorage.swift; sourceTree = "<group>"; };
 		3161D13127AC161B00285CF6 /* DownloadMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadMetadata.swift; sourceTree = "<group>"; };
 		31669B9928020A460071CC18 /* SaveLoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveLoginViewModel.swift; sourceTree = "<group>"; };
 		316790E42C9352190090B0A2 /* MarketplaceAdPostbackManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceAdPostbackManagerTests.swift; sourceTree = "<group>"; };
@@ -6603,6 +6605,7 @@
 				C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */,
 				C13C60D92E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift */,
 				C1D6C1DA2E74282700F29155 /* SwitchBarRetentionMetrics.swift */,
+				6090D90640A2B1A529EDBAAB /* ToggleModeStorage.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -11855,6 +11858,7 @@
 				315E14AA2DF77BCD00419C8A /* SwitchBarHandler.swift in Sources */,
 				315E14AB2DF77BCD00419C8A /* SwitchBarTextEntryViewController.swift in Sources */,
 				315E14AD2DF77BCD00419C8A /* SwitchBarViewController.swift in Sources */,
+				FD555C0BE82E630360DC2E5A /* ToggleModeStorage.swift in Sources */,
 				EE9D68D12AE00CF300B55EF4 /* NetworkProtectionVPNSettingsView.swift in Sources */,
 				982C87C42255559A00919035 /* UITableViewCellExtension.swift in Sources */,
 				3124186B2F48C9980023B9DE /* IPadModeToggleTextModel.swift in Sources */,

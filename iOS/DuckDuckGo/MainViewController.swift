@@ -1456,7 +1456,9 @@ class MainViewController: UIViewController {
         }
 
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
-            omniBar.beginEditing(animated: true)
+            if !aiChatAddressBarExperience.shouldShowModeToggle {
+                omniBar.beginEditing(animated: true)
+            }
         }
 
         syncService.scheduler.requestSyncImmediately()
@@ -1888,6 +1890,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.startBrowsing()
         }
 
+        // Mode is already set by refreshState → resolvedDefaultTextEntryMode()
         refreshUnifiedToggleInput(for: tab)
         updateBrowsingMenuHeaderDataSource()
     }
@@ -1925,9 +1928,11 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.endEditing()
 
         if aiChatAddressBarExperience.shouldShowModeToggle,
-           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController,
-           omniBarVC.selectedTextEntryMode == .aiChat {
-            omniBarVC.setSelectedTextEntryMode(.search)
+           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController {
+            let defaultMode = omniBarVC.resolvedDefaultTextEntryMode()
+            if omniBarVC.selectedTextEntryMode != defaultMode {
+                omniBarVC.setSelectedTextEntryMode(defaultMode)
+            }
         }
 
         refreshOmniBar()
@@ -2278,7 +2283,8 @@ class MainViewController: UIViewController {
             ViewHighlighter.hideAll()
         }
         daxDialogsManager.fireButtonPulseCancelled()
-        hideSuggestionTray()
+        // Reset omnibar editing state before creating a new tab.
+        dismissOmniBar()
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         currentTab?.dismiss()
@@ -3661,6 +3667,10 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+    }
+
+    func onTextEntryModeDidChange(_ mode: TextEntryMode) {
+        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
     }
     
     func isCurrentTabFireTab() -> Bool {

@@ -123,6 +123,7 @@ protocol OmniBarDelegate: AnyObject {
 
     // MARK: - Toggle
     func onToggleModeSwitched()
+    func onTextEntryModeDidChange(_ mode: TextEntryMode)
 
     /// When true, the omnibar editing-state transition uses the new behaviour (opaque from frame 0, single logo). Gated by showNTPAfterIdleReturn.
     func useNewOmnibarTransitionBehaviour() -> Bool
@@ -215,6 +216,8 @@ extension OmniBarDelegate {
     func onSwitchToTab(_ tab: Tab) {}
 
     func onToggleModeSwitched() {}
+
+    func onTextEntryModeDidChange(_ mode: TextEntryMode) {}
 
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         nil

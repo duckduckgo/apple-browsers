@@ -99,6 +99,10 @@ extension MainViewController {
 
     private func handleModeChange(_ mode: TextEntryMode) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
+
+        // Persist the toggle state back to the current tab
+        currentTab?.tabModel.preferredTextEntryMode = mode
+
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if coordinator.isAITabExpanded {
@@ -434,7 +438,8 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             return .allowDefault
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: .search, cardPosition: position)
+        let inputMode = tabManager.current()?.tabModel.preferredTextEntryMode ?? .search
+        coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }
 }

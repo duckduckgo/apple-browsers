@@ -104,8 +104,8 @@ extension Preferences {
                                     Text(UserText.addToDockInstructions)
                                         .padding(.bottom, 8)
                                     TextMenuItemCaption(UserText.addToDockInstructionsCaption)
-                                    TextButton(UserText.learnMore) {
-                                        dockModel.openAddToDockHelpURL()
+                                    TextButton(UserText.addToDockShowMeHow) {
+                                        dockModel.showAddToDockDemoVideo()
                                     }
                                 }
                             }

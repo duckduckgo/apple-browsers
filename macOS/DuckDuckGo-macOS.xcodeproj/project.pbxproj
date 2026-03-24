@@ -3852,8 +3852,12 @@
 		CC438E242EBCEB5A008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC438E222EBCEB50008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift */; };
 		CC442CAC2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CAB2F6C45AC002E8175 /* DockPreferencesModel.swift */; };
 		CC442CAD2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CAB2F6C45AC002E8175 /* DockPreferencesModel.swift */; };
+		CC442CB72F6C45B8002E8175 /* AddToDockDemoVideoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CB62F6C45AC002E8175 /* AddToDockDemoVideoPresenter.swift */; };
+		CC442CB82F6C45B8002E8175 /* AddToDockDemoVideoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CB62F6C45AC002E8175 /* AddToDockDemoVideoPresenter.swift */; };
 		CC442CAF2F6C64AB002E8175 /* DockPreferencesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CAE2F6C64AB002E8175 /* DockPreferencesModelTests.swift */; };
 		CC442CB02F6C64AB002E8175 /* DockPreferencesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CAE2F6C64AB002E8175 /* DockPreferencesModelTests.swift */; };
+		CC442CC12F6C64AB002E8175 /* MockAddToDockDemoVideoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CC02F6C64AB002E8175 /* MockAddToDockDemoVideoPresenter.swift */; };
+		CC442CC22F6C64AB002E8175 /* MockAddToDockDemoVideoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CC02F6C64AB002E8175 /* MockAddToDockDemoVideoPresenter.swift */; };
 		CC4B39BF2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */; };
 		CC4B39C02ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */; };
 		CC5415632F29238F0084A139 /* AIChatMenuConfigurationMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */; };
@@ -3885,6 +3889,8 @@
 		CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
 		CC87770C2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
 		CC87770D2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
+		CC8B4BDD2F730584000D1882 /* macOS_Add_To_Dock.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = CC8B4BDC2F730584000D1882 /* macOS_Add_To_Dock.mp4 */; };
+		CC8B4BDE2F730584000D1882 /* macOS_Add_To_Dock.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = CC8B4BDC2F730584000D1882 /* macOS_Add_To_Dock.mp4 */; };
 		CC8E70D32F0EC0A2008C8070 /* NewTabPageNextStepsCardsPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8E70D22F0EC0A2008C8070 /* NewTabPageNextStepsCardsPersistorTests.swift */; };
 		CC8E70D42F0EC0A2008C8070 /* NewTabPageNextStepsCardsPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8E70D22F0EC0A2008C8070 /* NewTabPageNextStepsCardsPersistorTests.swift */; };
 		CC8E70D62F0EC71E008C8070 /* MockNewTabPageNextStepsCardsPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8E70D52F0EC71E008C8070 /* MockNewTabPageNextStepsCardsPersistor.swift */; };
@@ -6462,7 +6468,9 @@
 		CC438E1C2EBCE224008537AD /* DefaultBrowserAndDockPromptUIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptUIProvider.swift; sourceTree = "<group>"; };
 		CC438E222EBCEB50008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptUIProvider.swift; sourceTree = "<group>"; };
 		CC442CAB2F6C45AC002E8175 /* DockPreferencesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockPreferencesModel.swift; sourceTree = "<group>"; };
+		CC442CB62F6C45AC002E8175 /* AddToDockDemoVideoPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockDemoVideoPresenter.swift; sourceTree = "<group>"; };
 		CC442CAE2F6C64AB002E8175 /* DockPreferencesModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockPreferencesModelTests.swift; sourceTree = "<group>"; };
+		CC442CC02F6C64AB002E8175 /* MockAddToDockDemoVideoPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAddToDockDemoVideoPresenter.swift; sourceTree = "<group>"; };
 		CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptNotificationPresenter.swift; sourceTree = "<group>"; };
 		CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuConfigurationMock.swift; sourceTree = "<group>"; };
 		CC5B3D002E158B9F00115521 /* ChromiumDataImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumDataImporterTests.swift; sourceTree = "<group>"; };
@@ -6477,6 +6485,7 @@
 		CC82ABC42F52106400AD9807 /* PromoResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoResult.swift; sourceTree = "<group>"; };
 		CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReader.swift; sourceTree = "<group>"; };
 		CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReaderTests.swift; sourceTree = "<group>"; };
+		CC8B4BDC2F730584000D1882 /* macOS_Add_To_Dock.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = macOS_Add_To_Dock.mp4; sourceTree = "<group>"; };
 		CC8E70D22F0EC0A2008C8070 /* NewTabPageNextStepsCardsPersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsCardsPersistorTests.swift; sourceTree = "<group>"; };
 		CC8E70D52F0EC71E008C8070 /* MockNewTabPageNextStepsCardsPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewTabPageNextStepsCardsPersistor.swift; sourceTree = "<group>"; };
 		CC8E70D82F0EC731008C8070 /* NewTabPageNextStepsSingleCardProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsSingleCardProviderTests.swift; sourceTree = "<group>"; };
@@ -8209,6 +8218,7 @@
 		4B0511A2262CAA5A00F6079C /* Preferences */ = {
 			isa = PBXGroup;
 			children = (
+				CC442CB62F6C45AC002E8175 /* AddToDockDemoVideoPresenter.swift */,
 				37CD54C027F2FDD100F1F7B9 /* Model */,
 				4B0511AA262CAA5A00F6079C /* View */,
 			);
@@ -8266,6 +8276,7 @@
 				1D9FDEB92B9B5E090040B78C /* WebTrackingProtectionPreferencesTests.swift */,
 				56189B782DF8DBEF004A19CC /* RootViewV2Tests.swift */,
 				CC442CAE2F6C64AB002E8175 /* DockPreferencesModelTests.swift */,
+				CC442CC02F6C64AB002E8175 /* MockAddToDockDemoVideoPresenter.swift */,
 			);
 			path = Preferences;
 			sourceTree = "<group>";
@@ -9834,6 +9845,7 @@
 				56A054012C1AFA5D007D8FAB /* OnboardingConfiguration.swift */,
 				56A0543D2C215FB3007D8FAB /* OnboardingUserScript.swift */,
 				8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */,
+				CC8B4BDC2F730584000D1882 /* macOS_Add_To_Dock.mp4 */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -13704,6 +13716,7 @@
 				3706FCE1293F65D500E42796 /* PermissionAuthorization.storyboard in Resources */,
 				CD2AB5C62C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				7B122A992DE4717400B84F63 /* AppStoreInfoPlist.xcstrings in Resources */,
+				CC8B4BDE2F730584000D1882 /* macOS_Add_To_Dock.mp4 in Resources */,
 				3706FCE6293F65D500E42796 /* social_images in Resources */,
 				BD384ACB2BBC821B00EF3735 /* vpn-dark-mode.json in Resources */,
 				BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */,
@@ -13937,6 +13950,7 @@
 				B64C84DE2692D7400048FEBE /* PermissionAuthorization.storyboard in Resources */,
 				CD2AB5C52C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				EA18D1CA272F0DC8006DC101 /* social_images in Resources */,
+				CC8B4BDD2F730584000D1882 /* macOS_Add_To_Dock.mp4 in Resources */,
 				BD384AC92BBC821A00EF3735 /* vpn-dark-mode.json in Resources */,
 				BB0DA4E02DB1806000AB9C29 /* dark-shield-new.json in Resources */,
 				BB0DA4E12DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
@@ -14655,6 +14669,7 @@
 				C18194652C7DF7D600381092 /* FreemiumDBPPresenter.swift in Sources */,
 				4B0BD7B82A9FE6E600EF609D /* NetworkProtectionOnboardingMenu.swift in Sources */,
 				CC442CAC2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
+				CC442CB72F6C45B8002E8175 /* AddToDockDemoVideoPresenter.swift in Sources */,
 				3706FB10293F65D500E42796 /* SuggestionTableRowView.swift in Sources */,
 				B55D8E5F2EE77688009083D9 /* BundleExtension.swift in Sources */,
 				3706FB11293F65D500E42796 /* DownloadsPreferences.swift in Sources */,
@@ -15710,6 +15725,7 @@
 				1D9FDEC12B9B5FEA0040B78C /* AccessibilityPreferencesTests.swift in Sources */,
 				3706FE11293F661700E42796 /* URLSuggestedFilenameTests.swift in Sources */,
 				CC442CB02F6C64AB002E8175 /* DockPreferencesModelTests.swift in Sources */,
+				CC442CC12F6C64AB002E8175 /* MockAddToDockDemoVideoPresenter.swift in Sources */,
 				5681ED472BDBAF6E00F59729 /* SyncErrorHandlerTests.swift in Sources */,
 				CC34456F2E674E7700019518 /* UserScriptErrorTests.swift in Sources */,
 				1E8995E02DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */,
@@ -16835,6 +16851,7 @@
 				4B92928C26670D1700AD2C21 /* OutlineSeparatorViewCell.swift in Sources */,
 				8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */,
 				CC442CAD2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
+				CC442CB82F6C45B8002E8175 /* AddToDockDemoVideoPresenter.swift in Sources */,
 				4BB99D0426FE191E001E4761 /* SafariDataImporter.swift in Sources */,
 				4B9DB0262A983B24000927DB /* WaitlistViewModel.swift in Sources */,
 				987799F929999973005D8EB6 /* LocalBookmarkStore.swift in Sources */,
@@ -18064,6 +18081,7 @@
 				CCF40A6F2ED7434C00CBF271 /* UserChurnPixelTests.swift in Sources */,
 				C1E961EB2B879E79001760E1 /* MockAutofillActionPresenter.swift in Sources */,
 				CC442CAF2F6C64AB002E8175 /* DockPreferencesModelTests.swift in Sources */,
+				CC442CC22F6C64AB002E8175 /* MockAddToDockDemoVideoPresenter.swift in Sources */,
 				4B3AD8672ED77577007CE825 /* BundleExtensionTests.swift in Sources */,
 				8477AF2A2EBB3F0E00849EA5 /* AttributedMetricOriginFileProviderTests.swift in Sources */,
 				4BA1A6FE258C5C1300F6F690 /* EncryptedValueTransformerTests.swift in Sources */,

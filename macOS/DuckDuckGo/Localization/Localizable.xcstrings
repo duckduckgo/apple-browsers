@@ -81608,6 +81608,18 @@
         }
       }
     },
+    "preferences.add-to-dock.demo-video.window-title" : {
+      "comment" : "Window title for the Add to Dock demo video",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to the Dock"
+          }
+        }
+      }
+    },
     "preferences.add-to-dock.instructions" : {
       "comment" : "Instructions for adding the app to the Dock",
       "extractionState" : "extracted_with_value",
@@ -81784,6 +81796,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удерживая клавишу control, нажмите на значок DuckDuckGo и выберите **Параметры > Держать на док-панели**."
+          }
+        }
+      }
+    },
+    "preferences.add-to-dock.show-me-how" : {
+      "comment" : "Opens a short video demonstrating how to add the app to the Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Me How"
           }
         }
       }

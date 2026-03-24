@@ -119,8 +119,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  windowControllersManager: windowControllersManager,
-                                                  pixelFiring: nil),
+                                                  pixelFiring: nil,
+                                                  addToDockDemoVideoPresenter: MockAddToDockDemoVideoPresenter()),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),
@@ -152,8 +152,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  windowControllersManager: windowControllersManager,
-                                                  pixelFiring: nil),
+                                                  pixelFiring: nil,
+                                                  addToDockDemoVideoPresenter: MockAddToDockDemoVideoPresenter()),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),
@@ -195,8 +195,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  windowControllersManager: windowControllersManager,
-                                                  pixelFiring: nil),
+                                                  pixelFiring: nil,
+                                                  addToDockDemoVideoPresenter: MockAddToDockDemoVideoPresenter()),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),

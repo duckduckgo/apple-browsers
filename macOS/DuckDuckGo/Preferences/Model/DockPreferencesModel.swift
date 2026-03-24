@@ -20,11 +20,11 @@ import Foundation
 import PixelKit
 import PrivacyConfig
 
-final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
+final class DockPreferencesModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let dockCustomizer: DockCustomization
     private let pixelFiring: PixelFiring?
-    let windowControllersManager: WindowControllersManagerProtocol
+    private let addToDockDemoVideoPresenter: AddToDockDemoVideoPresenting
 
     /// Whether the current build can add the app to the dock (programmatically).
     var canAddToDock: Bool {
@@ -46,12 +46,12 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
 
     init(featureFlagger: FeatureFlagger,
          dockCustomizer: DockCustomization,
-         windowControllersManager: WindowControllersManagerProtocol,
-         pixelFiring: PixelFiring?) {
+         pixelFiring: PixelFiring?,
+         addToDockDemoVideoPresenter: AddToDockDemoVideoPresenting) {
         self.featureFlagger = featureFlagger
         self.dockCustomizer = dockCustomizer
-        self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
+        self.addToDockDemoVideoPresenter = addToDockDemoVideoPresenter
     }
 
     func addToDock(from preferences: PreferencePaneIdentifier) {
@@ -73,16 +73,12 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     }
 
     @MainActor
-    func openAddToDockHelpURL() {
-        openNewTab(with: .addToDockHelpURL)
-        pixelFiring?.fire(GeneralPixel.settingsAddToDockLearnMoreClicked, frequency: .dailyAndCount)
+    func showAddToDockDemoVideo() {
+        pixelFiring?.fire(GeneralPixel.settingsAddToDockShowMeHowClicked, frequency: .dailyAndCount)
+        addToDockDemoVideoPresenter.presentAddToDockDemoVideo()
     }
 
     func refresh() {
         isBeingAddedToDock = false
     }
-}
-
-private extension URL {
-    static let addToDockHelpURL = URL(string: "https://support.apple.com/en-gb/guide/mac-help/mh35859/mac")!
 }

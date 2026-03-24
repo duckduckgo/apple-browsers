@@ -49,6 +49,9 @@ protocol SwitchBarHandling: AnyObject {
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
 
+    var hasSubmittedPrompt: Bool { get set }
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
+
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
@@ -102,6 +105,9 @@ final class SwitchBarHandler: SwitchBarHandling {
     @Published private(set) var hasUserInteractedWithText: Bool = false
     @Published private(set) var isCurrentTextValidURL: Bool = false
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
+
+    var hasSubmittedPrompt: Bool = false
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
 
     // MARK: - Mode Usage Detection
     private static var hasUsedSearchInSession = false

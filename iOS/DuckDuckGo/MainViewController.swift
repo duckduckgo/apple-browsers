@@ -127,6 +127,7 @@ class MainViewController: UIViewController {
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
+    private let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     var isNewTabPageVisible: Bool {
@@ -3681,10 +3682,13 @@ extension MainViewController: OmniBarDelegate {
     func onTextEntryModeDidChange(_ mode: TextEntryMode) {
     }
 
-    /// Saves the current omnibar toggle state to the tab on submission.
+    /// Saves the current omnibar toggle state to the tab on submission,
+    /// and persists it globally so "Last Used" mode picks it up for new tabs.
     private func commitToggleStateToCurrentTab() {
         guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else { return }
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = omniBarVC.selectedTextEntryMode
+        let mode = omniBarVC.selectedTextEntryMode
+        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+        toggleModeStorage.save(mode)
     }
     
     func isCurrentTabFireTab() -> Bool {

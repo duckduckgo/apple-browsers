@@ -73,6 +73,7 @@ struct SubscriptionState {
 final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private static let maxImageAttachments = 3
+    private static let maxImagesPerConversation = 5
 
     // MARK: - AIChatInputBoxHandling
 
@@ -137,6 +138,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var selectedModelSupportsImageUpload: Bool {
         guard !models.isEmpty else { return false }
         return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
+    }
+
+    var remainingImagesInConversation: Int {
+        let conversationUsed = attachmentUsage?.imagesUsed ?? 0
+        return max(0, Self.maxImagesPerConversation - conversationUsed)
+    }
+
+    var remainingImagesForPicker: Int {
+        let pendingCount = viewController.currentAttachments.count
+        let perTurnRemaining = Self.maxImageAttachments - pendingCount
+        return max(0, min(perTurnRemaining, remainingImagesInConversation))
+    }
+
+    var isConversationImageLimitReached: Bool {
+        remainingImagesInConversation == 0
     }
 
     var isOmnibarSession: Bool {
@@ -210,6 +226,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToGeneratingState()
         subscribeToStopGeneratingTap()
         subscribeToCustomizeResponsesTap()
+        subscribeToAttachmentUsageChanges()
         viewController.isCustomizeResponsesButtonHidden = true
 
         if let cachedLabel = preferences.selectedModelShortName {
@@ -715,7 +732,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Image Attachments
 
     func presentAttachmentOptions() {
-        let remaining = Self.maxImageAttachments - viewController.currentAttachments.count
+        let remaining = remainingImagesForPicker
         guard remaining > 0 else { return }
         guard let scene = viewController.view.window?.windowScene,
               let root = scene.keyWindow?.rootViewController else { return }
@@ -764,7 +781,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func addImageAttachment(image: UIImage, fileName: String) {
-        guard !viewController.isAttachmentsFull else { return }
+        guard !viewController.isAttachmentsFull, !isConversationImageLimitReached else { return }
         let attachment = AIChatImageAttachment(image: image, fileName: fileName)
         viewController.addAttachment(attachment)
     }
@@ -778,7 +795,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateImageButtonVisibility() {
-        let supportsImages = selectedModelSupportsImageUpload
+        let supportsImages = selectedModelSupportsImageUpload && !isConversationImageLimitReached
         viewController.isImageButtonHidden = !supportsImages
         if !supportsImages {
             clearAttachments()
@@ -804,6 +821,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.stopGeneratingButtonTappedPublisher
             .sink { [weak self] in
                 self?.didPressStopGeneratingButton.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToAttachmentUsageChanges() {
+        $attachmentUsage
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateImageButtonVisibility()
             }
             .store(in: &cancellables)
     }

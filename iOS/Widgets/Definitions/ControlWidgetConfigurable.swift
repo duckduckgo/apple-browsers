@@ -198,7 +198,7 @@ struct DuckAIVoiceChatControlWidget: ControlWidgetConfigurable {
         static var openAppWhenRun: Bool = true
 
         func perform() async throws -> some IntentResult & OpensIntent {
-            await EnvironmentValues().openURL(DeepLinks.openAIVoiceChat.appendingParameter(name: "source", value: "control_center"))
+            await EnvironmentValues().openURL(DeepLinks.openAIVoiceChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.controlCenter.rawValue))
             return .result()
         }
     }

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Persistence
 
 /// A variant of pixel that is fired just once. Ever.
 ///
@@ -39,7 +40,7 @@ public final class UniquePixel {
 
     }
 
-    public static let storage = UserDefaults(suiteName: Constant.uniquePixelStorageIdentifier)!
+    public static var storage: ThrowingKeyValueStoring = UserDefaults(suiteName: Constant.uniquePixelStorageIdentifier)!
     private static let calendar: Calendar = {
         var calendar = Calendar.current
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -61,7 +62,7 @@ public final class UniquePixel {
 
         if !pixel.hasBeenFiredEver(uniquePixelStorage: storage) {
             Pixel.fire(pixel: pixel, withAdditionalParameters: params, includedParameters: includedParameters, onComplete: onComplete)
-            storage.set(Date(), forKey: pixel.name)
+            try? storage.set(Date(), forKey: pixel.name)
         } else {
             onComplete(Error.alreadyFired)
         }
@@ -85,12 +86,16 @@ public final class UniquePixel {
 
 extension Pixel.Event {
 
-    public func lastFireDate(uniquePixelStorage: UserDefaults) -> Date? {
-        uniquePixelStorage.object(forKey: name) as? Date
+    public func lastFireDate(uniquePixelStorage: ThrowingKeyValueStoring) -> Date? {
+        try? uniquePixelStorage.object(forKey: name) as? Date
     }
 
-    func hasBeenFiredEver(uniquePixelStorage: UserDefaults) -> Bool {
-        lastFireDate(uniquePixelStorage: uniquePixelStorage) != nil
+    func hasBeenFiredEver(uniquePixelStorage: ThrowingKeyValueStoring) -> Bool {
+        do {
+            return try uniquePixelStorage.object(forKey: name) != nil
+        } catch {
+            return true
+        }
     }
 
 }

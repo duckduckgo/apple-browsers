@@ -506,7 +506,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
         let vpnFileStoreDirectory = Self.vpnFileStoreDirectory()
         Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
-        Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+        Self.configurePixelFileStores(vpnFileStoreDirectory: vpnFileStoreDirectory)
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
 
@@ -732,6 +732,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             writeOptions: [.atomic, .noFileProtection]
         ) {
             DailyPixel.storage = dailyPixelFileStore
+        }
+
+        if let uniquePixelFileStore = try? KeyValueFileStore(
+            location: vpnFileStoreDirectory,
+            name: "unique-pixel",
+            writeOptions: [.atomic, .noFileProtection]
+        ) {
+            UniquePixel.storage = uniquePixelFileStore
         }
     }
 

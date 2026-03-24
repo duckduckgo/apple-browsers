@@ -693,7 +693,14 @@ public final class PixelKit {
     }
 
     private func pixelHasBeenFiredEver(_ name: String) -> Bool {
-        pixelLastFireDate(pixelName: name) != nil
+        do {
+            let key = userDefaultsKeyName(forPixelName: name)
+            let legacyKey = legacyUserDefaultsKeyName(forPixelName: name)
+            return try defaults.object(forKey: key) != nil
+                || (try defaults.object(forKey: legacyKey) != nil)
+        } catch {
+            return true
+        }
     }
 
     public func clearFrequencyHistoryFor(pixel: PixelKitEvent) {

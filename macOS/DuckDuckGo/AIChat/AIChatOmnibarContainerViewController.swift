@@ -436,6 +436,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
                     Task { @MainActor in
                         _ = await self.historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+                        self.omnibarController.refreshSuggestions()
                     }
                 }
             }

@@ -2773,6 +2773,13 @@ class MainViewController: UIViewController {
         openAIChatInVoiceMode()
     }
 
+    func openAIVoiceChatFromDeepLink(source: String?) {
+        if let source {
+            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: source])
+        }
+        openAIChatInVoiceMode()
+    }
+
     private func openAIChatInVoiceMode() {
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
             openAIChatVoiceModeInTab()

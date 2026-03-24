@@ -527,7 +527,9 @@ extension MainCoordinator: URLHandling {
     private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
         controller.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
 
-        if url != AppDeepLinkSchemes.openVPN.url && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme {
+        if url != AppDeepLinkSchemes.openVPN.url
+            && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
+            && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
         }
         switch AppDeepLinkSchemes.fromURL(url) {
@@ -554,6 +556,9 @@ extension MainCoordinator: URLHandling {
             handleOpenPasswords(url: url)
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
+        case .openAIVoiceChat:
+            let source = url.getParameter(named: WidgetSourceType.sourceKey)
+            controller.openAIVoiceChatFromDeepLink(source: source)
         default:
             if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)

@@ -85,9 +85,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
+    var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
+    @Published var attachmentUsage: AIChatAttachmentUsage?
 
     // MARK: - Properties
 
@@ -596,6 +598,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         clearAttachments()
         viewController.text = ""
         textState = .empty
+        attachmentUsage = nil
     }
 
     func updateSelectedModel(_ modelId: String) {
@@ -828,6 +831,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         textState = .empty
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
+        attachmentUsage = nil
     }
 
     private func resetInputState() {

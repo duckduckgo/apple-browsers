@@ -276,6 +276,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
             let decodedStatus = try JSONDecoder().decode(AIChatStatus.self, from: jsonData)
             inputBoxHandler?.aiChatStatus = decodedStatus.status
+            inputBoxHandler?.attachmentUsage = decodedStatus.attachments
             return nil
         } catch {
             return nil

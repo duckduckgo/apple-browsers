@@ -17,9 +17,10 @@
 //  limitations under the License.
 //
 
-import PrivacyConfig
+import BrowserServicesKit
 import Core
 import Foundation
+import PrivacyConfig
 import Subscription
 
 /// Protocol defining the interface for the Subscription onboarding promotion helper.
@@ -70,16 +71,24 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     /// The pixel firing service used to track user interactions with the promotion.
     private let pixelFiring: PixelFiring.Type
 
+    /// The statistics store used to determine if the user is a returning user.
+    private let statisticsStore: StatisticsStore
+
     /// Initializes a new instance of the OnboardingSubscriptionPromotionHelper.
     ///
     /// - Parameters:
     ///   - featureFlagger: The feature flagging service. Defaults to the shared instance.
     ///   - subscriptionManager: The subscription manager. Defaults to the shared instance.
     ///   - pixelFiring: The pixel firing service. Defaults to Pixel.self.
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger, subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager, pixelFiring: PixelFiring.Type = Pixel.self) {
+    ///   - statisticsStore: The statistics store. Defaults to StatisticsUserDefaults.
+    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
+         pixelFiring: PixelFiring.Type = Pixel.self,
+         statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
         self.pixelFiring = pixelFiring
+        self.statisticsStore = statisticsStore
     }
     
     /// Text to display on the promotion proceed button
@@ -98,23 +107,48 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
 
     /// Provides the URL components for redirecting as part of the onboarding promotion experiment.
     ///
+    /// The origin encodes the user's returning/new status and free trial eligibility for attribution.
+    ///
     /// - Returns: URL components for the experiment, or `nil` if not applicable.
     func redirectURLComponents() -> URLComponents? {
-        SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue)
+        let origin: SubscriptionFunnelOrigin = switch (isReturningUser, isFreeTrialEligible) {
+        case (true, true): .onboardingReinstallFreeTrial
+        case (true, false): .onboardingReinstallSubscribe
+        case (false, true): .onboardingNewInstallFreeTrial
+        case (false, false): .onboardingNewInstallSubscribe
+        }
+        return SubscriptionURL.purchaseURLComponentsWithOrigin(origin.rawValue)
     }
 
     /// Fires a pixel when the onboarding promotion is shown to the user.
     func fireImpressionPixel() {
-        pixelFiring.fire(.subscriptionOnboardingPromotionImpression, withAdditionalParameters: [:])
+        pixelFiring.fire(.subscriptionOnboardingPromotionImpression, withAdditionalParameters: pixelParameters)
     }
 
     /// Fires a pixel when the onboarding promotion is tapped by the user.
     func fireTapPixel() {
-        pixelFiring.fire(.subscriptionOnboardingPromotionTap, withAdditionalParameters: [:])
+        pixelFiring.fire(.subscriptionOnboardingPromotionTap, withAdditionalParameters: pixelParameters)
     }
 
     /// Fires a pixel when the onboarding promotion is dismissed by the user.
     func fireDismissPixel() {
-        pixelFiring.fire(.subscriptionOnboardingPromotionDismiss, withAdditionalParameters: [:])
+        pixelFiring.fire(.subscriptionOnboardingPromotionDismiss, withAdditionalParameters: pixelParameters)
+    }
+
+    // MARK: - Private
+
+    private var isReturningUser: Bool {
+        statisticsStore.variant == VariantIOS.returningUser.name
+    }
+
+    private var isFreeTrialEligible: Bool {
+        subscriptionManager.isUserEligibleForFreeTrial()
+    }
+
+    private var pixelParameters: [String: String] {
+        [
+            PixelParameters.returningUser: isReturningUser ? "true" : "false",
+            PixelParameters.freeTrial: isFreeTrialEligible ? "true" : "false"
+        ]
     }
 }

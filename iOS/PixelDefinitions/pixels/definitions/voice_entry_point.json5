@@ -1,0 +1,25 @@
+// Voice entry point pixels for Duck.ai voice chat
+{
+    "m_aichat_voice_entry_point_tapped": {
+        "description": "Fires when user taps a voice entry point button to open Duck.ai voice mode",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The entry point source where the user tapped the voice button",
+                "enum": ["ntp", "toolbar", "address_bar", "control_center", "widget", "siri"]
+            }
+        ]
+    },
+    "m_aichat_voice_session_started": {
+        "description": "Fires when the native layer receives a voiceSessionStarted bridge message from the Duck.ai frontend, indicating a voice session has actually begun",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

@@ -101,6 +101,14 @@ extension WebExtensionManager {
         installationStore.installedExtensions.first { $0.embeddedType == type }
     }
 
+    /// Returns the installed path for an embedded extension type.
+    public func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? {
+        guard let installed = installedEmbeddedExtension(for: type) else {
+            return nil
+        }
+        return storageProvider.resolveInstalledExtension(identifier: installed.uniqueIdentifier)
+    }
+
     /// Installs an embedded extension from the given URL.
     @MainActor
     private func installEmbeddedExtension(from sourceURL: URL, type: DuckDuckGoWebExtensionType) async throws {

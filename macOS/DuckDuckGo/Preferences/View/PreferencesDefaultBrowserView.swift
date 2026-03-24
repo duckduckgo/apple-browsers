@@ -22,13 +22,13 @@ import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 import PixelKit
+import DesignResourcesKitIcons
 
 extension Preferences {
 
     struct DefaultBrowserView: View {
         @ObservedObject var defaultBrowserModel: DefaultBrowserPreferences
-        @State private var isAddedToDock = false
-        let dockCustomizer: DockCustomization?
+        @ObservedObject var dockModel: DockPreferencesModel
         let protectionStatus: PrivacyProtectionStatus?
 
         var body: some View {
@@ -68,11 +68,11 @@ extension Preferences {
 
                     Spacer().frame(height: 16)
 
-                    if let dockCustomizer {
+                    if dockModel.canAddToDock {
                         PreferencePaneSection(UserText.shortcuts, spacing: 4) {
                             PreferencePaneSubSection {
                                 HStack {
-                                    if isAddedToDock || dockCustomizer.isAddedToDock {
+                                    if dockModel.isAddedToDock {
                                         HStack {
                                             Image(.checkCircle).foregroundColor(Color(.successGreen))
                                             Text(UserText.isAddedToDock)
@@ -87,10 +87,7 @@ extension Preferences {
                                         .padding(.trailing, 8)
                                         Button(action: {
                                             withAnimation {
-                                                PixelKit.fire(GeneralPixel.userAddedToDockFromDefaultBrowserSection,
-                                                              includeAppVersionParameter: false)
-                                                dockCustomizer.addToDock()
-                                                isAddedToDock = true
+                                                dockModel.addToDock(from: .defaultBrowser)
                                             }
                                         }) {
                                             Text(UserText.addToDock)
@@ -101,8 +98,27 @@ extension Preferences {
                                 }
                             }
                         }
+                        .onAppear {
+                            dockModel.refresh()
+                        }
+                    } else if dockModel.canShowDockInstructions {
+                        PreferencePaneSection(UserText.shortcuts, spacing: 4) {
+                            PreferencePaneSubSection {
+                                HStack(alignment: .top) {
+                                    Image(nsImage: DesignSystemImages.Glyphs.Size16.addToTaskbar)
+                                        .foregroundColor(Color(.linkBlue))
+                                    VStack(alignment: .leading) {
+                                        Text(UserText.addToDockInstructions)
+                                            .padding(.bottom, 8)
+                                        TextMenuItemCaption(UserText.addToDockInstructionsCaption)
+                                        TextButton(UserText.learnMore) {
+                                            dockModel.openAddToDockHelpURL()
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-
                 }
             }
         }

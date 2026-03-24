@@ -30,13 +30,14 @@ public enum ContextualOnboardingBackgroundType {
     case trackers
     case fireDialog
     case endOfJourney
+    case endOfJourneyNTP
     case privacyProTrial
 
     var alignment: Alignment {
         switch self {
         case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog:
             return .bottomTrailing
-        case .endOfJourney, .privacyProTrial:
+        case .endOfJourney, .endOfJourneyNTP, .privacyProTrial:
             return .bottom
         }
     }
@@ -55,6 +56,8 @@ public enum ContextualOnboardingBackgroundType {
             return OnboardingRebrandingImages.Contextual.trackerBlockedBackground
         case .endOfJourney:
             return OnboardingRebrandingImages.Contextual.endOfJourneyBackground
+        case .endOfJourneyNTP:
+            return OnboardingRebrandingImages.Contextual.endOfJourneyBackgroundNewTab
         case .privacyProTrial:
             return OnboardingRebrandingImages.Contextual.subscriptionPromoBackground
         }
@@ -74,19 +77,29 @@ extension OnboardingRebranding.OnboardingStyles {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.onboardingTheme) private var theme
 
+        #if os(iOS)
         @StateObject private var keyboardResponder: KeyboardResponder
+        private let keyboardBehavior: KeyboardBehavior
+        #endif
+
         @State private var imageGlobalFrame: CGRect = .zero
 
         private let backgroundType: ContextualOnboardingBackgroundType
-        private let keyboardBehavior: KeyboardBehavior
         private let imageOffsetY: CGFloat
 
+        #if os(iOS)
         init(backgroundType: ContextualOnboardingBackgroundType, imageOffsetY: CGFloat, keyboardBehavior: KeyboardBehavior) {
             self.backgroundType = backgroundType
             self.keyboardBehavior = keyboardBehavior
             self.imageOffsetY = imageOffsetY
             _keyboardResponder = StateObject(wrappedValue: KeyboardResponder(isEnabled: keyboardBehavior.isEnabled))
         }
+        #elseif os(macOS)
+        init(backgroundType: ContextualOnboardingBackgroundType, imageOffsetY: CGFloat) {
+            self.backgroundType = backgroundType
+            self.imageOffsetY = imageOffsetY
+        }
+        #endif
 
         func body(content: Content) -> some View {
                 ZStack {
@@ -109,7 +122,9 @@ extension OnboardingRebranding.OnboardingStyles {
                                     }
                                 )
                                 .offset(y: calculateImageOffset())
+                        #if os(iOS)
                                 .animation(ContextualBackgroundStyleMetrics.backgroundImageKeyboardAnimation, value: keyboardResponder.keyboardFrame)
+                        #endif
 
                     }
                     .frame(maxWidth: .infinity, alignment: backgroundType.alignment)
@@ -182,7 +197,8 @@ extension OnboardingRebranding.OnboardingStyles {
         }
 
         #if os(iOS)
-        private static let maxHeightMetricsBuilder = MetricBuilder<CGFloat?>(default: nil).iPad(290).iPhone(landscape: 290)
+        private static let maxHeightContextualAssets = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200) // Contextual assets have smaller height than new tab page ones.
+        private static let maxHeightNewTabPageAssets = MetricBuilder<CGFloat?>(default: nil).iPad(290).iPhone(landscape: 290)
         // iPhone excludes .bottom to prevent background from being covered by the address bar when it is positioned at the bottom
         private static let ignoreSafeAreaEdgesBuilder = MetricBuilder<Edge.Set>(default: [.horizontal]).iPad([.bottom, .horizontal])
         #endif
@@ -190,7 +206,12 @@ extension OnboardingRebranding.OnboardingStyles {
         var maxHeightMetrics: CGFloat? {
             #if os(iOS)
             // iOS uses responsive metrics based on device type
-            return Self.maxHeightMetricsBuilder.build(v: vSizeClass, h: hSizeClass)
+            switch backgroundType {
+            case .tryASearchCompleted, .trackers, .fireDialog, .endOfJourney:
+                return Self.maxHeightContextualAssets.build(v: vSizeClass, h: hSizeClass)
+            case .tryASearch, .tryVisitingASiteNTP, .endOfJourneyNTP, .privacyProTrial:
+                return Self.maxHeightNewTabPageAssets.build(v: vSizeClass, h: hSizeClass)
+            }
             #else
             // macOS: Fixed value. Customise when implementing macOS contextual onboarding.
             return nil
@@ -220,11 +241,7 @@ extension OnboardingRebranding.OnboardingStyles {
         func body(content: Content) -> some View {
             content
                 .modifier(
-                    ContextualBackgroundStyle(
-                        backgroundType: backgroundType,
-                        imageOffsetY: didAppear ? 0 : imageHeight + 16,
-                        keyboardBehavior: keyboardBehavior
-                    )
+                    backgroundStyle
                 )
                 .onPreferenceChange(BackgroundIllustrationHeightPreferenceKey.self) { imageHeight in
                     guard imageHeight > 0 else { return }
@@ -234,6 +251,21 @@ extension OnboardingRebranding.OnboardingStyles {
                         didAppear = true
                     }
                 }
+        }
+
+        private var backgroundStyle: ContextualBackgroundStyle {
+            #if os(iOS)
+            ContextualBackgroundStyle(
+                backgroundType: backgroundType,
+                imageOffsetY: didAppear ? 0 : imageHeight + 16,
+                keyboardBehavior: keyboardBehavior
+            )
+            #elseif os(macOS)
+            ContextualBackgroundStyle(
+                backgroundType: backgroundType,
+                imageOffsetY: didAppear ? 0 : imageHeight + 16
+            )
+            #endif
         }
     }
 
@@ -315,21 +347,26 @@ public extension View {
         if let animationContext {
             self.modifier(OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(backgroundType: backgroundType, animation: animationContext.animation, delay: animationContext.delay, keyboardBehavior: keyboardBehavior))
         } else {
+            #if os(iOS)
             self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: 0, keyboardBehavior: keyboardBehavior))
+            #elseif os(macOS)
+            self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: 0))
+            #endif
         }
     }
 
 }
 
+#if os(iOS)
 /// Observable object that tracks keyboard frame changes.
 ///
 /// This class listens to keyboard notifications and publishes the keyboard's frame
 /// in global screen coordinates. Views can observe these changes to adjust their layout
 /// when the keyboard appears or disappears.
-final class KeyboardResponder: ObservableObject {
+public final class KeyboardResponder: ObservableObject {
     /// The current keyboard frame in global screen coordinates.
     /// Returns `.zero` when the keyboard is hidden or when keyboard observation is disabled.
-    @Published var keyboardFrame: CGRect = .zero
+    @Published public private(set) var keyboardFrame: CGRect = .zero
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -337,7 +374,7 @@ final class KeyboardResponder: ObservableObject {
     ///
     /// - Parameter isEnabled: Whether to observe keyboard notifications. When `false`,
     ///   no notifications are observed and `keyboardFrame` will always be `.zero`.
-    init(isEnabled: Bool = true) {
+    public init(isEnabled: Bool = true) {
         guard isEnabled else { return }
 
         NotificationCenter.default
@@ -357,3 +394,4 @@ final class KeyboardResponder: ObservableObject {
             .store(in: &cancellables)
     }
 }
+#endif

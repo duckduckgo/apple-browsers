@@ -96,4 +96,8 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String) {
         delegate?.tabDidRequestDownloads(tab: self)
     }
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String) {
+        delegate?.tabDidRequestDeleteContextualChat(tab: self, chatID: chatID)
+    }
 }

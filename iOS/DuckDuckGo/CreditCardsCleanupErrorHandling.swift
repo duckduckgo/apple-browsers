@@ -1,8 +1,8 @@
 //
-//  CredentialsCleanupErrorHandling.swift
+//  CreditCardsCleanupErrorHandling.swift
 //  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,15 +21,16 @@ import Foundation
 import BrowserServicesKit
 import Common
 import Persistence
+import Core
 
-public class CredentialsCleanupErrorHandling: EventMapping<CredentialsCleanupError> {
+public class CreditCardsCleanupErrorHandling: EventMapping<CreditCardsCleanupError> {
 
     public init() {
         super.init { event, _, _, _ in
-            if event.cleanupError is CredentialsCleanupCancelledError {
-                Pixel.fire(pixel: .credentialsCleanupAttemptedWhileSyncWasEnabled)
+            if event.cleanupError is CreditCardsCleanupCancelledError {
+                Pixel.fire(pixel: .creditCardsCleanupAttemptedWhileSyncWasEnabled)
             } else {
-                let domainEvent = Pixel.Event.credentialsDatabaseCleanupFailed
+                let domainEvent = Pixel.Event.creditCardsDatabaseCleanupFailed
                 let processedErrors = CoreDataErrorsParser.parse(error: event.cleanupError as NSError)
                 let params = processedErrors.errorPixelParameters
 
@@ -38,7 +39,7 @@ public class CredentialsCleanupErrorHandling: EventMapping<CredentialsCleanupErr
         }
     }
 
-    override init(mapping: @escaping EventMapping<CredentialsCleanupError>.Mapping) {
+    override init(mapping: @escaping EventMapping<CreditCardsCleanupError>.Mapping) {
         fatalError("Use init()")
     }
 }

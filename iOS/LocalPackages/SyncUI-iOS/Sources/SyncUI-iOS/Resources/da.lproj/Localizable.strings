@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Gendan automatisk dine data på denne enhed, hvis du geninstallerer appen.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Hvis du geninstallerer DuckDuckGo-appen, spørger vi, om du vil gendanne dine data på denne enhed.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Genoptag din Sync & Backup-session for at gendanne dine bogmærker, adgangskoder og andet, eller fortsæt med en ny opsætning.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Til";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Gendan automatisk dine data, hvis du geninstallerer appen. Sync & Backup-data kan ikke gendannes efter 18 måneders inaktivitet.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Gendan ved geninstallation af appen";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Gem gendannelses-PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Hvis du mister din enhed, skal du bruge denne gendannelseskode til at gendanne dine synkroniserede data.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Brug denne kode til at gendanne dine data, hvis du mister adgangen til denne enhed. Sync & Backup-data kan ikke gendannes efter 18 måneders inaktivitet. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Indtast tekstkode manuelt";

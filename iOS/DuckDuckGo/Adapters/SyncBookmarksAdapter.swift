@@ -26,6 +26,7 @@ import Persistence
 import SyncDataProviders
 import WidgetKit
 import os.log
+import Core
 
 public protocol FavoritesDisplayModeStoring: AnyObject {
     var favoritesDisplayMode: FavoritesDisplayMode { get set }

@@ -122,7 +122,8 @@ extension PromoServiceFactoryTests {
             keyValueStore: InMemoryThrowingKeyValueStore(),
             notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
             uiHosting: { nil },
-            isOnboardingCompletedProvider: { true }
+            isOnboardingCompletedProvider: { true },
+            dockCustomization: DockCustomizerMock()
         )
         return PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),

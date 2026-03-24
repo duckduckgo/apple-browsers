@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automātiski atjauno datus šajā ierīcē, ja atkārtoti instalē lietotni.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Ja atkārtoti instalēsi lietotni DuckDuckGo, mēs jautāsim, vai vēlies atjaunot datus šajā ierīcē.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Atsāc Sync & Backup sesiju, lai atjaunotu grāmatzīmes, paroles un citus datus, vai turpini ar jaunu iestatīšanu.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Ieslēgts";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Atjauno datus, ja atkārtoti instalē lietotni. Sync & Backup datus nevar atgūt pēc 18 mēnešu neaktivitātes.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Atjauno, atkārtoti instalējot lietotni";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Saglabāt atgūšanas PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Ja pazaudēsi savu ierīci, šis atgūšanas kods būs nepieciešams, lai atjaunotu sinhronizētos datus.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Izmanto šo kodu, lai atjaunotu datus, ja esi zaudējis piekļuvi šai ierīcei. Sync & Backup datus nevar atgūt pēc 18 mēnešu neaktivitātes. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Ievadīt teksta kodu manuāli";

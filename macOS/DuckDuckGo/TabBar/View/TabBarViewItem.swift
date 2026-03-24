@@ -148,8 +148,12 @@ final class TabBarItemCellView: NSView {
     }
 
     private enum Metrics {
-        static let closeButtonWidth: CGFloat = 16
-        static let closeButtonHeight: CGFloat = 16
+        static let audioAndCrashButtonSide: CGFloat = 16
+        static let closeButtonDimension: CGFloat = 20
+        static let faviconImageSide: CGFloat = 20
+        static let permissionButtonSideMin: CGFloat = 16
+        static let titleHeight: CGFloat = 16
+        static let titlePaddingOnCompact: CGFloat = 16
     }
 
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
@@ -199,7 +203,7 @@ final class TabBarItemCellView: NSView {
 
     fileprivate lazy var closeButton = {
         let closeButton = MouseOverButton(image: .close, target: nil, action: #selector(TabBarViewItem.closeButtonAction))
-        closeButton.frame.size = NSSize(width: Metrics.closeButtonWidth, height: Metrics.closeButtonHeight)
+        closeButton.frame.size = NSSize(width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
         closeButton.bezelStyle = .shadowlessSquare
         closeButton.normalTintColor = .button
         closeButton.mouseDownColor = .buttonMouseDown
@@ -439,7 +443,7 @@ final class TabBarItemCellView: NSView {
         }
         var maxX = bounds.maxX - 9
         if closeButton.isShown {
-            closeButton.frame = NSRect(x: maxX - 16, y: bounds.midY - 8, width: Metrics.closeButtonWidth, height: Metrics.closeButtonHeight)
+            closeButton.frame = NSRect(x: maxX - Metrics.closeButtonDimension, y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
             maxX = closeButton.frame.minX - 4
         } else {
             maxX = max(maxX - 1 /* 28 title offset with favicon */, 12 /* without favicon */)
@@ -469,42 +473,51 @@ final class TabBarItemCellView: NSView {
     }
 
     private func layoutForCompactMode() {
-        let isFaviconShown = faviconView.isShown
-        let isTitleShown = titleView.isShown
-        let numberOfElements: CGFloat = (isFaviconShown ? 1 : 0) + (crashIndicatorButton.isShown || audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (isTitleShown ? 1 : 0)
-        let elementWidth: CGFloat = 16
-        var totalWidth = numberOfElements * elementWidth
+        let isAudioOrCrashShown = crashIndicatorButton.isShown || audioButton.isShown
+        let numberOfElements: CGFloat =
+            (faviconView.isShown        ? 1 : 0) +
+            (isAudioOrCrashShown        ? 1 : 0) +
+            (permissionButton.isShown   ? 1 : 0) +
+            (closeButton.isShown        ? 1 : 0)
+
+        var totalWidth =
+            (faviconView.isShown        ? Metrics.faviconImageSide : 0) +
+            (isAudioOrCrashShown        ? Metrics.audioAndCrashButtonSide : 0) +
+            (permissionButton.isShown   ? Metrics.permissionButtonSideMin : 0) +
+            (closeButton.isShown        ? Metrics.closeButtonDimension : 0)
+
         // tighten elements to fit all
         let spacing = min(4, bounds.width - 4 - totalWidth)
         totalWidth += (numberOfElements - 1) * spacing
+
         // shift all shown elements from center
         var x = (bounds.width - totalWidth) / 2
 
         if faviconView.isShown {
             assert(closeButton.isHidden)
-            faviconView.frame = NSRect(x: x.rounded(), y: bounds.midY - 10, width: 20, height: 20)
+            faviconView.frame = NSRect(x: x.rounded(), y: bounds.midY - 10, width: Metrics.faviconImageSide, height: Metrics.faviconImageSide)
             x = faviconView.frame.maxX + spacing
         } else if titleView.isShown {
             assert(closeButton.isHidden)
-            titleView.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)
+            titleView.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: Metrics.titleHeight)
             updateTitleTextFieldMask()
         }
 
         if crashIndicatorButton.isShown {
-            crashIndicatorButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            crashIndicatorButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.audioAndCrashButtonSide, height: Metrics.audioAndCrashButtonSide)
             x = crashIndicatorButton.frame.maxX + spacing
         } else if audioButton.isShown {
-            audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.audioAndCrashButtonSide, height: Metrics.audioAndCrashButtonSide)
             x = audioButton.frame.maxX + spacing
         }
         if permissionButton.isShown {
             // make permission button from 16 to 24pt wide depending of available space
-            permissionButton.frame = NSRect(x: x.rounded() - spacing.rounded(), y: bounds.midY - 12, width: 16 + spacing.rounded() * 2, height: 24)
+            permissionButton.frame = NSRect(x: x.rounded() - spacing.rounded(), y: bounds.midY - 12, width: Metrics.permissionButtonSideMin + spacing.rounded() * 2, height: 24)
             x = permissionButton.frame.maxX
         }
         if closeButton.isShown {
             // close button appears in place of favicon in compact mode
-            closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.closeButtonWidth, height: Metrics.closeButtonHeight)
+            closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
             x = closeButton.frame.maxX + spacing
         }
     }
@@ -683,7 +696,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarViewItem")
 
     enum Width {
-        static let minimum: CGFloat = 52
+        static let minimum: CGFloat = 54
         static let minimumSelected: CGFloat = 120
         static let maximum: CGFloat = 240
     }

@@ -84,7 +84,8 @@ protocol ScriptSourceProviding {
             return appDelegate?.syncService
         },
         syncErrorHandler: Application.appDelegate.syncErrorHandler,
-        webExtensionAvailability: Application.appDelegate.webExtensionAvailability
+        webExtensionAvailability: Application.appDelegate.webExtensionAvailability,
+        dockCustomization: Application.appDelegate.dockCustomization
     )
 }
 
@@ -117,6 +118,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let appearancePreferences: AppearancePreferences
+    let dockCustomization: DockCustomization
 
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -141,7 +143,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          autoconsentManagement: AutoconsentManagement,
          syncServiceProvider: @escaping () -> DDGSyncing?,
          syncErrorHandler: SyncErrorHandling,
-         webExtensionAvailability: WebExtensionAvailabilityProviding?
+         webExtensionAvailability: WebExtensionAvailabilityProviding?,
+         dockCustomization: DockCustomization
     ) {
 
         self.configStorage = configStorage
@@ -163,6 +166,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.syncErrorHandler = syncErrorHandler
         self.webExtensionAvailability = webExtensionAvailability
         self.appearancePreferences = appearancePreferences
+        self.dockCustomization = dockCustomization
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
@@ -260,7 +264,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
-            dockCustomization: DockCustomizer(),
+            dockCustomization: dockCustomization,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,

@@ -34,7 +34,8 @@ final class DefaultBrowserAndDockPromptService {
         keyValueStore: ThrowingKeyValueStoring,
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting,
         uiHosting: @escaping () -> DefaultBrowserAndDockPromptUIHosting?,
-        isOnboardingCompletedProvider: @escaping () -> Bool
+        isOnboardingCompletedProvider: @escaping () -> Bool,
+        dockCustomization: DockCustomization
     ) {
 
         var defaultBrowserAndDockPromptDebugStore: DefaultBrowserAndDockPromptDebugStore?
@@ -75,9 +76,10 @@ final class DefaultBrowserAndDockPromptService {
             notificationPresenter: notificationPresenter,
             featureFlagger: featureFlagger,
             isOnboardingCompleted: isOnboardingCompletedProvider,
+            dockCustomization: dockCustomization,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
-        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
+        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier(dockCustomizer: dockCustomization)
         let uiProvider = DefaultBrowserAndDockPromptUIProvider()
         self.uiHosting = uiHosting
 

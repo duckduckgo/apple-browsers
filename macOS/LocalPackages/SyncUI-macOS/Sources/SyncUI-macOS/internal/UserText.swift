@@ -97,6 +97,7 @@ enum UserText {
 
     static let recovery = NSLocalizedString("prefrences.sync.recovery", bundle: Bundle.module, value: "Recovery", comment: "Sync settings section title")
     static let recoveryInstructions = NSLocalizedString("prefrences.sync.recovery-instructions", bundle: Bundle.module, value: "If you lose your device, you will need this recovery code to restore your synced data.", comment: "Instructions on how to restore synced data")
+    static let recoveryInstructionsFooter = NSLocalizedString("preferences.sync.recovery-instructions.footer", bundle: Bundle.module, value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer / caption on the restore synced data section in sync settings")
 
     // Sync with another device dialog
     static let syncWithAnotherDeviceTitle = NSLocalizedString("preferences.sync.sync-with-another-device.dialog-title", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync with another device dialog title")
@@ -118,7 +119,7 @@ enum UserText {
     static let recoveryPDFExplanation = NSLocalizedString("prefrences.sync.recovery-pdf-explanation", bundle: Bundle.module, value: "If you lose access to your devices, you will need this code to recover your synced data. You can save this code to your device as a PDF.", comment: "Sync recovery PDF explanation")
     static let recoveryPDFCopyCodeButton = NSLocalizedString("prefrences.sync.recovery-pdf-copy-code-button", bundle: Bundle.module, value: "Copy Code", comment: "Sync recovery PDF copy code button")
     static let recoveryPDFSavePDFButton = NSLocalizedString("prefrences.sync.recovery-pdf-save-pdf-button", bundle: Bundle.module, value: "Save PDF", comment: "Sync recovery PDF save pdf button")
-    static let recoveryPDFWarning = NSLocalizedString("prefrences.sync.recovery-pdf-warning", bundle: Bundle.module, value: "Anyone with access to this code can access your synced data, so please keep it in a safe place.", comment: "Sync recovery PDF warning")
+    static let recoveryPDFWarning = NSLocalizedString("prefrences.sync.recovery-pdf-warning", bundle: Bundle.module, value: "Sync & Backup data can’t be recovered after 18 months of inactivity.", comment: "Sync recovery PDF warning")
 
     // Sync with server dialog
     static let syncWithServerTitle = NSLocalizedString("preferences.sync.sync-with-server-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync with server dialog title")

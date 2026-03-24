@@ -22,11 +22,13 @@ import Common
 import os.log
 import Persistence
 
-protocol DockStateChecking {
-    var isAddedToDock: Bool { get }
-}
+protocol DockCustomization: AnyObject {
+    /// Whether the running build may programmatically add the app to the Dock (false for App Store sandbox builds).
+    var supportsAddingToDock: Bool { get }
 
-protocol DockCustomization: DockStateChecking {
+    /// Reads whether this app's bundle identifier appears in the user's Dock plist (`persistent-apps`).
+    var isAddedToDock: Bool { get }
+
     @discardableResult
     func addToDock() -> Bool
 
@@ -45,6 +47,10 @@ protocol DockCustomization: DockStateChecking {
 final class DockCustomizer: DockCustomization {
     enum Keys {
         static let wasNotificationShownToUser = "was-dock-notification.show-to-users"
+    }
+
+    var supportsAddingToDock: Bool {
+        !applicationBuildType.isAppStoreBuild
     }
 
     private let applicationBuildType: ApplicationBuildType
@@ -126,7 +132,7 @@ final class DockCustomizer: DockCustomization {
     // to restart after a brief delay to apply the changes.
     @discardableResult
     func addToDock() -> Bool {
-        guard !applicationBuildType.isAppStoreBuild else {
+        guard supportsAddingToDock else {
             return false
         }
 

@@ -104,7 +104,7 @@ final class TabAnimationsStyleProvider: TabStyleProviding {
     let tabSpacing: CGFloat = 0
     let applyTabShadow: Bool = false
     let standardTabCornerRadius: CGFloat = 10.0
-    let tabButtonActionsCornerRadius: CGFloat = 5
+    let tabButtonActionsCornerRadius: CGFloat = 3
 
     init(palette: ThemeColors) {
         self.palette = palette

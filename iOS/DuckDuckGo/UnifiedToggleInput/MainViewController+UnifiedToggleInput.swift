@@ -110,9 +110,9 @@ extension MainViewController {
 
     private func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
         let height = coordinator.omnibarEditingHeight()
+        viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = height
-            self.viewCoordinator.superview.layoutIfNeeded()
+            self.viewCoordinator.navigationBarContainer.layoutIfNeeded()
         }
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
         updateFloatingSubmitVisibility()

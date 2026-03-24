@@ -77,7 +77,7 @@ jobs:
     timeout-minutes: 10
 
     outputs:
-      commit_sha: ${{ steps.set-commit-sha.outputs.commit_sha }}
+      commit_sha: ${{ steps.update-asana.outputs.commit_sha }}
 
     steps:
 
@@ -87,11 +87,6 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ github.ref_name }}
           submodules: recursive
-
-      - name: Set commit SHA output
-        id: set-commit-sha
-        run: |
-          echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

@@ -594,6 +594,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         clearAttachments()
+        viewController.text = ""
+        textState = .empty
     }
 
     func updateSelectedModel(_ modelId: String) {

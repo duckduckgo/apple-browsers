@@ -3446,7 +3446,8 @@ extension MainViewController: OmniBarDelegate {
         }
 
         guard newTabPageViewController == nil else { return }
-        
+        guard !isIPadModeToggleInAIChatMode else { return }
+
         if !skipSERPFlow, isSERPPresented, let query = omniBar.text {
             tryToShowSuggestionTray(.autocomplete(query: query))
         } else {

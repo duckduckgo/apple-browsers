@@ -816,7 +816,7 @@ func removeVersionFromAppcast(_ version: String, appcastContent: String) -> Stri
         return nil
     }
 
-    return xmlDoc.xmlString(options: [.nodePreserveWhitespace, .nodePreserveAll, .nodePrettyPrint])
+    return xmlDoc.xmlString
 }
 
 func writeAppcastContent(_ content: String, to filePath: URL) {

@@ -107,7 +107,6 @@ extension Preferences {
                                 HStack(alignment: .top) {
                                     Image(nsImage: DesignSystemImages.Glyphs.Size16.addToTaskbar)
                                         .foregroundColor(Color(.linkBlue))
-                                        .padding(.trailing, 8)
                                     VStack(alignment: .leading) {
                                         Text(UserText.addToDockInstructions)
                                             .padding(.bottom, 8)

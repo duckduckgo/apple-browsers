@@ -81,7 +81,7 @@ public class DBPIOSInterface {
     }
 
     public protocol ContinuedProcessingDelegate: AnyObject {
-        func saveProfileAndStartInitialRun(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws
+        func saveProfileAndStartContinuedProcessingInitialRunIfSupported(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -212,6 +212,10 @@ public final class DataBrokerProtectionIOSManager {
         return false
     }
 
+    private var isInitialContinuedProcessingRunActive: Bool {
+        continuedProcessingDelegate != nil
+    }
+
     /// Snapshots the current authentication state and caches whether this is a free scan run.
     /// Returns the current `isAuthenticated` value for callers that need it.
     @discardableResult
@@ -340,7 +344,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
         operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
 
-        if featureFlagger.isForegroundRunningOnAppActiveFeatureOn {
+        if featureFlagger.isForegroundRunningOnAppActiveFeatureOn,
+           !isInitialContinuedProcessingRunActive {
             await startImmediateScanOperations()
         } else {
             await checkForEmailConfirmationData()
@@ -369,7 +374,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
     public func dashboardDidOpen() {
-        guard featureFlagger.isForegroundRunningWhenDashboardOpenFeatureOn else { return }
+        guard featureFlagger.isForegroundRunningWhenDashboardOpenFeatureOn,
+              !isInitialContinuedProcessingRunActive else { return }
 
         Logger.dataBrokerProtection.log("Starting all operations whilst dashboard open")
         queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
@@ -630,6 +636,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
     public func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController {
         return DataBrokerProtectionViewController(authenticationDelegate: self,
                                                   databaseDelegate: self,
+                                                  continuedProcessingDelegate: self,
                                                   userEventsDelegate: self,
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
@@ -920,9 +927,46 @@ private extension DataBrokerProtectionIOSManager {
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.ContinuedProcessingDelegate {
     @MainActor
-    public func saveProfileAndStartInitialRun(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws {
-        if #available(iOS 26.0, *) {
-            try await continuedProcessingCoordinator.startInitialRun(profile: profile)
+    private func shouldUseContinuedProcessingForInitialRun() -> Bool {
+        if let continuedProcessingTestConfiguration {
+            return continuedProcessingTestConfiguration.shouldUseContinuedProcessingForInitialRun
+        }
+
+        guard #available(iOS 26.0, *) else {
+            return false
+        }
+
+        return featureFlagger.isContinuedProcessingFeatureOn
+    }
+
+    @MainActor
+    public func saveProfileAndStartContinuedProcessingInitialRunIfSupported(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws {
+        if shouldUseContinuedProcessingForInitialRun() {
+            do {
+                try await saveProfileAndPrepareForInitialScans(profile)
+            } catch {
+                Logger.dataBrokerProtection.error("Continued processing preparation failed before task submission, falling back to legacy save. Error: \(error.localizedDescription, privacy: .public)")
+                try await saveProfile(profile)
+                return
+            }
+
+            do {
+                guard let scanPlan = try makeContinuedProcessingInitialRunPlan() else {
+                    Logger.dataBrokerProtection.log("Continued processing: no pending scans found during initial run preparation")
+                    return
+                }
+
+                if let coordinatorForTesting = continuedProcessingTestConfiguration?.coordinator {
+                    try await coordinatorForTesting.startInitialRun(scanPlan: scanPlan)
+                } else if #available(iOS 26.0, *) {
+                    try await continuedProcessingCoordinator.startInitialRun(scanPlan: scanPlan)
+                } else {
+                    fatalError("Continued processing coordinator is unavailable before iOS 26")
+                }
+            } catch {
+                Logger.dataBrokerProtection.error("Continued processing start failed after preparation, falling back to immediate scans. Error: \(error.localizedDescription, privacy: .public)")
+                await startImmediateScanOperations()
+            }
         } else {
             try await saveProfile(profile)
         }
@@ -933,6 +977,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.ContinuedProcessingDel
         profile: DataBrokerProtectionCore.DataBrokerProtectionProfile
     ) async throws -> DBPContinuedProcessingPlans.InitialScanPlan? {
         try await saveProfileAndPrepareForInitialScans(profile)
+
+        return try makeContinuedProcessingInitialRunPlan()
+    }
+
+    private func makeContinuedProcessingInitialRunPlan() throws -> DBPContinuedProcessingPlans.InitialScanPlan? {
 
         let brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
         let scanPlan = DBPContinuedProcessingPlanBuilder.makeInitialScanPlan(from: brokerProfileQueryData)

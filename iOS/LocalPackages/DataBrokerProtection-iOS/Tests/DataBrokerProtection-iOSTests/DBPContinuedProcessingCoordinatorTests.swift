@@ -24,23 +24,6 @@ import DataBrokerProtectionCore
 @MainActor
 final class DBPContinuedProcessingCoordinatorTests: XCTestCase {
 
-    func testWhenStartInitialRunAndNoPendingScans_thenDoesNotStartImmediateScans() async throws {
-        let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        dependencies.database.brokerProfileQueryDataToReturn = [
-            DBPContinuedProcessingTestUtils.makeBrokerProfileQueryData(
-                brokerId: 1,
-                profileQueryId: 1,
-                scanPreferredRunDate: nil
-            )
-        ]
-        let sut = DBPContinuedProcessingCoordinator(manager: manager)
-
-        try await sut.startInitialRun(profile: DBPContinuedProcessingTestUtils.makeProfile())
-
-        XCTAssertFalse(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
-        XCTAssertNil(manager.continuedProcessingDelegate)
-    }
-
     func testWhenScanPhaseCompletesAndNoInitialOptOuts_thenDoesNotStartImmediateOptOutsAndClearsDelegate() async {
         let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
         dependencies.database.brokerProfileQueryDataToReturn = [

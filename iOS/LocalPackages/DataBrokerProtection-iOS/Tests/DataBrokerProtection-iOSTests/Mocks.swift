@@ -50,15 +50,15 @@ final class MockContinuedProcessingCoordinator: DBPContinuedProcessingCoordinati
     var didCallStartInitialRun = false
     var _hasAttachedTask = false
     var startInitialRunError: Error?
-    private(set) var receivedProfile: DataBrokerProtectionProfile?
+    private(set) var receivedScanPlan: DBPContinuedProcessingPlans.InitialScanPlan?
 
     func hasAttachedTask() async -> Bool {
         _hasAttachedTask
     }
 
-    func startInitialRun(profile: DataBrokerProtectionProfile) async throws {
+    func startInitialRun(scanPlan: DBPContinuedProcessingPlans.InitialScanPlan) async throws {
         didCallStartInitialRun = true
-        receivedProfile = profile
+        receivedScanPlan = scanPlan
 
         if let startInitialRunError {
             throw startInitialRunError
@@ -69,6 +69,6 @@ final class MockContinuedProcessingCoordinator: DBPContinuedProcessingCoordinati
         didCallStartInitialRun = false
         _hasAttachedTask = false
         startInitialRunError = nil
-        receivedProfile = nil
+        receivedScanPlan = nil
     }
 }

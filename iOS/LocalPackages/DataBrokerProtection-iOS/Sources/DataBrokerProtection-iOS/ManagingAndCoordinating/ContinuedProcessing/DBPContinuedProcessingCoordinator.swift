@@ -35,7 +35,7 @@ enum DBPContinuedProcessingEvent {
 
 protocol DBPContinuedProcessingCoordinating: AnyObject {
     func hasAttachedTask() async -> Bool
-    func startInitialRun(profile: DataBrokerProtectionProfile) async throws
+    func startInitialRun(scanPlan: DBPContinuedProcessingPlans.InitialScanPlan) async throws
 }
 
 @available(iOS 26.0, *)
@@ -73,8 +73,8 @@ actor DBPContinuedProcessingCoordinator {
 
     // MARK: - Run Lifecycle
 
-    /// Prepares the initial run, registers the continued task, and starts the initial scan phase.
-    func startInitialRun(profile: DataBrokerProtectionProfile) async throws {
+    /// Registers the continued task for a prepared scan plan and starts the initial scan phase.
+    func startInitialRun(scanPlan: DBPContinuedProcessingPlans.InitialScanPlan) async throws {
         guard !isRunActive else {
             Logger.dataBrokerProtection.error(
                 "Continued processing: startInitialRun called while already active in phase \(String(describing: self.phase), privacy: .public) for run \(self.logRunIdentifier(), privacy: .public), ignoring"
@@ -82,10 +82,7 @@ actor DBPContinuedProcessingCoordinator {
             return
         }
 
-        guard try await prepareInitialRun(profile: profile) != nil else {
-            Logger.dataBrokerProtection.log("Continued processing: no pending scans found during initial run preparation")
-            return
-        }
+        prepareInitialRun(scanPlan: scanPlan)
 
         isRunActive = true
         phase = .initialScan
@@ -208,12 +205,8 @@ actor DBPContinuedProcessingCoordinator {
 
     // MARK: - Helpers
 
-    /// Builds the initial scan plan and seeds the progress reporter for the run.
-    private func prepareInitialRun(profile: DataBrokerProtectionProfile) async throws -> DBPContinuedProcessingPlans.InitialScanPlan? {
-        guard let scanPlan = try await manager?.prepareContinuedProcessingInitialRun(profile: profile) else {
-            return nil
-        }
-
+    /// Seeds the progress reporter for the prepared initial scan plan.
+    private func prepareInitialRun(scanPlan: DBPContinuedProcessingPlans.InitialScanPlan) {
         Logger.dataBrokerProtection.log(
             "Continued processing: preparing initial run with \(scanPlan.scanCount, privacy: .public) scans"
         )
@@ -221,8 +214,6 @@ actor DBPContinuedProcessingCoordinator {
         let scanJobTimeout = manager?.continuedProcessingScanJobTimeout() ?? .minutes(3)
         let scanBudgetUnitsPerJob = max(Int64(scanJobTimeout / Constants.heartbeatInterval), 1)
         progressReporter.startInitialRun(plan: scanPlan, scanBudgetUnitsPerJob: scanBudgetUnitsPerJob)
-
-        return scanPlan
     }
 
     /// Creates a unique task identifier, registers the handler, and submits the continued task request.

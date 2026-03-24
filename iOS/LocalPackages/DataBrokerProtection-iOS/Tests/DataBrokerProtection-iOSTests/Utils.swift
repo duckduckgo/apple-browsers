@@ -41,7 +41,7 @@ enum DBPContinuedProcessingTestUtils {
         let continuedProcessingCoordinator = (continuedProcessingTestConfiguration?.coordinator as? MockContinuedProcessingCoordinator) ?? MockContinuedProcessingCoordinator()
         let normalizedContinuedProcessingTestConfiguration = DataBrokerProtectionIOSManager.ContinuedProcessingTestConfiguration(
             coordinator: continuedProcessingCoordinator,
-            shouldUseContinuedProcessingForInitialRun: continuedProcessingTestConfiguration?.shouldUseContinuedProcessingForInitialRun ?? true,
+            shouldUseContinuedProcessingForInitialRun: continuedProcessingTestConfiguration?.shouldUseContinuedProcessingForInitialRun ?? featureFlagger.isContinuedProcessingFeatureOn,
             shouldRegisterBackgroundTaskHandler: continuedProcessingTestConfiguration?.shouldRegisterBackgroundTaskHandler ?? false
         )
         return IOSManagerTestDependenciesStore().makeTestIOSManager(

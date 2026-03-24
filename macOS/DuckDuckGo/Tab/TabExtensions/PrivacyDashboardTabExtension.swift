@@ -81,6 +81,7 @@ final class PrivacyDashboardTabExtension {
                 self.privacyInfo?.trackerInfo.add(detectedThirdPartyRequest: tracker.request)
             case .trackerWithSurrogate(host: let host):
                 self.privacyInfo?.trackerInfo.addInstalledSurrogateHost(host, for: tracker.request, onPageWithURL: url)
+                self.privacyInfo?.trackerInfo.addDetectedTracker(tracker.request, onPageWithURL: url)
             }
         }.store(in: &cancellables)
 

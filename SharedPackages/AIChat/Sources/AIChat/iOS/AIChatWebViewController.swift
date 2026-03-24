@@ -18,6 +18,7 @@
 //
 
 #if os(iOS)
+import AVFoundation
 import UIKit
 import WebKit
 
@@ -37,6 +38,7 @@ final class AIChatWebViewController: UIViewController {
         webView.isOpaque = false /// Required to make the background color visible
         webView.backgroundColor = .webViewBackgroundColor
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         return webView
     }()
@@ -120,6 +122,8 @@ extension AIChatWebViewController {
         static let autoSendKey = "prompt"
         static let autoSendValue = "1"
         static let toolChoice = "toolChoice"
+        static let modeKey = "mode"
+        static let voiceModeValue = "voice"
     }
 
     func reload() {
@@ -134,6 +138,22 @@ extension AIChatWebViewController {
     func loadQuery(_ query: String, autoSend: Bool, tools: [AIChatRAGTool]?) {
         let url = buildQueryURL(query: query, autoSend: autoSend, tools: tools)
         webView.load(URLRequest(url: url))
+    }
+
+    func loadVoiceMode() {
+        let url = buildVoiceModeURL()
+        webView.load(URLRequest(url: url))
+    }
+
+    private func buildVoiceModeURL() -> URL {
+        guard var components = URLComponents(url: chatModel.aiChatURL, resolvingAgainstBaseURL: false) else {
+            return chatModel.aiChatURL
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == QueryParameters.modeKey }
+        queryItems.append(URLQueryItem(name: QueryParameters.modeKey, value: QueryParameters.voiceModeValue))
+        components.queryItems = queryItems
+        return components.url ?? chatModel.aiChatURL
     }
 
     private func buildQueryURL(query: String, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL {
@@ -220,6 +240,26 @@ extension AIChatWebViewController: WKNavigationDelegate {
         } else {
             loadingView.stopAnimating()
         }
+    }
+}
+
+// MARK: - WKUIDelegate
+
+extension AIChatWebViewController: WKUIDelegate {
+
+    func webView(_ webView: WKWebView,
+                 requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo,
+                 type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        guard origin.host.isDuckAIHost,
+              type == .microphone || type == .cameraAndMicrophone else {
+            decisionHandler(.deny)
+            return
+        }
+
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        decisionHandler(status == .authorized ? .grant : .deny)
     }
 }
 

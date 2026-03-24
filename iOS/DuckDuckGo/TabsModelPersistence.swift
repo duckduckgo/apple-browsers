@@ -29,7 +29,7 @@ enum TabsModelStorageKey {
 protocol TabsModelPersisting {
 
     func getTabsModel(for key: TabsModelStorageKey) throws -> TabsModel?
-    func save(model: TabsModel, for key: TabsModelStorageKey)
+    func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error>
     func clear(for key: TabsModelStorageKey)
     func clearAll()
 }
@@ -139,15 +139,17 @@ class TabsModelPersistence: TabsModelPersisting {
         legacyStore.removeObject(forKey: Constants.legacyUDKey)
     }
 
-    public func save(model: TabsModel, for key: TabsModelStorageKey) {
+    public func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         do {
             let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
             try store(for: key).set(data, forKey: Constants.storageKey)
+            return .success(())
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                                          error: error)
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
+            return .failure(error)
         }
     }
 

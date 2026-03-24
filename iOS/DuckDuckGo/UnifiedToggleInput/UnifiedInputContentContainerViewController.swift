@@ -369,7 +369,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, barView: contentContainerView, isTopBarPosition: false)
+        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, anchorView: contentContainerView, isTopBarPosition: false)
     }
 
     private func setupSubscriptions() {
@@ -591,22 +591,11 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
 extension UnifiedInputContentContainerViewController: VoiceSearchViewControllerDelegate {
 
     func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
-        if let text = query {
-            switchBarHandler.updateCurrentText(text)
-        }
-
         controller.dismiss(animated: true) { [weak self] in
             guard let self, let query else { return }
-            self.handleVoiceSearchCompletion(with: query, for: target)
-        }
-    }
-
-    private func handleVoiceSearchCompletion(with query: String, for target: VoiceSearchTarget) {
-        switch target {
-        case .SERP:
-            delegate?.unifiedInputEditingStateDidSubmitQuery(query)
-        case .AIChat:
-            delegate?.unifiedInputEditingStateDidSubmitPrompt(query, tools: nil)
+            let mode: TextEntryMode = (target == .AIChat) ? .aiChat : .search
+            self.switchBarHandler.setToggleState(mode)
+            self.switchBarHandler.submitText(query)
         }
     }
 }

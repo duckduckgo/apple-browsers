@@ -53,6 +53,7 @@ public struct UserText {
     // MARK: Scoped Fire Confirmation
 
     public static let scopedFireConfirmationAlertTitle = NSLocalizedString("scoped.fire.confirmation.alert.title", value: "Delete tabs and site data?", comment: "Title for scoped fire confirmation dialog asking user to delete tabs and site data")
+    public static let scopedFireConfirmationAlertFireModeTitle = NotLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
     public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
     public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
@@ -70,11 +71,20 @@ public struct UserText {
     // MARK: Fire Mode Empty State
 
     public static let fireModeEmptyStateTitle = NotLocalizedString("fire.mode.empty.state.title", value: "Fire Tabs", comment: "Title shown on the Fire Mode empty state screen")
+    public static let fireTabEmptyStateTitle = NotLocalizedString("fire.tab.empty.state.title", value: "Fire Tab", comment: "Title shown on the Fire tab empty state screen")
     public static let fireModeEmptyStateBulletHistory = NotLocalizedString("fire.mode.empty.state.bullet.history", value: "Browse without saving local history", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
     public static let fireModeEmptyStateBulletAccount = NotLocalizedString("fire.mode.empty.state.bullet.account", value: "Sign in to a site with a different account", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
     public static let fireModeEmptyStateBulletTroubleshoot = NotLocalizedString("fire.mode.empty.state.bullet.troubleshoot", value: "Troubleshoot websites", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
     public static let fireModeEmptyStateDescription = NotLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
     public static let fireModeEmptyStateNewFireTab = NotLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
+    
+    // MARK: - Tab Switcher Fire Mode
+    public static let openNewTab = NotLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
+    public static let openNewFireTab = NotLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
+    public static let closeFireTab = NotLocalizedString("tab.close.closeFireTab", value: "Close fire tab", comment: "Accessibility label on tab cell")
+    public static let closeNewTab = NotLocalizedString("tab.close.closeNewTab", value: "Close tab", comment: "Accessibility label on tab cell")
+    public static let newTabTitle = NotLocalizedString("tab.new.title", value: "New Tab", comment: "New tab title")
+    public static let fireTabTitle = NotLocalizedString("tab.fire.title", value: "Fire Tab", comment: "Fire tab title")
 
     public static let actionOpen = NSLocalizedString("action.title.open", value: "Open", comment: "Open action")
     public static let actionCopy = NSLocalizedString("action.title.copy", value: "Copy", comment: "Copy action")
@@ -681,8 +691,13 @@ public struct UserText {
     }
     static let netPVPNNotificationsTitle = NSLocalizedString("network.protection.vpn.notifications.title", value: "VPN Notifications", comment: "Title for the VPN Notifications management screen.")
     static let netPStatusViewShareFeedback = NSLocalizedString("network.protection.status.menu.share.feedback", value: "Share Feedback", comment: "The status view 'Share Feedback' button which is shown inline on the status view after the temporary free use footer text")
-    static let netPStatusViewErrorConnectionFailedTitle = NSLocalizedString("network.protection.status.view.error.connection.failed.title", value: "Failed to Connect.", comment: "Generic connection failed error title shown in NetworkProtection's status view.")
-    static let netPStatusViewErrorConnectionFailedMessage = NSLocalizedString("network.protection.status.view.error.connection.failed.message", value: "Please try again later.", comment: "Generic connection failed error message shown in NetworkProtection's status view.")
+    static let netPStatusViewErrorConnectionFailedTitle = NSLocalizedString("network.protection.status.view.error.connection.failed.title", value: "Failed to Connect", comment: "Connection failed error title shown in NetworkProtection's status view.")
+
+    // MARK: - VPN Error Messages
+    static let vpnErrorAuthenticationFailed = NSLocalizedString("network.protection.error.authentication.failed", value: "Unable to authenticate. Please check your subscription is active, and try again.", comment: "Error shown when VPN cannot authenticate the user")
+    static let vpnErrorConnectionFailed = NSLocalizedString("network.protection.error.connection.failed", value: "Unable to connect to a VPN server. Please try again later.", comment: "Error shown when VPN fails to connect to a server")
+    static let vpnErrorSubscriptionExpired = NSLocalizedString("network.protection.error.subscription.expired", value: "Your subscription has ended. Please subscribe again to connect to a VPN server.", comment: "Error shown when the user's subscription has expired")
+    static let vpnErrorUnknown = NSLocalizedString("network.protection.error.unknown", value: "An unexpected error occurred. Please try again. If this issue continues, scroll to **About** and tap **FAQs and Support** for help.", comment: "Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations.")
     static let netPPreferredLocationSettingTitle = NSLocalizedString("network.protection.vpn.preferred.location.title", value: "Preferred Location", comment: "Title for the Preferred Location VPN Settings item.")
     static let netPPreferredLocationNearest = NSLocalizedString("network.protection.vpn.preferred.location.nearest", value: "Nearest Location", comment: "Label for the Preferred Location VPN Settings item when the nearest available location is selected.")
     static let netPVPNLocationTitle = NSLocalizedString("network.protection.vpn.location.title", value: "VPN Location", comment: "Title for the VPN Location screen.")
@@ -1981,6 +1996,7 @@ public struct UserText {
 
     // MARK: - AI Chat
     public static let aiChatToolbarSearchButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.search.button.accessibility.label", value: "Search web", comment: "Accessibility label for the search/globe button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarCustomizeResponsesButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.customizeResponses.button.accessibility.label", value: "Customize Responses", comment: "Accessibility label for the customize responses button in the Duck.ai native input toolbar")
     public static let aiChatToolbarAttachButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.attach.button.accessibility.label", value: "Attach image", comment: "Accessibility label for the image/attach button in the Duck.ai native input toolbar")
     public static let aiChatToolbarSubmitButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.submit.button.accessibility.label", value: "Submit", comment: "Accessibility label for the submit button in the Duck.ai native input toolbar")
 
@@ -1994,6 +2010,9 @@ public struct UserText {
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
     public static let settingsAIChatExperimentalTransition = NotLocalizedString("settings.aichat.native.experimental.transition", value: "Experimental switcher bar transition", comment: "")
+    
+    public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take a Photo", comment: "Action sheet option to take a photo using the device camera for attaching to an AI chat message")
+    public static let aiChatAttachmentOptionChoosePhoto = NSLocalizedString("aichat.attachment.option.choose.photo", value: "Choose Photo", comment: "Action sheet option to choose a photo from the photo library for attaching to an AI chat message")
 
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
@@ -2352,6 +2371,7 @@ public struct UserText {
     public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")
+            static let delayedTitle = NSLocalizedString("onboarding.privacypro.promo.title.delayed", value: "Did you know?", comment: "The title of the delayed subscription promotion dialog shown to users who skipped onboarding")
 
             // MARK: - Message Components
 

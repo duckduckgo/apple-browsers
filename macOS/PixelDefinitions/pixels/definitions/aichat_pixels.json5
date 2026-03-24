@@ -160,5 +160,21 @@
                 "enum": ["address-bar-button", "sidebar-close-button", "context-menu", "tabbar-button"]
             }
         ]
+    },
+    "m_mac_aichat_is_enabled": {
+        "description": "Daily pixel for AI Chat features enabled or disabled",
+        "owners": ["Bunn"],
+        "triggers": ["startup"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "is_enabled",
+                "description": "Whether AI Chat features are currently enabled",
+                "type": "string",
+                "enum": ["0", "1"]
+            }
+        ]
     }
 }

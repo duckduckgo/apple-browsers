@@ -837,7 +837,7 @@ extension SettingsViewModel {
     private func clearHistoryIfNeeded() {
         if !historyManager.isEnabledByUser {
             Task {
-                await self.historyManager.removeAllHistory()
+                _ = await self.historyManager.removeAllHistory()
             }
         }
     }

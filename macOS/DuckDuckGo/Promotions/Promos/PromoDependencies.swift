@@ -26,6 +26,7 @@ import RemoteMessaging
 struct PromoDependencies {
     let keyValueStore: ThrowingKeyValueStoring
     let isExternallyActivated: Bool
+    let isOnboardingCompletedProvider: () -> Bool
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let sessionRestoreCoordinator: SessionRestorePromptCoordinating

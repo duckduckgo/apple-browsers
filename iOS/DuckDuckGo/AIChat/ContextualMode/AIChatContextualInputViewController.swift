@@ -41,7 +41,7 @@ final class AIChatContextualInputViewController: UIViewController {
         static let horizontalPadding: CGFloat = 20
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
-        static let iPadLandscapeBottomPadding: CGFloat = 16
+        static let iPadBottomPadding: CGFloat = 16
     }
 
     // MARK: - Properties
@@ -244,9 +244,7 @@ private extension AIChatContextualInputViewController {
 
     func bottomPaddingForOrientation() -> CGFloat {
         guard UIDevice.current.userInterfaceIdiom == .pad else { return 0 }
-        let isLandscape = UIDevice.current.orientation.isLandscape ||
-            (view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
-        return isLandscape ? -Constants.iPadLandscapeBottomPadding : 0
+        return -Constants.iPadBottomPadding
     }
 }
 

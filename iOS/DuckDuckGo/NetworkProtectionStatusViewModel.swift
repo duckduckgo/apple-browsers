@@ -19,6 +19,7 @@
 
 import Foundation
 import Combine
+import NetworkExtension
 import VPN
 import WidgetKit
 import BrowserServicesKit
@@ -118,6 +119,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         }
     }
     @Published public var shouldShowError: Bool = false
+    private var errorTask: Task<Void, Never>?
 
     // MARK: Header
 
@@ -242,6 +244,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 switch status {
                 case .connected:
                     self?.isNetPEnabled = true
+                    self?.errorTask?.cancel()
+                    self?.error = nil
                 case .connecting:
                     self?.isNetPEnabled = true
                     self?.resetConnectionInformation()
@@ -379,21 +383,57 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }
 
     private func setUpErrorPublishers() {
-        guard AppDependencyProvider.shared.internalUserDecider.isInternalUser else {
-            return
-        }
-
         errorObserver.publisher
-            .map { errorMessage in
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                guard let self else { return }
+
                 guard let errorMessage else {
-                    return nil
+                    self.error = nil
+                    return
                 }
 
-                return ErrorItem(title: "Failed to Connect", message: errorMessage)
+                self.errorTask?.cancel()
+                self.errorTask = Task {
+                    let errorItem = await self.createErrorItem(fallbackMessage: errorMessage)
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        self.error = errorItem
+                    }
+                }
             }
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.error, onWeaklyHeld: self)
             .store(in: &cancellables)
+    }
+
+    private func createErrorItem(fallbackMessage: String) async -> ErrorItem? {
+        if #available(iOS 16.0, *), let session = await tunnelController.activeSession() {
+            let connectionError = await fetchConnectionError(from: session, fallbackMessage: fallbackMessage)
+
+            if let connectionError {
+                return ErrorItem(title: UserText.netPStatusViewErrorConnectionFailedTitle, message: connectionError.localizedMessage)
+            } else {
+                return nil
+            }
+        }
+
+        if let connectionError = VPNConnectionError(errorMessage: fallbackMessage) {
+            return ErrorItem(title: UserText.netPStatusViewErrorConnectionFailedTitle, message: connectionError.localizedMessage)
+        }
+
+        return nil
+    }
+
+    @available(iOS 16.0, *)
+    private func fetchConnectionError(from session: NETunnelProviderSession, fallbackMessage: String) async -> VPNConnectionError? {
+        await withCheckedContinuation { continuation in
+            session.fetchLastDisconnectError { error in
+                if let nsError = error as? NSError {
+                    continuation.resume(returning: VPNConnectionError(nsError: nsError))
+                } else {
+                    continuation.resume(returning: VPNConnectionError(errorMessage: fallbackMessage))
+                }
+            }
+        }
     }
 
     private func setUpLocationPublishers() {

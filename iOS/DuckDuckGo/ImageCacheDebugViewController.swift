@@ -50,6 +50,7 @@ class ImageCacheDebugViewController: UITableViewController {
 
     private let bookmarksContext: NSManagedObjectContext
     private let fireproofing: Fireproofing
+    private let faviconSourcesProvider = DefaultFaviconSourcesProvider()
 
     private var fireproofFavicons = [String: UIImage]()
     private var tabFavicons = [String: UIImage]()
@@ -125,7 +126,7 @@ class ImageCacheDebugViewController: UITableViewController {
         request.returnsObjectsAsFaults = false
         let bookmarksAndFavorites = (try? bookmarksContext.fetch(request)) ?? []
         for bookmark in bookmarksAndFavorites {
-            if let url = bookmark.urlObject, let imageResource = Favicons.shared.defaultResource(forDomain: url.host) {
+            if let url = bookmark.urlObject, let imageResource = defaultResource(forDomain: url.host) {
                 bookmarks[imageResource.cacheKey] = url.host
             }
         }
@@ -136,7 +137,7 @@ class ImageCacheDebugViewController: UITableViewController {
             let secureVault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
             let accounts = try secureVault.accounts()
             for account in accounts {
-                if let imageResource = Favicons.shared.defaultResource(forDomain: account.domain) {
+                if let imageResource = defaultResource(forDomain: account.domain) {
                     logins[imageResource.cacheKey] = account.domain
                 }
             }
@@ -148,7 +149,7 @@ class ImageCacheDebugViewController: UITableViewController {
     private func loadAllFireproofSites() {
         let allowedDomains = fireproofing.allowedDomains
         for site in allowedDomains {
-            if let imageResource = Favicons.shared.defaultResource(forDomain: site) {
+            if let imageResource = defaultResource(forDomain: site) {
                 fireproofSites[imageResource.cacheKey] = site
             }
         }
@@ -156,10 +157,14 @@ class ImageCacheDebugViewController: UITableViewController {
 
     private func loadAllTabs() {
         for tab in tabsModel.tabs {
-            if let link = tab.link?.url.host, let imageResource = Favicons.shared.defaultResource(forDomain: link) {
+            if let link = tab.link?.url.host, let imageResource = defaultResource(forDomain: link) {
                 tabs[imageResource.cacheKey] = link
             }
         }
+    }
+
+    private func defaultResource(forDomain domain: String?) -> KF.ImageResource? {
+        return FaviconsHelper.defaultResource(forDomain: domain, sourcesProvider: faviconSourcesProvider)
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {

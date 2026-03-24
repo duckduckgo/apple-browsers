@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 
 // MARK: - Delegate Protocol
@@ -28,9 +29,11 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
-    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapDismiss(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
+    func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -79,6 +82,8 @@ final class UnifiedToggleInputViewController: UIViewController {
     var inputMode: TextEntryMode {
         inputBarView.inputMode
     }
+
+    var attachButtonView: UIView { inputBarView.attachButtonView }
 
     var isVoiceSearchAvailable: Bool {
         get { handler.isVoiceSearchEnabled }
@@ -135,6 +140,36 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isModelChipHidden = newValue }
     }
 
+    var isImageButtonHidden: Bool {
+        get { inputBarView.isImageButtonHidden }
+        set { inputBarView.isImageButtonHidden = newValue }
+    }
+
+    var isCustomizeResponsesButtonHidden: Bool {
+        get { inputBarView.isCustomizeResponsesButtonHidden }
+        set { inputBarView.isCustomizeResponsesButtonHidden = newValue }
+    }
+
+    var isAttachmentsFull: Bool {
+        inputBarView.isAttachmentsFull
+    }
+
+    var currentAttachments: [AIChatImageAttachment] {
+        inputBarView.currentAttachments
+    }
+
+    func addAttachment(_ attachment: AIChatImageAttachment) {
+        inputBarView.addAttachment(attachment)
+    }
+
+    func removeAttachment(id: UUID) {
+        inputBarView.removeAttachment(id: id)
+    }
+
+    func removeAllAttachments() {
+        inputBarView.removeAllAttachments()
+    }
+
     func apply(_ config: UTIViewConfig, animated: Bool) {
         cardPosition = config.cardPosition
         usesOmnibarMargins = config.usesOmnibarMargins
@@ -183,6 +218,18 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onNeedsHierarchyLayout = { [weak self] in
             self?.view.window?.layoutIfNeeded()
         }
+        barView.onAttachTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapAttach(self)
+        }
+        barView.onAttachmentRemoved = { [weak self] id in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVC(self, didRemoveAttachment: id)
+        }
+        barView.onAttachmentsLayoutDidChange = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidChangeAttachments(self)
+        }
         view = barView
     }
 }
@@ -205,10 +252,6 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode) {
         delegate?.unifiedToggleInputVC(self, didChangeMode: mode)
-    }
-
-    func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView) {
-        delegate?.unifiedToggleInputVCDidTapVoice(self)
     }
 
     func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {

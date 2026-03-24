@@ -85,7 +85,6 @@ protocol TabExtensionDependencies {
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
-    var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
     var aiChatSessionStore: AIChatSessionStoring { get }
     var tabCrashAggregator: TabCrashAggregator { get }
     var tabsPreferences: TabsPreferences { get }
@@ -148,8 +147,8 @@ extension TabExtensionsBuilder {
                                         userContentControllerFuture: args.userContentControllerFuture,
                                         cbaTimeReporter: dependencies.cbaTimeReporter,
                                         privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                                        tld: dependencies.privacyFeatures.contentBlocking.tld,
-                                        trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature))
+                                        contentBlockerRulesUserScriptPublisher: userScripts.map(\.?.contentBlockerRulesScript),
+                                        surrogatesUserScriptPublisher: userScripts.map(\.?.surrogatesScript))
         }
 
         let specialErrorPageTabExtension = add {
@@ -191,6 +190,7 @@ extension TabExtensionsBuilder {
         add {
             AdClickAttributionTabExtension(inheritedAttribution: args.inheritedAttribution,
                                            userContentControllerFuture: args.userContentControllerFuture,
+                                           contentBlockerRulesScriptPublisher: userScripts.map { $0?.contentBlockerRulesScript },
                                            trackerInfoPublisher: contentBlocking.trackersPublisher.map { $0.request },
                                            dependencies: dependencies.privacyFeatures.contentBlocking)
         }
@@ -252,11 +252,6 @@ extension TabExtensionsBuilder {
         }
         add {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
-        }
-        add {
-            NewTabPageTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
-                                   webViewPublisher: args.webViewFuture,
-                                   pixelSender: dependencies.newTabPageShownPixelSender)
         }
 
         add {

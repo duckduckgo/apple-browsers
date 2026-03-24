@@ -19,6 +19,7 @@
 
 import WebKit
 import WKAbstractions
+import PixelKit
 
 @testable import Core
 
@@ -31,13 +32,27 @@ class MockWebsiteDataManager: WebsiteDataManaging {
     
     func consumeCookies(into httpCookieStore: any DDGHTTPCookieStore) async {}
     
-    func clear(dataStore: any DDGWebsiteDataStore) async {
+    func clear(dataStore: any DDGWebsiteDataStore) async -> WebsiteDataClearingResult {
         clearCallCount += 1
+        return makeMockResult(includeContainerCleanup: true)
     }
-    
-    func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async {
+
+    func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async -> WebsiteDataClearingResult {
         clearWithDomainsCallCount += 1
         clearCalledWithDomains = domains
+        return makeMockResult(includeContainerCleanup: false)
+    }
+
+    private func makeMockResult(includeContainerCleanup: Bool) -> WebsiteDataClearingResult {
+        let mockInterval = WideEvent.MeasuredInterval(start: Date(), end: Date())
+        let mockActionResult = ActionResult(result: .success(()), measuredInterval: mockInterval)
+        return WebsiteDataClearingResult(
+            safelyRemovableData: mockActionResult,
+            fireproofableData: mockActionResult,
+            cookies: mockActionResult,
+            observationsData: mockActionResult,
+            removeAllContainersAfterDelay: includeContainerCleanup ? mockActionResult : nil
+        )
     }
 
 }

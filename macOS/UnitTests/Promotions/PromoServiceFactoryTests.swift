@@ -127,6 +127,7 @@ extension PromoServiceFactoryTests {
         return PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
+            isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock()

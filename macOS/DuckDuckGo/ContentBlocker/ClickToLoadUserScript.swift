@@ -28,7 +28,6 @@ protocol ClickToLoadUserScriptDelegate: AnyObject {
 final class ClickToLoadUserScript: NSObject, WKNavigationDelegate, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
-    private var pendingPlaceholderDisplay = false
 
     weak var delegate: ClickToLoadUserScriptDelegate?
 
@@ -76,10 +75,6 @@ final class ClickToLoadUserScript: NSObject, WKNavigationDelegate, Subfeature {
     @MainActor
     private func handleGetClickToLoadState(params: Any, message: UserScriptMessage) -> Encodable? {
         webView = message.messageWebView
-        if pendingPlaceholderDisplay {
-            pendingPlaceholderDisplay = false
-            displayClickToLoadPlaceholders()
-        }
         return [
             "devMode": devMode,
             "youtubePreviewsEnabled": false
@@ -102,10 +97,7 @@ final class ClickToLoadUserScript: NSObject, WKNavigationDelegate, Subfeature {
 
     @MainActor
     public func displayClickToLoadPlaceholders() {
-        guard let webView else {
-            pendingPlaceholderDisplay = true
-            return
-        }
+        guard let webView else { return }
 
         broker?.push(method: "displayClickToLoadPlaceholders", params: ["ruleAction": ["block"]], for: self, into: webView)
     }

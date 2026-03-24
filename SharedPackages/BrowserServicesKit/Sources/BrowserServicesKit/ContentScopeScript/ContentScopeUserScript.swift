@@ -21,7 +21,6 @@ import Common
 import ContentScopeScripts
 import Foundation
 import PrivacyConfig
-import TrackerRadarKit
 import UserScript
 import WebKit
 
@@ -97,7 +96,6 @@ public final class ContentScopeProperties: Encodable {
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
     public let themeVariant: String?
-    public let trackerData: TrackerData?
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
@@ -106,8 +104,7 @@ public final class ContentScopeProperties: Encodable {
                 debug: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
                 currentCohorts: [ContentScopeExperimentData] = [],
-                themeVariant: String? = nil,
-                trackerData: TrackerData? = nil) {
+                themeVariant: String? = nil) {
         self.globalPrivacyControlValue = gpcEnabled
         self.debug = debug
         self.sessionKey = sessionKey
@@ -119,7 +116,6 @@ public final class ContentScopeProperties: Encodable {
         ]
         self.currentCohorts = currentCohorts
         self.themeVariant = themeVariant
-        self.trackerData = trackerData
     }
 
     enum CodingKeys: String, CodingKey {
@@ -134,7 +130,6 @@ public final class ContentScopeProperties: Encodable {
         case features
         case currentCohorts
         case themeVariant
-        case trackerData
     }
 
 }

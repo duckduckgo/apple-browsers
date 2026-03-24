@@ -26,6 +26,7 @@ public protocol AIChatInputBoxHandling {
     var didSubmitPrompt: PassthroughSubject<String, Never> { get }
     var didSubmitQuery: PassthroughSubject<String, Never> { get }
     var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
+    var didPressCustomizeResponsesButton: PassthroughSubject<Void, Never> { get }
 
     var persistedModelId: String? { get }
 
@@ -37,6 +38,7 @@ public protocol AIChatInputBoxHandling {
 
 public enum AIChatStatusValue: String, Codable {
     case startStreamNewPrompt = "start_stream:new_prompt"
+    case startStreamRestartStream = "start_stream:restart_stream"
     case loading
     case streaming
     case error

@@ -64,7 +64,7 @@ public class MockPrivacyConfiguration: PrivacyConfiguration {
         subfeatureSettings
     }
 
-    public var exceptionsListClosure: (PrivacyFeature) -> [String] = { _ in [] }
+    public var exceptionsList: (PrivacyFeature) -> [String] = { _ in [] }
     public var featureSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings = [:]
     public var subfeatureSettings: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings?
 
@@ -73,7 +73,7 @@ public class MockPrivacyConfiguration: PrivacyConfiguration {
     public var userUnprotectedDomains: [String] = []
     public var tempUnprotectedDomains: [String] = []
     public var trackerAllowlist: PrivacyConfigurationData.TrackerAllowlist = .init(json: ["state": "disabled"])!
-    public func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { exceptionsListClosure(featureKey) }
+    public func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { [] }
     public var isFeatureEnabledForDomainCheck: ((PrivacyFeature, String?) -> Bool)?
     public func isFeature(_ feature: PrivacyFeature, enabledForDomain: String?) -> Bool {
         isFeatureEnabledForDomainCheck?(feature, enabledForDomain) ?? true

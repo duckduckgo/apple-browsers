@@ -39,6 +39,125 @@ final class MockNavigationDelegate: NSObject, WKNavigationDelegate {
     }
 }
 
+final class MockRulesUserScriptDelegate: NSObject, ContentBlockerRulesUserScriptDelegate {
+
+    var shouldProcessTrackers = true
+    var shouldProcessCTLTrackers = true
+    var onTrackerDetected: ((DetectedRequest) -> Void)?
+    var detectedTrackers = Set<DetectedRequest>()
+    var onThirdPartyRequestDetected: ((DetectedRequest) -> Void)?
+    var detectedThirdPartyRequests = Set<DetectedRequest>()
+
+    func reset() {
+        detectedTrackers.removeAll()
+    }
+
+    func contentBlockerRulesUserScriptShouldProcessTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
+        return shouldProcessTrackers
+    }
+
+    func contentBlockerRulesUserScriptShouldProcessCTLTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
+        return shouldProcessCTLTrackers
+    }
+
+    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript,
+                                       detectedTracker tracker: DetectedRequest) {
+        detectedTrackers.insert(tracker)
+        onTrackerDetected?(tracker)
+    }
+
+    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript,
+                                       detectedThirdPartyRequest request: DetectedRequest) {
+        detectedThirdPartyRequests.insert(request)
+        onThirdPartyRequestDetected?(request)
+    }
+}
+
+final class MockSurrogatesUserScriptDelegate: NSObject, SurrogatesUserScriptDelegate {
+
+    var shouldProcessTrackers = true
+    var shouldProcessCTLTrackers = false
+
+    var onSurrogateDetected: ((DetectedRequest, String) -> Void)?
+    var detectedSurrogates = Set<DetectedRequest>()
+
+    func reset() {
+        detectedSurrogates.removeAll()
+    }
+
+    func surrogatesUserScriptShouldProcessTrackers(_ script: SurrogatesUserScript) -> Bool {
+        return shouldProcessTrackers
+    }
+
+    func surrogatesUserScriptShouldProcessCTLTrackers(_ script: SurrogatesUserScript) -> Bool {
+        shouldProcessCTLTrackers
+    }
+
+    func surrogatesUserScript(_ script: SurrogatesUserScript,
+                              detectedTracker tracker: DetectedRequest,
+                              withSurrogate host: String) {
+        detectedSurrogates.insert(tracker)
+        onSurrogateDetected?(tracker, host)
+    }
+}
+
+final class TestSchemeContentBlockerUserScriptConfig: ContentBlockerUserScriptConfig {
+
+    public let privacyConfiguration: PrivacyConfiguration
+    public let trackerData: TrackerData?
+    public let ctlTrackerData: TrackerData?
+    public let tld: TLD
+
+    public private(set) var source: String
+
+    public init(privacyConfiguration: PrivacyConfiguration,
+                trackerData: TrackerData?,
+                ctlTrackerData: TrackerData?,
+                tld: TLD) throws {
+        self.privacyConfiguration = privacyConfiguration
+        self.trackerData = trackerData
+        self.ctlTrackerData = ctlTrackerData
+        self.tld = tld
+
+        // UserScripts contain TrackerAllowlist rules in form of regular expressions - we need to ensure test scheme is matched instead of http/https
+        let orginalSource = try ContentBlockerRulesUserScript.generateSource(privacyConfiguration: privacyConfiguration)
+        source = orginalSource.replacingOccurrences(of: "http", with: "test")
+    }
+}
+
+public class TestSchemeSurrogatesUserScriptConfig: SurrogatesUserScriptConfig {
+
+    public let privacyConfig: PrivacyConfiguration
+    public let surrogates: String
+    public let trackerData: TrackerData?
+    public let encodedSurrogateTrackerData: String?
+    public let tld: TLD
+
+    public let source: String
+
+    public init(privacyConfig: PrivacyConfiguration,
+                surrogates: String,
+                trackerData: TrackerData?,
+                encodedSurrogateTrackerData: String?,
+                tld: TLD,
+                isDebugBuild: Bool) throws {
+
+        self.privacyConfig = privacyConfig
+        self.surrogates = surrogates
+        self.trackerData = trackerData
+        self.encodedSurrogateTrackerData = encodedSurrogateTrackerData
+        self.tld = tld
+
+        // UserScripts contain TrackerAllowlist rules in form of regular expressions - we need to ensure test scheme is matched instead of http/https
+        let orginalSource = try SurrogatesUserScript.generateSource(privacyConfiguration: privacyConfig,
+                                                                surrogates: surrogates,
+                                                                encodedSurrogateTrackerData: encodedSurrogateTrackerData,
+                                                                isDebugBuild: isDebugBuild)
+
+        source = orginalSource.replacingOccurrences(of: "http", with: "test")
+    }
+}
+
 final class WebKitTestHelper {
 
     static func preparePrivacyConfig(locallyUnprotected: [String],

@@ -29,8 +29,8 @@ protocol AutoconsentManaging: AnyObject {
     var detectedByBothCache: Set<String> { get set }
     var detectedOnlyRulesCache: Set<String> { get set }
     func firePixel(pixel: AutoconsentPixel, additionalParameters: [String: String])
-    func clearCache()
-    func clearCache(forDomains domains: [String])
+    func clearCache() -> Result<Void, Error>
+    func clearCache(forDomains domains: [String]) -> Result<Void, Error>
 }
 
 @MainActor
@@ -132,15 +132,16 @@ final class AutoconsentManagement: AutoconsentManaging {
         }
     }
 
-    func clearCache() {
+    func clearCache() -> Result<Void, Error> {
         dispatchPrecondition(condition: .onQueue(.main))
         sitesNotifiedCache.removeAll()
         detectedByPatternsCache.removeAll()
         detectedByBothCache.removeAll()
         detectedOnlyRulesCache.removeAll()
+        return .success(())
     }
     
-    func clearCache(forDomains domains: [String]) {
+    func clearCache(forDomains domains: [String]) -> Result<Void, Error> {
         dispatchPrecondition(condition: .onQueue(.main))
         let domainSet = Set(domains)
 
@@ -150,6 +151,7 @@ final class AutoconsentManagement: AutoconsentManaging {
                 host == domain || host.hasSuffix(".\(domain)")
             })
         }
+        return .success(())
     }
 
 }

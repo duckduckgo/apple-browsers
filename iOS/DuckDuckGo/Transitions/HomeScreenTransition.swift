@@ -113,7 +113,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
         imageView.frame = imageContainer.bounds
         imageView.contentMode = .center
         if tabSwitcherSettings.isGridViewEnabled {
-            imageView.image = TabViewCell.logoImage
+            imageView.image = TabViewCell.logoImage(for: tab)
         }
         
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
@@ -187,7 +187,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
         imageView.frame = previewFrame(for: imageContainer.bounds.size)
         imageView.contentMode = .center
         if tabSwitcherSettings.isGridViewEnabled {
-            imageView.image = TabViewCell.logoImage
+            imageView.image = TabViewCell.logoImage(for: tab)
             imageView.alpha = tab.viewed ? 1 : 0
         }
         imageView.backgroundColor = .clear

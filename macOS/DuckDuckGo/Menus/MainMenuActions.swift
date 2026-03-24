@@ -520,6 +520,14 @@ extension AppDelegate {
 
     // MARK: - Debug
 
+    @objc func debugClearWebViewCache(_ sender: Any?) {
+        WKWebsiteDataStore.default().removeData(
+            ofTypes: [WKWebsiteDataTypeDiskCache,
+                      WKWebsiteDataTypeMemoryCache,
+                      WKWebsiteDataTypeOfflineWebApplicationCache],
+            modifiedSince: .distantPast) { }
+    }
+
     @MainActor
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
@@ -1504,6 +1512,12 @@ extension MainViewController {
 
         tabCollectionViewModel.remove(at: index)
         WindowsManager.openNewWindow(with: tab)
+    }
+
+    @objc func newTabNextToActive(_ sender: Any?) {
+        guard let (tab, _) = getActiveTabAndIndex() else { return }
+
+        tabCollectionViewModel.insertNewTab(after: tab, with: .newtab, selected: true)
     }
 
     @objc func duplicateTab(_ sender: Any?) {

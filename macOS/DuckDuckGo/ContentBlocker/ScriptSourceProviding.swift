@@ -34,13 +34,14 @@ import WebExtensions
 protocol ScriptSourceProviding {
 
     var featureFlagger: FeatureFlagger { get }
+    var contentBlockerRulesConfig: ContentBlockerUserScriptConfig? { get }
+    var surrogatesConfig: SurrogatesUserScriptConfig? { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var autofillSourceProvider: AutofillUserScriptSourceProvider? { get }
     var autoconsentManagement: AutoconsentManagement { get }
     var sessionKey: String? { get }
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
-    var newTabPageActionsManager: NewTabPageActionsManager? { get }
     var historyViewActionsManager: HistoryViewActionsManager? { get }
     var windowControllersManager: WindowControllersManagerProtocol { get }
     var currentCohorts: [ContentScopeExperimentData]? { get }
@@ -50,7 +51,6 @@ protocol ScriptSourceProviding {
     var syncServiceProvider: () -> DDGSyncing? { get }
     var syncErrorHandler: SyncErrorHandling { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
-    var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -80,7 +80,6 @@ protocol ScriptSourceProviding {
         fireproofDomains: Application.appDelegate.fireproofDomains,
         fireCoordinator: Application.appDelegate.fireCoordinator,
         autoconsentManagement: Application.appDelegate.autoconsentManagement,
-        newTabPageActionsManager: nil,
         syncServiceProvider: { [weak appDelegate = Application.appDelegate] in
             return appDelegate?.syncService
         },
@@ -90,8 +89,9 @@ protocol ScriptSourceProviding {
 }
 
 struct ScriptSourceProvider: ScriptSourceProviding {
+    private(set) var contentBlockerRulesConfig: ContentBlockerUserScriptConfig?
+    private(set) var surrogatesConfig: SurrogatesUserScriptConfig?
     private(set) var onboardingActionsManager: OnboardingActionsManaging?
-    private(set) var newTabPageActionsManager: NewTabPageActionsManager?
     private(set) var historyViewActionsManager: HistoryViewActionsManager?
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
@@ -116,9 +116,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let syncServiceProvider: () -> DDGSyncing?
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
-    let trackerProtectionDataSource: TrackerProtectionDataSource?
+    let appearancePreferences: AppearancePreferences
 
-    @MainActor
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
@@ -140,7 +139,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
-         newTabPageActionsManager: NewTabPageActionsManager?,
          syncServiceProvider: @escaping () -> DDGSyncing?,
          syncErrorHandler: SyncErrorHandling,
          webExtensionAvailability: WebExtensionAvailabilityProviding?
@@ -164,17 +162,10 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
         self.webExtensionAvailability = webExtensionAvailability
-        self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
-            contentBlockingManager: contentBlockingManager,
-            additionalRuleLists: [
-                DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName,
-                AdClickAttributionRulesSplitter.blockingAttributionRuleListName(
-                    forListNamed: DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
-                ),
-            ]
-        )
+        self.appearancePreferences = appearancePreferences
 
-        self.newTabPageActionsManager = newTabPageActionsManager
+        self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
+        self.surrogatesConfig = buildSurrogatesConfig()
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
@@ -196,8 +187,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     }
 
     public func buildAutofillSource() -> AutofillUserScriptSourceProvider {
-        let privacyConfig = self.privacyConfigurationManager.privacyConfig
-        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
+        let privacyConfig = privacyConfigurationManager.privacyConfig
+        let themeVariant = appearancePreferences.themeName.rawValue
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                              properties: ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
@@ -216,7 +207,56 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         }
     }
 
-    @MainActor
+    private func buildContentBlockerRulesConfig() -> ContentBlockerUserScriptConfig {
+
+        let tdsName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
+        let trackerData = contentBlockingManager.currentRules.first(where: { $0.name == tdsName })?.trackerData
+
+        let ctlTrackerData = (contentBlockingManager.currentRules.first(where: {
+            $0.name == DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName
+        })?.trackerData)
+
+        do {
+            return try DefaultContentBlockerUserScriptConfig(privacyConfiguration: privacyConfigurationManager.privacyConfig,
+                                                             trackerData: trackerData,
+                                                             ctlTrackerData: ctlTrackerData,
+                                                             tld: tld,
+                                                             trackerDataManager: trackerDataManager)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error.localizedDescription)")
+        }
+    }
+
+    private func buildSurrogatesConfig() -> SurrogatesUserScriptConfig {
+
+        let isDebugBuild: Bool
+#if DEBUG
+        isDebugBuild = true
+#else
+        isDebugBuild = false
+#endif
+
+        let surrogates = configStorage.loadData(for: .surrogates)?.utf8String() ?? ""
+        let allTrackers = mergeTrackerDataSets(rules: contentBlockingManager.currentRules)
+        do {
+            return try DefaultSurrogatesUserScriptConfig(privacyConfig: privacyConfigurationManager.privacyConfig,
+                                                         surrogates: surrogates,
+                                                         trackerData: allTrackers.trackerData,
+                                                         encodedSurrogateTrackerData: allTrackers.encodedTrackerData,
+                                                         trackerDataManager: trackerDataManager,
+                                                         tld: tld,
+                                                         isDebugBuild: isDebugBuild)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error.localizedDescription)")
+        }
+    }
+
     private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
@@ -241,6 +281,43 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         }
 
         return data
+    }
+
+    private func mergeTrackerDataSets(rules: [ContentBlockerRulesManager.Rules]) -> (trackerData: TrackerData, encodedTrackerData: String) {
+        var combinedTrackers: [String: KnownTracker] = [:]
+        var combinedEntities: [String: Entity] = [:]
+        var combinedDomains: [String: String] = [:]
+        var cnames: [TrackerData.CnameDomain: TrackerData.TrackerDomain]? = [:]
+
+        let setsToCombine = [ DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName, DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName ]
+
+        for setName in setsToCombine {
+            if let ruleSetIndex = contentBlockingManager.currentRules.firstIndex(where: { $0.name == setName }) {
+                let ruleSet = rules[ruleSetIndex]
+
+                combinedTrackers = combinedTrackers.merging(ruleSet.trackerData.trackers) { (_, new) in new }
+                combinedEntities = combinedEntities.merging(ruleSet.trackerData.entities) { (_, new) in new }
+                combinedDomains = combinedDomains.merging(ruleSet.trackerData.domains) { (_, new) in new }
+                if setName == DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName {
+                    cnames = ruleSet.trackerData.cnames
+                }
+            }
+        }
+
+        let combinedTrackerData = TrackerData(trackers: combinedTrackers,
+                            entities: combinedEntities,
+                            domains: combinedDomains,
+                            cnames: cnames)
+
+        let surrogateTDS = ContentBlockerRulesManager.extractSurrogates(from: combinedTrackerData)
+        let encodedTrackerData = encodeTrackerData(surrogateTDS)
+
+        return (trackerData: combinedTrackerData, encodedTrackerData: encodedTrackerData)
+    }
+
+    private func encodeTrackerData(_ trackerData: TrackerData) -> String {
+        let encodedData = try? JSONEncoder().encode(trackerData)
+        return String(data: encodedData!, encoding: .utf8)!
     }
 
     private func generateCurrentCohorts() -> [ContentScopeExperimentData] {

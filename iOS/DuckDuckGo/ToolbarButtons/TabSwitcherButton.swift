@@ -26,6 +26,7 @@ protocol TabSwitcherButton: UIView {
 
     var tabCount: Int { get set }
     var hasUnread: Bool { get set }
+    var isFireMode: Bool { get set }
 
     func animateUpdate(update: @escaping () -> Void)
 }

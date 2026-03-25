@@ -28,7 +28,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-try-search-tall-dark.@2x.png",
+      "filename" : "contextual-bg-try-search-tall-dark@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
@@ -44,7 +44,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-try-search-tall-dark.@3x.png",
+      "filename" : "contextual-bg-try-search-tall-dark@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

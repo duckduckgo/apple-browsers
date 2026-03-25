@@ -189,7 +189,7 @@ struct DuckAIVoiceChatControlWidget: ControlWidgetConfigurable {
     let kind: ControlWidgetKind = .voiceChat
     let displayName: LocalizedStringResource = "Duck.ai Voice"
     let labelText: String = "Duck.ai Voice"
-    let imageName: String = "Voice-Symbol"
+    let imageName: String = "AIVoiceChat-Symbol"
     let intent = OpenVoiceChatIntent()
 
     struct OpenVoiceChatIntent: AppIntent {

@@ -22,6 +22,30 @@ import Common
 import os.log
 import Persistence
 
+/// Supplies whether a bundle identifier appears in the user Dock plist (`persistent-apps`).
+/// Injected so unit tests do not depend on the host machine’s Dock or whether the debug app is pinned.
+protocol DockMembershipProviding {
+    func isBundleIdentifierInDock(_ bundleIdentifier: String?) -> Bool
+}
+
+final class DockPlistDockMembershipProvider: DockMembershipProviding {
+    private let dockPlistURL: URL
+
+    init(dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("Preferences/com.apple.dock.plist")) {
+        self.dockPlistURL = dockPlistURL
+    }
+
+    func isBundleIdentifierInDock(_ bundleIdentifier: String?) -> Bool {
+        guard let bundleIdentifier,
+              let dockPlistDict = NSDictionary(contentsOf: dockPlistURL) as? [String: AnyObject],
+              let persistentApps = dockPlistDict["persistent-apps"] as? [[String: AnyObject]] else {
+            return false
+        }
+
+        return persistentApps.contains(where: { ($0["tile-data"] as? [String: AnyObject])?["bundle-identifier"] as? String == bundleIdentifier })
+    }
+}
+
 protocol DockCustomization: AnyObject {
     /// Whether the running build may programmatically add the app to the Dock (false for App Store sandbox builds).
     var supportsAddingToDock: Bool { get }
@@ -63,6 +87,7 @@ final class DockCustomizer: DockCustomization {
     private let applicationBuildType: ApplicationBuildType
     private let positionProvider: DockPositionProviding
     private let keyValueStore: KeyValueStoring
+    private let dockMembershipProvider: DockMembershipProviding
 
     @Published private var shouldShowNotificationPrivate: Bool = false
     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> {
@@ -72,10 +97,12 @@ final class DockCustomizer: DockCustomization {
 
     init(applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          positionProvider: DockPositionProviding = DockPositionProvider(),
-         keyValueStore: KeyValueStoring = UserDefaults.standard) {
+         keyValueStore: KeyValueStoring = UserDefaults.standard,
+         dockMembershipProvider: DockMembershipProviding = DockPlistDockMembershipProvider()) {
         self.applicationBuildType = applicationBuildType
         self.positionProvider = positionProvider
         self.keyValueStore = keyValueStore
+        self.dockMembershipProvider = dockMembershipProvider
 
         if !applicationBuildType.isAppStoreBuild {
             startTimer()
@@ -114,16 +141,9 @@ final class DockCustomizer: DockCustomization {
             && !isAddedToDock
     }
 
-    // This checks whether the bundle identifier of the current bundle
-    // is present in the 'persistent-apps' array of the Dock's plist.
+    // Whether the main bundle’s identifier appears in the Dock plist’s `persistent-apps`.
     var isAddedToDock: Bool {
-        guard let bundleIdentifier = Bundle.main.bundleIdentifier,
-              let dockPlistDict = dockPlistDict,
-              let persistentApps = dockPlistDict["persistent-apps"] as? [[String: AnyObject]] else {
-            return false
-        }
-
-        return persistentApps.contains(where: { ($0["tile-data"] as? [String: AnyObject])?["bundle-identifier"] as? String == bundleIdentifier })
+        dockMembershipProvider.isBundleIdentifierInDock(Bundle.main.bundleIdentifier)
     }
 
     func didCloseMoreOptionsMenu() {

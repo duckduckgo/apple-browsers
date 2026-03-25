@@ -1501,7 +1501,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
-        let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
+        let notificationPresenter = UpdateNotificationPresenter(
+            pixelFiring: PixelKit.shared,
+            shouldSuppressPostUpdateNotification: { [weak self] in
+                self?.windowControllersManager.selectedTab?.content == .releaseNotes
+            },
+            showNotificationPopover: { [weak self] popover in
+                guard let wc = self?.windowControllersManager.lastKeyMainWindowController
+                            ?? self?.windowControllersManager.mainWindowControllers.last,
+                      let button = wc.mainViewController.navigationBarViewController.optionsButton else {
+                    return
+                }
+                let parent = wc.mainViewController
+                guard parent.view.window?.isKeyWindow == true,
+                      (parent.presentedViewControllers ?? []).isEmpty else {
+                    return
+                }
+                popover.show(onParent: parent, relativeTo: button)
+            }
+        )
 
         if buildType.isAppStoreBuild {
             guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {

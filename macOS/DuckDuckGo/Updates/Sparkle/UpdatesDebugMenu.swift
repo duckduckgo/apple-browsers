@@ -102,7 +102,22 @@ final class UpdatesDebugMenu: NSMenu {
     }
 
     @objc func showBrowserUpdatedPopover() {
-        let presenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
+        let presenter = UpdateNotificationPresenter(
+            pixelFiring: PixelKit.shared,
+            showNotificationPopover: { popover in
+                guard let wc = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
+                            ?? Application.appDelegate.windowControllersManager.mainWindowControllers.last,
+                      let button = wc.mainViewController.navigationBarViewController.optionsButton else {
+                    return
+                }
+                let parent = wc.mainViewController
+                guard parent.view.window?.isKeyWindow == true,
+                      (parent.presentedViewControllers ?? []).isEmpty else {
+                    return
+                }
+                popover.show(onParent: parent, relativeTo: button)
+            }
+        )
         presenter.showUpdateNotification(for: .updated)
     }
 

@@ -495,14 +495,16 @@ extension OnboardingRebranding {
             if hasDaxExit {
                 // Trigger the slide-out; the overlay stays alive for daxExitDuration.
                 daxExiting = true
-                // After exit completes, swap in the overlay for the next step.
+                // After the exit animation completes, clear the flag.
+                // daxAnimationID is NOT incremented here — the old overlay stays frozen at
+                // exitOffset (off-screen) until the action fires and model.state changes.
+                // Incrementing here would recreate the overlay with the old state still active,
+                // causing a spurious second entrance/exit animation before the step transition.
                 DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.daxExitDuration) {
-                    daxExiting = false   // new overlay starts with isExiting = false
-                    daxPlayForward = true
-                    daxAnimationID += 1
+                    daxExiting = false
                 }
-            } else {
-                // No exit animation (or initial appearance) — swap immediately.
+            } else if action == nil {
+                // Initial appearance — no state change coming, reset Dax immediately.
                 daxPlayForward = true
                 daxAnimationID += 1
             }
@@ -515,6 +517,10 @@ extension OnboardingRebranding {
 
             if let action {
                 DispatchQueue.main.asyncAfter(deadline: .now() + actionDelay) {
+                    // Reset Dax and trigger the model state change in the same batch so SwiftUI
+                    // recreates the overlay exactly once with the correct new animation.
+                    daxPlayForward = true
+                    daxAnimationID += 1
                     // No withAnimation -- the bubble resize is driven by .animation(..., value: state.type).
                     action()
                 }

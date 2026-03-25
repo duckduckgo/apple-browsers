@@ -2482,7 +2482,8 @@ public struct UserText {
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 
             public enum Rebranding {
-                static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.rebranding.skip", value: "No Thanks", comment: "Button to decline and dismiss the subscription promotion and continue the onboarding process.")
+                static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.rebranding.skip", value: "No thanks", comment: "Button to decline and dismiss the subscription promotion and continue the onboarding process.")
+                static let tryItFree = NSLocalizedString("onboarding.subscription.promo.buttons.rebranding.tryItFree", value: "Try it free!", comment: "Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall.")
             }
         }
     }

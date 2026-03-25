@@ -89,7 +89,8 @@ protocol OmniBar: AnyObject {
 }
 
 extension OmniBar {
-    /// Convenience method that begins editing with the default `.search` text entry mode.
+    /// Begins editing without overriding the toggle mode. The SwitchBarHandler
+    /// will use its self-resolved default from settings.
     func beginEditing(animated: Bool) {
         beginEditing(animated: animated, forTextEntryMode: nil)
     }

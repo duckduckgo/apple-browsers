@@ -1887,6 +1887,8 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
+            // AI tabs use branding UI — skip setSelectedTextEntryMode to avoid
+            // flashing the "ask privately" placeholder before branding covers the text field.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
@@ -3086,6 +3088,8 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQueryUpdated(_ updatedQuery: String) {
+        // During iPad mode toggle transitions, text can be copied to the textField
+        // which triggers this method even in duck.ai mode — suppress suggestions.
         if isIPadModeToggleInAIChatMode {
             hideSuggestionTray()
             return

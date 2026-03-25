@@ -673,6 +673,10 @@ class OmniBarViewController: UIViewController, OmniBar {
                 let isExpanded = expandableBarView?.isSearchAreaExpanded == true
                 let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
                 if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
+                    // Note: selectedTextEntryMode is NOT reset here. It is owned by
+                    // refreshOmniBar (per-tab value) and must survive state transitions
+                    // like cancel/stopBrowsing — otherwise performCancel (0.3s after tab
+                    // switch) would overwrite the per-tab mode with the global default.
                     updateTextFieldPlaceholderForSelectedMode()
                 }
             }
@@ -708,6 +712,8 @@ class OmniBarViewController: UIViewController, OmniBar {
             expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
             expandable.selectedModeToggleState = selectedTextEntryMode
 
+            // Use isFirstResponder, not isEditing — isEditing stays true during
+            // transitions and would keep the search area expanded after tab switches.
             let isAddressBarSelected = textField.isFirstResponder || expandable.aiChatTextView.isFirstResponder
             let shouldShowModeToggle = state.showAIChatModeToggle && isAddressBarSelected
 
@@ -945,6 +951,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         updateTextFieldPlaceholderForSelectedMode()
 
         if state.showAIChatModeToggle {
+            // Only expand and show mode-specific icon when the address bar is actually
+            // focused. Without these guards, switching to a duck.ai tab would briefly
+            // flash the expanded search area and duck.ai icon before collapsing.
             let isFocused = textField.isFirstResponder || (expandableBarView?.aiChatTextView.isFirstResponder == true)
             let shouldExpand = isFocused && mode == .aiChat
             expandableBarView?.setSearchAreaExpanded(shouldExpand, animated: true)

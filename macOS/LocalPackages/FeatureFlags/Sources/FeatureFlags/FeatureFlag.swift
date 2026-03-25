@@ -306,6 +306,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the "Add to dock" onboarding step and setting for App Store builds
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725466401987?focus=true
     case addToDockAppStore
+
+    /// Enables removing individual AI chat suggestions from the omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
+    case aiChatRemoveSuggestion
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -345,7 +349,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
              .tabAnimations,
-             .addToDockAppStore:
+             .addToDockAppStore,
+             .aiChatRemoveSuggestion:
             .internalOnly
         default:
             .disabled
@@ -443,6 +448,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .promoQueue,
                 .semaphoreAlwaysVisible,
                 .tabAnimations,
+                .aiChatRemoveSuggestion,
                 .lazyMenuRebuild,
                 .websitesHistoryFirstTimeQuitSurvey,
                 .addToDockAppStore:
@@ -637,6 +643,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
         case .addToDockAppStore:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addToDockAppStore))
+        case .aiChatRemoveSuggestion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion))
         }
     }
 }

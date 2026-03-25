@@ -207,7 +207,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: Any?) {
-        DockCustomizer().addToDock()
+        guard dockCustomization.addToDock() else { return }
         PixelKit.fire(GeneralPixel.userAddedToDockFromMainMenu)
     }
 
@@ -814,7 +814,7 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-        Application.appDelegate.dockCustomization?.resetData()
+        dockCustomization.resetData()
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {

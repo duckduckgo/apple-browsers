@@ -107,6 +107,11 @@ DESCRIPTION
     --help
         Displays this help message.
 
+DEBUG OPTIONS
+
+    --appcast-path /path/to/appcast2.xml
+        Use local appcast file instead of downloading from the remote server.
+
 """)
 
     exit(0)
@@ -135,7 +140,7 @@ case .releaseToInternalChannel, .releaseHotfixToPublicChannel:
         print("➡️  Key file: \(keyFile)")
     }
 
-    performCommonChecksAndOperations()
+    performCommonChecksAndOperations(arguments)
 
     // Handle dmg file
     guard let dmgURL = handleDMGFile(dmgPath: dmgPath, updatesDirectoryURL: specificDir) else {
@@ -174,7 +179,7 @@ case .releaseToPublicChannel:
         print("➡️  Key file: \(keyFile)")
     }
 
-    performCommonChecksAndOperations()
+    performCommonChecksAndOperations(arguments)
 
     guard let dmgFileName = findDMG(for: versionIdentifier, in: specificDir) else {
         print("❌ Version \(versionIdentifier) does not exist in the downloaded appcast items.")
@@ -230,7 +235,7 @@ func extractVersionNumber(from versionIdentifier: String) -> String {
     return versionNumber
 }
 
-func performCommonChecksAndOperations() {
+func performCommonChecksAndOperations(_ arguments: Arguments) {
     // Check if generate_appcast is recent
     guard checkSparkleToolRecency(toolName: "generate_appcast"),
           checkSparkleToolRecency(toolName: "generate_keys"),
@@ -245,7 +250,7 @@ func performCommonChecksAndOperations() {
     }
 
     // Download appcast and update files
-    AppcastDownloader().download()
+    AppcastDownloader().download(arguments)
 }
 
 // MARK: - Checking the recency of Sparkle tools
@@ -342,9 +347,13 @@ final class AppcastDownloader {
     private let queue = DispatchQueue(label: "AppcastDownloader.queue")
     private var timer: DispatchSourceTimer!
 
-    func download() {
+    func download(_ arguments: Arguments) {
         prepareDirectories()
-        downloadAppcast()
+        if let appcastPath = arguments.parameters["--appcast-path"] {
+            copyAppcast(from: appcastPath)
+        } else {
+            downloadAppcast()
+        }
         dispatchGroup.wait()
         backupAppcast()
         parseAndDownloadFilesFromAppcast()
@@ -512,6 +521,19 @@ final class AppcastDownloader {
                 print("✅ Appcast downloaded to: \(appcastFilePath.path)")
                 self.dispatchGroup.leave()
             }
+        }
+    }
+
+    private func copyAppcast(from appcastPath: String) {
+        guard FileManager.default.fileExists(atPath: appcastPath) else {
+            print("❌ Appcast file does not exist at \(appcastPath)")
+            exit(1)
+        }
+        do {
+            try FileManager.default.copyItem(at: URL(fileURLWithPath: appcastPath), to: appcastFilePath)
+        } catch {
+            print("❌ Error copying appcast file: \(error)")
+            exit(1)
         }
     }
 
@@ -767,19 +789,34 @@ func readAppcastContent(from filePath: URL) -> String? {
 }
 
 func removeVersionFromAppcast(_ version: String, appcastContent: String) -> String? {
-    let pattern = "(<item>.*?<sparkle:version>\(version)</sparkle:version>.*?</item>)"
+    guard let xmlDoc = try? XMLDocument(xmlString: appcastContent, options: [.nodePreserveWhitespace, .nodePreserveAll]) else {
+        print("❌ Failed to parse appcast XML.")
+        return nil
+    }
 
-    guard let regex = try? NSRegularExpression(pattern: pattern, options: .dotMatchesLineSeparators),
-          let startMatch = regex.firstMatch(in: appcastContent, range: NSRange(appcastContent.startIndex..., in: appcastContent)),
-          let endRange = appcastContent.range(of: "</item>", options: [], range: Range(startMatch.range, in: appcastContent)!)
-    else {
+    let sparkleNS = "http://www.andymatuschak.org/xml-namespaces/sparkle"
+    guard let items = try? xmlDoc.nodes(forXPath: "//item") else {
+        print("❌ Failed to query items in appcast XML.")
+        return nil
+    }
+
+    var found = false
+    for item in items {
+        guard let itemElement = item as? XMLElement else { continue }
+        let versionElements = itemElement.elements(forLocalName: "version", uri: sparkleNS)
+        if let versionElement = versionElements.first, versionElement.stringValue == version {
+            itemElement.detach()
+            found = true
+            break
+        }
+    }
+
+    guard found else {
         print("❌ Failed to match version \(version) in the appcast content.")
         return nil
     }
 
-    var modifiedAppcastContent = appcastContent
-    modifiedAppcastContent.removeSubrange(Range(startMatch.range, in: appcastContent)!.lowerBound..<endRange.upperBound)
-    return modifiedAppcastContent
+    return xmlDoc.xmlString
 }
 
 func writeAppcastContent(_ content: String, to filePath: URL) {
@@ -818,6 +855,8 @@ func runGenerateAppcast(with versionNumber: String, channel: String? = nil, roll
     commandComponents.append("\(specificDir.path)")
 
     let command = commandComponents.joined(separator: " ")
+
+    print("🚀 Executing command: \(command)")
 
     // Execute the command
     let task = Process()

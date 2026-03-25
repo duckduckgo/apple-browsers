@@ -40,6 +40,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var currentToggleState: TextEntryMode = .aiChat
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
+    @Published var hasSubmittedPrompt: Bool = false
+
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
+        $hasSubmittedPrompt.eraseToAnyPublisher()
+    }
 
     var isGenerating: Bool = false {
         didSet { updateButtonState() }

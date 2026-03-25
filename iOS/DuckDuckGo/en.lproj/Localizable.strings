@@ -2014,6 +2014,9 @@
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Ask privately";
 
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Ask a follow-up question...";
+
 /* OK title for invite screen alert dismissal button */
 "invite.alert.ok.button" = "OK";
 

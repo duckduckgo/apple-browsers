@@ -107,6 +107,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         controller.extensionContexts
     }
 
+    public var extensionsDirectory: URL {
+        storageProvider.extensionsDirectory
+    }
+
     /// Whether the embedded autoconsent web extension is loaded and active.
     public var isAutoconsentExtensionLoaded: Bool {
         contexts.contains { $0.duckDuckGoWebExtensionType == .embedded }
@@ -117,9 +121,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public func installExtension(from sourceURL: URL) async throws {
         Logger.webExtensions.debug("🔄 Installing extension from: \(sourceURL.path)")
 
+        let metadata = try await WKWebExtension.metadata(from: sourceURL)
         let identifier = UUID().uuidString
 
-        _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
+        if metadata.requiresExtraction {
+            _ = try storageProvider.extractExtension(from: sourceURL, identifier: identifier)
+        } else {
+            _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
+        }
+
         Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
 
         do {
@@ -233,6 +243,19 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         } else {
             Logger.webExtensions.debug("✅ Successfully unloaded \(successCount) extension(s) from memory")
         }
+    }
+
+    @MainActor
+    public func reloadExtension(identifier: String) async throws {
+        Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
+
+        try loader.unloadExtension(identifier: identifier, from: controller)
+        unregisterHandlers(for: identifier)
+
+        _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        Logger.webExtensions.info("✅ Reloaded extension '\(identifier)'")
+        notifyUpdate()
     }
 
     // MARK: - Loading

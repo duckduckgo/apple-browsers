@@ -28,7 +28,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     private var promptTypeDeciderMock: MockDefaultBrowserAndDockPromptTypeDecider!
     private var defaultBrowserProviderMock: DefaultBrowserProviderMock!
     private var dockCustomizerMock: DockCustomizerMock!
-    private var applicationBuildTypeMock: ApplicationBuildTypeMock!
     private var storeMock: MockDefaultBrowserAndDockPromptStore!
     private var notificationPresenterMock: MockDefaultBrowserAndDockPromptNotificationPresenter!
     private var pixelKitMock: PixelKitMock!
@@ -42,7 +41,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         promptTypeDeciderMock = MockDefaultBrowserAndDockPromptTypeDecider()
         defaultBrowserProviderMock = DefaultBrowserProviderMock()
         dockCustomizerMock = DockCustomizerMock()
-        applicationBuildTypeMock = ApplicationBuildTypeMock()
         storeMock = MockDefaultBrowserAndDockPromptStore()
         notificationPresenterMock = MockDefaultBrowserAndDockPromptNotificationPresenter()
         timeTraveller = TimeTraveller(date: Self.now)
@@ -53,7 +51,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         promptTypeDeciderMock = nil
         defaultBrowserProviderMock = nil
         dockCustomizerMock = nil
-        applicationBuildTypeMock = nil
         storeMock = nil
         notificationPresenterMock = nil
         timeTraveller = nil
@@ -75,7 +72,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
             isOnboardingCompleted: { self.isOnboardingCompleted },
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
-            applicationBuildType: applicationBuildTypeMock,
             pixelFiring: pixelKitMock,
             dateProvider: timeTraveller.getDate
         )
@@ -85,7 +81,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testEvaluatePromptEligibility_SparkleBuild_DefaultBrowserAndAddedToDock_ReturnsNil() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = true
         let sut = makeSUT()
@@ -96,7 +91,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testEvaluatePromptEligibility_SparkleBuild_DefaultBrowserAndNotAddedToDock_ReturnsAddToDockPrompt() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -107,7 +101,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testEvaluatePromptEligibility_SparkleBuild_NotDefaultBrowserAndAddedToDock_ReturnsSetAsDefaultPrompt() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let sut = makeSUT()
@@ -118,7 +111,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testEvaluatePromptEligibility_SparkleBuild_NotDefaultBrowserAndNotAddedToDock_ReturnsBothDefaultBrowserAndDockPrompt() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -129,7 +121,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testEvaluatePromptEligibility_AppStoreBuild_DefaultBrowser_ReturnsNil() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = false
+        dockCustomizerMock.supportsAddingToDock = false
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -140,7 +132,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testEvaluatePromptEligibility_AppStoreBuild_NotDefaultBrowser_ReturnsSetAsDefaultPrompt() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = false
+        dockCustomizerMock.supportsAddingToDock = false
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -208,7 +200,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         // GIVEN
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         let sut = makeSUT()
 
@@ -250,7 +241,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testConfirmActionCallsAddToDockAndSetAsDefaultBrowserWhenBothDefaultBrowserAndDockPromptType() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -265,7 +255,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testConfirmActionCallsAddToDockWhenAddToDockPromptType() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -280,7 +269,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testConfirmActionCallsSetAsDefaultBrowserWhenSetAsDefaultPromptType() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let sut = makeSUT()
@@ -295,7 +283,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testConfirmActionDoesNothingWhenEvaluatePromptEligibilityIsNil() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = true
         let sut = makeSUT()
@@ -310,7 +297,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testConfirmActionSetBannerSeen() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -329,7 +315,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testConfirmActionDoesNotSetPopoverSeen() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -348,7 +333,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testConfirmActionDoesNotSetInactiveUserModalSeen() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -369,7 +353,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testDismissActionShouldHidePermanentlyFalseSetBannerSeenAndDoesNotSetPermanentlyHiddenFlagToTrue() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -388,7 +371,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testDismissActionShouldHidePermanentlyTrueSetBannerSeenAndSetPermanentlyHiddenFlagToTrue() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -407,7 +389,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testDismissActionDoesNotSetPopoverSeen() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT()
@@ -506,7 +487,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverSeenPixelTypeBothWhenPopoverPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .active(.popover)
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
@@ -522,7 +502,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverSeenPixelTypeSADOnlyWhenPopoverPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .active(.popover)
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
@@ -538,7 +517,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverSeenPixelTypeATTOnlyWhenPopoverPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .active(.popover)
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
@@ -554,7 +532,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverConfirmActionTypeBothWhenPopoverConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
@@ -569,7 +546,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverConfirmActionTypeSADOnlyWhenPopoverConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
@@ -584,7 +560,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverConfirmActionTypeATTOnlyWhenPopoverConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: .addToDockPrompt), frequency: .standard)
@@ -599,7 +574,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverDismissActionTypeBothWhenPopoverDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverCloseButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
@@ -614,7 +588,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverDismissActionTypeSADOnlyWhenPopoverDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverCloseButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
@@ -629,7 +602,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverDismissActionTypeATTOnlyWhenPopoverDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverCloseButtonClicked(type: .addToDockPrompt), frequency: .standard)
@@ -644,7 +616,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFirePopoverDismissActionUponStatusUpdateThenDoesNotFireDismissPixel() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT(expectedFireCalls: [])
@@ -660,7 +631,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerSeenPixelTypeBothWhenBannerPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
@@ -677,7 +647,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerSeenPixelTypeSADOnlyWhenBannerPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
@@ -694,7 +663,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerSeenPixelTypeATTOnlyWhenBannerPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
@@ -711,7 +679,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerConfirmActionTypeBothWhenPopoverConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         storeMock.bannerShownOccurrences = 10
@@ -727,7 +694,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerConfirmActionTypeSADOnlyWhenBannerConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         storeMock.bannerShownOccurrences = 4
@@ -743,7 +709,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerConfirmActionTypeATTOnlyWhenBannerConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         storeMock.bannerShownOccurrences = 5
@@ -759,7 +724,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerConfirmActionSendsFixedParameterWhenNumberOfBannerShownIsMoreThanTen() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         storeMock.bannerShownOccurrences = 25
@@ -775,7 +739,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerDismissActionTypeBothWhenBannerDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
@@ -790,7 +753,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testBannerPopoverDismissActionTypeSADOnlyWhenBannerDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
@@ -805,7 +767,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerDismissActionTypeATTOnlyWhenBannerDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: .addToDockPrompt), frequency: .standard)
@@ -820,7 +781,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerNeverAskAgainTypeBothWhenBannerDismissActionShouldPermanentlyDismissTrue() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerNeverAskAgainButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
@@ -835,7 +795,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerNeverAskAgainTypeSADOnlyWhenBannerDismissActionShouldPermanentlyDismissTrue() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerNeverAskAgainButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
@@ -850,7 +809,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerNeverAskAgainTypeATTOnlyWhenBannerDismissActionShouldPermanentlyDismissTrue() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerNeverAskAgainButtonClicked(type: .addToDockPrompt), frequency: .standard)
@@ -865,7 +823,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireBannerDismissActionUponStatusUpdateThenDoesNotFireDismissPixel() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT(expectedFireCalls: [])
@@ -881,7 +838,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalSeenPixelTypeBothWhenInactiveUserModalPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .inactive
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
@@ -897,7 +853,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalSeenPixelTypeSADOnlyWhenInactiveUserModalPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .inactive
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
@@ -913,7 +868,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalSeenPixelTypeATDOnlyWhenInactiveUserModalPromptIsReturned() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         promptTypeDeciderMock.promptTypeToReturn = .inactive
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
@@ -929,7 +883,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalConfirmActionTypeBothWhenInactiveUserModalConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
@@ -944,7 +897,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalConfirmActionTypeSADOnlyWheInactiveUserModalConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
@@ -959,7 +911,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalConfirmActionTypeATDOnlyWhenInactiveUserModalConfirmAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .addToDockPrompt), frequency: .standard)
@@ -974,7 +925,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalDismissedTypeBothWhenInactiveUserModalDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
@@ -989,7 +939,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalDismissedTypeSADOnlyWhenInactiveUserModalDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .setAsDefaultPrompt), frequency: .standard)
@@ -1004,7 +953,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalDismissedTypeATDOnlyWhenInactiveUserModalDismissAction() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .addToDockPrompt), frequency: .standard)
@@ -1019,7 +967,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testFireInactiveUserModalDismissedUponStatusUpdateThenDoesNotFireDismissPixel() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let sut = makeSUT(expectedFireCalls: [])
@@ -1050,7 +997,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     func testWhenEvaluateEligibilityCalledAndAlreadyDefaultAndInDockThenSendsNil() {
         // GIVEN
-        applicationBuildTypeMock.isSparkleBuild = true
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = true
         promptTypeDeciderMock.promptTypeToReturn = .active(.banner)

@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Restaurează automat datele pe acest dispozitiv, dacă reinstalezi aplicația.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Dacă reinstalezi aplicația DuckDuckGo, te vom întreba dacă dorești să restaurezi datele pe acest dispozitiv.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Reia sesiunea Sync & Backup pentru a restaura marcajele, parolele și multe altele sau continuă cu o nouă configurare.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Activat";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Restaurează-ți datele automat dacă reinstalezi aplicația. Datele din Sync & Backup nu pot fi recuperate după 18 luni de inactivitate.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Restaurează la reinstalarea aplicației";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Salvează PDF de recuperare";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Dacă îți pierzi dispozitivul, vei avea nevoie de acest cod de recuperare pentru a-ți restaura datele sincronizate.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Folosește acest cod pentru a restaura datele dacă pierzi accesul la acest dispozitiv. Datele din Sync & Backup nu pot fi recuperate după 18 luni de inactivitate. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Completează manual codul text";

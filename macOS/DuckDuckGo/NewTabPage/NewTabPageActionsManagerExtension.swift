@@ -62,7 +62,8 @@ extension NewTabPageActionsManager {
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
         syncService: DDGSyncing?,
         pinningManager: PinningManager,
-        promoService: PromoService?
+        promoService: PromoService?,
+        dockCustomization: DockCustomization
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -142,7 +143,7 @@ extension NewTabPageActionsManager {
             pixelHandler: nextStepsPixelHandler,
             cardActionsHandler: NewTabPageNextStepsCardsActionHandler(
                 defaultBrowserProvider: SystemDefaultBrowserProvider(),
-                dockCustomizer: DockCustomizer(),
+                dockCustomizer: dockCustomization,
                 dataImportProvider: dataImportProvider,
                 tabOpener: NewTabPageTabOpener(),
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -154,7 +155,8 @@ extension NewTabPageActionsManager {
             legacySubscriptionCardPersistor: subscriptionCardPersistor,
             persistor: nextStepsCardsPersistor,
             duckPlayerPreferences: duckPlayerPreferences,
-            syncService: syncService
+            syncService: syncService,
+            dockCustomization: dockCustomization
         )
         if let promoService {
             let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)

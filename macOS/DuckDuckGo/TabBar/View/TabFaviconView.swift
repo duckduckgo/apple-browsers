@@ -238,6 +238,6 @@ private enum FaviconMetrics {
 
 private enum FaviconAnimation {
     static let animationDuration = TimeInterval(0.15)
-    static let animationTimingFunction = CAMediaTimingFunction(controlPoints: 0.25, 0.1, 0.25, 1.0)
+    static let animationTimingFunction = CAMediaTimingFunction.bezierCubic
     static let scaleDownRatio: CGFloat = 0.75
 }

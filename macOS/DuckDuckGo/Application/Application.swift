@@ -48,9 +48,8 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
         NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
 
         let buildType = StandardApplicationBuildType()
-        let dockCustomizer = DockCustomizer()
-        let dockCustomization: DockCustomization? = buildType.isSparkleBuild ? dockCustomizer : nil
-        let delegate = AppDelegate(dockCustomization: dockCustomization, dockStateChecker: dockCustomizer)
+        let dockCustomization = DockCustomizer(applicationBuildType: buildType)
+        let delegate = AppDelegate(dockCustomization: dockCustomization)
         self.delegate = delegate
         Application.appDelegate = delegate
 

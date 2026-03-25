@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import ZIPFoundation
 
 /// Errors that can occur during web extension storage operations.
 @available(macOS 15.4, iOS 18.4, *)
@@ -25,6 +26,7 @@ public enum WebExtensionStorageError: Error {
     case failedToCreateDirectory(Error)
     case failedToCopyExtension(Error)
     case failedToRemoveExtension(Error)
+    case failedToExtractExtension(Error)
 }
 
 /// Protocol defining platform-specific storage for web extensions.
@@ -53,6 +55,15 @@ public protocol WebExtensionStorageProviding: AnyObject {
     /// - Throws: If the copy operation fails.
     func copyExtension(from sourceURL: URL, identifier: String) throws -> URL
 
+    /// Extracts a zip extension to platform storage.
+    /// Unlike `copyExtension`, this extracts the zip contents to the destination folder.
+    /// - Parameters:
+    ///   - sourceURL: The source URL of the zip file.
+    ///   - identifier: The unique identifier used to build the destination path.
+    /// - Returns: The destination folder URL where the extension was extracted.
+    /// - Throws: If the extraction operation fails.
+    func extractExtension(from sourceURL: URL, identifier: String) throws -> URL
+
     /// Removes an extension from storage.
     /// - Parameter identifier: The extension identifier to remove.
     /// - Throws: If the removal fails.
@@ -76,13 +87,38 @@ public extension WebExtensionStorageProviding {
             return nil
         }
 
-        guard let contents = try? fileManager.contentsOfDirectory(at: folderPath,
-                                                                   includingPropertiesForKeys: nil,
-                                                                   options: [.skipsHiddenFiles]),
-              let extensionFile = contents.first else {
+        guard let contents = try? fileManager.contentsOfDirectory(
+            at: folderPath,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
             return nil
         }
-        return extensionFile
+
+        // First, look for a zip file
+        if let zipFile = contents.first(where: { $0.pathExtension.lowercased() == "zip" }) {
+            return zipFile
+        }
+
+        // Check if manifest.json exists directly in the folder (flat zip extraction)
+        let directManifestPath = folderPath.appendingPathComponent("manifest.json")
+        if fileManager.fileExists(atPath: directManifestPath.path) {
+            return folderPath
+        }
+
+        // Look for a subfolder containing manifest.json
+        for item in contents {
+            var isDirectory: ObjCBool = false
+            if fileManager.fileExists(atPath: item.path, isDirectory: &isDirectory),
+               isDirectory.boolValue {
+                let manifestPath = item.appendingPathComponent("manifest.json")
+                if fileManager.fileExists(atPath: manifestPath.path) {
+                    return item
+                }
+            }
+        }
+
+        return nil
     }
 
     func copyExtension(from sourceURL: URL, identifier: String) throws -> URL {
@@ -108,6 +144,24 @@ public extension WebExtensionStorageProviding {
         }
 
         return destinationURL
+    }
+
+    func extractExtension(from sourceURL: URL, identifier: String) throws -> URL {
+        let identifierFolder = extensionsDirectory.appendingPathComponent(identifier)
+
+        do {
+            try fileManager.createDirectory(at: identifierFolder, withIntermediateDirectories: true)
+        } catch {
+            throw WebExtensionStorageError.failedToCreateDirectory(error)
+        }
+
+        do {
+            try fileManager.unzipItem(at: sourceURL, to: identifierFolder)
+        } catch {
+            throw WebExtensionStorageError.failedToExtractExtension(error)
+        }
+
+        return identifierFolder
     }
 
     func removeExtension(identifier: String) throws {

@@ -24,6 +24,7 @@ enum LaunchAction {
 
     case openURL(URL)
     case handleShortcutItem(UIApplicationShortcutItem)
+    case handleUserActivity(NSUserActivity)
     case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool)
 
     init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false) {
@@ -32,6 +33,8 @@ enum LaunchAction {
             self = .openURL(url)
         case .handleShortcutItem(let shortcutItem)?:
             self = .handleShortcutItem(shortcutItem)
+        case .handleUserActivity(let userActivity)?:
+            self = .handleUserActivity(userActivity)
         case nil:
             self = .standardLaunch(lastBackgroundDate: lastBackgroundDate, isFirstForeground: isFirstForeground)
         }
@@ -56,6 +59,7 @@ final class LaunchActionHandler: LaunchActionHandling {
 
     private let urlHandler: URLHandling
     private let shortcutItemHandler: ShortcutItemHandling
+    private let userActivityHandler: UserActivityHandling
     private let keyboardPresenter: KeyboardPresenting
     private let pixelFiring: PixelFiring.Type
     private let launchSourceManager: LaunchSourceManaging
@@ -64,6 +68,7 @@ final class LaunchActionHandler: LaunchActionHandling {
 
     init(urlHandler: URLHandling,
          shortcutItemHandler: ShortcutItemHandling,
+         userActivityHandler: UserActivityHandling,
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
          idleReturnEvaluator: IdleReturnEvaluating,
@@ -71,6 +76,7 @@ final class LaunchActionHandler: LaunchActionHandling {
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
+        self.userActivityHandler = userActivityHandler
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
         self.idleReturnEvaluator = idleReturnEvaluator
@@ -86,6 +92,9 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .handleShortcutItem(let shortcutItem):
             launchSourceManager.setSource(.shortcut)
             shortcutItemHandler.handleShortcutItem(shortcutItem)
+        case .handleUserActivity(let userActivity):
+            launchSourceManager.setSource(.standard)
+            userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
             if idleReturnEvaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lastBackgroundDate) {

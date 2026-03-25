@@ -104,7 +104,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
     @MainActor
     private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
-                                      dockCustomizer: DockCustomization?,
+                                      dockCustomizer: DockCustomization,
                                       freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
@@ -501,10 +501,12 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenDockCustomizerIsNotAvailableThenAddToDockMenuItemIsNotVisible() {
+    func testWhenAddingToDockIsNotSupportedThenAddToDockMenuItemIsNotVisible() {
         defaultBrowserProvider.isDefault = false
+        dockCustomizer.supportsAddingToDock = false
+        dockCustomizer.dockStatus = false
 
-        setupMoreOptionsMenu(dockCustomizer: nil)
+        setupMoreOptionsMenu()
         moreOptionsMenu.update()
 
         XCTAssertNotEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)

@@ -63,6 +63,9 @@ public struct UserText {
     public static let scopedFireConfirmationDownloadsWarning = NSLocalizedString("scoped.fire.confirmation.downloads.warning", value: "This will cancel downloads in progress.", comment: "Warning message that deleting will cancel any active downloads")
     public static let scopedFireConfirmationNewTabsInfo = NSLocalizedString("scoped.fire.confirmation.new.tabs.info", value: "New tabs you created can also be deleted individually.", comment: "Informational message explaining that new tabs can also be deleted individually")
 
+    public static let contextualChatDeleteConfirmationTitle = NotLocalizedString("contextual.chat.delete.confirmation.title", value: "Delete this chat?", comment: "Title for the confirmation dialog when deleting a contextual AI chat")
+    public static let contextualChatDeleteConfirmationButton = NotLocalizedString("contextual.chat.delete.confirmation.button", value: "Delete Chat", comment: "Button to confirm deleting a contextual AI chat")
+
     public static func scopedFireConfirmationTabsDeletedToast(tabCount: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "scoped.fire.confirmation.tabs.deleted.toast", value: nil, table: nil)
         return String.localizedStringWithFormat(format, tabCount)
@@ -2077,6 +2080,8 @@ public struct UserText {
     public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
+
+    public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Quick Actions
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize This Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")

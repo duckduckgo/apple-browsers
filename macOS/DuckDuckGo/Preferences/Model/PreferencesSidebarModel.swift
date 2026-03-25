@@ -69,6 +69,7 @@ final class PreferencesSidebarModel: ObservableObject {
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aiChatPreferences: AIChatPreferences
     let aboutPreferences: AboutPreferences
+    let dockPreferences: DockPreferencesModel
     let accessibilityPreferences: AccessibilityPreferences
     let duckPlayerPreferences: DuckPlayerPreferences
 
@@ -118,6 +119,7 @@ final class PreferencesSidebarModel: ObservableObject {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
@@ -138,6 +140,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.aiChatPreferences = aiChatPreferences
         self.aboutPreferences = aboutPreferences
+        self.dockPreferences = dockPreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.duckPlayerPreferences = duckPlayerPreferences
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
@@ -177,6 +180,7 @@ final class PreferencesSidebarModel: ObservableObject {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
@@ -205,6 +209,7 @@ final class PreferencesSidebarModel: ObservableObject {
                   cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                   aiChatPreferences: aiChatPreferences,
                   aboutPreferences: aboutPreferences,
+                  dockPreferences: dockPreferences,
                   accessibilityPreferences: accessibilityPreferences,
                   duckPlayerPreferences: duckPlayerPreferences,
                   winBackOfferVisibilityManager: winBackOfferVisibilityManager

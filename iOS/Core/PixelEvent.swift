@@ -88,6 +88,10 @@ extension Pixel {
         case tabSwitcherSwipeCloseTab
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
+        case tabManagerSwitchToAITab
+        case tabManagerSwitchToWebTab
+        case tabManagerCloseAITab
+        case tabManagerCloseWebTab
 
         // MARK: KeyValueFiles Store
         case keyValueFileStoreSupportDirAccessError
@@ -1554,6 +1558,8 @@ extension Pixel {
         case aiChatContextualPromptSubmittedWithContextNative
         case aiChatContextualPromptSubmittedWithoutContextNative
         case aiChatContextualSessionRestored
+        case aiChatContextualFireButtonTapped
+        case aiChatContextualFireButtonConfirmed
         case aiChatContextualPageContextCollectionEmpty
         case aiChatContextualPageContextCollectionUnavailable
 
@@ -1754,6 +1760,10 @@ extension Pixel.Event {
         case .tabSwitcherSwipeCloseTab: return "m_tab_manager_close_tab_swipe"
         case .tabSwitchLongPressNewTab: return "m_tab_manager_long_press_new_tab"
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
+        case .tabManagerSwitchToAITab: return "m_tab_manager_switch_to_ai_tab"
+        case .tabManagerSwitchToWebTab: return "m_tab_manager_switch_to_web_tab"
+        case .tabManagerCloseAITab: return "m_tab_manager_close_ai_tab"
+        case .tabManagerCloseWebTab: return "m_tab_manager_close_web_tab"
 
         case .settingsDoNotSellShown: return "ms_dns"
         case .settingsDoNotSellOn: return "ms_dns_on"
@@ -3111,6 +3121,8 @@ extension Pixel.Event {
         case .aiChatContextualPromptSubmittedWithContextNative: return "m_aichat_contextual_prompt_submitted_with_context_native"
         case .aiChatContextualPromptSubmittedWithoutContextNative: return "m_aichat_contextual_prompt_submitted_without_context_native"
         case .aiChatContextualSessionRestored: return "m_aichat_contextual_session_restored"
+        case .aiChatContextualFireButtonTapped: return "m_aichat_contextual_fire_button_tapped"
+        case .aiChatContextualFireButtonConfirmed: return "m_aichat_contextual_fire_button_confirmed"
         case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
         case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
 

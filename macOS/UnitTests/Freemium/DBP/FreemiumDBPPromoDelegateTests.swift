@@ -86,11 +86,13 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
-    func testIsEligible_whenDisplayWindowExpired() {
+    func testIsEligible_whenDisplayWindowExpired_remainsEligibleSoShowCanCleanUp() {
+        // An expired window still reports eligible — show() handles the expiry
+        // by clearing the date and returning .ignored(cooldown:)
         coordinator.displayWindowStartDate = Date().addingTimeInterval(-.days(8))
         coordinator.updateDisplayWindowExpiredState()
 
-        XCTAssertFalse(sut.isEligible)
+        XCTAssertTrue(sut.isEligible)
     }
 
     // MARK: - Fast-path eligibility
@@ -200,5 +202,121 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
     func testHide_isIdempotent() {
         sut.hide()
         sut.hide()
+    }
+
+    // MARK: - show() edge cases
+
+    func testShow_preservesExistingDisplayWindowStartDate() async {
+        let originalDate = Date().addingTimeInterval(-.days(3))
+        coordinator.displayWindowStartDate = originalDate
+
+        let task = Task {
+            await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
+        }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        // Date should not have been overwritten
+        XCTAssertEqual(
+            coordinator.displayWindowStartDate?.timeIntervalSince1970 ?? 0,
+            originalDate.timeIntervalSince1970,
+            accuracy: 1.0
+        )
+
+        sut.hide()
+        _ = await task.value
+    }
+
+    func testShow_doubleCallResumesFirstContinuation() async {
+        // First show — suspends
+        let firstTask = Task {
+            await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
+        }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        // Second show — should resume first with .noChange
+        let secondTask = Task {
+            await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
+        }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        let firstResult = await firstTask.value
+        XCTAssertEqual(firstResult, .noChange)
+
+        // Clean up second
+        sut.hide()
+        _ = await secondTask.value
+    }
+
+    // MARK: - isEligiblePublisher
+
+    func testIsEligiblePublisher_emitsTrueWhenAllConditionsMet() {
+        let expectation = XCTestExpectation(description: "publisher emits true")
+        sut.isEligiblePublisher
+            .first()
+            .sink { eligible in
+                if eligible { expectation.fulfill() }
+            }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 2.0)
+    }
+
+    func testIsEligiblePublisher_emitsFalseWhenFeatureBecomesUnavailable() {
+        let expectation = XCTestExpectation(description: "publisher emits false")
+        sut.isEligiblePublisher
+            .dropFirst() // skip initial true
+            .sink { eligible in
+                if !eligible { expectation.fulfill() }
+            }
+            .store(in: &cancellables)
+
+        mockFeature.featureAvailable = false
+
+        wait(for: [expectation], timeout: 2.0)
+    }
+
+    func testIsEligiblePublisher_emitsFalseWhenDismissed() {
+        let expectation = XCTestExpectation(description: "publisher emits false")
+        sut.isEligiblePublisher
+            .dropFirst()
+            .sink { eligible in
+                if !eligible { expectation.fulfill() }
+            }
+            .store(in: &cancellables)
+
+        // Trigger dismiss via notification (updates isDismissed on coordinator)
+        NotificationCenter.default.post(name: .freemiumDBPEntryPointActivated, object: nil)
+
+        wait(for: [expectation], timeout: 2.0)
+    }
+
+    func testIsEligiblePublisher_usesFastPathDuringActiveDisplayWindow() {
+        // Set up active display window
+        coordinator.displayWindowStartDate = Date()
+        coordinator.updateDisplayWindowExpiredState()
+
+        // Make isAvailable false but featureFlag true
+        mockFeature.mockFeatureFlagEnabled = true
+        mockFeature.featureAvailable = false
+
+        let expectation = XCTestExpectation(description: "publisher settles")
+        // Wait for isFeatureAvailable to propagate
+        coordinator.$isFeatureAvailable
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 2.0)
+
+        // Publisher should use fast-path: featureFlagEnabled (true) instead of isAvailable (false)
+        let publisherExpectation = XCTestExpectation(description: "publisher emits true via fast-path")
+        sut.isEligiblePublisher
+            .first()
+            .sink { eligible in
+                if eligible { publisherExpectation.fulfill() }
+            }
+            .store(in: &cancellables)
+
+        wait(for: [publisherExpectation], timeout: 2.0)
     }
 }

@@ -169,7 +169,7 @@ extension OnboardingRebranding.OnboardingStyles {
             let keyboardFrame = keyboardResponder.keyboardFrame
 
             // Check if image and keyboard actually overlap
-            // This is crucial for iPad where floating/split keyboards may not overlap the image
+            // This is handle the scenario on iPad where floating/split keyboards may not overlap the image
             let intersection = imageGlobalFrame.intersection(keyboardFrame)
 
             // No overlap = no adjustment needed
@@ -326,33 +326,58 @@ public enum KeyboardBehavior: Equatable {
 
 public extension View {
 
-    /// Applies the contextual onboarding background illustration.
+    /// Applies a keyboard-aware background for new tab page onboarding dialogs.
     ///
-    /// This modifier adds a background illustration appropriate for the given onboarding step.
-    /// The background can optionally animate in and adjust for keyboard appearance.
+    /// This modifier is designed for onboarding dialogs shown on the new tab page where
+    /// keyboard interaction is expected (e.g., search input). The background will automatically
+    /// adjust its position when the keyboard appears to remain visible.
+    ///
+    /// The background appears immediately without entrance animation.
+    ///
+    /// - Parameter backgroundType: The type of background illustration to display.
+    func applyNewTabOnboardingBackground(
+        backgroundType: ContextualOnboardingBackgroundType
+    ) -> some View {
+        #if os(iOS)
+            self.modifier(
+                OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
+                    backgroundType: backgroundType,
+                    imageOffsetY: 0,
+                    keyboardBehavior: .adjustForKeyboard
+                )
+            )
+        #elseif os(macOS)
+            self.modifier(
+                OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
+                    backgroundType: backgroundType,
+                    imageOffsetY: 0
+                )
+            )
+        #endif
+    }
+
+    /// Applies an animated background for contextual onboarding dialogs.
+    ///
+    /// This modifier is designed for onboarding dialogs shown during browsing (contextual).
+    /// The background animates in from the bottom edge with a fade/slide effect.
+    ///
+    /// No keyboard adjustment is performed as these dialogs don't typically involve keyboard interaction.
     ///
     /// - Parameters:
     ///   - backgroundType: The type of background illustration to display.
-    ///   - animationContext: Optional animation configuration. When provided, the illustration animates in from the bottom edge.
-    ///   - keyboardBehavior: How the background should respond to keyboard appearance. Defaults to `.ignoreKeyboard`.
-    ///
-    /// - Note: On iPad, keyboard adjustments only apply when the keyboard overlaps the background image.
-    ///   Floating or split keyboards that don't overlap the image will not trigger adjustments.
-    @ViewBuilder
-    func applyContextualOnboardingBackground(
+    ///   - animationContext: Animation configuration. Defaults to `.default`.
+    func applyAnimatedContextualOnboardingBackground(
         backgroundType: ContextualOnboardingBackgroundType,
-        animationContext: BackgroundAnimationContext? = nil,
-        keyboardBehavior: KeyboardBehavior = .ignoreKeyboard
+        animationContext: BackgroundAnimationContext = .default
     ) -> some View {
-        if let animationContext {
-            self.modifier(OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(backgroundType: backgroundType, animation: animationContext.animation, delay: animationContext.delay, keyboardBehavior: keyboardBehavior))
-        } else {
-            #if os(iOS)
-            self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: 0, keyboardBehavior: keyboardBehavior))
-            #elseif os(macOS)
-            self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: 0))
-            #endif
-        }
+        self.modifier(
+            OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(
+                backgroundType: backgroundType,
+                animation: animationContext.animation,
+                delay: animationContext.delay,
+                keyboardBehavior: .ignoreKeyboard
+            )
+        )
     }
 
 }

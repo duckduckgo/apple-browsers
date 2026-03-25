@@ -257,8 +257,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func syncChipVisibility(hasExistingChat: Bool) {
-        guard hasSubmittedPrompt != hasExistingChat else { return }
-        hasSubmittedPrompt = hasExistingChat
+        let shouldHide = hasExistingChat || hasSubmittedPrompt
+        guard hasSubmittedPrompt != shouldHide else { return }
+        hasSubmittedPrompt = shouldHide
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }

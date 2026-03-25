@@ -73,6 +73,7 @@ struct Background: BackgroundHandling {
     }
 
     private func cleanScreenTimeDataOniOS26() {
+        guard appDependencies.featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
         guard #available(iOS 26, *) else { return }
         Task {
             await ScreenTimeDataCleaner().removeScreenTimeData()

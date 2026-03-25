@@ -29,12 +29,10 @@ public struct ScreenTimeDataCleaner {
         let stores = uids.map { WKWebsiteDataStore(forIdentifier: $0) }
             + [WKWebsiteDataStore.default()]
 
-        await withTaskGroup(of: Void.self) { group in
-            for store in stores {
-                group.addTask {
-                    await store.removeData(ofTypes: [WKWebsiteDataTypeScreenTime], modifiedSince: .distantPast)
-                }
-            }
+        // Perform sequentially because it has to run on the main thread anyway, so even
+        // in a group they would still run sequentially.
+        for store in stores {
+            await store.removeData(ofTypes: [WKWebsiteDataTypeScreenTime], modifiedSince: .distantPast)
         }
     }
 

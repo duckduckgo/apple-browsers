@@ -1403,6 +1403,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func cleanScreenTimeDataOnMacOS26() {
+        guard featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
         guard #available(macOS 26, *) else { return }
         Task {
             await ScreenTimeDataCleaner().removeScreenTimeData()

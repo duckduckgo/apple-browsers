@@ -34,12 +34,6 @@ private enum BubbleBackedDialogMetrics {
     /// iPhone uses 0.0 (relies on padding), iPad uses percentage of screen height
     static let dialogVerticalOffsetPercentage = MetricBuilder<CGFloat>(default: 0.0)
         .iPad(portrait: 0.15, landscape: 0.05)
-
-    /// Whether to use padding-based positioning (iPhone) or offset-based positioning (iPad).
-    @MainActor
-    static let usePaddingBasedPositioning = MetricBuilder<Bool>(default: true)
-        .iPad(false)
-        .build()
 }
 
 /// Animation timing constants for the rebranded onboarding bubble dialogs.
@@ -245,6 +239,11 @@ extension OnboardingRebranding {
             let configuration = bubbleBackedDialogConfiguration(for: state.type)
 
             return GeometryReader { geometry in
+                let defaultTopPadding = onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin
+                // On iPad we reduce the gap between dialog and background illustration by adding extra padding to the dialog by a percentage of screen height based on orientation.
+                let platformSpecificTopPadding = geometry.size.height * BubbleBackedDialogMetrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass)
+                let topPadding = defaultTopPadding + platformSpecificTopPadding
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
                         bubbleBackedDialogView(state: state, configuration: configuration)
@@ -252,10 +251,9 @@ extension OnboardingRebranding {
                             .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, BubbleBackedDialogMetrics.usePaddingBasedPositioning ? onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin : nil) //iPhone does not use offset and relies on top padding.
+                            .padding(.top, topPadding)
                     }
                     .frame(minHeight: geometry.size.height, alignment: .top)
-                    .offset(y: geometry.size.height * BubbleBackedDialogMetrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass)) // On iPad we reduce the gap between dialog and background illustration by offsetting the dialog by a percentage of screen height based on orientation.
                     .background {
                         GeometryReader { proxy in
                             Color.clear.preference(

@@ -42,10 +42,6 @@ internal class MouseOverButton: NSButton, Hoverable {
     @IBInspectable dynamic var backgroundInset: NSPoint = .zero
     @IBInspectable dynamic var mustAnimateOnMouseOver: Bool = false
 
-    private enum Animations {
-        static let duration: TimeInterval = 0.15
-    }
-
     @IBInspectable var mouseOverTintColor: NSColor? {
         didSet {
             updateTintColor()

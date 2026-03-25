@@ -81,7 +81,7 @@ public extension OnboardingTheme {
             borderWidth: 1,
             borderInset: 0.5,
             iconSize: CGSize(width: 16, height: 16),
-            itemMaxHeight: 40
+            itemMaxHeight: 44
         )
 
         let linearOnboardingMetrics = LinearOnboardingMetrics(

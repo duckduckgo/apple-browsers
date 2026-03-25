@@ -59,6 +59,8 @@ final class UnifiedToggleInputView: UIView {
         static let collapsedCardHeight: CGFloat = 44
         static let cardHorizontalMargin: CGFloat = 16
         static let cardVerticalMargin: CGFloat = 8
+        static let cardHorizontalMarginBottom: CGFloat = 12
+        static let cardVerticalMarginBottom: CGFloat = 8
         static let cardCornerRadiusExpanded: CGFloat = 24
         static let cardCornerRadiusCollapsed: CGFloat = 16
         static let toggleTopPadding: CGFloat = 8
@@ -80,11 +82,9 @@ final class UnifiedToggleInputView: UIView {
         didSet {
             guard cardPosition != oldValue, isExpanded else { return }
             let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-            let expandedCorners: CACornerMask = (cardPosition == .top || usesOmnibarMargins) ? allCorners : [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-            cardView.layer.maskedCorners = expandedCorners
-            let shadowGoesDown = cardPosition == .top || usesOmnibarMargins
-            expandedShadow0.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 8 : -8)
-            expandedShadow1.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 2 : -2)
+            cardView.layer.maskedCorners = allCorners
+            expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
+            expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
         }
     }
 
@@ -374,8 +374,18 @@ final class UnifiedToggleInputView: UIView {
 
         let toggleHeight: CGFloat = (expanded && isToggleEnabled) ? Constants.toggleHeight : 0
         let showToolbar = expanded && isToggleEnabled && toggleView.selectedMode == .aiChat
-        let hMargin: CGFloat = (expanded && !showsDismissButton && !usesOmnibarMargins) ? 0 : Constants.cardHorizontalMargin
-        let vMargin: CGFloat = (expanded && !usesOmnibarMargins) ? 0 : Constants.cardVerticalMargin
+        let hMargin: CGFloat
+        if expanded && !showsDismissButton && !usesOmnibarMargins {
+            hMargin = (cardPosition == .bottom) ? Constants.cardHorizontalMarginBottom : 0
+        } else {
+            hMargin = Constants.cardHorizontalMargin
+        }
+        let vMargin: CGFloat
+        if expanded && !usesOmnibarMargins {
+            vMargin = (cardPosition == .bottom) ? Constants.cardVerticalMarginBottom : 0
+        } else {
+            vMargin = Constants.cardVerticalMargin
+        }
 
         textEntryView.isExpandable = expanded
         updateCardTrailingConstraint()
@@ -383,19 +393,14 @@ final class UnifiedToggleInputView: UIView {
         expandedShadow0.isHidden = !expanded
         expandedShadow1.isHidden = !expanded
         if expanded {
-            let shadowGoesDown = cardPosition == .top || usesOmnibarMargins
-            expandedShadow0.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 8 : -8)
-            expandedShadow1.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 2 : -2)
+            expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
+            expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
         }
         cardView.layer.shadowOpacity = expanded ? 0 : 1.0
         cardCollapsedHeightConstraint.constant = Constants.collapsedCardHeight
         cardCollapsedHeightConstraint.isActive = !expanded
 
-        let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        let expandedCorners: CACornerMask = (cardPosition == .top || usesOmnibarMargins)
-            ? allCorners
-            : [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        cardView.layer.maskedCorners = expanded ? expandedCorners : allCorners
+        cardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
 
@@ -443,8 +448,18 @@ final class UnifiedToggleInputView: UIView {
         isExpanded = expanded
         handler.isExpanded = expanded
 
-        let hMargin: CGFloat = (expanded && !showsDismissButton && !usesOmnibarMargins) ? 0 : Constants.cardHorizontalMargin
-        let vMargin: CGFloat = (expanded && !usesOmnibarMargins) ? 0 : Constants.cardVerticalMargin
+        let hMargin: CGFloat
+        if expanded && !showsDismissButton && !usesOmnibarMargins {
+            hMargin = (cardPosition == .bottom) ? Constants.cardHorizontalMarginBottom : 0
+        } else {
+            hMargin = Constants.cardHorizontalMargin
+        }
+        let vMargin: CGFloat
+        if expanded && !usesOmnibarMargins {
+            vMargin = (cardPosition == .bottom) ? Constants.cardVerticalMarginBottom : 0
+        } else {
+            vMargin = Constants.cardVerticalMargin
+        }
 
         textEntryView.isExpandable = expanded
         updateCardTrailingConstraint()
@@ -452,16 +467,13 @@ final class UnifiedToggleInputView: UIView {
         expandedShadow0.isHidden = !expanded
         expandedShadow1.isHidden = !expanded
         if expanded {
-            let shadowGoesDown = cardPosition == .top || usesOmnibarMargins
-            expandedShadow0.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 8 : -8)
-            expandedShadow1.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 2 : -2)
+            expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
+            expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
         }
         cardView.layer.shadowOpacity = expanded ? 0 : 1.0
         cardCollapsedHeightConstraint.isActive = !expanded
 
-        let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        let expandedCorners: CACornerMask = (cardPosition == .top || usesOmnibarMargins) ? allCorners : [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        cardView.layer.maskedCorners = expanded ? expandedCorners : allCorners
+        cardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
@@ -595,7 +607,6 @@ final class UnifiedToggleInputView: UIView {
         guard isExpanded else { return }
 
         let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        let topOnlyCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
 
         UIView.animate(withDuration: Constants.animationDuration, delay: 0, options: .curveEaseInOut) {
             if inactive {
@@ -609,12 +620,21 @@ final class UnifiedToggleInputView: UIView {
                 self.toolbarHeightConstraint.constant = 0
                 self.toolsToolbar.alpha = 0
             } else {
-                self.cardView.layer.maskedCorners = self.usesOmnibarMargins ? allCorners : topOnlyCorners
-                let shadowGoesDown = self.cardPosition == .top || self.usesOmnibarMargins
-                self.expandedShadow0.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 8 : -8)
-                self.expandedShadow1.shadowOffset = CGSize(width: 0, height: shadowGoesDown ? 2 : -2)
-                let horizontalMargin: CGFloat = (!self.showsDismissButton && !self.usesOmnibarMargins) ? 0 : Constants.cardHorizontalMargin
-                let verticalMargin: CGFloat = self.usesOmnibarMargins ? Constants.cardVerticalMargin : 0
+                self.cardView.layer.maskedCorners = allCorners
+                self.expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
+                self.expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
+                let horizontalMargin: CGFloat
+                if !self.showsDismissButton && !self.usesOmnibarMargins {
+                    horizontalMargin = (self.cardPosition == .bottom) ? Constants.cardHorizontalMarginBottom : 0
+                } else {
+                    horizontalMargin = Constants.cardHorizontalMargin
+                }
+                let verticalMargin: CGFloat
+                if self.usesOmnibarMargins {
+                    verticalMargin = Constants.cardVerticalMargin
+                } else {
+                    verticalMargin = (self.cardPosition == .bottom) ? Constants.cardVerticalMarginBottom : 0
+                }
                 let showToolbar = self.isToggleEnabled && self.toggleView.selectedMode == .aiChat
                 self.cardTopConstraint.constant = verticalMargin
                 self.cardLeadingConstraint.constant = horizontalMargin

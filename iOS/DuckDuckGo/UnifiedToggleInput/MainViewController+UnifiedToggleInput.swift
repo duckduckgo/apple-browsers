@@ -113,9 +113,14 @@ extension MainViewController {
         updateFloatingSubmitVisibility()
     }
 
-    private func handleAITabModeChange(_: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
+    private func handleAITabModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
         UIView.performWithoutAnimation {
             updateUnifiedInputContentVisibility(for: coordinator)
+            let background: UIColor = (mode == .aiChat)
+                ? UIColor(singleUseColor: .duckAIContextualSheetBackground)
+                : UIColor(designSystemColor: .panel)
+            viewCoordinator.navigationBarContainer.backgroundColor = background
+            viewCoordinator.unifiedInputContentContainer?.backgroundColor = background
             viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         }
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
@@ -373,6 +378,13 @@ extension MainViewController {
     private func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
         switch intent {
         case .showCollapsed:
+            viewCoordinator.navigationBarContainer.backgroundColor = nil
+            viewCoordinator.unifiedInputContentContainer?.backgroundColor = .clear
+            if let webView = currentTab?.webView {
+                webView.backgroundColor = nil
+                webView.scrollView.backgroundColor = nil
+                webView.underPageBackgroundColor = nil
+            }
             viewCoordinator.showUnifiedToggleInput()
             viewCoordinator.suggestionTrayContainer.isHidden = true
             if let coordinator = unifiedToggleInputCoordinator {
@@ -383,6 +395,16 @@ extension MainViewController {
         case .showExpanded:
             viewCoordinator.showUnifiedToggleInput()
             if let coordinator = unifiedToggleInputCoordinator {
+                if coordinator.isAITabState {
+                    let duckAIBackground = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+                    viewCoordinator.navigationBarContainer.backgroundColor = duckAIBackground
+                    viewCoordinator.unifiedInputContentContainer?.backgroundColor = duckAIBackground
+                    if let webView = currentTab?.webView {
+                        webView.backgroundColor = duckAIBackground
+                        webView.scrollView.backgroundColor = duckAIBackground
+                        webView.underPageBackgroundColor = duckAIBackground
+                    }
+                }
                 updateUnifiedInputContentVisibility(for: coordinator)
             }
             adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
@@ -441,6 +463,13 @@ extension MainViewController {
     }
 
     private func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
+        viewCoordinator.navigationBarContainer.backgroundColor = nil
+        viewCoordinator.unifiedInputContentContainer?.backgroundColor = .clear
+        if let webView = currentTab?.webView {
+            webView.backgroundColor = nil
+            webView.scrollView.backgroundColor = nil
+            webView.underPageBackgroundColor = nil
+        }
         let isTopPosition = coordinator.cardPosition == .top
         if isTopPosition && coordinator.isToggleEnabled {
             coordinator.viewController.animateToggleHide(additionalAnimations: { [weak self] in

@@ -34,6 +34,10 @@ class DebugScreensViewController: UIHostingController<DebugScreensView> {
         rootView.model.refreshToggles()
     }
 
+    @objc func dismissSelf() {
+        dismiss(animated: true)
+    }
+
 }
 
 struct DebugScreensView: View {

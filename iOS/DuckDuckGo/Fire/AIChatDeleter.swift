@@ -67,7 +67,7 @@ struct AIChatDeleter: AIChatDeleting {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSingleDeleteFailed)
             Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
-                userScriptError.fireLoadJSFailedPixelIfNeeded()
+                userScriptError.fireLoadJSFailedPixelIfNeeded(source: .browser)
             }
         }
         return result

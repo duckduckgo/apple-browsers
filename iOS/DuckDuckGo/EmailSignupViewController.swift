@@ -467,7 +467,7 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
             completionHandler(runtimeConfig)
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
+                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
             }
             fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
         }

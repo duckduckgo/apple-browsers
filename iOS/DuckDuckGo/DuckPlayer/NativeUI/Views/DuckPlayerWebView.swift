@@ -89,7 +89,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
            )
        } catch {
            if let error = error as? UserScriptError {
-               error.fireLoadJSFailedPixelIfNeeded()
+               error.fireLoadJSFailedPixelIfNeeded(source: .browser)
            }
            fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
        }

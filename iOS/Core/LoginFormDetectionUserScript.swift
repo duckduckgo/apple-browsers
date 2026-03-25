@@ -35,7 +35,7 @@ public class LoginFormDetectionUserScript: NSObject, UserScript {
             ])
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
+                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
             }
             fatalError("Failed to load JS for LoginFormDetectionUserScript: \(error)")
         }

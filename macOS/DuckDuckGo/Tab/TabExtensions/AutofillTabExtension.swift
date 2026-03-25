@@ -226,7 +226,7 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
             completionHandler(runtimeConfiguration)
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
+                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
             }
             fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
         }

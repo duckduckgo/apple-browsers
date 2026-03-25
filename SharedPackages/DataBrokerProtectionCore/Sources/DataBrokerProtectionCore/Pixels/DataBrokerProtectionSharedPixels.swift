@@ -92,6 +92,8 @@ public enum DataBrokerProtectionSharedPixels {
         public static let stalledByBroker = "stalled_by_broker"
         public static let needBackgroundAppRefresh = "need_background_app_refresh"
         public static let jsFile = "jsFile"
+        public static let source = "source"
+        public static let sourceDBP = "dbp"
         public static let dataBrokerJsonFileKey = "data_broker_json_file"
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
@@ -542,7 +544,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords),
                     Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
         case .userScriptLoadJSFailed(let jsFile, _):
-            return [Consts.jsFile: jsFile]
+            return [Consts.jsFile: jsFile, Consts.source: Consts.sourceDBP]
         case .serviceEmailConfirmationLinkClientReceived(let dataBrokerURL, let brokerVersion, let linkAgeMs):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,

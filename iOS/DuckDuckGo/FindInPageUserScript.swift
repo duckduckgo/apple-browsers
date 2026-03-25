@@ -29,7 +29,7 @@ public class FindInPageUserScript: NSObject, UserScript {
             return try Self.loadJS("findinpage", from: FindInPageIOSJSSupport.bundle)
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
+                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
             }
             fatalError("Failed to load JS for FindInPageUserScript: \(error.localizedDescription)")
         }

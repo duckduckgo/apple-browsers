@@ -429,7 +429,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
             completionHandler(runtimeConfiguration)
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
+                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
             }
             fatalError("Failed to load JS for DefaultAutofillSourceProvider: \(error.localizedDescription)")
         }

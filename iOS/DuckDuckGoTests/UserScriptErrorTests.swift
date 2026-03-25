@@ -29,10 +29,10 @@ final class UserScriptErrorTests: XCTestCase {
         let underlyingError = NSError(domain: "TestDomain", code: 1, userInfo: nil)
         let error = UserScriptError.failedToLoadJS(jsFile: jsFile, error: underlyingError)
 
-        error.fireLoadJSFailedPixelIfNeeded(pixelFiring: PixelFiringMock.self)
+        error.fireLoadJSFailedPixelIfNeeded(source: .browser, pixelFiring: PixelFiringMock.self)
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.userScriptLoadJSFailed.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [PixelParameters.jsFile: jsFile])
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [PixelParameters.jsFile: jsFile, PixelParameters.source: "browser"])
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.error as? NSError, underlyingError)
     }
 

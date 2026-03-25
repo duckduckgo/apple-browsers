@@ -84,7 +84,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
             source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
+                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
             }
             fatalError("Failed to load JS for AutoconsentUserScript: \(error.localizedDescription)")
         }

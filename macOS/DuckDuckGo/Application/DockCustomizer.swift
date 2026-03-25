@@ -35,9 +35,10 @@ protocol DockCustomization: AnyObject {
     /// The notification mentiond here is the blue dot notification shown in the more options menu.
     /// The blue dot is also show in the Add To Dock menu item.
     ///
-    /// The requriments for the blue dot show to shown are the following:
-    /// - Two days passed since first lauch.
-    /// - We didn't show it in the past (this means the blue dot was shown, the user opened the more options menu and then closed it)
+    /// Requirements for the blue dot:
+    /// - Two days passed since first launch.
+    /// - We did not already dismiss it via the more options menu (`wasNotificationShownToUser`).
+    /// - The app is not already in the Dock (`isAddedToDock`).
     var shouldShowNotification: Bool { get }
     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> { get }
     /// Recomputes published notification visibility from `shouldShowNotification`.
@@ -108,7 +109,9 @@ final class DockCustomizer: DockCustomization {
     }
 
     var shouldShowNotification: Bool {
-        AppDelegate.twoDaysPassedSinceFirstLaunch && !didWeShowNotificationToUser
+        AppDelegate.twoDaysPassedSinceFirstLaunch
+            && !didWeShowNotificationToUser
+            && !isAddedToDock
     }
 
     // This checks whether the bundle identifier of the current bundle

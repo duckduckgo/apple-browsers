@@ -27,6 +27,8 @@ import DesignResourcesKitIcons
 /// Enables dependency injection for testability.
 protocol SuggestionRowThemeProviding {
     var accentPrimaryColor: NSColor { get }
+    var selectedTintColor: NSColor { get }
+    var suggestionHighlightCornerRadius: CGFloat { get }
 }
 
 /// Default implementation that uses the app's theme manager.
@@ -37,6 +39,18 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
             color = NSApp.delegateTyped.themeManager.theme.palette.accentPrimary
         }
         return color
+    }
+
+    var selectedTintColor: NSColor {
+        var color: NSColor = NSColor(designSystemColor: .accentContentPrimary)
+        NSAppearance.withAppAppearance {
+            color = NSApp.delegateTyped.themeManager.theme.palette.accentContentPrimary
+        }
+        return color
+    }
+
+    var suggestionHighlightCornerRadius: CGFloat {
+        NSApp.delegateTyped.themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
     }
 }
 
@@ -52,10 +66,8 @@ final class AIChatSuggestionRowView: NSView {
         static let horizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 6
-        static let cornerRadius: CGFloat = 6
 
         // Colors matching SuggestionTableCellView
-        static let selectedTintColor: NSColor = .selectedSuggestionTint
         static let iconColor: NSColor = .suggestionIcon
         static let textColor: NSColor = NSColor(designSystemColor: .textPrimary)
     }
@@ -80,6 +92,22 @@ final class AIChatSuggestionRowView: NSView {
         return label
     }()
 
+    private let deleteButton: NSButton = {
+        let button = NSButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.bezelStyle = .shadowlessSquare
+        button.isBordered = false
+        button.image = DesignSystemImages.Glyphs.Size16.trash
+        button.imageScaling = .scaleProportionallyDown
+        button.imagePosition = .imageOnly
+        button.setButtonType(.momentaryPushIn)
+        button.highlight(false)
+        button.toolTip = UserText.removeRecentChatSuggestionTooltip
+        button.isHidden = true
+        button.setAccessibilityLabel(UserText.removeRecentChatSuggestionTooltip)
+        return button
+    }()
+
     private let backgroundLayer = CALayer()
 
     // MARK: - Properties
@@ -100,7 +128,9 @@ final class AIChatSuggestionRowView: NSView {
         }
     }
 
+    var canDelete: Bool = false
     var onClick: (() -> Void)?
+    var onDelete: (() -> Void)?
     var onMouseMoved: (() -> Void)?
     var onHoverChanged: ((Bool) -> Void)?
     var isKeyboardNavigating: Bool = false
@@ -126,11 +156,15 @@ final class AIChatSuggestionRowView: NSView {
         wantsLayer = true
         layer?.masksToBounds = true
 
-        backgroundLayer.cornerRadius = Constants.cornerRadius
+        backgroundLayer.cornerRadius = themeProvider.suggestionHighlightCornerRadius
         layer?.insertSublayer(backgroundLayer, at: 0)
+
+        deleteButton.target = self
+        deleteButton.action = #selector(deleteButtonClicked)
 
         addSubview(iconImageView)
         addSubview(titleLabel)
+        addSubview(deleteButton)
 
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.rowHeight),
@@ -141,8 +175,13 @@ final class AIChatSuggestionRowView: NSView {
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor)
+            titleLabel.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -Constants.iconTitleSpacing),
+            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            deleteButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            deleteButton.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            deleteButton.heightAnchor.constraint(equalToConstant: Constants.iconSize),
         ])
 
         updateAppearance()
@@ -172,18 +211,27 @@ final class AIChatSuggestionRowView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
-        if isSelected || isHovered {
+        let isHighlighted = isSelected || isHovered
+        if isHighlighted {
+            let tintColor = themeProvider.selectedTintColor
             backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
-            // Use white text/icons for contrast on colored background
-            titleLabel.textColor = Constants.selectedTintColor
-            iconImageView.contentTintColor = Constants.selectedTintColor
+            titleLabel.textColor = tintColor
+            iconImageView.contentTintColor = tintColor
+            deleteButton.contentTintColor = tintColor
         } else {
             backgroundLayer.backgroundColor = NSColor.clear.cgColor
             titleLabel.textColor = Constants.textColor
             iconImageView.contentTintColor = Constants.iconColor
+            deleteButton.contentTintColor = Constants.iconColor
         }
 
+        deleteButton.isHidden = !canDelete || !isHighlighted
+
         CATransaction.commit()
+    }
+
+    @objc private func deleteButtonClicked() {
+        onDelete?()
     }
 
     // MARK: - Mouse Tracking
@@ -239,7 +287,9 @@ final class AIChatSuggestionRowView: NSView {
 
     override func mouseUp(with event: NSEvent) {
         let locationInView = convert(event.locationInWindow, from: nil)
-        if bounds.contains(locationInView) {
+        let locationInDeleteButton = deleteButton.convert(event.locationInWindow, from: nil)
+        let isDeleteButtonClick = !deleteButton.isHidden && deleteButton.bounds.contains(locationInDeleteButton)
+        if bounds.contains(locationInView) && !isDeleteButtonClick {
             onClick?()
         }
         // Reset selection state after click (the view will likely be dismissed)

@@ -91,11 +91,11 @@ struct ScopedFireConfirmationView: View {
     /// Scope selection buttons
     private var scopeButtons: some View {
         VStack(spacing: Constants.buttonSpacing) {
-            // All Tabs button - Primary Destructive (filled)
+            // Primary action button - "Delete All" or "Delete Chat" depending on mode
             Button(action: {
                 viewModel.burnAllTabs()
             }) {
-                Text(UserText.scopedFireConfirmationDeleteAllButton)
+                Text(viewModel.primaryButtonTitle)
             }
             .buttonStyle(PrimaryDestructiveButtonStyle())
             .accessibilityIdentifier("alert.forget-data.confirm")

@@ -91,11 +91,13 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = false
         addSubview(stackView)
+        let bottomConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        bottomConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
             stackView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            bottomConstraint,
         ])
     }
 }

@@ -22,6 +22,8 @@ import Combine
 import UniformTypeIdentifiers
 import DesignResourcesKitIcons
 import AIChat
+import BrowserServicesKit
+import FeatureFlags
 import PixelKit
 
 /// A container view that properly handles hit testing when used with MouseBlockingBackgroundView.
@@ -95,6 +97,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var modelsCancellable: AnyCancellable?
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
+    private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
+        featureFlagger: NSApp.delegateTyped.featureFlagger,
+        privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager
+    )
 
     /// Current suggestions height - cached to avoid recalculation
     private(set) var suggestionsHeight: CGFloat = 0
@@ -410,6 +416,30 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 self.omnibarController,
                 didSelectSuggestion: suggestion
             )
+        }
+
+        // Handle suggestion deletions (gated by feature flag)
+        let canRemoveSuggestions = NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatRemoveSuggestion)
+        suggestionsView.canDeleteSuggestions = canRemoveSuggestions
+        if canRemoveSuggestions {
+            suggestionsView.onSuggestionDeleted = { [weak self] suggestion in
+                guard let self, let window = self.view.window else { return }
+
+                let alert = NSAlert()
+                alert.messageText = UserText.removeRecentChatConfirmationTitle
+                alert.informativeText = String(format: UserText.removeRecentChatConfirmationMessage, suggestion.title)
+                alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
+                alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+
+                alert.beginSheetModal(for: window) { [weak self] response in
+                    guard let self, response == .OK else { return }
+                    self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
+                    Task { @MainActor in
+                        _ = await self.historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+                        self.omnibarController.refreshSuggestions()
+                    }
+                }
+            }
         }
 
         // Bind to view model with height change callback

@@ -131,6 +131,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
     case privacyProOnboardingPromotion
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
+    case subscriptionPromoForReinstallers
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
@@ -361,6 +364,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213687255181524
     case fireproofingETLDPlus1
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213763338305579?focus=true
+    case aiChatContextualFireButton
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -391,7 +397,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
              .syncAutoRestore,
-             .fireproofingETLDPlus1:
+             .fireproofingETLDPlus1,
+             .subscriptionPromoForReinstallers:
             .enabled
         case .crashReportOptInStatusResetting:
             .internalOnly
@@ -439,6 +446,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .maliciousSiteProtection,
              .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
+             .subscriptionPromoForReinstallers,
              .duckPlayerNativeUI,
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
@@ -510,7 +518,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .customXSafariRedirectHandling,
              .simplifiedSyncSetupExperiment,
              .duckAIVoiceShortcut,
-             .fireproofingETLDPlus1:
+             .fireproofingETLDPlus1,
+             .aiChatContextualFireButton:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -634,6 +643,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.experimentalAddressBar))
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .subscriptionPromoForReinstallers:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoForReinstallers))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -779,6 +790,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.voiceShortcut))
         case .fireproofingETLDPlus1:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireproofingETLDPlus1))
+        case .aiChatContextualFireButton:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton))
         }
     }
 }

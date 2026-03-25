@@ -185,6 +185,13 @@ struct Launching: LaunchingHandling {
             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
+        // Subscription promo for reinstallers / skipped-onboarding users
+        let subscriptionPromoCoordinator = SubscriptionPromoCoordinator(
+            featureFlagger: featureFlagger,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+        )
+        let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
+
         // Initialise modal prompts coordination
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
@@ -203,6 +210,8 @@ struct Launching: LaunchingHandling {
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
                 winBackOfferCoordinator: winBackOfferService.coordinator,
+                subscriptionPromoPresenter: subscriptionPromoPresenter,
+                subscriptionPromoCoordinator: subscriptionPromoCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies
             )
         )

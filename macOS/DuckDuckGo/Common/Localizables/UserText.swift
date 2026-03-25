@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Navigation
 import BrowserServicesKit
@@ -342,6 +343,7 @@ struct UserText {
 
     // MARK: -
 
+    static let newTabToTheRight = NSLocalizedString("new-tab-on-right.tab", value: "New Tab on Right", comment: "Menu item. Adds a New Tab to the Right of the Active one")
     static let duplicateTab = NSLocalizedString("duplicate.tab", value: "Duplicate Tab", comment: "Menu item. Duplicate as a verb")
     static let pinTab = NSLocalizedString("pin.tab", value: "Pin Tab", comment: "Menu item. Pin as a verb")
     static let unpinTab = NSLocalizedString("unpin.tab", value: "Unpin Tab", comment: "Menu item. Unpin as a verb")
@@ -956,14 +958,18 @@ struct UserText {
         return String(format: localized, seconds)
     }
     static let quitSurveyQuitNow = NSLocalizedString("quit-survey.quit-now", value: "Close Now", comment: "Button to quit immediately")
-    static let quitSurveyNegativeTitle = NSLocalizedString("quit-survey.negative-title", value: "Which issues did you experience?", comment: "Title for negative feedback form in quit survey")
+    static let quitSurveyNegativeTitle = NSLocalizedString("quit-survey.negative-title", value: "Help us understand how we missed the mark", comment: "Title for negative feedback form in quit survey")
     static let quitSurveySelectAllThatApply = NSLocalizedString("quit-survey.select-all-that-apply", value: "Select all that apply", comment: "Instruction text for quit survey feedback options")
     static let quitSurveyTellUsMore = NSLocalizedString("quit-survey.tell-us-more", value: "Tell us more (optional)", comment: "Label for optional text input in quit survey")
     static let quitSurveyTellUsMoreHint = NSLocalizedString("quit-survey.tell-us-more-hint", value: "The more details you share, the better!", comment: "Hint text for optional feedback input")
-    static let quitSurveyTextPlaceholder = NSLocalizedString("quit-survey.text-placeholder", value: "Share your thoughts...", comment: "Placeholder text for feedback text input")
-    static let quitSurveyDisclaimer = NSLocalizedString("quit-survey.disclaimer", value: "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version.", comment: "Privacy disclaimer in quit survey")
+    static let quitSurveyTextPlaceholder = NSLocalizedString("quit-survey.text-placeholder", value: "Please describe the issues you experienced…", comment: "Placeholder text for feedback text input")
+    static let quitSurveyDisclaimer = NSLocalizedString("quit-survey.disclaimer", value: "Reports sent to DuckDuckGo are 100% anonymous and only include your selections above, your message, browser version, and macOS version. Please do not include any personal or identifying information in your feedback.", comment: "Privacy disclaimer in quit survey")
     static let quitSurveySubmitAndQuit = NSLocalizedString("quit-survey.submit-and-quit", value: "Submit and Quit", comment: "Button to submit feedback and quit")
     static let quitSurveySubmitting = NSLocalizedString("quit-survey.submitting", value: "Submitting...", comment: "Button text shown while feedback is being submitted")
+    static let quitSurveyAffectedDomainsTitle = NSLocalizedString("quit-survey.affected-domains.title", value: "Which websites have issues? (optional)", comment: "Title for quit survey domain selection screen")
+    static let quitSurveyAffectedDomainsFootnote = NSLocalizedString("quit-survey.affected-domains.footnote", value: "Select recent domains from your local browsing history", comment: "Footnote explaining domain list source in quit survey")
+    static let quitSurveyAffectedDomainsOther = NSLocalizedString("quit-survey.affected-domains.other", value: "Other", comment: "Other option in quit survey domain list")
+    static let quitSurveyAffectedDomainsOtherPlaceholder = NSLocalizedString("quit-survey.affected-domains.other-placeholder", value: "Enter a website address", comment: "Placeholder for the other domain text field in quit survey")
 
     // Quit survey feedback options
     static let quitSurveyOptionPagesFroze = NSLocalizedString("quit-survey.option.pages-froze", value: "Pages froze", comment: "Quit survey feedback option - site breakage")
@@ -982,7 +988,6 @@ struct UserText {
     static let quitSurveyOptionPrivacyConcerns = NSLocalizedString("quit-survey.option.privacy-concerns", value: "Privacy concerns", comment: "Quit survey feedback option - value proposition")
     static let quitSurveyOptionJustTryingItOut = NSLocalizedString("quit-survey.option.just-trying-it-out", value: "Just trying it out", comment: "Quit survey feedback option - value proposition")
     static let quitSurveyOptionSignInHassles = NSLocalizedString("quit-survey.option.sign-in-hassles", value: "Sign in hassles", comment: "Quit survey feedback option - ecosystem")
-    static let quitSurveyOptionNoExtensions = NSLocalizedString("quit-survey.option.no-extensions", value: "No extensions", comment: "Quit survey feedback option - features/extensions")
     static let quitSurveyOptionNoWebsiteTranslations = NSLocalizedString("quit-survey.option.no-website-translations", value: "No website translations", comment: "Quit survey feedback option - features/extensions")
     static let quitSurveyOptionIssueImportingMyStuff = NSLocalizedString("quit-survey.option.issue-importing-my-stuff", value: "Issue importing my stuff", comment: "Quit survey feedback option - onboarding")
     static let quitSurveyOptionSomethingElse = NSLocalizedString("quit-survey.option.something-else", value: "Something else", comment: "Quit survey feedback option for other issues")
@@ -1200,6 +1205,18 @@ struct UserText {
     static let isNotAddedToDock = NSLocalizedString("preferences.not-added-to-dock", value: "DuckDuckGo is not added to the Dock.", comment: "Indicate that the browser is not added to macOS system Dock")
     static let addToDock = NSLocalizedString("preferences.add-to-dock", value: "Add to Dock", comment: "Action button to add the app to the Dock")
     static let addDuckDuckGoToDock = NSLocalizedString("preferences.add-DuckDuckGo-to-dock", value: "Add DuckDuckGo To Dock", comment: "Action button to add the app to the Dock")
+    static let addToDockInstructions = NSLocalizedString("preferences.add-to-dock.instructions", value: "Get quick access to protected browsing. Add DuckDuckGo to your Dock.", comment: "Instructions for adding the app to the Dock")
+    static var addToDockInstructionsCaption: String {
+        if #available(macOS 12.0, *) {
+            return NSLocalizedString("preferences.add-to-dock.instructions-caption.markdown",
+                                     value: "Hold control and click the DuckDuckGo icon, then choose **Options > Keep in Dock**.",
+                                     comment: "Instructions for adding the app to the Dock. Contains markdown for bold text.")
+        } else {
+            return NSLocalizedString("preferences.add-to-dock.instructions-caption",
+                                     value: "Hold control and click the DuckDuckGo icon, then choose Options > Keep in Dock.",
+                                     comment: "Instructions for adding the app to the Dock.")
+        }
+    }
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
@@ -2209,6 +2226,10 @@ struct UserText {
     static let homePagePromotionFreemiumDBPPostScanEngagementButtonTitle = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.button.title", value: "View Results", comment: "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button")
 
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
+    static let removeRecentChatSuggestionTooltip = NotLocalizedString("remove.recent.chat.suggestion.tooltip", value: "Remove from recent chats", comment: "Tooltip for the button which removes a recent Duck.ai chat from the suggestions")
+    static let removeRecentChatConfirmationTitle = NotLocalizedString("remove.recent.chat.confirmation.title", value: "Remove Chat?", comment: "Title for the confirmation alert when removing a recent Duck.ai chat")
+    static let removeRecentChatConfirmationMessage = NotLocalizedString("remove.recent.chat.confirmation.message", value: "Are you sure you want to remove \"%@\" from your recent chats?", comment: "Message for the confirmation alert when removing a recent Duck.ai chat. %@ is the chat title.")
+    static let removeRecentChatConfirmationButton = NotLocalizedString("remove.recent.chat.confirmation.button", value: "Remove", comment: "Button title to confirm removing a recent Duck.ai chat")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
     static let searchTheWeb = NSLocalizedString("suggestion.search.privately", value: "Search privately", comment: "Label shown on the search suggestion cell indicating the action will search the web")

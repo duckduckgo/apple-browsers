@@ -131,10 +131,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476860577
     case newTabPageOmnibar
 
-    /// Loading New Tab Page in regular browsing webview
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719013868
-    case newTabPagePerTab
-
     /// Managing state of New Tab Page using tab IDs in frontend
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719908836
     case newTabPageTabIDs
@@ -297,13 +293,23 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
     case promoQueue
 
+    /// Enables showing browsing history domains in the first-time quit survey
+    case websitesHistoryFirstTimeQuitSurvey
+
     /// Enables the new Tab Animations (Milestone 1)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
     case tabAnimations
 
+    /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
+    case lazyMenuRebuild
+
     /// Enables the "Add to dock" onboarding step and setting for App Store builds
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725466401987?focus=true
     case addToDockAppStore
+
+    /// Enables removing individual AI chat suggestions from the omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
+    case aiChatRemoveSuggestion
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -335,13 +341,16 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics,
-                .promoQueue:
+                .promoQueue,
+                .lazyMenuRebuild,
+                .websitesHistoryFirstTimeQuitSurvey:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
              .tabAnimations,
-             .addToDockAppStore:
+             .addToDockAppStore,
+             .aiChatRemoveSuggestion:
             .internalOnly
         default:
             .disabled
@@ -388,7 +397,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .newTabPageOmnibar,
-                .newTabPagePerTab,
                 .newTabPageTabIDs,
                 .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
@@ -440,6 +448,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .promoQueue,
                 .semaphoreAlwaysVisible,
                 .tabAnimations,
+                .aiChatRemoveSuggestion,
+                .lazyMenuRebuild,
+                .websitesHistoryFirstTimeQuitSurvey,
                 .addToDockAppStore:
             return true
         case .freemiumDBP,
@@ -532,8 +543,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
-        case .newTabPagePerTab:
-            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPagePerTab))
         case .newTabPageTabIDs:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPageTabIDs))
         case .supportsAlternateStripePaymentFlow:
@@ -626,10 +635,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
             return .remoteReleasable(.feature(.promoQueue))
+        case .websitesHistoryFirstTimeQuitSurvey:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .tabAnimations:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
+        case .lazyMenuRebuild:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
         case .addToDockAppStore:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addToDockAppStore))
+        case .aiChatRemoveSuggestion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion))
         }
     }
 }

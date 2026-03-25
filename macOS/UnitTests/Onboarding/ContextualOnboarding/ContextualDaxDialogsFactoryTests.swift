@@ -39,7 +39,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         reporter = CapturingOnboardingPixelReporter()
         windowControllersManager = WindowControllersManagerMock()
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
         fireCoordinator = FireCoordinator(tld: TLD(),
                                           featureFlagger: featureFlagger,
                                           historyCoordinating: HistoryCoordinatingMock(),

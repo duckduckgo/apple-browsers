@@ -24,6 +24,7 @@ import Persistence
 import Foundation
 import SyncDataProviders
 import os.log
+import Core
 
 public enum AsyncErrorType: String {
     case bookmarksCountLimitExceeded

@@ -1,0 +1,16 @@
+{
+    "m_mac_errorpageshown_other": {
+        "description": "Fired when an error page is shown due to a navigation error other than WebKit content process termination.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_errorpageshown_webkittermination": {
+        "description": "Fired when an error page is shown due to a WebKit web content process termination.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

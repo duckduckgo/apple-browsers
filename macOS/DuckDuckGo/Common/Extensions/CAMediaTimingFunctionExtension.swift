@@ -1,7 +1,7 @@
 //
-//  MockNewTabPageTabPreloader.swift
+//  CAMediaTimingFunctionExtension.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,24 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+import Foundation
+import QuartzCore
 
-final class MockNewTabPageTabPreloader: NewTabPageTabPreloading {
+extension CAMediaTimingFunction {
 
-    var didCallNewTab = false
-    let tabToReturn = Tab(content: .newtab, shouldLoadInBackground: true, burnerMode: .regular)
-
-    @MainActor
-    func newTab() -> Tab? {
-        didCallNewTab = true
-        return tabToReturn
+    static var bezierCubic: CAMediaTimingFunction {
+        CAMediaTimingFunction(controlPoints: 0.25, 0.1, 0.25, 1.0)
     }
-
-    // satisfy the protocol
-    @MainActor
-    func reloadTab() { }
-
-    @MainActor
-    func reloadTab(force: Bool) { }
 }

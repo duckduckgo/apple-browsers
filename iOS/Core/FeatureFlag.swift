@@ -364,6 +364,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1211721072408370?focus=true0§
     case screenTimeCleaning
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213763338305579?focus=true
+    case aiChatContextualFireButton
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -515,7 +518,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .customXSafariRedirectHandling,
              .simplifiedSyncSetupExperiment,
              .duckAIVoiceShortcut,
-             .screenTimeCleaning:
+             .screenTimeCleaning,
+             .aiChatContextualFireButton:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -786,6 +790,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.voiceShortcut))
         case .screenTimeCleaning:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.screenTimeCleaning))
+        case .aiChatContextualFireButton:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton))
         }
     }
 }

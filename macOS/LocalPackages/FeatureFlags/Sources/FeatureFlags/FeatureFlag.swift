@@ -349,7 +349,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
-             .tabAnimations,
              .addToDockAppStore,
              .aiChatRemoveSuggestion:
             .internalOnly

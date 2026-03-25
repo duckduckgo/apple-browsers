@@ -3573,7 +3573,9 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidBeginEditing() { }
     func onDidEndEditing() {
-        // Restore the tab's committed mode when editing ends without submission (iPad).
+        // Restore the tab's committed mode — the user may have toggled without submitting.
+        // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
+        // firing (text field never becomes first responder during that flow).
         if let tabMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode {
             viewCoordinator.omniBar.setSelectedTextEntryMode(tabMode)
         }

@@ -63,7 +63,6 @@ class OmniBarViewController: UIViewController, OmniBar {
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode?
     internal(set) var selectedTextEntryMode: TextEntryMode = .search
-    private let toggleModeStorage: ToggleModeStoring
 
     // MARK: - Animation
 
@@ -134,17 +133,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.textField
     }
 
-    init(dependencies: OmnibarDependencyProvider, toggleModeStorage: ToggleModeStoring = ToggleModeStorage()) {
+    init(dependencies: OmnibarDependencyProvider) {
         self.dependencies = dependencies
-        self.toggleModeStorage = toggleModeStorage
         super.init(nibName: nil, bundle: nil)
-    }
-
-    /// Resolves the user's preferred default toggle mode from settings.
-    func resolvedDefaultTextEntryMode() -> TextEntryMode {
-        dependencies.aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
-            toggleModeStorage.restore()
-        }
     }
 
     @available(*, unavailable)

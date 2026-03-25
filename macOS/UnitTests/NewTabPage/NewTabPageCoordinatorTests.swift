@@ -215,25 +215,4 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         XCTAssertEqual(firePixelCalls.count, 1)
     }
 
-    @MainActor
-    func testWhenNewTabPageAppearsAndFreemiumBannerIsVisibleThenImpressionIsRecorded() async {
-        if freemiumDBPPromotionViewCoordinator.viewModel == nil {
-            let expectation = expectation(description: "Freemium banner view model becomes visible")
-            let cancellable = freemiumDBPPromotionViewCoordinator.$viewModel
-                .dropFirst()
-                .sink { viewModel in
-                    if viewModel != nil {
-                        expectation.fulfill()
-                    }
-                }
-
-            freemiumDBPPromotionViewCoordinator.isHomePagePromotionVisible = true
-            await fulfillment(of: [expectation], timeout: 1.0)
-            cancellable.cancel()
-        }
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-
-        XCTAssertEqual(freemiumDBPUserStateManager.ntpImpressionCount, 1)
-    }
 }

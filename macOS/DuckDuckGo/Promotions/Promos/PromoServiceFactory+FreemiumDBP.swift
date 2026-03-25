@@ -23,9 +23,9 @@ extension PromoServiceFactory {
     /// Freemium DBP banner promo. Delegate is set when NTP is built.
     static let freemiumDBP = Promo(
         id: "freemium-dbp-ntp-banner",
-        triggers: [], // External promo (Freemium DBP banner) so no internal triggers
+        triggers: [.newTabPageAppeared],
         initiated: .app,
-        promoType: PromoType(.banner),
+        promoType: PromoType(.remoteMessage),
         context: .newTabPage,
         coexistingPromoIDs: [],
         respectsGlobalCooldown: false,

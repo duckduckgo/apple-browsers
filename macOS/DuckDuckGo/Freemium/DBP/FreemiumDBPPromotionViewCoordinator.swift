@@ -29,16 +29,35 @@ import Common
 final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
 
     private enum Constants {
-        static let maxNTPImpressionsBeforeSuppression = 4
-        static let bannerSuppressionDuration: TimeInterval = .days(28)
+        static let displayWindowDuration: TimeInterval = .days(7)
     }
 
-    /// Published property that determines whether the promotion is visible on the home page.
-    @Published var isHomePagePromotionVisible: Bool = false
+    /// Whether the freemium DBP feature is currently available (includes async checks like product availability).
+    @Published private(set) var isFeatureAvailable: Bool = false
+
+    /// Whether the feature flag is enabled (synchronous — no async dependencies).
+    var isFeatureFlagEnabled: Bool {
+        freemiumDBPFeature.isFeatureFlagEnabled
+    }
+
+    /// Whether the user has dismissed the promotion.
+    @Published private(set) var isDismissed: Bool = false
+
+    /// Whether the current display window has expired (7 days elapsed).
+    @Published private(set) var isDisplayWindowExpired: Bool = false
 
     /// The view model representing the promotion, which updates based on the user's state. Returns `nil` if the feature is not enabled
     @Published
     private(set) var viewModel: PromotionViewModel?
+
+    /// Callback invoked when the user interacts with the banner (proceed or close).
+    /// Set by the promo delegate to route results back through show().
+    var onUserAction: ((PromoResult) -> Void)?
+
+    var displayWindowStartDate: Date? {
+        get { freemiumDBPUserStateManager.displayWindowStartDate }
+        set { freemiumDBPUserStateManager.displayWindowStartDate = newValue }
+    }
 
     /// Stores whether the user has dismissed the home page promotion.
     private var didDismissHomePagePromotion: Bool {
@@ -48,7 +67,7 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         set {
             Logger.freemiumDBP.debug("[Freemium DBP] Promotion dismiss state set to \(newValue)")
             freemiumDBPUserStateManager.didDismissHomePagePromotion = newValue
-            updateHomePagePromotionVisibility()
+            isDismissed = newValue
         }
     }
 
@@ -73,9 +92,6 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// Publisher that emits when contextual onboarding is completed
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
 
-    /// Provides the current date for impression suppression logic.
-    private let dateProvider: () -> Date
-
     /// Initializes the coordinator with the necessary dependencies.
     ///
     /// - Parameters:
@@ -89,8 +105,7 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          notificationCenter: NotificationCenter = .default,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
-         contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Empty<Bool, Never>().eraseToAnyPublisher(),
-         dateProvider: @escaping () -> Date = Date.init) {
+         contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Empty<Bool, Never>().eraseToAnyPublisher()) {
 
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.freemiumDBPFeature = freemiumDBPFeature
@@ -98,30 +113,32 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
-        self.dateProvider = dateProvider
 
-        setInitialPromotionVisibilityState()
+        isFeatureAvailable = freemiumDBPFeature.isAvailable
+        isDismissed = freemiumDBPUserStateManager.didDismissHomePagePromotion
+        updateDisplayWindowExpiredState()
+
         subscribeToFeatureAvailabilityUpdates()
         observeFreemiumDBPNotifications()
         observeContextualOnboardingCompletion()
-        setUpViewModelRefreshing()
     }
 
-    func recordNTPImpression() {
-        guard updateHomePagePromotionVisibility() else {
+    func updateDisplayWindowExpiredState() {
+        guard let startDate = displayWindowStartDate else {
+            isDisplayWindowExpired = false
             return
         }
+        isDisplayWindowExpired = Date().timeIntervalSince(startDate) >= Constants.displayWindowDuration
+    }
 
-        freemiumDBPUserStateManager.ntpImpressionCount += 1
-        Logger.freemiumDBP.debug("[Freemium DBP] Recorded NTP impression \(self.freemiumDBPUserStateManager.ntpImpressionCount)")
+    @MainActor
+    func refreshViewModel() {
+        viewModel = createViewModel()
+    }
 
-        guard freemiumDBPUserStateManager.ntpImpressionCount >= Constants.maxNTPImpressionsBeforeSuppression else {
-            return
-        }
-
-        freemiumDBPUserStateManager.bannerSuppressionStartDate = dateProvider()
-        Logger.freemiumDBP.debug("[Freemium DBP] Suppressing banner after reaching impression limit")
-        isHomePagePromotionVisible = false
+    @MainActor
+    func clearViewModel() {
+        viewModel = nil
     }
 }
 
@@ -141,7 +158,8 @@ private extension FreemiumDBPPromotionViewCoordinator {
             })
 
             showFreemiumDBP()
-            dismissHomePagePromotion()
+            didDismissHomePagePromotion = true
+            onUserAction?(.actioned)
         }
     }
 
@@ -158,7 +176,8 @@ private extension FreemiumDBPPromotionViewCoordinator {
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanDismiss)
             })
 
-            dismissHomePagePromotion()
+            didDismissHomePagePromotion = true
+            onUserAction?(.ignored())
         }
     }
 
@@ -168,22 +187,14 @@ private extension FreemiumDBPPromotionViewCoordinator {
         freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllersManager: Application.appDelegate.windowControllersManager)
     }
 
-    /// Dismisses the home page promotion and updates the user state to reflect this.
-    func dismissHomePagePromotion() {
-        didDismissHomePagePromotion = true
-    }
-
-    /// Sets the initial visibility state of the promotion based on whether the promotion was
-    /// previously dismissed and whether the Freemium DBP feature is available.
-    func setInitialPromotionVisibilityState() {
-        updateHomePagePromotionVisibility()
-    }
-
     /// Creates the view model for the promotion, updating based on the user's scan results.
     ///
     /// - Returns: The `PromotionViewModel` that represents the current state of the promotion.
+    /// Only called from the delegate-controlled `refreshViewModel()` path, where full eligibility
+    /// is already enforced by the PromoDelegate. This guard is a defensive check for the feature flag only —
+    /// async checks (product availability) are intentionally skipped to avoid startup timing issues.
     func createViewModel() -> PromotionViewModel? {
-        guard freemiumDBPFeature.isAvailable, isHomePagePromotionVisible else {
+        guard freemiumDBPFeature.isFeatureFlagEnabled else {
             return nil
         }
 
@@ -209,16 +220,6 @@ private extension FreemiumDBPPromotionViewCoordinator {
         }
     }
 
-    /// This method defines the entry point to updating `viewModel` which is every change to `isHomePagePromotionVisible`.
-    func setUpViewModelRefreshing() {
-        $isHomePagePromotionVisible.dropFirst().asVoid()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.viewModel = self?.createViewModel()
-            }
-            .store(in: &cancellables)
-    }
-
     /// Observes contextual onboarding completion and refreshes the view model.
     func observeContextualOnboardingCompletion() {
         contextualOnboardingPublisher
@@ -226,7 +227,7 @@ private extension FreemiumDBPPromotionViewCoordinator {
             .sink { [weak self] isCompleted in
                 guard let self, isCompleted else { return }
                 Logger.freemiumDBP.debug("[Freemium DBP] Contextual Onboarding Completed")
-                updateHomePagePromotionVisibility()
+                isDismissed = freemiumDBPUserStateManager.didDismissHomePagePromotion
             }
             .store(in: &cancellables)
     }
@@ -240,9 +241,9 @@ private extension FreemiumDBPPromotionViewCoordinator {
             .prepend(freemiumDBPFeature.isAvailable)
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] available in
                 guard let self else { return }
-                updateHomePagePromotionVisibility()
+                self.isFeatureAvailable = available
             }
             .store(in: &cancellables)
     }
@@ -289,37 +290,6 @@ private extension FreemiumDBPPromotionViewCoordinator {
         } else {
             promotionAction()
         }
-    }
-
-    @discardableResult
-    /// Updates the home page promotion visibility using the latest dismissal, feature, and suppression state.
-    /// - Returns: `true` when the promotion should be visible, otherwise `false`.
-    func updateHomePagePromotionVisibility() -> Bool {
-        guard !updateBannerSuppressionState() else {
-            isHomePagePromotionVisible = false
-            return false
-        }
-
-        isHomePagePromotionVisible = (!didDismissHomePagePromotion && freemiumDBPFeature.isAvailable)
-        return isHomePagePromotionVisible
-    }
-
-    /// Updates the banner suppression state using the current date.
-    /// - Returns: `true` when the banner should remain suppressed, otherwise `false`.
-    private func updateBannerSuppressionState() -> Bool {
-        guard let suppressionStartDate = freemiumDBPUserStateManager.bannerSuppressionStartDate else {
-            return false
-        }
-
-        let suppressionEndDate = suppressionStartDate.addingTimeInterval(Constants.bannerSuppressionDuration)
-        guard dateProvider() >= suppressionEndDate else {
-            return true
-        }
-
-        Logger.freemiumDBP.debug("[Freemium DBP] Banner suppression window elapsed, resetting impression cycle")
-        freemiumDBPUserStateManager.bannerSuppressionStartDate = nil
-        freemiumDBPUserStateManager.ntpImpressionCount = 0
-        return false
     }
 
 }

@@ -73,7 +73,7 @@ final class PromoServiceFactoryTests: XCTestCase {
         let promo = PromoServiceFactory.freemiumDBP
 
         XCTAssertEqual(promo.id, "freemium-dbp-ntp-banner")
-        XCTAssertTrue(promo.triggers.isEmpty)
+        XCTAssertEqual(promo.triggers, [.newTabPageAppeared])
         XCTAssertEqual(promo.initiated, .app)
         XCTAssertEqual(promo.promoType.severity, .medium)
         XCTAssertEqual(promo.context, .newTabPage)

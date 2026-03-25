@@ -46,8 +46,7 @@ final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManager {
     var firstProfileSavedTimestamp: Date?
     var upgradeToSubscriptionTimestamp: Date?
     var firstScanResults: FreemiumDBPMatchResults?
-    var ntpImpressionCount = 0
-    var bannerSuppressionStartDate: Date?
+    var displayWindowStartDate: Date?
 
     func resetAllState() {
         didCallResetAllState = true

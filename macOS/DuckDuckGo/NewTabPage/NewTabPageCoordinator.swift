@@ -119,7 +119,6 @@ final class NewTabPageCoordinator {
 
         notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
             .sink { [weak self] _ in
-//                freemiumDBPPromotionViewCoordinator.recordNTPImpression()
                 self?.newTabPageShownPixelSender.firePixel()
             }
             .store(in: &cancellables)

@@ -36,7 +36,6 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var cancellables: Set<AnyCancellable> = []
     private var contextualOnboardingSubject: PassthroughSubject<Bool, Never>!
-    private var currentDate: Date!
 
     override func setUpWithError() throws {
         mockUserStateManager = MockFreemiumDBPUserStateManager()
@@ -45,7 +44,6 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         mockPresenter = MockFreemiumDBPPresenter()
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         contextualOnboardingSubject = PassthroughSubject<Bool, Never>()
-        currentDate = Date()
 
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
@@ -53,8 +51,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
             freemiumDBPPresenter: mockPresenter,
             notificationCenter: notificationCenter,
             dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher(),
-            dateProvider: { [unowned self] in currentDate }
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
     }
 
@@ -70,49 +67,149 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         mockPixelHandler = nil
         cancellables = []
         contextualOnboardingSubject = nil
-        currentDate = nil
     }
 
-    func testInitialPromotionVisibility_whenFeatureIsAvailable_andNotDismissed() {
-        // Given
-        mockUserStateManager.didDismissHomePagePromotion = false
-        mockFeature.featureAvailable = true
+    // MARK: - Raw Eligibility Signals
 
-        // When
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-
-        // Then
-        XCTAssertTrue(sut.isHomePagePromotionVisible)
+    func testIsFeatureAvailable_reflectsFeatureState() {
+        XCTAssertTrue(sut.isFeatureAvailable)
+        mockFeature.isAvailableSubject.send(false)
+        let expectation = XCTestExpectation()
+        sut.$isFeatureAvailable.dropFirst().sink { available in
+            if !available { expectation.fulfill() }
+        }.store(in: &cancellables)
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertFalse(sut.isFeatureAvailable)
     }
 
-    func testInitialPromotionVisibility_whenPromotionDismissed() {
-        // Given
+    func testIsDismissed_reflectsDismissState() {
+        XCTAssertFalse(sut.isDismissed)
         mockUserStateManager.didDismissHomePagePromotion = true
-        mockFeature.featureAvailable = true
-
-        // When
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
             freemiumDBPFeature: mockFeature,
             freemiumDBPPresenter: mockPresenter,
             contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
-
-        // Then
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
+        XCTAssertTrue(sut.isDismissed)
     }
+
+    func testDisplayWindowExpired_whenNoStartDate() {
+        sut.updateDisplayWindowExpiredState()
+        XCTAssertFalse(sut.isDisplayWindowExpired)
+    }
+
+    func testDisplayWindowExpired_whenWithinWindow() {
+        sut.displayWindowStartDate = Date()
+        sut.updateDisplayWindowExpiredState()
+        XCTAssertFalse(sut.isDisplayWindowExpired)
+    }
+
+    func testDisplayWindowExpired_whenPastWindow() {
+        sut.displayWindowStartDate = Date().addingTimeInterval(-.days(8))
+        sut.updateDisplayWindowExpiredState()
+        XCTAssertTrue(sut.isDisplayWindowExpired)
+    }
+
+    func testIsDismissed_updatesOnScanResultsNotification() {
+        mockUserStateManager.didDismissHomePagePromotion = true
+        sut = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: mockPresenter,
+            notificationCenter: notificationCenter,
+            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
+        )
+        XCTAssertTrue(sut.isDismissed)
+
+        let expectation = XCTestExpectation(description: "isDismissed becomes false")
+        sut.$isDismissed.dropFirst().sink { isDismissed in
+            if !isDismissed { expectation.fulfill() }
+        }.store(in: &cancellables)
+
+        notificationCenter.post(name: .freemiumDBPResultPollingComplete, object: nil)
+
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertFalse(sut.isDismissed)
+    }
+
+    func testIsDismissed_updatesOnEntryPointActivation() {
+        XCTAssertFalse(sut.isDismissed)
+
+        let expectation = XCTestExpectation(description: "isDismissed becomes true")
+        sut.$isDismissed.dropFirst().sink { isDismissed in
+            if isDismissed { expectation.fulfill() }
+        }.store(in: &cancellables)
+
+        notificationCenter.post(name: .freemiumDBPEntryPointActivated, object: nil)
+
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertTrue(sut.isDismissed)
+    }
+
+    // MARK: - refreshViewModel / clearViewModel
+
+    @MainActor
+    func testRefreshViewModel_createsViewModel() {
+        XCTAssertNil(sut.viewModel)
+        sut.refreshViewModel()
+        XCTAssertNotNil(sut.viewModel)
+    }
+
+    @MainActor
+    func testClearViewModel_nilsViewModel() {
+        sut.refreshViewModel()
+        XCTAssertNotNil(sut.viewModel)
+        sut.clearViewModel()
+        XCTAssertNil(sut.viewModel)
+    }
+
+    // MARK: - onUserAction Callback
+
+    @MainActor
+    func testOnUserAction_calledOnProceed() async throws {
+        try await waitForViewModelUpdate()
+
+        let expectation = XCTestExpectation(description: "onUserAction called")
+        var receivedResult: PromoResult?
+        sut.onUserAction = { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        let viewModel = try XCTUnwrap(sut.viewModel)
+        await viewModel.proceedAction()
+
+        await fulfillment(of: [expectation], timeout: 2.0)
+        XCTAssertEqual(receivedResult, .actioned)
+    }
+
+    @MainActor
+    func testOnUserAction_calledOnClose() async throws {
+        try await waitForViewModelUpdate()
+
+        let expectation = XCTestExpectation(description: "onUserAction called")
+        var receivedResult: PromoResult?
+        sut.onUserAction = { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        let viewModel = try XCTUnwrap(sut.viewModel)
+        viewModel.closeAction()
+
+        await fulfillment(of: [expectation], timeout: 2.0)
+        XCTAssertEqual(receivedResult, .ignored())
+    }
+
+    // MARK: - Proceed / Close Actions
 
     @MainActor
     func testProceedAction_dismissesPromotion_callsShowFreemium_andFiresPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.didActivate = false
-            sut.isHomePagePromotionVisible = true
         }
 
         // When
@@ -259,248 +356,11 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertNil(viewModel)
     }
 
-    func testNotificationObservation_updatesPromotionVisibility() {
-        // When
-        notificationCenter.post(name: .freemiumDBPResultPollingComplete, object: nil)
-
-        // Then
-        XCTAssertFalse(mockUserStateManager.didDismissHomePagePromotion)
-
-        // When
-        notificationCenter.post(name: .freemiumDBPEntryPointActivated, object: nil)
-
-        // Then
-        XCTAssertFalse(mockUserStateManager.didDismissHomePagePromotion)
-    }
-
-    func testHomePageBecomesVisible_whenFeatureBecomesAvailable_andDidDismissFalse() {
-        // Given
-        mockUserStateManager.didDismissHomePagePromotion = false
-        mockFeature.featureAvailable = false
-        let expectation = XCTestExpectation(description: "isHomePagePromotionVisible becomes true")
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
-
-        // When
-        mockFeature.isAvailableSubject.send(true)
-
-        sut.$isHomePagePromotionVisible
-            .sink { isVisible in
-                if isVisible {
-                    expectation.fulfill()
-                }
-            }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: 2.0)
-
-        // Then
-        XCTAssertTrue(sut.isHomePagePromotionVisible)
-    }
-
-    func testHomePageBecomesInVisible_whenFeatureBecomesUnAvailable_andDidDismissFalse() {
-        // Given
-        mockUserStateManager.didDismissHomePagePromotion = false
-        mockFeature.featureAvailable = true
-        let expectation = XCTestExpectation(description: "isHomePagePromotionVisible becomes true")
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-        XCTAssertTrue(sut.isHomePagePromotionVisible)
-
-        // When
-        mockFeature.isAvailableSubject.send(false)
-
-        sut.$isHomePagePromotionVisible
-            .sink { isVisible in
-                if !isVisible {
-                    expectation.fulfill()
-                }
-            }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: 2.0)
-
-        // Then
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
-    }
-
-    func testHomePageDoesNotBecomeVisible_whenFeatureBecomesAvailable_andDidDismissTrue() {
-        // Given
-        mockUserStateManager.didDismissHomePagePromotion = true
-        mockFeature.featureAvailable = false
-        let expectation = XCTestExpectation(description: "isHomePagePromotionVisible becomes true")
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
-
-        // When
-        mockFeature.isAvailableSubject.send(true)
-
-        sut.$isHomePagePromotionVisible
-            .sink { isVisible in
-                if !isVisible {
-                    expectation.fulfill()
-                }
-            }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: 2.0)
-
-        // Then
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
-    }
-
-    func testHomePageDoesNotBecomeVisible_whenFeatureBecomesUnAvailable_andDidDismissTrue() {
-        // Given
-        mockUserStateManager.didDismissHomePagePromotion = true
-        mockFeature.featureAvailable = true
-        let expectation = XCTestExpectation(description: "isHomePagePromotionVisible becomes true")
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
-
-        // When
-        mockFeature.isAvailableSubject.send(false)
-
-        sut.$isHomePagePromotionVisible
-            .sink { isVisible in
-                if !isVisible {
-                    expectation.fulfill()
-                }
-            }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: 2.0)
-
-        // Then
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
-    }
-
-    @MainActor
-    func testViewModelRefreshes_whenContextualOnboardingCompletes() async throws {
-        // Given
-        mockUserStateManager.didDismissHomePagePromotion = false
-        mockFeature.featureAvailable = true
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            notificationCenter: notificationCenter,
-            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-
-        // When
-        let viewModel = try await waitForViewModelUpdate {
-            self.contextualOnboardingSubject.send(true)
-        }
-
-        // Then
-        XCTAssertNotNil(viewModel)
-    }
-
-    func testViewModelDoesNotRefresh_whenContextualOnboardingEmitsFalse() async throws {
-        // Given
-        mockUserStateManager.didDismissHomePagePromotion = false
-        mockFeature.featureAvailable = true
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            notificationCenter: notificationCenter,
-            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-
-        // Wait for initial setup to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-
-        let currentViewModel = sut.viewModel
-        let expectation = XCTestExpectation(description: "viewModel should not update")
-        expectation.isInverted = true
-
-        // When
-        sut.$viewModel.dropFirst().sink { _ in
-            expectation.fulfill()
-        }
-        .store(in: &cancellables)
-
-        contextualOnboardingSubject.send(false)
-
-        await fulfillment(of: [expectation], timeout: 0.5)
-
-        // Then
-        XCTAssertEqual(sut.viewModel?.title, currentViewModel?.title)
-    }
-
-    func testWhenFourthNTPImpressionIsRecordedThenBannerBecomesSuppressed() async throws {
-        // Given
-        try await waitForViewModelUpdate()
-
-        // When
-        sut.recordNTPImpression()
-        sut.recordNTPImpression()
-        sut.recordNTPImpression()
-        sut.recordNTPImpression()
-
-        // Then
-        XCTAssertEqual(mockUserStateManager.ntpImpressionCount, 4)
-        XCTAssertEqual(mockUserStateManager.bannerSuppressionStartDate, currentDate)
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
-    }
-
-    func testWhenBannerIsSuppressedThenNTPImpressionDoesNotIncrementDuringSuppressionWindow() async throws {
-        // Given
-        try await waitForViewModelUpdate()
-        mockUserStateManager.ntpImpressionCount = 4
-        mockUserStateManager.bannerSuppressionStartDate = currentDate
-
-        // When
-        sut.recordNTPImpression()
-
-        // Then
-        XCTAssertEqual(mockUserStateManager.ntpImpressionCount, 4)
-        XCTAssertEqual(mockUserStateManager.bannerSuppressionStartDate, currentDate)
-        XCTAssertFalse(sut.isHomePagePromotionVisible)
-    }
-
-    func testWhenSuppressionWindowHasElapsedThenBannerShowsAgainAndImpressionCountResets() async throws {
-        // Given
-        try await waitForViewModelUpdate()
-        mockUserStateManager.ntpImpressionCount = 4
-        mockUserStateManager.bannerSuppressionStartDate = currentDate.addingTimeInterval(-.days(29))
-
-        // When
-        sut.recordNTPImpression()
-
-        // Then
-        XCTAssertEqual(mockUserStateManager.ntpImpressionCount, 1)
-        XCTAssertNil(mockUserStateManager.bannerSuppressionStartDate)
-        XCTAssertTrue(sut.isHomePagePromotionVisible)
-    }
-
     // MARK: - Helpers
 
     /**
      * Sets up an expectation, then sets up Combine subscription for `sut.$viewModel` that fulfills the expectation,
-     * then calls the provided `block`, enables home page promotion and waits for time specified by `duration`
+     * then calls the provided `block`, refreshes the view model and waits for time specified by `duration`
      * before cancelling the subscription.
      */
     @discardableResult @MainActor
@@ -509,7 +369,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         let cancellable = sut.$viewModel.dropFirst().prefix(1).sink { _ in expectation.fulfill() }
 
         await block()
-        sut.isHomePagePromotionVisible = true
+        sut.refreshViewModel()
 
         await fulfillment(of: [expectation], timeout: duration)
         cancellable.cancel()

@@ -28,8 +28,7 @@ final class FreemiumDBPUserStateManagerTests: XCTestCase {
         static let didDismissHomePagePromotion = "macos.browser.freemium.dbp.did.post.dismiss.home.page.promotion"
         static let firstProfileSavedTimestamp = "macos.browser.freemium.dbp.first.profile.saved.timestamp"
         static let firstScanResults = "macos.browser.freemium.dbp.first.scan.results"
-        static let ntpImpressionCount = "macos.browser.freemium.dbp.ntp.impression.count"
-        static let bannerSuppressionStartDate = "macos.browser.freemium.dbp.banner.suppression.start.date"
+        static let displayWindowStartDate = "macos.browser.freemium.dbp.display.window.start.date"
         static let upgradeToSubscriptionTimestamp = "macos.browser.freemium.dbp.upgrade.to.subscription.timestamp"
     }
 
@@ -206,53 +205,22 @@ final class FreemiumDBPUserStateManagerTests: XCTestCase {
         XCTAssertEqual(result?.brokerCount, scanResults.brokerCount)
     }
 
-    func testSetsNTPImpressionCount() {
-        // Given
+    func testSetsDisplayWindowStartDate() {
         let sut = DefaultFreemiumDBPUserStateManager(userDefaults: testUserDefaults)
-        XCTAssertEqual(testUserDefaults.integer(forKey: Keys.ntpImpressionCount), 0)
+        XCTAssertNil(testUserDefaults.value(forKey: Keys.displayWindowStartDate))
 
-        // When
-        sut.ntpImpressionCount = 3
+        sut.displayWindowStartDate = Date()
 
-        // Then
-        XCTAssertEqual(testUserDefaults.integer(forKey: Keys.ntpImpressionCount), 3)
+        XCTAssertNotNil(testUserDefaults.value(forKey: Keys.displayWindowStartDate))
     }
 
-    func testGetsNTPImpressionCount() {
-        // Given
+    func testGetsDisplayWindowStartDate() {
         let sut = DefaultFreemiumDBPUserStateManager(userDefaults: testUserDefaults)
-        XCTAssertEqual(sut.ntpImpressionCount, 0)
-        testUserDefaults.setValue(2, forKey: Keys.ntpImpressionCount)
+        XCTAssertNil(sut.displayWindowStartDate)
+        testUserDefaults.setValue(Date(), forKey: Keys.displayWindowStartDate)
 
-        // When
-        let result = sut.ntpImpressionCount
+        let result = sut.displayWindowStartDate
 
-        // Then
-        XCTAssertEqual(result, 2)
-    }
-
-    func testSetsBannerSuppressionStartDate() {
-        // Given
-        let sut = DefaultFreemiumDBPUserStateManager(userDefaults: testUserDefaults)
-        XCTAssertNil(testUserDefaults.value(forKey: Keys.bannerSuppressionStartDate))
-
-        // When
-        sut.bannerSuppressionStartDate = Date()
-
-        // Then
-        XCTAssertNotNil(testUserDefaults.value(forKey: Keys.bannerSuppressionStartDate))
-    }
-
-    func testGetsBannerSuppressionStartDate() {
-        // Given
-        let sut = DefaultFreemiumDBPUserStateManager(userDefaults: testUserDefaults)
-        XCTAssertNil(sut.bannerSuppressionStartDate)
-        testUserDefaults.setValue(Date(), forKey: Keys.bannerSuppressionStartDate)
-
-        // When
-        let result = sut.bannerSuppressionStartDate
-
-        // Then
         XCTAssertNotNil(result)
     }
 
@@ -266,8 +234,7 @@ final class FreemiumDBPUserStateManagerTests: XCTestCase {
         sut.didDismissHomePagePromotion = true
         let scanResults = FreemiumDBPMatchResults(matchesCount: 10, brokerCount: 5)
         sut.firstScanResults = scanResults
-        sut.ntpImpressionCount = 4
-        sut.bannerSuppressionStartDate = Date()
+        sut.displayWindowStartDate = Date()
 
         // When
         sut.resetAllState()
@@ -278,8 +245,7 @@ final class FreemiumDBPUserStateManagerTests: XCTestCase {
         XCTAssertFalse(sut.didPostFirstProfileSavedNotification)
         XCTAssertFalse(sut.didPostResultsNotification)
         XCTAssertNil(sut.firstScanResults)
-        XCTAssertEqual(sut.ntpImpressionCount, 0)
-        XCTAssertNil(sut.bannerSuppressionStartDate)
+        XCTAssertNil(sut.displayWindowStartDate)
         XCTAssertFalse(sut.didDismissHomePagePromotion)
     }
 

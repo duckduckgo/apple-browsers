@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import AutoconsentStats
 import BrowserServicesKit
+import Combine
 import Common
 import DDGSync
 import History
@@ -159,7 +160,7 @@ extension NewTabPageActionsManager {
             dockCustomization: dockCustomization
         )
         if let promoService {
-            let freemiumDBPDelegate = FreemiumDBPPromoDelegate(provider: freemiumDBPBannerProvider)
+            let freemiumDBPDelegate = FreemiumDBPPromoDelegate(coordinator: freemiumDBPPromotionViewCoordinator)
             promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: freemiumDBPDelegate)
             let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
             promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)

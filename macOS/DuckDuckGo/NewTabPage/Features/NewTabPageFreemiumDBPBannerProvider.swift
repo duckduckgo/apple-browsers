@@ -75,27 +75,88 @@ extension NewTabPageDataModel.FreemiumPIRBannerMessage {
     }
 }
 
-final class FreemiumDBPPromoDelegate: ExternalPromoDelegate {
+final class FreemiumDBPPromoDelegate: PromoDelegate {
 
-    private let provider: NewTabPageFreemiumDBPBannerProviding
-    private let visibilitySubject: CurrentValueSubject<Bool, Never>
-    private var cancellables = Set<AnyCancellable>()
+    private let coordinator: FreemiumDBPPromotionViewCoordinator
+    private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
-    var isVisible: Bool { visibilitySubject.value }
-    var isVisiblePublisher: AnyPublisher<Bool, Never> { visibilitySubject.eraseToAnyPublisher() }
-    var resultWhenHidden: PromoResult { .noChange }
+    var isEligible: Bool {
+        guard !coordinator.isDismissed else { return false }
 
-    init(provider: NewTabPageFreemiumDBPBannerProviding) {
-        self.provider = provider
-        self.visibilitySubject = CurrentValueSubject(provider.bannerMessage != nil)
+        // Display window expired — ineligible until show() clears the date and returns the cooldown
+        if coordinator.displayWindowStartDate != nil && coordinator.isDisplayWindowExpired {
+            return false
+        }
 
-        provider.bannerMessagePublisher
-            .map { $0 != nil }
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] visible in
-                self?.visibilitySubject.send(visible)
+        // Active display window — skip async checks (product availability) but respect the feature flag.
+        // displayWindowStartDate is only set inside show() after full eligibility passed,
+        // so trusting it here avoids the startup timing issue where isFeatureAvailable
+        // is still false because App Store product availability hasn't settled.
+        if coordinator.displayWindowStartDate != nil {
+            return coordinator.isFeatureFlagEnabled
+        }
+
+        // No display window — full eligibility check
+        return coordinator.isFeatureAvailable
+    }
+
+    var isEligiblePublisher: AnyPublisher<Bool, Never> {
+        coordinator.$isFeatureAvailable
+            .combineLatest(coordinator.$isDismissed, coordinator.$isDisplayWindowExpired)
+            .map { [weak coordinator] isAvailable, isDismissed, isExpired in
+                guard let coordinator, !isDismissed else { return false }
+                if coordinator.displayWindowStartDate != nil && isExpired {
+                    return false
+                }
+                if coordinator.displayWindowStartDate != nil {
+                    return coordinator.isFeatureFlagEnabled
+                }
+                return isAvailable
             }
-            .store(in: &cancellables)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    init(coordinator: FreemiumDBPPromotionViewCoordinator) {
+        self.coordinator = coordinator
+    }
+
+    @MainActor
+    func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
+        // Guard against double-show: if a previous show() is still suspended, resume it first
+        resumeContinuation(with: .noChange)
+
+        if coordinator.displayWindowStartDate == nil {
+            coordinator.displayWindowStartDate = Date()
+        }
+
+        coordinator.updateDisplayWindowExpiredState()
+        if coordinator.isDisplayWindowExpired {
+            coordinator.displayWindowStartDate = nil
+            coordinator.updateDisplayWindowExpiredState() // Reset flag so isEligiblePublisher reflects future state correctly
+            return .ignored(cooldown: .days(28))
+        }
+
+        coordinator.refreshViewModel()
+
+        return await withCheckedContinuation { continuation in
+            showContinuation = continuation
+            coordinator.onUserAction = { [weak self] result in
+                self?.resumeContinuation(with: result)
+            }
+        }
+    }
+
+    @MainActor
+    func hide() {
+        resumeContinuation(with: .noChange)
+        coordinator.clearViewModel()
+    }
+
+    @MainActor
+    private func resumeContinuation(with result: PromoResult) {
+        showContinuation?.resume(returning: result)
+        showContinuation = nil
+        coordinator.onUserAction = nil
     }
 }

@@ -17,36 +17,42 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
     struct BrowsersComparisonContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.scenePhase) private var scenePhase
 
-        @Binding var showContent: Bool
+        @Binding var isVisible: Bool
         @State private var shouldStartTyping = false
+        @State private var showContent = false
         private let title: String
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
 
         init(
-            showContent: Binding<Bool>,
+            isVisible: Binding<Bool>,
             title: String,
             setAsDefaultBrowserAction: @escaping () -> Void,
             cancelAction: @escaping () -> Void
         ) {
-            self._showContent = showContent
+            self._isVisible = isVisible
             self.title = title
             self.setAsDefaultBrowserAction = setAsDefaultBrowserAction
             self.cancelAction = cancelAction
         }
 
+        // Uses a custom layout instead of LinearDialogContentContainer because
+        // the comparison table has its own animated row reveal that needs `showContent`.
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                TypingText(title, startAnimating: $shouldStartTyping)
+                TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: {
+                    withAnimation { showContent = true }
+                })
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
                     .multilineTextAlignment(.center)
@@ -66,14 +72,20 @@ extension OnboardingRebranding.OnboardingView {
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
                 }
+                .opacity(showContent ? 1 : 0)
+                .animation(.easeIn(duration: 0.25), value: showContent)
             }
-            .onChange(of: showContent) { isVisible in
-                if isVisible {
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+            // Re-trigger the typing pipeline when returning from Settings (e.g. after "Set as Default Browser").
+            // `isVisible` stays `true` during backgrounding so `onChange(of: isVisible)` never fires on return;
+            // observing `scenePhase` catches that case.
+            .onChange(of: scenePhase) { phase in
+                if phase == .active, isVisible {
+                    shouldStartTyping = false
+                    showContent = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
                         shouldStartTyping = true
                     }
-                } else {
-                    shouldStartTyping = false
                 }
             }
         }

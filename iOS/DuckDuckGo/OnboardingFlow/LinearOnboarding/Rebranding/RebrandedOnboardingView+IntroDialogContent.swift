@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
@@ -33,22 +33,25 @@ extension OnboardingRebranding.OnboardingView {
         private let skipAction: () -> Void
 
         @State private var showSkipOnboarding = false
+        /// Controls when the TypingText animation begins (delayed until the bubble fade-in finishes).
         @State private var shouldStartTyping = false
-        @State private var showMessage = false
-        @Binding var showContent: Bool
+        /// Drives the opacity fade-in of everything below the title (set after typing completes).
+        @State private var showContent = false
+        /// Bound to the parent's `showBubbleContent` -- used to coordinate the hide/show cycle.
+        @Binding var isVisible: Bool
 
         init(
             title: String,
             message: String,
             skipOnboardingView: AnyView?,
-            showContent: Binding<Bool>,
+            isVisible: Binding<Bool>,
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
             self.title = title
             self.message = message
             self.skipOnboardingView = skipOnboardingView
-            self._showContent = showContent
+            self._isVisible = isVisible
             self.continueAction = continueAction
             self.skipAction = skipAction
         }
@@ -75,10 +78,10 @@ extension OnboardingRebranding.OnboardingView {
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
                 ),
-                showMessage: $showMessage,
+                showContent: $showContent,
                 title: {
                     TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: {
-                        withAnimation { showMessage = true }
+                        withAnimation { showContent = true }
                     })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
@@ -100,54 +103,29 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
-            .onChange(of: showContent) { isVisible in
-                if isVisible {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
-                        shouldStartTyping = true
-                    }
-                } else {
-                    shouldStartTyping = false
-                    showMessage = false
-                }
-            }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
-        /// Handles the transition from intro to skip onboarding dialog with proper animation timing.
-        ///
-        /// This function orchestrates a three-phase animation sequence:
-        /// 1. Hide current content immediately (no fade-out animation)
-        /// 2. Switch to skip dialog and animate bubble resize
-        /// 3. Show new content after bubble finishes resizing
-        ///
-        /// Note: The bubble resize is triggered by the withAnimation wrapping showSkipOnboarding.
-        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
-        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        /// Runs a three-phase child transition (hide -> resize -> show) to switch to the skip dialog.
+        /// Unlike parent-level step changes, this is an internal view switch so we need an explicit
+        /// withAnimation to drive the bubble resize.
         private func showSkipOnboardingDialog() {
-            // Phase 1: Hide current content immediately
-            showContent = false
+            isVisible = false
             skipAction()
 
             if #available(iOS 17.0, *) {
-                // Phase 2: Animate view switch and bubble resize
                 withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showSkipOnboarding = true
                 } completion: {
-                    // Phase 3: Show new content after bubble finishes resizing
-                    withAnimation {
-                        showContent = true
-                    }
+                    withAnimation { isVisible = true }
                 }
             } else {
-                // Phase 2: Animate view switch and bubble resize
                 withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showSkipOnboarding = true
                 }
-
-                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
+                // Timing-based fallback for iOS 16 (no completion handler on withAnimation).
                 DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                    withAnimation {
-                        showContent = true
-                    }
+                    withAnimation { isVisible = true }
                 }
             }
         }

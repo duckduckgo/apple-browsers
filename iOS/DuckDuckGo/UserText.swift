@@ -2169,6 +2169,7 @@ public struct UserText {
             public static let message = NSLocalizedString("onboarding.skip.message", value: "Remember: you can delete all your tabs, history, and browsing data in two taps with the Fire Button 🔥", comment: "The message of the skip onboarding dialog popup.")
             public static let confirmSkipOnboardingCTA = NSLocalizedString("onboarding.skip.cta.confirmSkip", value: "Start Browsing", comment: "The title of the button to skip the onboarding and start browsing.")
             public static let resumeOnboardingCTA = NSLocalizedString("onboarding.skip.cta.resumeOnboarding", value: "Show Tutorial", comment: "The title of the button to resume the onboarding.")
+            public static let fireButton = NSLocalizedString("onboarding.skip.message.fireButton", value: "Fire Button", comment: "The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'.")
         }
 
         public enum BrowsersComparison {

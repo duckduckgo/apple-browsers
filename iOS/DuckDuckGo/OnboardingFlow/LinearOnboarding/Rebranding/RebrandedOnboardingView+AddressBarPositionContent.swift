@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
@@ -27,11 +27,11 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var shouldStartTyping = false
-        @Binding private var showContent: Bool
+        @Binding private var isVisible: Bool
         private let action: () -> Void
 
-        init(showContent: Binding<Bool>, action: @escaping () -> Void) {
-            self._showContent = showContent
+        init(isVisible: Binding<Bool>, action: @escaping () -> Void) {
+            self._isVisible = isVisible
             self.action = action
         }
 
@@ -52,8 +52,8 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
             }
-            .onChange(of: showContent) { isVisible in
-                if isVisible {
+            .onChange(of: isVisible) { showing in
+                if showing {
                     DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
                         shouldStartTyping = true
                     }

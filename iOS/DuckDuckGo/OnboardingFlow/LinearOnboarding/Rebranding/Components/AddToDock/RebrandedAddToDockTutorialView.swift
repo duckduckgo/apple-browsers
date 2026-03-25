@@ -37,22 +37,22 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         @State private var shouldStartTyping = false
-        @State private var showMessage = false
+        @State private var showContent = false
 
         private let title: String
         private let message: String
-        private let showContent: Binding<Bool>
+        @Binding var isVisible: Bool
         private let cta: String
         private let action: () -> Void
 
         init(title: String,
              message: String,
-             showContent: Binding<Bool>,
+             isVisible: Binding<Bool>,
              cta: String,
              action: @escaping () -> Void) {
             self.title = title
             self.message = message
-            self.showContent = showContent
+            self._isVisible = isVisible
             self.cta = cta
             self.action = action
         }
@@ -74,10 +74,10 @@ extension OnboardingRebranding.OnboardingView {
                 content: AnyView(
                     videoContent
                 ),
-                showMessage: $showMessage,
+                showContent: $showContent,
                 title: {
                     TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: {
-                        withAnimation { showMessage = true }
+                        withAnimation { showContent = true }
                     })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
@@ -90,18 +90,10 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
             )
-            .onChange(of: showContent.wrappedValue) { isVisible in
-                if isVisible {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
-                        shouldStartTyping = true
-                    }
-                } else {
-                    shouldStartTyping = false
-                    showMessage = false
-                }
-            }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
+        /// Scales the border image and video proportionally to fill the available width.
         private var videoContent: some View {
             GeometryReader { geometry in
                 let width = geometry.size.width

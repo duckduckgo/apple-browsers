@@ -17,19 +17,17 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import UIKit
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
     struct SkipOnboardingContent: View {
-        private static let fireButtonCopy = "Fire Button"
-
         @Environment(\.onboardingTheme) private var onboardingTheme
 
-        @State private var showMessage = false
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
 
         private let startBrowsingAction: () -> Void
         private let resumeOnboardingAction: () -> Void
@@ -51,19 +49,19 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(Self.styledMessage())
+                    styledMessage()
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
                         .font(onboardingTheme.typography.body)
                 ),
-                showMessage: $showMessage,
+                showContent: $showContent,
                 title: {
-                    TypingText(UserText.Onboarding.Skip.title, onTypingFinished: {
-                        withAnimation { showMessage = true }
+                    TypingText(UserText.Onboarding.Skip.title, startAnimating: $shouldStartTyping, onTypingFinished: {
+                        withAnimation { showContent = true }
                     })
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .font(onboardingTheme.typography.title)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .font(onboardingTheme.typography.title)
                 },
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
@@ -79,18 +77,27 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
-        }
-
-        /// Builds the message with bold applied to "Fire Button".
-        private static func styledMessage() -> AttributedString {
-            let fullText = UserText.Onboarding.Skip.message
-            let mutable = NSMutableAttributedString(string: fullText)
-            if let range = fullText.range(of: fireButtonCopy) {
-                let nsRange = NSRange(range, in: fullText)
-                mutable.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: UIFont.labelFontSize), range: nsRange)
+            // Delay typing start to let the parent bubble resize/fade-in complete;
+            // reset on disappear so a second appearance starts fresh.
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                    shouldStartTyping = true
+                }
             }
-            return AttributedString(mutable)
+            .onDisappear {
+                shouldStartTyping = false
+                showContent = false
+            }
         }
 
+        /// Builds the skip message as a composed Text, bolding the "Fire Button" product name.
+        /// Uses Text concatenation so the bold weight inherits from the outer `.font(...)` modifier.
+        private func styledMessage() -> Text {
+            let message = UserText.Onboarding.Skip.message
+            let highlight = UserText.Onboarding.Skip.fireButton
+            let parts = message.components(separatedBy: highlight)
+            guard parts.count == 2 else { return Text(message) }
+            return Text(parts[0]) + Text(highlight).bold() + Text(parts[1])
+        }
     }
 }

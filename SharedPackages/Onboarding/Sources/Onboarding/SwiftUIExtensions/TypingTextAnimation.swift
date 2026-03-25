@@ -18,16 +18,35 @@
 
 import SwiftUI
 
+// MARK: - Skip Environment Key
+
+private struct TypingAnimationSkipKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+extension EnvironmentValues {
+    /// Set to `true` on a container to immediately skip all `TypingText` animations in the subtree.
+    public var typingAnimationSkip: Bool {
+        get { self[TypingAnimationSkipKey.self] }
+        set { self[TypingAnimationSkipKey.self] = newValue }
+    }
+}
+
 // MARK: - Animation State
 
-/// Owns the typing timer and the published display text, enabling safe weak-capture inside the Timer callback.
+/// Owns the typing timer and the published display text.
+/// Uses weak self in the Timer callback to avoid retain cycles.
+@MainActor
 private final class TypingAnimationState: ObservableObject {
     @Published private(set) var displayedText: String = ""
 
     private var timer: Timer?
-    private static let typingInterval: TimeInterval = 0.04
+    /// Once set, `start()` becomes a no-op until `stop()` resets this flag.
+    private var skipped = false
+    private static let typingInterval: TimeInterval = 0.025
 
     func start(text: String, onFinished: (() -> Void)? = nil) {
+        guard !skipped else { return }
         invalidateTimer()
         displayedText = ""
         guard !text.isEmpty else {
@@ -47,18 +66,20 @@ private final class TypingAnimationState: ObservableObject {
                 onFinished?()
             }
         }
-        // Schedule on .common so the timer fires during scroll and other UI interactions.
+        // .common mode keeps the timer firing during scroll and other UI interactions.
         RunLoop.main.add(t, forMode: .common)
         timer = t
     }
 
     func skip(to text: String, onFinished: (() -> Void)? = nil) {
+        skipped = true
         invalidateTimer()
         displayedText = text
         onFinished?()
     }
 
     func stop() {
+        skipped = false
         invalidateTimer()
     }
 
@@ -74,22 +95,14 @@ private final class TypingAnimationState: ObservableObject {
 
 // MARK: - TypingText
 
-/// A `Text`-equivalent view that reveals its content character-by-character with a typing animation.
+/// Reveals text character-by-character with a typing animation.
 ///
-/// The full text is rendered **invisibly** to keep layout dimensions stable throughout the animation.
-/// An overlay `Text` is drawn on top and updated every 20 ms. Because formatting propagates through
-/// SwiftUI's environment, appearance modifiers (`.font`, `.foregroundStyle`, `.multilineTextAlignment`,
-/// etc.) work exactly as they do on a plain `Text`:
+/// The full text is rendered **hidden** to keep layout stable, with an overlay showing the
+/// progressively revealed text. Supports `.font`, `.foregroundStyle`, `.multilineTextAlignment`, etc.
 ///
-/// ```swift
-/// TypingText("Hello, world!", startAnimating: $shouldAnimate)
-///     .font(.title)
-///     .foregroundStyle(.primary)
-///     .multilineTextAlignment(.center)
-/// ```
-///
-/// Accessibility: when `accessibilityReduceMotion` is `true` the full text is shown immediately
-/// without animation.
+/// - Setting `.environment(\.typingAnimationSkip, true)` on a container instantly completes all
+///   `TypingText` animations in the subtree (used for tap-to-skip).
+/// - When `accessibilityReduceMotion` is enabled, the full text appears immediately.
 public struct TypingText: View {
     private let text: String
     private let startAnimating: Binding<Bool>
@@ -97,6 +110,7 @@ public struct TypingText: View {
 
     @StateObject private var state = TypingAnimationState()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.typingAnimationSkip) private var skipAnimation
 
     public init(_ text: String, startAnimating: Binding<Bool> = .constant(true), onTypingFinished: (() -> Void)? = nil) {
         self.text = text
@@ -105,10 +119,12 @@ public struct TypingText: View {
     }
 
     public var body: some View {
+        // Hidden text reserves layout space; overlay reveals progressively.
         Text(text)
-            .hidden()   // Reserves layout space using the full text dimensions.
-            .overlay {
-                Text(state.displayedText)
+            .hidden()
+            .overlay { Text(state.displayedText) }
+            .onChange(of: skipAnimation) { shouldSkip in
+                if shouldSkip { state.skip(to: text, onFinished: onTypingFinished) }
             }
             .onChange(of: startAnimating.wrappedValue) { shouldAnimate in
                 if shouldAnimate {
@@ -122,19 +138,15 @@ public struct TypingText: View {
                 }
             }
             .onChange(of: reduceMotion) { shouldReduce in
-                if shouldReduce {
-                    state.skip(to: text, onFinished: onTypingFinished)
-                }
+                if shouldReduce { state.skip(to: text, onFinished: onTypingFinished) }
             }
             .onAppear {
-                if reduceMotion {
+                if reduceMotion || skipAnimation {
                     state.skip(to: text, onFinished: onTypingFinished)
                 } else if startAnimating.wrappedValue {
                     state.start(text: text, onFinished: onTypingFinished)
                 }
             }
-            .onDisappear {
-                state.stop()
-            }
+            .onDisappear { state.stop() }
     }
 }

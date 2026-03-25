@@ -25,15 +25,15 @@ extension OnboardingRebranding.OnboardingView {
 
     struct AppIconPickerContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
-        
+
         @State private var shouldStartTyping = false
-        @State private var showMessage = false
-        private var showContent: Binding<Bool>
+        @State private var showContent = false
+        @Binding var isVisible: Bool
         private let action: () -> Void
 
-        init(showContent: Binding<Bool> = .constant(false),
+        init(isVisible: Binding<Bool> = .constant(false),
              action: @escaping () -> Void) {
-            self.showContent = showContent
+            self._isVisible = isVisible
             self.action = action
         }
 
@@ -54,11 +54,11 @@ extension OnboardingRebranding.OnboardingView {
                 content: AnyView(
                     RebrandedOnboardingView.AppIconPicker()
                 ),
-                showMessage: $showMessage,
+                showContent: $showContent,
                 title: {
                     TypingText(UserText.Onboarding.AppIconSelection.title,
                                startAnimating: $shouldStartTyping,
-                               onTypingFinished: { withAnimation { showMessage = true } })
+                               onTypingFinished: { withAnimation { showContent = true } })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)
@@ -70,16 +70,7 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
             )
-            .onChange(of: showContent.wrappedValue) { isVisible in
-                if isVisible {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
-                        shouldStartTyping = true
-                    }
-                } else {
-                    shouldStartTyping = false
-                    showMessage = false
-                }
-            }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
     }
 }

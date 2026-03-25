@@ -21,11 +21,6 @@ import DuckUI
 import Onboarding
 import SwiftUI
 
-private enum AddToDockContentMetrics {
-    static let messageFont = Font.system(size: 16)
-    static let additionalTopMargin: CGFloat = 0
-}
-
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockPromoContent: View {
@@ -33,25 +28,24 @@ extension OnboardingRebranding.OnboardingView {
 
         @State private var showAddToDockTutorial = false
         @State private var shouldStartTypingTitle = false
-        @State private var shouldStartTypingMessage = false
-        @State private var showMessage = false
-        @Binding var showContent: Bool
+        @State private var showContent = false
+        @Binding var isVisible: Bool
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
-            showContent: Binding<Bool>,
+            isVisible: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
-            self._showContent = showContent
+            self._isVisible = isVisible
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
         }
 
         var body: some View {
             if showAddToDockTutorial {
-                RebrandedOnboardingView.AddToDockTutorialContent(showContent: $showContent,
+                RebrandedOnboardingView.AddToDockTutorialContent(isVisible: $isVisible,
                                                                  cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
                     dismissAction(true)
                 }
@@ -69,22 +63,21 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    TypingText(UserText.AddToDockOnboarding.Promo.introMessage,
-                               startAnimating: $shouldStartTypingMessage)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.body)
-                        .multilineTextAlignment(.center)
+                    Text(UserText.AddToDockOnboarding.Promo.introMessage)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.body)
+                    .multilineTextAlignment(.center)
                 ),
                 content: AnyView(
-                    addToDockPromoView
+                    RebrandedOnboardingView.AddToDockPromoView()
+                        .padding(.vertical)
                 ),
-                showMessage: $showMessage,
+                showContent: $showContent,
                 title: {
                     TypingText(UserText.AddToDockOnboarding.Promo.title,
                                startAnimating: $shouldStartTypingTitle,
                                onTypingFinished: {
-                                   withAnimation { showMessage = true }
-                                   shouldStartTypingMessage = true
+                                   withAnimation { showContent = true }
                                })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
@@ -104,84 +97,50 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTypingTitle, showContent: $showContent)
         }
 
-        private var addToDockPromoView: some View {
-            RebrandedOnboardingView.AddToDockPromoView()
-                .padding(.vertical)
-                .onChange(of: showContent) { isVisible in
-                    if isVisible {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
-                            shouldStartTypingTitle = true
-                        }
-                    } else {
-                        shouldStartTypingTitle = false
-                        shouldStartTypingMessage = false
-                        showMessage = false
-                    }
-                }
-        }
-
-        /// Handles the transition from promo to tutorial with proper animation timing.
-        ///
-        /// This function orchestrates a three-phase animation sequence:
-        /// 1. Hide current content (sets opacity to 0 via parent's showContent binding)
-        /// 2. Switch to tutorial view and animate bubble resize
-        /// 3. Show new content after bubble finishes resizing
-        ///
-        /// Note: The bubble resize is triggered by the withAnimation wrapping showAddToDockTutorial.
-        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
-        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        /// Runs a three-phase child transition (hide -> resize -> show) to switch from promo to tutorial.
+        /// Uses explicit withAnimation because this is an internal view switch, not a parent state.type change.
         private func showTutorial() {
-            // Phase 1: Hide current content
-            showContent = false
+            isVisible = false
             showTutorialAction()
 
             if #available(iOS 17.0, *) {
-                // Phase 2: Animate view switch and bubble resize
                 withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showAddToDockTutorial = true
                 } completion: {
-                    // Phase 3: Show new content after bubble finishes resizing
-                    withAnimation {
-                        showContent = true
-                    }
+                    withAnimation { isVisible = true }
                 }
             } else {
-                // Phase 2: Animate view switch and bubble resize
                 withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showAddToDockTutorial = true
                 }
-
-                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
+                // Timing-based fallback for iOS 16 (no completion handler on withAnimation).
                 DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                    withAnimation {
-                        showContent = true
-                    }
+                    withAnimation { isVisible = true }
                 }
             }
         }
     }
 
+    /// Thin wrapper that passes the localised tutorial copy to `AddToDockTutorialView`.
     struct AddToDockTutorialContent: View {
-        let title = UserText.AddToDockOnboarding.Tutorial.title
-        let message = UserText.AddToDockOnboarding.Tutorial.message
-
-        let showContent: Binding<Bool>
+        @Binding var isVisible: Bool
         let cta: String
         let dismissAction: () -> Void
 
-        init(showContent: Binding<Bool>, cta: String, dismissAction: @escaping () -> Void) {
-            self.showContent = showContent
+        init(isVisible: Binding<Bool>, cta: String, dismissAction: @escaping () -> Void) {
+            self._isVisible = isVisible
             self.cta = cta
             self.dismissAction = dismissAction
         }
 
         var body: some View {
             RebrandedOnboardingView.AddToDockTutorialView(
-                title: title,
-                message: message,
-                showContent: showContent,
+                title: UserText.AddToDockOnboarding.Tutorial.title,
+                message: UserText.AddToDockOnboarding.Tutorial.message,
+                isVisible: $isVisible,
                 cta: cta,
                 action: dismissAction
             )

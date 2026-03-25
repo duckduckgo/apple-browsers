@@ -581,7 +581,7 @@ final class TabBarItemCellView: NSView {
             return
         }
 
-        backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+        backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: animated)
     }
 }
 

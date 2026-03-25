@@ -30,7 +30,6 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
-    func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapDismiss(_ view: UnifiedToggleInputView)
 }
@@ -123,6 +122,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isModelChipHidden = newValue }
     }
 
+    var isCustomizeResponsesButtonHidden: Bool {
+        get { toolsToolbar.isCustomizeResponsesButtonHidden }
+        set { toolsToolbar.isCustomizeResponsesButtonHidden = newValue }
+    }
+
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
     /// so that sibling views (e.g. the content container) animate in sync.
     /// The owning view controller sets this.
@@ -155,6 +159,8 @@ final class UnifiedToggleInputView: UIView {
     var onAttachmentRemoved: ((UUID) -> Void)?
 
     // MARK: - Attachment API
+
+    var attachButtonView: UIView { toolsToolbar.imageButton }
 
     var isImageButtonHidden: Bool {
         get { toolsToolbar.isImageButtonHidden }
@@ -563,6 +569,9 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
         }
+        toolsToolbar.onCustomizeResponsesTapped = { [weak self] in
+            self?.handler.customizeResponsesButtonTapped()
+        }
         toolsToolbar.onAttachTapped = { [weak self] in
             self?.onAttachTapped?()
         }
@@ -675,14 +684,6 @@ private extension UnifiedToggleInputView {
                 guard let self else { return }
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
-            }
-            .store(in: &cancellables)
-
-        handler.microphoneButtonTappedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else { return }
-                delegate?.unifiedToggleInputViewDidTapVoice(self)
             }
             .store(in: &cancellables)
 

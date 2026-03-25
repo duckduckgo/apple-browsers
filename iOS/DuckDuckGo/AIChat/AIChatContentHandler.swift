@@ -81,7 +81,10 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
-    
+
+    /// Builds a URL for voice mode (appends `?mode=voice`).
+    func buildVoiceModeURL() -> URL
+
     /// Submits a prompt to the AI Chat with optional page context.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
@@ -193,6 +196,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
+    func buildVoiceModeURL() -> URL {
+        AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL)
+    }
+
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         if let context = pageContext {
             Logger.aiChat.debug("[PageContext] Prompt submitted with context - title: \(context.title.prefix(50))")

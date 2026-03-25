@@ -46,6 +46,10 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
         tabBarViewItemWillOpenContextMenuCalled = true
     }
 
+    func tabBarViewItemNewToTheRightAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
     func tabBarViewItemCloseAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
     }

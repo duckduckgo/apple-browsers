@@ -26,7 +26,43 @@ import WidgetKit
 import os.log
 import Core
 
-public class Favicons {
+protocol FaviconManaging: FaviconProviding, FavoritesFaviconCaching, FaviconStoring {
+    @discardableResult
+    func clearCache(_ cacheType: FaviconsCacheType, clearMemoryCache: Bool) -> Result<Void, Error>
+    func removeBookmarkFavicon(forDomain domain: String)
+    func removeFireproofFavicon(forDomain domain: String)
+    func removeTabFavicon(forDomain domain: String)
+    func removeTabFavicon(forCacheKey key: String)
+    @discardableResult
+    func removeTabFavicons(forDomains domains: [String]) -> Result<Void, Error>
+    func loadFavicon(forDomain domain: String?,
+                     fromURL url: URL?,
+                     intoCache targetCacheType: FaviconsCacheType,
+                     fromCache: FaviconsCacheType?,
+                     queue: DispatchQueue?,
+                     completion: ((UIImage?) -> Void)?)
+}
+
+extension FaviconManaging {
+    @discardableResult
+    func clearCache(_ cacheType: FaviconsCacheType) -> Result<Void, Error> {
+        clearCache(cacheType, clearMemoryCache: false)
+    }
+
+    func loadFavicon(forDomain domain: String?,
+                     intoCache targetCacheType: FaviconsCacheType,
+                     fromCache: FaviconsCacheType? = nil,
+                     completion: ((UIImage?) -> Void)? = nil) {
+        loadFavicon(forDomain: domain, fromURL: nil, intoCache: targetCacheType, fromCache: fromCache, queue: OperationQueue.current?.underlyingQueue, completion: completion)
+    }
+
+    // Bridges FaviconProviding requirement to the full loadFavicon signature
+    func loadFavicon(forDomain domain: String, fromURL url: URL?, intoCache cacheType: FaviconsCacheType, completion: ((UIImage?) -> Void)?) {
+        loadFavicon(forDomain: domain, fromURL: url, intoCache: cacheType, fromCache: nil, queue: OperationQueue.current?.underlyingQueue, completion: completion)
+    }
+}
+
+public class Favicons: FaviconManaging {
 
     public struct Constants {
 
@@ -44,8 +80,6 @@ public class Favicons {
 
     }
 
-    public static let shared = Favicons()
-
     let sourcesProvider: FaviconSourcesProvider
     let downloader: NotFoundCachingDownloader
     let fireproofing: Fireproofing
@@ -54,7 +88,7 @@ public class Favicons {
 
     init(sourcesProvider: FaviconSourcesProvider = DefaultFaviconSourcesProvider(),
          downloader: NotFoundCachingDownloader = NotFoundCachingDownloader(),
-         fireproofing: Fireproofing = UserDefaultsFireproofing.xshared) {
+         fireproofing: Fireproofing = UserDefaultsFireproofing()) {
         self.sourcesProvider = sourcesProvider
         self.downloader = downloader
         self.fireproofing = fireproofing
@@ -376,7 +410,7 @@ public class Favicons {
 
 }
 
-extension Favicons: Bookmarks.FaviconStoring {
+extension Favicons {
 
     public func hasFavicon(for domain: String) -> Bool {
         guard let targetCache = Favicons.Constants.caches[.fireproof],

@@ -49,6 +49,9 @@ protocol SwitchBarHandling: AnyObject {
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
 
+    var hasSubmittedPrompt: Bool { get set }
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
+
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
@@ -94,6 +97,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
     private let featureFlagger: FeatureFlagger
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -101,6 +105,9 @@ final class SwitchBarHandler: SwitchBarHandling {
     @Published private(set) var hasUserInteractedWithText: Bool = false
     @Published private(set) var isCurrentTextValidURL: Bool = false
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
+
+    var hasSubmittedPrompt: Bool = false
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
 
     // MARK: - Mode Usage Detection
     private static var hasUsedSearchInSession = false
@@ -182,6 +189,7 @@ final class SwitchBarHandler: SwitchBarHandling {
          sessionStateMetrics: SessionStateMetricsProviding,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
          isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
@@ -190,6 +198,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.sessionStateMetrics = sessionStateMetrics
         self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
+        self.voiceShortcutFeature = voiceShortcutFeature
         self.isFireTab = isFireTab
 
         // Set up app lifecycle observers to reset session flags
@@ -225,10 +234,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     func setToggleState(_ state: TextEntryMode) {
         // Only fire pixel if the state is actually changing
         let isStateChanging = currentToggleState != state
-        
+
         currentToggleState = state
         saveToggleState()
-        
+        updateButtonState(currentText: currentText)
+
         if isStateChanging {
             fireModeSwitchedPixel(to: state)
         }
@@ -268,7 +278,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     private func updateButtonState(currentText: String) {
         if !currentText.isEmpty {
             buttonState = .clearOnly
-        } else if voiceSearchHelper.isVoiceSearchEnabled {
+        } else if voiceSearchHelper.isVoiceSearchEnabled
+                    && !(currentToggleState == .aiChat && voiceShortcutFeature.isAvailable) {
             if isUsingFadeOutAnimation || !isTopBarPosition {
                 buttonState = .voiceOnly
             } else {

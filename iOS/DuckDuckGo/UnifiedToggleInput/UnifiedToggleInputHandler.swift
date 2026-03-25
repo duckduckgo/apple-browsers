@@ -40,6 +40,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var currentToggleState: TextEntryMode = .aiChat
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
+    @Published var hasSubmittedPrompt: Bool = false
+
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
+        $hasSubmittedPrompt.eraseToAnyPublisher()
+    }
 
     var isGenerating: Bool = false {
         didSet { updateButtonState() }
@@ -104,6 +109,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         stopGeneratingButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let customizeResponsesButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesButtonTappedPublisher: AnyPublisher<Void, Never> {
+        customizeResponsesButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
     init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
@@ -152,6 +162,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     func stopGeneratingButtonTapped() {
         stopGeneratingButtonTappedSubject.send()
+    }
+
+    func customizeResponsesButtonTapped() {
+        customizeResponsesButtonTappedSubject.send()
     }
 
     func updateBarPosition(isTop: Bool) {}

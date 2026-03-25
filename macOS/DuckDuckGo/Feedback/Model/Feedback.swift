@@ -76,6 +76,12 @@ extension Feedback {
     }
 }
 
+extension Feedback: CustomStringConvertible {
+    var description: String {
+        return "category: \(category), comment: \(comment), appVersion: \(appVersion), osVersion: \(osVersion), subcategory: \(subcategory)"
+    }
+}
+
 extension Feedback.Category {
     var toString: String {
         switch self {

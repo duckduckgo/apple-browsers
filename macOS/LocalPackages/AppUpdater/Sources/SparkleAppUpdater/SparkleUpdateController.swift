@@ -146,7 +146,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     public var areAutomaticUpdatesEnabled: Bool {
         get {
-            (try? settings.automaticUpdates) ?? true
+            if manualUpdateRemovalHandler.shouldHideManualUpdateOption { return true }
+            return (try? settings.automaticUpdates) ?? true
         }
         set {
             let oldValue = areAutomaticUpdatesEnabled
@@ -210,34 +211,29 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
-    private let allowCustomUpdateFeed: Bool
+    private let manualUpdateRemovalHandler: ManualUpdateRemovalHandling
+    private let allowCustomUpdateFeedOverride: Bool
+    private let isAutoUpdatePaused: () -> Bool
+
+    private var allowCustomUpdateFeed: Bool {
+        allowCustomUpdateFeedOverride || internalUserDecider.isInternalUser
+    }
     private let pixelFiring: PixelFiring?
     private let isOnboardingFinished: () -> Bool
     private let openUpdatesPageAction: () -> Void
 
     /// Computes whether automatic downloads should be enabled.
     /// Static for testability - no controller state needed.
-    public static func resolveAutoDownloadEnabled(allowCustomUpdateFeed: Bool,
-                                                  featureFlagger: FeatureFlagger,
+    public static func resolveAutoDownloadEnabled(isAutoUpdatePaused: Bool,
                                                   userPreference: Bool) -> Bool {
-        // Custom update feed is only allowed in DEBUG/REVIEW builds.
-        guard allowCustomUpdateFeed else {
-            return userPreference
-        }
-
-#if DEBUG
-        let isUnsignedAutoUpdateEnabled = featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-#else // REVIEW
-        let isUnsignedAutoUpdateEnabled = featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
-#endif
-        return isUnsignedAutoUpdateEnabled && userPreference
+        guard !isAutoUpdatePaused else { return false }
+        return userPreference
     }
 
     /// Instance wrapper for the static method - convenience for non-static contexts.
     private func resolveAutoDownloadEnabled(userPreference: Bool) -> Bool {
         Self.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: allowCustomUpdateFeed,
-            featureFlagger: featureFlagger,
+            isAutoUpdatePaused: isAutoUpdatePaused(),
             userPreference: userPreference
         )
     }
@@ -246,17 +242,21 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
+                manualUpdateRemovalHandler: ManualUpdateRemovalHandling,
                 pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
                 allowCustomUpdateFeed: Bool,
+                isAutoUpdatePaused: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging,
                 isOnboardingFinished: @escaping () -> Bool,
                 openUpdatesPage: @escaping () -> Void = {}) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
-        self.allowCustomUpdateFeed = allowCustomUpdateFeed
+        self.manualUpdateRemovalHandler = manualUpdateRemovalHandler
+        self.allowCustomUpdateFeedOverride = allowCustomUpdateFeed
+        self.isAutoUpdatePaused = isAutoUpdatePaused
         self.internalUserDecider = internalUserDecider
         self.notificationPresenter = notificationPresenter
         self.pixelFiring = pixelFiring
@@ -267,7 +267,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
         // Capture the current value before initializing updateWideEvent
-        let currentAutomaticUpdatesEnabled = (try? settings.automaticUpdates) ?? true
+        let currentAutomaticUpdatesEnabled = manualUpdateRemovalHandler.shouldHideManualUpdateOption
+            || ((try? settings.automaticUpdates) ?? true)
         self.updateWideEvent = SparkleUpdateWideEvent(
             wideEventManager: wideEvent,
             internalUserDecider: internalUserDecider,
@@ -277,8 +278,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
         // Compute effective auto-download state before super.init() using static method
         let shouldAutoDownload = Self.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: allowCustomUpdateFeed,
-            featureFlagger: featureFlagger,
+            isAutoUpdatePaused: isAutoUpdatePaused(),
             userPreference: currentAutomaticUpdatesEnabled
         )
 
@@ -314,6 +314,13 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.updateWideEvent.cleanupAbandonedFlows()
 
         _ = try? configureUpdater()
+
+        pixelFiring?.fire(
+            UpdateFlowPixels.updateConfigurationDaily(
+                configuration: areAutomaticUpdatesEnabled ? "automatic" : "manual"
+            ),
+            frequency: .daily
+        )
 
         validateUpdateExpectations()
     }

@@ -118,6 +118,23 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         // State Reset - 200+
         case appRequestedCancellation
 
+        /// Integer error codes for `TunnelError`, used as the single source of truth
+        /// for serialization across the XPC / process boundary.
+        public enum Code: Int, CaseIterable {
+            // Tunnel Setup Errors - 0+
+            case startingTunnelWithoutAuthToken = 0
+            case couldNotGenerateTunnelConfiguration = 1
+            case simulateTunnelFailureError = 2
+            case settingsMissing = 3
+            case simulateSubscriptionExpiration = 4
+            case tokenReset = 5
+            // Subscription Errors - 100+
+            case vpnAccessRevoked = 100
+            case vpnAccessRevokedDetectedByMonitorCheck = 101
+            // State Reset - 200+
+            case appRequestedCancellation = 200
+        }
+
         public var errorDescription: String? {
             switch self {
             case .startingTunnelWithoutAuthToken(let internalError):
@@ -139,22 +156,22 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
-        public var errorCode: Int {
+        /// The `Code` for this error — exhaustive switch ensures new cases are not forgotten.
+        public var code: Code {
             switch self {
-                // Tunnel Setup Errors - 0+
-            case .startingTunnelWithoutAuthToken: return 0
-            case .couldNotGenerateTunnelConfiguration: return 1
-            case .simulateTunnelFailureError: return 2
-            case .settingsMissing: return 3
-            case .simulateSubscriptionExpiration: return 4
-            case .tokenReset: return 5
-                // Subscription Errors - 100+
-            case .vpnAccessRevoked: return 100
-            case .vpnAccessRevokedDetectedByMonitorCheck: return 101
-                // State Reset - 200+
-            case .appRequestedCancellation: return 200
+            case .startingTunnelWithoutAuthToken: return .startingTunnelWithoutAuthToken
+            case .couldNotGenerateTunnelConfiguration: return .couldNotGenerateTunnelConfiguration
+            case .simulateTunnelFailureError: return .simulateTunnelFailureError
+            case .settingsMissing: return .settingsMissing
+            case .simulateSubscriptionExpiration: return .simulateSubscriptionExpiration
+            case .tokenReset: return .tokenReset
+            case .vpnAccessRevoked: return .vpnAccessRevoked
+            case .vpnAccessRevokedDetectedByMonitorCheck: return .vpnAccessRevokedDetectedByMonitorCheck
+            case .appRequestedCancellation: return .appRequestedCancellation
             }
         }
+
+        public var errorCode: Int { code.rawValue }
 
         public var errorUserInfo: [String: Any] {
             switch self {

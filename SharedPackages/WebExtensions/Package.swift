@@ -31,7 +31,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../BrowserServicesKit")
+        .package(path: "../BrowserServicesKit"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
     ],
     targets: [
         .target(
@@ -39,7 +40,8 @@ let package = Package(
             dependencies: [
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit")
+                .product(name: "Persistence", package: "BrowserServicesKit"),
+                "ZIPFoundation",
             ],
             resources: [
                 .copy("BundledWebExtensions")

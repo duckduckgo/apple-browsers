@@ -119,6 +119,7 @@ extension MainViewController {
             BookmarksViewController(coder: coder,
                                     bookmarksDatabase: self.bookmarksDatabase,
                                     bookmarksSearch: self.bookmarksCachingSearch,
+                                    favicons: self.favicons,
                                     syncService: self.syncService,
                                     syncDataProviders: self.syncDataProviders,
                                     appSettings: self.appSettings,
@@ -231,6 +232,7 @@ extension MainViewController {
                                       bookmarksDatabase: self.bookmarksDatabase,
                                       syncService: self.syncService,
                                       featureFlagger: self.featureFlagger,
+                                      favicons: self.favicons,
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
                                       appSettings: self.appSettings,
@@ -414,6 +416,7 @@ extension MainViewController {
                                                             tabManager: tabManager,
                                                             syncPausedStateManager: syncPausedStateManager,
                                                             fireproofing: fireproofing,
+                                                            favicons: favicons,
                                                             websiteDataManager: websiteDataManager,
                                                             customConfigurationURLProvider: customConfigurationURLProvider,
                                                             keyValueStore: keyValueStore,
@@ -530,9 +533,15 @@ extension MainViewController {
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager))
 
+        debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
+
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
-        present(controller, animated: true) {
+        var presenter: UIViewController = self
+        while let presented = presenter.presentedViewController {
+            presenter = presented
+        }
+        presenter.present(controller, animated: true) {
             completion?(debug)
         }
     }

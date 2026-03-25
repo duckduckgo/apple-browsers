@@ -92,20 +92,16 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// Publisher that emits when contextual onboarding is completed
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
 
-    /// Initializes the coordinator with the necessary dependencies.
-    ///
-    /// - Parameters:
-    ///   - freemiumDBPUserStateManager: Manages the user's state in the Freemium DBP system.
-    ///   - freemiumDBPFeature: The feature that determines the availability of DBP.
-    ///   - freemiumDBPPresenter: The presenter used to show the Freemium DBP UI. Defaults to `DefaultFreemiumDBPPresenter`.
-    ///   - notificationCenter: The `NotificationCenter` instance used when subscribing to notifications
-    ///   - contextualOnboardingPublisher: Publisher that emits when contextual onboarding is completed
+    /// Provides the current date. In debug/review builds, may return a simulated date for testing.
+    private let dateProvider: () -> Date
+
     init(freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          notificationCenter: NotificationCenter = .default,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
-         contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Empty<Bool, Never>().eraseToAnyPublisher()) {
+         contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Empty<Bool, Never>().eraseToAnyPublisher(),
+         dateProvider: @escaping () -> Date = Date.init) {
 
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.freemiumDBPFeature = freemiumDBPFeature
@@ -113,6 +109,7 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
+        self.dateProvider = dateProvider
 
         isFeatureAvailable = freemiumDBPFeature.isAvailable
         isDismissed = freemiumDBPUserStateManager.didDismissHomePagePromotion
@@ -128,7 +125,7 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
             isDisplayWindowExpired = false
             return
         }
-        isDisplayWindowExpired = Date().timeIntervalSince(startDate) >= Constants.displayWindowDuration
+        isDisplayWindowExpired = dateProvider().timeIntervalSince(startDate) >= Constants.displayWindowDuration
     }
 
     @MainActor

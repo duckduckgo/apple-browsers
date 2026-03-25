@@ -1027,9 +1027,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: privacyConfigurationManager,
                                                        subscriptionManager: subscriptionManager,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
+        let freemiumDateProvider: () -> Date
+        if StandardApplicationBuildType().isDebugBuild || StandardApplicationBuildType().isReviewBuild {
+            let debugSimulatedDateStore = DebugSimulatedDateStore(keyValueStore: keyValueStore)
+            freemiumDateProvider = { debugSimulatedDateStore.simulatedDate ?? Date() }
+        } else {
+            freemiumDateProvider = Date.init
+        }
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                                                   freemiumDBPFeature: freemiumDBPFeature,
-                                                                                  contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher())
+                                                                                  contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
+                                                                                  dateProvider: freemiumDateProvider)
 
         brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager, store: BrokenSitePromptLimiterStore())
 #if DEBUG

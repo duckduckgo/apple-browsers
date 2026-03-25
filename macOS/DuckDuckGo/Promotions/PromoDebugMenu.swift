@@ -141,6 +141,14 @@ final class PromoDebugMenu: NSMenu {
         advanceDayItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.advanceSimulatedDate1Day)
         addItem(advanceDayItem)
 
+        let advanceWeekItem = NSMenuItem(title: "Advance Simulated Date by 1 Week", action: #selector(advanceSimulatedDateByWeek), keyEquivalent: "")
+        advanceWeekItem.target = self
+        addItem(advanceWeekItem)
+
+        let advanceMonthItem = NSMenuItem(title: "Advance Simulated Date by 1 Month", action: #selector(advanceSimulatedDateByMonth), keyEquivalent: "")
+        advanceMonthItem.target = self
+        addItem(advanceMonthItem)
+
         let resetDateItem = NSMenuItem(title: "Reset Simulated Date", action: #selector(resetSimulatedDate), keyEquivalent: "")
         resetDateItem.target = self
         resetDateItem.isEnabled = debugSimulatedDateStore.simulatedDate != nil
@@ -226,6 +234,14 @@ final class PromoDebugMenu: NSMenu {
 
     @objc private func advanceSimulatedDateByDay() {
         advanceSimulatedDate(by: .day)
+    }
+
+    @objc private func advanceSimulatedDateByWeek() {
+        advanceSimulatedDate(by: .days(7))
+    }
+
+    @objc private func advanceSimulatedDateByMonth() {
+        advanceSimulatedDate(by: .days(30))
     }
 
     @objc private func advanceSimulatedDateByHour() {

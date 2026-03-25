@@ -127,6 +127,7 @@ final class MainViewController: NSViewController {
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences = NSApp.delegateTyped.cookiePopupProtectionPreferences,
          aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences,
          aboutPreferences: AboutPreferences = NSApp.delegateTyped.aboutPreferences,
+         dockPreferences: DockPreferencesModel = NSApp.delegateTyped.dockPreferences,
          accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
          duckPlayer: DuckPlayer = NSApp.delegateTyped.duckPlayer,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -226,6 +227,7 @@ final class MainViewController: NSViewController {
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             aiChatPreferences: aiChatPreferences,
             aboutPreferences: aboutPreferences,
+            dockPreferences: dockPreferences,
             accessibilityPreferences: accessibilityPreferences,
             duckPlayer: duckPlayer,
             pinningManager: pinningManager

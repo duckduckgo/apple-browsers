@@ -337,12 +337,22 @@ final class TabViewCell: UICollectionViewCell {
 
     func closeTab() {
         guard let tab = tab else { return }
+        fireTabCloseSegmentationPixel()
         self.delegate?.deleteTab(tab: tab)
     }
 
     @IBAction func deleteTab() {
         Pixel.fire(pixel: .tabSwitcherClickCloseTab)
         closeTab()
+    }
+
+    private func fireTabCloseSegmentationPixel() {
+        guard let tab else { return }
+        if tab.isAITab {
+            DailyPixel.fireDailyAndCount(pixel: .tabManagerCloseAITab)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .tabManagerCloseWebTab)
+        }
     }
 
     func updateSelectionIndicator(_ image: UIImageView) {

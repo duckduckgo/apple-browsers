@@ -171,7 +171,7 @@ extension SyncSettingsView {
         } header: {
             Text(UserText.recoverySectionHeader)
         } footer: {
-            Text(UserText.saveRecoveryPDFFooter)
+            Text(.init("\(UserText.saveRecoveryPDFFooter)"))
         }
     }
 

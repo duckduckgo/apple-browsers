@@ -49,6 +49,14 @@ protocol ShortcutItemHandling {
 }
 
 @MainActor
+protocol UserActivityHandling {
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool
+
+}
+
+@MainActor
 final class MainCoordinator {
 
     let controller: MainViewController
@@ -63,10 +71,13 @@ final class MainCoordinator {
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let wideEvent: WideEventManaging
+    private let voiceSessionStateManager: VoiceSessionStateProviding
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var dataImportUserActivityHandler: DataImportUserActivityHandling?
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellables = Set<AnyCancellable>()
@@ -112,6 +123,8 @@ final class MainCoordinator {
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         self.wideEvent = wideEvent
+        self.voiceSessionStateManager = VoiceSessionStateManager()
+        self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
@@ -616,11 +629,37 @@ extension MainCoordinator: ShortcutItemHandling {
 
 }
 
+extension MainCoordinator: UserActivityHandling {
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
+        switch userActivity.activityType {
+        case DataImportUserActivityHandler.browserKitImportActivityType:
+            if dataImportUserActivityHandler == nil {
+                dataImportUserActivityHandler = makeDataImportUserActivityHandler()
+            }
+            return dataImportUserActivityHandler?.handle(userActivity) ?? false
+        default:
+            Logger.general.debug("Unhandled user activity type: \(userActivity.activityType)")
+            return false
+        }
+    }
+
+    private func makeDataImportUserActivityHandler() -> DataImportUserActivityHandler {
+        DataImportUserActivityHandler()
+    }
+
+}
+
 // MARK: - IdleReturnLaunchDelegate
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn() {
+        if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+            return
+        }
+
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)

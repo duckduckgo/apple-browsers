@@ -81608,6 +81608,186 @@
         }
       }
     },
+    "preferences.add-to-dock.instructions" : {
+      "comment" : "Instructions for adding the app to the Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erhalte schnellen Zugang zum geschützten Browsen. DuckDuckGo zum Dock hinzufügen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing. Add DuckDuckGo to your Dock."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtén acceso rápido a la navegación protegida. Añade DuckDuckGo a tu Dock."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bénéficiez d’un accès rapide à la navigation protégée. Ajoutez DuckDuckGo à votre Dock."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi rapidamente alla navigazione protetta. Aggiungi DuckDuckGo al tuo dock."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krijg snel toegang tot beschermd browsen. DuckDuckGo toevoegen aan je dock."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzyskaj szybki dostęp do chronionego przeglądania. Dodaj DuckDuckGo do Docka."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém acesso rápido à navegação protegida. Adiciona o DuckDuckGo à tua Dock."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защищенный браузер всегда под рукой. Просто добавьте DuckDuckGo на док-панель."
+          }
+        }
+      }
+    },
+    "preferences.add-to-dock.instructions-caption" : {
+      "comment" : "Instructions for adding the app to the Dock.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte die Strg-Taste gedrückt und klicke auf das DuckDuckGo-Symbol, dann wähle Optionen > Im Dock behalten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold control and click the DuckDuckGo icon, then choose Options > Keep in Dock."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado Control y haz clic en el icono de DuckDuckGo; a continuación, selecciona Opciones > Mantener en el Dock."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenez la touche Contrôle enfoncée et cliquez sur l'icône DuckDuckGo, puis choisissez Options > Garder dans le Dock."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto Control e fai clic sull'icona DuckDuckGo, quindi scegli Opzioni > Mantieni nel dock."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd de Control-toets ingedrukt en klik op het DuckDuckGo-pictogram, kies dan Opties > In Dock houden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj klawisz Ctrl i kliknij ikonę DuckDuckGo, a następnie wybierz Opcje > Zatrzymaj w Docku."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém premida a tecla Control e clica no ícone do DuckDuckGo e, de seguida, escolhe Opções > Manter na Dock."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживая клавишу control, нажмите на значок DuckDuckGo и выберите Параметры > Держать на док-панели."
+          }
+        }
+      }
+    },
+    "preferences.add-to-dock.instructions-caption.markdown" : {
+      "comment" : "Instructions for adding the app to the Dock. Contains markdown for bold text.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte die Steuerung gedrückt und klicke auf das DuckDuckGo-Symbol und wähle dann **Optionen > Im Dock belassen**."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold control and click the DuckDuckGo icon, then choose **Options > Keep in Dock**."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado Control y haz clic en el icono de DuckDuckGo; a continuación, selecciona **Opciones > Mantener en el Dock**."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenez la touche Contrôle enfoncée et cliquez sur l'icône DuckDuckGo, puis choisissez **Options > Garder dans le Dock**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto Control e fai clic sull'icona di DuckDuckGo, quindi scegli **Opzioni > Mantieni nel dock**."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd Control ingedrukt en klik op het DuckDuckGo-pictogram en kies vervolgens **Opties > In Dock bewaren**."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj klawisz Control i kliknij ikonę DuckDuckGo, a następnie wybierz **Opcje > Zachowaj w Docku**."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém premida a tecla Control e clica no ícone do DuckDuckGo e, de seguida, escolhe **Opções > Manter na Dock**."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживая клавишу control, нажмите на значок DuckDuckGo и выберите **Параметры > Держать на док-панели**."
+          }
+        }
+      }
+    },
     "preferences.aiFeatures" : {
       "comment" : "Title of the option to show AI features in preferences",
       "extractionState" : "extracted_with_value",

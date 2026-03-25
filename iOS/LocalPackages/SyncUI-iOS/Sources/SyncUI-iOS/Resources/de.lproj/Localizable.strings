@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Deine Daten auf diesem Gerät werden automatisch wiederhergestellt, wenn du die App neu installierst.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Wenn du die DuckDuckGo-App neu installierst, werden wir dich fragen, ob du deine Daten auf diesem Gerät wiederherstellen möchtest.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Setze deine Sync & Backup-Sitzung fort, um deine Lesezeichen, Passwörter und mehr wiederherzustellen, oder fahre mit einer neuen Einrichtung fort.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "An";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Deine Daten werden automatisch wiederhergestellt, wenn du die App neu installierst. Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Bei App-Neuinstallation wiederherstellen";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Wiederherstellungs-PDF speichern";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Wenn du dein Gerät verlierst, benötigst du diesen Wiederherstellungscode, um deine synchronisierten Daten wiederherzustellen.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Verwende diesen Code, um deine Daten wiederherzustellen, wenn du den Zugriff auf dieses Gerät verlierst. Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Gib den Textcode manuell ein";

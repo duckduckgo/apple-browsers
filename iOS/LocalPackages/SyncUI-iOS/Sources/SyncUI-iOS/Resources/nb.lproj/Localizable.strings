@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Gjenopprett dataene dine automatisk på denne enheten hvis du installerer appen på nytt.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Hvis du installerer DuckDuckGo-appen på nytt, spør vi deg om du vil gjenopprette dataene dine på denne enheten.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Gjenoppta Sync & Backup-økten for å gjenopprette bokmerker, passord og lignende, eller fortsett med et nytt oppsett.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "På";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Gjenopprett dataene dine automatisk hvis du installerer appen på nytt. Sync & Backup-data kan ikke gjenopprettes etter 18 måneder med inaktivitet.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Gjenopprett ved ny appinstallasjon";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Lagre gjenopprettings-PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Hvis du mister enheten din, trenger du denne gjenopprettingskoden til å gjenopprette de synkroniserte dataene dine.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Bruk denne koden til å gjenopprette dataene dine hvis du mister tilgang til enheten. Sync & Backup-data kan ikke gjenopprettes etter 18 måneder med inaktivitet. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Skriv inn tekstkoden manuelt";

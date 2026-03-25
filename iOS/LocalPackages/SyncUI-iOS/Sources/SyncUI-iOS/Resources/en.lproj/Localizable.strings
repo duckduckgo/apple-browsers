@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automatically restore your data on this device if you reinstall the app.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or continue with a new setup.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "On";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Restore your data automatically if you reinstall the app. Sync & Backup data can’t be recovered after 18 months of inactivity.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Restore on App Reinstall";
@@ -229,8 +229,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Save Recovery PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "If you lose your device, you will need this recovery code to restore your synced data.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Use this code to restore your data if you lose access to this device. Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn more](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Enter Text Code Manually";

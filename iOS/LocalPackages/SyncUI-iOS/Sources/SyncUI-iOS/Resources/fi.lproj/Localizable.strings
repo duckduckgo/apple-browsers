@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Palauta laitteen tiedot automaattisesti, jos asennat sovelluksen uudelleen.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Jos asennat DuckDuckGo-sovelluksen uudelleen, kysymme, haluatko palauttaa laitteen tiedot.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Jatka Sync & Backup -istuntoa, niin voit palauttaa kirjanmerkit, salasanat ja muut tiedot, tai jatka uudella määrityksellä.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Päällä";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Palauta tietosi automaattisesti, jos asennat sovelluksen uudelleen. Sync & Backup -tietoja ei voida palauttaa 18 kuukauden toimettomuuden jälkeen.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Palauta sovelluksen uudelleenasennuksen yhteydessä";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Tallenna palautuksen PDF-tiedosto";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Jos kadotat laitteesi, tarvitset tämän palautuskoodin palauttaaksesi synkronoidut tiedot.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Käytä tätä koodia tietojesi palauttamiseen, jos menetät pääsyn tähän laitteeseen. Sync & Backup -tietoja ei voida palauttaa 18 kuukauden toimettomuuden jälkeen. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Kirjoita tekstikoodi manuaalisesti";

@@ -141,7 +141,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private enum TextFieldMaskGradientSize {
-        static let width: CGFloat = 6
+        static let width: CGFloat = 32
         static let trailingSpace: CGFloat = 0
         static let trailingSpaceWithButton: CGFloat = 20
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
@@ -328,21 +328,22 @@ final class TabBarItemCellView: NSView {
         closeButton.toolTip = UserText.closeTab
         closeButton.setAccessibilityLabel(UserText.closeTab)
         closeButton.setAccessibilityIdentifier("TabBarViewItem.closeButton")
-        closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
+        closeButton.mustAnimateOnMouseOver = displaysTabsAnimations
 
         permissionButton.setAccessibilityIdentifier("TabBarViewItem.permissionButton")
         // Accessibility label and toolTip are updated in `updateUsedPermissions`
-        permissionButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        permissionButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
         audioButton.setAccessibilityIdentifier("TabBarViewItem.muteButton")
         // Accessibility Title and toolTip are updated in `updateAudioPlayState`
-        audioButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        audioButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
         crashIndicatorButton.setAccessibilityIdentifier("TabBarViewItem.crashButton")
         crashIndicatorButton.toolTip = UserText.tabCrashPopoverTitle
         crashIndicatorButton.setAccessibilityTitle(UserText.tabCrashPopoverTitle)
         crashIndicatorButton.setAccessibilityLabel(UserText.tabCrashPopoverMessage)
-        crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
         addSubview(faviconView)
         addSubview(crashIndicatorButton)
@@ -1063,10 +1064,13 @@ final class TabBarViewItem: NSCollectionViewItem {
             CATransaction.commit()
         }
 
+        let tabStyleProvider = theme.tabStyleProvider
+
         withoutAnimation {
             if displaysTabsAnimations {
                 cell.mouseOverView.backgroundColor = nil
                 cell.mouseOverView.mouseOverColor = nil
+                cell.closeButton.cornerRadius = isSelected ? tabStyleProvider.tabButtonActionsSelectedCornerRadius : tabStyleProvider.tabButtonActionsHighlightedCornerRadius
 
             } else if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil

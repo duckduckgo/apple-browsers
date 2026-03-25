@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Ripristina automaticamente i tuoi dati su questo dispositivo se reinstalli l'app.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Se reinstalli l'app DuckDuckGo, ti chiederemo se desideri ripristinare i tuoi dati su questo dispositivo.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Riprendi la tua sessione di Sync & Backup per ripristinare segnalibri, password e altro, oppure continua con una nuova configurazione.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "On";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Ripristina automaticamente i tuoi dati se reinstalli l'app. I dati di Sync & Backup non possono essere recuperati dopo 18 mesi di inattività.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Ripristino alla reinstallazione dell'app";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Salva PDF di recupero";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Se perdi il dispositivo, avrai bisogno di questo codice di recupero per ripristinare i dati sincronizzati.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Usa questo codice per ripristinare i tuoi dati se perdi l'accesso a questo dispositivo. I dati Sync & Backup non possono essere recuperati dopo 18 mesi di inattività. [Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Inserisci manualmente il codice SMS";

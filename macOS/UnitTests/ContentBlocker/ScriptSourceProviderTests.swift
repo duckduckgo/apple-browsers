@@ -100,7 +100,8 @@ final class ScriptSourceProviderTests: XCTestCase {
             autoconsentManagement: AutoconsentManagement(),
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
-            webExtensionAvailability: nil
+            webExtensionAvailability: nil,
+            dockCustomization: DockCustomizerMock()
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

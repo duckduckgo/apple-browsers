@@ -471,8 +471,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     // MARK: - Action Handlers
 
     private func handleMicrophoneButtonTapped() {
+        guard view.window != nil, view.superview?.isHidden != true else { return }
         SpeechRecognizer.requestMicAccess { [weak self] permission in
-            guard let self else { return }
+            guard let self,
+                  self.view.window != nil,
+                  self.view.superview?.isHidden != true else { return }
             if permission {
                 let preferredTarget: VoiceSearchTarget? = (self.switchBarHandler.currentToggleState == .aiChat) ? .AIChat : .SERP
                 self.showVoiceSearch(preferredTarget: preferredTarget)

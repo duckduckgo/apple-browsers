@@ -110,16 +110,19 @@ extension MainViewController {
 
     private func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
         let height = coordinator.omnibarEditingHeight()
+        viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = height
-            self.viewCoordinator.superview.layoutIfNeeded()
+            self.viewCoordinator.navigationBarContainer.layoutIfNeeded()
         }
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
         updateFloatingSubmitVisibility()
     }
 
     private func handleAITabModeChange(_: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        updateUnifiedInputContentVisibility(for: coordinator)
+        UIView.performWithoutAnimation {
+            updateUnifiedInputContentVisibility(for: coordinator)
+            viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+        }
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
 
         if keyboardShowing,
@@ -184,6 +187,7 @@ extension MainViewController {
 
         if tab.isAITab {
             viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            let hadSubmittedPrompt = coordinator.hasSubmittedPrompt
             if let userScript = tab.userScripts?.aiChatUserScript {
                 let hasExistingChat = tab.url?.duckAIChatID != nil
                 coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
@@ -200,7 +204,14 @@ extension MainViewController {
             coordinator.deactivateToOmnibar()
             viewCoordinator.showAITabChrome()
             if !coordinator.isAITabState {
+                let hasExistingChat = tab.url?.duckAIChatID != nil
                 coordinator.showCollapsed()
+                if !hasExistingChat && !hadSubmittedPrompt {
+                    DispatchQueue.main.async { [weak coordinator] in
+                        guard let coordinator, coordinator.isAITabState else { return }
+                        coordinator.showExpanded(inputMode: .aiChat)
+                    }
+                }
             }
             updateUnifiedInputContentVisibility(for: coordinator)
             refreshAIChatTabChatHeaderSubscriptionState()
@@ -503,7 +514,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapNewChat() {
         unifiedToggleInputCoordinator?.startNewChat()
-        unifiedToggleInputCoordinator?.showCollapsed()
+        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
         currentTab?.submitStartChatAction()
     }
 

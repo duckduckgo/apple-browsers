@@ -574,15 +574,6 @@ final class TabBarItemCellView: NSView {
     func startSpinnerIfNeeded(isLoading: Bool, error: WKError?, url: URL?) {
         faviconView.startSpinnerIfNeeded(isLoading: isLoading, url: url, error: error)
     }
-
-    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool) {
-        guard displaysTabsAnimations else {
-            return
-        }
-
-        backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
-        closeButton.animator().isHidden = !isMouseOver
-    }
 }
 
 extension TabBarItemCellView: ThemeUpdateListening {
@@ -1545,7 +1536,7 @@ extension TabBarViewItem: MouseClickViewDelegate {
         delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
         self.isMouseOver = isMouseOver
 
-        cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+        cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
 
         view.needsLayout = true
         eventMonitor = isMouseOver ? NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in

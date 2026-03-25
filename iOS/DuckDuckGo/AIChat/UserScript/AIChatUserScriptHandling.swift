@@ -275,15 +275,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
             let decodedStatus = try JSONDecoder().decode(AIChatStatus.self, from: jsonData)
-            Logger.aiChat.debug("[AttachUsage] responseState status=\(decodedStatus.status.rawValue) attachments=\(String(describing: decodedStatus.attachments))")
             inputBoxHandler?.aiChatStatus = decodedStatus.status
             if let attachments = decodedStatus.attachments {
-                Logger.aiChat.debug("[AttachUsage] updating usage: images=\(attachments.imagesUsed) files=\(attachments.filesUsed) fileBytes=\(attachments.fileSizeBytesUsed)")
                 inputBoxHandler?.attachmentUsage = attachments
             }
             return nil
         } catch {
-            Logger.aiChat.debug("[AttachUsage] decode error: \(error)")
             return nil
         }
     }

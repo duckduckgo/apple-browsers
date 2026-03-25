@@ -258,7 +258,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func syncChipVisibility(hasExistingChat: Bool) {
         let shouldHide = hasExistingChat || hasSubmittedPrompt
-        os_log(.debug, "[AttachUsage] syncChipVisibility: hasExistingChat=%{public}@ hasSubmittedPrompt=%{public}@ → shouldHide=%{public}@", "\(hasExistingChat)", "\(hasSubmittedPrompt)", "\(shouldHide)")
         guard hasSubmittedPrompt != shouldHide else { return }
         hasSubmittedPrompt = shouldHide
         updateModelChipVisibility()
@@ -803,7 +802,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateImageButtonVisibility() {
         let supportsImages = selectedModelSupportsImageUpload
-        os_log(.debug, "[AttachUsage] updateImageButtonVisibility: supportsUpload=%{public}@ conversationLimitReached=%{public}@ → hidden=%{public}@", "\(selectedModelSupportsImageUpload)", "\(isConversationImageLimitReached)", "\(!supportsImages)")
         viewController.isImageButtonHidden = !supportsImages
         if !supportsImages {
             clearAttachments()
@@ -853,7 +851,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func updateModelChipVisibility() {
-        os_log(.debug, "[AttachUsage] updateModelChipVisibility: hasSubmittedPrompt=%{public}@ → chipHidden=%{public}@", "\(hasSubmittedPrompt)", "\(hasSubmittedPrompt)")
         viewController.isModelChipHidden = hasSubmittedPrompt
     }
 

@@ -67308,7 +67308,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "To allow notifications, first enable them in\n"
+            "value" : "To allow notifications, first enable them in"
           }
         },
         "es" : {
@@ -68328,7 +68328,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "System notifications disabled. Turn them on in\n"
+            "value" : "System notifications disabled. Turn them on in"
           }
         },
         "es" : {

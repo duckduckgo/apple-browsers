@@ -581,7 +581,7 @@ final class TabBarItemCellView: NSView {
         }
 
         backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
-        closeButton.animator().isHidden = !isMouseOver
+        closeButton.animator().isHidden = isMouseOver && (widthStage.isCloseButtonHidden && NSApp.isCommandPressed)
     }
 }
 

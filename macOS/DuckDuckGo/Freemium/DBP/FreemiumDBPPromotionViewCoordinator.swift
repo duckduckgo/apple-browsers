@@ -81,7 +81,7 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     private let freemiumDBPPresenter: FreemiumDBPPresenter
 
     /// A set of cancellables for managing Combine subscriptions.
-    private var cancellables = Set<AnyCancellable>()
+    var cancellables = Set<AnyCancellable>()
 
     /// The `NotificationCenter` instance used when subscribing to notifications
     private let notificationCenter: NotificationCenter

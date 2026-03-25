@@ -160,8 +160,19 @@ extension NewTabPageActionsManager {
             dockCustomization: dockCustomization
         )
         if let promoService {
-            let freemiumDBPDelegate = FreemiumDBPPromoDelegate(coordinator: freemiumDBPPromotionViewCoordinator)
-            promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: freemiumDBPDelegate)
+            // Delay freemium delegate registration until feature availability has settled.
+            // PromoService buffers triggers for up to 1s waiting for delegates, so if the
+            // async product availability check resolves within that window, the buffered
+            // .newTabPageAppeared trigger will be evaluated with correct eligibility.
+            let coordinator = freemiumDBPPromotionViewCoordinator
+            coordinator.$isFeatureAvailable
+                .first(where: { $0 })
+                .sink { _ in
+                    let delegate = FreemiumDBPPromoDelegate(coordinator: coordinator)
+                    promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: delegate)
+                }
+                .store(in: &coordinator.cancellables)
+
             let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
             promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)
         }

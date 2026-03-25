@@ -97,7 +97,7 @@ final class AIChatSuggestionRowView: NSView {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.bezelStyle = .shadowlessSquare
         button.isBordered = false
-        button.image = DesignSystemImages.Glyphs.Size16.trash
+        button.image = DesignSystemImages.Glyphs.Size16.fire
         button.imageScaling = .scaleProportionallyDown
         button.imagePosition = .imageOnly
         button.setButtonType(.momentaryPushIn)

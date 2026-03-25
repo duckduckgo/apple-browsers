@@ -54,6 +54,10 @@ class WebCacheManagerTests: XCTestCase {
 
     func test_WhenClearingDefaultPersistence_ThenLeaveFireproofedCookies() async {
         fireproofing = MockFireproofing(domains: ["example.com"])
+        fireproofing.isAllowedCookieDomainHandler = { domain in
+            domain == "example.com" || domain == ".example.com"
+        }
+        fireproofing.isAllowedFireproofDomainHandler = { $0 == "example.com" }
         let cookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
             .make(name: "Test1", value: "Value", domain: "example.com"),
             .make(name: "Test2", value: "Value", domain: ".example.com"),
@@ -83,6 +87,10 @@ class WebCacheManagerTests: XCTestCase {
          dataStoreIDManager = DataStoreIDManager(store: keyValueStore)
 
          fireproofing = MockFireproofing(domains: ["example.com"])
+         fireproofing.isAllowedCookieDomainHandler = { domain in
+             domain == "example.com" || domain == ".example.com"
+         }
+         fireproofing.isAllowedFireproofDomainHandler = { $0 == "example.com" }
 
          MigratableCookieStorage.addCookies([
              .make(name: "Test1", value: "Value", domain: "example.com"),
@@ -192,6 +200,8 @@ class WebCacheManagerTests: XCTestCase {
 
     func test_WhenClearingForDomains_ThenFireproofedDomainsAreNotCleared() async {
         fireproofing = MockFireproofing(domains: ["example.com"])
+        fireproofing.isAllowedCookieDomainHandler = { $0 == "example.com" }
+        fireproofing.isAllowedFireproofDomainHandler = { $0 == "example.com" }
         let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
             .make(name: "Cookie1", value: "Value", domain: "example.com"),
             .make(name: "Cookie2", value: "Value", domain: "facebook.com"),
@@ -223,6 +233,10 @@ class WebCacheManagerTests: XCTestCase {
     func test_WhenClearingForSubdomain_AndRootIsFireproofed_ThenDataIsProtected() async {
         // Fireproof amazon.com
         fireproofing = MockFireproofing(domains: ["amazon.com"])
+        fireproofing.isAllowedCookieDomainHandler = { domain in
+            domain == "amazon.com" || domain == ".amazon.com"
+        }
+        fireproofing.isAllowedFireproofDomainHandler = { $0 == "amazon.com" }
         let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
             .make(name: "AmazonCookie", value: "Value", domain: "amazon.com"),
             .make(name: "MailAmazonCookie", value: "Value", domain: ".amazon.com"),

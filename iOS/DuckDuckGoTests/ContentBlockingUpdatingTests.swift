@@ -37,8 +37,10 @@ class FireproofingMock: Fireproofing {
     func addToAllowed(domain: String) {}
     
     func remove(domain: String) {}
-    
+
     func clearAll() {}
+
+    func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool { false }
 }
 
 final class ContentBlockingUpdatingTests: XCTestCase {

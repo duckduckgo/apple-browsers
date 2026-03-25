@@ -33,6 +33,9 @@ public protocol Fireproofing {
     func remove(domain: String)
     func clearAll()
 
+    @discardableResult
+    func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool
+
 }
 
 // This class is not final because we override allowed domains in WebCacheManagerTests
@@ -40,13 +43,12 @@ public class UserDefaultsFireproofing: Fireproofing {
 
     enum ETLDPlus1Key: String {
         case allowedDomains = "com.duckduckgo.ios.fireproofing.etldplus1.allowed-domains"
+        case migrationDone = "com.duckduckgo.ios.fireproofing.etldplus1.migration-done"
     }
 
     public struct Notifications {
         public static let loginDetectionStateChanged = Foundation.Notification.Name("com.duckduckgo.ios.PreserveLogins.loginDetectionStateChanged")
     }
-
-    public init() {}
 
     @UserDefaultsWrapper(key: .fireproofingAllowedDomains, defaultValue: [])
     private(set) public var allowedDomains: [String]
@@ -126,6 +128,44 @@ public class UserDefaultsFireproofing: Fireproofing {
             return activeAllowedDomainsIncludingDuckDuckGo.contains(normalized)
         }
         return activeAllowedDomainsIncludingDuckDuckGo.contains(domain)
+    }
+
+    // MARK: - Migration
+
+    private var isETLDPlus1MigrationDone: Bool {
+        get { keyValueStore.object(forKey: ETLDPlus1Key.migrationDone.rawValue) as? Bool ?? false }
+        set { keyValueStore.set(newValue, forKey: ETLDPlus1Key.migrationDone.rawValue) }
+    }
+
+    @discardableResult
+    public func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool {
+        guard !isETLDPlus1MigrationDone else { return false }
+
+        let existing = allowedDomains
+        guard !existing.isEmpty else {
+            isETLDPlus1MigrationDone = true
+            return false
+        }
+
+        Pixel.fire(pixel: .fireproofingETLDPlus1MigrationStart)
+
+        var normalized = Set<String>()
+        for domain in existing {
+            if let etldPlus1 = tld.eTLDplus1(domain) {
+                normalized.insert(etldPlus1)
+            }
+        }
+
+        etldPlus1AllowedDomains = Array(normalized)
+        isETLDPlus1MigrationDone = true
+
+        if normalized.isEmpty {
+            Pixel.fire(pixel: .fireproofingETLDPlus1MigrationFailed)
+        } else {
+            Pixel.fire(pixel: .fireproofingETLDPlus1MigrationSuccess)
+        }
+
+        return true
     }
 
 }

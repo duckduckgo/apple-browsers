@@ -80,6 +80,9 @@ struct Launching: LaunchingHandling {
         // Handles one-time application setup during launch
         try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
 
+        // Migrate existing fireproofed domains to eTLD+1 store
+        fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
+
         // Set idleReturnNewUser at launch (before statistics load) so new vs existing users get the correct after-inactivity default.
         IdleReturnCohort.setCohortIfNeeded(
             storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),

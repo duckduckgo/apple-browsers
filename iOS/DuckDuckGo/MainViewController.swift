@@ -3572,7 +3572,12 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onDidBeginEditing() { }
-    func onDidEndEditing() { }
+    func onDidEndEditing() {
+        // Restore the tab's committed mode when editing ends without submission (iPad).
+        if let tabMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode {
+            viewCoordinator.omniBar.setSelectedTextEntryMode(tabMode)
+        }
+    }
 
     // MARK: - iPad Expanded Omnibar
 

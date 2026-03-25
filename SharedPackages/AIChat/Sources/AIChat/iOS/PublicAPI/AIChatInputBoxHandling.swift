@@ -71,5 +71,12 @@ public struct AIChatAttachmentUsage: Codable, Equatable {
         self.filesUsed = filesUsed
         self.fileSizeBytesUsed = fileSizeBytesUsed
     }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        imagesUsed = try container.decodeIfPresent(Int.self, forKey: .imagesUsed) ?? 0
+        filesUsed = try container.decodeIfPresent(Int.self, forKey: .filesUsed) ?? 0
+        fileSizeBytesUsed = try container.decodeIfPresent(Int.self, forKey: .fileSizeBytesUsed) ?? 0
+    }
 }
 #endif

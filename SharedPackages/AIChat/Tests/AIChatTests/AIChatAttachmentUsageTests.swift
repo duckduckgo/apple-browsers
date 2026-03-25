@@ -78,6 +78,39 @@ final class AIChatAttachmentUsageTests: XCTestCase {
         XCTAssertEqual(status.attachments?.imagesUsed, 2)
     }
 
+    func testWhenAttachmentsHasPartialFieldsThenMissingFieldsDefaultToZero() throws {
+        let json = """
+        {
+            "status": "ready",
+            "attachments": {
+                "imagesUsed": 3
+            }
+        }
+        """.data(using: .utf8)!
+
+        let status = try JSONDecoder().decode(AIChatStatus.self, from: json)
+        XCTAssertEqual(status.status, .ready)
+        XCTAssertEqual(status.attachments?.imagesUsed, 3)
+        XCTAssertEqual(status.attachments?.filesUsed, 0)
+        XCTAssertEqual(status.attachments?.fileSizeBytesUsed, 0)
+    }
+
+    func testWhenAttachmentsIsEmptyObjectThenAllFieldsDefaultToZero() throws {
+        let json = """
+        {
+            "status": "ready",
+            "attachments": {}
+        }
+        """.data(using: .utf8)!
+
+        let status = try JSONDecoder().decode(AIChatStatus.self, from: json)
+        XCTAssertEqual(status.status, .ready)
+        XCTAssertNotNil(status.attachments)
+        XCTAssertEqual(status.attachments?.imagesUsed, 0)
+        XCTAssertEqual(status.attachments?.filesUsed, 0)
+        XCTAssertEqual(status.attachments?.fileSizeBytesUsed, 0)
+    }
+
     func testWhenAttachmentUsageValuesMatchThenTheyAreEqual() {
         let a = AIChatAttachmentUsage(imagesUsed: 3, filesUsed: 1, fileSizeBytesUsed: 100)
         let b = AIChatAttachmentUsage(imagesUsed: 3, filesUsed: 1, fileSizeBytesUsed: 100)

@@ -291,8 +291,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
         guard editingStateViewController == nil else { return }
 
-        let switchBarHandler = createSwitchBarHandler(for: textField)
-        switchBarHandler.setToggleState(textEntryMode)
+        let switchBarHandler = createSwitchBarHandler(for: textField, initialToggleState: textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let escapeHatch = omniDelegate?.escapeHatchForEditingState()
@@ -321,10 +320,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         present(editingStateViewController, animated: animated)
     }
 
-    private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
+    private func createSwitchBarHandler(for textField: UITextField, initialToggleState: TextEntryMode? = nil) -> SwitchBarHandler {
         let isFireTab = omniDelegate?.isCurrentTabFireTab() ?? false
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
                                                 aiChatSettings: dependencies.aiChatSettings,
+                                                initialToggleState: initialToggleState,
                                                 sessionStateMetrics: sessionStateMetrics,
                                                 isFireTab: isFireTab)
 

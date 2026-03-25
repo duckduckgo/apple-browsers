@@ -182,6 +182,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          aiChatSettings: AIChatSettingsProvider,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
+         initialToggleState: TextEntryMode? = nil,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
@@ -198,7 +199,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.voiceShortcutFeature = voiceShortcutFeature
         self.isFireTab = isFireTab
 
-        applyDefaultOmnibarMode()
+        applyDefaultOmnibarMode(override: initialToggleState)
 
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
@@ -322,8 +323,8 @@ final class SwitchBarHandler: SwitchBarHandling {
         toggleModeStorage.save(currentToggleState)
     }
 
-    private func applyDefaultOmnibarMode() {
-        currentToggleState = aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
+    private func applyDefaultOmnibarMode(override: TextEntryMode? = nil) {
+        currentToggleState = override ?? aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
             toggleModeStorage.restore()
         }
     }

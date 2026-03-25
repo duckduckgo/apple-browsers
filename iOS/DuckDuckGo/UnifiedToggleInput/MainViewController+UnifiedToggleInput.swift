@@ -385,7 +385,7 @@ extension MainViewController {
         case .showCollapsed:
             viewCoordinator.navigationBarContainer.backgroundColor = nil
             viewCoordinator.unifiedInputContentContainer?.backgroundColor = .clear
-            if let webView = currentTab?.webView {
+            if unifiedToggleInputCoordinator?.isAITabState == true, let webView = currentTab?.webView {
                 webView.backgroundColor = nil
                 webView.scrollView.backgroundColor = nil
                 webView.underPageBackgroundColor = nil
@@ -470,7 +470,7 @@ extension MainViewController {
     private func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
         viewCoordinator.navigationBarContainer.backgroundColor = nil
         viewCoordinator.unifiedInputContentContainer?.backgroundColor = .clear
-        if let webView = currentTab?.webView {
+        if coordinator.isAITabState, let webView = currentTab?.webView {
             webView.backgroundColor = nil
             webView.scrollView.backgroundColor = nil
             webView.underPageBackgroundColor = nil

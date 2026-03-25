@@ -28,7 +28,7 @@ struct PermissionCenterView: View {
     @ObservedObject var viewModel: PermissionCenterViewModel
 
     private enum PopoverWidth {
-        static let base: CGFloat = 360
+        static let base: CGFloat = 400
         static let withExternalApps: CGFloat = 380
         static let withPopups: CGFloat = 450
 

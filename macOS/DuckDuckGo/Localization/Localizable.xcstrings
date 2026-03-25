@@ -67301,55 +67301,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Systembenachrichtigungen sind deaktiviert. Schalte sie ein unter"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "System notifications disabled. Turn them on in"
+            "value" : "To allow notifications, first enable them in\n"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Notificaciones del sistema desactivadas. Actívalas en"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Notifications système désactivées. Activez-les dans"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Le notifiche di sistema sono disabilitate. Attivale in"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Systeemmeldingen zijn uitgeschakeld. Zet ze aan in"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Powiadomienia systemowe są wyłączone. Włącz je w"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Notificações do sistema desativadas. Ativa-as em"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Системные уведомления отключены. Включите их в разделе"
           }
         }
@@ -67421,55 +67421,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Systemeinstellungen → Benachrichtigungen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "System Settings → Notifications"
+            "value" : "System Settings → Notifications → DuckDuckGo"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Configuración del sistema → Notificaciones"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Paramètres système → Notifications"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Impostazioni di sistema → Notifiche"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Systeeminstellingen → Meldingen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ustawienia systemowe → Powiadomienia"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Definições → Notificações do Sistema"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Системные настройки → Уведомления"
           }
         }
@@ -68261,55 +68261,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Systembenachrichtigungen sind deaktiviert. Aktiviere sie zuerst in"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "System notifications are disabled. First, turn them on in"
+            "value" : "First, you need to turn on browser notifications in"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Las notificaciones del sistema están desactivadas. Primero, actívalas en"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Les notifications système sont désactivées. D'abord, activez-les dans"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Le notifiche di sistema sono disattivate. Innanzitutto, attivale in"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Systeemmeldingen zijn uitgeschakeld. Zet ze eerst aan in"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Powiadomienia systemowe są wyłączone. Najpierw włącz je w sekcji"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "As notificações do sistema estão desativadas. Primeiro, ativa-as em"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Системные уведомления отключены. Сначала включите их в разделе"
           }
         }
@@ -68321,55 +68321,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Systembenachrichtigungen sind deaktiviert.\nSchalte sie ein unter"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "System notifications disabled.\nTurn them on in"
+            "value" : "System notifications disabled. Turn them on in\n"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Notificaciones del sistema desactivadas.\nActívalas en"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Notifications système désactivées.\nActivez-les dans"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Le notifiche di sistema sono disabilitate.\nAttivale in"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Systeemmeldingen zijn uitgeschakeld.\nZet ze aan in"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Powiadomienia systemowe są wyłączone.\nWłącz je w"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Notificações do sistema desativadas.\nAtiva-as em"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Системные уведомления отключены.\nВключите их в разделе"
           }
         }

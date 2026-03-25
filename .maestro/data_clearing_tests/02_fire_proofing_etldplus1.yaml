@@ -1,0 +1,66 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - privacy
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Navigate to cookie test page on www.first-party.site
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://www.first-party.site/fireproofing/"
+- pressKey: Enter
+- runFlow:
+    file: ../shared/hide_daxdialogs.yaml
+
+# Set a cookie scoped to parent domain (first-party.site)
+- assertVisible: "Fireproofing Cookie Test"
+- tapOn:
+    id: "set-cookie"
+- assertVisible: "ddg_fireproof_test=fireproofed"
+
+# Fireproof the site
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Fireproof This Site"
+- tapOn: "Fireproof"
+- assertVisible: "first-party.site is now Fireproof"
+
+# Fire Button
+- runFlow:
+    file: ../shared/use_firebutton.yaml
+
+# Navigate to DIFFERENT subdomain (hsts.first-party.site)
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://hsts.first-party.site/fireproofing/"
+- pressKey: Enter
+
+# Verify cookie survived cross-subdomain (eTLD+1 protection)
+- assertVisible: "Fireproofing Cookie Test"
+- assertVisible: "ddg_fireproof_test=fireproofed"
+
+# Remove fireproofing
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Remove Fireproofing"
+
+# Fire Button
+- runFlow:
+    file: ../shared/use_firebutton.yaml
+
+# Navigate back and verify cookie was removed
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://www.first-party.site/fireproofing/"
+- pressKey: Enter
+- assertVisible: "Fireproofing Cookie Test"
+- assertVisible: "No cookies found."

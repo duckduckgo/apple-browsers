@@ -37,7 +37,8 @@ protocol TabStyleProviding {
     var tabSpacing: CGFloat { get }
     var applyTabShadow: Bool { get }
     var standardTabCornerRadius: CGFloat { get }
-    var tabButtonActionsCornerRadius: CGFloat { get }
+    var tabButtonActionsSelectedCornerRadius: CGFloat { get }
+    var tabButtonActionsHighlightedCornerRadius: CGFloat { get }
 }
 
 final class LegacyTabStyleProvider: TabStyleProviding {
@@ -56,7 +57,8 @@ final class LegacyTabStyleProvider: TabStyleProviding {
     let tabSpacing: CGFloat = 0
     let applyTabShadow: Bool = false
     let standardTabCornerRadius: CGFloat = 8
-    let tabButtonActionsCornerRadius: CGFloat = 2
+    let tabButtonActionsSelectedCornerRadius: CGFloat = 2
+    let tabButtonActionsHighlightedCornerRadius: CGFloat = 2
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
@@ -78,7 +80,8 @@ final class NewlineTabStyleProvider: TabStyleProviding {
     let tabSpacing: CGFloat = 1
     let applyTabShadow: Bool = true
     let standardTabCornerRadius: CGFloat = 10.0
-    let tabButtonActionsCornerRadius: CGFloat = 5
+    let tabButtonActionsSelectedCornerRadius: CGFloat = 5
+    let tabButtonActionsHighlightedCornerRadius: CGFloat = 5
 
     init(palette: ThemeColors) {
         self.palette = palette
@@ -104,7 +107,8 @@ final class TabAnimationsStyleProvider: TabStyleProviding {
     let tabSpacing: CGFloat = 0
     let applyTabShadow: Bool = false
     let standardTabCornerRadius: CGFloat = 10.0
-    let tabButtonActionsCornerRadius: CGFloat = 3
+    let tabButtonActionsSelectedCornerRadius: CGFloat = 4
+    let tabButtonActionsHighlightedCornerRadius: CGFloat = 6
 
     init(palette: ThemeColors) {
         self.palette = palette

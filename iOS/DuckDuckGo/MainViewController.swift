@@ -1932,7 +1932,7 @@ class MainViewController: UIViewController {
         refreshOmniBar()
     }
 
-    private var isIPadModeToggleInAIChatMode: Bool {
+    private var isModeToggleInAIChatMode: Bool {
         guard aiChatAddressBarExperience.shouldShowModeToggle,
               let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else {
             return false
@@ -3090,7 +3090,7 @@ extension MainViewController: OmniBarDelegate {
     func onOmniQueryUpdated(_ updatedQuery: String) {
         // During iPad mode toggle transitions, text can be copied to the textField
         // which triggers this method even in duck.ai mode — suppress suggestions.
-        if isIPadModeToggleInAIChatMode {
+        if isModeToggleInAIChatMode {
             hideSuggestionTray()
             return
         }
@@ -3447,7 +3447,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         guard newTabPageViewController == nil else { return }
-        guard !isIPadModeToggleInAIChatMode else { return }
+        guard !isModeToggleInAIChatMode else { return }
 
         if !skipSERPFlow, isSERPPresented, let query = omniBar.text {
             tryToShowSuggestionTray(.autocomplete(query: query))
@@ -3692,7 +3692,11 @@ extension MainViewController: OmniBarDelegate {
     /// and persists it globally so "Last Used" mode picks it up for new tabs.
     private func commitToggleStateToCurrentTab() {
         guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else { return }
-        let mode = omniBarVC.selectedTextEntryMode
+        commitToggleMode(omniBarVC.selectedTextEntryMode)
+    }
+
+    /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
+    func commitToggleMode(_ mode: TextEntryMode) {
         tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
         toggleModeStorage.save(mode)
     }

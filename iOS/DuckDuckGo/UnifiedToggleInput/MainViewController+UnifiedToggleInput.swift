@@ -514,8 +514,7 @@ private extension MainViewController {
 
     func commitUnifiedToggleStateToCurrentTab() {
         guard let mode = unifiedToggleInputCoordinator?.inputMode else { return }
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
-        toggleModeStorage.save(mode)
+        commitToggleMode(mode)
     }
 }
 

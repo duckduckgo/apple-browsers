@@ -83,15 +83,9 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
     var isEligible: Bool {
         guard !coordinator.isDismissed else { return false }
 
-        // Display window expired — ineligible until show() clears the date and returns the cooldown
-        if coordinator.displayWindowStartDate != nil && coordinator.isDisplayWindowExpired {
-            return false
-        }
-
-        // Active display window — skip async checks (product availability) but respect the feature flag.
-        // displayWindowStartDate is only set inside show() after full eligibility passed,
-        // so trusting it here avoids the startup timing issue where isFeatureAvailable
-        // is still false because App Store product availability hasn't settled.
+        // Active display window (including expired) — skip async checks (product availability)
+        // but respect the feature flag. Expiry is handled in show(), which clears the date
+        // and returns .ignored(cooldown:). We must return eligible here so show() gets called.
         if coordinator.displayWindowStartDate != nil {
             return coordinator.isFeatureFlagEnabled
         }
@@ -102,12 +96,9 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
         coordinator.$isFeatureAvailable
-            .combineLatest(coordinator.$isDismissed, coordinator.$isDisplayWindowExpired)
-            .map { [weak coordinator] isAvailable, isDismissed, isExpired in
+            .combineLatest(coordinator.$isDismissed)
+            .map { [weak coordinator] isAvailable, isDismissed in
                 guard let coordinator, !isDismissed else { return false }
-                if coordinator.displayWindowStartDate != nil && isExpired {
-                    return false
-                }
                 if coordinator.displayWindowStartDate != nil {
                     return coordinator.isFeatureFlagEnabled
                 }
@@ -127,13 +118,13 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
         resumeContinuation(with: .noChange)
 
         if coordinator.displayWindowStartDate == nil {
-            coordinator.displayWindowStartDate = Date()
+            coordinator.displayWindowStartDate = coordinator.dateProvider()
         }
 
         coordinator.updateDisplayWindowExpiredState()
         if coordinator.isDisplayWindowExpired {
             coordinator.displayWindowStartDate = nil
-            coordinator.updateDisplayWindowExpiredState() // Reset flag so isEligiblePublisher reflects future state correctly
+            coordinator.updateDisplayWindowExpiredState()
             return .ignored(cooldown: .days(28))
         }
 

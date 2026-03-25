@@ -93,7 +93,7 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
 
     /// Provides the current date. In debug/review builds, may return a simulated date for testing.
-    private let dateProvider: () -> Date
+    let dateProvider: () -> Date
 
     init(freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          freemiumDBPFeature: FreemiumDBPFeature,

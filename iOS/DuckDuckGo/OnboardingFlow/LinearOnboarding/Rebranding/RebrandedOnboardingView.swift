@@ -484,11 +484,12 @@ extension OnboardingRebranding {
             showBubbleContent = false
             skipTypingAnimation = false
 
-            // Determine whether the current Dax overlay should slide out before being replaced.
-            let currentDax: DaxAnimation? = {
+            // Dax exit only applies during step transitions (action != nil).
+            // On initial appearance (action == nil) the overlay is just being created — no exit needed.
+            let currentDax: DaxAnimation? = action != nil ? {
                 guard case let .onboarding(viewState) = model.state else { return nil }
                 return daxAnimation(for: viewState.type)
-            }()
+            }() : nil
             let hasDaxExit = currentDax?.exitOffset != nil
 
             if hasDaxExit {
@@ -501,7 +502,7 @@ extension OnboardingRebranding {
                     daxAnimationID += 1
                 }
             } else {
-                // No exit animation — swap immediately.
+                // No exit animation (or initial appearance) — swap immediately.
                 daxPlayForward = true
                 daxAnimationID += 1
             }

@@ -81608,30 +81608,6 @@
         }
       }
     },
-    "preferences.add-to-dock.demo-video.unavailable" : {
-      "comment" : "Shown when the Add to Dock demo video file is missing from the app bundle",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "This video couldn’t be loaded."
-          }
-        }
-      }
-    },
-    "preferences.add-to-dock.demo-video.window-title" : {
-      "comment" : "Window title for the Add to Dock demo video",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Add DuckDuckGo to the Dock"
-          }
-        }
-      }
-    },
     "preferences.add-to-dock.instructions" : {
       "comment" : "Instructions for adding the app to the Dock",
       "extractionState" : "extracted_with_value",

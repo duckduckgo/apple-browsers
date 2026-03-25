@@ -30,7 +30,7 @@ extension Preferences {
         @ObservedObject var dockModel: DockPreferencesModel
         let protectionStatus: PrivacyProtectionStatus?
 
-        private var addToDockDemoVideoSheetBinding: Binding<Bool> {
+        private var isPresentingAddToDockDemoVideo: Binding<Bool> {
             Binding(
                 get: { dockModel.isPresentingAddToDockDemoVideo },
                 set: { dockModel.isPresentingAddToDockDemoVideo = $0 }
@@ -127,8 +127,8 @@ extension Preferences {
                     }
                 }
             }
-            .sheet(isPresented: addToDockDemoVideoSheetBinding) {
-                AddToDockDemoVideoSheet(isPresented: addToDockDemoVideoSheetBinding)
+            .sheet(isPresented: isPresentingAddToDockDemoVideo) {
+                AddToDockDemoVideoSheet(isPresented: isPresentingAddToDockDemoVideo)
             }
         }
     }

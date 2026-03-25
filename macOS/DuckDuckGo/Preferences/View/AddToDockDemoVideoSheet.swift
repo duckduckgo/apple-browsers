@@ -25,35 +25,22 @@ import SwiftUI
 
 extension Preferences {
 
-    /// Sheet content width aligns with other preferences modals (e.g. About unsupported banner `maxWidth` 510, AI Chat dialog 360, VPN sheet 400). Video uses `maxContentWidth` 544 with a floor so AVKit’s transport bar can lay out (SwiftUI `VideoPlayer` was squeezed to ~180pt and broke internal constraints).
     struct AddToDockDemoVideoSheet: View {
 
-        fileprivate static let videoResourceName = "macOS_Add_To_Dock"
-        fileprivate static let referenceVideoSize = CGSize(width: 898, height: 680)
-        /// Wider than typical text sheets so the demo stays readable; cap requested by product.
-        fileprivate static let maxContentWidth: CGFloat = 544
-        /// AVPlayerView’s control chrome needs a minimum width; below ~300–360pt, AppKit logs unsatisfiable constraints on the volume/scrubber row.
-        fileprivate static let minPlayerWidth: CGFloat = 400
+        private static let videoURL = Bundle.main.url(forResource: "macOS_Add_To_Dock", withExtension: "mp4")!
+        private static let referenceVideoSize = CGSize(width: 898, height: 680)
 
         @Binding var isPresented: Bool
-        @StateObject private var coordinator = AddToDockDemoVideoPlayerCoordinator()
+        @StateObject private var coordinator = VideoPlayerCoordinator()
 
         var body: some View {
             VStack(spacing: 16) {
-                if let player = coordinator.queuePlayer {
-                    AddToDockAVPlayerView(player: player)
-                        .aspectRatio(
-                            Self.referenceVideoSize.width / Self.referenceVideoSize.height,
-                            contentMode: .fit
-                        )
-                        .frame(minWidth: Self.minPlayerWidth, maxWidth: Self.maxContentWidth)
-                } else {
-                    Text(UserText.addToDockDemoVideoUnavailable)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: Self.maxContentWidth)
-                        .frame(minHeight: 120)
-                }
+                VideoPlayerView(player: coordinator.queuePlayer)
+                    .aspectRatio(
+                        Self.referenceVideoSize.width / Self.referenceVideoSize.height,
+                        contentMode: .fit
+                    )
+                    .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: Preferences.Const.paneContentWidth)
 
                 HStack {
                     Spacer()
@@ -64,10 +51,10 @@ extension Preferences {
                 }
             }
             .padding()
-            .frame(maxWidth: Self.maxContentWidth)
+            .frame(maxWidth: Preferences.Const.paneContentWidth)
             .fixedSize(horizontal: false, vertical: true)
             .onAppear {
-                coordinator.loadBundledVideoIfNeeded(resourceName: Self.videoResourceName)
+                coordinator.loadVideoAsset(url: Self.videoURL)
             }
             .onDisappear {
                 coordinator.stop()
@@ -76,21 +63,15 @@ extension Preferences {
     }
 }
 
-// MARK: - Player coordinator (macOS)
+// MARK: - Video Coordinator
 
-/// Owns looping playback for the Add to Dock demo. API is intentionally smaller than iOS `VideoPlayerCoordinator` (no `AudioSessionManaging`, UIKit PiP, or async `AVURLAsset` load). A future shared module could extract a common core (`AVQueuePlayer` + `AVPlayerLooper`, load/play/stop) and keep platform adapters separate.
 @MainActor
-final class AddToDockDemoVideoPlayerCoordinator: ObservableObject {
+final class VideoPlayerCoordinator: ObservableObject {
 
-    @Published private(set) var queuePlayer: AVQueuePlayer?
+    @Published private(set) var queuePlayer = AVQueuePlayer()
     private var looper: AVPlayerLooper?
 
-    func loadBundledVideoIfNeeded(resourceName: String) {
-        guard queuePlayer == nil else { return }
-        guard let url = Bundle.main.url(forResource: resourceName, withExtension: "mp4") else {
-            Logger.general.error("Add to Dock demo video missing from bundle (expected \(resourceName).mp4)")
-            return
-        }
+    func loadVideoAsset(url: URL) {
         let item = AVPlayerItem(url: url)
         let player = AVQueuePlayer()
         looper = AVPlayerLooper(player: player, templateItem: item)
@@ -99,15 +80,16 @@ final class AddToDockDemoVideoPlayerCoordinator: ObservableObject {
     }
 
     func stop() {
-        queuePlayer?.pause()
+        queuePlayer.pause()
+        queuePlayer.removeAllItems()
         looper = nil
-        queuePlayer = nil
     }
 }
 
-// MARK: - AppKit player (avoids SwiftUI VideoPlayer layout bugs on macOS)
+// MARK: - Video Player Video
 
-private struct AddToDockAVPlayerView: NSViewRepresentable {
+/// Minimal video player implementation prevents constraint ambiguities due to compressed AVKit chrome in small SwiftUI modal.
+private struct VideoPlayerView: NSViewRepresentable {
 
     let player: AVQueuePlayer
 

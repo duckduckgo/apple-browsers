@@ -39,6 +39,10 @@ enum OnboardingBubbleAnimationMetrics {
     static let contentFadeInDelay: TimeInterval = 0.3
     /// Duration of the default SwiftUI fade-in animation applied when showing bubble content
     static let contentFadeInAnimationDuration: TimeInterval = 0.35
+    /// Duration of the Dax slide-in entrance animation
+    static let daxEntranceDuration: TimeInterval = 0.5
+    /// Duration of the Dax slide-out exit animation; parent must delay overlay removal by this amount
+    static let daxExitDuration: TimeInterval = 0.5
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -130,6 +134,12 @@ extension OnboardingRebranding {
         @State private var dialogContentHeight: CGFloat = 0
         @State private var showBubbleContent: Bool = false
         @State private var skipTypingAnimation: Bool = false
+        /// `true` → Dax plays forward (entrance); `false` → plays in reverse (exit).
+        @State private var daxPlayForward = true
+        /// Incrementing this ID forces `DaxAnimationOverlay` to recreate and restart from the correct frame.
+        @State private var daxAnimationID = 0
+        /// `true` while the current Dax overlay is sliding out; reset to `false` alongside `daxAnimationID`.
+        @State private var daxExiting = false
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
@@ -164,6 +174,14 @@ extension OnboardingRebranding {
                         .ignoresSafeArea()
 
                     ScrollableOnboardingBackground(viewState: viewState)
+
+                    if let dax = daxAnimation(for: viewState.type) {
+                        DaxAnimationOverlay(animation: dax, playForward: daxPlayForward, isExiting: daxExiting)
+                            // Combine animationID + name so the view is recreated on both:
+                            // - direction changes (same step, forward → reverse)
+                            // - step transitions where the animation asset changes
+                            .id("\(daxAnimationID)-\(dax.animationName)")
+                    }
 
                     onboardingDialogView(state: viewState)
                         .transition( // Scale content from 0.1 to 1.0 and fade in when appearing for the first time
@@ -436,7 +454,28 @@ extension OnboardingRebranding {
             )
         }
 
+        /// Returns the `DaxAnimation` for the given step, or `nil` if no animation is configured.
+        private func daxAnimation(for type: OnboardingView.ViewState.Intro.IntroType) -> DaxAnimation? {
+            switch type {
+            case .startOnboardingDialog: return IntroDialogContent.daxAnimation
+            case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation
+            default: return nil
+            }
+        }
+
+        /// Reverses the current step's Dax animation (plays from last frame back to first).
+        ///
+        /// Call this in response to a user interaction that should animate Dax out.
+        /// The animation plays once in reverse and stops on the first frame.
+        func reverseDaxAnimation() {
+            daxPlayForward = false
+            daxAnimationID += 1
+        }
+
         /// Animates a hide -> action -> show sequence to prevent cross-fading between steps.
+        ///
+        /// If the current step's `DaxAnimation` has an `exitOffset`, Dax slides off-screen first;
+        /// all subsequent delays are shifted by `OnboardingBubbleAnimationMetrics.daxExitDuration`.
         ///
         /// - Parameter action: Closure executed between hide and show (triggers state change and
         ///   bubble resize). Pass `nil` for the initial appearance where only a fade-in is needed.
@@ -445,9 +484,33 @@ extension OnboardingRebranding {
             showBubbleContent = false
             skipTypingAnimation = false
 
+            // Determine whether the current Dax overlay should slide out before being replaced.
+            let currentDax: DaxAnimation? = {
+                guard case let .onboarding(viewState) = model.state else { return nil }
+                return daxAnimation(for: viewState.type)
+            }()
+            let hasDaxExit = currentDax?.exitOffset != nil
+
+            if hasDaxExit {
+                // Trigger the slide-out; the overlay stays alive for daxExitDuration.
+                daxExiting = true
+                // After exit completes, swap in the overlay for the next step.
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.daxExitDuration) {
+                    daxExiting = false   // new overlay starts with isExiting = false
+                    daxPlayForward = true
+                    daxAnimationID += 1
+                }
+            } else {
+                // No exit animation — swap immediately.
+                daxPlayForward = true
+                daxAnimationID += 1
+            }
+
+            let daxExitDelay: TimeInterval = hasDaxExit ? OnboardingBubbleAnimationMetrics.daxExitDuration : 0
+
             // When there is an action, insert a fade-out delay before executing it so the
             // old content is invisible before the bubble starts resizing.
-            let actionDelay = action != nil ? OnboardingBubbleAnimationMetrics.contentFadeOutDelay : 0
+            let actionDelay = daxExitDelay + (action != nil ? OnboardingBubbleAnimationMetrics.contentFadeOutDelay : 0)
 
             if let action {
                 DispatchQueue.main.asyncAfter(deadline: .now() + actionDelay) {

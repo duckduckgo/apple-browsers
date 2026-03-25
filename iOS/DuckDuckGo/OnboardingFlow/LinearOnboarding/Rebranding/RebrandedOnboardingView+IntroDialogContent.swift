@@ -24,6 +24,16 @@ import SwiftUI
 extension OnboardingRebranding.OnboardingView {
 
     struct IntroDialogContent: View {
+
+        /// Dax "Thumbs Up" animation
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-Intro",
+            size: CGSize(width: 258, height: 352),
+            position: .left(bottomPadding: 100.0, xOffset: -40.0),
+            entranceOffset: CGPoint(x: -100, y: 0),
+            exitOffset: CGPoint(x: -258, y: 0),
+        )
+
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         private let title: String

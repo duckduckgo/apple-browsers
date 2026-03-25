@@ -24,6 +24,14 @@ import SwiftUI
 extension OnboardingRebranding.OnboardingView {
 
     struct BrowsersComparisonContent: View {
+
+        /// Dax "Wing Wave Up" animation
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-BrowserComparison",
+            size: CGSize(width: 390, height: 211),
+            position: .bottom()
+        )
+
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.scenePhase) private var scenePhase
 

@@ -96,13 +96,14 @@ private struct VideoPlayerView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
-        view.controlsStyle = .minimal
-        view.showsFullScreenToggleButton = false
+        view.controlsStyle = .none
         view.player = player
         return view
     }
 
     func updateNSView(_ nsView: AVPlayerView, context: Context) {
-        nsView.player = player
+        if nsView.player !== player {
+            nsView.player = player
+        }
     }
 }

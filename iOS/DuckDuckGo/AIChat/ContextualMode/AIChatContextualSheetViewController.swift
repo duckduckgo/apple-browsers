@@ -330,6 +330,22 @@ final class AIChatContextualSheetViewController: UIViewController {
         .portrait
     }
 
+    // MARK: - Sheet Configuration
+
+    func configureSheetPresentation() {
+        guard let sheet = sheetPresentationController else { return }
+
+        sheet.delegate = self
+        presentationController?.delegate = self
+        sheet.detents = [.medium(), .large()]
+        sheet.selectedDetentIdentifier = .medium
+        sheet.largestUndimmedDetentIdentifier = .medium
+        sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        sheet.prefersGrabberVisible = true
+        sheet.prefersEdgeAttachedInCompactHeight = true
+        sheet.preferredCornerRadius = Constants.sheetCornerRadius
+    }
+
     // MARK: - Actions
 
     @objc private func expandButtonTapped() {
@@ -823,6 +839,7 @@ private extension AIChatContextualSheetViewController {
 
     func configureModalPresentation() {
         modalPresentationStyle = .pageSheet
+        configureSheetPresentation()
     }
 
     func showDimmingView(animated: Bool) {
@@ -878,20 +895,6 @@ private extension AIChatContextualSheetViewController {
         if isWebViewVisible && isCurrentlyMediumDetent {
             expandToLargeDetent()
         }
-    }
-
-    func configureSheetPresentation() {
-        guard let sheet = sheetPresentationController else { return }
-
-        sheet.delegate = self
-        presentationController?.delegate = self
-        sheet.detents = [.medium(), .large()]
-        sheet.selectedDetentIdentifier = .medium
-        sheet.largestUndimmedDetentIdentifier = .medium
-        sheet.prefersScrollingExpandsWhenScrolledToEdge = false
-        sheet.prefersGrabberVisible = true
-        sheet.prefersEdgeAttachedInCompactHeight = true
-        sheet.preferredCornerRadius = Constants.sheetCornerRadius
     }
 }
 

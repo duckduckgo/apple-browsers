@@ -1457,9 +1457,7 @@ class MainViewController: UIViewController {
         }
 
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
-            if !aiChatAddressBarExperience.shouldShowModeToggle {
-                omniBar.beginEditing(animated: true)
-            }
+            omniBar.beginEditing(animated: true)
         }
 
         syncService.scheduler.requestSyncImmediately()

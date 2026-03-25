@@ -3689,9 +3689,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onTextEntryModeDidChange(_ mode: TextEntryMode) {
-        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
-            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
-        }
+        onToggleModeSwitched()
     }
 
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {

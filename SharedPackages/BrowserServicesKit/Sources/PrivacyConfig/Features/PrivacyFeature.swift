@@ -423,6 +423,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
+
+    /// Enables the fire button in the contextual AI chat sheet
+    case contextualFireButton
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

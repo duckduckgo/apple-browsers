@@ -63,6 +63,10 @@ public struct UserText {
     public static let scopedFireConfirmationDownloadsWarning = NSLocalizedString("scoped.fire.confirmation.downloads.warning", value: "This will cancel downloads in progress.", comment: "Warning message that deleting will cancel any active downloads")
     public static let scopedFireConfirmationNewTabsInfo = NSLocalizedString("scoped.fire.confirmation.new.tabs.info", value: "New tabs you created can also be deleted individually.", comment: "Informational message explaining that new tabs can also be deleted individually")
 
+    public static let contextualChatDeleteConfirmationTitle = NotLocalizedString("contextual.chat.delete.confirmation.title", value: "Delete this chat?", comment: "Title for the confirmation dialog when deleting a contextual AI chat")
+    public static let contextualChatDeleteConfirmationSubtitle = NotLocalizedString("contextual.chat.delete.confirmation.subtitle", value: "You can't undo this action", comment: "Subtitle for the confirmation dialog when deleting a contextual AI chat")
+    public static let contextualChatDeleteConfirmationButton = NotLocalizedString("contextual.chat.delete.confirmation.button", value: "Delete Chat", comment: "Button to confirm deleting a contextual AI chat")
+
     public static func scopedFireConfirmationTabsDeletedToast(tabCount: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "scoped.fire.confirmation.tabs.deleted.toast", value: nil, table: nil)
         return String.localizedStringWithFormat(format, tabCount)

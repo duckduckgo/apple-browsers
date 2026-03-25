@@ -4061,6 +4061,14 @@ extension MainViewController: TabDelegate {
     func tabDidRequestFireButtonPulse(tab: TabViewController) {
         showFireButtonPulse()
     }
+
+    func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
+        let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
+                                     privacyConfig: privacyConfigurationManager)
+        Task { @MainActor in
+            await cleaner.deleteAIChat(chatID: chatID)
+        }
+    }
     
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool) {
         if animated {

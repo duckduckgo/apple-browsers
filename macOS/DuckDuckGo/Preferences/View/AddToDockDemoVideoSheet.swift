@@ -68,18 +68,19 @@ extension Preferences {
 @MainActor
 final class VideoPlayerCoordinator: ObservableObject {
 
-    @Published private(set) var queuePlayer = AVQueuePlayer()
+    private(set) var queuePlayer = AVQueuePlayer()
     private var looper: AVPlayerLooper?
 
     func loadVideoAsset(url: URL) {
+        stop()
+
         let item = AVPlayerItem(url: url)
-        let player = AVQueuePlayer()
-        looper = AVPlayerLooper(player: player, templateItem: item)
-        queuePlayer = player
-        player.play()
+        looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+        queuePlayer.play()
     }
 
     func stop() {
+        looper?.disableLooping()
         queuePlayer.pause()
         queuePlayer.removeAllItems()
         looper = nil

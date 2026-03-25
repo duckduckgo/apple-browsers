@@ -274,25 +274,25 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
 
-        let capturedTextEntryMode: TextEntryMode? = textEntryMode
+        // Use explicit mode if set (programmatic beginEditing), otherwise fall back
+        // to the tab's per-tab mode already stored in selectedTextEntryMode.
+        let capturedTextEntryMode: TextEntryMode = textEntryMode ?? selectedTextEntryMode
 
         if let omniDelegate {
             omniDelegate.dismissContextualSheetIfNeeded { [weak self] in
                 guard let self else { return }
-                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, explicitTextEntryMode: capturedTextEntryMode, animated: animated)
+                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
             }
         } else {
-            present(for: textField, suggestionsDependencies: suggestionsDependencies, explicitTextEntryMode: capturedTextEntryMode, animated: animated)
+            present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
         }
     }
 
-    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, explicitTextEntryMode: TextEntryMode?, animated: Bool) {
+    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
         guard editingStateViewController == nil else { return }
 
         let switchBarHandler = createSwitchBarHandler(for: textField)
-        if let explicitTextEntryMode {
-            switchBarHandler.setToggleState(explicitTextEntryMode)
-        }
+        switchBarHandler.setToggleState(textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let escapeHatch = omniDelegate?.escapeHatchForEditingState()
@@ -516,15 +516,21 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onDismissRequested() {
-        // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
+        // Restore the tab's committed mode — the user toggled but didn't submit.
         omniDelegate?.onExperimentalAddressBarCancelPressed()
+        if let tabMode = omniDelegate?.preferredTextEntryModeForCurrentTab() {
+            selectedTextEntryMode = tabMode
+        }
     }
 
     func onSwitchToTab(_ tab: Tab) {
         omniDelegate?.onSwitchToTab(tab)
     }
 
-    func onToggleModeSwitched() {
+    func onToggleModeSwitched(to mode: TextEntryMode) {
+        // Sync the editing state's toggle back to selectedTextEntryMode so that
+        // commitToggleStateToCurrentTab reads the correct value on submission.
+        selectedTextEntryMode = mode
         omniDelegate?.onToggleModeSwitched()
     }
 

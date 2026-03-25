@@ -3684,6 +3684,10 @@ extension MainViewController: OmniBarDelegate {
     func onTextEntryModeDidChange(_ mode: TextEntryMode) {
     }
 
+    func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
+        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode
+    }
+
     /// Saves the current omnibar toggle state to the tab on submission,
     /// and persists it globally so "Last Used" mode picks it up for new tabs.
     private func commitToggleStateToCurrentTab() {

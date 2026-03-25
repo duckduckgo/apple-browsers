@@ -107,5 +107,22 @@ struct AppShortcuts: AppShortcutsProvider {
                     shortTitle: "Duck.ai Chat",
                     systemImageName: "circle.fill"
         )
+        AppShortcut(intent: AIVoiceChatIntent(),
+                    phrases: [
+                        "Start \(.applicationName) Voice Chat",
+                        "Start a voice chat in \(.applicationName)",
+                        "Start Duck AI voice on \(.applicationName)",
+                        "Open \(.applicationName) Voice Chat",
+                        "Open Duck AI voice on \(.applicationName)",
+                        "Launch \(.applicationName) Voice Chat",
+                        "Voice chat with \(.applicationName)",
+                        "Voice chat with Duck AI on \(.applicationName)",
+                        "Talk to Duck AI on \(.applicationName)",
+                        "Talk to \(.applicationName)",
+                        "Talk to \(.applicationName) AI"
+                    ],
+                    shortTitle: "Duck.ai Voice",
+                    systemImageName: "waveform"
+        )
     }
 }

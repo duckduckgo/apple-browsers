@@ -82,7 +82,7 @@ class AppDeepLinksTests: XCTestCase {
     }
 
     func testWhenLinkIsLowercaseVoiceChatThenDetected() {
-        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgopenvoicechat://")!),
+        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgopenaivoicechat://")!),
                        .openAIVoiceChat)
     }
 

@@ -143,59 +143,56 @@ class UserDefaultsFireproofingTests: XCTestCase {
     }
 
 
-    func testWhenDomainAdded_ThenBothStoresArePopulated() {
+    func testETLDPlus1_WhenDomainAdded_ThenAllowedDomainsShowsNormalized() {
         let fireproofing = makeETLDPlus1Fireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
-        XCTAssertTrue(fireproofing.allowedDomains.contains("login.example.com"))
-        XCTAssertTrue(fireproofing.etldPlus1AllowedDomains.contains("example.com"))
+        XCTAssertTrue(fireproofing.allowedDomains.contains("example.com"))
+        XCTAssertFalse(fireproofing.allowedDomains.contains("login.example.com"))
     }
 
-    func testWhenDomainRemoved_ThenBothStoresAreUpdated() {
+    func testETLDPlus1_WhenDomainRemoved_ThenAllowedDomainsIsEmpty() {
         let fireproofing = makeETLDPlus1Fireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
-        fireproofing.remove(domain: "login.example.com")
+        fireproofing.remove(domain: "example.com")
         XCTAssertTrue(fireproofing.allowedDomains.isEmpty)
-        XCTAssertTrue(fireproofing.etldPlus1AllowedDomains.isEmpty)
     }
 
-    func testWhenClearAllCalled_ThenBothStoresAreCleared() {
+    func testETLDPlus1_WhenClearAllCalled_ThenAllowedDomainsIsEmpty() {
         let fireproofing = makeETLDPlus1Fireproofing()
         fireproofing.addToAllowed(domain: "example.com")
         fireproofing.addToAllowed(domain: "other.org")
         fireproofing.clearAll()
         XCTAssertTrue(fireproofing.allowedDomains.isEmpty)
-        XCTAssertTrue(fireproofing.etldPlus1AllowedDomains.isEmpty)
     }
 
-    func testWhenPublicSuffixAdded_ThenLegacyStoreIsPopulatedButETLDPlus1StoreIsNot() {
+    func testETLDPlus1_WhenPublicSuffixAdded_ThenNotInAllowedDomains() {
         let fireproofing = makeETLDPlus1Fireproofing()
         fireproofing.addToAllowed(domain: "github.io")
-        XCTAssertTrue(fireproofing.allowedDomains.contains("github.io"))
-        XCTAssertTrue(fireproofing.etldPlus1AllowedDomains.isEmpty)
+        XCTAssertTrue(fireproofing.allowedDomains.isEmpty)
     }
 
-    func testWhenDuplicateETLDPlus1Added_ThenNoDuplicatesInStore() {
+    func testETLDPlus1_WhenDuplicateSubdomainsAdded_ThenSingleEntryInAllowedDomains() {
         let fireproofing = makeETLDPlus1Fireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
         fireproofing.addToAllowed(domain: "docs.example.com")
-        XCTAssertEqual(fireproofing.etldPlus1AllowedDomains, ["example.com"])
+        XCTAssertEqual(fireproofing.allowedDomains, ["example.com"])
     }
 
 
     func testMigration_NormalizesAndDeduplicates() {
         let fireproofing = makeLegacyFireproofing()
-        fireproofing.addToAllowed(domain: "login.example.com")
-        fireproofing.addToAllowed(domain: "shop.example.com")
-        fireproofing.addToAllowed(domain: "other.org")
-
-        // Clear the eTLD+1 store to simulate pre-migration state
+        fireproofing.addToAllowed(domain: "old.reddit.com")
+        fireproofing.addToAllowed(domain: "www.reddit.com")
+        fireproofing.addToAllowed(domain: "fantasy.premierleague.com")
+        fireproofing.addToAllowed(domain: "myproject.github.io")
         fireproofing.etldPlus1AllowedDomains = []
 
         let didMigrate = fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
 
         XCTAssertTrue(didMigrate)
-        let normalized = Set(fireproofing.etldPlus1AllowedDomains)
-        XCTAssertEqual(normalized, ["example.com", "other.org"])
+        let migrated = Set(fireproofing.etldPlus1AllowedDomains)
+        XCTAssertEqual(migrated, ["reddit.com", "premierleague.com", "myproject.github.io"])
+        XCTAssertEqual(migrated.count, 3, "Two reddit subdomains should collapse into one entry")
     }
 
     func testMigration_IsIdempotent() {
@@ -217,15 +214,13 @@ class UserDefaultsFireproofingTests: XCTestCase {
 
         XCTAssertTrue(fireproofing.etldPlus1AllowedDomains.contains("example.com"))
         XCTAssertFalse(fireproofing.etldPlus1AllowedDomains.contains("github.io"))
-        // Legacy store untouched
-        XCTAssertTrue(fireproofing.allowedDomains.contains("github.io"))
+        XCTAssertTrue(fireproofing.legacyAllowedDomains.contains("github.io"))
     }
 
     func testMigration_WithEmptyLegacyStore_SetsFlagAndReturnsFalse() {
         let fireproofing = makeLegacyFireproofing()
 
         XCTAssertFalse(fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded())
-        // Second call also returns false (flag is set)
         XCTAssertFalse(fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded())
     }
 

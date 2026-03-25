@@ -38,7 +38,6 @@ public protocol Fireproofing {
 
 }
 
-// This class is not final because we override allowed domains in WebCacheManagerTests
 public class UserDefaultsFireproofing: Fireproofing {
 
     enum ETLDPlus1Key: String {
@@ -51,7 +50,11 @@ public class UserDefaultsFireproofing: Fireproofing {
     }
 
     @UserDefaultsWrapper(key: .fireproofingAllowedDomains, defaultValue: [])
-    private(set) public var allowedDomains: [String]
+    var legacyAllowedDomains: [String]
+
+    public var allowedDomains: [String] {
+        isFireproofingETLDPlus1Enabled() ? etldPlus1AllowedDomains : legacyAllowedDomains
+    }
 
     @UserDefaultsWrapper(key: .fireproofingDetectionEnabled, defaultValue: false)
     public var loginDetectionEnabled: Bool {
@@ -74,26 +77,20 @@ public class UserDefaultsFireproofing: Fireproofing {
         self.isFireproofingETLDPlus1Enabled = isFireproofingETLDPlus1Enabled
     }
 
-    // MARK: - eTLD+1 Store
-
     var etldPlus1AllowedDomains: [String] {
         get { keyValueStore.object(forKey: ETLDPlus1Key.allowedDomains.rawValue) as? [String] ?? [] }
         set { keyValueStore.set(newValue, forKey: ETLDPlus1Key.allowedDomains.rawValue) }
     }
 
-    private var activeAllowedDomains: [String] {
-        isFireproofingETLDPlus1Enabled() ? etldPlus1AllowedDomains : allowedDomains
-    }
-
-    private var activeAllowedDomainsIncludingDuckDuckGo: [String] {
-        activeAllowedDomains + [
+    private var allowedDomainsIncludingDuckDuckGo: [String] {
+        allowedDomains + [
             URL.ddg.host ?? "",
             URL.duckAi.host ?? "",
         ]
     }
 
     public func addToAllowed(domain: String) {
-        allowedDomains += [domain]
+        legacyAllowedDomains += [domain]
 
         guard let normalized = tld.eTLDplus1(domain) else { return }
         if !etldPlus1AllowedDomains.contains(normalized) {
@@ -105,29 +102,34 @@ public class UserDefaultsFireproofing: Fireproofing {
         if isFireproofingETLDPlus1Enabled() {
             let cleaned = cookieDomain.hasPrefix(".") ? String(cookieDomain.dropFirst()) : cookieDomain
             guard let normalized = tld.eTLDplus1(cleaned) else { return false }
-            return activeAllowedDomainsIncludingDuckDuckGo.contains(normalized)
+            return allowedDomainsIncludingDuckDuckGo.contains(normalized)
         }
-        return activeAllowedDomainsIncludingDuckDuckGo.contains(where: { HTTPCookie.cookieDomain(cookieDomain, matchesTestDomain: $0) })
+        return allowedDomainsIncludingDuckDuckGo.contains(where: { HTTPCookie.cookieDomain(cookieDomain, matchesTestDomain: $0) })
     }
 
     public func remove(domain: String) {
-        allowedDomains = allowedDomains.filter { $0 != domain }
-
-        guard let normalized = tld.eTLDplus1(domain) else { return }
-        etldPlus1AllowedDomains = etldPlus1AllowedDomains.filter { $0 != normalized }
+        if isFireproofingETLDPlus1Enabled() {
+            guard let normalized = tld.eTLDplus1(domain) else { return }
+            legacyAllowedDomains = legacyAllowedDomains.filter { tld.eTLDplus1($0) != normalized }
+            etldPlus1AllowedDomains = etldPlus1AllowedDomains.filter { $0 != normalized }
+        } else {
+            legacyAllowedDomains = legacyAllowedDomains.filter { $0 != domain }
+            guard let normalized = tld.eTLDplus1(domain) else { return }
+            etldPlus1AllowedDomains = etldPlus1AllowedDomains.filter { $0 != normalized }
+        }
     }
 
     public func clearAll() {
-        allowedDomains = []
+        legacyAllowedDomains = []
         etldPlus1AllowedDomains = []
     }
 
     public func isAllowed(fireproofDomain domain: String) -> Bool {
         if isFireproofingETLDPlus1Enabled() {
             guard let normalized = tld.eTLDplus1(domain) else { return false }
-            return activeAllowedDomainsIncludingDuckDuckGo.contains(normalized)
+            return allowedDomainsIncludingDuckDuckGo.contains(normalized)
         }
-        return activeAllowedDomainsIncludingDuckDuckGo.contains(domain)
+        return allowedDomainsIncludingDuckDuckGo.contains(domain)
     }
 
     // MARK: - Migration
@@ -141,7 +143,7 @@ public class UserDefaultsFireproofing: Fireproofing {
     public func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool {
         guard !isETLDPlus1MigrationDone else { return false }
 
-        let existing = allowedDomains
+        let existing = legacyAllowedDomains
         guard !existing.isEmpty else {
             isETLDPlus1MigrationDone = true
             return false

@@ -121,6 +121,11 @@ extension MainViewController {
                 : UIColor(designSystemColor: .panel)
             viewCoordinator.navigationBarContainer.backgroundColor = background
             viewCoordinator.unifiedInputContentContainer?.backgroundColor = background
+            if let webView = currentTab?.webView {
+                webView.backgroundColor = background
+                webView.scrollView.backgroundColor = background
+                webView.underPageBackgroundColor = background
+            }
             viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         }
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)

@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -100,7 +101,15 @@ final class DockCustomizerTests: XCTestCase {
         XCTAssertEqual(receivedValue, false)
     }
 
-    func testWhenNotAppStoreBuildThenNotificationIsInitialized() {
+    /// Without a stored `firstLaunchDate`, `AppDelegate` falls back to a default “old” date so computed dock notification eligibility is `true`,
+    /// but the published value must stay `false` until `synchronizeNotificationVisibilityWithFirstLaunchDate()` runs (after real install date is written).
+    func testWhenNotAppStoreBuildWithoutSynchronizeThenPublisherDoesNotMirrorStaleFirstLaunchEligibility() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+
         let buildType = ApplicationBuildTypeMock()
         buildType.isAppStoreBuild = false
 
@@ -109,7 +118,43 @@ final class DockCustomizerTests: XCTestCase {
             keyValueStore: keyValueStore
         )
 
+        XCTAssertTrue(sut.shouldShowNotification)
+
         let expectation = expectation(description: "Publisher emits")
+        let cancellable = sut.shouldShowNotificationPublisher
+            .first()
+            .sink { value in
+                XCTAssertFalse(value)
+                expectation.fulfill()
+            }
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+    }
+
+    func testWhenSynchronizedAfterFirstLaunchDateSetToNowThenNotificationMatchesShouldShowNotification() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+
+        UserDefaultsWrapper<Any>.sharedDefaults
+            .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = false
+
+        let sut = DockCustomizer(
+            applicationBuildType: buildType,
+            keyValueStore: keyValueStore
+        )
+
+        XCTAssertFalse(sut.shouldShowNotification)
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+        XCTAssertFalse(sut.shouldShowNotification)
+
+        let expectation = expectation(description: "Publisher emits after sync")
         var receivedValue: Bool?
         let cancellable = sut.shouldShowNotificationPublisher
             .first()
@@ -121,7 +166,37 @@ final class DockCustomizerTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
 
-        XCTAssertEqual(receivedValue, sut.shouldShowNotification)
+        XCTAssertEqual(receivedValue, false)
+    }
+
+    func testWhenSynchronizedAfterFirstLaunchDateOlderThanTwoDaysThenNotificationPublisherIsTrue() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+
+        let threeDaysAgo = Date().addingTimeInterval(-3 * 24 * 60 * 60)
+        UserDefaultsWrapper<Any>.sharedDefaults
+            .set(threeDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = false
+
+        let sut = DockCustomizer(
+            applicationBuildType: buildType,
+            keyValueStore: keyValueStore
+        )
+
+        XCTAssertTrue(sut.shouldShowNotification)
+
+        var receivedValues: [Bool] = []
+        let cancellable = sut.shouldShowNotificationPublisher.sink { receivedValues.append($0) }
+
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+
+        XCTAssertEqual(receivedValues, [false, true])
+        cancellable.cancel()
     }
 
 }

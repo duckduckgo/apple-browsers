@@ -40,6 +40,12 @@ protocol DockCustomization: AnyObject {
     /// - We didn't show it in the past (this means the blue dot was shown, the user opened the more options menu and then closed it)
     var shouldShowNotification: Bool { get }
     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> { get }
+    /// Recomputes published notification visibility from `shouldShowNotification`.
+    ///
+    /// Call from `applicationDidFinishLaunching` after `firstLaunchDate` is set for a new install.
+    /// `DockCustomizer.init` must not assign `shouldShowNotificationPrivate` from `AppDelegate.firstLaunchDate`:
+    /// before that runs, `firstLaunchDate` falls back to a default “old” date so eligibility would be wrong.
+    func synchronizeNotificationVisibilityWithFirstLaunchDate()
     func didCloseMoreOptionsMenu()
     func resetData()
 }
@@ -71,9 +77,13 @@ final class DockCustomizer: DockCustomization {
         self.keyValueStore = keyValueStore
 
         if !applicationBuildType.isAppStoreBuild {
-            shouldShowNotificationPrivate = shouldShowNotification
             startTimer()
         }
+    }
+
+    func synchronizeNotificationVisibilityWithFirstLaunchDate() {
+        guard !applicationBuildType.isAppStoreBuild else { return }
+        shouldShowNotificationPrivate = shouldShowNotification
     }
 
     private var dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("Preferences/com.apple.dock.plist")

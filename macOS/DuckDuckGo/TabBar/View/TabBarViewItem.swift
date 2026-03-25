@@ -576,17 +576,19 @@ final class TabBarItemCellView: NSView {
         faviconView.startSpinnerIfNeeded(isLoading: isLoading, url: url, error: error)
     }
 
-    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool) {
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool, isPinned: Bool) {
         guard displaysTabsAnimations else {
             return
         }
 
         backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
-        refreshCloseButton(isSelected: isSelected, isMouseOver: isMouseOver, animated: true)
+        refreshCloseButton(isSelected: isSelected, isMouseOver: isMouseOver, isPinned: isPinned, animated: true)
     }
 
-    private func refreshCloseButton(isSelected: Bool, isMouseOver: Bool, animated: Bool) {
-        let isHidden = (!isMouseOver || (widthStage.isCloseButtonHidden && !NSApp.isCommandPressed)) && !isSelected
+    private func refreshCloseButton(isSelected: Bool, isMouseOver: Bool, isPinned: Bool, animated: Bool) {
+        let mustDisplayCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
+        let isHidden = !mustDisplayCloseButton || isPinned
+
         guard closeButton.isHidden != isHidden else {
             return
         }
@@ -868,7 +870,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
             updateSubviews()
 
-            cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+            cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, isPinned: isPinned)
             updateUsedPermissions()
         }
     }
@@ -1560,7 +1562,7 @@ extension TabBarViewItem: MouseClickViewDelegate {
         delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
         self.isMouseOver = isMouseOver
 
-        cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+        cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, isPinned: isPinned)
 
         view.needsLayout = true
         eventMonitor = isMouseOver ? NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in

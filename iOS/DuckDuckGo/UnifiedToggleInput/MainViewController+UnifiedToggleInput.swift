@@ -100,9 +100,6 @@ extension MainViewController {
     private func handleModeChange(_ mode: TextEntryMode) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
-        // Persist the toggle state back to the current tab
-        currentTab?.tabModel.preferredTextEntryMode = mode
-
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if coordinator.isAITabExpanded {
@@ -331,6 +328,10 @@ extension MainViewController {
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
                 coordinator.deactivateToOmnibar()
+                // Restore the tab's committed mode — the user toggled but didn't submit.
+                if let tabMode = self.tabManager.currentTabsModel.currentTab?.preferredTextEntryMode {
+                    coordinator.updateInputMode(tabMode, animated: false)
+                }
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
             }
@@ -438,7 +439,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             return .allowDefault
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        let inputMode = tabManager.current()?.tabModel.preferredTextEntryMode ?? .search
+        let inputMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode ?? .search
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }
@@ -449,10 +450,12 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
+        commitUnifiedToggleStateToCurrentTab()
         openAIChat(prompt, autoSend: true, modelId: modelId, images: images)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
+        commitUnifiedToggleStateToCurrentTab()
         handleUnifiedToggleInputSearchSubmission(query)
     }
 }
@@ -462,12 +465,14 @@ extension MainViewController: UnifiedToggleInputDelegate {
 extension MainViewController: UnifiedInputContentContainerViewControllerDelegate {
 
     func unifiedInputEditingStateDidSubmitQuery(_ query: String) {
+        commitUnifiedToggleStateToCurrentTab()
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalQuerySubmission()
         handleUnifiedToggleInputSearchSubmission(query)
     }
 
     func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?) {
+        commitUnifiedToggleStateToCurrentTab()
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalPromptSubmission()
         openAIChat(query, autoSend: true, tools: tools)
@@ -505,6 +510,12 @@ private extension MainViewController {
             refreshStatusBarBackgroundAfterAIChrome()
         }
         loadQuery(query)
+    }
+
+    func commitUnifiedToggleStateToCurrentTab() {
+        guard let mode = unifiedToggleInputCoordinator?.inputMode else { return }
+        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+        toggleModeStorage.save(mode)
     }
 }
 

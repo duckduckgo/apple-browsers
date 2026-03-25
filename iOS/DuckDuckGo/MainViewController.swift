@@ -127,7 +127,7 @@ class MainViewController: UIViewController {
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
-    private let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+    let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     var isNewTabPageVisible: Bool {

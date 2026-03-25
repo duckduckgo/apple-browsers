@@ -94,7 +94,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
 
     func proceedButtonText() -> String {
         subscriptionManager.isUserEligibleForFreeTrial()
-            ? UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree
+        ? UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.tryItFree
             : UserText.SubscriptionPromotionOnboarding.Buttons.learnMore
     }
 

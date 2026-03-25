@@ -95,6 +95,7 @@ struct Foreground: ForegroundHandling {
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
+            userActivityHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnEvaluator: idleReturnEvaluator,
@@ -179,6 +180,8 @@ struct Foreground: ForegroundHandling {
             launchActionHandler.handleLaunchAction(.openURL(url))
         case .handleShortcutItem(let shortcutItem):
             launchActionHandler.handleLaunchAction(.handleShortcutItem(shortcutItem))
+        case .handleUserActivity(let userActivity):
+            launchActionHandler.handleLaunchAction(.handleUserActivity(userActivity))
         }
     }
 

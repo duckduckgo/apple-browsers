@@ -15,6 +15,8 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
+//
+
 import DuckUI
 import Onboarding
 import SwiftUI
@@ -28,7 +30,8 @@ extension OnboardingRebranding.OnboardingView {
             animationName: "Dax-AddressBar",
             size: CGSize(width: 100, height: 111.3),
             position: .bottom(yOffset: 50.0),
-            loop: true
+            loop: true,
+            fadeInTime: 1.5
         )
 
         @Environment(\.onboardingTheme) private var onboardingTheme

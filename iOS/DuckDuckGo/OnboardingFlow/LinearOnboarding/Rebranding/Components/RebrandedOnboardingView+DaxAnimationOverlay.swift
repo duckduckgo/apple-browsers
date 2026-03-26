@@ -63,6 +63,8 @@ struct DaxAnimation {
     let fadeOut: Bool
     /// When `true`, the Lottie animation loops indefinitely instead of stopping on the last frame.
     let loop: Bool
+    /// When non-nil, the overlay starts at 0% opacity and fades in to 100% over this duration on appear.
+    let fadeInTime: TimeInterval?
 
     /// `true` when the animation slides off-screen **before** the step transition.
     /// The parent must delay the action call by `effectiveExitDuration`.
@@ -87,7 +89,8 @@ struct DaxAnimation {
          twoStagesAnimation: Double? = nil,
          exitDuration: TimeInterval? = nil,
          fadeOut: Bool = false,
-         loop: Bool = false) {
+         loop: Bool = false,
+         fadeInTime: TimeInterval? = nil) {
         self.animationName = animationName
         self.size = size
         self.position = position
@@ -97,6 +100,7 @@ struct DaxAnimation {
         self.exitDuration = exitDuration
         self.fadeOut = fadeOut
         self.loop = loop
+        self.fadeInTime = fadeInTime
     }
 }
 
@@ -131,14 +135,15 @@ struct DaxAnimationOverlay: View {
     /// Current displacement from `finalCenter`. Zero means the view is at its design position.
     /// Seeded from `entranceOffset` so the very first render is already off-screen — no jump.
     @State private var positionOffset: CGPoint
-    /// Opacity driven to 0 on exit when `animation.fadeOut` is `true`; otherwise stays at 1.
-    @State private var opacity: Double = 1
+    /// Opacity: starts at 0 when `fadeInTime` is set, otherwise 1. Driven to 0 on exit when `fadeOut` is `true`.
+    @State private var opacity: Double
 
     init(animation: DaxAnimation, playForward: Bool, isExiting: Bool) {
         self.animation = animation
         self.playForward = playForward
         self.isExiting = isExiting
         _positionOffset = State(initialValue: animation.entranceOffset ?? .zero)
+        _opacity = State(initialValue: animation.fadeInTime != nil ? 0 : 1)
     }
 
     /// Lottie playback mode derived from the current state.
@@ -184,11 +189,17 @@ struct DaxAnimationOverlay: View {
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .onAppear {
-            guard animation.entranceOffset != nil else { return }
-            // positionOffset is already at entranceOffset from init; animate straight to the
-            // final position in sync with Lottie starting to play — no intermediate jump needed.
-            withAnimation(.easeOut(duration: OnboardingBubbleAnimationMetrics.daxEntranceDuration)) {
-                positionOffset = .zero
+            if animation.entranceOffset != nil {
+                // positionOffset is already at entranceOffset from init; animate straight to the
+                // final position in sync with Lottie starting to play — no intermediate jump needed.
+                withAnimation(.easeOut(duration: OnboardingBubbleAnimationMetrics.daxEntranceDuration)) {
+                    positionOffset = .zero
+                }
+            }
+            if let fadeInTime = animation.fadeInTime {
+                withAnimation(.easeIn(duration: fadeInTime)) {
+                    opacity = 1
+                }
             }
         }
         .onChange(of: isExiting) { exiting in

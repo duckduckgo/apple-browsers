@@ -147,7 +147,7 @@
             },
             {
                 "keyPattern": "^ue[0-9]?$",
-                "type": "string",
+                "type": "integer",
                 "description": "Underlying error code at any depth"
             }
         ]

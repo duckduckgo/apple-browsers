@@ -136,6 +136,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var leftButtonContainer: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -199,6 +200,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var rightButtonContainer: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -822,10 +824,14 @@ private extension AIChatContextualSheetViewController {
     
     func updateButtonContainerCornerRadii() {
         let leftHeight = leftButtonContainer.bounds.height
-        leftButtonContainer.layer.cornerRadius = leftHeight / 2
+        if leftHeight > 0 {
+            leftButtonContainer.layer.cornerRadius = leftHeight / 2
+        }
 
         let rightHeight = rightButtonContainer.bounds.height
-        rightButtonContainer.layer.cornerRadius = rightHeight / 2
+        if rightHeight > 0 {
+            rightButtonContainer.layer.cornerRadius = rightHeight / 2
+        }
     }
 
     func updateShadowPath() {

@@ -49,25 +49,15 @@ enum DBPContinuedProcessingPlans {
     }
 }
 
-/// Builds continued-processing plans from eligible jobs only.
+/// Builds continued-processing plans from pre-filtered eligible jobs.
 enum DBPContinuedProcessingPlanBuilder {
     private struct BrokerQueryKey: Hashable {
         let brokerId: Int64
         let profileQueryId: Int64
     }
 
-    /// Initial scan plan used to seed the scan half of the progress model.
-    static func makeInitialScanPlan(
-        from brokerProfileQueryData: [BrokerProfileQueryData],
-        priorityDate: Date = Date()
-    ) -> DBPContinuedProcessingPlans.InitialScanPlan {
-        let eligibleJobs = BrokerProfileJob.sortedEligibleJobs(
-            brokerProfileQueriesData: brokerProfileQueryData,
-            jobType: .manualScan,
-            priorityDate: priorityDate
-        )
-
-        let scanJobs = eligibleJobs.compactMap { $0 as? ScanJobData }
+    /// Converts eligible scan jobs into an initial scan plan for the progress model.
+    static func makeInitialScanPlan(from scanJobs: [ScanJobData]) -> DBPContinuedProcessingPlans.InitialScanPlan {
         let scanJobIDs = scanJobs.map { job in
             DBPContinuedProcessingPlans.ScanJobID(
                 brokerId: job.brokerId,
@@ -78,18 +68,11 @@ enum DBPContinuedProcessingPlanBuilder {
         return DBPContinuedProcessingPlans.InitialScanPlan(scanJobIDs: scanJobIDs)
     }
 
-    /// Opt-out plans exclude jobs that runtime would skip.
+    /// Converts eligible opt-out jobs into an opt-out plan, excluding jobs that runtime would skip.
     static func makeOptOutPlan(
-        from brokerProfileQueryData: [BrokerProfileQueryData],
-        priorityDate: Date = Date()
+        from optOutJobs: [OptOutJobData],
+        brokerProfileQueryData: [BrokerProfileQueryData]
     ) -> DBPContinuedProcessingPlans.OptOutPlan {
-        let eligibleJobs = BrokerProfileJob.sortedEligibleJobs(
-            brokerProfileQueriesData: brokerProfileQueryData,
-            jobType: .optOut,
-            priorityDate: priorityDate
-        )
-
-        let optOutJobs = eligibleJobs.compactMap { $0 as? OptOutJobData }
         let dataByKey: [BrokerQueryKey: BrokerProfileQueryData] = Dictionary(
             brokerProfileQueryData.compactMap { queryData -> (BrokerQueryKey, BrokerProfileQueryData)? in
                 guard let brokerId = queryData.dataBroker.id,

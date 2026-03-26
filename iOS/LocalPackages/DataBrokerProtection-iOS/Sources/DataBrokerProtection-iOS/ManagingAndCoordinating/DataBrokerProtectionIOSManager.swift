@@ -969,9 +969,14 @@ extension DataBrokerProtectionIOSManager {
     }
 
     private func makeContinuedProcessingInitialRunPlan() throws -> DBPContinuedProcessingPlans.InitialScanPlan? {
-
         let brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
-        let scanPlan = DBPContinuedProcessingPlanBuilder.makeInitialScanPlan(from: brokerProfileQueryData)
+        let eligibleScanJobs = BrokerProfileJob.sortedEligibleJobs(
+            brokerProfileQueriesData: brokerProfileQueryData,
+            jobType: .manualScan,
+            priorityDate: Date()
+        ).compactMap { $0 as? ScanJobData }
+
+        let scanPlan = DBPContinuedProcessingPlanBuilder.makeInitialScanPlan(from: eligibleScanJobs)
         guard scanPlan.scanCount > 0 else {
             return nil
         }
@@ -985,7 +990,13 @@ extension DataBrokerProtectionIOSManager {
 
     func makeContinuedProcessingOptOutPlan() throws -> DBPContinuedProcessingPlans.OptOutPlan {
         let brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
-        return DBPContinuedProcessingPlanBuilder.makeOptOutPlan(from: brokerProfileQueryData)
+        let eligibleOptOutJobs = BrokerProfileJob.sortedEligibleJobs(
+            brokerProfileQueriesData: brokerProfileQueryData,
+            jobType: .optOut,
+            priorityDate: Date()
+        ).compactMap { $0 as? OptOutJobData }
+
+        return DBPContinuedProcessingPlanBuilder.makeOptOutPlan(from: eligibleOptOutJobs, brokerProfileQueryData: brokerProfileQueryData)
     }
 
     @MainActor

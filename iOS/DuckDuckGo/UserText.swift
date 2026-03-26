@@ -2278,6 +2278,18 @@ public struct UserText {
                 value: "What order should I watch the Mighty Ducks movies in?",
                 comment: "Second suggestion chip label in onboarding Duck.ai query experiment screen."
             )
+            public static let searchSuggestionOption1 = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.suggestion.search.option1",
+                value: "how to say \"duck\" in spanish",
+                comment: "First suggestion chip label in onboarding Duck.ai query experiment screen when Search mode is active."
+            )
+            public static let searchSuggestionOption2 = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.suggestion.search.option2",
+                value: "mighty ducks cast",
+                comment: "Second suggestion chip label in onboarding Duck.ai query experiment screen when Search mode is active."
+            )
+            public static let suggestionSurpriseMe = Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
+
             public static let fireOnboardingTitle = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.fire.title",
                 value: "And that’s Duck.ai!",

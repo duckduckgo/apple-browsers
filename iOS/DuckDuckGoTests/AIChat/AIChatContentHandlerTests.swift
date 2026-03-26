@@ -638,6 +638,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func responseReceived(params: Any, message: any UserScriptMessage) async -> (any Encodable)? { nil }
 }
 // swiftlint:enable inclusive_language
 

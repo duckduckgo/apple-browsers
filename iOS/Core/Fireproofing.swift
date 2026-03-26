@@ -117,6 +117,8 @@ public class UserDefaultsFireproofing: Fireproofing {
         } else {
             legacyAllowedDomains = legacyAllowedDomains.filter { $0 != domain }
             guard let normalized = tld.eTLDplus1(domain) else { return }
+            let hasRemainingLegacyDomainForETLDPlus1 = legacyAllowedDomains.contains { tld.eTLDplus1($0) == normalized }
+            guard !hasRemainingLegacyDomainForETLDPlus1 else { return }
             etldPlus1AllowedDomains = etldPlus1AllowedDomains.filter { $0 != normalized }
         }
     }

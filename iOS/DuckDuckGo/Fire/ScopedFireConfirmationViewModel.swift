@@ -148,18 +148,17 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// Computes the subtitle text for the confirmation dialog.
     ///
     /// The logic follows this priority:
-    /// 1. If contextual chat mode → always show "You can't undo this action"
-    /// 2. If showing Dax fire dialog (onboarding) → return nil (skip all subtitles)
-    /// 3. If there are ongoing downloads → show downloads warning
-    /// 4. If no tab view model → return nil (tab switcher/settings)
-    /// 5. If tab doesn't support tab history → show new tabs info
-    /// 5a. If in fire mode → return nil (skip explanatory subtitles)
-    /// 6. For AI tabs → show AI-specific description (up to 2 times)
-    /// 7. For normal web tabs → show sign out warning (up to 2 times)
-    /// 8. Otherwise → return nil
+    /// 1. If showing Dax fire dialog (onboarding) → return nil (skip all subtitles)
+    /// 2. If there are ongoing downloads → show downloads warning
+    /// 3. If no tab view model → return nil (tab switcher/settings)
+    /// 4. If tab doesn't support tab history → show new tabs info
+    /// 4a. If in fire mode → return nil (skip explanatory subtitles)
+    /// 5. For AI tabs → show AI-specific description (up to 2 times)
+    /// 6. For normal web tabs → show sign out warning (up to 2 times)
+    /// 7. Otherwise → return nil
     private func computeSubtitle() -> String? {
         if case .contextualChat = fireContext {
-            return UserText.contextualChatDeleteConfirmationSubtitle
+            return nil
         }
 
         // Skip all subtitles if in onboarding

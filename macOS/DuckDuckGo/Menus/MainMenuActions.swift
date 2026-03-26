@@ -825,6 +825,10 @@ extension AppDelegate {
         UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
+    @objc func setLaunchDay10DaysInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.daysAgo(10), forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
     @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
         UserDefaults.standard.set(Date.monthAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }

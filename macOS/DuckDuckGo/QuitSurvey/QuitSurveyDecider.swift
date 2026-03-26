@@ -179,6 +179,11 @@ protocol QuitSurveyPersistor {
 
     /// Only for internal users, triggered from the debug menu
     var alwaysShowQuitSurvey: Bool { get set }
+
+    /// Stores a bool if the user has selected a thumbs up response
+    /// When set, the thumbs up return user pixel should be fired on next app launch.
+    /// After firing the pixel, this should be cleared to ensure the pixel is only fired once.
+    var hasSelectedThumbsUp: Bool? { get set }
 }
 
 final class QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
@@ -187,6 +192,7 @@ final class QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
         case hasQuitAppBefore = "quit-survey.has-quit-app-before"
         case pendingReturnUserReasons = "quit-survey.pending-return-user-reasons"
         case alwaysShowQuitSurvey = "quit-survey.always-show-quit-survey"
+        case hasSelectedThumbsUp = "quit-survey.has-selected-thumbs-up"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -256,6 +262,28 @@ final class QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
                 try keyValueStore.set(newValue, forKey: Key.alwaysShowQuitSurvey.rawValue)
             } catch {
                 Logger.general.error("Failed to write hasQuitAppBefore to keyValueStore: \(error)")
+            }
+        }
+    }
+
+    var hasSelectedThumbsUp: Bool? {
+        get {
+            do {
+                return try keyValueStore.object(forKey: Key.hasSelectedThumbsUp.rawValue) as? Bool
+            } catch {
+                Logger.general.error("Failed to read hasSelectedThumbsUp from keyValueStore: \(error)")
+                return nil
+            }
+        }
+        set {
+            do {
+                if let value = newValue {
+                    try keyValueStore.set(value, forKey: Key.hasSelectedThumbsUp.rawValue)
+                } else {
+                    try keyValueStore.removeObject(forKey: Key.hasSelectedThumbsUp.rawValue)
+                }
+            } catch {
+                Logger.general.error("Failed to write hasSelectedThumbsUp to keyValueStore: \(error)")
             }
         }
     }

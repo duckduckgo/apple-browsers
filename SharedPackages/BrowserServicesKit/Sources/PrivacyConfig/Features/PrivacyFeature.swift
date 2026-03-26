@@ -192,6 +192,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case lazyMenuRebuild
 
     case addToDockAppStore
+
+    case screenTimeCleaning
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -258,6 +260,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case crashReportOptInStatusResetting
 
     case fireproofingETLDPlus1
+
+    case screenTimeCleaning
+
+    case minimalChromeInLandscape
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

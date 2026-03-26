@@ -78,7 +78,7 @@ struct ReturnToTabCard: View {
     private var iconView: some View {
         Group {
             if model.isAITab {
-                Image(uiImage: DesignSystemImages.Color.Size24.aiChatGradient)
+                Image(uiImage: UIImage(resource: .duckAIDefault))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
             } else if let domain = model.domain {

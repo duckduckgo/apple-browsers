@@ -477,8 +477,8 @@ final class BrowserTabViewController: NSViewController {
         tabCollectionViewModel.tabCollection.$tabs
             .sink {  [weak self] tabs in
                 guard let self else { return }
-                setDelegate(for: tabs)
-                removeDataBrokerViewIfNecessary(for: tabs)
+                setDelegate(for: tabs.compactMap(\.tab))
+                removeDataBrokerViewIfNecessary(for: tabs.compactMap(\.tab))
             }
             .store(in: &cancellables)
 
@@ -495,7 +495,7 @@ final class BrowserTabViewController: NSViewController {
         pinnedTabsDelegatesCancellable = tabCollectionViewModel.pinnedTabsCollection?.$tabs
             .sink(receiveValue: { [weak self] tabs in
                 guard let self else { return }
-                setDelegate(for: tabs)
+                setDelegate(for: tabs.compactMap(\.tab))
             })
     }
 
@@ -1157,7 +1157,7 @@ final class BrowserTabViewController: NSViewController {
         guard let tabViewModel else { return false }
 
         let newWebView = webView(for: tabViewModel)
-        let isPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs.contains(tabViewModel.tab) == true
+        let isPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs.contains(where: { $0.tab === tabViewModel.tab }) == true
         let isKeyWindow = view.window?.isKeyWindow == true
 
         let tabIsNotOnScreen = webView?.tabContentView.superview == nil
@@ -1395,7 +1395,7 @@ extension BrowserTabViewController: TabDelegate {
     }
 
     func closeTab(_ tab: Tab) {
-        guard let index = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) else {
+        guard let index = tabCollectionViewModel.tabCollection.tabs.firstIndex(where: { $0.tab === tab }) else {
             return
         }
         tabCollectionViewModel.remove(at: .unpinned(index))

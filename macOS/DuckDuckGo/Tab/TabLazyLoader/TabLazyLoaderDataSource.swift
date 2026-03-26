@@ -53,11 +53,11 @@ extension TabLazyLoaderDataSource {
 extension TabCollectionViewModel: TabLazyLoaderDataSource {
 
     var pinnedTabs: [Tab] {
-        pinnedTabsCollection?.tabs ?? []
+        (pinnedTabsCollection?.tabs ?? []).compactMap(\.tab)
     }
 
     var tabs: [Tab] {
-        tabCollection.tabs
+        tabCollection.tabs.compactMap(\.tab)
     }
 
     var selectedTab: Tab? {

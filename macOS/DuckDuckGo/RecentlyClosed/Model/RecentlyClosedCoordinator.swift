@@ -128,13 +128,24 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
     private(set) var cache = [RecentlyClosedCacheItem]()
 
-    private func cacheTabContent(_ tab: Tab, of tabCollection: TabCollection, at tabIndex: TabIndex) {
-        guard !tab.content.isEmpty, !tab.burnerMode.isBurner else {
+    private func cacheTabContent(_ anyTab: AnyTab, of tabCollection: TabCollection, at tabIndex: TabIndex) {
+        guard !anyTab.content.isEmpty, !anyTab.burnerMode.isBurner else {
             // Don't cache empty tabs and burner tabs
             return
         }
 
-        let cacheItem = RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: tabIndex)
+        let cacheItem: RecentlyClosedTab
+        switch anyTab {
+        case .loaded(let tab):
+            cacheItem = RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: tabIndex)
+        case .suspended(let suspended):
+            cacheItem = RecentlyClosedTab(tabContent: suspended.content,
+                                          favicon: suspended.favicon,
+                                          title: suspended.title,
+                                          interactionData: suspended.interactionStateData,
+                                          originalTabCollection: tabCollection,
+                                          index: tabIndex)
+        }
         cache.append(cacheItem)
     }
 
@@ -147,8 +158,18 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
             return
         }
 
-        let tabCacheItems = tabCollection.tabs.enumerated().map {
-            RecentlyClosedTab(tab: $0.element, originalTabCollection: tabCollection, tabIndex: .unpinned($0.offset))
+        let tabCacheItems = tabCollection.tabs.enumerated().compactMap { (offset, anyTab) -> RecentlyClosedTab? in
+            switch anyTab {
+            case .loaded(let tab):
+                return RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: .unpinned(offset))
+            case .suspended(let suspended):
+                return RecentlyClosedTab(tabContent: suspended.content,
+                                         favicon: suspended.favicon,
+                                         title: suspended.title,
+                                         interactionData: suspended.interactionStateData,
+                                         originalTabCollection: tabCollection,
+                                         index: .unpinned(offset))
+            }
         }
         let droppingPoint = mainWindowController.window?.frame.droppingPoint
         let contentSize = mainWindowController.window?.frame.size

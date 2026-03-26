@@ -40,29 +40,15 @@ extension Tab: NSSecureCoding {
 
     @MainActor
     convenience init?(coder decoder: NSCoder) {
-        let uuid: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.uuid)
-        let url: URL? = decoder.decodeIfPresent(at: NSSecureCodingKeys.url)
-        let videoID: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoID)
-        let videoTimestamp: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoTimestamp)
-        let preferencePane = decoder.decodeIfPresent(at: NSSecureCodingKeys.preferencePane)
-            .flatMap(PreferencePaneIdentifier.init(rawValue:))
-        let historyPane = decoder.decodeIfPresent(at: NSSecureCodingKeys.historyPane)
-            .flatMap(HistoryPaneIdentifier.init(rawValue:))
+        guard let data = TabRestorationData(coder: decoder) else { return nil }
 
-        guard let tabTypeRawValue: Int = decoder.decodeIfPresent(at: NSSecureCodingKeys.tabType),
-              let tabType = TabContent.ContentType(rawValue: tabTypeRawValue),
-              let content = TabContent(type: tabType, url: url, videoID: videoID, timestamp: videoTimestamp, preferencePane: preferencePane, historyPane: historyPane)
-        else { return nil }
-
-        let interactionStateData: Data? = decoder.decodeIfPresent(at: NSSecureCodingKeys.interactionStateData) ?? decoder.decodeIfPresent(at: NSSecureCodingKeys.sessionStateData)
-
-        self.init(uuid: uuid,
-                  content: content,
-                  title: decoder.decodeIfPresent(at: NSSecureCodingKeys.title),
-                  favicon: decoder.decodeIfPresent(at: NSSecureCodingKeys.favicon),
-                  interactionStateData: interactionStateData,
+        self.init(uuid: data.uuid,
+                  content: data.content,
+                  title: data.title,
+                  favicon: data.favicon,
+                  interactionStateData: data.interactionStateData,
                   shouldLoadInBackground: false,
-                  lastSelectedAt: decoder.decodeIfPresent(at: NSSecureCodingKeys.lastSelectedAt))
+                  lastSelectedAt: data.lastSelectedAt)
 
         _=self.awakeAfter(using: decoder)
     }
@@ -91,7 +77,7 @@ extension Tab: NSSecureCoding {
 
 }
 
-private extension Tab.TabContent {
+extension Tab.TabContent {
 
     enum ContentType: Int, CaseIterable {
         case url = 0

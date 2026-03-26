@@ -186,6 +186,7 @@ extension AppDelegate {
         // so we need to instruct all open history tabs to reload themselves.
         let historyTabs = self.windowControllersManager.mainWindowControllers
             .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+            .compactMap(\.tab)
             .filter { $0.content.isHistory }
         historyTabs.forEach { $0.reload() }
     }
@@ -1552,7 +1553,7 @@ extension MainViewController {
 
         let otherMainViewControllers = otherWindowControllers.compactMap { $0.mainViewController }
         let otherTabCollectionViewModels = otherMainViewControllers.map { $0.tabCollectionViewModel }
-        let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
+        let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }.compactMap(\.tab)
         let otherLocalHistoryOfRemovedTabs = Set(otherTabCollectionViewModels.flatMap { $0.tabCollection.localHistoryOfRemovedTabs })
 
         WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
@@ -1595,9 +1596,14 @@ extension MainViewController {
         let urls = Self.debugTabURLs
         (0..<numberOfTabs).forEach { i in
             let url = urls[i % urls.count]
-            let tab = Tab(content: .url(url, credential: nil, source: .ui))
-            tabCollectionViewModel.append(tab: tab)
+            let suspended = SuspendedTab(content: .url(url, credential: nil, source: .ui),
+                                         title: url.host ?? url.absoluteString)
+            tabCollectionViewModel.tabCollection.append(anyTab: .suspended(suspended))
         }
+        // Notify the delegate so the collection view reloads before we select
+        tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)
+        let lastIndex = tabCollectionViewModel.tabCollection.tabs.count - 1
+        tabCollectionViewModel.select(at: .unpinned(lastIndex))
     }
 
     @objc func debugShiftCardImpression(_ sender: Any?) {

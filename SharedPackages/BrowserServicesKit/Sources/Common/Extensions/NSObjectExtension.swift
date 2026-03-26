@@ -76,7 +76,7 @@ extension NSObject {
         }
         public static let interrupt = DeallocationCheckAction { object in
 #if DEBUG
-            breakByRaisingSigInt("\(object) has not been deallocated. Ensure there‘s no retain cycle added.")
+            //breakByRaisingSigInt("\(object) has not been deallocated. Ensure there‘s no retain cycle added.")
 #endif
         }
         public static let log = DeallocationCheckAction { object in

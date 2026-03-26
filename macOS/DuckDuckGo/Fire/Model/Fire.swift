@@ -983,7 +983,8 @@ final class Fire: FireProtocol {
                 return .failure(DataClearingWideEventError(description: "No pinned tabs manager"))
             }
 
-            for (index, pinnedTab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
+            for (index, anyTab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
+                guard let pinnedTab = anyTab.tab else { continue }
                 let newTab = replacementPinnedTab(from: pinnedTab)
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
             }
@@ -1111,7 +1112,7 @@ final class Fire: FireProtocol {
             return [tabViewModel]
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
             let pinnedTabViewModels = Array(tabCollectionViewModel.pinnedTabsManager?.tabViewModels.values ?? Dictionary().values)
-            let tabViewModels = Array(tabCollectionViewModel.tabViewModels.values)
+            let tabViewModels = tabCollectionViewModel.tabViewModels.values.compactMap { $0 as? TabViewModel }
             return pinnedTabViewModels + tabViewModels
         case .allWindows:
             let pinnedTabViewModels = Array(pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.values })
@@ -1189,8 +1190,8 @@ extension TabCollection {
 
     var localHistoryDomains: Set<String> {
         var domains = Set<String>()
-
-        for tab in tabs {
+        for anyTab in tabs {
+            guard let tab = anyTab.tab else { continue }
             domains = domains.union(tab.localHistoryDomains)
         }
         return domains

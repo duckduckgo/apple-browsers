@@ -47,9 +47,16 @@ final class WindowManagerStateRestorationTests: XCTestCase {
             !a.enumerated().contains { !isTab($0.1, equalTo: b[$0.0]) }
     }
 
+    func areAnyTabsEqual(_ a: [AnyTab], _ b: [Tab]) -> Bool {
+        let loadedTabs = a.compactMap(\.tab)
+        return areTabsEqual(loadedTabs, b)
+    }
+
     @MainActor
     func areTabCollectionViewModelsEqual(_ a: TabCollectionViewModel, _ b: TabCollectionViewModel) -> Bool {
-        a.selectionIndex == b.selectionIndex && areTabsEqual(a.tabCollection.tabs, b.tabCollection.tabs)
+        let aTabs = a.tabCollection.tabs.compactMap(\.tab)
+        let bTabs = b.tabCollection.tabs.compactMap(\.tab)
+        return a.selectionIndex == b.selectionIndex && areTabsEqual(aTabs, bTabs)
     }
 
     // MARK: -
@@ -128,7 +135,7 @@ final class WindowManagerStateRestorationTests: XCTestCase {
             return XCTFail("Could not unarchive WindowManagerStateRestoration")
         }
 
-        XCTAssertTrue(areTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs))
+        XCTAssertTrue(areAnyTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs))
         XCTAssertEqual(restored.windows.count, 2)
         XCTAssertEqual(restored.keyWindowIndex, 1)
 

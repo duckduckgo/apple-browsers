@@ -201,7 +201,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     private func migrateAllPerWindowPinnedTabsToShared() {
         let allTabs = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }
         perWindowPinnedTabsManagers.forEach { $0.tabCollection.removeAll() }
-        allTabs.forEach { sharedPinnedTabsManager.pin($0, firePixel: false) }
+        allTabs.compactMap(\.tab).forEach { sharedPinnedTabsManager.pin($0, firePixel: false) }
     }
 
     // MARK: Cache

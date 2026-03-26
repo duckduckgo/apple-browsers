@@ -77,9 +77,7 @@ final class TabViewModel: NSObject {
     let zoomLevelSubject = PassthroughSubject<DefaultZoomValue, Never>()
     private(set) var zoomLevel: DefaultZoomValue = .percent100 {
         didSet {
-            if tab.isWebViewCreated {
-                self.tab.webView.zoomLevel = zoomLevel
-            }
+            self.tab.webView.zoomLevel = zoomLevel
             if oldValue != zoomLevel {
                 zoomLevelSubject.send(zoomLevel)
             }
@@ -305,17 +303,13 @@ final class TabViewModel: NSObject {
     }
 
     private func subscribeToPreferences() {
-        if tab.isWebViewCreated {
-            tab.webView.zoomLevelDelegate = self
-        }
+        tab.webView.zoomLevelDelegate = self
         appearancePreferences.$showFullURL.dropFirst().sink { [weak self] showFullURL in
             self?.updatePassiveAddressBarString(showFullURL: showFullURL)
         }.store(in: &cancellables)
         accessibilityPreferences.$defaultPageZoom.sink { [weak self] newValue in
             guard let self = self else { return }
-            if tab.isWebViewCreated {
-                self.tab.webView.defaultZoomValue = newValue
-            }
+            self.tab.webView.defaultZoomValue = newValue
             if !isThereZoomPerWebsite {
                 self.zoomLevel = newValue
             }

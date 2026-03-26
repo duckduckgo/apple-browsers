@@ -186,8 +186,9 @@ extension TabIndex {
     /// 5. Try to find the next tab
     /// 6. Try to find the previous tab
     @MainActor
-    func calculateSelectedTabIndexAfterClosing(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
-        if let parentTabId = removedTab.parentTabID {
+    func calculateSelectedTabIndexAfterClosing(for viewModel: TabCollectionViewModel, removedTab: AnyTab) -> TabIndex? {
+        // Only loaded tabs can have parent relationships; suspended tabs fall through to default logic
+        if let loadedTab = removedTab.tab, let parentTabId = loadedTab.parentTabID {
             if let nextTabWithSameParent = findNextTabWithSameParent(for: viewModel, parentTabId: parentTabId) {
                 return nextTabWithSameParent
             }
@@ -196,12 +197,12 @@ extension TabIndex {
                 return previousTabWithSameParent
             }
 
-            if let parentTab = removedTab.parentTab, let parentTabIndex = viewModel.indexInAllTabs(of: parentTab) {
+            if let parentTab = loadedTab.parentTab, let parentTabIndex = viewModel.indexInAllTabs(of: parentTab) {
                 return parentTabIndex
             }
         }
 
-        return findNewSelectionIndexWithoutParent(for: viewModel, removedTab: removedTab)
+        return findNewSelectionIndexWithoutParent(for: viewModel, removedTab: removedTab.tab)
     }
 
     private enum SearchDirection {
@@ -260,12 +261,14 @@ extension TabIndex {
     /// 5. Try to find the next tab
     /// 6. Try to find the previous tab
     @MainActor
-    private func findNewSelectionIndexWithoutParent(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
-        if let nextTabWithRemovedTabAsParent = findNextTabWithRemovedTabAsParent(for: viewModel, removedTab: removedTab) {
+    private func findNewSelectionIndexWithoutParent(for viewModel: TabCollectionViewModel, removedTab: Tab?) -> TabIndex? {
+        if let removedTab,
+           let nextTabWithRemovedTabAsParent = findNextTabWithRemovedTabAsParent(for: viewModel, removedTab: removedTab) {
             return nextTabWithRemovedTabAsParent
         }
 
-        if let previousTabWithRemovedTabAsParent = findPreviousTabWithRemovedTabAsParent(for: viewModel, removedTab: removedTab) {
+        if let removedTab,
+           let previousTabWithRemovedTabAsParent = findPreviousTabWithRemovedTabAsParent(for: viewModel, removedTab: removedTab) {
             return previousTabWithRemovedTabAsParent
         }
 

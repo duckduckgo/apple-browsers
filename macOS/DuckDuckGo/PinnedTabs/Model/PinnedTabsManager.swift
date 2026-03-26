@@ -26,7 +26,7 @@ import PixelKit
 final class PinnedTabsManager {
 
     private(set) var tabCollection: TabCollection
-    private(set) var tabViewModels = [Tab: TabViewModel]()
+    private(set) var tabViewModels = [String: TabViewModel]()
 
     let didUnpinTabPublisher: AnyPublisher<Int, Never>
 
@@ -46,7 +46,7 @@ final class PinnedTabsManager {
     }
 
     func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> Tab? {
-        guard let tab = tabCollection.tabs[safe: index] else {
+        guard let anyTab = tabCollection.tabs[safe: index], let tab = anyTab.tab else {
             Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
             return nil
         }
@@ -66,7 +66,7 @@ final class PinnedTabsManager {
     }
 
     func isTabPinned(_ tab: Tab) -> Bool {
-        tabCollection.tabs.contains(tab)
+        tabCollection.tabs.contains { $0.tab === tab }
     }
 
     func tabViewModel(at index: Int) -> TabViewModel? {
@@ -76,7 +76,14 @@ final class PinnedTabsManager {
         }
 
         let tab = tabCollection.tabs[index]
-        return tabViewModels[tab]
+        return tabViewModels[tab.uuid]
+    }
+
+    func tabBarViewModel(at index: Int) -> (any TabBarViewModel)? {
+        guard index >= 0, tabCollection.tabs.count > index else {
+            return nil
+        }
+        return tabViewModels[tabCollection.tabs[index].uuid]
     }
 
     func isDomainPinned(_ domain: String) -> Bool {
@@ -89,8 +96,8 @@ final class PinnedTabsManager {
 
     func setUp(movingTabsFrom collection: TabCollection) {
         tabCollection.removeAll()
-        for tab in collection.tabs {
-            tabCollection.append(tab: tab)
+        for anyTab in collection.tabs {
+            tabCollection.append(anyTab: anyTab)
         }
         collection.clearAfterMerge()
     }
@@ -109,7 +116,7 @@ final class PinnedTabsManager {
             .asVoid()
             .sink { [weak self] in
                 if NSApp.windows.filter({ $0 is MainWindow }).count == 1 {
-                    self?.tabCollection.tabs.forEach { $0.stopAllMediaAndLoading() }
+                    self?.tabCollection.tabs.forEach { $0.tab?.stopAllMediaAndLoading() }
                 }
             }
     }
@@ -124,23 +131,20 @@ final class PinnedTabsManager {
         tabsCancellable = tabCollection.$tabs.sink { [weak self] newTabs in
             guard let self = self else { return }
 
-            let new = Set(newTabs)
-            let old = Set(self.tabViewModels.keys)
+            let newUUIDs = Set(newTabs.map(\.uuid))
+            let oldUUIDs = Set(self.tabViewModels.keys)
 
-            self.removeTabViewModels(old.subtracting(new))
-            self.addTabViewModels(new.subtracting(old))
-        }
-    }
+            let removedUUIDs = oldUUIDs.subtracting(newUUIDs)
+            for uuid in removedUUIDs {
+                self.tabViewModels[uuid] = nil
+            }
 
-    private func removeTabViewModels(_ removed: Set<Tab>) {
-        for tab in removed {
-            tabViewModels[tab] = nil
-        }
-    }
-
-    private func addTabViewModels(_ added: Set<Tab>) {
-        for tab in added {
-            tabViewModels[tab] = TabViewModel(tab: tab)
+            let addedUUIDs = newUUIDs.subtracting(oldUUIDs)
+            for anyTab in newTabs where addedUUIDs.contains(anyTab.uuid) {
+                if case .loaded(let tab) = anyTab {
+                    self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
+                }
+            }
         }
     }
 }

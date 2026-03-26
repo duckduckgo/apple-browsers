@@ -1912,7 +1912,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
 
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
 
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: tabIndex) else {
+        guard let viewModel = tabCollectionViewModel.tabBarViewModel(at: tabIndex) else {
             tabBarViewItem.clear()
             return tabBarViewItem
         }
@@ -1920,7 +1920,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
         tabBarViewItem.fireproofDomains = fireproofDomains
         tabBarViewItem.delegate = self
         tabBarViewItem.isBurner = tabCollectionViewModel.isBurner
-        tabBarViewItem.subscribe(to: tabViewModel)
+        tabBarViewItem.subscribe(to: viewModel)
 
         if let pinnedTabsCollectionView, pinnedTabsCollectionView == collectionView {
             tabBarViewItem.isLeftToSelected = pinnedTabsCollectionView.isLastItemInSection(indexPath: indexPath) && shouldHideLastPinnedSeparator
@@ -2513,7 +2513,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
+              let tab = tabCollection?.tabs[safe: indexPath.item]?.tab
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
@@ -2528,7 +2528,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
+              let tab = tabCollection?.tabs[safe: indexPath.item]?.tab
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
@@ -2543,7 +2543,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
+              let tab = tabCollection?.tabs[safe: indexPath.item]?.tab
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
@@ -2558,7 +2558,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item] else { return }
+              let tab = tabCollection?.tabs[safe: indexPath.item]?.tab else { return }
 
         if let url = URL.makeURL(from: stringValue) {
             tab.setContent(.url(url, credential: nil, source: .userEntered(stringValue, downloadRequested: false)))

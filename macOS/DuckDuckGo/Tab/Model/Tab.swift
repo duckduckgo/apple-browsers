@@ -376,11 +376,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         userContentController?.delegate = self
 
-        let isDeferred = featureFlagger.isFeatureOn(.deferredTabWebViewCreation)
-        Logger.tabLazyLoading.debug("🔷 [Tab] init id=\(self.uuid) deferred=\(isDeferred) content=\(String(describing: self.content))")
-        if !isDeferred {
-            _ = self.webView // trigger eager creation
-        }
+        // WebView is always created eagerly — deferred creation is handled by SuspendedTab
+        self.webView = createWebView()
+        finalizeWebViewSetup()
 
         faviconCancellable = extensions.favicons?.faviconPublisher.assign(to: \.favicon, onWeaklyHeld: self)
         if favicon == nil {
@@ -514,14 +512,14 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     deinit {
-        DispatchQueue.main.asyncOrNow { [_webView, userContentController] in
+        DispatchQueue.main.asyncOrNow { [webView, userContentController] in
             // WebKit objects must be deallocated on the main thread
-            _webView?.stopAllMedia(shouldStopLoading: true)
+            webView?.stopAllMedia(shouldStopLoading: true)
 
             userContentController?.cleanUpBeforeClosing()
 #if DEBUG
             if case .normal = AppVersion.runType {
-                _webView?.assertObjectDeallocated(after: 4.0)
+                webView?.assertObjectDeallocated(after: 4.0)
             }
 #endif
         }
@@ -594,25 +592,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     // MARK: - Properties
 
-    private var _webView: WebView?
-
-    private(set) var webView: WebView {
-        get {
-            if let wv = _webView { return wv }
-            Logger.tabLazyLoading.debug("🔷 [Tab] Deferred webView created id=\(self.uuid) content=\(String(describing: self.content))")
-            let wv = createWebView()
-            _webView = wv
-            finalizeWebViewSetup()
-            return wv
-        }
-        set {
-            _webView = newValue
-        }
-    }
-
-    var isWebViewCreated: Bool {
-        _webView != nil
-    }
+    private(set) var webView: WebView!
 
     private let audioStateSubject = CurrentValueSubject<WebView.AudioState, Never>(.unmuted(isPlayingAudio: false))
 
@@ -634,13 +614,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @PublishedAfter private(set) var content: TabContent {
         didSet {
-            if isWebViewCreated && !content.displaysContentInWebView && oldValue.displaysContentInWebView {
+            if !content.displaysContentInWebView && oldValue.displaysContentInWebView {
                 webView.stopAllMedia(shouldStopLoading: false)
             }
             Task { @MainActor in
                 extensions.favicons?.loadCachedFavicon(oldValue: oldValue, isBurner: burnerMode.isBurner, error: error)
             }
-            if isWebViewCreated && navigationDelegate.currentNavigation == nil {
+            if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)
             }
             if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
@@ -1024,7 +1004,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @MainActor(unsafe)
     @discardableResult
     func reload() -> ExpectedNavigation? {
-        Logger.tabLazyLoading.debug("🔷 [Tab] reload() id=\(self.uuid) isWebViewCreated=\(self.isWebViewCreated) content=\(String(describing: self.content))")
+        Logger.tabLazyLoading.debug("🔷 [Tab] reload() id=\(self.uuid) content=\(String(describing: self.content))")
         userInteractionDialog = nil
 
         self.brokenSiteInfo?.tabReloadRequested()
@@ -1075,7 +1055,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @discardableResult
     private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource) -> ExpectedNavigation? {
         let willReload = content.urlForWebView.map { shouldReload($0, source: reloadIfNeededSource) } ?? false
-        Logger.tabLazyLoading.debug("🔷 [Tab] reloadIfNeeded id=\(self.uuid) source=\(String(describing: reloadIfNeededSource)) url=\(String(describing: self.content.urlForWebView)) willReload=\(willReload) webViewUrl=\(String(describing: self._webView?.url)) interactionState=\(String(describing: self.interactionState))")
+        Logger.tabLazyLoading.debug("🔷 [Tab] reloadIfNeeded id=\(self.uuid) source=\(String(describing: reloadIfNeededSource)) url=\(String(describing: self.content.urlForWebView)) willReload=\(willReload) webViewUrl=\(String(describing: self.webView?.url)) interactionState=\(String(describing: self.interactionState))")
         guard let url = content.urlForWebView,
               shouldReload(url, source: reloadIfNeededSource) else { return nil }
 

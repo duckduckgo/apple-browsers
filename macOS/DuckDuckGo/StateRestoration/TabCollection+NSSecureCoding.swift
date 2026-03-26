@@ -23,15 +23,68 @@ extension TabCollection: NSSecureCoding {
     static var supportsSecureCoding: Bool { true }
 
     convenience init?(coder decoder: NSCoder) {
-        guard let tabs = decoder.decodeObject(of: [NSArray.self, Tab.self],
-                                              forKey: NSKeyedArchiveRootObjectKey) as? [Tab] else {
+        // Decode all tabs as lightweight TabRestorationData instead of full Tab objects.
+        // This avoids creating WKWebViews for every restored tab.
+        if let unarchiver = decoder as? NSKeyedUnarchiver {
+            unarchiver.setClass(TabRestorationData.self, forClassName: "Tab")
+        }
+
+        guard let restorationDataArray = decoder.decodeObject(
+            of: [NSArray.self, TabRestorationData.self],
+            forKey: NSKeyedArchiveRootObjectKey
+        ) as? [TabRestorationData] else {
+            // Restore class mapping on failure
+            if let unarchiver = decoder as? NSKeyedUnarchiver {
+                unarchiver.setClass(Tab.self, forClassName: "Tab")
+            }
             return nil
         }
+
+        // Restore class mapping for any subsequent decodes
+        if let unarchiver = decoder as? NSKeyedUnarchiver {
+            unarchiver.setClass(Tab.self, forClassName: "Tab")
+        }
+
+        // All tabs start suspended; the selected one is materialized by TabCollectionViewModel
+        let tabs: [AnyTab] = restorationDataArray.map { .suspended(SuspendedTab(from: $0)) }
         self.init(tabs: tabs)
     }
 
     func encode(with coder: NSCoder) {
-        coder.encode(tabs, forKey: NSKeyedArchiveRootObjectKey)
+        // Convert all AnyTab to TabRestorationData for encoding.
+        // Register under "Tab" class name so old binaries can still decode the archive.
+        if let archiver = coder as? NSKeyedArchiver {
+            archiver.setClassName("Tab", for: TabRestorationData.self)
+        }
+
+        let restorationData: [TabRestorationData] = tabs.map { anyTab in
+            switch anyTab {
+            case .loaded(let tab):
+                return TabRestorationData(
+                    uuid: tab.uuid,
+                    content: tab.content,
+                    title: tab.title,
+                    favicon: tab.favicon,
+                    interactionStateData: tab.getActualInteractionStateData(),
+                    lastSelectedAt: tab.lastSelectedAt,
+                    visitedDomainURLs: tab.localHistory.compactMap(\.identifier),
+                    tabSnapshotIdentifier: tab.tabSnapshotIdentifier?.uuidString
+                )
+            case .suspended(let suspended):
+                return TabRestorationData(
+                    uuid: suspended.uuid,
+                    content: suspended.content,
+                    title: suspended.title,
+                    favicon: suspended.favicon,
+                    interactionStateData: suspended.interactionStateData,
+                    lastSelectedAt: suspended.lastSelectedAt,
+                    visitedDomainURLs: suspended.visitedDomainURLs,
+                    tabSnapshotIdentifier: suspended.tabSnapshotIdentifier
+                )
+            }
+        }
+
+        coder.encode(restorationData, forKey: NSKeyedArchiveRootObjectKey)
     }
 
 }

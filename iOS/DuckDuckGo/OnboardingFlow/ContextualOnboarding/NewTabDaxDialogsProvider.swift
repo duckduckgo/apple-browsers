@@ -66,10 +66,30 @@ final class NewTabDaxDialogsProvider: NewTabDaxDialogProviding {
 
     @ViewBuilder
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        if featureFlagger.isFeatureOn(.onboardingRebranding) {
+        // TODO: Re-enable `featureFlagger.isFeatureOn(.onboardingRebranding)` once forced-style validation is complete.
+        if DaxDialogs.shouldForceRebrandedOnboarding {
             rebrandedDaxDialogsFactory.createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         } else {
             legacyDaxDialogsFactory.createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
+        }
+    }
+
+    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+        // TODO: Re-enable `featureFlagger.isFeatureOn(.onboardingRebranding)` once forced-style validation is complete.
+        if DaxDialogs.shouldForceRebrandedOnboarding {
+            AnyView(rebrandedDaxDialogsFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss))
+        } else {
+            AnyView(
+                OnboardingFinalDialog(
+                    logoPosition: .top,
+                    message: message,
+                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                    dismissAction: onDismiss,
+                    onManualDismiss: onDismiss
+                )
+                .onboardingDaxDialogStyle()
+                .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+            )
         }
     }
 

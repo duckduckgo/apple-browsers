@@ -53,9 +53,8 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        // TODO: Temporary override for experiment validation. Remove when onboarding style is controlled by remote config.
-        let shouldForceRebrandedOnboarding = true
-        let controller: Onboarding = if shouldForceRebrandedOnboarding || featureFlagger.isFeatureOn(.onboardingRebranding) {
+        // TODO: Re-enable `featureFlagger.isFeatureOn(.onboardingRebranding)` once forced-style validation is complete.
+        let controller: Onboarding = if DaxDialogs.shouldForceRebrandedOnboarding {
             OnboardingIntroViewController.rebranded(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,

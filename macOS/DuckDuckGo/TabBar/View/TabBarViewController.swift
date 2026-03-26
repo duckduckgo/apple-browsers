@@ -1839,18 +1839,18 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         bookmarkManager.remove(bookmark: bookmark, undoManager: nil)
     }
 
-    private func fireproof(_ tab: Tab) {
-        guard let url = tab.url, let host = url.host else {
-            Logger.general.error("TabBarViewController: Failed to get url of tab bar view item")
+    private func fireproof(url: URL) {
+        guard let host = url.host else {
+            Logger.general.error("TabBarViewController: Failed to get host from url")
             return
         }
 
         fireproofDomains.add(domain: host)
     }
 
-    private func removeFireproofing(from tab: Tab) {
-        guard let host = tab.url?.host else {
-            Logger.general.error("TabBarViewController: Failed to get url of tab bar view item")
+    private func removeFireproofing(url: URL) {
+        guard let host = url.host else {
+            Logger.general.error("TabBarViewController: Failed to get host from url")
             return
         }
 
@@ -2513,13 +2513,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]?.tab
+              let url = tabCollection?.tabs[safe: indexPath.item]?.url
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
         }
 
-        fireproof(tab)
+        fireproof(url: url)
     }
 
     func tabBarViewItemMuteUnmuteSite(_ tabBarViewItem: TabBarViewItem) {
@@ -2543,13 +2543,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]?.tab
+              let url = tabCollection?.tabs[safe: indexPath.item]?.url
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
         }
 
-        removeFireproofing(from: tab)
+        removeFireproofing(url: url)
     }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {

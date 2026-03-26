@@ -24,6 +24,7 @@ enum QuitSurveyPixelName: String {
     case quitSurveyThumbsDown = "quit-survey-thumbs-down"
     case quitSurveyThumbsDownSubmission = "quit-survey-reasons-submission"
     case quitSurveyReturnUser = "quit-survey-reasons-return"
+    case quitSurveyThumbsUpReturnUser = "quit-survey-thumbs-up-return"
 
 }
 
@@ -36,6 +37,7 @@ enum QuitSurveyPixels: PixelKitEvent {
     case quitSurveyThumbsDown
     case quitSurveyThumbsDownSubmission(reasons: String, affectedDomains: String?)
     case quitSurveyReturnUser(reasons: String)
+    case quitSurveyThumbsUpReturnUser
 
     var name: String {
         switch self {
@@ -49,12 +51,14 @@ enum QuitSurveyPixels: PixelKitEvent {
             return QuitSurveyPixelName.quitSurveyThumbsDownSubmission.rawValue
         case .quitSurveyReturnUser:
             return QuitSurveyPixelName.quitSurveyReturnUser.rawValue
+        case .quitSurveyThumbsUpReturnUser:
+            return QuitSurveyPixelName.quitSurveyThumbsUpReturnUser.rawValue
         }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case .quitSurveyShown, .quitSurveyThumbsUp, .quitSurveyThumbsDown:
+        case .quitSurveyShown, .quitSurveyThumbsUp, .quitSurveyThumbsDown, .quitSurveyThumbsUpReturnUser:
             return nil
         case let .quitSurveyThumbsDownSubmission(reasons, affectedDomains):
             var params = [QuitSurveyPixels.reasonsKey: reasons]

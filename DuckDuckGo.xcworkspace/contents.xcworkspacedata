@@ -4,18 +4,11 @@
    <Group
       location = "group:SharedPackages"
       name = "SharedPackages">
-      <FileSystemSynchronizedGroup
-         location = "group:Infrastructure"
-         name = "Infrastructure">
-      </FileSystemSynchronizedGroup>
       <FileRef
-         location = "group:SERPSettings">
+         location = "group:AIChat">
       </FileRef>
       <FileRef
          location = "group:AttributedMetric">
-      </FileRef>
-      <FileRef
-         location = "group:AIChat">
       </FileRef>
       <FileRef
          location = "group:AutomationServer">
@@ -26,8 +19,18 @@
       <FileRef
          location = "group:DataBrokerProtectionCore">
       </FileRef>
+      <FileSystemSynchronizedGroup
+         location = "group:Infrastructure"
+         name = "Infrastructure">
+      </FileSystemSynchronizedGroup>
       <FileRef
          location = "group:Onboarding">
+      </FileRef>
+      <FileRef
+         location = "group:ScreenTimeDataCleaner">
+      </FileRef>
+      <FileRef
+         location = "group:SERPSettings">
       </FileRef>
       <FileRef
          location = "group:UIComponents">

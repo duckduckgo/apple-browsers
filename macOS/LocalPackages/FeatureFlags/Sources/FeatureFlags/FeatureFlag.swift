@@ -310,6 +310,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables removing individual AI chat suggestions from the omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
     case aiChatRemoveSuggestion
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
+    case screenTimeCleaning
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -343,7 +346,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .startupMetrics,
                 .promoQueue,
                 .lazyMenuRebuild,
-                .websitesHistoryFirstTimeQuitSurvey:
+                .websitesHistoryFirstTimeQuitSurvey,
+                .screenTimeCleaning:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
@@ -451,7 +455,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatRemoveSuggestion,
                 .lazyMenuRebuild,
                 .websitesHistoryFirstTimeQuitSurvey,
-                .addToDockAppStore:
+                .addToDockAppStore,
+                .screenTimeCleaning:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -645,6 +650,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addToDockAppStore))
         case .aiChatRemoveSuggestion:
             return .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion))
+        case .screenTimeCleaning:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning))
         }
     }
 }

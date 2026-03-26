@@ -25,10 +25,11 @@ import SwiftUI
 
 extension Preferences {
 
-    struct AddToDockDemoVideoSheet: View {
+    struct PreferencesVideoSheet: View {
 
-        private static let videoURL = Bundle.main.url(forResource: "macOS_Add_To_Dock", withExtension: "mp4")!
-        private static let referenceVideoSize = CGSize(width: 1536, height: 752)
+        let videoURL: URL
+        /// Video size used to calculate aspect ratio for the player view.
+        let videoSize: CGSize
 
         @Binding var isPresented: Bool
         @StateObject private var coordinator = VideoPlayerCoordinator()
@@ -36,10 +37,7 @@ extension Preferences {
         var body: some View {
             VStack(spacing: 16) {
                 VideoPlayerView(player: coordinator.queuePlayer)
-                    .aspectRatio(
-                        Self.referenceVideoSize.width / Self.referenceVideoSize.height,
-                        contentMode: .fit
-                    )
+                    .aspectRatio(videoSize.width / videoSize.height, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: Preferences.Const.paneContentWidth)
 
@@ -55,7 +53,7 @@ extension Preferences {
             .frame(maxWidth: Preferences.Const.paneContentWidth)
             .fixedSize(horizontal: false, vertical: true)
             .onAppear {
-                coordinator.loadVideoAsset(url: Self.videoURL)
+                coordinator.loadVideoAsset(url: videoURL)
             }
             .onDisappear {
                 coordinator.stop()

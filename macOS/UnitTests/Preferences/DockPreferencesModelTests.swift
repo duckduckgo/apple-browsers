@@ -89,6 +89,10 @@ final class DockPreferencesModelTests: XCTestCase {
         XCTAssertFalse(model.canShowDockInstructions)
     }
 
+    func testDockInstructionsVideoAssetIsNotNil() {
+        XCTAssertNotNil(DockPreferencesModel.demoVideoURL)
+    }
+
     // MARK: - isAddedToDock
 
     func testWhenNotAddedToDockAndCustomizerReportsFalseThenIsAddedToDockIsFalse() {

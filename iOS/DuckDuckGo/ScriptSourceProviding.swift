@@ -121,7 +121,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
             .build()
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to build DefaultAutofillSourceProvider: \(error)")
         }
@@ -141,7 +141,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                              trackerDataManager: ContentBlocking.shared.trackerDataManager)
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error)")
         }
@@ -165,7 +165,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
             return surrogatesConfig
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error)")
         }

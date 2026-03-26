@@ -3852,7 +3852,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             completionHandler(runtimeConfiguration)
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
         }

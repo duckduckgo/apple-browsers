@@ -31,7 +31,7 @@ final class UserScriptErrorTests: XCTestCase {
             .init(pixel: GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, error: underlyingError, source: .browser), frequency: .dailyAndCount)
         ])
 
-        error.fireLoadJSFailedPixelIfNeeded(source: .browser, pixelFiring: mockPixelKit)
+        error.fireLoadJSFailedPixelIfNeeded(pixelFiring: mockPixelKit)
 
         mockPixelKit.verifyExpectations()
     }

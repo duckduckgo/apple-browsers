@@ -491,7 +491,7 @@ class FireExecutor: FireExecuting {
             DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
 
             if let userScriptError = error as? UserScriptError {
-                userScriptError.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
         return result
@@ -517,7 +517,7 @@ class FireExecutor: FireExecuting {
             DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
 
             if let userScriptError = error as? UserScriptError {
-                userScriptError.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
         return result

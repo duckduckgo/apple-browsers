@@ -27,7 +27,7 @@ extension UserScriptError {
         case dbp
     }
 
-    public func fireLoadJSFailedPixelIfNeeded(source: Source, pixelFiring: PixelFiring? = PixelKit.shared) {
+    public func fireLoadJSFailedPixelIfNeeded(source: Source = .browser, pixelFiring: PixelFiring? = PixelKit.shared) {
         guard case let UserScriptError.failedToLoadJS(jsFile, error) = self else {
             return
         }

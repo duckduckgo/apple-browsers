@@ -110,7 +110,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
         }

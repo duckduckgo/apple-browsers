@@ -93,7 +93,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
             pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
 
             if let userScriptError = error as? UserScriptError {
-                userScriptError.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
 

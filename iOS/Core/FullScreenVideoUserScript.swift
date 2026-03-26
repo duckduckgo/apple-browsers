@@ -26,7 +26,7 @@ public class FullScreenVideoUserScript: NSObject, UserScript {
             return try Self.loadJS("fullscreenvideo", from: Bundle.core)
         } catch {
             if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded(source: .browser)
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to load JS for FullScreenVideoUserScript: \(error)")
         }

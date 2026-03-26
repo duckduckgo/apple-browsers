@@ -26,7 +26,7 @@ extension UserScriptError {
         case dbp
     }
 
-    public func fireLoadJSFailedPixelIfNeeded(source: Source, pixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+    public func fireLoadJSFailedPixelIfNeeded(source: Source = .browser, pixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
         guard case let UserScriptError.failedToLoadJS(jsFile, error) = self else {
             return
         }

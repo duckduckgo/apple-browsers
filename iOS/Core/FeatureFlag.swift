@@ -350,9 +350,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
-    case suppressTrackerAnimationOnColdStart
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213554455515126?focus=true
     case customXSafariRedirectHandling
 
@@ -391,7 +388,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .crashCollectionLimitCallStackTreeDepth,
              .tabSwitcherTrackerCount,
              .iPadDuckaiOnTab,
-             .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
              .syncAutoRestore,
              .subscriptionPromoForReinstallers:
@@ -510,7 +506,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
              .fireMode,
-             .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
              .simplifiedSyncSetupExperiment,
              .duckAIVoiceShortcut,
@@ -775,8 +770,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .fireMode:
             return .disabled
-        case .suppressTrackerAnimationOnColdStart:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.suppressTrackerAnimationOnColdStart))
         case .customXSafariRedirectHandling:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customXSafariRedirectHandling))
         case .simplifiedSyncSetupExperiment:

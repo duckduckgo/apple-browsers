@@ -69,16 +69,16 @@ public final class WebExtensionScriptletCoordinator {
 
     private func subscribeToScriptletUpdates() {
         cancellable = scriptletProvider.availabilityPublisher(for: extensionType)
+            .dropFirst()
             .sink { [weak self] availability in
                 guard let self = self else { return }
 
                 switch availability {
-                case .notAvailable:
-                    Logger.webExtensions.debug("[Scriptlets] ⏭️ Scriptlets not available for '\(self.extensionType.rawValue)'")
+                case .notAvailable, .updating:
                     break
 
-                case .available(let scriptlets), .updating(let scriptlets):
-                    Logger.webExtensions.debug("[Scriptlets] 🔄 Scriptlets availability updated for '\(self.extensionType.rawValue)' (\(scriptlets.count) scriptlet(s))")
+                case .available(let scriptlets):
+                    Logger.webExtensions.debug("[Scriptlets] 🔄 Scriptlets updated for '\(self.extensionType.rawValue)' (\(scriptlets.count) scriptlet(s))")
                     Task {
                         await self.installScriptlets(scriptlets)
                     }

@@ -52,6 +52,10 @@ extension WebExtensionManager {
             return
         }
 
+        if type == .adBlockingExtension {
+            scriptletCoordinator?.onExtensionDisabled()
+        }
+
         Logger.webExtensions.info("🗑️ Uninstalling embedded extension: \(type.rawValue)")
         do {
             try uninstallExtension(identifier: installed.uniqueIdentifier)
@@ -79,6 +83,11 @@ extension WebExtensionManager {
                 if shouldUpgrade(installed: installed, bundledVersion: bundledMetadata.version) {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
+
+                    if descriptor.type == .adBlockingExtension {
+                        scriptletCoordinator?.onExtensionDisabled()
+                    }
+
                     try uninstallExtension(identifier: installed.uniqueIdentifier)
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
@@ -131,6 +140,10 @@ extension WebExtensionManager {
             installationStore.add(installedExtension)
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()
+
+            if type == .adBlockingExtension {
+                await scriptletCoordinator?.onExtensionEnabled()
+            }
         } catch {
             Logger.webExtensions.error("❌ Failed to load embedded extension '\(identifier)': \(error.localizedDescription)")
             unregisterHandlers(for: identifier)

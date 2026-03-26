@@ -371,6 +371,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings?
     private var darkReaderCancellables = Set<AnyCancellable>()
 
+    private var scriptletManager: ScriptletManager?
+    private var scriptletCoordinator: WebExtensionScriptletCoordinator?
+
     /// Holder class that allows `WebExtensionAvailability` to be created before `super.init()`,
     /// while still providing access to `webExtensionManager` which is set on `self` after `super.init()`.
     private final class WebExtensionManagerHolder {
@@ -1780,6 +1783,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         if featureFlagger.isFeatureOn(.webExtensions) {
+            let scriptletsDirectory = URL.sandboxApplicationSupportURL
+                .appendingPathComponent("Scriptlets", isDirectory: true)
+
+            let scriptletManager = ScriptletManagerFactory.makeManager(
+                privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                apiService: DefaultAPIService(),
+                baseDirectory: scriptletsDirectory
+            )
+            self.scriptletManager = scriptletManager
+
+            let extensionsDirectory = URL.sandboxApplicationSupportURL
+                .appendingPathComponent("WebExtensions", isDirectory: true)
+
+            let scriptletCoordinator = WebExtensionScriptletCoordinator(
+                scriptletProvider: scriptletManager,
+                installer: ScriptletInstaller(extensionsBaseDirectory: extensionsDirectory),
+                extensionID: "com.duckduckgo.web-extension.substitution"
+            )
+            self.scriptletCoordinator = scriptletCoordinator
+
             // Create manager synchronously so it's available during state restoration.
             // Tabs restored before the manager exists won't have webExtensionController attached.
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
@@ -1789,8 +1812,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
             self.webExtensionManager = webExtensionManager
 
+            webExtensionManager.setScriptletCoordinator(scriptletCoordinator)
+
             // Load extensions asynchronously - the controller is already attached to tabs
             Task {
+                await scriptletManager.start()
+                scriptletCoordinator.start()
                 await webExtensionManager.loadInstalledExtensions()
                 await syncEmbeddedExtensions()
             }
@@ -1809,12 +1836,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        let scriptletsDirectory = URL.sandboxApplicationSupportURL
+            .appendingPathComponent("Scriptlets", isDirectory: true)
+
+        let scriptletManager = ScriptletManagerFactory.makeManager(
+            privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            apiService: DefaultAPIService(),
+            baseDirectory: scriptletsDirectory
+        )
+        self.scriptletManager = scriptletManager
+
+        let extensionsDirectory = URL.sandboxApplicationSupportURL
+            .appendingPathComponent("WebExtensions", isDirectory: true)
+
+        let scriptletCoordinator = WebExtensionScriptletCoordinator(
+            scriptletProvider: scriptletManager,
+            installer: ScriptletInstaller(extensionsBaseDirectory: extensionsDirectory),
+            extensionID: "com.duckduckgo.web-extension.substitution"
+        )
+        self.scriptletCoordinator = scriptletCoordinator
+
+        await scriptletManager.start()
+
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
         )
         self.webExtensionManager = webExtensionManager
+
+        webExtensionManager.setScriptletCoordinator(scriptletCoordinator)
+        scriptletCoordinator.start()
 
         await webExtensionManager.loadInstalledExtensions()
         await syncEmbeddedExtensions()

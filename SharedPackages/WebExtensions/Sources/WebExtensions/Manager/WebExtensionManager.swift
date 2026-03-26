@@ -48,6 +48,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
+    /// Coordinator for managing scriptlet installation to extensions.
+    public private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
 
@@ -114,6 +117,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     /// Whether the embedded autoconsent web extension is loaded and active.
     public var isAutoconsentExtensionLoaded: Bool {
         contexts.contains { $0.duckDuckGoWebExtensionType == .embedded }
+    }
+
+    // MARK: - Scriptlet Coordinator
+
+    public func setScriptletCoordinator(_ coordinator: WebExtensionScriptletCoordinator) {
+        self.scriptletCoordinator = coordinator
     }
 
     // MARK: - Install/Uninstall

@@ -35,6 +35,7 @@ import PrivacyConfig
 import Networking
 import Configuration
 import Network
+import WebExtensions
 
 protocol DependencyProvider {
 
@@ -105,6 +106,34 @@ final class AppDependencyProvider: DependencyProvider {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
+
+    lazy var scriptletManager: ScriptletManager = {
+        let scriptletsDirectory = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent("Scriptlets", isDirectory: true)
+
+        return ScriptletManagerFactory.makeManager(
+            privacyConfigManager: configurationManager,
+            apiService: DefaultAPIService(),
+            baseDirectory: scriptletsDirectory
+        )
+    }()
+
+    lazy var scriptletCoordinator: WebExtensionScriptletCoordinator = {
+        let extensionsDirectory = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent("WebExtensions", isDirectory: true)
+
+        let installer = ScriptletInstaller(extensionsBaseDirectory: extensionsDirectory)
+
+        return WebExtensionScriptletCoordinator(
+            scriptletProvider: scriptletManager,
+            installer: installer,
+            extensionID: "com.duckduckgo.web-extension.adblocking"
+        )
+    }()
 
     private init() {
 

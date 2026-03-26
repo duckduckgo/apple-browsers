@@ -361,6 +361,10 @@ final class MainCoordinator {
 
         // Load extensions asynchronously - the controller is already attached to tabs
         webExtensionLoadTask = Task { @MainActor [weak self] in
+            await appDependencies.scriptletManager.start()
+            webExtensionManager.setScriptletCoordinator(appDependencies.scriptletCoordinator)
+            appDependencies.scriptletCoordinator.start()
+
             await webExtensionManager.loadInstalledExtensions()
             guard !Task.isCancelled else { return }
             await self?.syncEmbeddedExtensions()

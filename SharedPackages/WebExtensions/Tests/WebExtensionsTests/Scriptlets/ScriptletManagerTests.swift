@@ -36,6 +36,7 @@ final class ScriptletManagerTests: XCTestCase {
         mockStore = MockScriptletStore()
 
         manager = ScriptletManager(
+            extensionType: .adBlockingExtension,
             configProvider: mockConfigProvider,
             fetcher: mockFetcher,
             validator: mockValidator,

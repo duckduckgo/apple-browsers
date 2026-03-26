@@ -23,18 +23,22 @@ final class ScriptletInstallerTests: XCTestCase {
 
     var tempDirectory: URL!
     var installer: ScriptletInstaller!
+    var installationDirectory: URL!
 
     override func setUp() {
         super.setUp()
         tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
 
-        installer = ScriptletInstaller(extensionsBaseDirectory: tempDirectory)
+        installationDirectory = tempDirectory.appendingPathComponent(UUID().uuidString)
+
+        installer = ScriptletInstaller()
     }
 
     override func tearDown() {
         try? FileManager.default.removeItem(at: tempDirectory)
         installer = nil
+        installationDirectory = nil
         tempDirectory = nil
         super.tearDown()
     }
@@ -45,11 +49,9 @@ final class ScriptletInstallerTests: XCTestCase {
             Scriptlet(name: "test2", content: Data("content2".utf8))
         ]
 
-        try await installer.installScriptlets(scriptlets, to: "test-extension")
+        try await installer.installScriptlets(scriptlets, to: installationDirectory)
 
-        let scriptletsDir = tempDirectory
-            .appendingPathComponent("test-extension")
-            .appendingPathComponent("scriptlets")
+        let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
 
         let files = try FileManager.default.contentsOfDirectory(at: scriptletsDir, includingPropertiesForKeys: nil)
 
@@ -60,14 +62,12 @@ final class ScriptletInstallerTests: XCTestCase {
 
     func testWhenScriptletsInstalledTwiceThenOldFilesAreCleared() async throws {
         let oldScriptlets = [Scriptlet(name: "old", content: Data("old".utf8))]
-        try await installer.installScriptlets(oldScriptlets, to: "test-extension")
+        try await installer.installScriptlets(oldScriptlets, to: installationDirectory)
 
         let newScriptlets = [Scriptlet(name: "new", content: Data("new".utf8))]
-        try await installer.installScriptlets(newScriptlets, to: "test-extension")
+        try await installer.installScriptlets(newScriptlets, to: installationDirectory)
 
-        let scriptletsDir = tempDirectory
-            .appendingPathComponent("test-extension")
-            .appendingPathComponent("scriptlets")
+        let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
 
         let files = try FileManager.default.contentsOfDirectory(at: scriptletsDir, includingPropertiesForKeys: nil)
 
@@ -75,15 +75,13 @@ final class ScriptletInstallerTests: XCTestCase {
         XCTAssertEqual(files.first?.lastPathComponent, "new.js")
     }
 
-    func testWhenScriptletsRemovedThenDirectoryIsDeleted() throws {
+    func testWhenScriptletsRemovedThenDirectoryIsDeleted() async throws {
         let scriptlets = [Scriptlet(name: "test", content: Data("test".utf8))]
-        try installer.installScriptlets(scriptlets, to: "test-extension")
+        try await installer.installScriptlets(scriptlets, to: installationDirectory)
 
-        try installer.removeScriptlets(from: "test-extension")
+        try installer.removeScriptlets(from: installationDirectory)
 
-        let scriptletsDir = tempDirectory
-            .appendingPathComponent("test-extension")
-            .appendingPathComponent("scriptlets")
+        let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
 
         XCTAssertFalse(FileManager.default.fileExists(atPath: scriptletsDir.path))
     }

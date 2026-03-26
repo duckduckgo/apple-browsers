@@ -24,19 +24,25 @@ final class MockScriptletStore: ScriptletStoring {
     var cachedScriptlets: CachedScriptlets?
     var savedScriptlets: [Scriptlet]?
     var savedVersion: String?
+    var savedExtensionType: DuckDuckGoWebExtensionType?
+    var savedTargetPaths: [String: String]?
     var clearCallCount = 0
+    var clearedExtensionType: DuckDuckGoWebExtensionType?
 
-    func loadCached() -> CachedScriptlets? {
+    func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets? {
         cachedScriptlets
     }
 
-    func save(_ scriptlets: [Scriptlet], version: String) throws {
+    func save(_ scriptlets: [Scriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType, withTargetPaths targetPaths: [String: String]) throws {
         savedScriptlets = scriptlets
         savedVersion = version
+        savedExtensionType = extensionType
+        savedTargetPaths = targetPaths
     }
 
-    func clear() {
+    func clear(for extensionType: DuckDuckGoWebExtensionType) {
         clearCallCount += 1
+        clearedExtensionType = extensionType
         cachedScriptlets = nil
     }
 }

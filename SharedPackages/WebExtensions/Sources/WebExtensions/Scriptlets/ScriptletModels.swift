@@ -84,3 +84,33 @@ public struct CachedScriptlets {
         self.scriptlets = scriptlets
     }
 }
+
+public struct ScriptletCacheMetadata: Codable, Equatable {
+    public var extensions: [String: ExtensionScriptletMetadata]
+
+    public init(extensions: [String: ExtensionScriptletMetadata] = [:]) {
+        self.extensions = extensions
+    }
+}
+
+public struct ExtensionScriptletMetadata: Codable, Equatable {
+    public let extensionType: String
+    public let version: String
+    public let scriptlets: [ScriptletFileMetadata]
+
+    public init(extensionType: String, version: String, scriptlets: [ScriptletFileMetadata]) {
+        self.extensionType = extensionType
+        self.version = version
+        self.scriptlets = scriptlets
+    }
+}
+
+public struct ScriptletFileMetadata: Codable, Equatable {
+    public let targetPath: String
+    public let cachedFileName: String
+
+    public init(targetPath: String, cachedFileName: String) {
+        self.targetPath = targetPath
+        self.cachedFileName = cachedFileName
+    }
+}

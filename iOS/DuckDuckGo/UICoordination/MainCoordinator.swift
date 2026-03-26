@@ -366,6 +366,7 @@ final class MainCoordinator {
             appDependencies.scriptletCoordinator.start()
 
             await webExtensionManager.loadInstalledExtensions()
+            await webExtensionManager.updateScriptletCoordinatorInstallationPath()
             guard !Task.isCancelled else { return }
             await self?.syncEmbeddedExtensions()
             guard !Task.isCancelled else { return }

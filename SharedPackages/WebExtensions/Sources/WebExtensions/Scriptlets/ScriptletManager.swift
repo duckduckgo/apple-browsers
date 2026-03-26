@@ -20,8 +20,10 @@ import Combine
 import Foundation
 import os.log
 
+@available(macOS 15.4, iOS 18.4, *)
 public final class ScriptletManager: ScriptletProviding {
 
+    private let extensionType: DuckDuckGoWebExtensionType
     private let configProvider: ScriptletConfigProviding
     private let fetcher: ScriptletFetching
     private let validator: ScriptletValidating
@@ -34,11 +36,13 @@ public final class ScriptletManager: ScriptletProviding {
     private var configCancellable: AnyCancellable?
 
     public init(
+        extensionType: DuckDuckGoWebExtensionType,
         configProvider: ScriptletConfigProviding,
         fetcher: ScriptletFetching,
         validator: ScriptletValidating,
         store: ScriptletStoring
     ) {
+        self.extensionType = extensionType
         self.configProvider = configProvider
         self.fetcher = fetcher
         self.validator = validator
@@ -85,14 +89,14 @@ public final class ScriptletManager: ScriptletProviding {
     }
 
     private func loadCachedScriptlets() {
-        guard let cached = store.loadCached(),
+        guard let cached = store.loadCached(for: extensionType),
               let currentManifest = configProvider.currentManifest,
               cached.version == currentManifest.version else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No valid cache found")
+            Logger.webExtensions.debug("[Scriptlets] ⏭️ No valid cache found for '\(self.extensionType.rawValue)'")
             return
         }
 
-        Logger.webExtensions.info("[Scriptlets] ✅ Loaded \(cached.scriptlets.count) cached scriptlet(s) v\(cached.version)")
+        Logger.webExtensions.info("[Scriptlets] ✅ Loaded \(cached.scriptlets.count) cached scriptlet(s) v\(cached.version) for '\(self.extensionType.rawValue)'")
         availability = .available(cached.scriptlets)
         lastSuccessfulVersion = cached.version
     }
@@ -128,15 +132,17 @@ public final class ScriptletManager: ScriptletProviding {
             Logger.webExtensions.debug("[Scriptlets] ✓ Validating \(fetched.count) fetched scriptlet(s)")
             let validated = try validator.validate(fetched)
 
+            let targetPaths = Dictionary(uniqueKeysWithValues: validated.map { ($0.name, $0.name) })
+
             Logger.webExtensions.debug("[Scriptlets] 💾 Saving \(validated.count) validated scriptlet(s)")
-            try store.save(validated, version: manifest.version)
+            try store.save(validated, version: manifest.version, for: extensionType, withTargetPaths: targetPaths)
 
             availability = .available(validated)
             lastSuccessfulVersion = manifest.version
-            Logger.webExtensions.info("[Scriptlets] ✅ Successfully updated to version \(manifest.version) with \(validated.count) scriptlet(s)")
+            Logger.webExtensions.info("[Scriptlets] ✅ Successfully updated to version \(manifest.version) with \(validated.count) scriptlet(s) for '\(self.extensionType.rawValue)'")
 
         } catch {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to fetch/update scriptlets: \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] ❌ Failed to fetch/update scriptlets for '\(self.extensionType.rawValue)': \(error.localizedDescription)")
             if let existing = existingScriptlets {
                 Logger.webExtensions.warning("[Scriptlets] ⚠️ Keeping \(existing.count) existing scriptlet(s) after error")
                 availability = .available(existing)

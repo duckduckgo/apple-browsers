@@ -18,8 +18,9 @@
 
 import Foundation
 
+@available(macOS 15.4, iOS 18.4, *)
 public protocol ScriptletStoring {
-    func loadCached() -> CachedScriptlets?
-    func save(_ scriptlets: [Scriptlet], version: String) throws
-    func clear()
+    func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets?
+    func save(_ scriptlets: [Scriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType, withTargetPaths: [String: String]) throws
+    func clear(for extensionType: DuckDuckGoWebExtensionType)
 }

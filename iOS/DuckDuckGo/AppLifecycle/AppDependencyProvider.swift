@@ -114,6 +114,7 @@ final class AppDependencyProvider: DependencyProvider {
             .appendingPathComponent("Scriptlets", isDirectory: true)
 
         return ScriptletManagerFactory.makeManager(
+            extensionType: .adBlockingExtension,
             privacyConfigManager: configurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory
@@ -121,17 +122,12 @@ final class AppDependencyProvider: DependencyProvider {
     }()
 
     lazy var scriptletCoordinator: WebExtensionScriptletCoordinator = {
-        let extensionsDirectory = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first!
-            .appendingPathComponent("WebExtensions", isDirectory: true)
-
-        let installer = ScriptletInstaller(extensionsBaseDirectory: extensionsDirectory)
+        let installer = ScriptletInstaller()
 
         return WebExtensionScriptletCoordinator(
             scriptletProvider: scriptletManager,
             installer: installer,
-            extensionID: "com.duckduckgo.web-extension.adblocking"
+            extensionType: .adBlockingExtension
         )
     }()
 

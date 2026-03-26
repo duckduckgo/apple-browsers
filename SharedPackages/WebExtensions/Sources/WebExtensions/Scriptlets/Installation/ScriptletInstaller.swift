@@ -21,21 +21,16 @@ import os.log
 
 public final class ScriptletInstaller: ScriptletInstalling {
 
-    private let extensionsBaseDirectory: URL
     private let fileManager: FileManager
     private let scriptletsSubpath = "scriptlets"
 
-    public init(
-        extensionsBaseDirectory: URL,
-        fileManager: FileManager = .default
-    ) {
-        self.extensionsBaseDirectory = extensionsBaseDirectory
+    public init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
     }
 
-    public func installScriptlets(_ scriptlets: [Scriptlet], to extensionID: String) async throws {
-        Logger.webExtensions.debug("[Scriptlets] 📦 Installing \(scriptlets.count) scriptlet(s) to extension '\(extensionID)'")
-        let targetDirectory = scriptletsDirectory(for: extensionID)
+    public func installScriptlets(_ scriptlets: [Scriptlet], to installationDirectory: URL) async throws {
+        Logger.webExtensions.debug("[Scriptlets] 📦 Installing \(scriptlets.count) scriptlet(s) to '\(installationDirectory.path)'")
+        let targetDirectory = installationDirectory.appendingPathComponent(scriptletsSubpath)
 
         Logger.webExtensions.debug("[Scriptlets] 🗂️ Preparing directory: \(targetDirectory.path)")
         try prepareDirectory(targetDirectory)
@@ -46,20 +41,14 @@ public final class ScriptletInstaller: ScriptletInstalling {
             try scriptlet.content.write(to: targetFile, options: .atomic)
         }
 
-        Logger.webExtensions.info("[Scriptlets] ✅ Successfully installed \(scriptlets.count) scriptlet(s) to '\(extensionID)'")
+        Logger.webExtensions.info("[Scriptlets] ✅ Successfully installed \(scriptlets.count) scriptlet(s) to '\(installationDirectory.path)'")
     }
 
-    public func removeScriptlets(from extensionID: String) throws {
-        Logger.webExtensions.debug("[Scriptlets] 🗑️ Removing scriptlets from extension '\(extensionID)'")
-        let targetDirectory = scriptletsDirectory(for: extensionID)
+    public func removeScriptlets(from installationDirectory: URL) throws {
+        Logger.webExtensions.debug("[Scriptlets] 🗑️ Removing scriptlets from '\(installationDirectory.path)'")
+        let targetDirectory = installationDirectory.appendingPathComponent(scriptletsSubpath)
         try? fileManager.removeItem(at: targetDirectory)
-        Logger.webExtensions.info("[Scriptlets] ✅ Removed scriptlets from '\(extensionID)'")
-    }
-
-    private func scriptletsDirectory(for extensionID: String) -> URL {
-        extensionsBaseDirectory
-            .appendingPathComponent(extensionID)
-            .appendingPathComponent(scriptletsSubpath)
+        Logger.webExtensions.info("[Scriptlets] ✅ Removed scriptlets from '\(installationDirectory.path)'")
     }
 
     private func prepareDirectory(_ directory: URL) throws {

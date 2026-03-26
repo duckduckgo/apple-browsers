@@ -20,9 +20,11 @@ import Foundation
 import Networking
 import PrivacyConfig
 
+@available(macOS 15.4, iOS 18.4, *)
 public enum ScriptletManagerFactory {
 
     public static func makeManager(
+        extensionType: DuckDuckGoWebExtensionType,
         privacyConfigManager: PrivacyConfigurationManaging,
         apiService: APIService,
         baseDirectory: URL,
@@ -43,6 +45,7 @@ public enum ScriptletManagerFactory {
         )
 
         return ScriptletManager(
+            extensionType: extensionType,
             configProvider: configProvider,
             fetcher: fetcher,
             validator: validator,

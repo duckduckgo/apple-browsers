@@ -141,7 +141,9 @@ extension WebExtensionManager {
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()
 
-            if type == .adBlockingExtension {
+            if type == .adBlockingExtension,
+               let installationPath = installedExtensionPath(for: type) {
+                await scriptletCoordinator?.setInstallationDirectory(installationPath)
                 await scriptletCoordinator?.onExtensionEnabled()
             }
         } catch {

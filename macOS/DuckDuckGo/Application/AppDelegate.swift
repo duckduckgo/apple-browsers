@@ -1787,19 +1787,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .appendingPathComponent("Scriptlets", isDirectory: true)
 
             let scriptletManager = ScriptletManagerFactory.makeManager(
+                extensionType: .adBlockingExtension,
                 privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 apiService: DefaultAPIService(),
                 baseDirectory: scriptletsDirectory
             )
             self.scriptletManager = scriptletManager
 
-            let extensionsDirectory = URL.sandboxApplicationSupportURL
-                .appendingPathComponent("WebExtensions", isDirectory: true)
-
             let scriptletCoordinator = WebExtensionScriptletCoordinator(
                 scriptletProvider: scriptletManager,
-                installer: ScriptletInstaller(extensionsBaseDirectory: extensionsDirectory),
-                extensionID: "com.duckduckgo.web-extension.substitution"
+                installer: ScriptletInstaller(),
+                extensionType: .adBlockingExtension
             )
             self.scriptletCoordinator = scriptletCoordinator
 
@@ -1819,6 +1817,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await scriptletManager.start()
                 scriptletCoordinator.start()
                 await webExtensionManager.loadInstalledExtensions()
+                await webExtensionManager.updateScriptletCoordinatorInstallationPath()
                 await syncEmbeddedExtensions()
             }
         } else {
@@ -1840,19 +1839,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .appendingPathComponent("Scriptlets", isDirectory: true)
 
         let scriptletManager = ScriptletManagerFactory.makeManager(
+            extensionType: .adBlockingExtension,
             privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory
         )
         self.scriptletManager = scriptletManager
 
-        let extensionsDirectory = URL.sandboxApplicationSupportURL
-            .appendingPathComponent("WebExtensions", isDirectory: true)
-
         let scriptletCoordinator = WebExtensionScriptletCoordinator(
             scriptletProvider: scriptletManager,
-            installer: ScriptletInstaller(extensionsBaseDirectory: extensionsDirectory),
-            extensionID: "com.duckduckgo.web-extension.substitution"
+            installer: ScriptletInstaller(),
+            extensionType: .adBlockingExtension
         )
         self.scriptletCoordinator = scriptletCoordinator
 
@@ -1869,6 +1866,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         scriptletCoordinator.start()
 
         await webExtensionManager.loadInstalledExtensions()
+        await webExtensionManager.updateScriptletCoordinatorInstallationPath()
         await syncEmbeddedExtensions()
     }
 

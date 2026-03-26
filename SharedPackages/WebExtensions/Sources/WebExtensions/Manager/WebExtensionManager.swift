@@ -125,6 +125,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         self.scriptletCoordinator = coordinator
     }
 
+    /// Updates the scriptlet coordinator with the installation directory for its extension type.
+    /// Should be called after extensions are loaded.
+    @MainActor
+    public func updateScriptletCoordinatorInstallationPath() async {
+        guard let coordinator = scriptletCoordinator else { return }
+
+        if let path = installedExtensionPath(for: coordinator.extensionType) {
+            await coordinator.setInstallationDirectory(path)
+        }
+    }
+
     // MARK: - Install/Uninstall
 
     public func installExtension(from sourceURL: URL) async throws {

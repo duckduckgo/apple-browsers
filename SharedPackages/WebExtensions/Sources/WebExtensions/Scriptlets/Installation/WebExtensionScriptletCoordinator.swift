@@ -20,26 +20,28 @@ import Combine
 import Foundation
 import os.log
 
+@available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionScriptletCoordinator {
 
     private let scriptletProvider: ScriptletProviding
     private let installer: ScriptletInstalling
-    private let extensionID: String
+    public let extensionType: DuckDuckGoWebExtensionType
+    private var installationDirectory: URL?
 
     private var cancellable: AnyCancellable?
 
     public init(
         scriptletProvider: ScriptletProviding,
         installer: ScriptletInstalling,
-        extensionID: String
+        extensionType: DuckDuckGoWebExtensionType
     ) {
         self.scriptletProvider = scriptletProvider
         self.installer = installer
-        self.extensionID = extensionID
+        self.extensionType = extensionType
     }
 
     public func start() {
-        Logger.webExtensions.debug("[Scriptlets] 🚀 Starting coordinator for extension '\(self.extensionID)'")
+        Logger.webExtensions.debug("[Scriptlets] 🚀 Starting coordinator for extension type '\(self.extensionType.rawValue)'")
         subscribeToScriptletUpdates()
 
         Task {
@@ -47,14 +49,24 @@ public final class WebExtensionScriptletCoordinator {
         }
     }
 
+    public func setInstallationDirectory(_ directory: URL) async {
+        Logger.webExtensions.debug("[Scriptlets] 📍 Setting installation directory for '\(self.extensionType.rawValue)': \(directory.path)")
+        self.installationDirectory = directory
+        await installCurrentScriptlets()
+    }
+
     public func onExtensionEnabled() async {
-        Logger.webExtensions.debug("[Scriptlets] ▶️ Extension '\(self.extensionID)' enabled, installing scriptlets")
+        Logger.webExtensions.debug("[Scriptlets] ▶️ Extension '\(self.extensionType.rawValue)' enabled, installing scriptlets")
         await installCurrentScriptlets()
     }
 
     public func onExtensionDisabled() {
-        Logger.webExtensions.debug("[Scriptlets] ⏸️ Extension '\(self.extensionID)' disabled, removing scriptlets")
-        try? installer.removeScriptlets(from: extensionID)
+        Logger.webExtensions.debug("[Scriptlets] ⏸️ Extension '\(self.extensionType.rawValue)' disabled, removing scriptlets")
+        guard let installationDirectory = installationDirectory else {
+            Logger.webExtensions.warning("[Scriptlets] ⚠️ No installation directory set for '\(self.extensionType.rawValue)', cannot remove scriptlets")
+            return
+        }
+        try? installer.removeScriptlets(from: installationDirectory)
     }
 
     private func subscribeToScriptletUpdates() {
@@ -64,11 +76,11 @@ public final class WebExtensionScriptletCoordinator {
 
                 switch availability {
                 case .notAvailable:
-                    Logger.webExtensions.debug("[Scriptlets] ⏭️ Scriptlets not available for '\(self.extensionID)'")
+                    Logger.webExtensions.debug("[Scriptlets] ⏭️ Scriptlets not available for '\(self.extensionType.rawValue)'")
                     break
 
                 case .available(let scriptlets), .updating(let scriptlets):
-                    Logger.webExtensions.debug("[Scriptlets] 🔄 Scriptlets availability updated for '\(self.extensionID)' (\(scriptlets.count) scriptlet(s))")
+                    Logger.webExtensions.debug("[Scriptlets] 🔄 Scriptlets availability updated for '\(self.extensionType.rawValue)' (\(scriptlets.count) scriptlet(s))")
                     Task {
                         await self.installScriptlets(scriptlets)
                     }
@@ -78,7 +90,7 @@ public final class WebExtensionScriptletCoordinator {
 
     private func installCurrentScriptlets() async {
         guard let scriptlets = scriptletProvider.scriptlets else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No scriptlets available for installation to '\(self.extensionID)'")
+            Logger.webExtensions.debug("[Scriptlets] ⏭️ No scriptlets available for installation to '\(self.extensionType.rawValue)'")
             return
         }
 
@@ -86,10 +98,15 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     private func installScriptlets(_ scriptlets: [Scriptlet]) async {
+        guard let installationDirectory = installationDirectory else {
+            Logger.webExtensions.warning("[Scriptlets] ⚠️ No installation directory set for '\(self.extensionType.rawValue)', cannot install scriptlets")
+            return
+        }
+
         do {
-            try await installer.installScriptlets(scriptlets, to: extensionID)
+            try await installer.installScriptlets(scriptlets, to: installationDirectory)
         } catch {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to install scriptlets to '\(self.extensionID)': \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] ❌ Failed to install scriptlets to '\(self.extensionType.rawValue)': \(error.localizedDescription)")
         }
     }
 }

@@ -334,6 +334,22 @@ final class AIChatContextualSheetViewController: UIViewController {
         .portrait
     }
 
+    // MARK: - Sheet Configuration
+
+    func configureSheetPresentation() {
+        guard let sheet = sheetPresentationController else { return }
+
+        sheet.delegate = self
+        presentationController?.delegate = self
+        sheet.detents = [.medium(), .large()]
+        sheet.selectedDetentIdentifier = .medium
+        sheet.largestUndimmedDetentIdentifier = .medium
+        sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        sheet.prefersGrabberVisible = true
+        sheet.prefersEdgeAttachedInCompactHeight = true
+        sheet.preferredCornerRadius = Constants.sheetCornerRadius
+    }
+
     // MARK: - Actions
 
     @objc private func expandButtonTapped() {
@@ -868,10 +884,14 @@ private extension AIChatContextualSheetViewController {
     
     func updateButtonContainerCornerRadii() {
         let leftHeight = leftButtonContainer.bounds.height
-        leftButtonContainer.layer.cornerRadius = leftHeight / 2
+        if leftHeight > 0 {
+            leftButtonContainer.layer.cornerRadius = leftHeight / 2
+        }
 
         let rightHeight = rightButtonContainer.bounds.height
-        rightButtonContainer.layer.cornerRadius = rightHeight / 2
+        if rightHeight > 0 {
+            rightButtonContainer.layer.cornerRadius = rightHeight / 2
+        }
     }
 
     func updateShadowPath() {
@@ -885,6 +905,7 @@ private extension AIChatContextualSheetViewController {
 
     func configureModalPresentation() {
         modalPresentationStyle = .pageSheet
+        configureSheetPresentation()
     }
 
     func showDimmingView(animated: Bool) {
@@ -940,20 +961,6 @@ private extension AIChatContextualSheetViewController {
         if isWebViewVisible && isCurrentlyMediumDetent {
             expandToLargeDetent()
         }
-    }
-
-    func configureSheetPresentation() {
-        guard let sheet = sheetPresentationController else { return }
-
-        sheet.delegate = self
-        presentationController?.delegate = self
-        sheet.detents = [.medium(), .large()]
-        sheet.selectedDetentIdentifier = .medium
-        sheet.largestUndimmedDetentIdentifier = .medium
-        sheet.prefersScrollingExpandsWhenScrolledToEdge = false
-        sheet.prefersGrabberVisible = true
-        sheet.prefersEdgeAttachedInCompactHeight = true
-        sheet.preferredCornerRadius = Constants.sheetCornerRadius
     }
 }
 

@@ -111,17 +111,11 @@ struct ScrollableOnboardingBackground: View {
     private func backgroundView(for state: OnboardingView.ViewState.Intro, width: CGFloat) -> some View {
         VStack {
             Spacer()
-            if let backgroundImage = state.type.backgroundImage {
-                backgroundImage
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: width, alignment: .center)
-                    .frame(maxHeight: state.type.backgroundMaxHeight)
-            } else {
-                Color.clear
-                    .frame(width: width)
-                    .frame(maxHeight: state.type.backgroundMaxHeight)
-            }
+            state.type.backgroundImage
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: width, alignment: .center)
+                .frame(maxHeight: state.type.backgroundMaxHeight)
         }
         .ignoresSafeArea()
     }
@@ -170,8 +164,8 @@ private struct ExitingBackgroundView<Content: View>: View, Animatable {
 }
 
 private extension OnboardingView.ViewState.Intro.IntroType {
-    
-    var backgroundImage: Image? {
+
+    var backgroundImage: Image {
         switch self {
         case .startOnboardingDialog:
             return OnboardingRebrandingImages.Linear.introBackground
@@ -186,7 +180,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         case .chooseSearchExperienceDialog:
             return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
         case .duckAIQueryExperimentDialog:
-            return nil
+            return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
         }
     }
 

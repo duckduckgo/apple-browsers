@@ -127,7 +127,7 @@ class MainViewController: UIViewController {
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
-    let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+    let toggleModeStorage: ToggleModeStoring
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     var isNewTabPageVisible: Bool {
@@ -378,7 +378,8 @@ class MainViewController: UIViewController {
         privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         whatsNewRepository: WhatsNewMessageRepository,
-        darkReaderFeatureSettings: DarkReaderFeatureSettings
+        darkReaderFeatureSettings: DarkReaderFeatureSettings,
+        toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -439,6 +440,7 @@ class MainViewController: UIViewController {
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.whatsNewRepository = whatsNewRepository
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
+        self.toggleModeStorage = toggleModeStorage
 
         super.init(nibName: nil, bundle: nil)
         

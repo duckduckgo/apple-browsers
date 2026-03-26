@@ -62,7 +62,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode?
-    internal(set) var selectedTextEntryMode: TextEntryMode = .search
+    var selectedTextEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 

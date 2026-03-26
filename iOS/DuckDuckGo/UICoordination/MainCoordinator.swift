@@ -150,6 +150,7 @@ final class MainCoordinator {
             onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
+        let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -182,7 +183,8 @@ final class MainCoordinator {
                                 privacyStats: privacyStats,
                                 voiceSearchHelper: voiceSearchHelper,
                                 launchSourceManager: launchSourceManager,
-                                darkReaderFeatureSettings: darkReaderFeatureSettings)
+                                darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                toggleModeStorage: toggleModeStorage)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -256,7 +258,8 @@ final class MainCoordinator {
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository,
-                                        darkReaderFeatureSettings: darkReaderFeatureSettings)
+                                        darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                        toggleModeStorage: toggleModeStorage)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 

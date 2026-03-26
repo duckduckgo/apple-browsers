@@ -177,7 +177,7 @@ actor DBPContinuedProcessingCoordinator {
             return
         }
 
-        guard optOutPlan.optOutCount > 0 else {
+        if optOutPlan.optOutCount == 0 {
             Logger.dataBrokerProtection.log("Continued processing: no initial opt-outs found after scan phase for run \(self.logRunIdentifier(), privacy: .public)")
             finish(success: true)
             return

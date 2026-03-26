@@ -291,7 +291,7 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = .default
+            textView.keyboardType = .webSearch
             textView.returnKeyType = .default
             if handler.isUsingFadeOutAnimation && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
@@ -526,7 +526,7 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = .default
+            textView.keyboardType = .webSearch
             textView.returnKeyType = .default
             enableAutoCorrectionAndSpellChecking()
         }

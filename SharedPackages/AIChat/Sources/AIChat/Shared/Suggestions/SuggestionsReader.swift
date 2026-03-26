@@ -141,16 +141,14 @@ public final class SuggestionsReader: SuggestionsReading {
             since = nil
         }
 
-        for domain in URL.aiChatDomains {
-            // Navigate to domain
-            let navigationResult = await navigateToSite(domain)
-            if case .failure(let error) = navigationResult {
-                Logger.aiChat.debug("SuggestionsReader: Navigation to \(domain) failed: \(error.localizedDescription)")
-                lastError = error
-                continue
-            }
-
-            // Fetch suggestions from this domain
+        // Only read suggestions from duck.ai — duckduckgo.com data was migrated
+        let domain = URL.duckAi
+        let navigationResult = await navigateToSite(domain)
+        if case .failure(let error) = navigationResult {
+            Logger.aiChat.debug("SuggestionsReader: Navigation to \(domain) failed: \(error.localizedDescription)")
+            lastError = error
+        } else {
+            // Fetch suggestions
             let fetchResult = await withCheckedContinuation { continuation in
                 // Resume any previous continuation to avoid leaking a suspended caller
                 self.fetchContinuation?.resume(returning: .failure(ReaderError.operationSuperseded))

@@ -4886,6 +4886,7 @@
 		37534CA2281132CB002621E7 /* TabLazyLoaderDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabLazyLoaderDataSource.swift; sourceTree = "<group>"; };
 		37534CA42811987D002621E7 /* AdjacentItemEnumeratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjacentItemEnumeratorTests.swift; sourceTree = "<group>"; };
 		37534CA62811988E002621E7 /* AdjacentItemEnumerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjacentItemEnumerator.swift; sourceTree = "<group>"; };
+		375494162F7576EC002105EC /* content-scope-scripts */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "content-scope-scripts"; path = "/Users/ayoy/code/content-scope-scripts"; sourceTree = "<absolute>"; };
 		3758A38B2D108229001CEAA1 /* NewTabPageFreemiumDBPBannerProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageFreemiumDBPBannerProvider.swift; sourceTree = "<group>"; };
 		37598EF02D5A187600720EAF /* HistoryViewErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewErrorHandler.swift; sourceTree = "<group>"; };
 		37598EF32D5A18FB00720EAF /* HistoryViewPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewPixel.swift; sourceTree = "<group>"; };
@@ -10305,6 +10306,7 @@
 		AA585D75248FD31100E9A3E2 = {
 			isa = PBXGroup;
 			children = (
+				375494162F7576EC002105EC /* content-scope-scripts */,
 				378B5886295CF2A4002C0CC0 /* Configuration */,
 				AA585D80248FD31100E9A3E2 /* DuckDuckGo */,
 				9D9AE9132AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgent */,

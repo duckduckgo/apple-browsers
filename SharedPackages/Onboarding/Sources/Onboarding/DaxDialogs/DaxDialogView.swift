@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DesignResourcesKit
+import SwiftUI
+import UIComponents
 
 // MARK: - Metrics
 
@@ -303,14 +304,6 @@ struct OnboardingDismissButton: View {
 
 // Move this extension to `SwiftUIExtensions` package when creating it.
 public extension View {
-
-    @ViewBuilder func `ifLet`<Content: View, Value>(_ value: Value?, transform: (Self, Value) -> Content) -> some View {
-        if let value = value {
-            transform(self, value)
-        } else {
-            self
-        }
-    }
 
     func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
         self

@@ -17,9 +17,10 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Onboarding
 import MetricBuilder
+import Onboarding
+import SwiftUI
+import UIComponents
 
 // MARK: - Fire Dialog
 

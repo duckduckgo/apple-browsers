@@ -17,12 +17,13 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import VPN
-import TipKit
-import Networking
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Networking
+import SwiftUI
+import TipKit
+import UIComponents
+import VPN
 
 struct NetworkProtectionStatusView: View {
 

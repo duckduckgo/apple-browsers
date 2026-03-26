@@ -116,15 +116,15 @@ public final class SuggestionsReader: SuggestionsReading {
             return .failure(ReaderError.scriptNotInitialized)
         }
 
-        // Fetch from all domains and return the result with the most recent chat
-        return await fetchFromAllDomains(query: query, maxChats: maxChats, script: script)
+        // Fetch suggestions from duck.ai
+        return await fetchSuggestionsFromDuckAi(query: query, maxChats: maxChats, script: script)
     }
 
     /// One week in seconds
     private static let oneWeekInterval: TimeInterval = 7 * 24 * 60 * 60
 
     @MainActor
-    private func fetchFromAllDomains(
+    private func fetchSuggestionsFromDuckAi(
         query: String?,
         maxChats: Int,
         script: AIChatSuggestionsUserScript

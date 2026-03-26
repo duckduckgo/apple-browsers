@@ -109,4 +109,8 @@ public protocol WebExtensionManaging: AnyObject {
     /// Returns the extension context for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func context(for identifier: String) -> WKWebExtensionContext?
+
+    /// Clears all cached scriptlets from disk and resets in-memory state.
+    @available(macOS 15.4, iOS 18.4, *)
+    func clearCachedScriptlets()
 }

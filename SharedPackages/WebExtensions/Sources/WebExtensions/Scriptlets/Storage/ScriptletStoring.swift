@@ -23,4 +23,5 @@ public protocol ScriptletStoring {
     func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets?
     func save(_ scriptlets: [Scriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType, withTargetPaths: [String: String]) throws
     func clear(for extensionType: DuckDuckGoWebExtensionType)
+    func clearAll()
 }

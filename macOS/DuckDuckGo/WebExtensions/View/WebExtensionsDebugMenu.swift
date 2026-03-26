@@ -27,6 +27,7 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
+    private let clearCachedScriptletsMenuItem = NSMenuItem(title: "Clear Cached Scriptlets", action: #selector(WebExtensionsDebugMenu.clearCachedScriptlets))
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
 
     init(webExtensionManager: WebExtensionManaging) {
@@ -37,6 +38,8 @@ final class WebExtensionsDebugMenu: NSMenu {
         installExtensionMenuItem.isEnabled = true
         uninstallAllExtensionsMenuItem.target = self
         uninstallAllExtensionsMenuItem.isEnabled = true
+        clearCachedScriptletsMenuItem.target = self
+        clearCachedScriptletsMenuItem.isEnabled = true
         openExtensionsFolderMenuItem.target = self
         openExtensionsFolderMenuItem.isEnabled = true
 
@@ -48,6 +51,7 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         addItem(installExtensionMenuItem)
         addItem(uninstallAllExtensionsMenuItem)
+        addItem(clearCachedScriptletsMenuItem)
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
 
@@ -101,6 +105,10 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     @objc func uninstallAllExtensions() {
         webExtensionManager.uninstallAllExtensions()
+    }
+
+    @objc func clearCachedScriptlets() {
+        webExtensionManager.clearCachedScriptlets()
     }
 
     @objc func openExtensionsFolderInFinder() {

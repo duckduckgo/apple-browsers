@@ -103,6 +103,7 @@ public final class ScriptletStore: ScriptletStoring {
         try? fileManager.moveItem(at: extensionDirectory, to: backupDirectory)
 
         do {
+            try fileManager.createDirectory(at: baseDirectory, withIntermediateDirectories: true, attributes: nil)
             try fileManager.moveItem(at: tempDirectory, to: extensionDirectory)
             try? fileManager.removeItem(at: backupDirectory)
 
@@ -126,6 +127,13 @@ public final class ScriptletStore: ScriptletStoring {
         saveMetadata(metadata)
 
         Logger.webExtensions.info("[Scriptlets] ✅ Cleared scriptlet cache for '\(extensionType.rawValue)'")
+    }
+
+    public func clearAll() {
+        Logger.webExtensions.debug("[Scriptlets] 🗑️ Clearing all cached scriptlets")
+        try? fileManager.removeItem(at: baseDirectory)
+        defaults.removeObject(forKey: metadataKey)
+        Logger.webExtensions.info("[Scriptlets] ✅ Cleared all scriptlet caches")
     }
 
     private func extensionDirectory(for extensionType: DuckDuckGoWebExtensionType) -> URL {

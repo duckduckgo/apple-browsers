@@ -83,6 +83,13 @@ public final class ScriptletManager: ScriptletProviding {
         await refreshIfNeeded(for: extensionType)
     }
 
+    public func clearCachedScriptlets() {
+        Logger.webExtensions.debug("[Scriptlets] 🗑️ Clearing all cached scriptlets and resetting state")
+        store.clearAll()
+        lastSuccessfulVersions.removeAll()
+        availabilities.removeAll()
+    }
+
     public func refreshIfNeeded(for extensionType: DuckDuckGoWebExtensionType) async {
         guard let manifest = configProvider.currentManifest(for: extensionType) else {
             Logger.webExtensions.debug("[Scriptlets] ⏭️ No manifest available for '\(extensionType.rawValue)', skipping refresh")

@@ -284,6 +284,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
     }
 
+    public func clearCachedScriptlets() {
+        scriptletConfiguration?.provider.clearCachedScriptlets()
+    }
+
     @MainActor
     public func reloadExtension(identifier: String) async throws {
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")

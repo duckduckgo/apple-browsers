@@ -45,4 +45,11 @@ final class MockScriptletStore: ScriptletStoring {
         clearedExtensionType = extensionType
         cachedScriptlets = nil
     }
+
+    var clearAllCallCount = 0
+
+    func clearAll() {
+        clearAllCallCount += 1
+        cachedScriptlets = nil
+    }
 }

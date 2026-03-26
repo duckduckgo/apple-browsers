@@ -514,6 +514,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
+    func clearCachedScriptlets() {}
 }
 
 @available(macOS 15.4, iOS 18.4, *)

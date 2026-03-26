@@ -82,18 +82,6 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isFeatureAvailable)
     }
 
-    func testIsDismissed_reflectsDismissState() {
-        XCTAssertFalse(sut.isDismissed)
-        mockUserStateManager.didDismissHomePagePromotion = true
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-        XCTAssertTrue(sut.isDismissed)
-    }
-
     func testDisplayWindowExpired_whenNoStartDate() {
         sut.updateDisplayWindowExpiredState()
         XCTAssertFalse(sut.isDisplayWindowExpired)
@@ -109,43 +97,6 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         sut.displayWindowStartDate = Date().addingTimeInterval(-.days(8))
         sut.updateDisplayWindowExpiredState()
         XCTAssertTrue(sut.isDisplayWindowExpired)
-    }
-
-    func testIsDismissed_updatesOnScanResultsNotification() {
-        mockUserStateManager.didDismissHomePagePromotion = true
-        sut = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter,
-            notificationCenter: notificationCenter,
-            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
-        )
-        XCTAssertTrue(sut.isDismissed)
-
-        let expectation = XCTestExpectation(description: "isDismissed becomes false")
-        sut.$isDismissed.dropFirst().sink { isDismissed in
-            if !isDismissed { expectation.fulfill() }
-        }.store(in: &cancellables)
-
-        notificationCenter.post(name: .freemiumDBPResultPollingComplete, object: nil)
-
-        wait(for: [expectation], timeout: 2.0)
-        XCTAssertFalse(sut.isDismissed)
-    }
-
-    func testIsDismissed_updatesOnEntryPointActivation() {
-        XCTAssertFalse(sut.isDismissed)
-
-        let expectation = XCTestExpectation(description: "isDismissed becomes true")
-        sut.$isDismissed.dropFirst().sink { isDismissed in
-            if isDismissed { expectation.fulfill() }
-        }.store(in: &cancellables)
-
-        notificationCenter.post(name: .freemiumDBPEntryPointActivated, object: nil)
-
-        wait(for: [expectation], timeout: 2.0)
-        XCTAssertTrue(sut.isDismissed)
     }
 
     // MARK: - refreshViewModel / clearViewModel
@@ -206,7 +157,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
     // MARK: - Proceed / Close Actions
 
     @MainActor
-    func testProceedAction_dismissesPromotion_callsShowFreemium_andFiresPixel() async throws {
+    func testProceedAction_callsShowFreemium_andFiresPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.didActivate = false
@@ -217,13 +168,12 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         await viewModel.proceedAction()
 
         // Then
-        XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabScanClick)
     }
 
     @MainActor
-    func testCloseAction_dismissesPromotion_andFiresPixel() async throws {
+    func testCloseAction_firesPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.didActivate = false
@@ -238,13 +188,12 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         viewModel.closeAction()
 
         // Then
-        XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
         XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(DataBrokerProtectionFreemiumPixels.newTabScanDismiss),
                       "Expected newTabScanDismiss to be fired. Actual events: \(mockPixelHandler.allFiredEvents)")
     }
 
     @MainActor
-    func testProceedAction_dismissesResults_callsShowFreemium_andFiresPixel() async throws {
+    func testProceedAction_withResults_callsShowFreemium_andFiresPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.didActivate = false
@@ -256,13 +205,12 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         await viewModel.proceedAction()
 
         // Then
-        XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabResultsClick)
     }
 
     @MainActor
-    func testCloseAction_dismissesResults_andFiresPixel() async throws {
+    func testCloseAction_withResults_firesPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 5, brokerCount: 2)
@@ -273,12 +221,11 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         viewModel.closeAction()
 
         // Then
-        XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabResultsDismiss)
     }
 
     @MainActor
-    func testProceedAction_dismissesNoResults_callsShowFreemium_andFiresPixel() async throws {
+    func testProceedAction_withNoResults_callsShowFreemium_andFiresPixel() async throws {
         throw XCTSkip("Flaky")
 
         // Given
@@ -292,13 +239,12 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         await viewModel.proceedAction()
 
         // Then
-        XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabNoResultsClick)
     }
 
     @MainActor
-    func testCloseAction_dismissesNoResults_andFiresPixel() async throws {
+    func testCloseAction_withNoResults_firesPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 0, brokerCount: 0)
@@ -312,7 +258,6 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         viewModel.closeAction()
 
         // Then
-        XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
         XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(DataBrokerProtectionFreemiumPixels.newTabNoResultsDismiss),
                       "Expected newTabNoResultsDismiss to be fired. Actual events: \(mockPixelHandler.allFiredEvents)")
     }
@@ -354,6 +299,35 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertNil(viewModel)
+    }
+
+    // MARK: - onScanResultsUpdated / hasLegacyDismissal
+
+    func testScanResultsNotification_callsOnScanResultsUpdated() {
+        let expectation = XCTestExpectation(description: "onScanResultsUpdated called")
+        sut.onScanResultsUpdated = {
+            expectation.fulfill()
+        }
+
+        notificationCenter.post(name: .freemiumDBPResultPollingComplete, object: nil)
+
+        wait(for: [expectation], timeout: 2.0)
+    }
+
+    func testHasLegacyDismissal_readsPersistedFlag() {
+        XCTAssertFalse(sut.hasLegacyDismissal)
+
+        mockUserStateManager.didDismissHomePagePromotion = true
+        sut = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: mockPresenter,
+            notificationCenter: notificationCenter,
+            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
+        )
+
+        XCTAssertTrue(sut.hasLegacyDismissal)
     }
 
     // MARK: - Helpers

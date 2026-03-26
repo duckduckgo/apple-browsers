@@ -72,20 +72,6 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
-    func testIsEligible_whenDismissed() {
-        mockUserStateManager.didDismissHomePagePromotion = true
-        coordinator = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: MockFreemiumDBPPresenter(),
-            dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
-            contextualOnboardingPublisher: Empty<Bool, Never>().eraseToAnyPublisher()
-        )
-        sut = FreemiumDBPPromoDelegate(coordinator: coordinator)
-
-        XCTAssertFalse(sut.isEligible)
-    }
-
     func testIsEligible_whenDisplayWindowExpired_remainsEligibleSoShowCanCleanUp() {
         // An expired window still reports eligible — show() handles the expiry
         // by clearing the date and returning .ignored(cooldown:)
@@ -123,6 +109,71 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
     }
 
     // MARK: - show()
+
+    func testShow_returnsIgnoredForLegacyDismissal_whenPreScanBanner() async {
+        mockUserStateManager.didDismissHomePagePromotion = true
+        mockUserStateManager.firstScanResults = nil
+
+        coordinator = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: MockFreemiumDBPPresenter(),
+            dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
+            contextualOnboardingPublisher: Empty<Bool, Never>().eraseToAnyPublisher()
+        )
+        sut = FreemiumDBPPromoDelegate(coordinator: coordinator)
+
+        let result = await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
+        XCTAssertEqual(result, .ignored())
+    }
+
+    func testShow_ignoresLegacyDismissal_whenScanResultsExist() async {
+        mockUserStateManager.didDismissHomePagePromotion = true
+        mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 3, brokerCount: 1)
+
+        coordinator = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: MockFreemiumDBPPresenter(),
+            dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
+            contextualOnboardingPublisher: Empty<Bool, Never>().eraseToAnyPublisher()
+        )
+        sut = FreemiumDBPPromoDelegate(coordinator: coordinator)
+
+        let task = Task {
+            await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
+        }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertNotNil(coordinator.viewModel)
+
+        sut.hide()
+        _ = await task.value
+    }
+
+    func testShow_ignoresLegacyDismissal_whenForced() async {
+        mockUserStateManager.didDismissHomePagePromotion = true
+        mockUserStateManager.firstScanResults = nil
+
+        coordinator = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: MockFreemiumDBPPresenter(),
+            dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
+            contextualOnboardingPublisher: Empty<Bool, Never>().eraseToAnyPublisher()
+        )
+        sut = FreemiumDBPPromoDelegate(coordinator: coordinator)
+
+        let task = Task {
+            await sut.show(history: PromoHistoryRecord(id: "test"), force: true)
+        }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertNotNil(coordinator.viewModel)
+
+        sut.hide()
+        _ = await task.value
+    }
 
     func testShow_setsDisplayWindowStartDate() async {
         XCTAssertNil(coordinator.displayWindowStartDate)
@@ -275,19 +326,40 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
     }
 
-    func testIsEligiblePublisher_emitsFalseWhenDismissed() {
-        let expectation = XCTestExpectation(description: "publisher emits false")
+    func testRefreshEligibility_causesPublisherToReEmit() {
+        var emissions: [Bool] = []
+        let expectation = XCTestExpectation(description: "publisher re-emits")
+        expectation.expectedFulfillmentCount = 2
+
         sut.isEligiblePublisher
-            .dropFirst()
             .sink { eligible in
-                if !eligible { expectation.fulfill() }
+                emissions.append(eligible)
+                expectation.fulfill()
             }
             .store(in: &cancellables)
 
-        // Trigger dismiss via notification (updates isDismissed on coordinator)
-        NotificationCenter.default.post(name: .freemiumDBPEntryPointActivated, object: nil)
+        sut.refreshEligibility()
 
         wait(for: [expectation], timeout: 2.0)
+        XCTAssertEqual(emissions, [true, true])
+    }
+
+    func testScanResultsNotification_triggersRefreshEligibility() {
+        var emitCount = 0
+        let expectation = XCTestExpectation(description: "publisher re-emits after notification")
+        expectation.expectedFulfillmentCount = 2
+
+        sut.isEligiblePublisher
+            .sink { _ in
+                emitCount += 1
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.post(name: .freemiumDBPResultPollingComplete, object: nil)
+
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertEqual(emitCount, 2)
     }
 
     func testIsEligiblePublisher_usesFastPathDuringActiveDisplayWindow() {

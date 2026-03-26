@@ -145,9 +145,9 @@ final class PerformanceMetricsReporterTests: XCTestCase {
         reporter.startupProfiler(profiler, didCompleteWithMetrics: metrics)
 
         // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["app_delegate_init"], "100")
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["main_menu_init"], "200")
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["time_to_interactive"], "2000")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["app_delegate_init"], "150")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["main_menu_init"], "250")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["time_to_interactive"], "2500")
     }
 }
 

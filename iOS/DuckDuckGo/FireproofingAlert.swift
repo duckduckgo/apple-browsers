@@ -24,20 +24,22 @@ class FireproofingAlert {
 
     static func showFireproofDisabledMessage(usingController controller: UIViewController,
                                              worker: FireproofingWorking,
-                                             forDomain domain: String) {
-        
+                                             forDomain domain: String,
+                                             undoDomain: String) {
+
         let message = UserText.fireproofingRemovalConfirmMessage.format(arguments: domain)
         ActionMessageView.present(message: message, actionTitle: UserText.actionGenericUndo, onAction: {
-            worker.handleUserEnablingFireproofing(forDomain: domain)
+            worker.handleUserEnablingFireproofing(forDomain: undoDomain)
         })
     }
-    
+
     static func showFireproofEnabledMessage(usingController controller: UIViewController,
                                             worker: FireproofingWorking,
-                                            forDomain domain: String) {
+                                            forDomain domain: String,
+                                            undoDomain: String) {
         let message = UserText.fireproofingConfirmMessage.format(arguments: domain)
         ActionMessageView.present(message: message, actionTitle: UserText.actionGenericUndo, onAction: {
-            worker.handleUserDisablingFireproofing(forDomain: domain)
+            worker.handleUserDisablingFireproofing(forDomain: undoDomain)
         })
     }
     

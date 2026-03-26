@@ -246,7 +246,7 @@ extension WebCacheManager {
 
         let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
         guard let cookieETLDPlus1 = tld.eTLDplus1(cookieDomain) else { return false }
-        return domains.contains(cookieETLDPlus1)
+        return domains.contains(where: { tld.eTLDplus1($0) == cookieETLDPlus1 })
     }
 
     private func performMigrationIfNeeded(dataStoreIDManager: DataStoreIDManaging,

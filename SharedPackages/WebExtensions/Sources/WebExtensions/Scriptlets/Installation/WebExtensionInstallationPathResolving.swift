@@ -21,4 +21,7 @@ import Foundation
 @available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionInstallationPathResolving: AnyObject {
     func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL?
+
+    @MainActor
+    func reloadExtension(for type: DuckDuckGoWebExtensionType) async throws
 }

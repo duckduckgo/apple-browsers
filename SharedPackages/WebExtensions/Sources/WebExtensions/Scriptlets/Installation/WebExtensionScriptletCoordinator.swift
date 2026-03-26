@@ -102,6 +102,7 @@ public final class WebExtensionScriptletCoordinator {
 
         do {
             try await installer.installScriptlets(scriptlets, cacheRootDirectory: scriptletProvider.cacheRootDirectory, to: installationDirectory)
+            try await installationPathResolver?.reloadExtension(for: extensionType)
         } catch {
             Logger.webExtensions.error("[Scriptlets] ❌ Failed to install scriptlets to '\(self.extensionType.rawValue)': \(error.localizedDescription)")
         }

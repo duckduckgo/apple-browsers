@@ -118,6 +118,15 @@ extension WebExtensionManager {
         return storageProvider.resolveInstalledExtension(identifier: installed.uniqueIdentifier)
     }
 
+    @MainActor
+    public func reloadExtension(for type: DuckDuckGoWebExtensionType) async throws {
+        guard let installed = installedEmbeddedExtension(for: type) else {
+            Logger.webExtensions.warning("⚠️ Cannot reload extension for type '\(type.rawValue)': not installed")
+            return
+        }
+        try await reloadExtension(identifier: installed.uniqueIdentifier)
+    }
+
     /// Installs an embedded extension from the given URL.
     @MainActor
     private func installEmbeddedExtension(from sourceURL: URL, type: DuckDuckGoWebExtensionType) async throws {

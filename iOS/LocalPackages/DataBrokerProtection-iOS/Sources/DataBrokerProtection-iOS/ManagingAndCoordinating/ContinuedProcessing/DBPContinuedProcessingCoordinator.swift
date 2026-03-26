@@ -85,8 +85,9 @@ actor DBPContinuedProcessingCoordinator {
             "Continued processing: preparing initial run with \(scanPlan.scanCount, privacy: .public) scans"
         )
         let scanJobTimeout = manager?.continuedProcessingScanJobTimeout() ?? .minutes(3)
-        let scanBudgetUnitsPerJob = max(Int64(scanJobTimeout / Constants.heartbeatInterval), 1)
-        progressReporter.startInitialRun(plan: scanPlan, scanBudgetUnitsPerJob: scanBudgetUnitsPerJob)
+        progressReporter.startInitialRun(plan: scanPlan,
+                                         scanJobTimeout: scanJobTimeout,
+                                         heartbeatInterval: Constants.heartbeatInterval)
 
         manager?.continuedProcessingDelegate = self
 
@@ -146,9 +147,7 @@ actor DBPContinuedProcessingCoordinator {
 
     /// Transitions into the initial scan phase and starts immediate scans through the manager.
     func startScanPhase() async {
-        transition(to: .initialScan) {
-            self.progressReporter.enterScanPhase()
-        }
+        transition(to: .initialScan)
         Logger.dataBrokerProtection.log("Continued processing: starting scan phase for run \(self.logRunIdentifier(), privacy: .public)")
         await manager?.startImmediateScanOperationsForContinuedProcessing()
     }

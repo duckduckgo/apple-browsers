@@ -138,24 +138,19 @@ final class DBPContinuedProcessingProgressReporter {
 
     /// Seeds the scan-phase budget from the initial plan and reserves an equally sized opt-out budget.
     ///
-    /// Example:
-    /// if the initial scan plan has 3 jobs and `scanBudgetUnitsPerJob` is `120`, then:
-    /// - the scan half starts with `3 * 120 = 360` total units
-    /// - each scan job is allotted `120` units
-    /// - the opt-out half reserves another `360` units up front
-    /// - the full run therefore starts with `720` total units split 50/50 across the two phases
-    func startInitialRun(plan: DBPContinuedProcessingPlans.InitialScanPlan, scanBudgetUnitsPerJob: Int64) {
-        let scanBudgetUnitsPerJob = max(scanBudgetUnitsPerJob, 1)
+    /// The budget per scan job is derived from the expected scan duration and heartbeat interval.
+    /// For example, if `scanJobTimeout` is 180s and `heartbeatInterval` is 1.5s, each scan job
+    /// gets `120` budget units. A plan with 3 scans starts at `3 × 120 = 360` scan units plus
+    /// an equal `360` reserved for opt-outs, totaling `720` units split 50/50.
+    func startInitialRun(plan: DBPContinuedProcessingPlans.InitialScanPlan,
+                         scanJobTimeout: TimeInterval,
+                         heartbeatInterval: TimeInterval) {
+        let scanBudgetUnitsPerJob = max(Int64(scanJobTimeout / heartbeatInterval), 1)
         phase = .scan
         scanProgress.reset(jobIDs: plan.scanJobIDs, allottedUnitsPerJob: scanBudgetUnitsPerJob)
         // Reserve a fixed second half up front so the total budget stays a 50/50 scan/opt-out split.
         reservedOptOutUnits = scanProgress.totalUnits
         optOutProgress.reserve(totalUnits: scanProgress.totalUnits)
-    }
-
-    /// Marks scan progress as the active phase.
-    func enterScanPhase() {
-        phase = .scan
     }
 
     /// Divides the reserved opt-out budget across the runnable opt-out plan.

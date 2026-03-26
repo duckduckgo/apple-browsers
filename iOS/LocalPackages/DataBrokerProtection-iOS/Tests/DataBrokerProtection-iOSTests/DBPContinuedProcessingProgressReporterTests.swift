@@ -30,7 +30,7 @@ final class DBPContinuedProcessingProgressReporterTests: XCTestCase {
                 .init(brokerId: 2, profileQueryId: 2),
                 .init(brokerId: 3, profileQueryId: 3)
             ]),
-            scanBudgetUnitsPerJob: 120
+            scanJobTimeout: 120, heartbeatInterval: 1
         )
 
         let snapshot = sut.snapshot()
@@ -46,7 +46,7 @@ final class DBPContinuedProcessingProgressReporterTests: XCTestCase {
             plan: DBPContinuedProcessingPlans.InitialScanPlan(scanJobIDs: [
                 .init(brokerId: 1, profileQueryId: 1)
             ]),
-            scanBudgetUnitsPerJob: 2
+            scanJobTimeout: 2, heartbeatInterval: 1
         )
 
         sut.advanceHeartbeat()
@@ -69,7 +69,7 @@ final class DBPContinuedProcessingProgressReporterTests: XCTestCase {
 
         sut.startInitialRun(
             plan: DBPContinuedProcessingPlans.InitialScanPlan(scanJobIDs: [firstScan, secondScan]),
-            scanBudgetUnitsPerJob: 120
+            scanJobTimeout: 120, heartbeatInterval: 1
         )
 
         sut.recordCompletedScan(firstScan)
@@ -93,7 +93,7 @@ final class DBPContinuedProcessingProgressReporterTests: XCTestCase {
                 .init(brokerId: 1, profileQueryId: 1),
                 .init(brokerId: 2, profileQueryId: 2)
             ]),
-            scanBudgetUnitsPerJob: 181
+            scanJobTimeout: 181, heartbeatInterval: 1
         )
 
         sut.enterOptOutPhase(plan: DBPContinuedProcessingPlans.OptOutPlan(optOutJobIDs: [firstOptOut, secondOptOut, thirdOptOut]))
@@ -116,7 +116,7 @@ final class DBPContinuedProcessingProgressReporterTests: XCTestCase {
             plan: DBPContinuedProcessingPlans.InitialScanPlan(scanJobIDs: [
                 .init(brokerId: 1, profileQueryId: 1)
             ]),
-            scanBudgetUnitsPerJob: 120
+            scanJobTimeout: 120, heartbeatInterval: 1
         )
         sut.enterOptOutPhase(plan: DBPContinuedProcessingPlans.OptOutPlan(optOutJobIDs: [firstOptOut, secondOptOut]))
 
@@ -137,7 +137,7 @@ final class DBPContinuedProcessingProgressReporterTests: XCTestCase {
             plan: DBPContinuedProcessingPlans.InitialScanPlan(scanJobIDs: [
                 .init(brokerId: 1, profileQueryId: 1)
             ]),
-            scanBudgetUnitsPerJob: 120
+            scanJobTimeout: 120, heartbeatInterval: 1
         )
         sut.enterOptOutPhase(plan: DBPContinuedProcessingPlans.OptOutPlan(optOutJobIDs: [
             .init(brokerId: 1, profileQueryId: 1, extractedProfileId: 11)

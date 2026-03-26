@@ -72,6 +72,7 @@ final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
         case .fire:
             rootView = AnyView(
                 fireDialog(
+                    title: spec.title,
                     message: spec.message,
                     delegate: delegate,
                     pixelName: spec.pixelName,
@@ -81,7 +82,6 @@ final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
         case .final:
             rootView = AnyView(
                 endOfJourneyDialog(
-                    message: spec.message,
                     delegate: delegate,
                     pixelName: spec.pixelName
                 )
@@ -239,6 +239,7 @@ private extension RebrandedContextualDaxDialogFactory {
 private extension RebrandedContextualDaxDialogFactory {
 
     func fireDialog(
+        title: String?,
         message: String,
         delegate: ContextualOnboardingDelegate,
         pixelName: Pixel.Event,
@@ -249,10 +250,10 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         } : nil
 
-        let fireDialogMessage = message.isEmpty ? UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage : message
         return OnboardingConditionalCenteredScrollableContainerView {
             OnboardingRebranding.OnboardingFireDialog(
-                message: fireDialogMessage,
+                title: title,
+                message: message,
                 onManualDismiss: onManualDismiss
             )
         }
@@ -269,7 +270,6 @@ private extension RebrandedContextualDaxDialogFactory {
 private extension RebrandedContextualDaxDialogFactory {
 
     func endOfJourneyDialog(
-        message: String,
         delegate: ContextualOnboardingDelegate,
         pixelName: Pixel.Event
     ) -> some View {
@@ -283,10 +283,9 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        let endOfJourneyMessage = message.isEmpty ? UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage : message
         return OnboardingConditionalCenteredScrollableContainerView {
             OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                message: endOfJourneyMessage,
+                message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                 dismissAction: dismissAction,
                 onManualDismiss: onManualDismiss

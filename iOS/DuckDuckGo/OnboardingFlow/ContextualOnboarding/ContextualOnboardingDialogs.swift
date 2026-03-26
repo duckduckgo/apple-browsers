@@ -84,14 +84,21 @@ struct OnboardingTryVisitingSiteDialogContent: View {
 // MARK: - Fire Dialog
 
 struct OnboardingFireDialog: View {
+    let title: String?
     let message: String
     let onManualDismiss: (() -> Void)?
+
+    init(title: String? = nil, message: String, onManualDismiss: (() -> Void)? = nil) {
+        self.title = title
+        self.message = message
+        self.onManualDismiss = onManualDismiss
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
                 VStack {
-                    OnboardingFireButtonDialogContent(message: message)
+                    OnboardingFireButtonDialogContent(title: title, message: message)
                 }
             }
             .padding()
@@ -100,18 +107,20 @@ struct OnboardingFireDialog: View {
 }
 
 struct OnboardingFireButtonDialogContent: View {
-    let message: String
 
-    private var attributedMessage: NSAttributedString {
-        let titleBoldString = UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle
-        let fireButtonBoldString = "Fire Button."
-        let attributed = message.attributed
-            .withFont(.daxBodyBold(), forText: titleBoldString)
-        return attributed.withFont(.daxBodyBold(), forText: fireButtonBoldString)
+    let title: String?
+    let attributedMessage: NSAttributedString
+
+    init(title: String? = nil, message: String) {
+        self.title = title
+        let boldString = "Fire Button."
+        attributedMessage = message.attributed.withFont(.daxBodyBold(), forText: boldString)
     }
 
     var body: some View {
         ContextualDaxDialogContent(
+            title: title,
+            titleFont: Font(UIFont.daxTitle3()),
             message: attributedMessage,
             messageFont: Font.system(size: 16)
         )
@@ -181,9 +190,7 @@ struct OnboardingTrackersDoneDialog: View {
             }) {
                 VStack {
                     if showNextScreen {
-                        OnboardingFireButtonDialogContent(
-                            message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage
-                        )
+                        OnboardingFireButtonDialogContent(message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
                     } else {
                         ContextualDaxDialogContent(
                             message: message,
@@ -229,33 +236,33 @@ struct OnboardingFinalDialog: View {
     }
 
     var body: some View {
-        DaxDialogView(logoPosition: logoPosition, onManualDismiss: onManualDismiss) {
-            ContextualDaxDialogContent(
-                title: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
-                titleFont: Font(UIFont.daxTitle3()),
-                message: message.attributedString(
-                    withPlaceholder: UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken,
-                    replacedByImage: DesignSystemImages.Glyphs.Size16.aiChat,
-                    verticalOffset: -2
-                ) ?? NSAttributedString(string: message),
-                messageFont: Font.system(size: 16),
-                customActionView: AnyView(customActionView)
-            )
+        ScrollView(.vertical, showsIndicators: false) {
+            DaxDialogView(logoPosition: logoPosition, onManualDismiss: onManualDismiss) {
+                ContextualDaxDialogContent(
+                    title: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
+                    titleFont: Font(UIFont.daxTitle3()),
+                    message: message.attributedString(
+                        withPlaceholder: UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken,
+                        replacedByImage: DesignSystemImages.Glyphs.Size16.aiChat,
+                        verticalOffset: -2
+                    ) ?? NSAttributedString(string: message),
+                    messageFont: Font.system(size: 16),
+                    customActionView: AnyView(customActionView)
+                )
+            }
+            .padding()
         }
-        .padding()
     }
 
     @ViewBuilder
     private var customActionView: some View {
-        VStack(spacing: 12) {
-            OnboardingCTAButton(
-                title: cta,
-                buttonStyle: .primary(),
-                action: {
-                    dismissAction()
-                }
-            )
-        }
+        OnboardingCTAButton(
+            title: cta,
+            buttonStyle: .primary(),
+            action: {
+                dismissAction()
+            }
+        )
     }
 
 }

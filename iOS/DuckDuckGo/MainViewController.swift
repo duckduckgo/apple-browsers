@@ -2621,11 +2621,7 @@ class MainViewController: UIViewController {
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
         showFireButtonPulse()
-        currentTab?.presentExperimentContextualDaxFireDialog(
-            message: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle
-                + "\n\n"
-                + UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingMessage
-        )
+        currentTab?.presentExperimentContextualDaxFireDialog()
     }
 
     private func scheduleExperimentDuckAIFireOnboardingAfterLoadIfNeeded(for tab: TabViewController) {
@@ -2670,8 +2666,7 @@ class MainViewController: UIViewController {
         }
 
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+        DispatchQueue.main.async {
             newTabPageViewController.showExperimentCompletionDialog(message: message)
         }
     }

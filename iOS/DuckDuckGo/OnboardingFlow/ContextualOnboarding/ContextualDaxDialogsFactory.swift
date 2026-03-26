@@ -94,6 +94,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .fire:
             rootView = AnyView(
                 fireDialog(
+                    title: spec.title,
                     message: spec.message,
                     delegate: delegate,
                     pixelName: spec.pixelName,
@@ -103,7 +104,6 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .final:
             rootView = AnyView(
                 endOfJourneyDialog(
-                    message: spec.message,
                     delegate: delegate,
                     pixelName: spec.pixelName
                 )
@@ -240,6 +240,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     private func fireDialog(
+        title: String?,
         message: String,
         delegate: ContextualOnboardingDelegate,
         pixelName: Pixel.Event,
@@ -250,15 +251,13 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         } : nil
 
-        let fireDialogMessage = message.isEmpty ? UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage : message
-        return OnboardingFireDialog(message: fireDialogMessage, onManualDismiss: onManualDismiss)
+        return OnboardingFireDialog(title: title, message: message, onManualDismiss: onManualDismiss)
             .onFirstAppear { [weak self] in
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
             }
     }
 
     private func endOfJourneyDialog(
-        message: String,
         delegate: ContextualOnboardingDelegate,
         pixelName: Pixel.Event
     ) -> some View {
@@ -272,10 +271,9 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        let endOfJourneyMessage = message.isEmpty ? UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage : message
         return OnboardingFinalDialog(
             logoPosition: .left,
-            message: endOfJourneyMessage,
+            message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
             cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
             dismissAction: dismissAction,
             onManualDismiss: onManualDismiss

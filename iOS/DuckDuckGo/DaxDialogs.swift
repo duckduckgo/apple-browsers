@@ -179,18 +179,30 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
                                                        pixelName: .daxDialogsWithTrackersUnique,
                                                        message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithMultipleTrackers)
 
-        static let fire = BrowsingSpec(type: .fire, pixelName: .daxDialogsFireEducationShownUnique)
+        static let fire = BrowsingSpec(type: .fire,
+                                       pixelName: .daxDialogsFireEducationShownUnique,
+                                       message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
 
-        static let final = BrowsingSpec(type: .final, pixelName: .daxDialogsEndOfJourneyTabUnique)
+        static let fireDuckAIExperiment = BrowsingSpec(type: .fire,
+                                                       pixelName: .daxDialogsFireEducationShownUnique,
+                                                       title: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle,
+                                                       message: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingMessage,
+                                                       allowsManualDismiss: false)
 
+        static let final = BrowsingSpec(type: .final,
+                                        pixelName: .daxDialogsEndOfJourneyTabUnique,
+                                        message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage)
+
+        let title: String?
         let message: String
         let pixelName: Pixel.Event
         let type: SpecType
         let allowsManualDismiss: Bool
 
-        init(type: SpecType, pixelName: Pixel.Event, message: String = "", allowsManualDismiss: Bool = true) {
+        init(type: SpecType, pixelName: Pixel.Event, title: String? = nil, message: String = "", allowsManualDismiss: Bool = true) {
             self.type = type
             self.pixelName = pixelName
+            self.title = title
             self.message = message
             self.allowsManualDismiss = allowsManualDismiss
         }
@@ -207,6 +219,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             BrowsingSpec(
                 type: type,
                 pixelName: pixelName,
+                title: title,
                 message: message,
                 allowsManualDismiss: allowsManualDismiss
             )
@@ -216,6 +229,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             BrowsingSpec(
                 type: type,
                 pixelName: pixelName,
+                title: title,
                 message: message,
                 allowsManualDismiss: allowsManualDismiss
             )

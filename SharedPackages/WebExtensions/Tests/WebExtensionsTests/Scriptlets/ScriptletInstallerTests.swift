@@ -60,8 +60,7 @@ final class ScriptletInstallerTests: XCTestCase {
 
         try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
-        let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
-        let files = try FileManager.default.contentsOfDirectory(at: scriptletsDir, includingPropertiesForKeys: nil)
+        let files = try FileManager.default.contentsOfDirectory(at: installationDirectory, includingPropertiesForKeys: nil)
 
         XCTAssertEqual(files.count, 2)
         XCTAssertTrue(files.contains(where: { $0.lastPathComponent == "test1.js" }))
@@ -78,37 +77,23 @@ final class ScriptletInstallerTests: XCTestCase {
         try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
         let targetFile = installationDirectory
-            .appendingPathComponent("scriptlets")
             .appendingPathComponent("isolated/ublock-filters.js")
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: targetFile.path))
     }
 
-    func testWhenScriptletsInstalledTwiceThenOldFilesAreCleared() async throws {
-        let oldScriptlets = [Scriptlet(path: "old.js", relativeCachedPath: "ext/1.0/old.js")]
-        try writeCacheFile(at: "ext/1.0/old.js", content: "old")
-        try await installer.installScriptlets(oldScriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
-
-        let newScriptlets = [Scriptlet(path: "new.js", relativeCachedPath: "ext/2.0/new.js")]
-        try writeCacheFile(at: "ext/2.0/new.js", content: "new")
-        try await installer.installScriptlets(newScriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
-
-        let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
-        let files = try FileManager.default.contentsOfDirectory(at: scriptletsDir, includingPropertiesForKeys: nil)
-
-        XCTAssertEqual(files.count, 1)
-        XCTAssertEqual(files.first?.lastPathComponent, "new.js")
-    }
-
-    func testWhenScriptletsRemovedThenDirectoryIsDeleted() async throws {
-        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
-        try writeCacheFile(at: "ext/1.0/test.js", content: "test")
+    func testWhenScriptletAlreadyExistsThenItIsOverwritten() async throws {
+        let scriptlets = [Scriptlet(path: "script.js", relativeCachedPath: "ext/1.0/script.js")]
+        try writeCacheFile(at: "ext/1.0/script.js", content: "old content")
         try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
-        try installer.removeScriptlets(from: installationDirectory)
+        try writeCacheFile(at: "ext/2.0/script.js", content: "new content")
+        let updatedScriptlets = [Scriptlet(path: "script.js", relativeCachedPath: "ext/2.0/script.js")]
+        try await installer.installScriptlets(updatedScriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
-        let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
-        XCTAssertFalse(FileManager.default.fileExists(atPath: scriptletsDir.path))
+        let targetFile = installationDirectory.appendingPathComponent("script.js")
+        let content = try String(contentsOf: targetFile, encoding: .utf8)
+        XCTAssertEqual(content, "new content")
     }
 
     // MARK: - Helpers

@@ -22,7 +22,6 @@ import os.log
 public final class ScriptletInstaller: ScriptletInstalling {
 
     private let fileManager: FileManager
-    private let scriptletsSubpath = "scriptlets"
 
     public init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -30,18 +29,22 @@ public final class ScriptletInstaller: ScriptletInstalling {
 
     public func installScriptlets(_ scriptlets: [Scriptlet], cacheRootDirectory: URL, to installationDirectory: URL) async throws {
         Logger.webExtensions.debug("[Scriptlets] 📦 Installing \(scriptlets.count) scriptlet(s) to '\(installationDirectory.path)'")
-        let targetDirectory = installationDirectory.appendingPathComponent(scriptletsSubpath)
 
-        Logger.webExtensions.debug("[Scriptlets] 🗂️ Preparing directory: \(targetDirectory.path)")
-        try prepareDirectory(targetDirectory)
+        Logger.webExtensions.debug("[Scriptlets] 🗂️ Preparing directory: \(installationDirectory.path)")
+        try prepareDirectory(installationDirectory)
 
         for scriptlet in scriptlets {
             let sourceFile = cacheRootDirectory.appendingPathComponent(scriptlet.relativeCachedPath)
-            let targetFile = targetDirectory.appendingPathComponent(scriptlet.path)
+            let targetFile = installationDirectory.appendingPathComponent(scriptlet.path)
 
             let targetFileDirectory = targetFile.deletingLastPathComponent()
             if !fileManager.fileExists(atPath: targetFileDirectory.path) {
                 try fileManager.createDirectory(at: targetFileDirectory, withIntermediateDirectories: true)
+            }
+
+            if fileManager.fileExists(atPath: targetFile.path) {
+                Logger.webExtensions.debug("[Scriptlets] 🔄 Overwriting existing scriptlet at '\(scriptlet.path)'")
+                try fileManager.removeItem(at: targetFile)
             }
 
             Logger.webExtensions.debug("[Scriptlets] 📋 Copying scriptlet '\(scriptlet.relativeCachedPath)' to \(scriptlet.path)")
@@ -51,16 +54,7 @@ public final class ScriptletInstaller: ScriptletInstalling {
         Logger.webExtensions.info("[Scriptlets] ✅ Successfully installed \(scriptlets.count) scriptlet(s) to '\(installationDirectory.path)'")
     }
 
-    public func removeScriptlets(from installationDirectory: URL) throws {
-        Logger.webExtensions.debug("[Scriptlets] 🗑️ Removing scriptlets from '\(installationDirectory.path)'")
-        let targetDirectory = installationDirectory.appendingPathComponent(scriptletsSubpath)
-        try? fileManager.removeItem(at: targetDirectory)
-        Logger.webExtensions.info("[Scriptlets] ✅ Removed scriptlets from '\(installationDirectory.path)'")
-    }
-
     private func prepareDirectory(_ directory: URL) throws {
-        try? fileManager.removeItem(at: directory)
-
         try fileManager.createDirectory(
             at: directory,
             withIntermediateDirectories: true,

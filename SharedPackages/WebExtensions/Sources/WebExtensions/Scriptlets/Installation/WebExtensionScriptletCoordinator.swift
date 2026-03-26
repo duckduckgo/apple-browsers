@@ -56,11 +56,7 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     public func onExtensionDisabled() {
-        Logger.webExtensions.debug("[Scriptlets] ⏸️ Extension '\(self.extensionType.rawValue)' disabled, removing scriptlets")
-        guard let installationDirectory = resolveInstallationDirectory() else {
-            return
-        }
-        try? installer.removeScriptlets(from: installationDirectory)
+        Logger.webExtensions.debug("[Scriptlets] ⏸️ Extension '\(self.extensionType.rawValue)' disabled")
     }
 
     private func resolveInstallationDirectory() -> URL? {

@@ -41,6 +41,7 @@ final class AIChatViewControllerManager {
     // MARK: - Public Properties
 
     weak var delegate: AIChatViewControllerManagerDelegate?
+    var isFireModeProvider: (() -> Bool)?
 
     // MARK: - Private Properties
 
@@ -148,6 +149,12 @@ final class AIChatViewControllerManager {
              viewController: parentViewController, completion: completion)
     }
 
+    /// Opens AI Chat in voice mode.
+    @MainActor
+    func openAIChatVoiceMode(on viewController: UIViewController) {
+        open(presentationMode: .modal, viewController: viewController, voiceMode: true)
+    }
+
     // MARK: - Private Setup Methods
 
     /// Unified internal method handling both modal and container presentations.
@@ -171,7 +178,8 @@ final class AIChatViewControllerManager {
                       presentationMode: AIChatPresentationMode,
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
-                      completion: (() -> Void)? = nil) {
+                      completion: (() -> Void)? = nil,
+                      voiceMode: Bool = false) {
 
         productSurfaceTelemetry.duckAIUsed()
 
@@ -201,7 +209,8 @@ final class AIChatViewControllerManager {
                     presentationMode: presentationMode,
                     containerView: containerView,
                     viewController: viewController,
-                    completion: completion
+                    completion: completion,
+                    voiceMode: voiceMode
                 )
             }
         } else {
@@ -214,7 +223,8 @@ final class AIChatViewControllerManager {
                 presentationMode: presentationMode,
                 containerView: containerView,
                 viewController: viewController,
-                completion: completion
+                completion: completion,
+                voiceMode: voiceMode
             )
         }
     }
@@ -229,7 +239,8 @@ final class AIChatViewControllerManager {
                               presentationMode: AIChatPresentationMode,
                               containerView: UIView?,
                               viewController: UIViewController?,
-                              completion: (() -> Void)?) {
+                              completion: (() -> Void)?,
+                              voiceMode: Bool = false) {
         switch presentationMode {
         case .modal:
             guard let viewController = viewController else { return }
@@ -239,7 +250,8 @@ final class AIChatViewControllerManager {
                 autoSend: autoSend,
                 onboardingFlowType: onboardingFlowType,
                 tools: tools,
-                on: viewController
+                on: viewController,
+                voiceMode: voiceMode
             )
         case .container:
             guard let containerView = containerView, let viewController = viewController else { return }
@@ -266,7 +278,8 @@ final class AIChatViewControllerManager {
                                        autoSend: Bool,
                                        onboardingFlowType: AIChatOnboardingFlowType = .default,
                                        tools: [AIChatRAGTool]?,
-                                       on viewController: UIViewController) {
+                                       on viewController: UIViewController,
+                                       voiceMode: Bool = false) {
         let aiChatViewController = createAIChatViewController(presentationMode: .modal)
         setupChatViewController(
             aiChatViewController,
@@ -274,9 +287,9 @@ final class AIChatViewControllerManager {
             payload: payload,
             autoSend: autoSend,
             onboardingFlowType: onboardingFlowType,
-            tools: tools
+            tools: tools,
+            voiceMode: voiceMode
         )
-
         let roundedPageSheet = RoundedPageSheetContainerViewController(
             contentViewController: aiChatViewController,
             allowedOrientation: .portrait
@@ -380,7 +393,8 @@ final class AIChatViewControllerManager {
 
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
-        let configuration = WKWebViewConfiguration.persistent()
+        let fireMode = isFireModeProvider?() ?? false
+        let configuration = WKWebViewConfiguration.persistent(fireMode: fireMode)
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self
@@ -394,7 +408,13 @@ final class AIChatViewControllerManager {
                                          payload: Any?,
                                          autoSend: Bool,
                                          onboardingFlowType: AIChatOnboardingFlowType = .default,
-                                         tools: [AIChatRAGTool]?) {
+                                         tools: [AIChatRAGTool]?,
+                                         voiceMode: Bool = false) {
+        if voiceMode {
+            aiChatViewController.loadVoiceMode()
+            return
+        }
+
         if let query = query {
             aiChatViewController.loadQuery(
                 query,
@@ -445,6 +465,7 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         }
 
         aiChatUserScript = userScripts.aiChatUserScript
+        aiChatUserScript?.setFireModeProvider(isFireModeProvider)
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
         aiChatUserScript?.webView = chatViewController?.webView

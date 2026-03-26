@@ -101,7 +101,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                                                               webExtensionAvailability: nil)
 
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
-        let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence)
+        let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence, featureFlagger: featureFlagger)
         let tabManager = TabManager(tabsModelProvider: modelProvider,
                                     previewsSource: MockTabPreviewsSource(),
                                     interactionStateSource: nil,
@@ -122,6 +122,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                                     websiteDataManager: mockWebsiteDataManager,
                                     fireproofing: fireproofing,
+                                    favicons: Favicons(),
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
@@ -140,6 +141,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                         syncService: syncService,
                                         bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
                                         fireproofing: fireproofing,
+                                        favicons: Favicons(),
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                                         historyManager: historyManager,
@@ -171,6 +173,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
+            favicons: Favicons(),
             textZoomCoordinatorProvider: textZoomCoordinatorProvider,
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,

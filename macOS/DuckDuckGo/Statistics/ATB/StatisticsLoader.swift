@@ -34,6 +34,7 @@ final class StatisticsLoader {
     private let emailManager: EmailManager
     private let attributionPixelHandler: InstallationAttributionsPixelHandler
     private let usageSegmentation: UsageSegmenting
+    private let dockCustomization: DockCustomization
     private let parser = AtbParser()
     private var isAppRetentionRequestInProgress = false
     var isSearchRetentionRequestInProgress = false
@@ -46,6 +47,7 @@ final class StatisticsLoader {
         emailManager: EmailManager = EmailManager(),
         attributionPixelHandler: InstallationAttributionsPixelHandler = AppInstallationAttributionPixelHandler(),
         usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
+        dockCustomization: DockCustomization = Application.appDelegate.dockCustomization,
         fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
         fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels
     ) {
@@ -53,6 +55,7 @@ final class StatisticsLoader {
         self.emailManager = emailManager
         self.attributionPixelHandler = attributionPixelHandler
         self.usageSegmentation = usageSegmentation
+        self.dockCustomization = dockCustomization
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
     }
@@ -337,8 +340,9 @@ final class StatisticsLoader {
     }
 
     private func fireDockPixel() {
-        DispatchQueue.global().asyncAfter(deadline: .now() + Double.random(in: 0.5...5)) {
-            if DockCustomizer().isAddedToDock {
+        let delay = Double.random(in: 0.5...5)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            if self.dockCustomization.isAddedToDock {
                 PixelKit.fire(GeneralPixel.serpAddedToDock,
                               includeAppVersionParameter: false)
             }

@@ -159,7 +159,7 @@ public struct SaveRecoveryKeyView: View {
             .background(RoundedRectangle(cornerRadius: 12).foregroundColor(Color(designSystemColor: .backgroundTertiary)))
 
             Text(UserText.autoRestoreFooter)
-                .daxCaption()
+                .daxCaption1()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .padding(.horizontal, 16)
                 .fixedSize(horizontal: false, vertical: true)

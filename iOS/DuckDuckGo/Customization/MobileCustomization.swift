@@ -79,6 +79,8 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size24.key
             case .downloads:
                 DesignSystemImages.Glyphs.Size24.downloads
+            case .duckAIVoice:
+                DesignSystemImages.Glyphs.Size24.voice
             }
         }
 
@@ -108,6 +110,8 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size16.keyLogin
             case .downloads:
                 DesignSystemImages.Glyphs.Size16.downloads
+            case .duckAIVoice:
+                DesignSystemImages.Glyphs.Size16.voice
             }
         }
 
@@ -128,6 +132,7 @@ class MobileCustomization {
         // Shared
         case fire
         case vpn
+        case duckAIVoice
     }
 
     static let addressBarDefault: Button = .share
@@ -154,10 +159,26 @@ class MobileCustomization {
             .downloads,
         ]
 
+    var toolbarButtonOptions: [Button] {
+        var buttons = Self.toolbarButtons
+        if voiceShortcutFeature.isAvailable {
+            buttons.append(.duckAIVoice)
+        }
+        return buttons
+    }
+
+    var addressBarButtonOptions: [Button] {
+        var buttons = Self.addressBarButtons
+        if voiceShortcutFeature.isAvailable {
+            buttons.append(.duckAIVoice)
+        }
+        return buttons
+    }
+
     var state: State {
         State(isEnabled: isEnabled,
-              currentToolbarButton: current(forKey: .toolbarButton, containedIn: Self.toolbarButtons, Self.toolbarDefault),
-              currentAddressBarButton: current(forKey: .addressBarButton, containedIn: Self.addressBarButtons.compactMap { $0 }, Self.addressBarDefault))
+              currentToolbarButton: current(forKey: .toolbarButton, containedIn: toolbarButtonOptions, Self.toolbarDefault),
+              currentAddressBarButton: current(forKey: .addressBarButton, containedIn: addressBarButtonOptions, Self.addressBarDefault))
     }
 
     var hasFireButton: Bool {
@@ -172,6 +193,7 @@ class MobileCustomization {
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
     private let pixelFiring: PixelFiring.Type
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     public weak var delegate: Delegate?
 
@@ -187,12 +209,14 @@ class MobileCustomization {
          postChangeNotification: @escaping ((State) -> Void) = {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
          },
-         pixelFiring: PixelFiring.Type = Pixel.self
+         pixelFiring: PixelFiring.Type = Pixel.self,
+         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature()
     ) {
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification
         self.pixelFiring = pixelFiring
+        self.voiceShortcutFeature = voiceShortcutFeature
     }
 
     /// Get the current button for the given storage key.  If the button isn't in the alloweed list then the default is returned.  This prevents migration problems if the options change.

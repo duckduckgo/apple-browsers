@@ -28,6 +28,7 @@ import PrivacyConfig
 import UIComponents
 import RemoteMessaging
 import AIChat
+import Subscription
 
 class SuggestionTrayViewController: UIViewController {
     
@@ -110,10 +111,12 @@ class SuggestionTrayViewController: UIViewController {
         let newTabDialogFactory: NewTabDaxDialogsProvider
         let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
+        let faviconsCache: FavoritesFaviconCaching
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
         let appSettings: AppSettings
+        let subscriptionManager: any SubscriptionManager
         let internalUserCommands: URLBasedDebugCommands
     }
 
@@ -303,6 +306,8 @@ class SuggestionTrayViewController: UIViewController {
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
             appSettings: dependencies.appSettings,
+            faviconsCache: dependencies.faviconsCache,
+            subscriptionManager: dependencies.subscriptionManager,
             internalUserCommands: dependencies.internalUserCommands
         )
 

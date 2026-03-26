@@ -76,6 +76,7 @@ protocol AIChatMetricReportingHandling: AnyObject {
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
     var displayMode: AIChatDisplayMode? { get set }
+    var isFireModeProvider: (() -> Bool)? { get set }
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
@@ -98,6 +99,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
     func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable?
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
+    func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
+    func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -128,6 +131,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
+
+    /// Provider that returns whether the current context is fire mode.
+    /// Each owner (tab, contextual sheet, modal) is responsible for setting this.
+    var isFireModeProvider: (() -> Bool)?
 
     /// Closure that provides page context on getAIChatPageContext requests.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
@@ -248,6 +255,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         let supportsNativeChatInput = supportsFullMode && featureFlagger.isFeatureOn(.unifiedToggleInput)
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt
+        let fireMode = isFireModeProvider?() ?? false
 
         return AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
@@ -264,7 +272,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
-            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync),
+            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
             supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts)
         )
     }
@@ -275,6 +283,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
             let decodedStatus = try JSONDecoder().decode(AIChatStatus.self, from: jsonData)
             inputBoxHandler?.aiChatStatus = decodedStatus.status
+            if let attachments = decodedStatus.attachments {
+                inputBoxHandler?.attachmentUsage = attachments
+            }
             return nil
         } catch {
             return nil
@@ -405,6 +416,21 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         return migrationStore.clear()
+    }
+
+    // MARK: - Voice Session
+
+    @MainActor
+    func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: nil)
+        Pixel.fire(pixel: .voiceSessionStarted)
+        return nil
+    }
+
+    @MainActor
+    func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: nil)
+        return nil
     }
 
     // MARK: - Sync

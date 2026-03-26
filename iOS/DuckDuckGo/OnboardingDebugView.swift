@@ -25,6 +25,7 @@ struct OnboardingDebugView: View {
     @StateObject private var viewModel = OnboardingDebugViewModel()
     @State private var isShowingResetDaxDialogsAlert = false
     @State private var isShowingResetOnboardingAlert = false
+    @State private var isShowingSubscriptionPromoCooldownAlert = false
 
     private let newOnboardingIntroStartAction: (OnboardingDebugFlow) -> Void
     @State private var selectedFlow: OnboardingDebugFlow
@@ -57,6 +58,18 @@ struct OnboardingDebugView: View {
                     Alert(title: Text(verbatim: "All onboarding reset"),
                           message: Text(verbatim: "Kill and relaunch the app to restart onboarding."),
                           dismissButton: .cancel(Text(verbatim: "Done")))
+                })
+            }
+
+            Section {
+                Button(action: {
+                    viewModel.markSubscriptionPromoCooldownPassed()
+                    isShowingSubscriptionPromoCooldownAlert = true
+                }, label: {
+                    Text(verbatim: "Set Subscription Promo Cooldown Passed")
+                })
+                .alert(isPresented: $isShowingSubscriptionPromoCooldownAlert, content: {
+                    Alert(title: Text(verbatim: "Subscription promo cooldown set"), dismissButton: .cancel(Text(verbatim: "Done")))
                 })
             }
 
@@ -112,15 +125,18 @@ final class OnboardingDebugViewModel: ObservableObject {
     private let manager: OnboardingNewUserProviderDebugging
     private var settings: DaxDialogsSettings
     private let tutorialSettings: TutorialSettings
+    private let statisticsStore: StatisticsUserDefaults
 
     init(
         manager: OnboardingNewUserProviderDebugging = OnboardingManager(),
         settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
-        tutorialSettings: TutorialSettings = DefaultTutorialSettings()
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+        statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults()
     ) {
         self.manager = manager
         self.settings = settings
         self.tutorialSettings = tutorialSettings
+        self.statisticsStore = statisticsStore
         onboardingUserType = manager.onboardingUserTypeDebugValue
     }
 
@@ -146,6 +162,13 @@ final class OnboardingDebugViewModel: ObservableObject {
         settings.privacyButtonPulseShown = false
         settings.browsingFinalDialogShown = false
         settings.subscriptionPromotionDialogShown = false
+        tutorialSettings.hasSkippedOnboarding = false
+    }
+
+    func markSubscriptionPromoCooldownPassed() {
+        statisticsStore.installDate = Calendar.current.date(byAdding: .day,
+                                                            value: -SubscriptionPromoCoordinator.cooldownDays,
+                                                            to: Date())
     }
 }
 

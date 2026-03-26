@@ -18,6 +18,7 @@
 //
 
 #if os(iOS)
+import AVFoundation
 import UIKit
 import WebKit
 
@@ -37,6 +38,7 @@ final class AIChatWebViewController: UIViewController {
         webView.isOpaque = false /// Required to make the background color visible
         webView.backgroundColor = .webViewBackgroundColor
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         return webView
     }()
@@ -146,6 +148,15 @@ extension AIChatWebViewController {
         webView.load(URLRequest(url: url))
     }
 
+    func loadVoiceMode() {
+        let url = buildVoiceModeURL()
+        webView.load(URLRequest(url: url))
+    }
+
+    private func buildVoiceModeURL() -> URL {
+        AIChatURLParameters.voiceModeURL(from: chatModel.aiChatURL)
+    }
+
     private func buildQueryURL(query: String, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
         guard var components = URLComponents(url: chatModel.aiChatURL, resolvingAgainstBaseURL: false) else {
             return chatModel.aiChatURL
@@ -236,6 +247,26 @@ extension AIChatWebViewController: WKNavigationDelegate {
         } else {
             loadingView.stopAnimating()
         }
+    }
+}
+
+// MARK: - WKUIDelegate
+
+extension AIChatWebViewController: WKUIDelegate {
+
+    func webView(_ webView: WKWebView,
+                 requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo,
+                 type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        guard origin.host.isDuckAIHost,
+              type == .microphone || type == .cameraAndMicrophone else {
+            decisionHandler(.deny)
+            return
+        }
+
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        decisionHandler(status == .authorized ? .grant : .deny)
     }
 }
 

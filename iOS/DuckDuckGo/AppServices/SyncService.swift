@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Bookmarks
 import Combine
 import Core
 import DDGSync
@@ -43,6 +44,7 @@ final class SyncService {
     init(bookmarksDatabase: CoreDataDatabase,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
+         faviconStoring: FaviconStoring,
          application: UIApplication = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          autoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager) {
@@ -70,7 +72,7 @@ final class SyncService {
             settingHandlers: [FavoritesDisplayModeSyncHandler()],
             favoritesDisplayModeStorage: FavoritesDisplayModeStorage(),
             syncErrorHandler: syncErrorHandler,
-            faviconStoring: Favicons.shared,
+            faviconStoring: faviconStoring,
             tld: AppDependencyProvider.shared.storageCache.tld,
             featureFlagger: featureFlagger
         )

@@ -43,6 +43,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
          persistor: NewTabPageNextStepsCardsPersisting,
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          syncService: DDGSyncing?,
+         dockCustomization: DockCustomization,
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         let singleCardProvider = NewTabPageNextStepsSingleCardProvider(
             cardActionHandler: cardActionsHandler,
@@ -53,7 +54,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
             appearancePreferences: appearancePreferences,
             featureFlagger: featureFlagger,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
-            dockCustomizer: DockCustomizer(),
+            dockCustomizer: dockCustomization,
             dataImportProvider: dataImportProvider,
             duckPlayerPreferences: duckPlayerPreferences,
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
@@ -62,6 +63,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         )
         let legacyCardsProvider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: HomePage.Models.ContinueSetUpModel(
+                dockCustomizer: dockCustomization,
                 dataImportProvider: dataImportProvider,
                 subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
                 persistor: legacyPersistor,

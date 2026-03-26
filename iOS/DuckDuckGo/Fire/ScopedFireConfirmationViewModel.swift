@@ -23,63 +23,76 @@ import Persistence
 
 @MainActor
 final class ScopedFireConfirmationViewModel: ObservableObject {
+
     enum Flow: Equatable {
         case standard
         case duckAIExperiment
     }
-    
+
+    // MARK: - Types
+
+    enum FireContext {
+        /// Standard fire confirmation with "Delete All" and optional "Delete This Tab/Chat" buttons.
+        case `default`(daxDialogsManager: DaxDialogsManaging)
+        /// Contextual AI chat deletion with a single "Delete Chat" button.
+        case contextualChat(onDelete: () -> Void)
+    }
+
     // MARK: - Constants
-    
+
     private enum Keys {
         static let signOutWarningShowCount = "com.duckduckgo.fire.signOutWarningShowCount"
     }
-    
+
     private static let maxSubtitleShowCount = 2
-        
+
     // MARK: - Published Properties
-    
+
     /// The subtitle text to display. Computed once during initialization.
     @Published private(set) var subtitle: String?
-    
+
     // MARK: - Private Variables
-    
+
+    private let fireContext: FireContext
     private let onConfirm: (FireRequest) -> Void
     private let onCancel: () -> Void
     private let tabViewModel: TabViewModel?
     private let downloadManager: DownloadManaging
     private let keyValueStore: KeyValueStoring
     private let appSettings: AppSettings
-    private let daxDialogsManager: DaxDialogsManaging
     private let source: FireRequest.Source
     private let flow: Flow
-    
+    private let browsingMode: BrowsingMode
+
     // MARK: - Initializer
-    
+
     init(tabViewModel: TabViewModel?,
          source: FireRequest.Source,
          flow: Flow = .standard,
+         fireContext: FireContext,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         daxDialogsManager: DaxDialogsManaging,
+         browsingMode: BrowsingMode,
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
         self.tabViewModel = tabViewModel
         self.source = source
+        self.fireContext = fireContext
         self.downloadManager = downloadManager
         self.keyValueStore = keyValueStore
         self.appSettings = appSettings
-        self.daxDialogsManager = daxDialogsManager
         self.flow = flow
+        self.browsingMode = browsingMode
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.subtitle = computeSubtitle()
     }
-    
+
     // MARK: - Computed Variables
-    
+
     /// Indicates whether the single tab burn option should be shown.
-    /// Returns `true` when a tab view model is available.
+    /// Returns `true` when a tab view model is available and fire context is default.
     var canBurnSingleTab: Bool {
         if flow == .duckAIExperiment {
             guard let tab = tabViewModel?.tab else {
@@ -88,19 +101,27 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             return tab.isAITab
         }
 
+        if case .contextualChat = fireContext { return false }
         guard let tab = tabViewModel?.tab, tab.supportsTabHistory else {
             return false
         }
         return true
     }
-    
+
     var headerTitle: String {
         if flow == .duckAIExperiment {
             return UserText.scopedFireConfirmationDuckAIExperimentTitle
         }
 
-        let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
-        return shouldIncludeAIChat ? UserText.scopedFireConfirmationAlertTitleWithAIChat : UserText.scopedFireConfirmationAlertTitle
+        if case .contextualChat = fireContext {
+            return UserText.contextualChatDeleteConfirmationTitle
+        }
+        if browsingMode == .fire {
+            return UserText.scopedFireConfirmationAlertFireModeTitle
+        } else {
+            let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
+            return shouldIncludeAIChat ? UserText.scopedFireConfirmationAlertTitleWithAIChat : UserText.scopedFireConfirmationAlertTitle
+        }
     }
 
     var showsDeleteAllButton: Bool {
@@ -110,21 +131,33 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     var isDuckAIExperimentFlow: Bool {
         flow == .duckAIExperiment
     }
-    
+
+    var primaryButtonTitle: String {
+        if case .contextualChat = fireContext {
+            return UserText.contextualChatDeleteConfirmationButton
+        }
+        return UserText.scopedFireConfirmationDeleteAllButton
+    }
+
     var tabScopeButtonTitle: String {
         guard let tab = tabViewModel?.tab, tab.isAITab else {
             return UserText.scopedFireConfirmationDeleteThisTabButton
         }
         return UserText.scopedFireConfirmationDeleteThisChatButton
     }
-    
+
     // MARK: - Public Functions
-    
+
     func burnAllTabs() {
-        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: source)
+        if case .contextualChat(let onDelete) = fireContext {
+            onDelete()
+            return
+        }
+        let scope: FireRequest.Scope = browsingMode == .fire ? .fireMode : .all
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: scope, source: source)
         onConfirm(request)
     }
-    
+
     func burnThisTab() {
         guard let tabViewModel else {
             return
@@ -133,13 +166,13 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         let request = FireRequest(options: options, trigger: .manualFire, scope: .tab(viewModel: tabViewModel), source: source)
         onConfirm(request)
     }
-    
+
     func cancel() {
         onCancel()
     }
-    
+
     // MARK: - Private Functions
-    
+
     /// Computes the subtitle text for the confirmation dialog.
     ///
     /// The logic follows this priority:
@@ -147,6 +180,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// 2. If there are ongoing downloads → show downloads warning
     /// 3. If no tab view model → return nil (tab switcher/settings)
     /// 4. If tab doesn't support tab history → show new tabs info
+    /// 4a. If in fire mode → return nil (skip explanatory subtitles)
     /// 5. For AI tabs → show AI-specific description (up to 2 times)
     /// 6. For normal web tabs → show sign out warning (up to 2 times)
     /// 7. Otherwise → return nil
@@ -156,25 +190,36 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         }
 
         // Skip all subtitles if in onboarding
-        if daxDialogsManager.isShowingFireDialog {
+        if case .contextualChat = fireContext {
             return nil
         }
-        
+
+        // Skip all subtitles if in onboarding
+        if case .default(let daxDialogsManager) = fireContext,
+           daxDialogsManager.isShowingFireDialog {
+            return nil
+        }
+
         // Check for ongoing downloads first
         if hasOngoingDownloads() {
             return UserText.scopedFireConfirmationDownloadsWarning
         }
-        
+
         // No subtitle for tab switcher and settings
         guard let tabViewModel else {
             return nil
         }
-        
+
         // If tab doesn't support burning, show new tabs info
         guard tabViewModel.tab.supportsTabHistory else {
             return UserText.scopedFireConfirmationNewTabsInfo
         }
-        
+
+        // Skip explanatory subtitles for fire mode
+        guard browsingMode != .fire else {
+            return nil
+        }
+
         // Check tab type and show count
         if tabViewModel.tab.isAITab {
             return aiTabSubtitle()

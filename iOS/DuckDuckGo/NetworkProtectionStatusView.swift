@@ -449,9 +449,15 @@ private struct NetworkProtectionErrorView: View {
                     .daxBodyBold()
                     .foregroundColor(.primary)
             }
-            Text(message)
-                .daxBodyRegular()
-                .foregroundColor(.primary)
+            if let attributedMessage = try? AttributedString(markdown: message) {
+                Text(attributedMessage)
+                    .daxBodyRegular()
+                    .foregroundColor(.primary)
+            } else {
+                Text(message)
+                    .daxBodyRegular()
+                    .foregroundColor(.primary)
+            }
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

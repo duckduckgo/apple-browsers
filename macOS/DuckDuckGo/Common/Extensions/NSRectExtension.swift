@@ -43,4 +43,12 @@ extension NSRect {
         return insetBy(dx: 0, dy: offset)
     }
 
+    func inset(by insets: NSEdgeInsets) -> NSRect {
+        NSRect(
+            x: origin.x + insets.left,
+            y: origin.y + insets.bottom,
+            width: width - insets.left - insets.right,
+            height: height - insets.top - insets.bottom
+        )
+    }
 }

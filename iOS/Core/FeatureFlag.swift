@@ -131,6 +131,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
     case privacyProOnboardingPromotion
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
+    case subscriptionPromoForReinstallers
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
@@ -358,6 +361,18 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213617478454569?focus=true
     case simplifiedSyncSetupExperiment
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
+    case duckAIVoiceShortcut
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
+    case screenTimeCleaning
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213763338305579?focus=true
+    case aiChatContextualFireButton
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213809475913723?focus=true
+    case minimalChromeInLandscape
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -388,9 +403,12 @@ extension FeatureFlag: FeatureFlagDescribing {
              .suppressTrackerAnimationOnColdStart,
              .onboardingDuckAIQueryExperiment,
              .customXSafariRedirectHandling,
-             .syncAutoRestore:
+             .syncAutoRestore,
+             .subscriptionPromoForReinstallers,
+             .screenTimeCleaning:
             .enabled
-        case .crashReportOptInStatusResetting:
+        case .crashReportOptInStatusResetting,
+             .minimalChromeInLandscape:
             .internalOnly
         default:
             .disabled
@@ -447,6 +465,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .maliciousSiteProtection,
              .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
+             .subscriptionPromoForReinstallers,
              .duckPlayerNativeUI,
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
@@ -499,7 +518,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
-
              .enhancedDataClearingSettings,
              .genericBackgroundTask,
              .tabSwitcherTrackerCount,
@@ -517,7 +535,11 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fireMode,
              .suppressTrackerAnimationOnColdStart,
              .customXSafariRedirectHandling,
-             .simplifiedSyncSetupExperiment:
+             .simplifiedSyncSetupExperiment,
+             .duckAIVoiceShortcut,
+             .screenTimeCleaning,
+             .aiChatContextualFireButton,
+             .minimalChromeInLandscape:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -641,6 +663,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.experimentalAddressBar))
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .subscriptionPromoForReinstallers:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoForReinstallers))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -784,6 +808,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customXSafariRedirectHandling))
         case .simplifiedSyncSetupExperiment:
             return .remoteReleasable(.subfeature(SyncSubfeature.simplifiedSyncSetupExperiment))
+        case .duckAIVoiceShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.voiceShortcut))
+        case .screenTimeCleaning:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.screenTimeCleaning))
+        case .aiChatContextualFireButton:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton))
+        case .minimalChromeInLandscape:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape))
         }
     }
 }

@@ -38,6 +38,7 @@ struct ModalPromptProviders {
     let newAddressBarPicker: ModalPromptProvider
     let defaultBrowser: ModalPromptProvider
     let winBackOffer: ModalPromptProvider
+    let subscriptionPromo: ModalPromptProvider
     let whatsNew: ModalPromptProvider
 }
 
@@ -58,13 +59,15 @@ final class ModalPromptCoordinationService {
         // Providers are sort from highest to lowest priority, with item at index 0 being the highest priority.
         // Priority order:
         // 1. WinBack Offer
-        // 2. AddressBar Picker
-        // 3. Set As Default Browser
-        //  3.1 Re-activation Prompt
-        //  3.2 Default Browser Prompt
-        // 4. What's New
+        // 2. Subscription Promo (delayed/reinstaller)
+        // 3. AddressBar Picker
+        // 4. Set As Default Browser
+        //  4.1 Re-activation Prompt
+        //  4.2 Default Browser Prompt
+        // 5. What's New
         let providers: [ModalPromptProvider] = [
             providers.winBackOffer,
+            providers.subscriptionPromo,
             providers.newAddressBarPicker,
             providers.defaultBrowser,
             providers.whatsNew,

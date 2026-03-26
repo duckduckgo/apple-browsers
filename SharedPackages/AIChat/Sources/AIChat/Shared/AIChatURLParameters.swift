@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 public enum AIChatURLParameters {
     /// Prompt text passed to Duck.ai.
     public static let promptQueryName = "q"
@@ -29,6 +31,21 @@ public enum AIChatURLParameters {
     public static let flowQueryName = "flow"
     /// Flow selector value for mobile app onboarding.
     public static let mobileAppOnboardingFlowQueryValue = "mobile-app-onboarding"
+
+    public static let modeName = "mode"
+    public static let voiceModeValue = "voice"
+
+    /// Appends `?mode=voice` to the given base URL.
+    public static func voiceModeURL(from baseURL: URL) -> URL {
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            return baseURL
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == modeName }
+        queryItems.append(URLQueryItem(name: modeName, value: voiceModeValue))
+        components.queryItems = queryItems
+        return components.url ?? baseURL
+    }
 }
 
 /// Allowed onboarding flow types passed through Duck.ai URL query params.

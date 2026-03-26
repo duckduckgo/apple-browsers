@@ -55,6 +55,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case openSettingsAction
         case toggleSidebarAction
         case syncStatusChanged(AIChatSyncHandler.SyncStatus)
+        case customizeResponsesAction
 
         var methodName: String {
             switch self {
@@ -72,6 +73,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitToggleSidebarAction"
             case .syncStatusChanged:
                 return "submitSyncStatusChanged"
+            case .customizeResponsesAction:
+                return "submitCustomizeResponsesAction"
             }
         }
 
@@ -212,6 +215,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.sendToSyncSettings
         case .setAIChatHistoryEnabled:
             return handler.setAIChatHistoryEnabled
+        case .voiceSessionStarted:
+            return handler.voiceSessionStarted
+        case .voiceSessionEnded:
+            return handler.voiceSessionEnded
         default:
             return nil
         }
@@ -231,6 +238,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
         self.handler.setContextualModePixelHandler(pixelHandler)
+    }
+
+    func setFireModeProvider(_ provider: (() -> Bool)?) {
+        handler.isFireModeProvider = provider
     }
 
     // MARK: - Input Box Event Subscription
@@ -255,6 +266,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         inputBoxHandler?.didPressStopGeneratingButton
             .sink(receiveValue: { [weak self] _ in self?.push(.promptInterruption) })
+            .store(in: &inputBoxCancellables)
+
+        inputBoxHandler?.didPressCustomizeResponsesButton
+            .sink(receiveValue: { [weak self] _ in self?.push(.customizeResponsesAction) })
             .store(in: &inputBoxCancellables)
 
         handler.setAIChatInputBoxHandler(inputBoxHandler)

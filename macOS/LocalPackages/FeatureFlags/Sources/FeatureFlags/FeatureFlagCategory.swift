@@ -62,7 +62,8 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
                 .aiChatChromeSidebar,
-                .aiChatNtpRecentChats:
+                .aiChatNtpRecentChats,
+                .aiChatRemoveSuggestion:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -75,7 +76,8 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .sync
         case .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
-                .appStoreUpdateFlow:
+                .appStoreUpdateFlow,
+                .automaticUpdatesOnly:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,

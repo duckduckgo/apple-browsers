@@ -180,6 +180,7 @@
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>ConfigurationIntent</string>
+		<string>BEBrowserDataExchangeImportActivity</string>
 	</array>
 	<key>OSLogPreferences</key>
 	<dict>

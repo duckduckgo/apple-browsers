@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Egyéni URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Sötét olvasó által kizárt tartományok (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Könyvjelzőfájl importálása…";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Nincsenek aktív előfizetéseid";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nincsenek kizárt tartományok";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nem található meglévő előfizetés";

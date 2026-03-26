@@ -31,6 +31,8 @@ protocol AIChatContextualModePixelFiring {
     func fireExpandButtonTapped()
     func fireNewChatButtonTapped()
     func fireQuickActionSummarizeSelected()
+    func fireFireButtonTapped()
+    func fireFireButtonConfirmed()
 
     // MARK: - Page Context Attachment
     func firePageContextPlaceholderShown()
@@ -117,6 +119,14 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func fireQuickActionSummarizeSelected() {
         firePixel(.aiChatContextualQuickActionSummarizeSelected)
+    }
+
+    func fireFireButtonTapped() {
+        firePixel(.aiChatContextualFireButtonTapped)
+    }
+
+    func fireFireButtonConfirmed() {
+        firePixel(.aiChatContextualFireButtonConfirmed)
     }
 
     // MARK: - Page Context Attachment

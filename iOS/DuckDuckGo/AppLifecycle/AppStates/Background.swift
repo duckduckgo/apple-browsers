@@ -20,6 +20,8 @@
 import UIKit
 import Core
 import Persistence
+import ScreenTimeDataCleaner
+import WebKit
 
 /// Represents the state where the app is in the background and not visible to the user.
 /// - Usage:
@@ -67,6 +69,15 @@ struct Background: BackgroundHandling {
         appDependencies.mainCoordinator.onBackground()
 
         updateApplicationShortcutItems()
+        cleanScreenTimeDataOniOS26()
+    }
+
+    private func cleanScreenTimeDataOniOS26() {
+        guard appDependencies.featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
+        guard #available(iOS 26, *) else { return }
+        Task {
+            await ScreenTimeDataCleaner().removeScreenTimeData()
+        }
     }
 
     private func updateApplicationShortcutItems() {

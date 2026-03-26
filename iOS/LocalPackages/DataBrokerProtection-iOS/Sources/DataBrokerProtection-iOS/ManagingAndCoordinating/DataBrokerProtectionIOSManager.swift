@@ -420,7 +420,6 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         await startImmediateScanOperations()
     }
 
-    @MainActor
     func saveProfileAndPrepareForInitialScans(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws {
         do {
             try await database.save(profile)
@@ -889,7 +888,6 @@ private extension DataBrokerProtectionIOSManager {
         }
     }
 
-    @MainActor
     private func performImmediateScanOperations(
         completion: @escaping () -> Void
     ) async {
@@ -918,7 +916,6 @@ private extension DataBrokerProtectionIOSManager {
 // MARK: - Continued Processing
 
 private extension DataBrokerProtectionIOSManager {
-    @MainActor
     func shouldUseContinuedProcessingForInitialRun() -> Bool {
         guard #available(iOS 26.0, *) else {
             return false
@@ -929,7 +926,6 @@ private extension DataBrokerProtectionIOSManager {
 }
 
 extension DataBrokerProtectionIOSManager {
-    @MainActor
     func prepareContinuedProcessingInitialRun(
         profile: DataBrokerProtectionCore.DataBrokerProtectionProfile
     ) async throws -> DBPContinuedProcessingPlans.InitialScanPlan? {
@@ -1009,10 +1005,8 @@ extension DataBrokerProtectionIOSManager: DBPContinuedProcessingDelegate {
             errorHandler: nil
         ) {
             Task { [weak self] in
-                if let self {
-                    Logger.dataBrokerProtection.log("Continued processing: immediate opt-out operations completed")
-                    await self.continuedProcessingCoordinator.didEmit(event: .optOutPhaseCompleted)
-                }
+                Logger.dataBrokerProtection.log("Continued processing: immediate opt-out operations completed")
+                await self?.continuedProcessingCoordinator.didEmit(event: .optOutPhaseCompleted)
             }
         }
     }

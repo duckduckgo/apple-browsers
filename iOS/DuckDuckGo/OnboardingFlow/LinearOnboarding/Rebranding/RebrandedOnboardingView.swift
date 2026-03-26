@@ -43,6 +43,15 @@ enum OnboardingBubbleAnimationMetrics {
     static let daxEntranceDuration: TimeInterval = 0.5
     /// Duration of the Dax slide-out exit animation; parent must delay overlay removal by this amount
     static let daxExitDuration: TimeInterval = 0.5
+    /// Reference screen size (iPhone 16 base: 390 × 844 pt).
+    /// Dax animations and bubble tails are hidden on screens smaller than this.
+    static let referenceScreenSize = CGSize(width: 390, height: 844)
+    /// `true` when the device screen is smaller than `referenceScreenSize` in either dimension.
+    /// On compact devices, Dax animations and bubble tails are hidden entirely.
+    static var isCompactDevice: Bool {
+        let screen = UIScreen.main.bounds.size
+        return screen.width < referenceScreenSize.width || screen.height < referenceScreenSize.height
+    }
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -349,12 +358,15 @@ extension OnboardingRebranding {
             stepInfo: ViewState.Intro.StepInfo,
             @ViewBuilder content: @escaping () -> Content
         ) -> some View {
-            // The tail always sits on the bottom edge. For leading (Dax on left) the offset is
-            // mirrored (theme 0.8 → 0.2 from left); for trailing (Dax on right) it is used directly.
-            let tail: OnboardingBubbleView<Content>.TailPosition = switch configuration.tailDirection {
-            case .leading: .bottom(offset: 1 - configuration.tailOffset, direction: .leading)
-            case .trailing: .bottom(offset: configuration.tailOffset, direction: .trailing)
-            }
+            // Tail is hidden entirely on compact devices (screens smaller than iPhone 16).
+            // On standard devices it sits on the bottom edge; the offset is mirrored for leading
+            // tails (theme 0.8 → 0.2 from left) and used directly for trailing ones.
+            let tail: OnboardingBubbleView<Content>.TailPosition? = OnboardingBubbleAnimationMetrics.isCompactDevice ? nil : {
+                switch configuration.tailDirection {
+                case .leading: return .bottom(offset: 1 - configuration.tailOffset, direction: .leading)
+                case .trailing: return .bottom(offset: configuration.tailOffset, direction: .trailing)
+                }
+            }()
             OnboardingBubbleView.withStepProgressIndicator(
                 tailPosition: tail,
                 currentStep: stepInfo.currentStep,
@@ -500,8 +512,10 @@ extension OnboardingRebranding {
             return daxAnimation(for: viewState.type)
         }
 
-        /// Returns the `DaxAnimation` for the given step, or `nil` if no animation is configured.
+        /// Returns the `DaxAnimation` for the given step, or `nil` if no animation is configured
+        /// or the device screen is smaller than the reference size (iPhone 16).
         private func daxAnimation(for type: OnboardingView.ViewState.Intro.IntroType) -> DaxAnimation? {
+            guard !OnboardingBubbleAnimationMetrics.isCompactDevice else { return nil }
             switch type {
             case .startOnboardingDialog: return IntroDialogContent.daxAnimation
             case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation

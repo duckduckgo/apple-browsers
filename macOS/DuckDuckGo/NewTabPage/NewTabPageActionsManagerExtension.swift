@@ -161,11 +161,29 @@ extension NewTabPageActionsManager {
         )
         if let promoService {
             let coordinator = freemiumDBPPromotionViewCoordinator
-            coordinator.$isFeatureAvailable
+            let promoId = PromoServiceFactory.freemiumDBP.id
+
+            // Register the delegate once either signal fires:
+            // 1. Feature availability settles (normal path)
+            // 2. Promo history shows it was recently shown (fast-path for restarts
+            //    during an active display window — avoids waiting for async checks)
+            let featureReady = coordinator.$isFeatureAvailable
                 .first(where: { $0 })
+                .map { _ in () }
+
+            let historyReady = promoService.historyPublisher(for: promoId)
+                .compactMap { record -> Void? in
+                    guard let lastShown = record?.lastShown,
+                          Date().timeIntervalSince(lastShown) < .days(7) else { return nil }
+                    return ()
+                }
+                .first()
+
+            featureReady.merge(with: historyReady)
+                .first()
                 .sink { _ in
                     let delegate = FreemiumDBPPromoDelegate(coordinator: coordinator)
-                    promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: delegate)
+                    promoService.setDelegate(for: promoId, delegate: delegate)
                 }
                 .store(in: &coordinator.cancellables)
 

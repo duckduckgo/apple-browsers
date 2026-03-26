@@ -32,19 +32,11 @@ extension OnboardingRebranding {
         let onManualDismiss: (() -> Void)?
 
         var body: some View {
-            ScrollView(.vertical, showsIndicators: false) {
-                Group {
-                    if let onManualDismiss {
-                        OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                            OnboardingRebranding.OnboardingFireDialogContent(message: message)
-                        }
-                    } else {
-                        OnboardingBubbleView(tailPosition: nil) {
-                            OnboardingRebranding.OnboardingFireDialogContent(message: message)
-                        }
-                    }
-                }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
+            OnboardingBubbleView(tailPosition: nil) {
+                OnboardingRebranding.OnboardingFireDialogContent(message: message)
+            }
+            .ifLet(onManualDismiss) { view, onManualDismiss in
+                view.onboardingDismissable(onManualDismiss)
             }
             .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)

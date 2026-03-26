@@ -302,7 +302,7 @@ struct OnboardingDismissButton: View {
 }
 
 // Move this extension to `SwiftUIExtensions` package when creating it.
-private extension View {
+public extension View {
 
     @ViewBuilder func `ifLet`<Content: View, Value>(_ value: Value?, transform: (Self, Value) -> Content) -> some View {
         if let value = value {

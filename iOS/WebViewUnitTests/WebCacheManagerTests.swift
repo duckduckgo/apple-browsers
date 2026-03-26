@@ -163,6 +163,27 @@ class WebCacheManagerTests: XCTestCase {
         XCTAssertEqual(3, mockHttpCookieStore.cookiesThatWereDeleted.count)
     }
 
+    func test_WhenRemovingCookiesForETLDPlus1_ThenSubdomainScopedCookiesAreAlsoRemoved() async {
+        let mockHttpCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
+            .make(name: "RootCookie", value: "Value", domain: "reddit.com"),
+            .make(name: "DotRootCookie", value: "Value", domain: ".reddit.com"),
+            .make(name: "SubdomainCookie", value: "Value", domain: "old.reddit.com"),
+            .make(name: "DotSubdomainCookie", value: "Value", domain: ".old.reddit.com"),
+            .make(name: "OtherCookie", value: "Value", domain: "example.com"),
+        ])
+        let dataStore = MockWebsiteDataStore(httpCookieStore: mockHttpCookieStore)
+
+        let webCacheManager = makeWebCacheManager()
+        await webCacheManager.removeCookies(forDomains: ["reddit.com"], fromDataStore: dataStore)
+
+        XCTAssertEqual(4, mockHttpCookieStore.cookiesThatWereDeleted.count)
+        XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "RootCookie" })
+        XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "DotRootCookie" })
+        XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "SubdomainCookie" })
+        XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "DotSubdomainCookie" })
+        XCTAssertFalse(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "OtherCookie" })
+    }
+
     // MARK: - Domain-Specific Clearing Tests
 
     func test_WhenClearingForDomains_ThenOnlySpecifiedDomainsAreCleared() async {

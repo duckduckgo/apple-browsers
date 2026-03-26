@@ -158,7 +158,7 @@ extension OnboardingRebranding {
         private struct BubbleBackedDialogConfiguration {
             let tailOffset: CGFloat
             let tailDirection: BubbleTailDirection
-            let additionalTopMargin: CGFloat
+            var additionalTopMargin: CGFloat = 0
             let isVisible: Bool
             let showsStepCounter: Bool
         }
@@ -349,7 +349,14 @@ extension OnboardingRebranding {
             stepInfo: ViewState.Intro.StepInfo,
             @ViewBuilder content: @escaping () -> Content
         ) -> some View {
+            // The tail always sits on the bottom edge. For leading (Dax on left) the offset is
+            // mirrored (theme 0.8 → 0.2 from left); for trailing (Dax on right) it is used directly.
+            let tail: OnboardingBubbleView<Content>.TailPosition = switch configuration.tailDirection {
+            case .leading: .bottom(offset: 1 - configuration.tailOffset, direction: .leading)
+            case .trailing: .bottom(offset: configuration.tailOffset, direction: .trailing)
+            }
             OnboardingBubbleView.withStepProgressIndicator(
+                tailPosition: tail,
                 currentStep: stepInfo.currentStep,
                 totalSteps: stepInfo.totalSteps,
                 isVisible: configuration.showsStepCounter
@@ -394,15 +401,34 @@ extension OnboardingRebranding {
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailOffset,
                     tailDirection: .trailing,
-                    additionalTopMargin: 0,
                     isVisible: true,
                     showsStepCounter: true
                 )
-            case .browsersComparisonDialog, .addToDockPromoDialog, .chooseAddressBarPositionDialog, .chooseSearchExperienceDialog:
+            case .browsersComparisonDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailOffset,
                     tailDirection: .leading,
-                    additionalTopMargin: 0,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .addToDockPromoDialog:
+                return BubbleBackedDialogConfiguration(
+                    tailOffset: tailOffset,
+                    tailDirection: .leading,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseAddressBarPositionDialog:
+                return BubbleBackedDialogConfiguration(
+                    tailOffset: tailOffset,
+                    tailDirection: .leading,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseSearchExperienceDialog:
+                return BubbleBackedDialogConfiguration(
+                    tailOffset: tailOffset,
+                    tailDirection: .leading,
                     isVisible: true,
                     showsStepCounter: true
                 )
@@ -415,6 +441,16 @@ extension OnboardingRebranding {
                 showTutorialAction: {
                     // The child view manages its own hide/show sequence for the promo -> tutorial switch.
                     model.addToDockShowTutorialAction()
+                    // The background doesn't change here, so animateContentTransition is not called.
+                    // Trigger the Dax exit manually: starts simultaneously with the tutorial transition,
+                    // then removes the overlay once the exit animation completes.
+                    let exitDuration = AddToDockPromoContent.daxAnimation.effectiveExitDuration
+                    daxExiting = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + exitDuration) {
+                        daxExiting = false
+                        currentDaxAnimation = nil
+                        daxAnimationID += 1
+                    }
                 },
                 dismissAction: { fromAddToDockTutorial in
                     animateContentTransition {
@@ -469,6 +505,10 @@ extension OnboardingRebranding {
             switch type {
             case .startOnboardingDialog: return IntroDialogContent.daxAnimation
             case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation
+            case .addToDockPromoDialog: return AddToDockPromoContent.daxAnimation
+            case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
+            case .chooseAddressBarPositionDialog: return AddressBarPositionContent.daxAnimation
+            case .chooseSearchExperienceDialog: return SearchExperienceContent.daxAnimation
             default: return nil
             }
         }
@@ -501,7 +541,9 @@ extension OnboardingRebranding {
                 return daxAnimation(for: viewState.type)
             }() : nil
             let daxExitDuration = currentDax?.effectiveExitDuration ?? OnboardingBubbleAnimationMetrics.daxExitDuration
-            let hasAnyDaxExit = currentDax?.hasSlideExit == true || currentDax?.hasFadeExit == true
+            let hasAnyDaxExit = currentDax?.hasSlideExit == true
+                || currentDax?.hasFadeExit == true
+                || currentDax?.hasTwoStagesExit == true
 
             if action == nil {
                 // Initial appearance — pin the overlay to the current step and reset Dax.

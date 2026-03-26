@@ -15,15 +15,22 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
-//
-
 import DuckUI
 import Onboarding
 import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-46879
     struct AddressBarPositionContent: View {
+
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-AddressBar",
+            size: CGSize(width: 100, height: 111.3),
+            position: .bottom(yOffset: 50.0),
+            loop: true
+        )
+
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var shouldStartTyping = false

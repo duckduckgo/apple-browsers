@@ -15,14 +15,13 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
-//
-
 import DuckUI
 import Onboarding
 import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31959
     struct IntroDialogContent: View {
 
         /// Dax "Thumbs Up" animation
@@ -32,7 +31,7 @@ extension OnboardingRebranding.OnboardingView {
             position: .left(bottomPadding: 110.0, xOffset: -40.0),
             entranceOffset: CGPoint(x: -100, y: 0),
             exitOffset: CGPoint(x: -258, y: 0),
-            exitDuration: 1.0,
+            exitDuration: 0.5,
             fadeOut: true
         )
 

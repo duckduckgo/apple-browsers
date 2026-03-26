@@ -15,15 +15,23 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
-//
-
 import DuckUI
 import Onboarding
 import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-45897
     struct AppIconPickerContent: View {
+
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-AppIconPicker",
+            size: CGSize(width: 211, height: 390),
+            position: .right(),
+            twoStagesAnimation: 0.5,
+            exitDuration: 0.5
+        )
+
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var shouldStartTyping = false

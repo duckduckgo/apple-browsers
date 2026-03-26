@@ -16,13 +16,22 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-
 import Onboarding
 import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12192-50600
     struct SearchExperienceContent: View {
+
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-SearchExperience",
+            size: CGSize(width: 211, height: 390),
+            position: .left(),
+            twoStagesAnimation: 0.5,
+            exitDuration: 1.0
+        )
+
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var shouldStartTyping = false

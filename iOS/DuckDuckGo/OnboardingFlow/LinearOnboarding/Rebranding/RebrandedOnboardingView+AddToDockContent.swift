@@ -15,15 +15,23 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
-//
-
 import DuckUI
 import Onboarding
 import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12203-26425
     struct AddToDockPromoContent: View {
+
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-AddToDockPromo",
+            size: CGSize(width: 211, height: 390),
+            position: .left(),
+            twoStagesAnimation: 0.5,
+            exitDuration: 0.5
+        )
+
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var showAddToDockTutorial = false
@@ -125,6 +133,7 @@ extension OnboardingRebranding.OnboardingView {
     }
 
     /// Thin wrapper that passes the localised tutorial copy to `AddToDockTutorialView`.
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12203-27033
     struct AddToDockTutorialContent: View {
         @Binding var isVisible: Bool
         let cta: String

@@ -28,9 +28,9 @@ struct DaxAnimation {
     /// Anchoring position relative to the view's bottom edge.
     enum Position {
         /// Bottom-leading corner anchor; `bottomPadding` lifts above the bottom, `xOffset` shifts right (+) / left (−).
-        case left(bottomPadding: CGFloat, xOffset: CGFloat = 0)
+        case left(bottomPadding: CGFloat = 0, xOffset: CGFloat = 0)
         /// Bottom-trailing corner anchor; `bottomPadding` lifts above the bottom, `xOffset` shifts left (+) / right (−).
-        case right(bottomPadding: CGFloat, xOffset: CGFloat = 0)
+        case right(bottomPadding: CGFloat = 0, xOffset: CGFloat = 0)
         /// Centered horizontally at the bottom; `leftCenterOffset` shifts from center (positive = left, negative = right), `yOffset` lifts above the bottom (+) / pushes below (−).
         case bottom(leftCenterOffset: CGFloat = 0, yOffset: CGFloat = 0)
         /// Fixed offset from the bottom-leading corner: x right (+) / left (−), y up (+) / down (−).
@@ -61,6 +61,8 @@ struct DaxAnimation {
     let exitDuration: TimeInterval?
     /// When `true`, the overlay fades from fully opaque to transparent during the exit animation.
     let fadeOut: Bool
+    /// When `true`, the Lottie animation loops indefinitely instead of stopping on the last frame.
+    let loop: Bool
 
     /// `true` when the animation slides off-screen **before** the step transition.
     /// The parent must delay the action call by `effectiveExitDuration`.
@@ -69,6 +71,10 @@ struct DaxAnimation {
     /// `true` when the animation fades out **simultaneously** with the step transition.
     /// The parent fires the action immediately and delays overlay recreation instead.
     var hasFadeExit: Bool { fadeOut }
+
+    /// `true` when `twoStagesAnimation` is set and the exit stage (midpoint → 1.0) should play
+    /// simultaneously with the step transition.
+    var hasTwoStagesExit: Bool { twoStagesAnimation != nil }
 
     /// Resolved exit animation duration — custom value when set, otherwise the shared default.
     var effectiveExitDuration: TimeInterval { exitDuration ?? OnboardingBubbleAnimationMetrics.daxExitDuration }
@@ -80,7 +86,8 @@ struct DaxAnimation {
          exitOffset: CGPoint? = nil,
          twoStagesAnimation: Double? = nil,
          exitDuration: TimeInterval? = nil,
-         fadeOut: Bool = false) {
+         fadeOut: Bool = false,
+         loop: Bool = false) {
         self.animationName = animationName
         self.size = size
         self.position = position
@@ -89,6 +96,7 @@ struct DaxAnimation {
         self.twoStagesAnimation = twoStagesAnimation
         self.exitDuration = exitDuration
         self.fadeOut = fadeOut
+        self.loop = loop
     }
 }
 
@@ -143,6 +151,9 @@ struct DaxAnimationOverlay: View {
             return isExiting
                 ? .playing(.fromProgress(midPoint, toProgress: 1.0, loopMode: .playOnce))
                 : .playing(.fromProgress(0, toProgress: midPoint, loopMode: .playOnce))
+        }
+        if animation.loop {
+            return .playing(.fromProgress(0, toProgress: 1.0, loopMode: .loop))
         }
         return playForward
             ? .playing(.fromProgress(0, toProgress: 1.0, loopMode: .playOnce))

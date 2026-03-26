@@ -15,8 +15,6 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
-//
-
 import SwiftUI
 import Onboarding
 import Lottie
@@ -25,6 +23,7 @@ import Lottie
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31845
     struct LandingView: View {
 
         @Environment(\.colorScheme) private var colorScheme

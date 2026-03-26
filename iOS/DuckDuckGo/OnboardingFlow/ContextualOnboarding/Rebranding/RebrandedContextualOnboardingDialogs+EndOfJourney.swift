@@ -37,35 +37,21 @@ extension OnboardingRebranding {
         let dismissAction: () -> Void
         let onManualDismiss: () -> Void
 
-        private let chatIconToken = "[[chat_icon]]"
-
-        private var baseMessage: String {
-            guard message.contains(chatIconToken) else { return message }
-            return message.components(separatedBy: "\n\n").first ?? message.replacingOccurrences(of: chatIconToken, with: "")
-        }
-
         var body: some View {
-            ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                    OnboardingRebranding.ContextualDaxDialogContent(
-                        orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                        title: title,
-                        message: baseMessage
-                    ) {
-                        if message.contains(chatIconToken) {
-                            (
-                                Text("You can use Duck.ai from anywhere you see the chat icon ")
-                                + Text(Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat))
-                            )
-                            .daxSubheadRegular()
-                            .multilineTextAlignment(.center)
-                            .padding(.bottom, 8)
-                        }
-                        Button(action: dismissAction) {
-                            Text(cta)
-                        }
-                        .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
-                        .buttonStyle(theme.primaryButtonStyle.style)
+            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                OnboardingRebranding.ContextualDaxDialogContent(
+                    orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
+                    title: AttributedString(title),
+                    message: AttributedString(
+                        message.attributedString(
+                            withPlaceholder: UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken,
+                            replacedByImage: DesignSystemImages.Glyphs.Size16.aiChat,
+                            verticalOffset: -2
+                        ) ?? NSAttributedString(string: message)
+                    )
+                ) {
+                    Button(action: dismissAction) {
+                        Text(cta)
                     }
                     .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                     .buttonStyle(theme.primaryButtonStyle.style)

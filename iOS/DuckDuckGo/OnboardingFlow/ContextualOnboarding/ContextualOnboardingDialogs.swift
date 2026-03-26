@@ -215,57 +215,39 @@ struct OnboardingFinalDialog: View {
     let cta: String
     let dismissAction: () -> Void
     let onManualDismiss: () -> Void
-    let usesExperimentCompletionFormatting: Bool
-    private let chatIconToken = "[[chat_icon]]"
 
     init(logoPosition: DaxDialogLogoPosition,
          message: String,
          cta: String,
          dismissAction: @escaping () -> Void,
-         onManualDismiss: @escaping () -> Void,
-         usesExperimentCompletionFormatting: Bool = false) {
+         onManualDismiss: @escaping () -> Void) {
         self.logoPosition = logoPosition
         self.message = message
         self.cta = cta
         self.dismissAction = dismissAction
         self.onManualDismiss = onManualDismiss
-        self.usesExperimentCompletionFormatting = usesExperimentCompletionFormatting
-    }
-
-    private var baseMessage: String {
-        guard message.contains(chatIconToken) else { return message }
-        return message.components(separatedBy: "\n\n").first ?? message.replacingOccurrences(of: chatIconToken, with: "")
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: logoPosition, onManualDismiss: onManualDismiss) {
-                ContextualDaxDialogContent(
-                    title: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
-                    titleFont: Font(UIFont.daxTitle3()),
-                    message: NSAttributedString(string: baseMessage),
-                    messageFont: Font.system(size: 16),
-                    customActionView: AnyView(customActionView)
-                )
-            }
-            .padding()
+        DaxDialogView(logoPosition: logoPosition, onManualDismiss: onManualDismiss) {
+            ContextualDaxDialogContent(
+                title: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
+                titleFont: Font(UIFont.daxTitle3()),
+                message: message.attributedString(
+                    withPlaceholder: UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken,
+                    replacedByImage: DesignSystemImages.Glyphs.Size16.aiChat,
+                    verticalOffset: -2
+                ) ?? NSAttributedString(string: message),
+                messageFont: Font.system(size: 16),
+                customActionView: AnyView(customActionView)
+            )
         }
+        .padding()
     }
 
     @ViewBuilder
     private var customActionView: some View {
-        VStack(alignment: usesExperimentCompletionFormatting ? .leading : .center, spacing: 12) {
-            if message.contains(chatIconToken) {
-                (
-                    Text("You can use Duck.ai from anywhere you see the chat icon ")
-                    + Text(Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat))
-                )
-                .frame(maxWidth: .infinity, alignment: usesExperimentCompletionFormatting ? .leading : .center)
-                .multilineTextAlignment(usesExperimentCompletionFormatting ? .leading : .center)
-                .padding(.top, usesExperimentCompletionFormatting ? 8 : 0)
-                .padding(.bottom, usesExperimentCompletionFormatting ? 8 : 0)
-            }
-
+        VStack(spacing: 12) {
             OnboardingCTAButton(
                 title: cta,
                 buttonStyle: .primary(),
@@ -273,7 +255,6 @@ struct OnboardingFinalDialog: View {
                     dismissAction()
                 }
             )
-            .padding(.top, usesExperimentCompletionFormatting ? 8 : 0)
         }
     }
 

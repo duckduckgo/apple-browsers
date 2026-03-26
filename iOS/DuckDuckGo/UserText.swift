@@ -2260,7 +2260,7 @@ public struct UserText {
             )
             public static let aiPlaceholder = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.placeholder.ai",
-                value: "Ask anything privately",
+                value: "Ask privately",
                 comment: "Placeholder for AI query input in onboarding Duck.ai query experiment screen."
             )
             public static let searchPlaceholder = NotLocalizedString(

@@ -656,14 +656,12 @@ jobs:
         if: steps.orphaned-translations.outputs.has_orphans == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          ORPHAN_MESSAGE: ${{ steps.orphaned-translations.outputs.message }}
         run: |
+          body=$(printf '## ⚠️ Orphaned Translations Detected\n\n%s\n\n> This is an automated warning. The PR will not be blocked.' "$ORPHAN_MESSAGE")
           gh pr comment ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
-            --body "## ⚠️ Orphaned Translations Detected
-
-          ${{ steps.orphaned-translations.outputs.message }}
-
-          > This is an automated warning. The PR will not be blocked."
+            --body "$body"
 
   create-asana-task:
     name: Create Asana Task

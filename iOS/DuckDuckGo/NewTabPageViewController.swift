@@ -22,6 +22,7 @@ import DDGSync
 import Bookmarks
 import BrowserServicesKit
 import Core
+import Onboarding
 import RemoteMessaging
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
@@ -293,23 +294,12 @@ extension NewTabPageViewController {
         let onDismiss = { [weak self] in
             guard let self else { return }
             self.dismissHostingController(didFinishNTPOnboarding: true)
+            self.daxDialogsManager.dismiss()
             ViewHighlighter.hideAll()
             self.chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .search)
         }
 
-        let dialogView = OnboardingFinalDialog(
-            logoPosition: .top,
-            message: message,
-            cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-            dismissAction: onDismiss,
-            onManualDismiss: onDismiss,
-        )
-
-        let root = AnyView(
-            dialogView
-                .onboardingDaxDialogStyle()
-                .onboardingContextualBackgroundStyle(background: .illustratedGradient)
-        )
+        let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
 
         let hostingController = UIHostingController(rootView: root)
         self.hostingController = hostingController

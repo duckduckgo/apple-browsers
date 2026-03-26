@@ -88,23 +88,25 @@ private extension RebrandedNewTabDaxDialogFactory {
 
 extension RebrandedNewTabDaxDialogFactory {
 
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> some View {
-        FadeInView {
-            ScrollView(.vertical, showsIndicators: false) {
-                OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                    message: message,
-                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                    dismissAction: onDismiss,
-                    onManualDismiss: onDismiss
-                )
+    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+        AnyView(
+            FadeInView {
+                ScrollView(.vertical, showsIndicators: false) {
+                    OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                        message: message,
+                        cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                        dismissAction: onDismiss,
+                        onManualDismiss: onDismiss
+                    )
+                }
+                .scrollIfNeeded()
             }
-            .scrollIfNeeded()
-        }
-        .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
-        .onFirstAppear { [weak self] in
-            self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-        }
+            .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
+            .onFirstAppear { [weak self] in
+                self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
+                self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+            }
+        )
     }
 
 }

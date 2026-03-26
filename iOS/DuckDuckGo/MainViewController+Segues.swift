@@ -533,9 +533,15 @@ extension MainViewController {
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager))
 
+        debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
+
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
-        present(controller, animated: true) {
+        var presenter: UIViewController = self
+        while let presented = presenter.presentedViewController {
+            presenter = presented
+        }
+        presenter.present(controller, animated: true) {
             completion?(debug)
         }
     }

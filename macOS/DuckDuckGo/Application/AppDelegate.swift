@@ -53,6 +53,7 @@ import PixelKit
 import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
+import ScreenTimeDataCleaner
 import ServiceManagement
 import Subscription
 import SyncDataProviders
@@ -1396,6 +1397,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         profilerToken.stop()
     }
 
+    func applicationDidResignActive(_ notification: Notification) {
+        cleanScreenTimeDataOnMacOS26()
+    }
+
+    private func cleanScreenTimeDataOnMacOS26() {
+        guard featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
+        guard #available(macOS 26, *) else { return }
+        Task {
+            await ScreenTimeDataCleaner().removeScreenTimeData()
+        }
+    }
+
     private func fireFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
@@ -1524,6 +1537,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
 
             let allowCustomUpdateFeed = buildType.isDebugBuild || buildType.isReviewBuild
+
             let sparkleUpdateController = sparkleFactory.instantiate(
                 internalUserDecider: internalUserDecider,
                 featureFlagger: featureFlagger,
@@ -1531,6 +1545,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
                 allowCustomUpdateFeed: allowCustomUpdateFeed,
+                isAutoUpdatePaused: { [featureFlagger] in
+                    if buildType.isDebugBuild {
+                        return !featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+                    } else if buildType.isReviewBuild {
+                        return !featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+                    } else {
+                        return false
+                    }
+                },
                 wideEvent: wideEvent,
                 isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
                 openUpdatesPage: { [windowControllersManager] in

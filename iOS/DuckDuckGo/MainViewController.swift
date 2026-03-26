@@ -1337,8 +1337,8 @@ class MainViewController: UIViewController {
     private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
         if targetTab.isAITab {
             return EscapeHatchModel(
-                title: UserText.omnibarFullAIChatModeDisplayTitle,
-                subtitle: "Duck.ai",
+                title: targetTab.aiChatConversationTitle ?? UserText.omnibarFullAIChatModeDisplayTitle,
+                subtitle: UserText.omnibarFullAIChatModeDisplayTitle,
                 isAITab: true,
                 domain: nil,
                 targetTab: targetTab
@@ -3367,6 +3367,20 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
+    override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
+        if motion == .motionShake, featureFlagger.internalUserDecider.isInternalUser || isDebugBuild {
+            var topVC: UIViewController = self
+            while let presented = topVC.presentedViewController {
+                topVC = presented
+            }
+            if !(topVC is DebugScreensViewController),
+               !((topVC as? UINavigationController)?.viewControllers.first is DebugScreensViewController) {
+                segueToDebugSettings()
+            }
+        }
+        super.motionEnded(motion, with: event)
+    }
+
     func performCancel() {
         dismissOmniBar()
         omniBar.cancel()
@@ -4022,6 +4036,14 @@ extension MainViewController: TabDelegate {
     
     func tabDidRequestFireButtonPulse(tab: TabViewController) {
         showFireButtonPulse()
+    }
+
+    func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
+        let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
+                                     privacyConfig: privacyConfigurationManager)
+        Task { @MainActor in
+            await cleaner.deleteAIChat(chatID: chatID)
+        }
     }
     
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool) {

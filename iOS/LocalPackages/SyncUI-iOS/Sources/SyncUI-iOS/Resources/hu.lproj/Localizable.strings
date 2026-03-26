@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Az alkalmazás újratelepítésekor az adataid automatikusan visszaállításra kerülnek ezen az eszközön.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Ha újratelepíted a DuckDuckGo-alkalmazást, megkérdezzük, hogy szeretnéd-e visszaállítani az adataidat ezen az eszközön.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Folytasd a Sync & Backup munkamenetedet a könyvjelzőid, a jelszavaid és az egyéb dolgaid visszaállításához, vagy hozz létre egy új beállítást.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Be";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Adatok automatikus visszaállítása az alkalmazás újratelepítésekor. A Sync & Backup-adatok 18 hónap inaktivitás után nem állíthatók vissza.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Visszaállítás az alkalmazás újratelepítésekor";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Helyreállítási PDF-fájl mentése";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Ha elveszted az eszközt, erre a helyreállítási kódra lesz szükséged a szinkronizált adatok visszaállításához.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Ezzel a kóddal állíthatod vissza az adataidat, ha elveszíted a hozzáférést ehhez az eszközhöz. A Sync & Backup-adatok 18 hónapnyi inaktivitás után nem állíthatók vissza. [További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Szöveges kód manuális bevitele";

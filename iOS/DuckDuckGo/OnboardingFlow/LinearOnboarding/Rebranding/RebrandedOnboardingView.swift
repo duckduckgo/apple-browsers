@@ -20,6 +20,7 @@
 import DuckUI
 import Onboarding
 import SwiftUI
+import MetricBuilder
 
 private enum BubbleBackedDialogMetrics {
     static let introAdditionalTopMargin: CGFloat = 40
@@ -28,6 +29,11 @@ private enum BubbleBackedDialogMetrics {
     static let searchExperienceAdditionalTopMargin: CGFloat = 0
     static let addToDockAdditionalTopMargin: CGFloat = 0
     static let appIconPickerAdditionalTopMargin: CGFloat = 0
+
+    /// Percentage-based vertical offset for the dialog bubble to center it appropriately based on device orientation and screen size.
+    /// iPhone uses 0.0 (relies on padding), iPad uses percentage of screen height
+    static let dialogVerticalOffsetPercentage = MetricBuilder<CGFloat>(default: 0.0)
+        .iPad(portrait: 0.15, landscape: 0.05)
 }
 
 /// Animation timing constants for the rebranded onboarding bubble dialogs.
@@ -152,6 +158,8 @@ extension OnboardingRebranding {
         typealias ViewState = LegacyOnboardingViewState
 
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+        @Environment(\.verticalSizeClass) private var verticalSizeClass
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
         @State private var dialogContentHeight: CGFloat = 0
@@ -231,6 +239,11 @@ extension OnboardingRebranding {
             let configuration = bubbleBackedDialogConfiguration(for: state.type)
 
             return GeometryReader { geometry in
+                let defaultTopPadding = onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin
+                // On iPad we reduce the gap between dialog and background illustration by adding extra padding to the dialog by a percentage of screen height based on orientation.
+                let platformSpecificTopPadding = geometry.size.height * BubbleBackedDialogMetrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass)
+                let topPadding = defaultTopPadding + platformSpecificTopPadding
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
                         bubbleBackedDialogView(state: state, configuration: configuration)
@@ -238,7 +251,7 @@ extension OnboardingRebranding {
                             .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin)
+                            .padding(.top, topPadding)
                     }
                     .frame(minHeight: geometry.size.height, alignment: .top)
                     .background {

@@ -62,7 +62,6 @@ extension OnboardingView {
         static let legacyInitialInputFocusDelayAfterAppear: TimeInterval = 0.35
         static let rebrandedInitialInputFocusDelayAfterAppear: TimeInterval = 0.55
         static let suggestionInitialRevealDelay: TimeInterval = 0.8
-        static let suggestionRevealFallbackDelayAfterFocus: TimeInterval = 0.4
         static let pickerSelectionAnimationDuration: TimeInterval = 0.22
         static let contentFadeAnimationDuration: TimeInterval = 0.2
         static let suggestionSpringMass: CGFloat = 0.7
@@ -101,7 +100,6 @@ extension OnboardingView {
         @State private var visibleSuggestionCount = 0
         @State private var didRunInitialToggleAnimation = false
         @State private var isTransitioningOut = false
-        @State private var isRunningInitialSelectionAnimation = false
         @State private var suggestionSequenceStarted = false
         @State private var showInteractiveControls = false
         @State private var hasStartedEntranceSequence = false
@@ -223,7 +221,6 @@ extension OnboardingView {
                 isInputFocused = false
                 visibleSuggestionCount = 0
                 didRunInitialToggleAnimation = false
-                isRunningInitialSelectionAnimation = false
                 showInteractiveControls = false
                 hasStartedEntranceSequence = false
                 hasPassedInitialFocusDelay = false
@@ -303,11 +300,9 @@ extension OnboardingView {
                 isDuckAISelected = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.initialToggleStartDelay) {
                     guard didRunInitialToggleAnimation, showInteractiveControls else { return }
-                    isRunningInitialSelectionAnimation = true
                     withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
                         isDuckAISelected = true
                     } completion: {
-                        isRunningInitialSelectionAnimation = false
                         startSuggestionSequenceIfNeeded()
                     }
                 }
@@ -508,15 +503,6 @@ extension OnboardingView {
         }
     }
 
-}
-
-private extension OnboardingView.DuckAIExperimentSearchContent {
-    struct DisplayedSuggestion {
-        let visibleTitle: String
-        let prompt: String
-        let promptSource: DuckAIQueryExperimentPromptSource
-        let icon: UIImage
-    }
 }
 
 // MARK: - OnboardingQueryField

@@ -170,6 +170,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             userScripts.append(autoconsentUserScript)
         }
 
+        contentScopeUserScript.registerSubfeature(delegate: webRTCUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
@@ -254,7 +255,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated,
         autofillScript,
         formFocusUserScript,
-        webRTCUserScript,
     ]
 
     @MainActor

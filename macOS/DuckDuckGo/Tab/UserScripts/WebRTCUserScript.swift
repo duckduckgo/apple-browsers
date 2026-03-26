@@ -23,54 +23,37 @@ protocol WebRTCUserScriptDelegate: AnyObject {
     @MainActor func webRTCUserScript(_ script: WebRTCUserScript, didChangeConnectionActive active: Bool)
 }
 
-/// Injects a lightweight script that intercepts `RTCPeerConnection` to detect active WebRTC sessions.
-/// When a connection is created the native layer is notified; when all connections reach a terminal
-/// state (`closed` or `failed`) or are explicitly closed, the native layer is notified that no
-/// active connection remains. Used to prevent tab suspension while a page has an open peer connection.
-final class WebRTCUserScript: NSObject, UserScript {
+/// Receives `webRTCConnectionChanged` notifications from the Content Scope Scripts `webRtc` feature.
+/// Used to prevent tab suspension while a page has an open peer connection.
+final class WebRTCUserScript: NSObject, Subfeature {
 
-    // swiftlint:disable:next line_length
-    var source: String = """
-    (function () {
-        'use strict';
-        if (typeof RTCPeerConnection === 'undefined') return;
-        var activeCount = 0;
-        var OriginalRTC = window.RTCPeerConnection;
-        function notifyHost() {
-            window.webkit.messageHandlers.webRTCConnectionChanged.postMessage(activeCount > 0);
-        }
-        window.RTCPeerConnection = function RTCPeerConnection(config, constraints) {
-            var pc = new OriginalRTC(config, constraints);
-            activeCount++;
-            notifyHost();
-            pc.addEventListener('connectionstatechange', function () {
-                var s = pc.connectionState;
-                if (s === 'closed' || s === 'failed') {
-                    activeCount = Math.max(0, activeCount - 1);
-                    notifyHost();
-                }
-            });
-            var origClose = pc.close.bind(pc);
-            pc.close = function () {
-                activeCount = Math.max(0, activeCount - 1);
-                notifyHost();
-                return origClose();
-            };
-            return pc;
-        };
-        window.RTCPeerConnection.prototype = OriginalRTC.prototype;
-    })();
-    """
+    struct WebRTCConnectionPayload: Decodable {
+        let isActive: Bool
+    }
 
-    var injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    var forMainFrameOnly: Bool = false
-    var messageNames: [String] = ["webRTCConnectionChanged"]
+    let messageOriginPolicy: MessageOriginPolicy = .all
+    let featureName: String = "webRtc"
 
+    weak var broker: UserScriptMessageBroker?
     weak var delegate: WebRTCUserScriptDelegate?
 
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
-        guard let active = message.body as? Bool else { return }
-        delegate?.webRTCUserScript(self, didChangeConnectionActive: active)
+    enum MessageNames: String, CaseIterable {
+        case webRTCConnectionChanged
+    }
+
+    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        switch MessageNames(rawValue: methodName) {
+        case .webRTCConnectionChanged:
+            return { [weak self] in try await self?.webRTCConnectionChanged(params: $0, original: $1) }
+        default:
+            return nil
+        }
+    }
+
+    @MainActor
+    private func webRTCConnectionChanged(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let payload: WebRTCConnectionPayload = DecodableHelper.decode(from: params) else { return nil }
+        delegate?.webRTCUserScript(self, didChangeConnectionActive: payload.isActive)
+        return nil
     }
 }

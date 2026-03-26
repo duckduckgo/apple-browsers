@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import UIComponents
 
 extension OnboardingRebranding {
 
@@ -29,13 +30,8 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
 
         private let orientation: ContextualDaxDialogOrientation
-        #if os(iOS)
-        private let title: AttributedString?
-        private let message: AttributedString
-        #else
         private let title: NSAttributedString?
         private let message: NSAttributedString
-        #endif
 
         private let titleTextAlignment: TextAlignment?
         private let messageTextAlignment: TextAlignment?
@@ -53,9 +49,9 @@ extension OnboardingRebranding {
             @ViewBuilder content: () -> Content
         ) {
             self.orientation = orientation
-            self.title = title
+            self.title = title.map(NSAttributedString.init)
             self.titleTextAlignment = titleTextAlignment
-            self.message = message
+            self.message = NSAttributedString(message)
             self.messageTextAlignment = messageTextAlignment
             self.content = content()
         }
@@ -179,13 +175,8 @@ private extension OnboardingRebranding {
     struct TitleMessageStack: View {
         @Environment(\.onboardingTheme) private var theme
 
-        #if os(iOS)
-        let title: AttributedString?
-        let message: AttributedString
-        #else
         let title: NSAttributedString?
         let message: NSAttributedString
-        #endif
 
         let titleBodyVerticalSpacing: CGFloat
 
@@ -196,13 +187,13 @@ private extension OnboardingRebranding {
             VStack(alignment: .leading, spacing: titleBodyVerticalSpacing) {
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
-                    StyledAttributedText(title)
+                    Text(attributedStringWithAttachments: title)
                         .font(theme.typography.contextualTitle)
                         .multilineTextAlignment(titleAlignment)
                         .frame(maxWidth: .infinity, alignment: Alignment(titleAlignment))
                 }
                 let messageAlignment = messageTextAlignment ?? theme.contextualOnboardingMetrics.contextualBodyTextAlignment
-                StyledAttributedText(message)
+                Text(attributedStringWithAttachments: message)
                     .font(theme.typography.contextualBody)
                     .multilineTextAlignment(messageAlignment)
                     .frame(maxWidth: .infinity, alignment: Alignment(messageAlignment))
@@ -215,38 +206,6 @@ private extension OnboardingRebranding {
 }
 
 // MARK: - Helpers
-
-#if os(iOS)
-private struct StyledAttributedText: View {
-    private let attributedString: AttributedString
-
-    init(_ attributedString: AttributedString) {
-        self.attributedString = attributedString
-    }
-
-    var body: some View {
-        Text(attributedString)
-    }
-}
-#endif
-
-#if os(macOS)
-private struct StyledAttributedText: View {
-    private let attributedString: NSAttributedString
-
-    init(_ attributedString: NSAttributedString) {
-        self.attributedString = attributedString
-    }
-
-    var body: some View {
-        if #available(macOS 12, *) {
-            Text(AttributedString(attributedString))
-        } else {
-            Text(attributedString.string)
-        }
-    }
-}
-#endif
 
 private extension Alignment {
 

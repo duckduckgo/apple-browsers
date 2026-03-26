@@ -20,7 +20,6 @@
 import MetricBuilder
 import Onboarding
 import SwiftUI
-import UIComponents
 
 // MARK: - Fire Dialog
 
@@ -29,12 +28,19 @@ extension OnboardingRebranding {
     struct OnboardingFireDialog: View {
         @Environment(\.onboardingTheme) private var theme
 
+        let title: String?
         let message: String
         let onManualDismiss: (() -> Void)?
 
+        init(title: String? = nil, message: String, onManualDismiss: (() -> Void)? = nil) {
+            self.title = title
+            self.message = message
+            self.onManualDismiss = onManualDismiss
+        }
+
         var body: some View {
             OnboardingBubbleView(tailPosition: nil) {
-                OnboardingRebranding.OnboardingFireDialogContent(message: message)
+                OnboardingRebranding.OnboardingFireDialogContent(title: title, message: message)
             }
             .ifLet(onManualDismiss) { view, onManualDismiss in
                 view.onboardingDismissable(onManualDismiss)
@@ -48,25 +54,20 @@ extension OnboardingRebranding {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
 
+        let title: String?
         let message: String
+
+        init(title: String? = nil, message: String) {
+            self.title = title
+            self.message = message
+        }
 
         var body: some View {
             OnboardingRebranding.ContextualDaxDialogContent<EmptyView>(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
-                message: attributedMessage
+                title: title,
+                message: message
             )
-        }
-
-        private var attributedMessage: AttributedString {
-            var attributedString = AttributedString(message)
-            if let titleRange = attributedString.range(of: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle) {
-                attributedString[titleRange].inlinePresentationIntent = .stronglyEmphasized
-            }
-            // Find the range of "Fire Button"
-            if let range = attributedString.range(of: "Fire Button") {
-                attributedString[range].inlinePresentationIntent = .stronglyEmphasized // Bold
-            }
-            return attributedString
         }
     }
 

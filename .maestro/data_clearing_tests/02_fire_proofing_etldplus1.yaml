@@ -19,11 +19,12 @@ tags:
 - runFlow:
     file: ../shared/hide_daxdialogs.yaml
 
-# Set a cookie scoped to parent domain (first-party.site)
+# Set both cookie types
 - assertVisible: "Fireproofing Cookie Test"
-- tapOn:
-    id: "set-cookie"
-- assertVisible: "ddg_fireproof_test=fireproofed"
+- tapOn: "Set Parent Cookie"
+- assertVisible: ".*ddg_fireproof_test=fireproofed.*"
+- tapOn: "Set Host-Only Cookie"
+- assertVisible: ".*ddg_fireproof_host_test=fireproofed.*"
 
 # Fireproof the site
 - runFlow:
@@ -31,21 +32,31 @@ tags:
     env:
       ITEM: "Fireproof This Site"
 - tapOn: "Fireproof"
-- assertVisible: "first-party.site is now Fireproof"
+- assertVisible: "first-party\\.site is now Fireproof"
 
 # Fire Button
 - runFlow:
     file: ../shared/use_firebutton.yaml
 
+# Navigate back to SAME subdomain (www.first-party.site)
+# Verify BOTH cookie types survived the fire
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://www.first-party.site/fireproofing/"
+- pressKey: Enter
+- assertVisible: "Fireproofing Cookie Test"
+- assertVisible: ".*ddg_fireproof_test=fireproofed.*"
+- assertVisible: ".*ddg_fireproof_host_test=fireproofed.*"
+
 # Navigate to DIFFERENT subdomain (hsts.first-party.site)
+# Verify parent-domain cookie survived cross-subdomain (eTLD+1 protection)
+# Host-only cookie is NOT expected here (browser cookie scoping, not our feature)
 - tapOn:
     id: "searchEntry"
 - inputText: "https://hsts.first-party.site/fireproofing/"
 - pressKey: Enter
-
-# Verify cookie survived cross-subdomain (eTLD+1 protection)
 - assertVisible: "Fireproofing Cookie Test"
-- assertVisible: "ddg_fireproof_test=fireproofed"
+- assertVisible: ".*ddg_fireproof_test=fireproofed.*"
 
 # Remove fireproofing
 - runFlow:
@@ -57,10 +68,18 @@ tags:
 - runFlow:
     file: ../shared/use_firebutton.yaml
 
-# Navigate back and verify cookie was removed
+# Navigate to www.first-party.site — verify ALL cookies cleared
 - tapOn:
     id: "searchEntry"
 - inputText: "https://www.first-party.site/fireproofing/"
 - pressKey: Enter
 - assertVisible: "Fireproofing Cookie Test"
-- assertVisible: "No cookies found."
+- assertVisible: "No cookies found\\."
+
+# Navigate to hsts.first-party.site — verify cookies cleared here too
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://hsts.first-party.site/fireproofing/"
+- pressKey: Enter
+- assertVisible: "Fireproofing Cookie Test"
+- assertVisible: "No cookies found\\."

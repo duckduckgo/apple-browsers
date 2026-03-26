@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Niestandardowy adres URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domeny wykluczone w Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuj plik zakładek...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Brak aktywnych subskrypcji";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Brak wykluczonych domen";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nie znaleziono istniejącej subskrypcji";

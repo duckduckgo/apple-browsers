@@ -40,9 +40,6 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         freemiumDBPFeature.isFeatureFlagEnabled
     }
 
-    /// Whether the user has dismissed the promotion.
-    @Published private(set) var isDismissed: Bool = false
-
     /// Whether the current display window has expired (7 days elapsed).
     @Published private(set) var isDisplayWindowExpired: Bool = false
 
@@ -54,21 +51,24 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// Set by the promo delegate to route results back through show().
     var onUserAction: ((PromoResult) -> Void)?
 
+    /// Callback invoked when scan results arrive, allowing the delegate
+    /// to trigger a re-evaluation of eligibility via refreshEligibility().
+    var onScanResultsUpdated: (() -> Void)?
+
     var displayWindowStartDate: Date? {
         get { freemiumDBPUserStateManager.displayWindowStartDate }
         set { freemiumDBPUserStateManager.displayWindowStartDate = newValue }
     }
 
-    /// Stores whether the user has dismissed the home page promotion.
-    private var didDismissHomePagePromotion: Bool {
-        get {
-            return freemiumDBPUserStateManager.didDismissHomePagePromotion
-        }
-        set {
-            Logger.freemiumDBP.debug("[Freemium DBP] Promotion dismiss state set to \(newValue)")
-            freemiumDBPUserStateManager.didDismissHomePagePromotion = newValue
-            isDismissed = newValue
-        }
+    /// Whether the user dismissed the promotion before queue integration (legacy).
+    /// Read-only — current dismissals are handled by PromoService.
+    var hasLegacyDismissal: Bool {
+        freemiumDBPUserStateManager.didDismissHomePagePromotion
+    }
+
+    /// The user's first scan results, if any.
+    var firstScanResults: FreemiumDBPMatchResults? {
+        freemiumDBPUserStateManager.firstScanResults
     }
 
     /// The user state manager, which tracks the user's activation status and scan results.
@@ -112,7 +112,6 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         self.dateProvider = dateProvider
 
         isFeatureAvailable = freemiumDBPFeature.isAvailable
-        isDismissed = freemiumDBPUserStateManager.didDismissHomePagePromotion
         updateDisplayWindowExpiredState()
 
         subscribeToFeatureAvailabilityUpdates()
@@ -155,7 +154,6 @@ private extension FreemiumDBPPromotionViewCoordinator {
             })
 
             showFreemiumDBP()
-            didDismissHomePagePromotion = true
             onUserAction?(.actioned)
         }
     }
@@ -173,7 +171,6 @@ private extension FreemiumDBPPromotionViewCoordinator {
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanDismiss)
             })
 
-            didDismissHomePagePromotion = true
             onUserAction?(.ignored())
         }
     }
@@ -217,14 +214,13 @@ private extension FreemiumDBPPromotionViewCoordinator {
         }
     }
 
-    /// Observes contextual onboarding completion and refreshes the view model.
     func observeContextualOnboardingCompletion() {
         contextualOnboardingPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isCompleted in
                 guard let self, isCompleted else { return }
                 Logger.freemiumDBP.debug("[Freemium DBP] Contextual Onboarding Completed")
-                isDismissed = freemiumDBPUserStateManager.didDismissHomePagePromotion
+                onScanResultsUpdated?()
             }
             .store(in: &cancellables)
     }
@@ -245,22 +241,12 @@ private extension FreemiumDBPPromotionViewCoordinator {
             .store(in: &cancellables)
     }
 
-    /// Observes notifications related to Freemium DBP (e.g., result polling complete or entry point activated),
-    /// and updates the promotion visibility state accordingly.
     func observeFreemiumDBPNotifications() {
         notificationCenter.publisher(for: .freemiumDBPResultPollingComplete)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.freemiumDBP.debug("[Freemium DBP] Received Scan Results Notification")
-                self?.didDismissHomePagePromotion = false
-            }
-            .store(in: &cancellables)
-
-        notificationCenter.publisher(for: .freemiumDBPEntryPointActivated)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                Logger.freemiumDBP.debug("[Freemium DBP] Received Entry Point Activation Notification")
-                self?.didDismissHomePagePromotion = true
+                self?.onScanResultsUpdated?()
             }
             .store(in: &cancellables)
     }

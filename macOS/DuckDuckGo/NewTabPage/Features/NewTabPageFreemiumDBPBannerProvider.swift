@@ -81,8 +81,6 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     var isEligible: Bool {
-        guard !coordinator.isDismissed else { return false }
-
         // Active display window (including expired) — skip async checks (product availability)
         // but respect the feature flag. Expiry is handled in show(), which clears the date
         // and returns .ignored(cooldown:). We must return eligible here so show() gets called.
@@ -94,11 +92,13 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
         return coordinator.isFeatureAvailable
     }
 
+    private let refreshSubject = PassthroughSubject<Void, Never>()
+
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
         coordinator.$isFeatureAvailable
-            .combineLatest(coordinator.$isDismissed)
-            .map { [weak coordinator] isAvailable, isDismissed in
-                guard let coordinator, !isDismissed else { return false }
+            .combineLatest(refreshSubject.prepend(()))
+            .map { [weak coordinator] isAvailable, _ in
+                guard let coordinator else { return false }
                 if coordinator.displayWindowStartDate != nil {
                     return coordinator.isFeatureFlagEnabled
                 }
@@ -108,14 +108,27 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
             .eraseToAnyPublisher()
     }
 
+    func refreshEligibility() {
+        refreshSubject.send(())
+    }
+
     init(coordinator: FreemiumDBPPromotionViewCoordinator) {
         self.coordinator = coordinator
+        coordinator.onScanResultsUpdated = { [weak self] in
+            self?.refreshEligibility()
+        }
     }
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
         // Guard against double-show: if a previous show() is still suspended, resume it first
         resumeContinuation(with: .noChange)
+
+        // Honor legacy dismissals from before queue integration.
+        // Only applies to pre-scan banner — if scan results exist, the variant changed.
+        if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil && !force {
+            return .ignored()
+        }
 
         if coordinator.displayWindowStartDate == nil {
             coordinator.displayWindowStartDate = coordinator.dateProvider()

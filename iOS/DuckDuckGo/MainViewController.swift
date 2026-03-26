@@ -223,18 +223,33 @@ class MainViewController: UIViewController {
 
     var keyModifierFlags: UIKeyModifierFlags?
     var showKeyboardAfterFireButton: DispatchWorkItem?
+
+    /// Tracks the one-time Duck.ai Fire onboarding sequence:
+    /// idle -> awaiting first AI response -> active -> completed.
     private enum ExperimentDuckAIFireOnboardingState {
+        /// The experiment flow is not armed for the current tab/session.
         case idle
+        /// The Duck.ai onboarding UI is active and we are waiting for the first response
+        /// before showing the Fire onboarding dialog.
         case awaitingFirstResponse
+        /// The Fire onboarding dialog has been triggered and related UI state is locked.
         case active
+        /// The Fire onboarding sequence finished and should not be shown again this session.
         case completed
     }
 
+    /// Stores transient state needed to coordinate the Fire onboarding across
+    /// async AI responses, delayed retries, and post-Fire cleanup.
     private struct ExperimentDuckAIFireOnboardingFlowContext {
+        /// Current position in the Fire onboarding state machine.
         var state: ExperimentDuckAIFireOnboardingState = .idle
+        /// Restores the address bar picker after the Fire dialog if the experiment moved it.
         var shouldForcePostFireAddressBarPickerRestore = false
+        /// Prevents user interaction with experiment-owned controls while the dialog is active.
         var controlsLocked = false
+        /// Pending retry or failsafe trigger used when the dialog cannot be shown immediately.
         var triggerWorkItem: DispatchWorkItem?
+        /// Completion copy captured before the final dialog can safely be presented.
         var pendingCompletionDialogMessage: String?
     }
 
@@ -1574,7 +1589,7 @@ class MainViewController: UIViewController {
                 attachPopoverTo: source,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: FireRequest.Source.browsing,
-                scopedFlow: ScopedFireConfirmationViewModel.Flow.duckAIExperiment,
+                confirmationType: .duckAIExperiment,
                 daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAllWithAnimation(request: fireRequest) {
@@ -2579,16 +2594,16 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .aiChatResponseReceived)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.triggerExperimentDuckAIFireOnboardingIfNeeded()
+                self?.showExperimentFireDialogAfterAIChatResponseIfReady()
             }
             .store(in: &aiChatCancellables)
     }
 
-    private func triggerExperimentDuckAIFireOnboardingIfNeeded() {
+    private func showExperimentFireDialogAfterAIChatResponseIfReady() {
         if onboardingTransitionInProgress {
             experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
             let workItem = DispatchWorkItem { [weak self] in
-                self?.triggerExperimentDuckAIFireOnboardingIfNeeded()
+                self?.showExperimentFireDialogAfterAIChatResponseIfReady()
             }
             experimentDuckAIFireOnboardingFlow.triggerWorkItem = workItem
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
@@ -2622,7 +2637,7 @@ class MainViewController: UIViewController {
 
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.triggerExperimentDuckAIFireOnboardingIfNeeded()
+            self?.showExperimentFireDialogAfterAIChatResponseIfReady()
         }
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + ExperimentDuckAIFireOnboardingMetrics.onboardingFireFailsafeTriggerDelayAfterLoad, execute: workItem)

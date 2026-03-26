@@ -36,17 +36,11 @@ struct IOSManagerTestDependencies {
 enum DBPContinuedProcessingTestUtils {
     static func makeTestIOSManager(
         featureFlagger: MockDBPFeatureFlagger = MockDBPFeatureFlagger(),
-        continuedProcessingTestConfiguration: DataBrokerProtectionIOSManager.ContinuedProcessingTestConfiguration? = nil
+        continuedProcessingCoordinator: MockContinuedProcessingCoordinator = MockContinuedProcessingCoordinator()
     ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
-        let continuedProcessingCoordinator = (continuedProcessingTestConfiguration?.coordinator as? MockContinuedProcessingCoordinator) ?? MockContinuedProcessingCoordinator()
-        let normalizedContinuedProcessingTestConfiguration = DataBrokerProtectionIOSManager.ContinuedProcessingTestConfiguration(
-            coordinator: continuedProcessingCoordinator,
-            shouldUseContinuedProcessingForInitialRun: continuedProcessingTestConfiguration?.shouldUseContinuedProcessingForInitialRun ?? featureFlagger.isContinuedProcessingFeatureOn,
-            shouldRegisterBackgroundTaskHandler: continuedProcessingTestConfiguration?.shouldRegisterBackgroundTaskHandler ?? false
-        )
         return IOSManagerTestDependenciesStore().makeTestIOSManager(
             featureFlagger: featureFlagger,
-            continuedProcessingTestConfiguration: normalizedContinuedProcessingTestConfiguration
+            continuedProcessingCoordinator: continuedProcessingCoordinator
         )
     }
 
@@ -97,12 +91,11 @@ enum DBPContinuedProcessingTestUtils {
 
         func makeTestIOSManager(
             featureFlagger: MockDBPFeatureFlagger,
-            continuedProcessingTestConfiguration: DataBrokerProtectionIOSManager.ContinuedProcessingTestConfiguration
+            continuedProcessingCoordinator: MockContinuedProcessingCoordinator
         ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
-            let continuedProcessingCoordinator = (continuedProcessingTestConfiguration.coordinator as? MockContinuedProcessingCoordinator) ?? MockContinuedProcessingCoordinator()
             let manager = makeManager(
                 featureFlagger: featureFlagger,
-                continuedProcessingTestConfiguration: continuedProcessingTestConfiguration
+                continuedProcessingCoordinator: continuedProcessingCoordinator
             )
             reset(manager: manager)
 
@@ -120,7 +113,7 @@ enum DBPContinuedProcessingTestUtils {
 
         private func makeManager(
             featureFlagger: MockDBPFeatureFlagger,
-            continuedProcessingTestConfiguration: DataBrokerProtectionIOSManager.ContinuedProcessingTestConfiguration
+            continuedProcessingCoordinator: MockContinuedProcessingCoordinator
         ) -> DataBrokerProtectionIOSManager {
             jobDependencies.database = database
 
@@ -142,7 +135,8 @@ enum DBPContinuedProcessingTestUtils {
                 wideEvent: nil,
                 eventsHandler: eventsHandler,
                 engagementPixelsRepository: MockDataBrokerProtectionEngagementPixelsRepository(),
-                continuedProcessingTestConfiguration: continuedProcessingTestConfiguration
+                continuedProcessingCoordinator: continuedProcessingCoordinator,
+                shouldRegisterBackgroundTaskHandler: false
             )
         }
 

@@ -145,22 +145,6 @@ public final class DataBrokerProtectionIOSManager {
         static let defaultMinBackgroundTaskWaitTime: TimeInterval = .minutes(15)
     }
 
-    struct ContinuedProcessingTestConfiguration {
-        let coordinator: (any DBPContinuedProcessingCoordinating)?
-        let shouldUseContinuedProcessingForInitialRun: Bool
-        let shouldRegisterBackgroundTaskHandler: Bool
-
-        init(
-            coordinator: (any DBPContinuedProcessingCoordinating)? = nil,
-            shouldUseContinuedProcessingForInitialRun: Bool = true,
-            shouldRegisterBackgroundTaskHandler: Bool = false
-        ) {
-            self.coordinator = coordinator
-            self.shouldUseContinuedProcessingForInitialRun = shouldUseContinuedProcessingForInitialRun
-            self.shouldRegisterBackgroundTaskHandler = shouldRegisterBackgroundTaskHandler
-        }
-    }
-
     public static let backgroundTaskIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
     private let database: DataBrokerProtectionRepository
@@ -184,15 +168,10 @@ public final class DataBrokerProtectionIOSManager {
     private let eventsHandler: EventMapping<JobEvent>
     private let isWebViewInspectable: Bool
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService?
-    private let continuedProcessingTestConfiguration: ContinuedProcessingTestConfiguration?
     private var currentRunIsFreeScan: Bool?
     weak var continuedProcessingDelegate: DBPContinuedProcessingEventDelegate?
 
     private lazy var continuedProcessingCoordinator: any DBPContinuedProcessingCoordinating = {
-        if let coordinatorForTesting = continuedProcessingTestConfiguration?.coordinator {
-            return coordinatorForTesting
-        }
-
         guard #available(iOS 26.0, *) else {
             fatalError("Continued processing coordinator is unavailable before iOS 26")
         }
@@ -279,7 +258,8 @@ public final class DataBrokerProtectionIOSManager {
          engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp),
          isWebViewInspectable: Bool = false,
          freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
-         continuedProcessingTestConfiguration: ContinuedProcessingTestConfiguration? = nil
+         continuedProcessingCoordinator: (any DBPContinuedProcessingCoordinating)? = nil,
+         shouldRegisterBackgroundTaskHandler: Bool = true
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -302,14 +282,14 @@ public final class DataBrokerProtectionIOSManager {
         self.eventsHandler = eventsHandler
         self.isWebViewInspectable = isWebViewInspectable
         self.freeTrialConversionService = freeTrialConversionService
-        self.continuedProcessingTestConfiguration = continuedProcessingTestConfiguration
+
+        if let continuedProcessingCoordinator {
+            self.continuedProcessingCoordinator = continuedProcessingCoordinator
+        }
 
         self.queueManager.delegate = self
 
-        if let continuedProcessingTestConfiguration,
-           continuedProcessingTestConfiguration.shouldRegisterBackgroundTaskHandler == false {
-            // Skip registration in tests.
-        } else {
+        if shouldRegisterBackgroundTaskHandler {
             registerBackgroundTaskHandler()
         }
         Logger.dataBrokerProtection.debug("PIR wide event sweep requested (iOS setup)")
@@ -430,13 +410,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
                     return
                 }
 
-                if let coordinatorForTesting = continuedProcessingTestConfiguration?.coordinator {
-                    try await coordinatorForTesting.startInitialRun(scanPlan: scanPlan)
-                } else if #available(iOS 26.0, *) {
-                    try await continuedProcessingCoordinator.startInitialRun(scanPlan: scanPlan)
-                } else {
-                    fatalError("Continued processing coordinator is unavailable before iOS 26")
-                }
+                try await continuedProcessingCoordinator.startInitialRun(scanPlan: scanPlan)
                 return
             } catch {
                 Logger.dataBrokerProtection.error("Continued processing start failed after preparation, falling back to immediate scans. Error: \(error.localizedDescription, privacy: .public)")
@@ -946,10 +920,6 @@ private extension DataBrokerProtectionIOSManager {
 private extension DataBrokerProtectionIOSManager {
     @MainActor
     func shouldUseContinuedProcessingForInitialRun() -> Bool {
-        if let continuedProcessingTestConfiguration {
-            return continuedProcessingTestConfiguration.shouldUseContinuedProcessingForInitialRun
-        }
-
         guard #available(iOS 26.0, *) else {
             return false
         }

@@ -109,31 +109,11 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
-    func testWhenSaveProfileAndContinuedProcessingIsNotSupported_thenFallsBackToLegacySave() async throws {
-        // Given
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
-            continuedProcessingTestConfiguration: .init(shouldUseContinuedProcessingForInitialRun: false)
-        )
-
-        // When
-        try await sut.saveProfile(DBPContinuedProcessingTestUtils.makeProfile())
-
-        // Then
-        XCTAssertFalse(dependencies.continuedProcessingCoordinator.didCallStartInitialRun)
-        XCTAssertTrue(dependencies.database.wasSaveProfileCalled)
-        XCTAssertTrue(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
-    }
-
     func testWhenSaveProfileAndFeatureFlagIsOn_thenStartsContinuedProcessing() async throws {
         // Given
-        let continuedProcessingCoordinator = MockContinuedProcessingCoordinator()
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
-            continuedProcessingTestConfiguration: .init(
-                coordinator: continuedProcessingCoordinator,
-                shouldUseContinuedProcessingForInitialRun: true
-            )
+            featureFlagger: MockDBPFeatureFlagger(isContinuedProcessingFeatureOn: true)
         )
-        let profile = DBPContinuedProcessingTestUtils.makeProfile()
         dependencies.database.brokerProfileQueryDataToReturn = [
             DBPContinuedProcessingTestUtils.makeBrokerProfileQueryData(
                 brokerId: 1,
@@ -143,7 +123,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         ]
 
         // When
-        try await sut.saveProfile(profile)
+        try await sut.saveProfile(DBPContinuedProcessingTestUtils.makeProfile())
 
         // Then
         XCTAssertTrue(dependencies.continuedProcessingCoordinator.didCallStartInitialRun)
@@ -154,13 +134,11 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
 
     func testWhenSaveProfileAndContinuedProcessingStartFails_thenFallsBackToImmediateScansWithoutPreparingTwice() async throws {
         // Given
-        let continuedProcessingCoordinator = MockContinuedProcessingCoordinator()
-        continuedProcessingCoordinator.startInitialRunError = NSError(domain: "test", code: 1)
+        let coordinator = MockContinuedProcessingCoordinator()
+        coordinator.startInitialRunError = NSError(domain: "test", code: 1)
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
-            continuedProcessingTestConfiguration: .init(
-                coordinator: continuedProcessingCoordinator,
-                shouldUseContinuedProcessingForInitialRun: true
-            )
+            featureFlagger: MockDBPFeatureFlagger(isContinuedProcessingFeatureOn: true),
+            continuedProcessingCoordinator: coordinator
         )
         dependencies.database.brokerProfileQueryDataToReturn = [
             DBPContinuedProcessingTestUtils.makeBrokerProfileQueryData(

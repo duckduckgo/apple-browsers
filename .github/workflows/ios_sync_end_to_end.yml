@@ -175,7 +175,7 @@ jobs:
           runner: ${{ env.RUNS_ON }}
 
     - name: Send Status Pixel
-      if: always()
+      if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_status_ios_e2e_sync_${{ steps.upload.outcome }}

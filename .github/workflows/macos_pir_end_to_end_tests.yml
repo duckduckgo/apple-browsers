@@ -173,7 +173,7 @@ jobs:
           runner: ${{ matrix.runner }}
 
     - name: Send Status Pixel
-      if: always()
+      if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_status_mac_e2e_pir_${{ steps.run-tests.outcome }}

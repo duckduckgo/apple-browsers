@@ -194,6 +194,17 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     // MARK: - Layout
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
+        if isPhoneLandscape {
+            // In phone landscape, the compact layout animation handles the transition.
+            // Skip the dismiss button animation to avoid layout conflicts.
+            oldView.isHidden = true
+            oldView.alpha = 0
+            newView.isHidden = false
+            newView.alpha = 1
+            newView.transform = .identity
+            return
+        }
+
         dismissButtonAnimator?.stopAnimation(true)
         let animationDuration: CGFloat = 0.25
 
@@ -235,7 +246,32 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     override func updateInterface(from oldState: any OmniBarState, to state: any OmniBarState) {
         super.updateInterface(from: oldState, to: state)
 
-        omniBarView.isUsingCompactLayout = !state.hasLargeWidth
+        let isLandscapeEditing = isPhoneLandscape && barView.textField.isEditing
+        let newCompact = !state.hasLargeWidth || isLandscapeEditing
+
+        if omniBarView.isUsingCompactLayout != newCompact {
+            if isPhoneLandscape {
+                if newCompact {
+                    UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+                        self.omniBarView.leadingButtonsContainer.alpha = 0
+                        self.omniBarView.trailingButtonsContainer.alpha = 0
+                        self.omniBarView.isUsingCompactLayout = true
+                        self.omniBarView.layoutIfNeeded()
+                    }
+                } else {
+                    self.omniBarView.leadingButtonsContainer.alpha = 0
+                    self.omniBarView.trailingButtonsContainer.alpha = 0
+                    UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+                        self.omniBarView.leadingButtonsContainer.alpha = 1
+                        self.omniBarView.trailingButtonsContainer.alpha = 1
+                        self.omniBarView.isUsingCompactLayout = false
+                        self.omniBarView.layoutIfNeeded()
+                    }
+                }
+            } else {
+                omniBarView.isUsingCompactLayout = newCompact
+            }
+        }
 
         let hasTrailingAccessory = state.showAIChatButton || state.showAIChatModeToggle
         let hasAdjacentButton = state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton

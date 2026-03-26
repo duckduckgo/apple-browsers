@@ -137,7 +137,7 @@ final class BrowsingMenuViewController: UIViewController {
     }
 
     private func configureArrow(with color: UIColor) {
-        guard AppWidthObserver.shared.isLargeWidth else {
+        guard AppWidthObserver.shared.shouldUseCombinedBar else {
             arrowView.isHidden = true
             return
         }
@@ -245,20 +245,20 @@ final class BrowsingMenuViewController: UIViewController {
               let windowBounds = guideView.window?.bounds
         else { return }
 
-        let isIPad = AppWidthObserver.shared.isLargeWidth
+        let isCombinedBar = AppWidthObserver.shared.shouldUseCombinedBar
         let isIPhoneLandscape = traitCollection.containsTraits(in: UITraitCollection(verticalSizeClass: .compact))
 
-        topConstraint.isActive = !isIPad
-        topConstraintIPad.isActive = isIPad
-        bottomConstraint.isActive = !isIPad
-        bottomConstraintIPad.isActive = isIPad
+        topConstraint.isActive = !isCombinedBar
+        topConstraintIPad.isActive = isCombinedBar
+        bottomConstraint.isActive = !isCombinedBar
+        bottomConstraintIPad.isActive = isCombinedBar
 
         // Make it go above WebView in Landscape
         topConstraint.constant = (isIPhoneLandscape ? 10 : 0)
         // Move menu up in Landscape, as bottom toolbar shrinks
 
         bottomConstraint.constant = windowBounds.maxY - frame.maxY - (isIPhoneLandscape ? 2 : 10)
-        rightConstraint.constant = isIPad ? 67 : 10
+        rightConstraint.constant = isCombinedBar ? 67 : 10
 
         recalculatePreferredWidthConstraint()
     }

@@ -60,6 +60,13 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
+    var isPhoneLandscape: Bool = false {
+        didSet {
+            guard oldValue != isPhoneLandscape else { return }
+            barView.isPhoneLandscapeLayout = isPhoneLandscape
+        }
+    }
+
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode = .search
     private(set) var selectedTextEntryMode: TextEntryMode = .search
@@ -245,6 +252,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
         barView.onBookmarksPressed = { [weak self] in
             self?.onBookmarksPressed()
+        }
+        barView.onPasswordsPressed = { [weak self] in
+            self?.onPasswordsPressed()
         }
         barView.onAIChatPressed = { [weak self] in
             self?.onAIChatPressed()
@@ -688,13 +698,16 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
-        barView.isBackButtonHidden = !state.showBackButton
-        barView.isForwardButtonHidden = !state.showForwardButton
-        barView.isBookmarksButtonHidden = !state.showBookmarksButton
+        barView.isBackButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showBackButton
+        barView.isForwardButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showForwardButton
+        barView.isBookmarksButtonHidden = isPhoneLandscape ? state.isBrowsing : !state.showBookmarksButton
+        barView.isPasswordsButtonHidden = isPhoneLandscape ? state.isBrowsing : true
         barView.isAIChatButtonHidden = !state.showAIChatButton
-        
+        barView.isFireButtonHidden = !isPhoneLandscape
+        barView.isTabSwitcherButtonHidden = !isPhoneLandscape
+
         if let expandable = expandableBarView {
-            expandable.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
+            expandable.isExternalRefreshButtonHidden = isPhoneLandscape || !state.showRefreshOutsideAddressBar
             expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
             expandable.selectedModeToggleState = selectedTextEntryMode
 
@@ -916,6 +929,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         Pixel.fire(pixel: .bookmarksButtonPressed,
                    withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
         omniDelegate?.onBookmarksPressed()
+    }
+
+    private func onPasswordsPressed() {
+        omniDelegate?.onPasswordsPressed()
     }
 
     private func onAIChatPressed() {

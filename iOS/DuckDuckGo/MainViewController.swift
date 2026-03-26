@@ -204,6 +204,7 @@ class MainViewController: UIViewController {
 
     weak var tabSwitcherController: TabSwitcherViewController?
     var tabSwitcherButton: TabSwitcherButton?
+    var omniBarTabSwitcherButton: TabSwitcherButton?
 
     let gestureBookmarksButton = GestureToolbarButton()
 
@@ -1213,6 +1214,25 @@ class MainViewController: UIViewController {
 
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
+
+        // Omnibar tab switcher button (for iPhone landscape combined bar)
+        let omniBarTSButton = TabSwitcherStaticButton()
+        omniBarTSButton.delegate = self
+        omniBarTSButton.translatesAutoresizingMaskIntoConstraints = false
+        let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
+        container.addSubview(omniBarTSButton)
+        NSLayoutConstraint.activate([
+            omniBarTSButton.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            omniBarTSButton.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            omniBarTSButton.widthAnchor.constraint(equalToConstant: 34),
+            omniBarTSButton.heightAnchor.constraint(equalToConstant: 44),
+        ])
+        omniBarTabSwitcherButton = omniBarTSButton
+
+        // Omnibar fire button (for iPhone landscape combined bar)
+        viewCoordinator.omniBar.barView.onFirePressed = { [weak self] in
+            self?.onFirePressed()
+        }
     }
     
     private func initBookmarksButton() {
@@ -1844,9 +1864,15 @@ class MainViewController: UIViewController {
     private func refreshTabIcon() {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.currentTabsModel.count)
         assert(tabSwitcherButton != nil)
-        tabSwitcherButton?.tabCount = tabManager.currentTabsModel.count
-        tabSwitcherButton?.hasUnread = tabManager.currentTabsModel.hasUnread
-        tabSwitcherButton?.isFireMode = tabManager.currentBrowsingMode == .fire
+        let count = tabManager.currentTabsModel.count
+        let hasUnread = tabManager.currentTabsModel.hasUnread
+        let isFireMode = tabManager.currentBrowsingMode == .fire
+        tabSwitcherButton?.tabCount = count
+        tabSwitcherButton?.hasUnread = hasUnread
+        tabSwitcherButton?.isFireMode = isFireMode
+        omniBarTabSwitcherButton?.tabCount = count
+        omniBarTabSwitcherButton?.hasUnread = hasUnread
+        omniBarTabSwitcherButton?.isFireMode = isFireMode
     }
 
     private func refreshOmniBar() {
@@ -1950,7 +1976,7 @@ class MainViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
         
         if AppWidthObserver.shared.willResize(toWidth: size.width) {
-            applyWidth()
+            applyWidth(for: size)
         }
 
         self.showMenuHighlighterIfNeeded()
@@ -1985,10 +2011,24 @@ class MainViewController: UIViewController {
         orientationPixelWorker = worker
     }
 
-    private func applyWidth() {
+    private func isPhoneLandscapeMode(for size: CGSize? = nil) -> Bool {
+        guard featureFlagger.isFeatureOn(.minimalChromeInLandscape) else { return false }
+        let size = size ?? view.bounds.size
+        return !AppWidthObserver.shared.isPad
+            && (size.width > size.height)
+    }
+
+    private func applyWidth(for size: CGSize? = nil) {
+
+        if AppWidthObserver.shared.isPhoneLandscape {
+            setPhoneLandscapeMode(false)
+            viewCoordinator.setNavBarContainerExpandableHeight(false)
+        }
 
         if AppWidthObserver.shared.isLargeWidth {
             applyLargeWidth()
+        } else if isPhoneLandscapeMode(for: size) {
+            applyPhoneLandscapeWidth()
         } else {
             applySmallWidth()
         }
@@ -2029,6 +2069,11 @@ class MainViewController: UIViewController {
         }
     }
     
+    private func setPhoneLandscapeMode(_ enabled: Bool) {
+        viewCoordinator.omniBar.isPhoneLandscape = enabled
+        AppWidthObserver.shared.isPhoneLandscape = enabled
+    }
+
     private func applyLargeWidth() {
         viewCoordinator.tabBarContainer.isHidden = false
         viewCoordinator.toolbar.isHidden = true
@@ -2047,6 +2092,21 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.isEnabled = true
     }
 
+    private func applyPhoneLandscapeWidth() {
+        setPhoneLandscapeMode(true)
+        viewCoordinator.tabBarContainer.isHidden = true
+        viewCoordinator.toolbar.isHidden = true
+        viewCoordinator.omniBar.enterPadState()
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+
+        if appSettings.currentAddressBarPosition.isBottom {
+            viewCoordinator.setNavBarContainerBottomToKeyboard()
+            viewCoordinator.setNavBarContainerExpandableHeight(true)
+        }
+
+        swipeTabsCoordinator?.isEnabled = true
+    }
+
     @discardableResult
     func tryToShowSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) -> Bool {
         let canShow = suggestionTrayController?.canShow(for: type) ?? false
@@ -2059,7 +2119,7 @@ class MainViewController: UIViewController {
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
-        if !AppWidthObserver.shared.isLargeWidth {
+        if !AppWidthObserver.shared.shouldUseCombinedBar {
             if !daxDialogsManager.shouldShowFireButtonPulse {
                 ViewHighlighter.hideAll()
             }
@@ -3901,6 +3961,9 @@ extension MainViewController: TabDelegate {
             }
             tabSwitcherButton?.animateUpdate {
                 self.tabSwitcherButton?.tabCount += 1
+            }
+            omniBarTabSwitcherButton?.animateUpdate {
+                self.omniBarTabSwitcherButton?.tabCount += 1
             }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)

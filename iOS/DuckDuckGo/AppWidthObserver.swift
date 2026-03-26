@@ -38,16 +38,20 @@ public class AppWidthObserver {
         return isPad && currentWidth >= Constants.minPadWidth
     }
 
+    var isPhoneLandscape: Bool = false
+
+    public var shouldUseCombinedBar: Bool {
+        isLargeWidth || isPhoneLandscape
+    }
+
     private init() {}
 
     func willResize(toWidth width: CGFloat) -> Bool {
-        guard isPad else { return false }
-        
         if width != currentWidth {
             currentWidth = width
             return true
         }
-        
+
         return false
     }
 

@@ -26,7 +26,7 @@ class FireproofingAlert {
                                              worker: FireproofingWorking,
                                              forDomain domain: String) {
         
-        let message = UserText.fireproofingRemovalConfirmMessage.format(arguments: domain.droppingWwwPrefix())
+        let message = UserText.fireproofingRemovalConfirmMessage.format(arguments: domain)
         ActionMessageView.present(message: message, actionTitle: UserText.actionGenericUndo, onAction: {
             worker.handleUserEnablingFireproofing(forDomain: domain)
         })
@@ -35,7 +35,7 @@ class FireproofingAlert {
     static func showFireproofEnabledMessage(usingController controller: UIViewController,
                                             worker: FireproofingWorking,
                                             forDomain domain: String) {
-        let message = UserText.fireproofingConfirmMessage.format(arguments: domain.droppingWwwPrefix())
+        let message = UserText.fireproofingConfirmMessage.format(arguments: domain)
         ActionMessageView.present(message: message, actionTitle: UserText.actionGenericUndo, onAction: {
             worker.handleUserDisablingFireproofing(forDomain: domain)
         })
@@ -44,7 +44,7 @@ class FireproofingAlert {
     static func showConfirmFireproofWebsite(usingController controller: UIViewController,
                                             forDomain domain: String,
                                             onConfirmHandler: @escaping () -> Void) {
-        let prompt = UIAlertController(title: UserText.fireproofingAskTitle.format(arguments: domain.droppingWwwPrefix()),
+        let prompt = UIAlertController(title: UserText.fireproofingAskTitle.format(arguments: domain),
                                        message: UserText.fireproofingAskMessage,
                                        preferredStyle: controller.isPad ? .alert : .actionSheet)
         prompt.addAction(title: UserText.FireproofingConfirmAction, style: .default) {
@@ -57,7 +57,7 @@ class FireproofingAlert {
     static func showFireproofWebsitePrompt(usingController controller: UIViewController,
                                            forDomain domain: String,
                                            onConfirmHandler: @escaping () -> Void) {
-        let prompt = UIAlertController(title: UserText.fireproofingAskTitle.format(arguments: domain.droppingWwwPrefix()),
+        let prompt = UIAlertController(title: UserText.fireproofingAskTitle.format(arguments: domain),
                                        message: UserText.fireproofingAskMessage,
                                        preferredStyle: controller.isPad ? .alert : .actionSheet)
         prompt.addAction(title: UserText.FireproofingConfirmAction) {

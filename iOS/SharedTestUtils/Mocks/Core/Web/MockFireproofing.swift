@@ -52,6 +52,10 @@ class MockFireproofing: Fireproofing {
         isAllowedFireproofDomainHandler?(domain) ?? false
     }
 
+    func displayDomain(for domain: String) -> String {
+        domain
+    }
+
     func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool {
         false
     }

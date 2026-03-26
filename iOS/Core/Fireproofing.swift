@@ -33,6 +33,8 @@ public protocol Fireproofing {
     func remove(domain: String)
     func clearAll()
 
+    func displayDomain(for domain: String) -> String
+
     @discardableResult
     func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool
 
@@ -122,6 +124,13 @@ public class UserDefaultsFireproofing: Fireproofing {
     public func clearAll() {
         legacyAllowedDomains = []
         etldPlus1AllowedDomains = []
+    }
+
+    public func displayDomain(for domain: String) -> String {
+        if isFireproofingETLDPlus1Enabled() {
+            return tld.eTLDplus1(domain) ?? domain.droppingWwwPrefix()
+        }
+        return domain.droppingWwwPrefix()
     }
 
     public func isAllowed(fireproofDomain domain: String) -> Bool {

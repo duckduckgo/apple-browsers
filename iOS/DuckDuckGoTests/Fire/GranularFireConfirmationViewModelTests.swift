@@ -82,6 +82,8 @@ final class GranularFireConfirmationViewModelTests: XCTestCase {
             fireproofedDomains.contains(domain)
         }
 
+        func displayDomain(for domain: String) -> String { domain }
+
         func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool { false }
     }
     

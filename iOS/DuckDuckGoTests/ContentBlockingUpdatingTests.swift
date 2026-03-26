@@ -40,6 +40,8 @@ class FireproofingMock: Fireproofing {
 
     func clearAll() {}
 
+    func displayDomain(for domain: String) -> String { domain }
+
     func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool { false }
 }
 

@@ -55,5 +55,12 @@
                 "type": "string"
             }
         ]
+    },
+    "m_mac_quit-survey-thumbs-up-return": {
+        "description": "Fired once when the user returns to the app after completing the quit survey with thumbs up",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

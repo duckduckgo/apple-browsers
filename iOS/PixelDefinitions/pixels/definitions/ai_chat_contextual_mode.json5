@@ -125,6 +125,20 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_contextual_fire_button_tapped": {
+        "description": "Fired when the user taps the fire button in the AI Chat contextual sheet",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_fire_button_confirmed": {
+        "description": "Fired when the user confirms chat deletion from the fire button confirmation in the AI Chat contextual sheet",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_contextual_page_context_collection_empty": {
         "description": "Fired when page context collection runs but returns no usable content (empty title, content, favicon, and fullContentLength)",
         "owners": ["aataraxiaa"],

@@ -23,38 +23,45 @@ import os.log
 @available(macOS 15.4, iOS 18.4, *)
 public final class ScriptletManager: ScriptletProviding {
 
-    private let extensionType: DuckDuckGoWebExtensionType
     private let configProvider: ScriptletConfigProviding
     private let fetcher: ScriptletFetching
     private let validator: ScriptletValidating
     private let store: ScriptletStoring
 
-    @Published public private(set) var availability: ScriptletAvailability = .notAvailable
+    @Published private var availabilities: [DuckDuckGoWebExtensionType: ScriptletAvailability] = [:]
 
-    private var lastSuccessfulVersion: String?
-    private var currentFetchTask: Task<Void, Never>?
+    private var lastSuccessfulVersions: [DuckDuckGoWebExtensionType: String] = [:]
+    private var currentFetchTasks: [DuckDuckGoWebExtensionType: Task<Void, Never>] = [:]
+    private var activeExtensionTypes: Set<DuckDuckGoWebExtensionType> = []
     private var configCancellable: AnyCancellable?
 
     public init(
-        extensionType: DuckDuckGoWebExtensionType,
         configProvider: ScriptletConfigProviding,
         fetcher: ScriptletFetching,
         validator: ScriptletValidating,
         store: ScriptletStoring
     ) {
-        self.extensionType = extensionType
         self.configProvider = configProvider
         self.fetcher = fetcher
         self.validator = validator
         self.store = store
     }
 
-    public var availabilityPublisher: AnyPublisher<ScriptletAvailability, Never> {
-        $availability.eraseToAnyPublisher()
+    // MARK: - ScriptletProviding
+
+    public func availability(for extensionType: DuckDuckGoWebExtensionType) -> ScriptletAvailability {
+        availabilities[extensionType] ?? .notAvailable
     }
 
-    public var scriptlets: [Scriptlet]? {
-        switch availability {
+    public func availabilityPublisher(for extensionType: DuckDuckGoWebExtensionType) -> AnyPublisher<ScriptletAvailability, Never> {
+        $availabilities
+            .map { $0[extensionType] ?? .notAvailable }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    public func scriptlets(for extensionType: DuckDuckGoWebExtensionType) -> [Scriptlet]? {
+        switch availability(for: extensionType) {
         case .notAvailable:
             return nil
         case .available(let scriptlets), .updating(let scriptlets):
@@ -62,93 +69,102 @@ public final class ScriptletManager: ScriptletProviding {
         }
     }
 
-    public var isReady: Bool {
-        scriptlets != nil
+    public func isReady(for extensionType: DuckDuckGoWebExtensionType) -> Bool {
+        scriptlets(for: extensionType) != nil
     }
 
-    public func start() async {
-        Logger.webExtensions.debug("[Scriptlets] 🔄 Starting scriptlet manager")
-        loadCachedScriptlets()
-        subscribeToConfigUpdates()
-        await refreshIfNeeded()
+    // MARK: - Lifecycle
+
+    public func start(for extensionType: DuckDuckGoWebExtensionType) async {
+        Logger.webExtensions.debug("[Scriptlets] 🔄 Starting scriptlet manager for '\(extensionType.rawValue)'")
+        activeExtensionTypes.insert(extensionType)
+        loadCachedScriptlets(for: extensionType)
+        subscribeToConfigUpdatesIfNeeded()
+        await refreshIfNeeded(for: extensionType)
     }
 
-    public func refreshIfNeeded() async {
-        guard let manifest = configProvider.currentManifest else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No manifest available, skipping refresh")
+    public func refreshIfNeeded(for extensionType: DuckDuckGoWebExtensionType) async {
+        guard let manifest = configProvider.currentManifest(for: extensionType) else {
+            Logger.webExtensions.debug("[Scriptlets] ⏭️ No manifest available for '\(extensionType.rawValue)', skipping refresh")
             return
         }
 
-        guard manifest.version != lastSuccessfulVersion else {
-            Logger.webExtensions.debug("[Scriptlets] ✓ Already on latest version \(manifest.version)")
+        guard manifest.version != lastSuccessfulVersions[extensionType] else {
+            Logger.webExtensions.debug("[Scriptlets] ✓ Already on latest version \(manifest.version) for '\(extensionType.rawValue)'")
             return
         }
 
-        Logger.webExtensions.info("[Scriptlets] 🔄 Refreshing scriptlets: \(self.lastSuccessfulVersion ?? "none") → \(manifest.version)")
-        await fetchAndUpdate(manifest: manifest)
+        Logger.webExtensions.info("[Scriptlets] 🔄 Refreshing scriptlets for '\(extensionType.rawValue)': \(self.lastSuccessfulVersions[extensionType] ?? "none") → \(manifest.version)")
+        await fetchAndUpdate(for: extensionType, manifest: manifest)
     }
 
-    private func loadCachedScriptlets() {
+    // MARK: - Private
+
+    private func loadCachedScriptlets(for extensionType: DuckDuckGoWebExtensionType) {
         guard let cached = store.loadCached(for: extensionType),
-              let currentManifest = configProvider.currentManifest,
+              let currentManifest = configProvider.currentManifest(for: extensionType),
               cached.version == currentManifest.version else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No valid cache found for '\(self.extensionType.rawValue)'")
+            Logger.webExtensions.debug("[Scriptlets] ⏭️ No valid cache found for '\(extensionType.rawValue)'")
             return
         }
 
-        Logger.webExtensions.info("[Scriptlets] ✅ Loaded \(cached.scriptlets.count) cached scriptlet(s) v\(cached.version) for '\(self.extensionType.rawValue)'")
-        availability = .available(cached.scriptlets)
-        lastSuccessfulVersion = cached.version
+        Logger.webExtensions.info("[Scriptlets] ✅ Loaded \(cached.scriptlets.count) cached scriptlet(s) v\(cached.version) for '\(extensionType.rawValue)'")
+        availabilities[extensionType] = .available(cached.scriptlets)
+        lastSuccessfulVersions[extensionType] = cached.version
     }
 
-    private func subscribeToConfigUpdates() {
+    private func subscribeToConfigUpdatesIfNeeded() {
+        guard configCancellable == nil else { return }
+
         configCancellable = configProvider.configUpdatedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self = self else { return }
 
-                self.currentFetchTask?.cancel()
+                for extensionType in self.activeExtensionTypes {
+                    self.currentFetchTasks[extensionType]?.cancel()
 
-                self.currentFetchTask = Task { [weak self] in
-                    await self?.refreshIfNeeded()
+                    self.currentFetchTasks[extensionType] = Task { [weak self] in
+                        await self?.refreshIfNeeded(for: extensionType)
+                    }
                 }
             }
     }
 
-    private func fetchAndUpdate(manifest: ScriptletManifest) async {
-        let existingScriptlets = scriptlets
+    private func fetchAndUpdate(for extensionType: DuckDuckGoWebExtensionType, manifest: ScriptletManifest) async {
+        let existingScriptlets = scriptlets(for: extensionType)
 
         if let existing = existingScriptlets {
-            Logger.webExtensions.debug("[Scriptlets] 🔄 Updating scriptlets (keeping \(existing.count) existing during update)")
-            availability = .updating(existing)
+            Logger.webExtensions.debug("[Scriptlets] 🔄 Updating scriptlets for '\(extensionType.rawValue)' (keeping \(existing.count) existing during update)")
+            availabilities[extensionType] = .updating(existing)
         } else {
-            Logger.webExtensions.debug("[Scriptlets] 🔄 Fetching scriptlets (no existing scriptlets)")
+            Logger.webExtensions.debug("[Scriptlets] 🔄 Fetching scriptlets for '\(extensionType.rawValue)' (no existing scriptlets)")
         }
 
         do {
-            Logger.webExtensions.debug("[Scriptlets] 📥 Fetching \(manifest.scriptlets.count) scriptlet(s)")
+            Logger.webExtensions.debug("[Scriptlets] 📥 Fetching \(manifest.scriptlets.count) scriptlet(s) for '\(extensionType.rawValue)'")
             let fetched = try await fetcher.fetch(manifest.scriptlets)
 
-            Logger.webExtensions.debug("[Scriptlets] ✓ Validating \(fetched.count) fetched scriptlet(s)")
+            Logger.webExtensions.debug("[Scriptlets] ✓ Validating \(fetched.count) fetched scriptlet(s) for '\(extensionType.rawValue)'")
             let validated = try validator.validate(fetched)
 
             let targetPaths = Dictionary(uniqueKeysWithValues: validated.map { ($0.name, $0.name) })
 
-            Logger.webExtensions.debug("[Scriptlets] 💾 Saving \(validated.count) validated scriptlet(s)")
+            Logger.webExtensions.debug("[Scriptlets] 💾 Saving \(validated.count) validated scriptlet(s) for '\(extensionType.rawValue)'")
             try store.save(validated, version: manifest.version, for: extensionType, withTargetPaths: targetPaths)
 
-            availability = .available(validated)
-            lastSuccessfulVersion = manifest.version
-            Logger.webExtensions.info("[Scriptlets] ✅ Successfully updated to version \(manifest.version) with \(validated.count) scriptlet(s) for '\(self.extensionType.rawValue)'")
+            availabilities[extensionType] = .available(validated)
+            lastSuccessfulVersions[extensionType] = manifest.version
+            Logger.webExtensions.info("[Scriptlets] ✅ Successfully updated to version \(manifest.version) with \(validated.count) scriptlet(s) for '\(extensionType.rawValue)'")
 
         } catch {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to fetch/update scriptlets for '\(self.extensionType.rawValue)': \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] ❌ Failed to fetch/update scriptlets for '\(extensionType.rawValue)': \(error.localizedDescription)")
             if let existing = existingScriptlets {
-                Logger.webExtensions.warning("[Scriptlets] ⚠️ Keeping \(existing.count) existing scriptlet(s) after error")
-                availability = .available(existing)
+                Logger.webExtensions.warning("[Scriptlets] ⚠️ Keeping \(existing.count) existing scriptlet(s) for '\(extensionType.rawValue)' after error")
+                availabilities[extensionType] = .available(existing)
             } else {
-                Logger.webExtensions.warning("[Scriptlets] ⚠️ No scriptlets available after error")
-                availability = .notAvailable
+                Logger.webExtensions.warning("[Scriptlets] ⚠️ No scriptlets available for '\(extensionType.rawValue)' after error")
+                availabilities[extensionType] = .notAvailable
             }
         }
     }

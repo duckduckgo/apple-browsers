@@ -22,11 +22,11 @@ import Foundation
 
 final class MockScriptletConfigProvider: ScriptletConfigProviding {
 
-    var manifest: ScriptletManifest?
+    var manifests: [DuckDuckGoWebExtensionType: ScriptletManifest] = [:]
     let configUpdateSubject = PassthroughSubject<Void, Never>()
 
-    var currentManifest: ScriptletManifest? {
-        manifest
+    func currentManifest(for extensionType: DuckDuckGoWebExtensionType) -> ScriptletManifest? {
+        manifests[extensionType]
     }
 
     var configUpdatedPublisher: AnyPublisher<Void, Never> {

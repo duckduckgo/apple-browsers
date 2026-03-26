@@ -107,29 +107,24 @@ final class AppDependencyProvider: DependencyProvider {
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
-    lazy var scriptletManager: ScriptletManager = {
+    @available(iOS 18.4, *)
+    func makeScriptletConfiguration() -> ScriptletConfiguration {
         let scriptletsDirectory = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first!
             .appendingPathComponent("Scriptlets", isDirectory: true)
 
-        return ScriptletManagerFactory.makeManager(
-            extensionType: .adBlockingExtension,
+        let scriptletManager = ScriptletManagerFactory.makeManager(
             privacyConfigManager: configurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory
         )
-    }()
 
-    lazy var scriptletCoordinator: WebExtensionScriptletCoordinator = {
-        let installer = ScriptletInstaller()
-
-        return WebExtensionScriptletCoordinator(
-            scriptletProvider: scriptletManager,
-            installer: installer,
+        return ScriptletConfiguration(
+            provider: scriptletManager,
             extensionType: .adBlockingExtension
         )
-    }()
+    }
 
     private init() {
 

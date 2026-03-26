@@ -19,7 +19,8 @@
 import Combine
 import Foundation
 
+@available(macOS 15.4, iOS 18.4, *)
 public protocol ScriptletConfigProviding {
-    var currentManifest: ScriptletManifest? { get }
+    func currentManifest(for extensionType: DuckDuckGoWebExtensionType) -> ScriptletManifest?
     var configUpdatedPublisher: AnyPublisher<Void, Never> { get }
 }

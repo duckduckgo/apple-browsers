@@ -21,6 +21,7 @@ import Foundation
 import PrivacyConfig
 import os.log
 
+@available(macOS 15.4, iOS 18.4, *)
 public final class ScriptletConfigProvider: ScriptletConfigProviding {
 
     private let privacyConfigManager: PrivacyConfigurationManaging
@@ -29,12 +30,17 @@ public final class ScriptletConfigProvider: ScriptletConfigProviding {
         self.privacyConfigManager = privacyConfigManager
     }
 
-    public var currentManifest: ScriptletManifest? {
-        let settings = privacyConfigManager.privacyConfig.settings(for: .adBlockingExtension)
+    public func currentManifest(for extensionType: DuckDuckGoWebExtensionType) -> ScriptletManifest? {
+        guard let feature = privacyFeature(for: extensionType) else {
+            Logger.webExtensions.debug("[Scriptlets] ⏭️ No privacy feature mapping for '\(extensionType.rawValue)'")
+            return nil
+        }
+
+        let settings = privacyConfigManager.privacyConfig.settings(for: feature)
 
         guard let version = settings["version"] as? String,
               let scriptletsDict = settings["scriptlets"] as? [String: [String: Any]] else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No scriptlet manifest in privacy config")
+            Logger.webExtensions.debug("[Scriptlets] ⏭️ No scriptlet manifest in privacy config for '\(extensionType.rawValue)'")
             return nil
         }
 
@@ -48,15 +54,24 @@ public final class ScriptletConfigProvider: ScriptletConfigProviding {
         }
 
         guard !descriptors.isEmpty else {
-            Logger.webExtensions.warning("[Scriptlets] ⚠️ Scriptlet manifest found but no valid descriptors")
+            Logger.webExtensions.warning("[Scriptlets] ⚠️ Scriptlet manifest found but no valid descriptors for '\(extensionType.rawValue)'")
             return nil
         }
 
-        Logger.webExtensions.debug("[Scriptlets] ✓ Manifest retrieved: v\(version) with \(descriptors.count) descriptor(s)")
+        Logger.webExtensions.debug("[Scriptlets] ✓ Manifest retrieved for '\(extensionType.rawValue)': v\(version) with \(descriptors.count) descriptor(s)")
         return ScriptletManifest(version: version, scriptlets: descriptors)
     }
 
     public var configUpdatedPublisher: AnyPublisher<Void, Never> {
         privacyConfigManager.updatesPublisher
+    }
+
+    private func privacyFeature(for extensionType: DuckDuckGoWebExtensionType) -> PrivacyFeature? {
+        switch extensionType {
+        case .adBlockingExtension:
+            return .adBlockingExtension
+        case .embedded, .darkReader:
+            return nil
+        }
     }
 }

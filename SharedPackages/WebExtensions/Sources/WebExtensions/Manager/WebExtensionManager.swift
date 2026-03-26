@@ -20,10 +20,30 @@ import Foundation
 import os.log
 import WebKit
 
+/// Bundles the dependencies for the scriptlet subsystem.
+/// Pass to `WebExtensionManager` to enable automatic scriptlet management.
+@available(macOS 15.4, iOS 18.4, *)
+public struct ScriptletConfiguration {
+
+    public let provider: ScriptletProviding
+    public let extensionType: DuckDuckGoWebExtensionType
+    public let installer: ScriptletInstalling
+
+    public init(
+        provider: ScriptletProviding,
+        extensionType: DuckDuckGoWebExtensionType,
+        installer: ScriptletInstalling = ScriptletInstaller()
+    ) {
+        self.provider = provider
+        self.extensionType = extensionType
+        self.installer = installer
+    }
+}
+
 /// Manages web extensions including installation, loading, and lifecycle.
 /// Platform-specific behavior is delegated to the windowTabProvider and lifecycleDelegate.
 @available(macOS 15.4, iOS 18.4, *)
-open class WebExtensionManager: NSObject, WebExtensionManaging {
+open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInstallationPathResolving {
 
     // MARK: - Dependencies
 
@@ -48,8 +68,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
-    /// Coordinator for managing scriptlet installation to extensions.
-    public private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
+    /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
+    private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
+
+    /// The scriptlet configuration, if scriptlet support is enabled.
+    private let scriptletConfiguration: ScriptletConfiguration?
 
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
@@ -74,7 +97,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 messageRouter: WebExtensionMessageRouting? = nil,
-                handlerProvider: WebExtensionHandlerProviding? = nil) {
+                handlerProvider: WebExtensionHandlerProviding? = nil,
+                scriptletConfiguration: ScriptletConfiguration? = nil) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -89,8 +113,19 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         self.pixelFiring = pixelFiring
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
+        self.scriptletConfiguration = scriptletConfiguration
 
         super.init()
+
+        if let scriptletConfiguration {
+            let coordinator = WebExtensionScriptletCoordinator(
+                scriptletProvider: scriptletConfiguration.provider,
+                installer: scriptletConfiguration.installer,
+                extensionType: scriptletConfiguration.extensionType,
+                installationPathResolver: self
+            )
+            self.scriptletCoordinator = coordinator
+        }
 
         controller.delegate = self
         self.loader.delegate = self
@@ -119,23 +154,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         contexts.contains { $0.duckDuckGoWebExtensionType == .embedded }
     }
 
-    // MARK: - Scriptlet Coordinator
-
-    public func setScriptletCoordinator(_ coordinator: WebExtensionScriptletCoordinator) {
-        self.scriptletCoordinator = coordinator
-    }
-
-    /// Updates the scriptlet coordinator with the installation directory for its extension type.
-    /// Should be called after extensions are loaded.
-    @MainActor
-    public func updateScriptletCoordinatorInstallationPath() async {
-        guard let coordinator = scriptletCoordinator else { return }
-
-        if let path = installedExtensionPath(for: coordinator.extensionType) {
-            await coordinator.setInstallationDirectory(path)
-        }
-    }
-
     // MARK: - Install/Uninstall
 
     public func installExtension(from sourceURL: URL) async throws {
@@ -159,7 +177,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
                 uniqueIdentifier: identifier,
                 filename: loadResult.filename,
                 name: loadResult.displayName,
-                version: loadResult.version
+                version: loadResult.version,
+                embeddedType: metadata.type
             )
 
             installationStore.add(installedExtension)
@@ -282,6 +301,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     @MainActor
     public func loadInstalledExtensions() async {
+        if let scriptletConfiguration {
+            await scriptletConfiguration.provider.start(for: scriptletConfiguration.extensionType)
+        }
+
         eventsListener.controller = controller
 
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
@@ -330,6 +353,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
         let knownIdentifiers = Set(installationStore.installedExtensions.map(\.uniqueIdentifier))
         storageProvider.cleanupOrphanedExtensions(keeping: knownIdentifiers)
+
+        scriptletCoordinator?.start()
 
         notifyUpdate()
     }

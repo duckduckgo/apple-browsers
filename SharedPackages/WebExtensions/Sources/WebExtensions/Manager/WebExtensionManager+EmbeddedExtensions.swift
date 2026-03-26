@@ -52,7 +52,7 @@ extension WebExtensionManager {
             return
         }
 
-        if type == .adBlockingExtension {
+        if type == scriptletCoordinator?.extensionType {
             scriptletCoordinator?.onExtensionDisabled()
         }
 
@@ -84,7 +84,7 @@ extension WebExtensionManager {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
 
-                    if descriptor.type == .adBlockingExtension {
+                    if descriptor.type == scriptletCoordinator?.extensionType {
                         scriptletCoordinator?.onExtensionDisabled()
                     }
 
@@ -141,9 +141,7 @@ extension WebExtensionManager {
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()
 
-            if type == .adBlockingExtension,
-               let installationPath = installedExtensionPath(for: type) {
-                await scriptletCoordinator?.setInstallationDirectory(installationPath)
+            if type == scriptletCoordinator?.extensionType {
                 await scriptletCoordinator?.onExtensionEnabled()
             }
         } catch {

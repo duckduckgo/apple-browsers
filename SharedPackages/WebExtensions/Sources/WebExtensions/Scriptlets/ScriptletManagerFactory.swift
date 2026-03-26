@@ -24,7 +24,6 @@ import PrivacyConfig
 public enum ScriptletManagerFactory {
 
     public static func makeManager(
-        extensionType: DuckDuckGoWebExtensionType,
         privacyConfigManager: PrivacyConfigurationManaging,
         apiService: APIService,
         baseDirectory: URL,
@@ -45,7 +44,6 @@ public enum ScriptletManagerFactory {
         )
 
         return ScriptletManager(
-            extensionType: extensionType,
             configProvider: configProvider,
             fetcher: fetcher,
             validator: validator,

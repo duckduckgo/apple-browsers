@@ -345,7 +345,8 @@ final class MainCoordinator {
             mainViewController: controller,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            scriptletConfiguration: appDependencies.makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
 
@@ -361,12 +362,7 @@ final class MainCoordinator {
 
         // Load extensions asynchronously - the controller is already attached to tabs
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            await appDependencies.scriptletManager.start()
-            webExtensionManager.setScriptletCoordinator(appDependencies.scriptletCoordinator)
-            appDependencies.scriptletCoordinator.start()
-
             await webExtensionManager.loadInstalledExtensions()
-            await webExtensionManager.updateScriptletCoordinatorInstallationPath()
             guard !Task.isCancelled else { return }
             await self?.syncEmbeddedExtensions()
             guard !Task.isCancelled else { return }

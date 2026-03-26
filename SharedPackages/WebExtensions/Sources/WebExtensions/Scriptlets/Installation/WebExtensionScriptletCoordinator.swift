@@ -26,18 +26,23 @@ public final class WebExtensionScriptletCoordinator {
     private let scriptletProvider: ScriptletProviding
     private let installer: ScriptletInstalling
     public let extensionType: DuckDuckGoWebExtensionType
-    private var installationDirectory: URL?
+
+    /// Resolves the installation path for the extension type.
+    /// Set after creation when the web extension manager is available.
+    public weak var installationPathResolver: (any WebExtensionInstallationPathResolving)?
 
     private var cancellable: AnyCancellable?
 
     public init(
         scriptletProvider: ScriptletProviding,
         installer: ScriptletInstalling,
-        extensionType: DuckDuckGoWebExtensionType
+        extensionType: DuckDuckGoWebExtensionType,
+        installationPathResolver: (any WebExtensionInstallationPathResolving)? = nil
     ) {
         self.scriptletProvider = scriptletProvider
         self.installer = installer
         self.extensionType = extensionType
+        self.installationPathResolver = installationPathResolver
     }
 
     public func start() {
@@ -49,12 +54,6 @@ public final class WebExtensionScriptletCoordinator {
         }
     }
 
-    public func setInstallationDirectory(_ directory: URL) async {
-        Logger.webExtensions.debug("[Scriptlets] 📍 Setting installation directory for '\(self.extensionType.rawValue)': \(directory.path)")
-        self.installationDirectory = directory
-        await installCurrentScriptlets()
-    }
-
     public func onExtensionEnabled() async {
         Logger.webExtensions.debug("[Scriptlets] ▶️ Extension '\(self.extensionType.rawValue)' enabled, installing scriptlets")
         await installCurrentScriptlets()
@@ -62,15 +61,22 @@ public final class WebExtensionScriptletCoordinator {
 
     public func onExtensionDisabled() {
         Logger.webExtensions.debug("[Scriptlets] ⏸️ Extension '\(self.extensionType.rawValue)' disabled, removing scriptlets")
-        guard let installationDirectory = installationDirectory else {
-            Logger.webExtensions.warning("[Scriptlets] ⚠️ No installation directory set for '\(self.extensionType.rawValue)', cannot remove scriptlets")
+        guard let installationDirectory = resolveInstallationDirectory() else {
             return
         }
         try? installer.removeScriptlets(from: installationDirectory)
     }
 
+    private func resolveInstallationDirectory() -> URL? {
+        guard let directory = installationPathResolver?.installedExtensionPath(for: extensionType) else {
+            Logger.webExtensions.warning("[Scriptlets] ⚠️ No installation directory available for '\(self.extensionType.rawValue)'")
+            return nil
+        }
+        return directory
+    }
+
     private func subscribeToScriptletUpdates() {
-        cancellable = scriptletProvider.availabilityPublisher
+        cancellable = scriptletProvider.availabilityPublisher(for: extensionType)
             .sink { [weak self] availability in
                 guard let self = self else { return }
 
@@ -89,7 +95,7 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     private func installCurrentScriptlets() async {
-        guard let scriptlets = scriptletProvider.scriptlets else {
+        guard let scriptlets = scriptletProvider.scriptlets(for: extensionType) else {
             Logger.webExtensions.debug("[Scriptlets] ⏭️ No scriptlets available for installation to '\(self.extensionType.rawValue)'")
             return
         }
@@ -98,8 +104,7 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     private func installScriptlets(_ scriptlets: [Scriptlet]) async {
-        guard let installationDirectory = installationDirectory else {
-            Logger.webExtensions.warning("[Scriptlets] ⚠️ No installation directory set for '\(self.extensionType.rawValue)', cannot install scriptlets")
+        guard let installationDirectory = resolveInstallationDirectory() else {
             return
         }
 

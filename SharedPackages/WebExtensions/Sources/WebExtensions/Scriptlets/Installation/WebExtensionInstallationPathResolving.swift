@@ -1,5 +1,5 @@
 //
-//  ScriptletProviding.swift
+//  WebExtensionInstallationPathResolving.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,15 +16,9 @@
 //  limitations under the License.
 //
 
-import Combine
 import Foundation
 
 @available(macOS 15.4, iOS 18.4, *)
-public protocol ScriptletProviding {
-    func start(for extensionType: DuckDuckGoWebExtensionType) async
-    func availability(for extensionType: DuckDuckGoWebExtensionType) -> ScriptletAvailability
-    func availabilityPublisher(for extensionType: DuckDuckGoWebExtensionType) -> AnyPublisher<ScriptletAvailability, Never>
-    func scriptlets(for extensionType: DuckDuckGoWebExtensionType) -> [Scriptlet]?
-    func isReady(for extensionType: DuckDuckGoWebExtensionType) -> Bool
-    func refreshIfNeeded(for extensionType: DuckDuckGoWebExtensionType) async
+public protocol WebExtensionInstallationPathResolving: AnyObject {
+    func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL?
 }

@@ -66,7 +66,7 @@ public final class AppStoreCrashCollection: CrashReporting {
         let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)
         let callStackDepthLimit: Int? = isCallStackLimitingEnabled ? 250 : nil
 
-        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit, sortKeys: false) { [weak self] pixelParameters, payloads, completion in
+        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit) { [weak self] pixelParameters, payloads, completion in
             guard let self else { return }
 
             pixelParameters.forEach { parameters in

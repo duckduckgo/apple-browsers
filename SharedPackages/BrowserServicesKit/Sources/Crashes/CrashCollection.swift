@@ -124,11 +124,10 @@ public final class CrashCollection {
     /// This method collects additional NSException/C++ exception data (message and stack trace) saved by `CrashLogMessageExtractor` and attaches it to payloads.
     /// - Parameters:
     ///   - callStackDepthLimit: Nesting limit of the call stack in the report. Used to prevent excessive recursion during JSON write. Pass `nil` to disable limiting.
-    ///   - sortKeys: Defines if JSON keys are sorted during write.
     ///   - didFindCrashReports: callback called after payload preprocessing is finished.
     ///     Provides processed JSON data to be presented to the user and Pixel parameters to fire a crash Pixel.
     ///     `uploadReports` callback is used when the user accepts uploading the crash report and starts crash upload to the server.
-    public func startAttachingCrashLogMessages(callStackDepthLimit: Int? = nil, sortKeys: Bool = true, didFindCrashReports: @escaping (_ pixelParameters: [[CrashReportPixelParameter: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
+    public func startAttachingCrashLogMessages(callStackDepthLimit: Int? = nil, didFindCrashReports: @escaping (_ pixelParameters: [[CrashReportPixelParameter: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
         start(process: { payloads in
             payloads.compactMap { payload in
                 var dict = payload.dictionaryRepresentation()
@@ -204,7 +203,7 @@ public final class CrashCollection {
                     return nil
                 }
 
-                let writeOptions: JSONSerialization.WritingOptions = sortKeys ? [.prettyPrinted, .sortedKeys] : [.prettyPrinted]
+                let writeOptions: JSONSerialization.WritingOptions = [.prettyPrinted]
 
                 return try? JSONSerialization.data(withJSONObject: dict, options: writeOptions)
             }

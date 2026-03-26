@@ -90774,6 +90774,54 @@
         }
       }
     },
+    "remove.recent.chat.confirmation.button" : {
+      "comment" : "Button title to confirm deleting a recent Duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "remove.recent.chat.confirmation.message" : {
+      "comment" : "Message for the confirmation alert when deleting a recent Duck.ai chat. %@ is the chat title.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"%@\" will be permanently deleted everywhere."
+          }
+        }
+      }
+    },
+    "remove.recent.chat.confirmation.title" : {
+      "comment" : "Title for the confirmation alert when deleting a recent Duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete this chat?"
+          }
+        }
+      }
+    },
+    "remove.recent.chat.suggestion.tooltip" : {
+      "comment" : "Tooltip for the button which removes a recent Duck.ai chat from the suggestions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete this chat"
+          }
+        }
+      }
+    },
     "remove.suggestion.tooltip" : {
       "comment" : "Tooltip for the button which removes the history entry from the history",
       "extractionState" : "extracted_with_value",

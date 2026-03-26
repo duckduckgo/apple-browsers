@@ -32,7 +32,7 @@ struct AIChatDeepLinkHandler {
         }
 
         mainViewController.dismiss(animated: true) {
-            mainViewController.openAIChat()
+            mainViewController.openAIChat(fromDeepLink: true)
         }
     }
 

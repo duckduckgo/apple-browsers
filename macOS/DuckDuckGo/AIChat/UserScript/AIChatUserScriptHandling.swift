@@ -356,7 +356,21 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         let pageContext = await pageContextScript.collectAndWait()
-        return AIChatTabContentResponse(pageContext: pageContext)
+
+        // Replace favicon URLs with base64-encoded data to avoid CSP blocking in the sidebar
+        let enrichedContext: AIChatPageContextData? = pageContext.flatMap { ctx in
+            let pageURL = URL(string: ctx.url)
+            let base64Favicon = pageURL.flatMap { faviconData(for: $0) } ?? []
+            return AIChatPageContextData(
+                title: ctx.title,
+                favicon: base64Favicon.isEmpty ? ctx.favicon : base64Favicon,
+                url: ctx.url,
+                content: ctx.content,
+                truncated: ctx.truncated,
+                fullContentLength: ctx.fullContentLength
+            )
+        }
+        return AIChatTabContentResponse(pageContext: enrichedContext)
     }
 
     @MainActor

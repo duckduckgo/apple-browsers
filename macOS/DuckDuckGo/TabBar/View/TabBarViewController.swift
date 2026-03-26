@@ -2219,7 +2219,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        return tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.content.canBeDuplicated ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.tabContent.canBeDuplicated ?? false
     }
 
     func tabBarViewItemNewToTheRightAction(_ tabBarViewItem: TabBarViewItem) {
@@ -2253,7 +2253,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return false
         }
 
-        return tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.content.canBePinned ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: .unpinned(indexPath.item))?.tabContent.canBePinned ?? false
     }
 
     func tabBarViewItemPinAction(_ tabBarViewItem: TabBarViewItem) {
@@ -2329,7 +2329,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        return tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.content.canBeBookmarked ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.tabContent.canBeBookmarked ?? false
     }
 
     func tabBarViewItemIsAlreadyBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {

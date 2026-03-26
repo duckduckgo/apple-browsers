@@ -234,8 +234,8 @@ final class TabCollectionViewModel: NSObject {
 #endif
     }
 
-    func setUpLazyLoadingIfNeeded() {
-        guard !isTabLazyLoadingRequested else {
+    func setUpLazyLoadingIfNeeded(force: Bool = false) {
+        guard force || !isTabLazyLoadingRequested else {
             Logger.tabLazyLoading.debug("Lazy loading already requested in this session, skipping.")
             return
         }
@@ -879,6 +879,8 @@ final class TabCollectionViewModel: NSObject {
             }
             if didMaterialize {
                 self.updateSelectedTabViewModel()
+                // Trigger tab bar reload so items re-subscribe to the new TabViewModels
+                self.delegate?.tabCollectionViewModelDidMultipleChanges(self)
             }
 
             // Make sure the tab is burner if it is supposed to be

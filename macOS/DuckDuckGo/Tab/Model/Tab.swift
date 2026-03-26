@@ -422,7 +422,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     /// Wires up the WebView after it has been stored in `_webView`.
     /// Called immediately after `createWebView()` from the `webView` getter.
     private func finalizeWebViewSetup() {
-        Logger.tabLazyLoading.debug("🔷 [Tab] finalizeWebViewSetup id=\(self.uuid) shouldLoadInBackground=\(self.initialShouldLoadInBackground)")
         MainActor.assumeMainThread {
             userContentController.map { userContentControllerPromiseFulfill($0) }
 
@@ -1004,7 +1003,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @MainActor(unsafe)
     @discardableResult
     func reload() -> ExpectedNavigation? {
-        Logger.tabLazyLoading.debug("🔷 [Tab] reload() id=\(self.uuid) content=\(String(describing: self.content))")
         userInteractionDialog = nil
 
         self.brokenSiteInfo?.tabReloadRequested()
@@ -1055,7 +1053,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @discardableResult
     private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource) -> ExpectedNavigation? {
         let willReload = content.urlForWebView.map { shouldReload($0, source: reloadIfNeededSource) } ?? false
-        Logger.tabLazyLoading.debug("🔷 [Tab] reloadIfNeeded id=\(self.uuid) source=\(String(describing: reloadIfNeededSource)) url=\(String(describing: self.content.urlForWebView)) willReload=\(willReload) webViewUrl=\(String(describing: self.webView?.url)) interactionState=\(String(describing: self.interactionState))")
         guard let url = content.urlForWebView,
               shouldReload(url, source: reloadIfNeededSource) else { return nil }
 
@@ -1069,7 +1066,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return reload()
         }
         let didRestore = restoreInteractionStateIfNeeded()
-        Logger.tabLazyLoading.debug("🔷 [Tab] restoreInteractionState id=\(self.uuid) didRestore=\(didRestore)")
         if didRestore { return nil /* session restored */ }
         invalidateInteractionStateData()
 

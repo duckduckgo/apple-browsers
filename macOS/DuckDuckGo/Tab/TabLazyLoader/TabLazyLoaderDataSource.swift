@@ -18,6 +18,8 @@
 
 import Foundation
 import Combine
+import Common
+import os.log
 
 protocol TabLazyLoaderDataSource: AnyObject {
     associatedtype Tab: LazyLoadable
@@ -32,10 +34,18 @@ protocol TabLazyLoaderDataSource: AnyObject {
 
     var isSelectedTabLoading: Bool { get }
     var isSelectedTabLoadingPublisher: AnyPublisher<Bool, Never> { get }
+
+    var allTabs: [AnyTab] { get }
+    var suspendedTabCount: Int { get }
+    func materialize(_ anyTab: AnyTab) -> Tab?
 }
 
 extension TabLazyLoaderDataSource {
     var qualifiesForLazyLoading: Bool {
+        if suspendedTabCount > 0 {
+            return true
+        }
+
         if pinnedTabs.count > 0 {
             return true
         }
@@ -81,5 +91,17 @@ extension TabCollectionViewModel: TabLazyLoaderDataSource {
             .compactMap { $0 }
             .flatMap(\.$isLoading)
             .eraseToAnyPublisher()
+    }
+
+    var suspendedTabCount: Int {
+        let count = tabCollection.tabs.filter { if case .suspended = $0 { return true }; return false }.count
+        return count
+    }
+
+    var allTabs: [AnyTab] { tabCollection.tabs }
+
+    func materialize(_ anyTab: AnyTab) -> Tab? {
+        guard let index = tabCollection.tabs.firstIndex(where: { $0.id == anyTab.id }) else { return nil }
+        return materialize(at: .unpinned(index))
     }
 }

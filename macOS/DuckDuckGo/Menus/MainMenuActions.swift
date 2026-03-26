@@ -1604,6 +1604,9 @@ extension MainViewController {
         tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)
         let lastIndex = tabCollectionViewModel.tabCollection.tabs.count - 1
         tabCollectionViewModel.select(at: .unpinned(lastIndex))
+
+        // Trigger background materialization of suspended tabs
+        tabCollectionViewModel.setUpLazyLoadingIfNeeded(force: true)
     }
 
     @objc func debugShiftCardImpression(_ sender: Any?) {

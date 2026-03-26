@@ -93,14 +93,14 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureDuckAIQueryExperimentSelectionImpression()
     func measureDuckAIQueryExperimentChooseSearchOnly()
     func measureDuckAIQueryExperimentChooseAIChat()
-    func measureDuckAIQueryExperimentQuerySubmission(isDuckAISelected: Bool, promptSource: DuckAIQueryExperimentPromptSource)
+    func measureDuckAIQueryExperimentQuerySubmission(selection: OnboardingIntroViewModel.DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource)
 }
 
 extension OnboardingIntroPixelReporting {
     func measureDuckAIQueryExperimentSelectionImpression() {}
     func measureDuckAIQueryExperimentChooseSearchOnly() {}
     func measureDuckAIQueryExperimentChooseAIChat() {}
-    func measureDuckAIQueryExperimentQuerySubmission(isDuckAISelected: Bool, promptSource: DuckAIQueryExperimentPromptSource) {}
+    func measureDuckAIQueryExperimentQuerySubmission(selection: OnboardingIntroViewModel.DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {}
 }
 
 protocol OnboardingCustomInteractionPixelReporting {
@@ -299,8 +299,14 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedAI, unique: false)
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(isDuckAISelected: Bool, promptSource: DuckAIQueryExperimentPromptSource) {
-        let metricName: DuckAIQueryExperimentMetric.Name = isDuckAISelected ? .aiChat : .search
+    func measureDuckAIQueryExperimentQuerySubmission(selection: OnboardingIntroViewModel.DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+        let metricName: DuckAIQueryExperimentMetric.Name
+        switch selection {
+        case .duckAI:
+            metricName = .aiChat
+        case .search:
+            metricName = .search
+        }
 
         experimentPixel.fireExperimentPixel(
             for: DuckAIQueryExperimentMetric.subfeatureID,

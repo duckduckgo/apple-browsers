@@ -28,6 +28,7 @@ import UIKit
 
 extension OnboardingView {
     private enum Metrics {
+        // TODO: Validate there's no unused values
         // MARK: Spacing
         static let contentVerticalSpacing: CGFloat = 16
         static let legacyTitleToPickerTopPadding: CGFloat = 8
@@ -52,7 +53,7 @@ extension OnboardingView {
         static let queryFieldCornerRadius: CGFloat = 14
         static let queryFieldInnerBorderInset: CGFloat = 2
         static let maxSuggestionCount = 3
-        static let legacyQueryFieldBorderWidth: CGFloat = 2
+        static let legacyQueryFieldBorderWidth: CGFloat = 1
         static let rebrandedQueryFieldBorderWidth: CGFloat = 1
 
         // MARK: Animation
@@ -83,10 +84,11 @@ extension OnboardingView {
 
         // MARK: Dependencies
         @Environment(\.onboardingTheme) private var onboardingTheme
-        private let action: (OnboardingIntroViewModel.DuckAIExperimentSelection) -> Void
+        // TODO: Why `action`?
+        private let action: (OnboardingIntroViewModel.DuckAIQueryExperimentMode) -> Void
         private let openAIChatAction: (String?, Bool) -> Void
         private let openSearchAction: (String) -> Void
-        private let measureQuerySubmissionAction: (Bool, DuckAIQueryExperimentPromptSource) -> Void
+        private let measureQuerySubmissionAction: (OnboardingIntroViewModel.DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void
         private let startExitTransitionAction: () -> Void
         private let visualStyle: VisualStyle
         private var animateTitle: Binding<Bool>
@@ -95,7 +97,8 @@ extension OnboardingView {
 
         // MARK: State
         @State private var query = ""
-        @State private var isDuckAISelected: Bool
+        @State private var selectedMode: OnboardingIntroViewModel.DuckAIQueryExperimentMode
+        // TODO: can this be changed to state machine?
         @State private var isInputFocused = false
         @State private var visibleSuggestionCount = 0
         @State private var didRunInitialToggleAnimation = false
@@ -105,8 +108,6 @@ extension OnboardingView {
         @State private var hasStartedEntranceSequence = false
         @State private var hasPassedInitialFocusDelay = false
         @State private var shouldFocusWhenInitialDelayPasses = false
-        private let shouldAnimateToDuckAIOnAppear: Bool
-        private let startsInSearchMode: Bool
 
         // MARK: Constants
         private static let pickerItems: [ImageSegmentedPickerItem] = [
@@ -123,13 +124,13 @@ extension OnboardingView {
         ]
 
         init(
-            defaultExperience: OnboardingIntroStep.DuckAIExperimentDefaultExperience,
+            defaultMode: OnboardingIntroViewModel.DuckAIQueryExperimentMode,
             visualStyle: VisualStyle = .legacy,
             animateTitle: Binding<Bool> = .constant(false),
-            action: @escaping (OnboardingIntroViewModel.DuckAIExperimentSelection) -> Void,
+            action: @escaping (OnboardingIntroViewModel.DuckAIQueryExperimentMode) -> Void,
             openAIChatAction: @escaping (String?, Bool) -> Void,
             openSearchAction: @escaping (String) -> Void,
-            measureQuerySubmissionAction: @escaping (Bool, DuckAIQueryExperimentPromptSource) -> Void,
+            measureQuerySubmissionAction: @escaping (OnboardingIntroViewModel.DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void,
             startExitTransitionAction: @escaping () -> Void
         ) {
             self.action = action
@@ -139,16 +140,13 @@ extension OnboardingView {
             self.startExitTransitionAction = startExitTransitionAction
             self.visualStyle = visualStyle
             self.animateTitle = animateTitle
-            self.shouldAnimateToDuckAIOnAppear = defaultExperience == .duckAI
-            let startsInSearchMode = defaultExperience == .search || shouldAnimateToDuckAIOnAppear
-            self.startsInSearchMode = startsInSearchMode
-            let initialSelection = startsInSearchMode ? Self.pickerItems[0] : Self.pickerItems[1]
-            _isDuckAISelected = State(initialValue: !startsInSearchMode)
+            let initialSelection = (defaultMode == .duckAI) ? Self.pickerItems[1] : Self.pickerItems[0]
+            _selectedMode = State(initialValue: defaultMode)
             _pickerViewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
                 items: Self.pickerItems,
                 selectedItem: initialSelection,
                 configuration: ImageSegmentedPickerConfiguration(itemContentSpacing: Metrics.queryFieldContentSpacing),
-                scrollProgress: startsInSearchMode ? 0 : 1,
+                scrollProgress: defaultMode == .duckAI ? 1 : 0,
                 isScrollProgressDriven: false
             ))
         }
@@ -183,16 +181,16 @@ extension OnboardingView {
                         // Drive content mode (Search vs Duck.ai) from user picker selection.
                         .onChange(of: pickerViewModel.selectedItem) { selectedItem in
                             SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
-                                isDuckAISelected = selectedItem == Self.pickerItems[1]
+                                selectedMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
                             }
                         }
                         // Keep picker model + visual progress in sync for programmatic/default mode changes.
-                        .onChange(of: isDuckAISelected) { isSelected in
-                            let selection = isSelected ? Self.pickerItems[1] : Self.pickerItems[0]
-                            if pickerViewModel.selectedItem != selection {
-                                pickerViewModel.selectItem(selection)
+                        .onChange(of: selectedMode) { selection in
+                            let pickerItem = selection == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
+                            if pickerViewModel.selectedItem != pickerItem {
+                                pickerViewModel.selectItem(pickerItem)
                             }
-                            pickerViewModel.updateScrollProgress(isSelected ? 1 : 0)
+                            pickerViewModel.updateScrollProgress(selection == .duckAI ? 1 : 0)
                         }
                         .padding(.top, titleToPickerTopPadding)
                         .padding(.bottom, Metrics.pickerBottomPadding)
@@ -213,11 +211,10 @@ extension OnboardingView {
             }
             .opacity(isTransitioningOut ? 0 : 1)
             .onAppear {
-                let initialSelection = startsInSearchMode ? Self.pickerItems[0] : Self.pickerItems[1]
+                let initialSelection = selectedMode == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
                 pickerViewModel.selectItem(initialSelection)
-                pickerViewModel.updateScrollProgress(startsInSearchMode ? 0 : 1)
+                pickerViewModel.updateScrollProgress(selectedMode == .duckAI ? 1 : 0)
                 query = ""
-                isDuckAISelected = !startsInSearchMode
                 isInputFocused = false
                 visibleSuggestionCount = 0
                 didRunInitialToggleAnimation = false
@@ -295,20 +292,17 @@ extension OnboardingView {
             guard !didRunInitialToggleAnimation else { return }
             didRunInitialToggleAnimation = true
 
-            if shouldAnimateToDuckAIOnAppear {
-                // Treatment A behavior: start in Search, then animate to Duck.ai.
-                isDuckAISelected = false
+            if selectedMode == .duckAI {
+                selectedMode = .search
                 DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.initialToggleStartDelay) {
                     guard didRunInitialToggleAnimation, showInteractiveControls else { return }
                     withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
-                        isDuckAISelected = true
+                        selectedMode = .duckAI
                     } completion: {
                         startSuggestionSequenceIfNeeded()
                     }
                 }
             } else {
-                // Treatment B behavior: stay in Search, no auto-switch.
-                isDuckAISelected = false
                 startSuggestionSequenceIfNeeded()
             }
         }
@@ -337,11 +331,11 @@ extension OnboardingView {
                 // Text input
                 OnboardingQueryField(
                     text: $query,
-                    placeholder: isDuckAISelected
+                    placeholder: selectedMode == .duckAI
                     ? UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder
                     : UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
                     isFocused: $isInputFocused,
-                    isSingleLine: !isDuckAISelected,
+                    isSingleLine: selectedMode != .duckAI,
                     onSubmit: handlePrimaryAction
                 )
                 .transaction { transaction in
@@ -349,14 +343,14 @@ extension OnboardingView {
                     transaction.animation = nil
                 }
                 .frame(
-                    height: isDuckAISelected ? Metrics.multilineFieldHeight : Metrics.singleLineFieldHeight,
-                    alignment: isDuckAISelected ? .topLeading : .center
+                    height: selectedMode == .duckAI ? Metrics.multilineFieldHeight : Metrics.singleLineFieldHeight,
+                    alignment: selectedMode == .duckAI ? .topLeading : .center
                 )
 
                 // Submit action button
                 Button(action: handlePrimaryAction) {
                     Image(
-                        uiImage: isDuckAISelected
+                        uiImage: selectedMode == .duckAI
                         ? DesignSystemImages.Glyphs.Size16.arrowRight
                         : DesignSystemImages.Glyphs.Size24.findSearchSmall
                     )
@@ -384,13 +378,13 @@ extension OnboardingView {
             )
             .cornerRadius(Metrics.queryFieldCornerRadius)
             .frame(maxWidth: .infinity)
-            .animation(.easeInOut(duration: Metrics.contentFadeAnimationDuration), value: isDuckAISelected)
+            .animation(.easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
         }
 
         private var suggestionChips: some View {
             OnboardingSuggestionChips(
                 viewModel: suggestionsViewModel,
-                isDuckAIMode: isDuckAISelected,
+                isDuckAIMode: selectedMode == .duckAI,
                 visibleCount: visibleSuggestionCount,
                 visualStyle: visualStyle,
                 onItemTap: { item, promptSource in
@@ -425,11 +419,11 @@ extension OnboardingView {
 
         private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryExperimentPromptSource) {
             if autoSend {
-                measureQuerySubmissionAction(isDuckAISelected, promptSource)
+                measureQuerySubmissionAction(selectedMode, promptSource)
             }
 
             let preloadedSearchQuery: String? = {
-                guard !isDuckAISelected, let searchQuery = prompt, !searchQuery.isEmpty else { return nil }
+                guard selectedMode != .duckAI, let searchQuery = prompt, !searchQuery.isEmpty else { return nil }
                 return searchQuery
             }()
 
@@ -445,11 +439,11 @@ extension OnboardingView {
             withAnimation(.easeOut(duration: Metrics.contentFadeAnimationDuration)) {
                 isTransitioningOut = true
             } completion: {
-                if isDuckAISelected {
+                if selectedMode == .duckAI {
                     openAIChatAction(prompt, autoSend)
-                    action(.searchAndDuckAI)
+                    action(.duckAI)
                 } else if preloadedSearchQuery != nil {
-                    action(.searchOnly)
+                    action(.search)
                 } else {
                     isTransitioningOut = false
                 }
@@ -497,7 +491,6 @@ extension OnboardingView {
                 CATransaction.commit()
             }
         }
-
         private func dismissKeyboard() {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }

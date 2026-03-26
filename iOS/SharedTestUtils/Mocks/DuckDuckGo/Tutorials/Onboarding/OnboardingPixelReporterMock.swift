@@ -62,7 +62,7 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureChooseSearchOnly = false
     private(set) var didCallMeasureDuckAIQueryExperimentQuerySubmission = false
     private(set) var didCaptureDuckAIQueryExperimentPromptSourceValue: String?
-    private(set) var didCaptureDuckAIQueryExperimentIsDuckAISelected: Bool?
+    private(set) var didCaptureDuckAIQueryExperimentSelection: OnboardingIntroViewModel.DuckAIQueryExperimentMode?
 
     private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
@@ -187,10 +187,10 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureChooseSearchOnly = true
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(isDuckAISelected: Bool, promptSource: DuckAIQueryExperimentPromptSource) {
+    func measureDuckAIQueryExperimentQuerySubmission(selection: OnboardingIntroViewModel.DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
         didCallMeasureDuckAIQueryExperimentQuerySubmission = true
         didCaptureDuckAIQueryExperimentPromptSourceValue = promptSource.rawValue
-        didCaptureDuckAIQueryExperimentIsDuckAISelected = isDuckAISelected
+        didCaptureDuckAIQueryExperimentSelection = selection
     }
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {

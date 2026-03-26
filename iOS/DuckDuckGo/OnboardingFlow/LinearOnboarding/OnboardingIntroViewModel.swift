@@ -28,10 +28,9 @@ import PrivacyConfig
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
-    enum DuckAIExperimentSelection {
-        // TODO: Why `searchOnly` and `searchAndDuckAI`?, why DuckAIExperimentDefaultExperience not used here?
-        case searchOnly
-        case searchAndDuckAI
+    enum DuckAIQueryExperimentMode {
+        case search
+        case duckAI
     }
 
     struct IntroState {
@@ -244,11 +243,11 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func selectDuckAIQueryExperimentAction(selection: DuckAIExperimentSelection) {
+    func selectDuckAIQueryExperimentAction(selection: DuckAIQueryExperimentMode) {
         switch selection {
-        case .searchAndDuckAI:
+        case .duckAI:
             pixelReporter.measureDuckAIQueryExperimentChooseAIChat()
-        case .searchOnly:
+        case .search:
             pixelReporter.measureDuckAIQueryExperimentChooseSearchOnly()
         }
         makeNextViewState()
@@ -266,11 +265,20 @@ final class OnboardingIntroViewModel: ObservableObject {
         onSearchFromOnboarding?(query)
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(isDuckAISelected: Bool, promptSource: DuckAIQueryExperimentPromptSource) {
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
         pixelReporter.measureDuckAIQueryExperimentQuerySubmission(
-            isDuckAISelected: isDuckAISelected,
+            selection: selection,
             promptSource: promptSource
         )
+    }
+
+    var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode {
+        switch resolveDuckAIQueryExperimentCohortID() {
+        case .treatmentB:
+            .search
+        case .treatmentA, .control, .none:
+            .duckAI
+        }
     }
 
     func restoreSyncAccountAction() {
@@ -320,8 +328,8 @@ private extension OnboardingIntroViewModel {
             OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
         case .searchExperienceSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
-        case .duckAIQueryExperimentSelection(let defaultExperience):
-            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog(defaultExperience: defaultExperience), step: stepInfo()))
+        case .duckAIQueryExperimentSelection:
+            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog, step: stepInfo()))
         }
 
         state = viewState
@@ -371,24 +379,14 @@ private extension OnboardingIntroViewModel {
     }
 
     func insertExperimentStepIfNeeded() {
-        guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) else { return }
-        guard !introSteps.contains(where: {
-            if case .duckAIQueryExperimentSelection = $0 { return true }
-            return false
-        }) else { return }
-        guard let cohort = resolveDuckAIQueryExperimentCohortID() else { return }
-
-        switch cohort {
-        case .control:
-            // Control keeps the baseline flow and does not add the experiment dialog.
+        guard
+            let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
+            let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
+            !introSteps.contains(.duckAIQueryExperimentSelection)
+        else {
             return
-        case .treatmentA:
-            // Treatment A defaults picker to Duck.ai.
-            introSteps.insert(.duckAIQueryExperimentSelection(defaultExperience: .duckAI), at: currentStepIndex + 1)
-        case .treatmentB:
-            // Treatment B defaults picker to Search.
-            introSteps.insert(.duckAIQueryExperimentSelection(defaultExperience: .search), at: currentStepIndex + 1)
         }
+        introSteps.insert(.duckAIQueryExperimentSelection, at: currentStepIndex + 1)
     }
 
     func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {

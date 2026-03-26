@@ -400,8 +400,8 @@ extension OnboardingRebranding {
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
-            case .duckAIQueryExperimentDialog(let defaultExperience):
-                experimentSearchExperienceSelectionView(defaultExperience: defaultExperience)
+            case .duckAIQueryExperimentDialog:
+                experimentSearchExperienceSelectionView()
             }
         }
 
@@ -512,9 +512,9 @@ extension OnboardingRebranding {
             )
         }
 
-        private func experimentSearchExperienceSelectionView(defaultExperience: OnboardingIntroStep.DuckAIExperimentDefaultExperience) -> some View {
+        private func experimentSearchExperienceSelectionView() -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
-                defaultExperience: defaultExperience,
+                defaultMode: model.duckAIQueryExperimentDefaultMode,
                 visualStyle: .rebranded,
                 action: model.selectDuckAIQueryExperimentAction(selection:),
                 openAIChatAction: model.openAIChatFromOnboarding,

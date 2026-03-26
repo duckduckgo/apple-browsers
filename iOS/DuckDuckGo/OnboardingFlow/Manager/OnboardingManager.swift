@@ -140,18 +140,13 @@ extension OnboardingManager: OnboardingNewUserProviderDebugging {
 // MARK: - Onboarding Steps Provider
 
 enum OnboardingIntroStep: Equatable {
-    enum DuckAIExperimentDefaultExperience: Equatable {
-        case search
-        case duckAI
-    }
-
     case introDialog(isReturningUser: Bool)
     case browserComparison
     case appIconSelection
     case addToDockPromo
     case addressBarPositionSelection
     case searchExperienceSelection
-    case duckAIQueryExperimentSelection(defaultExperience: DuckAIExperimentDefaultExperience)
+    case duckAIQueryExperimentSelection
 }
 
 protocol OnboardingStepsProvider: AnyObject {

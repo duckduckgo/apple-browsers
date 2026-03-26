@@ -104,10 +104,8 @@ public final class WebExtensionScriptletCoordinator {
             return
         }
 
-        let cacheDirectory = scriptletProvider.cacheDirectory(for: extensionType)
-
         do {
-            try await installer.installScriptlets(scriptlets, from: cacheDirectory, to: installationDirectory)
+            try await installer.installScriptlets(scriptlets, cacheRootDirectory: scriptletProvider.cacheRootDirectory, to: installationDirectory)
         } catch {
             Logger.webExtensions.error("[Scriptlets] ❌ Failed to install scriptlets to '\(self.extensionType.rawValue)': \(error.localizedDescription)")
         }

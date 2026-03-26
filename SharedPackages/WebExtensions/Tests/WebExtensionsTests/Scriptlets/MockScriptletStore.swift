@@ -29,6 +29,10 @@ final class MockScriptletStore: ScriptletStoring {
     var clearCallCount = 0
     var clearedExtensionType: DuckDuckGoWebExtensionType?
 
+    var cacheRootDirectory: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("mock-cache")
+    }
+
     func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets? {
         cachedScriptlets
     }
@@ -39,10 +43,6 @@ final class MockScriptletStore: ScriptletStoring {
         savedVersion = version
         savedExtensionType = extensionType
         return scriptletsToReturn
-    }
-
-    func cacheDirectory(for extensionType: DuckDuckGoWebExtensionType) -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent(extensionType.rawValue)
     }
 
     func clear(for extensionType: DuckDuckGoWebExtensionType) {

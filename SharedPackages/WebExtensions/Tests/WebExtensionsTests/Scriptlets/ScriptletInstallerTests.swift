@@ -23,7 +23,7 @@ final class ScriptletInstallerTests: XCTestCase {
 
     var tempDirectory: URL!
     var installer: ScriptletInstaller!
-    var sourceDirectory: URL!
+    var cacheRootDirectory: URL!
     var installationDirectory: URL!
 
     override func setUp() {
@@ -31,10 +31,10 @@ final class ScriptletInstallerTests: XCTestCase {
         tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
 
-        sourceDirectory = tempDirectory.appendingPathComponent("source")
+        cacheRootDirectory = tempDirectory.appendingPathComponent("cache")
         installationDirectory = tempDirectory.appendingPathComponent("install")
 
-        try? FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: cacheRootDirectory, withIntermediateDirectories: true)
 
         installer = ScriptletInstaller()
     }
@@ -43,22 +43,22 @@ final class ScriptletInstallerTests: XCTestCase {
         try? FileManager.default.removeItem(at: tempDirectory)
         installer = nil
         installationDirectory = nil
-        sourceDirectory = nil
+        cacheRootDirectory = nil
         tempDirectory = nil
         super.tearDown()
     }
 
     func testWhenScriptletsInstalledThenFilesAreCopiedToExtensionDirectory() async throws {
         let scriptlets = [
-            Scriptlet(name: "test1", targetPath: "test1.js"),
-            Scriptlet(name: "test2", targetPath: "test2.js")
+            Scriptlet(path: "test1.js", relativeCachedPath: "ext/1.0/test1.js"),
+            Scriptlet(path: "test2.js", relativeCachedPath: "ext/1.0/test2.js")
         ]
 
         for scriptlet in scriptlets {
-            try "content".write(to: sourceDirectory.appendingPathComponent(scriptlet.fileName), atomically: true, encoding: .utf8)
+            try writeCacheFile(at: scriptlet.relativeCachedPath, content: "content")
         }
 
-        try await installer.installScriptlets(scriptlets, from: sourceDirectory, to: installationDirectory)
+        try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
         let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
         let files = try FileManager.default.contentsOfDirectory(at: scriptletsDir, includingPropertiesForKeys: nil)
@@ -70,15 +70,12 @@ final class ScriptletInstallerTests: XCTestCase {
 
     func testWhenTargetPathHasSubdirectoriesThenDirectoryStructureIsPreserved() async throws {
         let scriptlets = [
-            Scriptlet(name: "scriptlets/isolated/ublock-filters.js", targetPath: "isolated/ublock-filters.js")
+            Scriptlet(path: "isolated/ublock-filters.js", relativeCachedPath: "ext/1.0/isolated/ublock-filters.js")
         ]
 
-        try "content".write(
-            to: sourceDirectory.appendingPathComponent(scriptlets[0].fileName),
-            atomically: true,
-            encoding: .utf8)
+        try writeCacheFile(at: "ext/1.0/isolated/ublock-filters.js", content: "content")
 
-        try await installer.installScriptlets(scriptlets, from: sourceDirectory, to: installationDirectory)
+        try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
         let targetFile = installationDirectory
             .appendingPathComponent("scriptlets")
@@ -88,14 +85,13 @@ final class ScriptletInstallerTests: XCTestCase {
     }
 
     func testWhenScriptletsInstalledTwiceThenOldFilesAreCleared() async throws {
-        let oldScriptlets = [Scriptlet(name: "old", targetPath: "old")]
-        try "old".write(to: sourceDirectory.appendingPathComponent("old.js"), atomically: true, encoding: .utf8)
-        try await installer.installScriptlets(oldScriptlets, from: sourceDirectory, to: installationDirectory)
+        let oldScriptlets = [Scriptlet(path: "old.js", relativeCachedPath: "ext/1.0/old.js")]
+        try writeCacheFile(at: "ext/1.0/old.js", content: "old")
+        try await installer.installScriptlets(oldScriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
-        try? FileManager.default.removeItem(at: sourceDirectory.appendingPathComponent("old.js"))
-        let newScriptlets = [Scriptlet(name: "new", targetPath: "new")]
-        try "new".write(to: sourceDirectory.appendingPathComponent("new.js"), atomically: true, encoding: .utf8)
-        try await installer.installScriptlets(newScriptlets, from: sourceDirectory, to: installationDirectory)
+        let newScriptlets = [Scriptlet(path: "new.js", relativeCachedPath: "ext/2.0/new.js")]
+        try writeCacheFile(at: "ext/2.0/new.js", content: "new")
+        try await installer.installScriptlets(newScriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
         let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
         let files = try FileManager.default.contentsOfDirectory(at: scriptletsDir, includingPropertiesForKeys: nil)
@@ -105,13 +101,24 @@ final class ScriptletInstallerTests: XCTestCase {
     }
 
     func testWhenScriptletsRemovedThenDirectoryIsDeleted() async throws {
-        let scriptlets = [Scriptlet(name: "test", targetPath: "test")]
-        try "test".write(to: sourceDirectory.appendingPathComponent("test.js"), atomically: true, encoding: .utf8)
-        try await installer.installScriptlets(scriptlets, from: sourceDirectory, to: installationDirectory)
+        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
+        try writeCacheFile(at: "ext/1.0/test.js", content: "test")
+        try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
 
         try installer.removeScriptlets(from: installationDirectory)
 
         let scriptletsDir = installationDirectory.appendingPathComponent("scriptlets")
         XCTAssertFalse(FileManager.default.fileExists(atPath: scriptletsDir.path))
+    }
+
+    // MARK: - Helpers
+
+    private func writeCacheFile(at relativePath: String, content: String) throws {
+        let fileURL = cacheRootDirectory.appendingPathComponent(relativePath)
+        let directory = fileURL.deletingLastPathComponent()
+        if !FileManager.default.fileExists(atPath: directory.path) {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        try content.write(to: fileURL, atomically: true, encoding: .utf8)
     }
 }

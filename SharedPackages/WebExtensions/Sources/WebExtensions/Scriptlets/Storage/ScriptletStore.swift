@@ -37,6 +37,10 @@ public final class ScriptletStore: ScriptletStoring {
         self.fileManager = fileManager
     }
 
+    public var cacheRootDirectory: URL {
+        baseDirectory
+    }
+
     public func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets? {
         Logger.webExtensions.debug("[Scriptlets] 📂 Loading cached scriptlets for '\(extensionType.rawValue)'")
 
@@ -46,13 +50,11 @@ public final class ScriptletStore: ScriptletStoring {
             return nil
         }
 
-        let extensionDirectory = self.extensionDirectory(for: extensionType)
-
         let validScriptlets = cached.scriptlets.filter { scriptlet in
-            let fileURL = extensionDirectory.appendingPathComponent(scriptlet.fileName)
+            let fileURL = baseDirectory.appendingPathComponent(scriptlet.relativeCachedPath)
             let exists = fileManager.fileExists(atPath: fileURL.path)
             if !exists {
-                Logger.webExtensions.warning("[Scriptlets] ⚠️ Cached file missing: \(scriptlet.fileName)")
+                Logger.webExtensions.warning("[Scriptlets] ⚠️ Cached file missing: \(scriptlet.relativeCachedPath)")
             }
             return exists
         }
@@ -71,17 +73,27 @@ public final class ScriptletStore: ScriptletStoring {
         Logger.webExtensions.debug("[Scriptlets] 💾 Saving \(fetched.count) scriptlet(s) v\(version) for '\(extensionType.rawValue)'")
 
         let extensionDirectory = self.extensionDirectory(for: extensionType)
+        let safeVersion = sanitizedDirectoryName(version)
         let tempDirectory = fileManager.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent(safeVersion)
 
         Logger.webExtensions.debug("[Scriptlets] 📝 Writing scriptlets to temporary directory")
         try fileManager.createDirectory(at: tempDirectory, withIntermediateDirectories: true, attributes: nil)
 
         var scriptlets: [Scriptlet] = []
+        let extensionTypeRawValue = extensionType.rawValue
 
         for item in fetched {
-            let scriptlet = Scriptlet(name: item.descriptor.name, targetPath: item.descriptor.name)
-            let file = tempDirectory.appendingPathComponent(scriptlet.fileName)
+            let relativeCachedPath = "\(extensionTypeRawValue)/\(safeVersion)/\(item.descriptor.name)"
+            let scriptlet = Scriptlet(path: item.descriptor.name, relativeCachedPath: relativeCachedPath)
+            let file = tempDirectory.appendingPathComponent(item.descriptor.name)
+
+            let fileDirectory = file.deletingLastPathComponent()
+            if !fileManager.fileExists(atPath: fileDirectory.path) {
+                try fileManager.createDirectory(at: fileDirectory, withIntermediateDirectories: true)
+            }
+
             try item.data.write(to: file, options: .atomic)
             scriptlets.append(scriptlet)
         }
@@ -94,7 +106,7 @@ public final class ScriptletStore: ScriptletStoring {
 
         do {
             try fileManager.createDirectory(at: baseDirectory, withIntermediateDirectories: true, attributes: nil)
-            try fileManager.moveItem(at: tempDirectory, to: extensionDirectory)
+            try fileManager.moveItem(at: tempDirectory.deletingLastPathComponent(), to: extensionDirectory)
             try? fileManager.removeItem(at: backupDirectory)
 
             updateMetadata(for: extensionType, version: version, scriptlets: scriptlets)
@@ -127,12 +139,14 @@ public final class ScriptletStore: ScriptletStoring {
         Logger.webExtensions.info("[Scriptlets] ✅ Cleared all scriptlet caches")
     }
 
-    public func cacheDirectory(for extensionType: DuckDuckGoWebExtensionType) -> URL {
-        extensionDirectory(for: extensionType)
-    }
-
     private func extensionDirectory(for extensionType: DuckDuckGoWebExtensionType) -> URL {
         baseDirectory.appendingPathComponent(extensionType.rawValue)
+    }
+
+    /// Replaces path-unsafe characters so the version can be used as a single directory component.
+    private func sanitizedDirectoryName(_ value: String) -> String {
+        value.replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "..", with: "_")
     }
 
     private func loadMetadata() -> ScriptletCacheMetadata? {

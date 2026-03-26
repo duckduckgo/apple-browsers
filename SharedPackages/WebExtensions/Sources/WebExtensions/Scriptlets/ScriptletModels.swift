@@ -25,17 +25,15 @@ public enum ScriptletAvailability: Equatable {
 }
 
 public struct Scriptlet: Equatable, Codable {
-    public let name: String
-    public let targetPath: String
+    /// The original path from the descriptor, used as the installation target path.
+    public let path: String
 
-    public init(name: String, targetPath: String) {
-        self.name = name
-        self.targetPath = targetPath
-    }
+    /// The path to the cached file, relative to the cache root directory.
+    public let relativeCachedPath: String
 
-    public var fileName: String {
-        let safeName = name.replacingOccurrences(of: "/", with: "-")
-        return safeName.hasSuffix(".js") ? safeName : "\(safeName).js"
+    public init(path: String, relativeCachedPath: String) {
+        self.path = path
+        self.relativeCachedPath = relativeCachedPath
     }
 }
 

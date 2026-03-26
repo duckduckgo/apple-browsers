@@ -73,8 +73,8 @@ public final class ScriptletManager: ScriptletProviding {
         scriptlets(for: extensionType) != nil
     }
 
-    public func cacheDirectory(for extensionType: DuckDuckGoWebExtensionType) -> URL {
-        store.cacheDirectory(for: extensionType)
+    public var cacheRootDirectory: URL {
+        store.cacheRootDirectory
     }
 
     // MARK: - Lifecycle

@@ -557,8 +557,7 @@ extension MainCoordinator: URLHandling {
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
         case .openAIVoiceChat:
-            let source = url.getParameter(named: WidgetSourceType.sourceKey)
-            controller.openAIVoiceChatFromDeepLink(source: source)
+            AIChatDeepLinkHandler().handleDeepLink(url, on: controller, voiceMode: true)
         default:
             if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)

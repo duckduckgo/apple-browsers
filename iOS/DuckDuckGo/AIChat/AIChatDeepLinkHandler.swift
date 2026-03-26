@@ -23,16 +23,23 @@ import AIChat
 
 struct AIChatDeepLinkHandler {
 
-    /// Utility function to handle AI Chat deeplink since it needs to be called from 2 different entry points
-    func handleDeepLink(_ url: URL, on mainViewController: MainViewController) {
-        firePixel(url)
+    /// Handles AI Chat deep links (text and voice), dismissing any presented modal first.
+    func handleDeepLink(_ url: URL, on mainViewController: MainViewController, voiceMode: Bool = false) {
+        if !voiceMode {
+            firePixel(url)
+        }
 
         guard !isAIChatAlreadyPresented(on: mainViewController) else {
             return
         }
 
         mainViewController.dismiss(animated: true) {
-            mainViewController.openAIChat(fromDeepLink: true)
+            if voiceMode {
+                let source = url.getParameter(named: WidgetSourceType.sourceKey)
+                mainViewController.openAIVoiceChatFromDeepLink(source: source)
+            } else {
+                mainViewController.openAIChat(fromDeepLink: true)
+            }
         }
     }
 

@@ -73,6 +73,10 @@ public final class ScriptletManager: ScriptletProviding {
         scriptlets(for: extensionType) != nil
     }
 
+    public func cacheDirectory(for extensionType: DuckDuckGoWebExtensionType) -> URL {
+        store.cacheDirectory(for: extensionType)
+    }
+
     // MARK: - Lifecycle
 
     public func start(for extensionType: DuckDuckGoWebExtensionType) async {
@@ -153,16 +157,14 @@ public final class ScriptletManager: ScriptletProviding {
             let fetched = try await fetcher.fetch(manifest.scriptlets)
 
             Logger.webExtensions.debug("[Scriptlets] ✓ Validating \(fetched.count) fetched scriptlet(s) for '\(extensionType.rawValue)'")
-            let validated = try validator.validate(fetched)
+            try validator.validate(fetched)
 
-            let targetPaths = Dictionary(uniqueKeysWithValues: validated.map { ($0.name, $0.name) })
+            Logger.webExtensions.debug("[Scriptlets] 💾 Saving \(fetched.count) validated scriptlet(s) for '\(extensionType.rawValue)'")
+            let scriptlets = try store.save(fetched, version: manifest.version, for: extensionType)
 
-            Logger.webExtensions.debug("[Scriptlets] 💾 Saving \(validated.count) validated scriptlet(s) for '\(extensionType.rawValue)'")
-            try store.save(validated, version: manifest.version, for: extensionType, withTargetPaths: targetPaths)
-
-            availabilities[extensionType] = .available(validated)
+            availabilities[extensionType] = .available(scriptlets)
             lastSuccessfulVersions[extensionType] = manifest.version
-            Logger.webExtensions.info("[Scriptlets] ✅ Successfully updated to version \(manifest.version) with \(validated.count) scriptlet(s) for '\(extensionType.rawValue)'")
+            Logger.webExtensions.info("[Scriptlets] ✅ Successfully updated to version \(manifest.version) with \(scriptlets.count) scriptlet(s) for '\(extensionType.rawValue)'")
 
         } catch {
             Logger.webExtensions.error("[Scriptlets] ❌ Failed to fetch/update scriptlets for '\(extensionType.rawValue)': \(error.localizedDescription)")

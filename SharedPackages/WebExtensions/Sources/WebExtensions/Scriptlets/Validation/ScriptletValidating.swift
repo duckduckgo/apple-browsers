@@ -19,5 +19,5 @@
 import Foundation
 
 public protocol ScriptletValidating {
-    func validate(_ fetched: [FetchedScriptlet]) throws -> [Scriptlet]
+    func validate(_ fetched: [FetchedScriptlet]) throws
 }

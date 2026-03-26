@@ -66,7 +66,7 @@ final class ScriptletManagerTests: XCTestCase {
     }
 
     func testWhenStartedWithValidCacheThenAvailabilityIsAvailable() async {
-        let scriptlets = [Scriptlet(name: "test", content: Data("test".utf8))]
+        let scriptlets = [Scriptlet(name: "test", targetPath: "test")]
         mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
 
@@ -80,7 +80,7 @@ final class ScriptletManagerTests: XCTestCase {
     func testWhenStartedWithCacheVersionMismatchThenFetchIsTriggered() async {
         mockStore.cachedScriptlets = CachedScriptlets(
             version: "1.0",
-            scriptlets: [Scriptlet(name: "old", content: Data("old".utf8))]
+            scriptlets: [Scriptlet(name: "old", targetPath: "old")]
         )
 
         let descriptor = ScriptletDescriptor(
@@ -90,9 +90,9 @@ final class ScriptletManagerTests: XCTestCase {
         )
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "2.0", scriptlets: [descriptor])
 
-        let newScriptlet = Scriptlet(name: "new", content: Data("new".utf8))
+        let newScriptlet = Scriptlet(name: "new", targetPath: "new")
         mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("new".utf8))]
-        mockValidator.validatedScriptlets = [newScriptlet]
+        mockStore.scriptletsToReturn = [newScriptlet]
 
         await manager.start(for: testExtensionType)
 
@@ -109,11 +109,11 @@ final class ScriptletManagerTests: XCTestCase {
             url: URL(string: "https://example.com/test.js")!,
             signature: "sig"
         )
-        let scriptlet = Scriptlet(name: "test", content: Data("test".utf8))
+        let scriptlet = Scriptlet(name: "test", targetPath: "test")
 
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "2.0", scriptlets: [descriptor])
         mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("test".utf8))]
-        mockValidator.validatedScriptlets = [scriptlet]
+        mockStore.scriptletsToReturn = [scriptlet]
 
         mockConfigProvider.configUpdateSubject.send()
 
@@ -139,7 +139,7 @@ final class ScriptletManagerTests: XCTestCase {
     }
 
     func testWhenFetchFailsWithExistingScriptletsThenKeepsExisting() async {
-        let existingScriptlet = Scriptlet(name: "existing", content: Data("existing".utf8))
+        let existingScriptlet = Scriptlet(name: "existing", targetPath: "existing")
         mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: [existingScriptlet])
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
 

@@ -23,10 +23,12 @@ public final class StubScriptletValidator: ScriptletValidating {
 
     public init() {}
 
-    public func validate(_ fetched: [FetchedScriptlet]) throws -> [Scriptlet] {
+    public func validate(_ fetched: [FetchedScriptlet]) throws {
         Logger.webExtensions.debug("[Scriptlets] ✓ Stub validator: passing through \(fetched.count) scriptlet(s) without validation")
-        return fetched.map { item in
-            Scriptlet(name: item.descriptor.name, content: item.data)
+        for item in fetched {
+            guard String(data: item.data, encoding: .utf8) != nil else {
+                throw ScriptletError.invalidEncoding(name: item.descriptor.name)
+            }
         }
     }
 }

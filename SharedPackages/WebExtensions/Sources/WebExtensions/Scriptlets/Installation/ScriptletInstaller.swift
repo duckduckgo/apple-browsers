@@ -28,7 +28,7 @@ public final class ScriptletInstaller: ScriptletInstalling {
         self.fileManager = fileManager
     }
 
-    public func installScriptlets(_ scriptlets: [Scriptlet], to installationDirectory: URL) async throws {
+    public func installScriptlets(_ scriptlets: [Scriptlet], from sourceDirectory: URL, to installationDirectory: URL) async throws {
         Logger.webExtensions.debug("[Scriptlets] 📦 Installing \(scriptlets.count) scriptlet(s) to '\(installationDirectory.path)'")
         let targetDirectory = installationDirectory.appendingPathComponent(scriptletsSubpath)
 
@@ -36,9 +36,16 @@ public final class ScriptletInstaller: ScriptletInstalling {
         try prepareDirectory(targetDirectory)
 
         for scriptlet in scriptlets {
-            let targetFile = targetDirectory.appendingPathComponent(scriptlet.fileName)
-            Logger.webExtensions.debug("[Scriptlets] 💾 Writing scriptlet '\(scriptlet.name)' to \(scriptlet.fileName)")
-            try scriptlet.content.write(to: targetFile, options: .atomic)
+            let sourceFile = sourceDirectory.appendingPathComponent(scriptlet.fileName)
+            let targetFile = targetDirectory.appendingPathComponent(scriptlet.targetPath)
+
+            let targetFileDirectory = targetFile.deletingLastPathComponent()
+            if !fileManager.fileExists(atPath: targetFileDirectory.path) {
+                try fileManager.createDirectory(at: targetFileDirectory, withIntermediateDirectories: true)
+            }
+
+            Logger.webExtensions.debug("[Scriptlets] 📋 Copying scriptlet '\(scriptlet.name)' to \(scriptlet.targetPath)")
+            try fileManager.copyItem(at: sourceFile, to: targetFile)
         }
 
         Logger.webExtensions.info("[Scriptlets] ✅ Successfully installed \(scriptlets.count) scriptlet(s) to '\(installationDirectory.path)'")

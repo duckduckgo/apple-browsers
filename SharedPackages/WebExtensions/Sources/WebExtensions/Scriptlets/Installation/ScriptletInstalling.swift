@@ -19,6 +19,6 @@
 import Foundation
 
 public protocol ScriptletInstalling {
-    func installScriptlets(_ scriptlets: [Scriptlet], to installationDirectory: URL) async throws
+    func installScriptlets(_ scriptlets: [Scriptlet], from sourceDirectory: URL, to installationDirectory: URL) async throws
     func removeScriptlets(from installationDirectory: URL) throws
 }

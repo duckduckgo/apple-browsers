@@ -26,15 +26,11 @@ public enum ScriptletAvailability: Equatable {
 
 public struct Scriptlet: Equatable, Codable {
     public let name: String
-    public let content: Data
+    public let targetPath: String
 
-    public init(name: String, content: Data) {
+    public init(name: String, targetPath: String) {
         self.name = name
-        self.content = content
-    }
-
-    public var contentString: String? {
-        String(data: content, encoding: .utf8)
+        self.targetPath = targetPath
     }
 
     public var fileName: String {
@@ -75,7 +71,7 @@ public struct FetchedScriptlet {
     }
 }
 
-public struct CachedScriptlets {
+public struct CachedScriptlets: Equatable, Codable {
     public let version: String
     public let scriptlets: [Scriptlet]
 
@@ -86,31 +82,9 @@ public struct CachedScriptlets {
 }
 
 public struct ScriptletCacheMetadata: Codable, Equatable {
-    public var extensions: [String: ExtensionScriptletMetadata]
+    public var extensions: [String: CachedScriptlets]
 
-    public init(extensions: [String: ExtensionScriptletMetadata] = [:]) {
+    public init(extensions: [String: CachedScriptlets] = [:]) {
         self.extensions = extensions
-    }
-}
-
-public struct ExtensionScriptletMetadata: Codable, Equatable {
-    public let extensionType: String
-    public let version: String
-    public let scriptlets: [ScriptletFileMetadata]
-
-    public init(extensionType: String, version: String, scriptlets: [ScriptletFileMetadata]) {
-        self.extensionType = extensionType
-        self.version = version
-        self.scriptlets = scriptlets
-    }
-}
-
-public struct ScriptletFileMetadata: Codable, Equatable {
-    public let targetPath: String
-    public let cachedFileName: String
-
-    public init(targetPath: String, cachedFileName: String) {
-        self.targetPath = targetPath
-        self.cachedFileName = cachedFileName
     }
 }

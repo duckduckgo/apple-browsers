@@ -54,46 +54,45 @@ final class ScriptletStoreTests: XCTestCase {
     }
 
     func testWhenScriptletsSavedThenCanBeLoaded() throws {
-        let scriptlets = [
-            Scriptlet(name: "scriptlets/test1.js", content: Data("content1".utf8)),
-            Scriptlet(name: "scriptlets/test2.js", content: Data("content2".utf8))
-        ]
-        let targetPaths = [
-            "scriptlets/test1.js": "scriptlets/test1.js",
-            "scriptlets/test2.js": "scriptlets/test2.js"
+        let fetched = [
+            makeFetchedScriptlet(name: "scriptlets/test1.js", content: "content1"),
+            makeFetchedScriptlet(name: "scriptlets/test2.js", content: "content2")
         ]
 
-        try store.save(scriptlets, version: "1.0", for: .adBlockingExtension, withTargetPaths: targetPaths)
+        try store.save(fetched, version: "1.0", for: .adBlockingExtension)
 
         let cached = store.loadCached(for: .adBlockingExtension)
 
         XCTAssertNotNil(cached)
         XCTAssertEqual(cached?.version, "1.0")
         XCTAssertEqual(cached?.scriptlets.count, 2)
-        XCTAssertTrue(cached?.scriptlets.contains(where: { $0.name == "scriptlets/test1.js" }) ?? false)
-        XCTAssertTrue(cached?.scriptlets.contains(where: { $0.name == "scriptlets/test2.js" }) ?? false)
+        XCTAssertTrue(cached?.scriptlets.contains(where: { $0.targetPath == "scriptlets/test1.js" }) ?? false)
+        XCTAssertTrue(cached?.scriptlets.contains(where: { $0.targetPath == "scriptlets/test2.js" }) ?? false)
     }
 
     func testWhenSavingNewVersionThenOverwritesOldVersion() throws {
-        let oldScriptlets = [Scriptlet(name: "scriptlets/old.js", content: Data("old".utf8))]
-        let oldTargetPaths = ["scriptlets/old.js": "scriptlets/old.js"]
-        try store.save(oldScriptlets, version: "1.0", for: .adBlockingExtension, withTargetPaths: oldTargetPaths)
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/old.js", content: "old")],
+            version: "1.0",
+            for: .adBlockingExtension)
 
-        let newScriptlets = [Scriptlet(name: "scriptlets/new.js", content: Data("new".utf8))]
-        let newTargetPaths = ["scriptlets/new.js": "scriptlets/new.js"]
-        try store.save(newScriptlets, version: "2.0", for: .adBlockingExtension, withTargetPaths: newTargetPaths)
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/new.js", content: "new")],
+            version: "2.0",
+            for: .adBlockingExtension)
 
         let cached = store.loadCached(for: .adBlockingExtension)
 
         XCTAssertEqual(cached?.version, "2.0")
         XCTAssertEqual(cached?.scriptlets.count, 1)
-        XCTAssertEqual(cached?.scriptlets.first?.name, "scriptlets/new.js")
+        XCTAssertEqual(cached?.scriptlets.first?.targetPath, "scriptlets/new.js")
     }
 
     func testWhenClearCalledThenRemovesAllData() throws {
-        let scriptlets = [Scriptlet(name: "scriptlets/test.js", content: Data("test".utf8))]
-        let targetPaths = ["scriptlets/test.js": "scriptlets/test.js"]
-        try store.save(scriptlets, version: "1.0", for: .adBlockingExtension, withTargetPaths: targetPaths)
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/test.js", content: "test")],
+            version: "1.0",
+            for: .adBlockingExtension)
 
         store.clear(for: .adBlockingExtension)
 
@@ -102,32 +101,36 @@ final class ScriptletStoreTests: XCTestCase {
     }
 
     func testWhenMultipleExtensionsSavedThenEachCanBeLoadedIndependently() throws {
-        let scriptlets1 = [Scriptlet(name: "scriptlets/ext1.js", content: Data("ext1".utf8))]
-        let targetPaths1 = ["scriptlets/ext1.js": "scriptlets/ext1.js"]
-        try store.save(scriptlets1, version: "1.0", for: .adBlockingExtension, withTargetPaths: targetPaths1)
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/ext1.js", content: "ext1")],
+            version: "1.0",
+            for: .adBlockingExtension)
 
-        let scriptlets2 = [Scriptlet(name: "scriptlets/ext2.js", content: Data("ext2".utf8))]
-        let targetPaths2 = ["scriptlets/ext2.js": "scriptlets/ext2.js"]
-        try store.save(scriptlets2, version: "2.0", for: .embedded, withTargetPaths: targetPaths2)
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/ext2.js", content: "ext2")],
+            version: "2.0",
+            for: .embedded)
 
         let cached1 = store.loadCached(for: .adBlockingExtension)
         let cached2 = store.loadCached(for: .embedded)
 
         XCTAssertEqual(cached1?.version, "1.0")
-        XCTAssertEqual(cached1?.scriptlets.first?.name, "scriptlets/ext1.js")
+        XCTAssertEqual(cached1?.scriptlets.first?.targetPath, "scriptlets/ext1.js")
 
         XCTAssertEqual(cached2?.version, "2.0")
-        XCTAssertEqual(cached2?.scriptlets.first?.name, "scriptlets/ext2.js")
+        XCTAssertEqual(cached2?.scriptlets.first?.targetPath, "scriptlets/ext2.js")
     }
 
     func testWhenClearingOneExtensionThenOtherExtensionRemainsIntact() throws {
-        let scriptlets1 = [Scriptlet(name: "scriptlets/ext1.js", content: Data("ext1".utf8))]
-        let targetPaths1 = ["scriptlets/ext1.js": "scriptlets/ext1.js"]
-        try store.save(scriptlets1, version: "1.0", for: .adBlockingExtension, withTargetPaths: targetPaths1)
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/ext1.js", content: "ext1")],
+            version: "1.0",
+            for: .adBlockingExtension)
 
-        let scriptlets2 = [Scriptlet(name: "scriptlets/ext2.js", content: Data("ext2".utf8))]
-        let targetPaths2 = ["scriptlets/ext2.js": "scriptlets/ext2.js"]
-        try store.save(scriptlets2, version: "2.0", for: .embedded, withTargetPaths: targetPaths2)
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/ext2.js", content: "ext2")],
+            version: "2.0",
+            for: .embedded)
 
         store.clear(for: .adBlockingExtension)
 
@@ -140,17 +143,23 @@ final class ScriptletStoreTests: XCTestCase {
     }
 
     func testWhenTargetPathsProvidedThenMetadataStoresCorrectPaths() throws {
-        let scriptlets = [
-            Scriptlet(name: "scriptlets/isolated/ublock-filters.js", content: Data("content".utf8))
-        ]
-        let targetPaths = [
-            "scriptlets/isolated/ublock-filters.js": "scriptlets/isolated/ublock-filters.js"
-        ]
-
-        try store.save(scriptlets, version: "1.0", for: .adBlockingExtension, withTargetPaths: targetPaths)
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/isolated/ublock-filters.js", content: "content")],
+            version: "1.0",
+            for: .adBlockingExtension)
 
         let cached = store.loadCached(for: .adBlockingExtension)
 
-        XCTAssertEqual(cached?.scriptlets.first?.name, "scriptlets/isolated/ublock-filters.js")
+        XCTAssertEqual(cached?.scriptlets.first?.targetPath, "scriptlets/isolated/ublock-filters.js")
+    }
+
+    // MARK: - Helpers
+
+    private func makeFetchedScriptlet(name: String, content: String) -> FetchedScriptlet {
+        let descriptor = ScriptletDescriptor(
+            name: name,
+            url: URL(string: "https://example.com/\(name)")!,
+            signature: "sig")
+        return FetchedScriptlet(descriptor: descriptor, data: Data(content.utf8))
     }
 }

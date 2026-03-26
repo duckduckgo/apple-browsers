@@ -22,10 +22,10 @@ import Foundation
 final class MockScriptletStore: ScriptletStoring {
 
     var cachedScriptlets: CachedScriptlets?
-    var savedScriptlets: [Scriptlet]?
+    var savedFetched: [FetchedScriptlet]?
     var savedVersion: String?
     var savedExtensionType: DuckDuckGoWebExtensionType?
-    var savedTargetPaths: [String: String]?
+    var scriptletsToReturn: [Scriptlet] = []
     var clearCallCount = 0
     var clearedExtensionType: DuckDuckGoWebExtensionType?
 
@@ -33,11 +33,16 @@ final class MockScriptletStore: ScriptletStoring {
         cachedScriptlets
     }
 
-    func save(_ scriptlets: [Scriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType, withTargetPaths targetPaths: [String: String]) throws {
-        savedScriptlets = scriptlets
+    @discardableResult
+    func save(_ fetched: [FetchedScriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType) throws -> [Scriptlet] {
+        savedFetched = fetched
         savedVersion = version
         savedExtensionType = extensionType
-        savedTargetPaths = targetPaths
+        return scriptletsToReturn
+    }
+
+    func cacheDirectory(for extensionType: DuckDuckGoWebExtensionType) -> URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent(extensionType.rawValue)
     }
 
     func clear(for extensionType: DuckDuckGoWebExtensionType) {

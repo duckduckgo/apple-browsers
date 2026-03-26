@@ -22,16 +22,13 @@ import Foundation
 final class MockScriptletValidator: ScriptletValidating {
 
     var validateCallCount = 0
-    var validatedScriptlets: [Scriptlet] = []
     var shouldThrowError = false
 
-    func validate(_ fetched: [FetchedScriptlet]) throws -> [Scriptlet] {
+    func validate(_ fetched: [FetchedScriptlet]) throws {
         validateCallCount += 1
 
         if shouldThrowError {
             throw ScriptletError.signatureVerificationFailed(name: "test")
         }
-
-        return validatedScriptlets
     }
 }

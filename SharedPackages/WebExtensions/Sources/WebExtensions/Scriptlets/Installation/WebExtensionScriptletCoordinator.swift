@@ -48,10 +48,6 @@ public final class WebExtensionScriptletCoordinator {
     public func start() {
         Logger.webExtensions.debug("[Scriptlets] 🚀 Starting coordinator for extension type '\(self.extensionType.rawValue)'")
         subscribeToScriptletUpdates()
-
-        Task {
-            await installCurrentScriptlets()
-        }
     }
 
     public func onExtensionEnabled() async {
@@ -108,8 +104,10 @@ public final class WebExtensionScriptletCoordinator {
             return
         }
 
+        let cacheDirectory = scriptletProvider.cacheDirectory(for: extensionType)
+
         do {
-            try await installer.installScriptlets(scriptlets, to: installationDirectory)
+            try await installer.installScriptlets(scriptlets, from: cacheDirectory, to: installationDirectory)
         } catch {
             Logger.webExtensions.error("[Scriptlets] ❌ Failed to install scriptlets to '\(self.extensionType.rawValue)': \(error.localizedDescription)")
         }

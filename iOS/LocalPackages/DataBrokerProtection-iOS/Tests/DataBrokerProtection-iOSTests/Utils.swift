@@ -147,7 +147,6 @@ enum DBPContinuedProcessingTestUtils {
             jobDependencies.database = database
             authenticationManager.reset()
             eventsHandler.reset()
-            manager.continuedProcessingDelegate = nil
         }
     }
 }

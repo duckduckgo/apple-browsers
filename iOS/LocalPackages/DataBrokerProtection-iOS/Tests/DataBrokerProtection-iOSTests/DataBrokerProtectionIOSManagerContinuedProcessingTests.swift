@@ -44,52 +44,48 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertTrue(dependencies.eventsHandler.profileSavedFired)
     }
 
-    func testWhenStartImmediateScanOperationsForContinuedProcessing_thenStartsQueueAndEmitsScanPhaseCompleted() async {
+    func testWhenCoordinatorIsReadyForScanOperations_thenStartsQueueAndEmitsScanPhaseCompleted() async {
         // Given
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        let delegate = MockContinuedProcessingEventDelegate()
         let expectation = expectation(description: "scan phase completed")
-        delegate.onEvent = { event in
+        dependencies.continuedProcessingCoordinator.onEvent = { event in
             if case .scanPhaseCompleted = event {
                 expectation.fulfill()
             }
         }
-        sut.continuedProcessingDelegate = delegate
 
         // When
-        await sut.startImmediateScanOperationsForContinuedProcessing()
+        await sut.coordinatorIsReadyForScanOperations()
         await fulfillment(of: [expectation], timeout: 1)
 
         // Then
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
-    func testWhenStartImmediateOptOutOperationsForContinuedProcessing_thenStartsQueueAndEmitsOptOutPhaseCompleted() async {
+    func testWhenCoordinatorIsReadyForOptOutOperations_thenStartsQueueAndEmitsOptOutPhaseCompleted() async {
         // Given
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        let delegate = MockContinuedProcessingEventDelegate()
         let expectation = expectation(description: "opt-out phase completed")
-        delegate.onEvent = { event in
+        dependencies.continuedProcessingCoordinator.onEvent = { event in
             if case .optOutPhaseCompleted = event {
                 expectation.fulfill()
             }
         }
-        sut.continuedProcessingDelegate = delegate
 
         // When
-        sut.startImmediateOptOutOperationsForContinuedProcessing()
+        sut.coordinatorIsReadyForOptOutOperations()
         await fulfillment(of: [expectation], timeout: 1)
 
         // Then
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateOptOutOperationsIfPermitted)
     }
 
-    func testWhenStopContinuedProcessingOperations_thenStopsQueue() {
+    func testWhenCoordinatorDidRequestStopOperations_thenStopsQueue() {
         // Given
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
 
         // When
-        sut.stopContinuedProcessingOperations()
+        sut.coordinatorDidRequestStopOperations()
 
         // Then
         XCTAssertTrue(dependencies.queueManager.didCallStop)

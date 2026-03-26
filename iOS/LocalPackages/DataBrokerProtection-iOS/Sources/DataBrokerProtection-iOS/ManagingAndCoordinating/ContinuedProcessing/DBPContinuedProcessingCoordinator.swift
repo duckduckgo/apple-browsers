@@ -22,8 +22,16 @@ import DataBrokerProtectionCore
 import Foundation
 import os.log
 
-protocol DBPContinuedProcessingEventDelegate: AnyObject, Sendable {
-    func iosManager(_ manager: DataBrokerProtectionIOSManager, didEmit event: DBPContinuedProcessingEvent) async
+// MARK: - Coordinator Delegate (coordinator → manager)
+
+protocol DBPContinuedProcessingDelegate: AnyObject {
+    func coordinatorDidStartRun()
+    func coordinatorDidFinishRun()
+    func coordinatorIsReadyForScanOperations() async
+    func coordinatorIsReadyForOptOutOperations()
+    func coordinatorDidRequestStopOperations()
+    func continuedProcessingScanJobTimeout() -> TimeInterval
+    func makeContinuedProcessingOptOutPlan() throws -> DBPContinuedProcessingPlans.OptOutPlan
 }
 
 enum DBPContinuedProcessingEvent {
@@ -33,10 +41,15 @@ enum DBPContinuedProcessingEvent {
     case optOutPhaseCompleted
 }
 
-protocol DBPContinuedProcessingCoordinating: AnyObject {
+// MARK: - Coordinator Protocol (manager → coordinator)
+
+protocol DBPContinuedProcessingCoordinating: AnyObject, Sendable {
     func hasAttachedTask() async -> Bool
     func startInitialRun(scanPlan: DBPContinuedProcessingPlans.InitialScanPlan) async throws
+    func didEmit(event: DBPContinuedProcessingEvent) async
 }
+
+// MARK: - Coordinator
 
 @available(iOS 26.0, *)
 actor DBPContinuedProcessingCoordinator {
@@ -52,7 +65,7 @@ actor DBPContinuedProcessingCoordinator {
         static let heartbeatInterval: TimeInterval = 1.5
     }
 
-    private weak var manager: DataBrokerProtectionIOSManager?
+    private weak var delegate: DBPContinuedProcessingDelegate?
     private let progressReporter: DBPContinuedProcessingProgressReporter
 
     private var taskIdentifier: String?
@@ -64,9 +77,9 @@ actor DBPContinuedProcessingCoordinator {
         task != nil
     }
 
-    init(manager: DataBrokerProtectionIOSManager,
+    init(delegate: DBPContinuedProcessingDelegate,
          progressReporter: DBPContinuedProcessingProgressReporter? = nil) {
-        self.manager = manager
+        self.delegate = delegate
         self.progressReporter = progressReporter ?? DBPContinuedProcessingProgressReporter()
     }
 
@@ -84,12 +97,12 @@ actor DBPContinuedProcessingCoordinator {
         Logger.dataBrokerProtection.log(
             "Continued processing: preparing initial run with \(scanPlan.scanCount, privacy: .public) scans"
         )
-        let scanJobTimeout = manager?.continuedProcessingScanJobTimeout() ?? .minutes(3)
+        let scanJobTimeout = delegate?.continuedProcessingScanJobTimeout() ?? .minutes(3)
         progressReporter.startInitialRun(plan: scanPlan,
                                          scanJobTimeout: scanJobTimeout,
                                          heartbeatInterval: Constants.heartbeatInterval)
 
-        manager?.continuedProcessingDelegate = self
+        delegate?.coordinatorDidStartRun()
 
         do {
             try registerAndSubmitTask()
@@ -119,7 +132,7 @@ actor DBPContinuedProcessingCoordinator {
         Logger.dataBrokerProtection.log(
             "Continued processing: task expired for run \(self.logRunIdentifier(), privacy: .public) in phase \(String(describing: self.phase), privacy: .public)"
         )
-        manager?.stopContinuedProcessingOperations()
+        delegate?.coordinatorDidRequestStopOperations()
         finish(success: false)
     }
 
@@ -130,7 +143,6 @@ actor DBPContinuedProcessingCoordinator {
         )
         heartbeatTask?.cancel()
         heartbeatTask = nil
-        manager?.continuedProcessingDelegate = nil
 
         if success {
             progressReporter.completeAll()
@@ -141,15 +153,16 @@ actor DBPContinuedProcessingCoordinator {
         task = nil
         transition(to: nil)
         taskIdentifier = nil
+        delegate?.coordinatorDidFinishRun()
     }
 
     // MARK: - Phases
 
-    /// Transitions into the initial scan phase and starts immediate scans through the manager.
+    /// Transitions into the initial scan phase and signals the delegate to start scans.
     func startScanPhase() async {
         transition(to: .initialScan)
         Logger.dataBrokerProtection.log("Continued processing: starting scan phase for run \(self.logRunIdentifier(), privacy: .public)")
-        await manager?.startImmediateScanOperationsForContinuedProcessing()
+        await delegate?.coordinatorIsReadyForScanOperations()
     }
 
     /// Completes scan progress and either moves to initial opt-outs or finishes the run.
@@ -158,7 +171,7 @@ actor DBPContinuedProcessingCoordinator {
         refreshContinuedProcessingUI()
         Logger.dataBrokerProtection.log("Continued processing: scan phase completed for run \(self.logRunIdentifier(), privacy: .public)")
 
-        guard let optOutPlan = try? manager?.makeContinuedProcessingOptOutPlan() else {
+        guard let optOutPlan = try? delegate?.makeContinuedProcessingOptOutPlan() else {
             Logger.dataBrokerProtection.log("Continued processing: failed to load opt-out plan after scan phase for run \(self.logRunIdentifier(), privacy: .public)")
             finish(success: false)
             return
@@ -176,13 +189,13 @@ actor DBPContinuedProcessingCoordinator {
         await startOptOutPhase(optOutPlan: optOutPlan)
     }
 
-    /// Transitions into the initial opt-out phase and starts immediate opt-out work.
+    /// Transitions into the initial opt-out phase and signals the delegate to start opt-outs.
     func startOptOutPhase(optOutPlan: DBPContinuedProcessingPlans.OptOutPlan) async {
         transition(to: .initialOptOut) {
             self.progressReporter.enterOptOutPhase(plan: optOutPlan)
         }
         Logger.dataBrokerProtection.log("Continued processing: starting opt-out phase for run \(self.logRunIdentifier(), privacy: .public)")
-        manager?.startImmediateOptOutOperationsForContinuedProcessing()
+        delegate?.coordinatorIsReadyForOptOutOperations()
     }
 
     /// Completes opt-out progress and finishes the continued-processing run.
@@ -316,14 +329,9 @@ actor DBPContinuedProcessingCoordinator {
 }
 
 @available(iOS 26.0, *)
-extension DBPContinuedProcessingCoordinator: DBPContinuedProcessingCoordinating {}
-
-// MARK: - DBPContinuedProcessingEventDelegate
-
-@available(iOS 26.0, *)
-extension DBPContinuedProcessingCoordinator: DBPContinuedProcessingEventDelegate {
+extension DBPContinuedProcessingCoordinator: DBPContinuedProcessingCoordinating {
     /// Applies manager-emitted scan and opt-out events to the current continued-processing run.
-    func iosManager(_ manager: DataBrokerProtectionIOSManager, didEmit event: DBPContinuedProcessingEvent) {
+    func didEmit(event: DBPContinuedProcessingEvent) {
         guard phase != nil else { return }
 
         switch event {

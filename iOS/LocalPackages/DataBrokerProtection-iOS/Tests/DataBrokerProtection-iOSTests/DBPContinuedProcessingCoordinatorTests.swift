@@ -21,68 +21,48 @@ import XCTest
 import DataBrokerProtectionCore
 
 @available(iOS 26.0, *)
-@MainActor
 final class DBPContinuedProcessingCoordinatorTests: XCTestCase {
 
-    func testWhenScanPhaseCompletesAndNoInitialOptOuts_thenDoesNotStartImmediateOptOutsAndClearsDelegate() async {
-        let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        dependencies.database.brokerProfileQueryDataToReturn = [
-            DBPContinuedProcessingTestUtils.makeBrokerProfileQueryData(brokerId: 1, profileQueryId: 1)
-        ]
-        let sut = DBPContinuedProcessingCoordinator(manager: manager)
-        manager.continuedProcessingDelegate = sut
+    func testWhenScanPhaseCompletesAndNoInitialOptOuts_thenDoesNotStartOptOutsAndNotifiesFinish() async {
+        let delegate = MockContinuedProcessingCoordinatorDelegate()
+        let sut = DBPContinuedProcessingCoordinator(delegate: delegate)
 
         await sut.handleScanPhaseCompleted()
 
-        XCTAssertFalse(dependencies.queueManager.didCallStartImmediateOptOutOperationsIfPermitted)
-        XCTAssertNil(manager.continuedProcessingDelegate)
+        XCTAssertFalse(delegate.didCallCoordinatorIsReadyForOptOutOperations)
+        XCTAssertTrue(delegate.didCallCoordinatorDidFinishRun)
     }
 
-    func testWhenScanPhaseCompletesAndInitialOptOutsExist_thenStartsImmediateOptOuts() async {
-        let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        dependencies.database.brokerProfileQueryDataToReturn = [
-            DBPContinuedProcessingTestUtils.makeBrokerProfileQueryData(
-                brokerId: 1,
-                profileQueryId: 1,
-                optOutJobData: [
-                    .mock(
-                        with: .mockWithoutRemovedDate,
-                        brokerId: 1,
-                        profileQueryId: 1,
-                        preferredRunDate: .now
-                    )
-                ]
-            )
-        ]
-        let sut = DBPContinuedProcessingCoordinator(manager: manager)
-        manager.continuedProcessingDelegate = sut
-
-        await sut.handleScanPhaseCompleted()
-        await Task.yield()
-
-        XCTAssertTrue(dependencies.queueManager.didCallStartImmediateOptOutOperationsIfPermitted)
-    }
-
-    func testWhenScanPhaseCompletesAndDeterminingOptOutsFails_thenDoesNotStartImmediateOptOutsAndClearsDelegate() async {
-        let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        dependencies.database.fetchAllBrokerProfileQueryDataError = NSError(domain: "test", code: 1)
-        let sut = DBPContinuedProcessingCoordinator(manager: manager)
-        manager.continuedProcessingDelegate = sut
+    func testWhenScanPhaseCompletesAndInitialOptOutsExist_thenSignalsReadyForOptOuts() async {
+        let delegate = MockContinuedProcessingCoordinatorDelegate()
+        delegate.optOutPlanToReturn = DBPContinuedProcessingPlans.OptOutPlan(optOutJobIDs: [
+            .init(brokerId: 1, profileQueryId: 1, extractedProfileId: 1)
+        ])
+        let sut = DBPContinuedProcessingCoordinator(delegate: delegate)
 
         await sut.handleScanPhaseCompleted()
 
-        XCTAssertFalse(dependencies.queueManager.didCallStartImmediateOptOutOperationsIfPermitted)
-        XCTAssertNil(manager.continuedProcessingDelegate)
+        XCTAssertTrue(delegate.didCallCoordinatorIsReadyForOptOutOperations)
     }
 
-    func testWhenExpire_thenStopsContinuedProcessingOperationsAndClearsDelegate() async {
-        let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        let sut = DBPContinuedProcessingCoordinator(manager: manager)
-        manager.continuedProcessingDelegate = sut
+    func testWhenScanPhaseCompletesAndDeterminingOptOutsFails_thenNotifiesFinish() async {
+        let delegate = MockContinuedProcessingCoordinatorDelegate()
+        delegate.optOutPlanError = NSError(domain: "test", code: 1)
+        let sut = DBPContinuedProcessingCoordinator(delegate: delegate)
+
+        await sut.handleScanPhaseCompleted()
+
+        XCTAssertFalse(delegate.didCallCoordinatorIsReadyForOptOutOperations)
+        XCTAssertTrue(delegate.didCallCoordinatorDidFinishRun)
+    }
+
+    func testWhenExpire_thenRequestsStopAndNotifiesFinish() async {
+        let delegate = MockContinuedProcessingCoordinatorDelegate()
+        let sut = DBPContinuedProcessingCoordinator(delegate: delegate)
 
         await sut.expire()
 
-        XCTAssertTrue(dependencies.queueManager.didCallStop)
-        XCTAssertNil(manager.continuedProcessingDelegate)
+        XCTAssertTrue(delegate.didCallCoordinatorDidRequestStopOperations)
+        XCTAssertTrue(delegate.didCallCoordinatorDidFinishRun)
     }
 }

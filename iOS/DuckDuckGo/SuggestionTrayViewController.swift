@@ -59,6 +59,13 @@ class SuggestionTrayViewController: UIViewController {
         isShowingAutocompleteSuggestions || isShowingFavorites
     }
 
+    /// Called when URL-only fallback visibility changes, so the host can update Dax visibility.
+    var onURLFallbackVisibilityChanged: (() -> Void)?
+
+    var suggestionFilter: AutocompleteSuggestionFilter = .all {
+        didSet { autocompleteController?.suggestionFilter = suggestionFilter }
+    }
+
     private var autocompleteController: AutocompleteViewController?
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
@@ -350,6 +357,7 @@ class SuggestionTrayViewController: UIViewController {
                                                     aiChatSettings: aiChatSettings,
                                                     featureDiscovery: featureDiscovery,
                                                     productSurfaceTelemetry: productSurfaceTelemetry)
+        controller.suggestionFilter = suggestionFilter
         install(controller: controller, animated: animated)
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
@@ -429,7 +437,13 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
             variableHeightConstraint.constant = height
         }
     }
-    
+
+    func autocompleteDidReloadResults(_ controller: AutocompleteViewController) {
+        guard controller.suggestionFilter == .urlsOnly else { return }
+        view.isHidden = controller.isEmpty
+        onURLFallbackVisibilityChanged?()
+    }
+
 }
 
 extension SuggestionTrayViewController {

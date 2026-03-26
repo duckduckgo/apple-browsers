@@ -91,6 +91,27 @@ final class SwipeContainerManager: NSObject {
         manager.installInContainerView(chatPageContainer, parentViewController: containerViewController)
     }
 
+    /// Makes the search page container visible/hidden independently of the toggle mode.
+    /// Used to show URL fallback suggestions in duck.ai mode.
+    func setSearchPageVisible(_ visible: Bool, animated: Bool) {
+        let alpha: CGFloat = visible ? 1.0 : 0.0
+        if visible {
+            searchPageContainer.superview?.bringSubviewToFront(searchPageContainer)
+        }
+        if animated {
+            UIView.animate(withDuration: 0.2) {
+                self.searchPageContainer.alpha = alpha
+            }
+        } else {
+            searchPageContainer.alpha = alpha
+        }
+    }
+
+    /// Restores the chat page container visibility after URL fallback hides.
+    func restoreChatPageVisibility() {
+        chatPageContainer.alpha = 1.0
+    }
+
     func syncVisibleMode(animated: Bool) {
         if switchBarHandler.isUsingFadeOutAnimation {
             fadeOutContainerViewController.setMode(switchBarHandler.currentToggleState)

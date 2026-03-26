@@ -556,6 +556,10 @@ extension UnifiedInputContentContainerViewController: FadeOutContainerViewContro
     func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
         return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
     }
+
+    func fadeOutContainerViewControllerShouldKeepSearchVisible(_ controller: FadeOutContainerViewController) -> Bool {
+        return false
+    }
 }
 
 // MARK: - SuggestionTrayManagerDelegate

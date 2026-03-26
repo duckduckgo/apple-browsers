@@ -59,7 +59,6 @@ actor DBPContinuedProcessingCoordinator {
     private var phase: Phase?
     private var task: BGContinuedProcessingTask?
     private var heartbeatTask: Task<Void, Never>?
-    private(set) var isRunActive = false
 
     func hasAttachedTask() -> Bool {
         task != nil
@@ -75,17 +74,20 @@ actor DBPContinuedProcessingCoordinator {
 
     /// Registers the continued task for a prepared scan plan and starts the initial scan phase.
     func startInitialRun(scanPlan: DBPContinuedProcessingPlans.InitialScanPlan) async throws {
-        guard !isRunActive else {
+        guard phase == nil else {
             Logger.dataBrokerProtection.error(
                 "Continued processing: startInitialRun called while already active in phase \(String(describing: self.phase), privacy: .public) for run \(self.logRunIdentifier(), privacy: .public), ignoring"
             )
             return
         }
 
-        prepareInitialRun(scanPlan: scanPlan)
+        Logger.dataBrokerProtection.log(
+            "Continued processing: preparing initial run with \(scanPlan.scanCount, privacy: .public) scans"
+        )
+        let scanJobTimeout = manager?.continuedProcessingScanJobTimeout() ?? .minutes(3)
+        let scanBudgetUnitsPerJob = max(Int64(scanJobTimeout / Constants.heartbeatInterval), 1)
+        progressReporter.startInitialRun(plan: scanPlan, scanBudgetUnitsPerJob: scanBudgetUnitsPerJob)
 
-        isRunActive = true
-        phase = .initialScan
         manager?.continuedProcessingDelegate = self
 
         do {
@@ -136,9 +138,8 @@ actor DBPContinuedProcessingCoordinator {
 
         task?.setTaskCompleted(success: success)
         task = nil
-        phase = nil
+        transition(to: nil)
         taskIdentifier = nil
-        isRunActive = false
     }
 
     // MARK: - Phases
@@ -146,7 +147,7 @@ actor DBPContinuedProcessingCoordinator {
     /// Transitions into the initial scan phase and starts immediate scans through the manager.
     func startScanPhase() async {
         transition(to: .initialScan) {
-            progressReporter.enterScanPhase()
+            self.progressReporter.enterScanPhase()
         }
         Logger.dataBrokerProtection.log("Continued processing: starting scan phase for run \(self.logRunIdentifier(), privacy: .public)")
         await manager?.startImmediateScanOperationsForContinuedProcessing()
@@ -179,7 +180,7 @@ actor DBPContinuedProcessingCoordinator {
     /// Transitions into the initial opt-out phase and starts immediate opt-out work.
     func startOptOutPhase(optOutPlan: DBPContinuedProcessingPlans.OptOutPlan) async {
         transition(to: .initialOptOut) {
-            progressReporter.enterOptOutPhase(plan: optOutPlan)
+            self.progressReporter.enterOptOutPhase(plan: optOutPlan)
         }
         Logger.dataBrokerProtection.log("Continued processing: starting opt-out phase for run \(self.logRunIdentifier(), privacy: .public)")
         manager?.startImmediateOptOutOperationsForContinuedProcessing()
@@ -200,21 +201,15 @@ actor DBPContinuedProcessingCoordinator {
         let snapshot = progressReporter.snapshot()
         task?.progress.totalUnitCount = max(snapshot.total, 1)
         task?.progress.completedUnitCount = min(snapshot.completed, max(snapshot.total, 1))
-        task?.updateTitle(title(for: self.phase), subtitle: subtitle(for: self.phase))
+
+        let subtitle = switch phase {
+        case .initialOptOut: progressReporter.optOutSubtitle
+        default: progressReporter.scanSubtitle
+        }
+        task?.updateTitle(Constants.taskTitle, subtitle: subtitle)
     }
 
     // MARK: - Helpers
-
-    /// Seeds the progress reporter for the prepared initial scan plan.
-    private func prepareInitialRun(scanPlan: DBPContinuedProcessingPlans.InitialScanPlan) {
-        Logger.dataBrokerProtection.log(
-            "Continued processing: preparing initial run with \(scanPlan.scanCount, privacy: .public) scans"
-        )
-
-        let scanJobTimeout = manager?.continuedProcessingScanJobTimeout() ?? .minutes(3)
-        let scanBudgetUnitsPerJob = max(Int64(scanJobTimeout / Constants.heartbeatInterval), 1)
-        progressReporter.startInitialRun(plan: scanPlan, scanBudgetUnitsPerJob: scanBudgetUnitsPerJob)
-    }
 
     /// Creates a unique task identifier, registers the handler, and submits the continued task request.
     private func registerAndSubmitTask() throws {
@@ -242,10 +237,10 @@ actor DBPContinuedProcessingCoordinator {
         refreshContinuedProcessingUI()
     }
 
-    /// Switches the active phase and refreshes the system task UI after phase-specific updates.
-    private func transition(to phase: Phase, updateProgress: () -> Void) {
+    /// Sets the active phase, runs any progress updates, and refreshes the system task UI.
+    private func transition(to phase: Phase?, updateProgress: (() -> Void)? = nil) {
         self.phase = phase
-        updateProgress()
+        updateProgress?()
         refreshContinuedProcessingUI()
     }
 
@@ -267,7 +262,6 @@ actor DBPContinuedProcessingCoordinator {
         return taskIdentifier.split(separator: ".").last.map(String.init) ?? taskIdentifier
     }
 
-    @available(iOS 26.0, *)
     /// Registers the continued task handler using the unique task identifier.
     private func registerTaskHandler(identifier taskIdentifier: String) throws {
         Logger.dataBrokerProtection.log(
@@ -297,7 +291,6 @@ actor DBPContinuedProcessingCoordinator {
         )
     }
 
-    @available(iOS 26.0, *)
     /// Submits the continued task request that lets the system relaunch or continue the work.
     private func submitTaskRequest(identifier: String) throws {
         #if targetEnvironment(simulator)
@@ -321,21 +314,6 @@ actor DBPContinuedProcessingCoordinator {
         }
         #endif
     }
-
-    /// Returns the static system task title shown throughout the run.
-    private func title(for phase: Phase?) -> String {
-        Constants.taskTitle
-    }
-
-    /// Returns the current phase-specific subtitle for the system task.
-    private func subtitle(for phase: Phase?) -> String {
-        switch phase {
-        case .initialOptOut:
-            progressReporter.optOutSubtitle
-        default:
-            progressReporter.scanSubtitle
-        }
-    }
 }
 
 @available(iOS 26.0, *)
@@ -347,7 +325,7 @@ extension DBPContinuedProcessingCoordinator: DBPContinuedProcessingCoordinating 
 extension DBPContinuedProcessingCoordinator: DBPContinuedProcessingEventDelegate {
     /// Applies manager-emitted scan and opt-out events to the current continued-processing run.
     func iosManager(_ manager: DataBrokerProtectionIOSManager, didEmit event: DBPContinuedProcessingEvent) {
-        guard isRunActive else { return }
+        guard phase != nil else { return }
 
         switch event {
         case .scanJobCompleted(let id):

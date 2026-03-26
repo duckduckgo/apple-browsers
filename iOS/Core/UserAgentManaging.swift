@@ -108,10 +108,6 @@ struct UserAgent {
         static let fallbackDefaultAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/\(fallbackWekKitVersion) (KHTML, like Gecko) Mobile/15E148"
         static let desktopPrefixComponent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)"
         static let fallbackVersionComponent = "Version/13.1.1"
-        // TODO: Temporary onboarding experiment override; remove when Duck.ai onboarding no longer requires forced Safari UA.
-        static let duckAIDemoHost = "use-serp-dev-testing15.duck.ai"
-        static let UserAgentOverride =
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 26_3 like Mac OS X) AppleWebKit/606.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1"
 
         static let uaOmitSitesConfigKey = "omitApplicationSites"
         static let uaOmitDomainConfigKey = "domain"
@@ -236,12 +232,6 @@ struct UserAgent {
                       isDesktop: Bool,
                       deviceVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
                       privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig) -> String {
-
-        // TODO: Temporary onboarding experiment override; remove when Duck.ai onboarding no longer requires forced Safari UA.
-        if url?.host?.lowercased() != Constants.duckAIDemoHost {
-            return Constants.UserAgentOverride
-        }
-
         guard privacyConfig.isEnabled(featureKey: .customUserAgent) else { return oldLogic(forUrl: url,
                                                                                            isDesktop: isDesktop,
                                                                                            privacyConfig: privacyConfig) }

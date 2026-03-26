@@ -42,7 +42,9 @@ public struct ReleaseNotesValues: Codable {
     let lastUpdate: UInt
     let releaseTitle: String?
     let releaseNotes: [String]?
-    let releaseNotesSubscription: [String]?
+    /// The key must stay `releaseNotesPrivacyPro` (not `releaseNotesSubscription`)
+    /// for compatibility with ContentScopeScripts.
+    let releaseNotesPrivacyPro: [String]?
     let downloadProgress: Double?
     let automaticUpdate: Bool?
 }
@@ -124,7 +126,7 @@ extension ReleaseNotesValues {
          lastUpdate: UInt,
          releaseTitle: String? = nil,
          releaseNotes: [String]? = nil,
-         releaseNotesSubscription: [String]? = nil,
+         releaseNotesPrivacyPro: [String]? = nil,
          downloadProgress: Double? = nil,
          automaticUpdate: Bool?) {
         self.status = status.rawValue
@@ -133,7 +135,7 @@ extension ReleaseNotesValues {
         self.lastUpdate = lastUpdate
         self.releaseTitle = releaseTitle
         self.releaseNotes = releaseNotes
-        self.releaseNotesSubscription = releaseNotesSubscription
+        self.releaseNotesPrivacyPro = releaseNotesPrivacyPro
         self.downloadProgress = downloadProgress
         self.automaticUpdate = automaticUpdate
     }
@@ -178,7 +180,7 @@ extension ReleaseNotesValues {
                   lastUpdate: lastUpdate,
                   releaseTitle: latestUpdate.title,
                   releaseNotes: latestUpdate.releaseNotes,
-                  releaseNotesSubscription: latestUpdate.releaseNotesSubscription,
+                  releaseNotesPrivacyPro: latestUpdate.releaseNotesSubscription,
                   downloadProgress: downloadProgress,
                   automaticUpdate: automaticUpdate)
     }

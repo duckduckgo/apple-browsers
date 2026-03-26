@@ -523,4 +523,36 @@ final class QuitSurveyViewModelTests: XCTestCase {
         XCTAssertNotNil(submissionCall)
         XCTAssertNil(submissionCall?.pixel.parameters?["affected_domains"])
     }
+
+    // MARK: - Thumbs Up Persistor
+
+    func testSelectPositiveResponseSetsThumbsUpFlag() {
+        let persistor = MockQuitSurveyPersistor()
+        let vm = QuitSurveyViewModel(persistor: persistor, featureFlagger: MockFeatureFlagger(), onQuit: {})
+
+        vm.selectPositiveResponse()
+
+        XCTAssertEqual(persistor.hasSelectedThumbsUp, true)
+    }
+
+    func testGoBackAfterPositiveResponseClearsThumbsUpFlag() {
+        let persistor = MockQuitSurveyPersistor()
+        let vm = QuitSurveyViewModel(persistor: persistor, featureFlagger: MockFeatureFlagger(), onQuit: {})
+
+        vm.selectPositiveResponse()
+        vm.goBack()
+
+        XCTAssertNil(persistor.hasSelectedThumbsUp)
+    }
+
+    func testSubmitFeedbackClearsThumbsUpFlagWhenPreviouslySet() {
+        let persistor = MockQuitSurveyPersistor()
+        persistor.hasSelectedThumbsUp = true
+        let vm = QuitSurveyViewModel(feedbackSender: MockFeedbackSender(), persistor: persistor, featureFlagger: MockFeatureFlagger(), onQuit: {})
+
+        vm.toggleOption("slow-to-open")
+        vm.submitFeedback()
+
+        XCTAssertNil(persistor.hasSelectedThumbsUp)
+    }
 }

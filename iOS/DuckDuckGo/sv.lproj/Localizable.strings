@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Anpassad URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Exkluderade domäner från Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importera bokmärkesfil ...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Inga aktiva abonnemang";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Inga uteslutna domäner";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Inget befintligt abonnemang hittades";

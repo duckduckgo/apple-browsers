@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Pielāgots URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader izslēgtie domēni (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importēt grāmatzīmes failu...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Nav aktīvu abonementu";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nav izslēgtu domēnu";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nav atrasts neviens esošs abonements";

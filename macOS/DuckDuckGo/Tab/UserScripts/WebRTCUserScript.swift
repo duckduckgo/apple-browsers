@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import WebKit
 import UserScript
 
@@ -32,7 +33,11 @@ final class WebRTCUserScript: NSObject, Subfeature {
     }
 
     let messageOriginPolicy: MessageOriginPolicy = .all
-    let featureName: String = "webRtc"
+
+    static public let featureName: String = "webRtc"
+    var featureName: String {
+        Self.featureName
+    }
 
     weak var broker: UserScriptMessageBroker?
     weak var delegate: WebRTCUserScriptDelegate?

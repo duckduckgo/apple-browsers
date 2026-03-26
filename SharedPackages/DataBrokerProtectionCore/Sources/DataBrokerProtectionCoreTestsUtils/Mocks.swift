@@ -1962,7 +1962,7 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     public func dataBrokerOperationDidError(_ error: any Error,
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
-                                            context: BrokerProfileJobContext?,
+                                            context: BrokerJobStepContext?,
                                             dataBrokerParent: String?,
                                             isFreeScan: Bool?) {
         dataBrokerOperationDidErrorCalled = true
@@ -1972,7 +1972,7 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                            version: String?,
                                                            dataBrokerParent: String?,
-                                                           context: BrokerProfileJobContext) {
+                                                           context: BrokerJobStepContext) {
 
     }
 }

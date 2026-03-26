@@ -498,7 +498,7 @@ final class JobQueueManagerTests: XCTestCase {
                               pixelHandler: mockPixelHandler)
         sut.delegate = mockQueueDelegate
 
-        let context = BrokerProfileJobContext(brokerId: 41, profileQueryId: 43, extractedProfileId: 47, stepType: .optOut)
+        let context = BrokerJobStepContext(brokerId: 41, profileQueryId: 43, extractedProfileId: 47, stepType: .optOut)
 
         sut.dataBrokerOperationDidCompleteSuccessfully(withBrokerURL: "broker.com",
                                                        version: "1.0.0",
@@ -524,7 +524,7 @@ final class JobQueueManagerTests: XCTestCase {
                               pixelHandler: mockPixelHandler)
         sut.delegate = mockQueueDelegate
 
-        let context = BrokerProfileJobContext(brokerId: 53, profileQueryId: 59, extractedProfileId: nil, stepType: .scan)
+        let context = BrokerJobStepContext(brokerId: 53, profileQueryId: 59, extractedProfileId: nil, stepType: .scan)
 
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.actionFailed(actionID: "action", message: "failed"),
                                         withBrokerURL: "broker.com",
@@ -592,7 +592,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(error,
                                         withBrokerURL: "broker.com",
                                         version: "1.0.0",
-                                        context: BrokerProfileJobContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .optOut),
+                                        context: BrokerJobStepContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .optOut),
                                         dataBrokerParent: "parent.com",
                                         isFreeScan: false)
 
@@ -666,7 +666,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        context: BrokerProfileJobContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
+                                        context: BrokerJobStepContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
                                         dataBrokerParent: nil,
                                         isFreeScan: true)
 
@@ -687,7 +687,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        context: BrokerProfileJobContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
+                                        context: BrokerJobStepContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
                                         dataBrokerParent: nil,
                                         isFreeScan: false)
 
@@ -708,7 +708,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        context: BrokerProfileJobContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
+                                        context: BrokerJobStepContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
                                         dataBrokerParent: nil,
                                         isFreeScan: nil)
 
@@ -729,7 +729,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.actionFailed(actionID: "id", message: "msg"),
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        context: BrokerProfileJobContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
+                                        context: BrokerJobStepContext(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
                                         dataBrokerParent: nil,
                                         isFreeScan: true)
 
@@ -851,13 +851,13 @@ final class JobQueueManagerTests: XCTestCase {
 
 private final class MockJobQueueManagerDelegate: JobQueueManagerDelegate {
     var didEnqueueOperations = false
-    var completedContexts: [BrokerProfileJobContext?] = []
+    var completedContexts: [BrokerJobStepContext?] = []
 
     func queueManagerWillEnqueueOperations(_ queueManager: any JobQueueManaging) {
         didEnqueueOperations = true
     }
 
-    func queueManagerDidCompleteIndividualJob(_ queueManager: any JobQueueManaging, context: BrokerProfileJobContext?) {
+    func queueManagerDidCompleteIndividualJob(_ queueManager: any JobQueueManaging, context: BrokerJobStepContext?) {
         completedContexts.append(context)
     }
 }

@@ -97,7 +97,7 @@ public protocol JobQueueManaging {
 
 public protocol JobQueueManagerDelegate: AnyObject {
     func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging)
-    func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging, context: BrokerProfileJobContext?)
+    func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging, context: BrokerJobStepContext?)
 }
 
 public final class JobQueueManager: JobQueueManaging {
@@ -338,7 +338,7 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
     public func dataBrokerOperationDidError(_ error: any Error,
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
-                                            context: BrokerProfileJobContext?,
+                                            context: BrokerJobStepContext?,
                                             dataBrokerParent: String?,
                                             isFreeScan: Bool?) {
         operationErrors.append(error)
@@ -366,7 +366,7 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
     public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                            version: String?,
                                                            dataBrokerParent: String?,
-                                                           context: BrokerProfileJobContext) {
+                                                           context: BrokerJobStepContext) {
         delegate?.queueManagerDidCompleteIndividualJob(self, context: context)
     }
 }

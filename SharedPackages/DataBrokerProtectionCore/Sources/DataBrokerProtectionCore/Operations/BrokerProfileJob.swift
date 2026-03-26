@@ -28,7 +28,7 @@ public enum JobType {
     case all
 }
 
-public struct BrokerProfileJobContext: Sendable {
+public struct BrokerJobStepContext: Sendable {
     public let brokerId: Int64
     public let profileQueryId: Int64
     public let extractedProfileId: Int64?
@@ -46,13 +46,13 @@ public protocol BrokerProfileJobStatusReportingDelegate: AnyObject {
     func dataBrokerOperationDidError(_ error: any Error,
                                      withBrokerURL brokerURL: String?,
                                      version: String?,
-                                     context: BrokerProfileJobContext?,
+                                     context: BrokerJobStepContext?,
                                      dataBrokerParent: String?,
                                      isFreeScan: Bool?)
     func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                     version: String?,
                                                     dataBrokerParent: String?,
-                                                    context: BrokerProfileJobContext)
+                                                    context: BrokerJobStepContext)
 }
 
 public class BrokerProfileJob: Operation, @unchecked Sendable {
@@ -199,7 +199,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     return nil
                 }
             }()
-            let context = BrokerProfileJobContext(
+            let context = BrokerJobStepContext(
                 brokerId: jobData.brokerId,
                 profileQueryId: jobData.profileQueryId,
                 extractedProfileId: (jobData as? OptOutJobData)?.extractedProfile.id,

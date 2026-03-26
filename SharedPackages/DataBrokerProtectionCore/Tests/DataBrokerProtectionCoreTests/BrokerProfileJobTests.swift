@@ -173,7 +173,7 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testWhenScanJobErrors_thenErrorContextIncludesScanIdentifiers() async {
-        let delegate = BrokerProfileJobContextCapturingDelegate()
+        let delegate = BrokerJobStepContextCapturingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -212,7 +212,7 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testWhenOptOutJobCompletes_thenSuccessContextIncludesOptOutIdentifiers() async {
-        let delegate = BrokerProfileJobContextCapturingDelegate()
+        let delegate = BrokerJobStepContextCapturingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -255,7 +255,7 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testWhenOptOutJobIsSkipped_thenNoSuccessContextIsReported() async {
-        let delegate = BrokerProfileJobContextCapturingDelegate()
+        let delegate = BrokerJobStepContextCapturingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -516,14 +516,14 @@ private extension BrokerProfileJobTests {
     }
 }
 
-private final class BrokerProfileJobContextCapturingDelegate: BrokerProfileJobStatusReportingDelegate {
-    var successContexts: [BrokerProfileJobContext] = []
-    var errorContexts: [BrokerProfileJobContext] = []
+private final class BrokerJobStepContextCapturingDelegate: BrokerProfileJobStatusReportingDelegate {
+    var successContexts: [BrokerJobStepContext] = []
+    var errorContexts: [BrokerJobStepContext] = []
 
     func dataBrokerOperationDidError(_ error: any Error,
                                      withBrokerURL brokerURL: String?,
                                      version: String?,
-                                     context: BrokerProfileJobContext?,
+                                     context: BrokerJobStepContext?,
                                      dataBrokerParent: String?,
                                      isFreeScan: Bool?) {
         if let context {
@@ -534,7 +534,7 @@ private final class BrokerProfileJobContextCapturingDelegate: BrokerProfileJobSt
     func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                     version: String?,
                                                     dataBrokerParent: String?,
-                                                    context: BrokerProfileJobContext) {
+                                                    context: BrokerJobStepContext) {
         successContexts.append(context)
     }
 }

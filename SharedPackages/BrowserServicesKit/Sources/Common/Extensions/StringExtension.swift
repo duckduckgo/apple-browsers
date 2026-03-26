@@ -485,6 +485,7 @@ public extension String {
             }
         }
 
+        // swiftlint:disable:next optional_data_string_conversion
         return String(decoding: result, as: UTF8.self)
     }
 

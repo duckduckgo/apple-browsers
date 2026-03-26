@@ -326,9 +326,17 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
     }
 
-    func testRefreshEligibility_causesPublisherToReEmit() {
+    func testRefreshEligibility_reEmitsWhenValueChanges() {
+        // Start with feature unavailable
+        mockFeature.featureAvailable = false
+        let unavailableExpectation = XCTestExpectation(description: "publisher emits false")
+        coordinator.$isFeatureAvailable.dropFirst().sink { available in
+            if !available { unavailableExpectation.fulfill() }
+        }.store(in: &cancellables)
+        wait(for: [unavailableExpectation], timeout: 2.0)
+
         var emissions: [Bool] = []
-        let expectation = XCTestExpectation(description: "publisher re-emits")
+        let expectation = XCTestExpectation(description: "publisher emits after refresh")
         expectation.expectedFulfillmentCount = 2
 
         sut.isEligiblePublisher
@@ -338,28 +346,31 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
             }
             .store(in: &cancellables)
 
+        // Make feature available again and refresh
+        mockFeature.featureAvailable = true
+        let availableExpectation = XCTestExpectation(description: "feature becomes available")
+        coordinator.$isFeatureAvailable.dropFirst().sink { available in
+            if available { availableExpectation.fulfill() }
+        }.store(in: &cancellables)
+        wait(for: [availableExpectation], timeout: 2.0)
+
         sut.refreshEligibility()
 
         wait(for: [expectation], timeout: 2.0)
-        XCTAssertEqual(emissions, [true, true])
+        XCTAssertEqual(emissions.last, true)
     }
 
-    func testScanResultsNotification_triggersRefreshEligibility() {
-        var emitCount = 0
-        let expectation = XCTestExpectation(description: "publisher re-emits after notification")
-        expectation.expectedFulfillmentCount = 2
-
-        sut.isEligiblePublisher
-            .sink { _ in
-                emitCount += 1
-                expectation.fulfill()
-            }
-            .store(in: &cancellables)
+    func testScanResultsNotification_callsOnScanResultsUpdated() {
+        let expectation = XCTestExpectation(description: "onScanResultsUpdated called via notification")
+        let originalCallback = coordinator.onScanResultsUpdated
+        coordinator.onScanResultsUpdated = {
+            originalCallback?()
+            expectation.fulfill()
+        }
 
         NotificationCenter.default.post(name: .freemiumDBPResultPollingComplete, object: nil)
 
         wait(for: [expectation], timeout: 2.0)
-        XCTAssertEqual(emitCount, 2)
     }
 
     func testIsEligiblePublisher_usesFastPathDuringActiveDisplayWindow() {

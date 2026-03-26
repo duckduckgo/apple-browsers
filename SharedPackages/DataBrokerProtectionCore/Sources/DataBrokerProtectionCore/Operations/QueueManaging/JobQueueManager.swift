@@ -97,7 +97,7 @@ public protocol JobQueueManaging {
 
 public protocol JobQueueManagerDelegate: AnyObject {
     func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging)
-    func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging, context: BrokerJobStepContext?)
+    func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging, identifier: CompletedJobIdentifier?)
 }
 
 public final class JobQueueManager: JobQueueManaging {
@@ -338,11 +338,11 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
     public func dataBrokerOperationDidError(_ error: any Error,
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
-                                            context: BrokerJobStepContext?,
+                                            identifier: CompletedJobIdentifier?,
                                             dataBrokerParent: String?,
                                             isFreeScan: Bool?) {
         operationErrors.append(error)
-        delegate?.queueManagerDidCompleteIndividualJob(self, context: context)
+        delegate?.queueManagerDidCompleteIndividualJob(self, identifier: identifier)
 
         guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else { return }
 
@@ -355,7 +355,7 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
                                                  message: message,
                                                  dataBroker: brokerURL,
                                                  version: version,
-                                                 stepType: context?.stepType,
+                                                 stepType: identifier?.stepType,
                                                  dataBrokerParent: dataBrokerParent,
                                                  isFreeScan: isFreeScan))
         default:
@@ -366,8 +366,8 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
     public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                            version: String?,
                                                            dataBrokerParent: String?,
-                                                           context: BrokerJobStepContext) {
-        delegate?.queueManagerDidCompleteIndividualJob(self, context: context)
+                                                           identifier: CompletedJobIdentifier) {
+        delegate?.queueManagerDidCompleteIndividualJob(self, identifier: identifier)
     }
 }
 

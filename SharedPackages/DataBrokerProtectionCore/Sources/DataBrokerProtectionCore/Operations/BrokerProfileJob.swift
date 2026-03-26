@@ -28,7 +28,7 @@ public enum JobType {
     case all
 }
 
-public struct BrokerJobStepContext: Sendable {
+public struct CompletedJobIdentifier: Sendable {
     public let brokerId: Int64
     public let profileQueryId: Int64
     public let extractedProfileId: Int64?
@@ -46,13 +46,13 @@ public protocol BrokerProfileJobStatusReportingDelegate: AnyObject {
     func dataBrokerOperationDidError(_ error: any Error,
                                      withBrokerURL brokerURL: String?,
                                      version: String?,
-                                     context: BrokerJobStepContext?,
+                                     identifier: CompletedJobIdentifier?,
                                      dataBrokerParent: String?,
                                      isFreeScan: Bool?)
     func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                     version: String?,
                                                     dataBrokerParent: String?,
-                                                    context: BrokerJobStepContext)
+                                                    identifier: CompletedJobIdentifier)
 }
 
 public class BrokerProfileJob: Operation, @unchecked Sendable {
@@ -199,7 +199,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     return nil
                 }
             }()
-            let context = BrokerJobStepContext(
+            let identifier = CompletedJobIdentifier(
                 brokerId: jobData.brokerId,
                 profileQueryId: jobData.profileQueryId,
                 extractedProfileId: (jobData as? OptOutJobData)?.extractedProfile.id,
@@ -240,7 +240,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     statusReportingDelegate?.dataBrokerOperationDidCompleteSuccessfully(withBrokerURL: dataBroker?.url,
                                                                                         version: dataBroker?.version,
                                                                                         dataBrokerParent: dataBroker?.parent,
-                                                                                        context: context)
+                                                                                        identifier: identifier)
 
                     let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
                     Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
@@ -255,7 +255,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 statusReportingDelegate?.dataBrokerOperationDidError(error,
                                                                      withBrokerURL: dataBroker?.url,
                                                                      version: dataBroker?.version,
-                                                                     context: context,
+                                                                     identifier: identifier,
                                                                      dataBrokerParent: dataBroker?.parent,
                                                                      isFreeScan: isFreeScan)
             }

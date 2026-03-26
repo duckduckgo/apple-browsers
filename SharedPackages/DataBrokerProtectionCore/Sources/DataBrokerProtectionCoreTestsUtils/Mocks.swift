@@ -1912,7 +1912,7 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
             statusReportingDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound,
                                                                  withBrokerURL: nil,
                                                                  version: nil,
-                                                                 context: nil,
+                                                                 identifier: nil,
                                                                  dataBrokerParent: nil,
                                                                  isFreeScan: nil)
         }
@@ -1962,7 +1962,7 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     public func dataBrokerOperationDidError(_ error: any Error,
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
-                                            context: BrokerJobStepContext?,
+                                            identifier: CompletedJobIdentifier?,
                                             dataBrokerParent: String?,
                                             isFreeScan: Bool?) {
         dataBrokerOperationDidErrorCalled = true
@@ -1972,7 +1972,7 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                            version: String?,
                                                            dataBrokerParent: String?,
-                                                           context: BrokerJobStepContext) {
+                                                           identifier: CompletedJobIdentifier) {
 
     }
 }

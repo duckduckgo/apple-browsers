@@ -173,7 +173,7 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testWhenScanJobErrors_thenErrorContextIncludesScanIdentifiers() async {
-        let delegate = BrokerJobStepContextCapturingDelegate()
+        let delegate = CompletedJobIdentifierCapturingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -203,16 +203,16 @@ final class BrokerProfileJobTests: XCTestCase {
         job.start()
         await fulfillment(of: [expectation], timeout: 15)
 
-        XCTAssertTrue(delegate.successContexts.isEmpty)
-        XCTAssertEqual(delegate.errorContexts.count, 1)
-        XCTAssertEqual(delegate.errorContexts.first?.brokerId, brokerId)
-        XCTAssertEqual(delegate.errorContexts.first?.profileQueryId, profileQueryId)
-        XCTAssertNil(delegate.errorContexts.first?.extractedProfileId)
-        XCTAssertEqual(delegate.errorContexts.first?.stepType, .scan)
+        XCTAssertTrue(delegate.successIdentifiers.isEmpty)
+        XCTAssertEqual(delegate.errorIdentifiers.count, 1)
+        XCTAssertEqual(delegate.errorIdentifiers.first?.brokerId, brokerId)
+        XCTAssertEqual(delegate.errorIdentifiers.first?.profileQueryId, profileQueryId)
+        XCTAssertNil(delegate.errorIdentifiers.first?.extractedProfileId)
+        XCTAssertEqual(delegate.errorIdentifiers.first?.stepType, .scan)
     }
 
     func testWhenOptOutJobCompletes_thenSuccessContextIncludesOptOutIdentifiers() async {
-        let delegate = BrokerJobStepContextCapturingDelegate()
+        let delegate = CompletedJobIdentifierCapturingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -246,16 +246,16 @@ final class BrokerProfileJobTests: XCTestCase {
         job.start()
         await fulfillment(of: [expectation], timeout: 15)
 
-        XCTAssertEqual(delegate.successContexts.count, 1)
-        XCTAssertEqual(delegate.successContexts.first?.brokerId, brokerId)
-        XCTAssertEqual(delegate.successContexts.first?.profileQueryId, profileQueryId)
-        XCTAssertEqual(delegate.successContexts.first?.extractedProfileId, extractedProfileId)
-        XCTAssertEqual(delegate.successContexts.first?.stepType, .optOut)
-        XCTAssertTrue(delegate.errorContexts.isEmpty)
+        XCTAssertEqual(delegate.successIdentifiers.count, 1)
+        XCTAssertEqual(delegate.successIdentifiers.first?.brokerId, brokerId)
+        XCTAssertEqual(delegate.successIdentifiers.first?.profileQueryId, profileQueryId)
+        XCTAssertEqual(delegate.successIdentifiers.first?.extractedProfileId, extractedProfileId)
+        XCTAssertEqual(delegate.successIdentifiers.first?.stepType, .optOut)
+        XCTAssertTrue(delegate.errorIdentifiers.isEmpty)
     }
 
     func testWhenOptOutJobIsSkipped_thenNoSuccessContextIsReported() async {
-        let delegate = BrokerJobStepContextCapturingDelegate()
+        let delegate = CompletedJobIdentifierCapturingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -292,8 +292,8 @@ final class BrokerProfileJobTests: XCTestCase {
         job.start()
         await fulfillment(of: [expectation], timeout: 15)
 
-        XCTAssertTrue(delegate.successContexts.isEmpty)
-        XCTAssertTrue(delegate.errorContexts.isEmpty)
+        XCTAssertTrue(delegate.successIdentifiers.isEmpty)
+        XCTAssertTrue(delegate.errorIdentifiers.isEmpty)
     }
 
     // MARK: - Filtering Tests
@@ -516,25 +516,25 @@ private extension BrokerProfileJobTests {
     }
 }
 
-private final class BrokerJobStepContextCapturingDelegate: BrokerProfileJobStatusReportingDelegate {
-    var successContexts: [BrokerJobStepContext] = []
-    var errorContexts: [BrokerJobStepContext] = []
+private final class CompletedJobIdentifierCapturingDelegate: BrokerProfileJobStatusReportingDelegate {
+    var successIdentifiers: [CompletedJobIdentifier] = []
+    var errorIdentifiers: [CompletedJobIdentifier] = []
 
     func dataBrokerOperationDidError(_ error: any Error,
                                      withBrokerURL brokerURL: String?,
                                      version: String?,
-                                     context: BrokerJobStepContext?,
+                                     identifier: CompletedJobIdentifier?,
                                      dataBrokerParent: String?,
                                      isFreeScan: Bool?) {
-        if let context {
-            errorContexts.append(context)
+        if let identifier {
+            errorIdentifiers.append(identifier)
         }
     }
 
     func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
                                                     version: String?,
                                                     dataBrokerParent: String?,
-                                                    context: BrokerJobStepContext) {
-        successContexts.append(context)
+                                                    identifier: CompletedJobIdentifier) {
+        successIdentifiers.append(identifier)
     }
 }

@@ -405,7 +405,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
         }
     }
 
-    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, context: BrokerJobStepContext?) {
+    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, identifier: CompletedJobIdentifier?) {
         // Figure out if we've just finished initial scans, and send the appropriate pixel if necessary
 
         let database = jobDependencies.database

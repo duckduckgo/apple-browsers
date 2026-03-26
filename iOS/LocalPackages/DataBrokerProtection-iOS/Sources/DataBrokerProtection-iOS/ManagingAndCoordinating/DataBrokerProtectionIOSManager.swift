@@ -453,12 +453,12 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
         }
     }
 
-    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, context: BrokerJobStepContext?) {
-        if let context {
-            switch context.stepType {
+    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, identifier: CompletedJobIdentifier?) {
+        if let identifier {
+            switch identifier.stepType {
             case .scan:
                 let event = DBPContinuedProcessingEvent.scanJobCompleted(
-                    .init(brokerId: context.brokerId, profileQueryId: context.profileQueryId)
+                    .init(brokerId: identifier.brokerId, profileQueryId: identifier.profileQueryId)
                 )
                 Task { [weak self] in
                     if let self {
@@ -466,11 +466,11 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
                     }
                 }
             case .optOut:
-                if let extractedProfileId = context.extractedProfileId {
+                if let extractedProfileId = identifier.extractedProfileId {
                     let event = DBPContinuedProcessingEvent.optOutJobCompleted(
                         .init(
-                            brokerId: context.brokerId,
-                            profileQueryId: context.profileQueryId,
+                            brokerId: identifier.brokerId,
+                            profileQueryId: identifier.profileQueryId,
                             extractedProfileId: extractedProfileId
                         )
                     )

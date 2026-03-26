@@ -37,7 +37,6 @@ public final class DBPUIViewModel {
 
     private weak var authenticationDelegate: DBPIOSInterface.AuthenticationDelegate?
     private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
-    private weak var continuedProcessingDelegate: DBPIOSInterface.ContinuedProcessingDelegate?
     private weak var feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate?
     private weak var userEventsDelegate: DBPIOSInterface.UserEventsDelegate?
     private let privacyConfigManager: PrivacyConfigurationManaging
@@ -50,7 +49,6 @@ public final class DBPUIViewModel {
 
     public init(authenticationDelegate: DBPIOSInterface.AuthenticationDelegate,
                 databaseDelegate: DBPIOSInterface.DatabaseDelegate,
-                continuedProcessingDelegate: DBPIOSInterface.ContinuedProcessingDelegate,
                 feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate,
                 userEventsDelegate: DBPIOSInterface.UserEventsDelegate,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -59,7 +57,6 @@ public final class DBPUIViewModel {
                 contentScopeProperties: ContentScopeProperties) {
         self.authenticationDelegate = authenticationDelegate
         self.databaseDelegate = databaseDelegate
-        self.continuedProcessingDelegate = continuedProcessingDelegate
         self.feedbackFormDelegate = feedbackFormDelegate
         self.userEventsDelegate = userEventsDelegate
         self.webUISettings = webUISettings
@@ -124,7 +121,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
             assertionFailure("Couldn't save profile")
             return
         }
-        try await continuedProcessingDelegate?.saveProfileAndStartContinuedProcessingInitialRunIfSupported(profile)
+        try await databaseDelegate?.saveProfile(profile)
     }
     
     public func getUserProfile() -> DBPUIUserProfile? {

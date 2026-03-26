@@ -47,7 +47,7 @@ public class DBPIOSInterface {
      Where possible, avoid using this and prefer to use individual delegates
      This is only used for injecting through layers of the app that don't care about DBP
      */
-    public typealias PublicInterface = AppLifecycleEventsDelegate & DatabaseDelegate & ContinuedProcessingDelegate & DebuggingDelegate & RunPrerequisitesDelegate & DataBrokerProtectionViewControllerProvider
+    public typealias PublicInterface = AppLifecycleEventsDelegate & DatabaseDelegate & DebuggingDelegate & RunPrerequisitesDelegate & DataBrokerProtectionViewControllerProvider
     public typealias DebuggingDelegate = DebugInformationDelegate & DebugCommandsDelegate
     public typealias DebugInformationDelegate = BackgroundTaskInformationDelegate & JobQueueInformationDelegate & RunPrerequisitesDelegate
 
@@ -78,10 +78,6 @@ public class DBPIOSInterface {
         func fireWeeklyPixels() async
 
         func resetAllNotificationStatesForDebug()
-    }
-
-    public protocol ContinuedProcessingDelegate: AnyObject {
-        func saveProfileAndStartContinuedProcessingInitialRunIfSupported(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -426,6 +422,27 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
     @MainActor
     public func saveProfile(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws {
         try await saveProfileAndPrepareForInitialScans(profile)
+
+        if shouldUseContinuedProcessingForInitialRun() {
+            do {
+                guard let scanPlan = try makeContinuedProcessingInitialRunPlan() else {
+                    Logger.dataBrokerProtection.log("Continued processing: no pending scans found during initial run preparation")
+                    return
+                }
+
+                if let coordinatorForTesting = continuedProcessingTestConfiguration?.coordinator {
+                    try await coordinatorForTesting.startInitialRun(scanPlan: scanPlan)
+                } else if #available(iOS 26.0, *) {
+                    try await continuedProcessingCoordinator.startInitialRun(scanPlan: scanPlan)
+                } else {
+                    fatalError("Continued processing coordinator is unavailable before iOS 26")
+                }
+                return
+            } catch {
+                Logger.dataBrokerProtection.error("Continued processing start failed after preparation, falling back to immediate scans. Error: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
         await startImmediateScanOperations()
     }
 
@@ -636,7 +653,6 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
     public func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController {
         return DataBrokerProtectionViewController(authenticationDelegate: self,
                                                   databaseDelegate: self,
-                                                  continuedProcessingDelegate: self,
                                                   userEventsDelegate: self,
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
@@ -925,9 +941,11 @@ private extension DataBrokerProtectionIOSManager {
 
 }
 
-extension DataBrokerProtectionIOSManager: DBPIOSInterface.ContinuedProcessingDelegate {
+// MARK: - Continued Processing
+
+private extension DataBrokerProtectionIOSManager {
     @MainActor
-    private func shouldUseContinuedProcessingForInitialRun() -> Bool {
+    func shouldUseContinuedProcessingForInitialRun() -> Bool {
         if let continuedProcessingTestConfiguration {
             return continuedProcessingTestConfiguration.shouldUseContinuedProcessingForInitialRun
         }
@@ -938,40 +956,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.ContinuedProcessingDel
 
         return featureFlagger.isContinuedProcessingFeatureOn
     }
+}
 
-    @MainActor
-    public func saveProfileAndStartContinuedProcessingInitialRunIfSupported(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws {
-        if shouldUseContinuedProcessingForInitialRun() {
-            do {
-                try await saveProfileAndPrepareForInitialScans(profile)
-            } catch {
-                Logger.dataBrokerProtection.error("Continued processing preparation failed before task submission, falling back to legacy save. Error: \(error.localizedDescription, privacy: .public)")
-                try await saveProfile(profile)
-                return
-            }
-
-            do {
-                guard let scanPlan = try makeContinuedProcessingInitialRunPlan() else {
-                    Logger.dataBrokerProtection.log("Continued processing: no pending scans found during initial run preparation")
-                    return
-                }
-
-                if let coordinatorForTesting = continuedProcessingTestConfiguration?.coordinator {
-                    try await coordinatorForTesting.startInitialRun(scanPlan: scanPlan)
-                } else if #available(iOS 26.0, *) {
-                    try await continuedProcessingCoordinator.startInitialRun(scanPlan: scanPlan)
-                } else {
-                    fatalError("Continued processing coordinator is unavailable before iOS 26")
-                }
-            } catch {
-                Logger.dataBrokerProtection.error("Continued processing start failed after preparation, falling back to immediate scans. Error: \(error.localizedDescription, privacy: .public)")
-                await startImmediateScanOperations()
-            }
-        } else {
-            try await saveProfile(profile)
-        }
-    }
-
+extension DataBrokerProtectionIOSManager {
     @MainActor
     func prepareContinuedProcessingInitialRun(
         profile: DataBrokerProtectionCore.DataBrokerProtectionProfile

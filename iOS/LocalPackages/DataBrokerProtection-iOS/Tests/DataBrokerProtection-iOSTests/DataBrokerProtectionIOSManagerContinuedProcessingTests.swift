@@ -95,13 +95,13 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStop)
     }
 
-    func testWhenSaveProfileAndStartInitialRunAndFeatureFlagIsOff_thenFallsBackToLegacySave() async throws {
+    func testWhenSaveProfileAndFeatureFlagIsOff_thenFallsBackToLegacySave() async throws {
         // Given
         let featureFlagger = MockDBPFeatureFlagger(isContinuedProcessingFeatureOn: false)
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
 
         // When
-        try await sut.saveProfileAndStartContinuedProcessingInitialRunIfSupported(DBPContinuedProcessingTestUtils.makeProfile())
+        try await sut.saveProfile(DBPContinuedProcessingTestUtils.makeProfile())
 
         // Then
         XCTAssertFalse(dependencies.continuedProcessingCoordinator.didCallStartInitialRun)
@@ -109,14 +109,14 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
-    func testWhenSaveProfileAndStartInitialRunAndContinuedProcessingIsNotSupported_thenFallsBackToLegacySave() async throws {
+    func testWhenSaveProfileAndContinuedProcessingIsNotSupported_thenFallsBackToLegacySave() async throws {
         // Given
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
             continuedProcessingTestConfiguration: .init(shouldUseContinuedProcessingForInitialRun: false)
         )
 
         // When
-        try await sut.saveProfileAndStartContinuedProcessingInitialRunIfSupported(DBPContinuedProcessingTestUtils.makeProfile())
+        try await sut.saveProfile(DBPContinuedProcessingTestUtils.makeProfile())
 
         // Then
         XCTAssertFalse(dependencies.continuedProcessingCoordinator.didCallStartInitialRun)
@@ -124,7 +124,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
-    func testWhenSaveProfileAndStartInitialRunAndFeatureFlagIsOn_thenStartsContinuedProcessing() async throws {
+    func testWhenSaveProfileAndFeatureFlagIsOn_thenStartsContinuedProcessing() async throws {
         // Given
         let continuedProcessingCoordinator = MockContinuedProcessingCoordinator()
         let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
@@ -143,7 +143,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         ]
 
         // When
-        try await sut.saveProfileAndStartContinuedProcessingInitialRunIfSupported(profile)
+        try await sut.saveProfile(profile)
 
         // Then
         XCTAssertTrue(dependencies.continuedProcessingCoordinator.didCallStartInitialRun)
@@ -152,7 +152,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertFalse(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
-    func testWhenSaveProfileAndStartInitialRunAndContinuedProcessingStartFails_thenFallsBackToImmediateScansWithoutPreparingTwice() async throws {
+    func testWhenSaveProfileAndContinuedProcessingStartFails_thenFallsBackToImmediateScansWithoutPreparingTwice() async throws {
         // Given
         let continuedProcessingCoordinator = MockContinuedProcessingCoordinator()
         continuedProcessingCoordinator.startInitialRunError = NSError(domain: "test", code: 1)
@@ -171,7 +171,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         ]
 
         // When
-        try await sut.saveProfileAndStartContinuedProcessingInitialRunIfSupported(DBPContinuedProcessingTestUtils.makeProfile())
+        try await sut.saveProfile(DBPContinuedProcessingTestUtils.makeProfile())
 
         // Then
         XCTAssertTrue(dependencies.continuedProcessingCoordinator.didCallStartInitialRun)

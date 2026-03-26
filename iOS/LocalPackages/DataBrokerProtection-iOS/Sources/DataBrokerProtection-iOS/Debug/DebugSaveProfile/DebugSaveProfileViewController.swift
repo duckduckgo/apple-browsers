@@ -23,10 +23,8 @@ import DataBrokerProtectionCore
 
 public final class DebugSaveProfileViewController: UIHostingController<DebugSaveProfileView> {
 
-    weak var continuedProcessingDelegate: DBPIOSInterface.ContinuedProcessingDelegate?
-
-    public init(continuedProcessingDelegate: DBPIOSInterface.ContinuedProcessingDelegate?) {
-        let viewModel = DebugSaveProfileViewModel(continuedProcessingDelegate: continuedProcessingDelegate)
+    public init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?) {
+        let viewModel = DebugSaveProfileViewModel(databaseDelegate: databaseDelegate)
         let contentView = DebugSaveProfileView(viewModel: viewModel)
         super.init(rootView: contentView)
     }

@@ -33,7 +33,6 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private var authenticationDelegate: DBPIOSInterface.AuthenticationDelegate
     private var databaseDelegate: DBPIOSInterface.DatabaseDelegate
-    private var continuedProcessingDelegate: DBPIOSInterface.ContinuedProcessingDelegate
     private var userEventsDelegate: DBPIOSInterface.UserEventsDelegate
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
@@ -54,7 +53,6 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
         return DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                               databaseDelegate: databaseDelegate,
-                              continuedProcessingDelegate: continuedProcessingDelegate,
                               feedbackFormDelegate: self,
                               userEventsDelegate: userEventsDelegate,
                               webUISettings: webUISettings,
@@ -82,7 +80,6 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
     public init(authenticationDelegate: DBPIOSInterface.AuthenticationDelegate,
                 databaseDelegate: DBPIOSInterface.DatabaseDelegate,
-                continuedProcessingDelegate: DBPIOSInterface.ContinuedProcessingDelegate,
                 userEventsDelegate: DBPIOSInterface.UserEventsDelegate,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties,
@@ -96,7 +93,6 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
         self.authenticationDelegate = authenticationDelegate
         self.databaseDelegate = databaseDelegate
-        self.continuedProcessingDelegate = continuedProcessingDelegate
         self.userEventsDelegate = userEventsDelegate
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties

@@ -190,7 +190,6 @@ extension DebugScreensViewModel {
                     DataBrokerProtectionDebugViewController(coder: coder,
                                                             databaseDelegate: self.dependencies.databaseDelegate,
                                                             debuggingDelegate: self.dependencies.debuggingDelegate,
-                                                            continuedProcessingDelegate: self.dependencies.continuedProcessingDelegate,
                                                             runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
                 }
             }) : nil,

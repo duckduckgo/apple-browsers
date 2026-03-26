@@ -41,6 +41,7 @@ extension OnboardingView {
         static let queryFieldVerticalPadding: CGFloat = 16.33
         static let suggestionChipLeadingPadding: CGFloat = 14
         static let suggestionChipTrailingPadding: CGFloat = 16
+        static let suggestionChipVerticalPadding: CGFloat = 8
         static let suggestionChipContentSpacing: CGFloat = 8
         static let disabledPrimaryActionOpacity: CGFloat = 0.3
 
@@ -102,6 +103,7 @@ extension OnboardingView {
         private let measureQuerySubmissionAction: (Bool, DuckAIQueryExperimentPromptSource) -> Void
         private let startExitTransitionAction: () -> Void
         private let visualStyle: VisualStyle
+        private let searchSuggestions: [ContextualOnboardingListItem]
         private var animateTitle: Binding<Bool>
         @StateObject private var pickerViewModel: ImageSegmentedPickerViewModel
 
@@ -151,6 +153,7 @@ extension OnboardingView {
             self.measureQuerySubmissionAction = measureQuerySubmissionAction
             self.startExitTransitionAction = startExitTransitionAction
             self.visualStyle = visualStyle
+            self.searchSuggestions = Array(OnboardingSuggestedSearchesProvider().list.prefix(Metrics.maxSuggestionCount))
             self.animateTitle = animateTitle
             self.shouldAnimateToDuckAIOnAppear = defaultExperience == .duckAI
             let startsInSearchMode = defaultExperience == .search || shouldAnimateToDuckAIOnAppear
@@ -409,39 +412,52 @@ extension OnboardingView {
 
         private var suggestionChips: some View {
             VStack(spacing: Metrics.interChipSpacing) {
-                if visibleSuggestionCount >= 1 {
-                    suggestionChip(
-                        isDuckAISelected
-                        ? UserText.Onboarding.DuckAIQueryExperiment.suggestionOption1
-                        : UserText.Onboarding.DuckAIQueryExperiment.searchSuggestionOption1,
-                        promptSource: .option1,
-                        icon: suggestionIcon
-                    )
-                    .transition(suggestionTransition)
-                }
-                if visibleSuggestionCount >= 2 {
-                    suggestionChip(
-                        isDuckAISelected
-                        ? UserText.Onboarding.DuckAIQueryExperiment.suggestionOption2
-                        : UserText.Onboarding.DuckAIQueryExperiment.searchSuggestionOption2,
-                        promptSource: .option2,
-                        icon: suggestionIcon
-                    )
-                    .transition(suggestionTransition)
-                }
-                if visibleSuggestionCount >= 3 {
-                    suggestionChip(
-                        UserText.Onboarding.DuckAIQueryExperiment.suggestionSurpriseMe,
-                        promptSource: .option3,
-                        icon: DesignSystemImages.Glyphs.Size16.wand
-                    )
-                    .transition(suggestionTransition)
+                ForEach(Array(displayedSuggestions.enumerated()), id: \.offset) { index, suggestion in
+                    if visibleSuggestionCount >= index + 1 {
+                        suggestionChip(
+                            title: suggestion.visibleTitle,
+                            prompt: suggestion.prompt,
+                            promptSource: suggestion.promptSource,
+                            icon: suggestion.icon
+                        )
+                        .transition(suggestionTransition)
+                    }
                 }
             }
         }
 
-        private var suggestionIcon: UIImage {
-            isDuckAISelected ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.findSearchSmall
+        private var displayedSuggestions: [DisplayedSuggestion] {
+            if isDuckAISelected {
+                return [
+                    DisplayedSuggestion(
+                        visibleTitle: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption1,
+                        prompt: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption1,
+                        promptSource: .option1,
+                        icon: DesignSystemImages.Glyphs.Size16.aiChat
+                    ),
+                    DisplayedSuggestion(
+                        visibleTitle: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption2,
+                        prompt: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption2,
+                        promptSource: .option2,
+                        icon: DesignSystemImages.Glyphs.Size16.aiChat
+                    ),
+                    DisplayedSuggestion(
+                        visibleTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle,
+                        prompt: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle,
+                        promptSource: .option3,
+                        icon: DesignSystemImages.Glyphs.Size16.wand
+                    )
+                ]
+            }
+
+            return Array(searchSuggestions.prefix(Metrics.maxSuggestionCount).enumerated()).map { index, item in
+                DisplayedSuggestion(
+                    visibleTitle: item.title,
+                    prompt: item.title,
+                    promptSource: promptSource(for: index),
+                    icon: icon(for: item)
+                )
+            }
         }
 
         private var suggestionTransition: AnyTransition {
@@ -468,9 +484,9 @@ extension OnboardingView {
             )
         }
 
-        private func suggestionChip(_ title: String, promptSource: DuckAIQueryExperimentPromptSource, icon: UIImage) -> some View {
+        private func suggestionChip(title: String, prompt: String, promptSource: DuckAIQueryExperimentPromptSource, icon: UIImage) -> some View {
             Button {
-                openSelectedExperience(prompt: title, autoSend: true, promptSource: promptSource)
+                openSelectedExperience(prompt: prompt, autoSend: true, promptSource: promptSource)
             } label: {
                 HStack(spacing: Metrics.suggestionChipContentSpacing) {
                     Image(uiImage: icon)
@@ -480,14 +496,16 @@ extension OnboardingView {
                         .frame(width: Metrics.suggestionChipIconSize, height: Metrics.suggestionChipIconSize)
                     Text(title)
                         .font(Font(UIFont.daxBodyBold()))
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .foregroundColor(accentColor)
                 .padding(.leading, Metrics.suggestionChipLeadingPadding)
                 .padding(.trailing, Metrics.suggestionChipTrailingPadding)
+                .padding(.vertical, Metrics.suggestionChipVerticalPadding)
                 .frame(maxWidth: .infinity)
-                .frame(height: suggestionChipHeight)
+                .frame(minHeight: suggestionChipHeight, alignment: .leading)
                 // Make the whole button area tappable, when there's no background.
                 .contentShape(Rectangle())
                 .overlay(
@@ -496,6 +514,28 @@ extension OnboardingView {
                 )
             }
             .buttonStyle(OutlinedSuggestionChipButtonStyle(cornerRadius: suggestionChipCornerRadius))
+        }
+
+        private func icon(for item: ContextualOnboardingListItem) -> UIImage {
+            switch item {
+            case .search:
+                DesignSystemImages.Glyphs.Size24.findSearchSmall
+            case .site:
+                DesignSystemImages.Glyphs.Size16.globe
+            case .surprise:
+                DesignSystemImages.Glyphs.Size16.wand
+            }
+        }
+
+        private func promptSource(for index: Int) -> DuckAIQueryExperimentPromptSource {
+            switch index {
+            case 0:
+                .option1
+            case 1:
+                .option2
+            default:
+                .option3
+            }
         }
 
         // MARK: Actions
@@ -594,6 +634,16 @@ extension OnboardingView {
     }
 
 }
+
+private extension OnboardingView.DuckAIExperimentSearchContent {
+    struct DisplayedSuggestion {
+        let visibleTitle: String
+        let prompt: String
+        let promptSource: DuckAIQueryExperimentPromptSource
+        let icon: UIImage
+    }
+}
+
 // MARK: - OnboardingQueryField
 private struct OnboardingQueryField: UIViewRepresentable {
     private static let singleLineTopInset: CGFloat = 5.0 / 3.0

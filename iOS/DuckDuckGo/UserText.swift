@@ -2260,7 +2260,7 @@ public struct UserText {
             )
             public static let aiPlaceholder = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.placeholder.ai",
-                value: "Ask privately",
+                value: "Ask anything privately",
                 comment: "Placeholder for AI query input in onboarding Duck.ai query experiment screen."
             )
             public static let searchPlaceholder = NotLocalizedString(
@@ -2270,28 +2270,13 @@ public struct UserText {
             )
             public static let suggestionOption1 = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.suggestion.option1",
-                value: "how to say \"duck\" in 10 languages",
+                value: "How do you say \"duck\" in 10 languages?",
                 comment: "First suggestion chip label in onboarding Duck.ai query experiment screen."
             )
             public static let suggestionOption2 = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.suggestion.option2",
-                value: "all mighty ducks movies",
+                value: "What order should I watch the Mighty Ducks movies in?",
                 comment: "Second suggestion chip label in onboarding Duck.ai query experiment screen."
-            )
-            public static let searchSuggestionOption1 = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.search.option1",
-                value: "how to say \"duck\" in spanish",
-                comment: "First suggestion chip label in onboarding Duck.ai query experiment screen when Search mode is active."
-            )
-            public static let searchSuggestionOption2 = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.search.option2",
-                value: "mighty ducks cast",
-                comment: "Second suggestion chip label in onboarding Duck.ai query experiment screen when Search mode is active."
-            )
-            public static let suggestionSurpriseMe = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.surprise-me",
-                value: "surprise me!",
-                comment: "Surprise me suggestion chip label in onboarding Duck.ai query experiment screen."
             )
             public static let fireOnboardingTitle = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.fire.title",

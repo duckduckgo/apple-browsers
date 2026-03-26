@@ -37,7 +37,7 @@ final class DuckAIVoiceControlWidgetTests: XCTestCase {
 
         XCTAssertEqual(widget.kind, .voiceChat)
         XCTAssertEqual(widget.labelText, "Duck.ai Voice")
-        XCTAssertEqual(widget.imageName, "Voice-Symbol")
+        XCTAssertEqual(widget.imageName, "AIVoiceChat-Symbol")
     }
 
     // MARK: - Deep Link URL

@@ -121,7 +121,6 @@ extension Preferences {
                                         dockModel.showAddToDockDemoVideo()
                                     }
                                 }
-                                .padding(.leading, 24)
                             }
                         }
                     }

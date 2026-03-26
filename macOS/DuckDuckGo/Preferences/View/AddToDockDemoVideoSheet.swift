@@ -28,7 +28,7 @@ extension Preferences {
     struct AddToDockDemoVideoSheet: View {
 
         private static let videoURL = Bundle.main.url(forResource: "macOS_Add_To_Dock", withExtension: "mp4")!
-        private static let referenceVideoSize = CGSize(width: 898, height: 680)
+        private static let referenceVideoSize = CGSize(width: 1536, height: 752)
 
         @Binding var isPresented: Bool
         @StateObject private var coordinator = VideoPlayerCoordinator()
@@ -40,6 +40,7 @@ extension Preferences {
                         Self.referenceVideoSize.width / Self.referenceVideoSize.height,
                         contentMode: .fit
                     )
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: Preferences.Const.paneContentWidth)
 
                 HStack {

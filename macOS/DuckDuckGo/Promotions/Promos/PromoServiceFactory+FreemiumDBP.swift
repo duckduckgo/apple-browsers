@@ -28,8 +28,6 @@ extension PromoServiceFactory {
         promoType: PromoType(.remoteMessage),
         context: .newTabPage,
         coexistingPromoIDs: [],
-        respectsGlobalCooldown: false,
-        setsGlobalCooldown: false,
         delegate: nil
     )
 }

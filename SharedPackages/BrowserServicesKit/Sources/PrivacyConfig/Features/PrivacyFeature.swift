@@ -260,6 +260,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case crashReportOptInStatusResetting
 
     case screenTimeCleaning
+
+    case minimalChromeInLandscape
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

@@ -367,6 +367,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213763338305579?focus=true
     case aiChatContextualFireButton
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213809475913723?focus=true
+    case minimalChromeInLandscape
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -400,7 +403,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPromoForReinstallers,
              .screenTimeCleaning:
             .enabled
-        case .crashReportOptInStatusResetting:
+        case .crashReportOptInStatusResetting,
+             .minimalChromeInLandscape:
             .internalOnly
         default:
             .disabled
@@ -498,7 +502,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
-
              .enhancedDataClearingSettings,
              .genericBackgroundTask,
              .tabSwitcherTrackerCount,
@@ -519,7 +522,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .simplifiedSyncSetupExperiment,
              .duckAIVoiceShortcut,
              .screenTimeCleaning,
-             .aiChatContextualFireButton:
+             .aiChatContextualFireButton,
+             .minimalChromeInLandscape:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -792,6 +796,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .aiChatContextualFireButton:
             return .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton))
+        case .minimalChromeInLandscape:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape))
         }
     }
 }

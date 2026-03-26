@@ -29,7 +29,9 @@ extension OnboardingRebranding.OnboardingView {
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-BrowserComparison",
             size: CGSize(width: 390, height: 211),
-            position: .bottom()
+            position: .bottom(),
+            twoStagesAnimation: 0.5,
+            exitDuration: 1.0
         )
 
         @Environment(\.onboardingTheme) private var onboardingTheme

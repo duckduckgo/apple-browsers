@@ -49,17 +49,46 @@ struct DaxAnimation {
     /// When non-nil, the view slides from `finalCenter` to `finalCenter + exitOffset`
     /// when the animation is played in reverse.
     let exitOffset: CGPoint?
+    /// When non-nil, the Lottie animation is split into two stages:
+    /// - **Entrance** — plays from frame 0 to this progress value (0…1).
+    /// - **Exit** — plays from this progress value to 1.0 when `isExiting` becomes `true`.
+    ///
+    /// When `nil` (the default), the animation plays fully forward (0 → 1) on entrance
+    /// and fully in reverse (1 → 0) on exit, using the `playForward` flag.
+    let twoStagesAnimation: Double?
+    /// Duration of the exit animation in seconds.
+    /// When `nil` (the default), falls back to `OnboardingBubbleAnimationMetrics.daxExitDuration`.
+    let exitDuration: TimeInterval?
+    /// When `true`, the overlay fades from fully opaque to transparent during the exit animation.
+    let fadeOut: Bool
+
+    /// `true` when the animation slides off-screen **before** the step transition.
+    /// The parent must delay the action call by `effectiveExitDuration`.
+    var hasSlideExit: Bool { exitOffset != nil }
+
+    /// `true` when the animation fades out **simultaneously** with the step transition.
+    /// The parent fires the action immediately and delays overlay recreation instead.
+    var hasFadeExit: Bool { fadeOut }
+
+    /// Resolved exit animation duration — custom value when set, otherwise the shared default.
+    var effectiveExitDuration: TimeInterval { exitDuration ?? OnboardingBubbleAnimationMetrics.daxExitDuration }
 
     init(animationName: String,
          size: CGSize,
          position: DaxAnimation.Position,
          entranceOffset: CGPoint? = nil,
-         exitOffset: CGPoint? = nil) {
+         exitOffset: CGPoint? = nil,
+         twoStagesAnimation: Double? = nil,
+         exitDuration: TimeInterval? = nil,
+         fadeOut: Bool = false) {
         self.animationName = animationName
         self.size = size
         self.position = position
         self.entranceOffset = entranceOffset
         self.exitOffset = exitOffset
+        self.twoStagesAnimation = twoStagesAnimation
+        self.exitDuration = exitDuration
+        self.fadeOut = fadeOut
     }
 }
 
@@ -77,10 +106,16 @@ struct DaxAnimation {
 /// ## Exit
 /// Set `isExiting = true` to slide the view from `finalCenter` to `finalCenter + animation.exitOffset`.
 /// The parent must wait `OnboardingBubbleAnimationMetrics.daxExitDuration` before destroying the view.
+///
+/// ## Two-stage playback
+/// If `animation.twoStagesAnimation` is set, the animation is split at that progress point:
+/// entrance plays 0 → midpoint, exit plays midpoint → 1.0.
+/// The `playForward` flag is ignored for two-stage animations.
 struct DaxAnimationOverlay: View {
 
     let animation: DaxAnimation
     /// `true` to play forward (entrance); `false` to play in reverse (exit).
+    /// Ignored when `animation.twoStagesAnimation` is set — stage is determined by `isExiting` instead.
     let playForward: Bool
     /// Set to `true` to trigger the slide-out exit animation (requires `animation.exitOffset`).
     let isExiting: Bool
@@ -88,12 +123,30 @@ struct DaxAnimationOverlay: View {
     /// Current displacement from `finalCenter`. Zero means the view is at its design position.
     /// Seeded from `entranceOffset` so the very first render is already off-screen — no jump.
     @State private var positionOffset: CGPoint
+    /// Opacity driven to 0 on exit when `animation.fadeOut` is `true`; otherwise stays at 1.
+    @State private var opacity: Double = 1
 
     init(animation: DaxAnimation, playForward: Bool, isExiting: Bool) {
         self.animation = animation
         self.playForward = playForward
         self.isExiting = isExiting
         _positionOffset = State(initialValue: animation.entranceOffset ?? .zero)
+    }
+
+    /// Lottie playback mode derived from the current state.
+    ///
+    /// - **Standard** (`twoStagesAnimation == nil`): `playForward` controls direction.
+    /// - **Two-stage** (`twoStagesAnimation != nil`): entrance plays 0 → midpoint;
+    ///   exit (`isExiting == true`) plays midpoint → 1.0.
+    private var lottiePlaybackMode: LottiePlaybackMode {
+        if let midPoint = animation.twoStagesAnimation {
+            return isExiting
+                ? .playing(.fromProgress(midPoint, toProgress: 1.0, loopMode: .playOnce))
+                : .playing(.fromProgress(0, toProgress: midPoint, loopMode: .playOnce))
+        }
+        return playForward
+            ? .playing(.fromProgress(0, toProgress: 1.0, loopMode: .playOnce))
+            : .playing(.fromProgress(1.0, toProgress: 0, loopMode: .playOnce))
     }
 
     var body: some View {
@@ -103,11 +156,8 @@ struct DaxAnimationOverlay: View {
             Lottie.LottieView {
                 try await DotLottieFile.asset(named: animation.animationName)
             }
-            // Play once and stop on the last frame of the chosen direction so Dax stays visible.
-            .playbackMode(playForward
-                ? .playing(.fromProgress(0, toProgress: 1.0, loopMode: .playOnce))
-                : .playing(.fromProgress(1.0, toProgress: 0, loopMode: .playOnce))
-            )
+            // Play once and stop on the last frame so Dax stays visible at rest.
+            .playbackMode(lottiePlaybackMode)
             .resizable()
             // Stable ID keeps the same LottieView instance across re-renders triggered by
             // positionOffset changes. Without it, the async closure re-runs on each re-render
@@ -119,6 +169,7 @@ struct DaxAnimationOverlay: View {
         }
         // Expand proxy.size to the full screen so positions are computed against the true screen
         // bottom, not the safe-area-inset bottom.
+        .opacity(opacity)
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .onAppear {
@@ -130,9 +181,17 @@ struct DaxAnimationOverlay: View {
             }
         }
         .onChange(of: isExiting) { exiting in
-            guard exiting, let offset = animation.exitOffset else { return }
-            withAnimation(.easeIn(duration: OnboardingBubbleAnimationMetrics.daxExitDuration)) {
-                positionOffset = offset
+            guard exiting else { return }
+            let duration = animation.effectiveExitDuration
+            if let offset = animation.exitOffset {
+                withAnimation(.easeIn(duration: duration)) {
+                    positionOffset = offset
+                }
+            }
+            if animation.fadeOut {
+                withAnimation(.easeIn(duration: duration)) {
+                    opacity = 0
+                }
             }
         }
     }

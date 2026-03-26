@@ -138,8 +138,11 @@ extension OnboardingRebranding {
         @State private var daxPlayForward = true
         /// Incrementing this ID forces `DaxAnimationOverlay` to recreate and restart from the correct frame.
         @State private var daxAnimationID = 0
-        /// `true` while the current Dax overlay is sliding out; reset to `false` alongside `daxAnimationID`.
+        /// `true` while the current Dax overlay is animating its exit; reset alongside `daxAnimationID`.
         @State private var daxExiting = false
+        /// The animation currently displayed by the overlay. Updated explicitly so the old overlay
+        /// stays alive (and can play its exit) even after the model state has moved to the next step.
+        @State private var currentDaxAnimation: DaxAnimation?
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
@@ -175,7 +178,7 @@ extension OnboardingRebranding {
 
                     ScrollableOnboardingBackground(viewState: viewState)
 
-                    if let dax = daxAnimation(for: viewState.type) {
+                    if let dax = currentDaxAnimation {
                         DaxAnimationOverlay(animation: dax, playForward: daxPlayForward, isExiting: daxExiting)
                             // Combine animationID + name so the view is recreated on both:
                             // - direction changes (same step, forward → reverse)
@@ -454,6 +457,13 @@ extension OnboardingRebranding {
             )
         }
 
+        /// Returns the `DaxAnimation` for the current model state, or `nil`.
+        /// Called after a state change to advance `currentDaxAnimation` to the next step.
+        private var activeDaxAnimation: DaxAnimation? {
+            guard case let .onboarding(viewState) = model.state else { return nil }
+            return daxAnimation(for: viewState.type)
+        }
+
         /// Returns the `DaxAnimation` for the given step, or `nil` if no animation is configured.
         private func daxAnimation(for type: OnboardingView.ViewState.Intro.IntroType) -> DaxAnimation? {
             switch type {
@@ -490,39 +500,44 @@ extension OnboardingRebranding {
                 guard case let .onboarding(viewState) = model.state else { return nil }
                 return daxAnimation(for: viewState.type)
             }() : nil
-            let hasDaxExit = currentDax?.exitOffset != nil
+            let daxExitDuration = currentDax?.effectiveExitDuration ?? OnboardingBubbleAnimationMetrics.daxExitDuration
+            let hasAnyDaxExit = currentDax?.hasSlideExit == true || currentDax?.hasFadeExit == true
 
-            if hasDaxExit {
-                // Trigger the slide-out; the overlay stays alive for daxExitDuration.
-                daxExiting = true
-                // After the exit animation completes, clear the flag.
-                // daxAnimationID is NOT incremented here — the old overlay stays frozen at
-                // exitOffset (off-screen) until the action fires and model.state changes.
-                // Incrementing here would recreate the overlay with the old state still active,
-                // causing a spurious second entrance/exit animation before the step transition.
-                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.daxExitDuration) {
-                    daxExiting = false
-                }
-            } else if action == nil {
-                // Initial appearance — no state change coming, reset Dax immediately.
+            if action == nil {
+                // Initial appearance — pin the overlay to the current step and reset Dax.
+                currentDaxAnimation = activeDaxAnimation
                 daxPlayForward = true
                 daxAnimationID += 1
             }
 
-            let daxExitDelay: TimeInterval = hasDaxExit ? OnboardingBubbleAnimationMetrics.daxExitDuration : 0
-
-            // When there is an action, insert a fade-out delay before executing it so the
-            // old content is invisible before the bubble starts resizing.
-            let actionDelay = daxExitDelay + (action != nil ? OnboardingBubbleAnimationMetrics.contentFadeOutDelay : 0)
+            // All exit animations (slide, fade, or both) start simultaneously with the page
+            // transition — no pre-transition delay is added.
+            let actionDelay: TimeInterval = action != nil ? OnboardingBubbleAnimationMetrics.contentFadeOutDelay : 0
 
             if let action {
                 DispatchQueue.main.asyncAfter(deadline: .now() + actionDelay) {
-                    // Reset Dax and trigger the model state change in the same batch so SwiftUI
-                    // recreates the overlay exactly once with the correct new animation.
-                    daxPlayForward = true
-                    daxAnimationID += 1
+                    if hasAnyDaxExit {
+                        // Trigger exit animations in sync with the page transition.
+                        // currentDaxAnimation is intentionally NOT updated here — keeping it
+                        // pinned to the old step's animation keeps the overlay alive so it can
+                        // finish its exit even after model.state has moved to the next step.
+                        daxExiting = true
+                        action()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + daxExitDuration) {
+                            // Exit complete — advance the overlay to the new step.
+                            daxExiting = false
+                            currentDaxAnimation = activeDaxAnimation
+                            daxPlayForward = true
+                            daxAnimationID += 1
+                        }
+                    } else {
+                        // No exit animation — advance the overlay atomically with the state change.
+                        action()
+                        currentDaxAnimation = activeDaxAnimation
+                        daxPlayForward = true
+                        daxAnimationID += 1
+                    }
                     // No withAnimation -- the bubble resize is driven by .animation(..., value: state.type).
-                    action()
                 }
             }
 

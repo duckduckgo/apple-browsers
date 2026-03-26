@@ -72,42 +72,6 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
-    func testIsEligible_whenDisplayWindowExpired_remainsEligibleSoShowCanCleanUp() {
-        // An expired window still reports eligible — show() handles the expiry
-        // by clearing the date and returning .ignored(cooldown:)
-        coordinator.displayWindowStartDate = Date().addingTimeInterval(-.days(8))
-        coordinator.updateDisplayWindowExpiredState()
-
-        XCTAssertTrue(sut.isEligible)
-    }
-
-    // MARK: - Fast-path eligibility
-
-    func testIsEligible_fastPath_whenFeatureUnavailableButFlagEnabled() {
-        // Simulate startup timing: isAvailable is false (product availability not settled)
-        // but feature flag is enabled and display window is active
-        coordinator.displayWindowStartDate = Date()
-        coordinator.updateDisplayWindowExpiredState()
-        mockFeature.featureAvailable = false
-        mockFeature.mockFeatureFlagEnabled = true
-
-        // Re-sync coordinator state
-        let expectation = XCTestExpectation()
-        coordinator.$isFeatureAvailable.dropFirst().sink { _ in expectation.fulfill() }.store(in: &cancellables)
-        wait(for: [expectation], timeout: 2.0)
-
-        XCTAssertTrue(sut.isEligible)
-    }
-
-    func testIsEligible_fastPath_whenFeatureFlagDisabled() {
-        // Even during active display window, feature flag must be respected
-        coordinator.displayWindowStartDate = Date()
-        coordinator.updateDisplayWindowExpiredState()
-        mockFeature.mockFeatureFlagEnabled = false
-
-        XCTAssertFalse(sut.isEligible)
-    }
-
     // MARK: - show()
 
     func testShow_returnsIgnoredForLegacyDismissal_whenPreScanBanner() async {
@@ -175,28 +139,25 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         _ = await task.value
     }
 
-    func testShow_setsDisplayWindowStartDate() async {
-        XCTAssertNil(coordinator.displayWindowStartDate)
-
+    func testShow_suspendsAndWaitsForUserAction() async {
         let task = Task {
             await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
         }
         try? await Task.sleep(nanoseconds: 50_000_000)
 
-        XCTAssertNotNil(coordinator.displayWindowStartDate)
+        XCTAssertNotNil(coordinator.viewModel)
 
         sut.hide()
         _ = await task.value
     }
 
-    func testShow_returnsIgnoredWhenWindowExpired() async {
-        coordinator.displayWindowStartDate = Date().addingTimeInterval(-.days(8))
-        coordinator.updateDisplayWindowExpiredState()
+    func testShow_returnsIgnoredWhenDisplayWindowExpired() async {
+        var history = PromoHistoryRecord(id: "test")
+        history.lastShown = Date().addingTimeInterval(-.days(8))
 
-        let result = await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
+        let result = await sut.show(history: history, force: false)
 
         XCTAssertEqual(result, .ignored(cooldown: .days(28)))
-        XCTAssertNil(coordinator.displayWindowStartDate)
     }
 
     func testShow_suspendsAndResumesWithActionedOnProceed() async {
@@ -256,26 +217,6 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
     }
 
     // MARK: - show() edge cases
-
-    func testShow_preservesExistingDisplayWindowStartDate() async {
-        let originalDate = Date().addingTimeInterval(-.days(3))
-        coordinator.displayWindowStartDate = originalDate
-
-        let task = Task {
-            await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
-        }
-        try? await Task.sleep(nanoseconds: 50_000_000)
-
-        // Date should not have been overwritten
-        XCTAssertEqual(
-            coordinator.displayWindowStartDate?.timeIntervalSince1970 ?? 0,
-            originalDate.timeIntervalSince1970,
-            accuracy: 1.0
-        )
-
-        sut.hide()
-        _ = await task.value
-    }
 
     func testShow_doubleCallResumesFirstContinuation() async {
         // First show — suspends
@@ -373,33 +314,4 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
     }
 
-    func testIsEligiblePublisher_usesFastPathDuringActiveDisplayWindow() {
-        // Set up active display window
-        coordinator.displayWindowStartDate = Date()
-        coordinator.updateDisplayWindowExpiredState()
-
-        // Make isAvailable false but featureFlag true
-        mockFeature.mockFeatureFlagEnabled = true
-        mockFeature.featureAvailable = false
-
-        let expectation = XCTestExpectation(description: "publisher settles")
-        // Wait for isFeatureAvailable to propagate
-        coordinator.$isFeatureAvailable
-            .dropFirst()
-            .sink { _ in expectation.fulfill() }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: 2.0)
-
-        // Publisher should use fast-path: featureFlagEnabled (true) instead of isAvailable (false)
-        let publisherExpectation = XCTestExpectation(description: "publisher emits true via fast-path")
-        sut.isEligiblePublisher
-            .first()
-            .sink { eligible in
-                if eligible { publisherExpectation.fulfill() }
-            }
-            .store(in: &cancellables)
-
-        wait(for: [publisherExpectation], timeout: 2.0)
-    }
 }

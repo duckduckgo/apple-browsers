@@ -82,23 +82,6 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isFeatureAvailable)
     }
 
-    func testDisplayWindowExpired_whenNoStartDate() {
-        sut.updateDisplayWindowExpiredState()
-        XCTAssertFalse(sut.isDisplayWindowExpired)
-    }
-
-    func testDisplayWindowExpired_whenWithinWindow() {
-        sut.displayWindowStartDate = Date()
-        sut.updateDisplayWindowExpiredState()
-        XCTAssertFalse(sut.isDisplayWindowExpired)
-    }
-
-    func testDisplayWindowExpired_whenPastWindow() {
-        sut.displayWindowStartDate = Date().addingTimeInterval(-.days(8))
-        sut.updateDisplayWindowExpiredState()
-        XCTAssertTrue(sut.isDisplayWindowExpired)
-    }
-
     // MARK: - refreshViewModel / clearViewModel
 
     @MainActor

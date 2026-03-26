@@ -28,20 +28,8 @@ import Common
 /// the visibility of the promotion and responding to user interactions with the promotion view.
 final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
 
-    private enum Constants {
-        static let displayWindowDuration: TimeInterval = .days(7)
-    }
-
     /// Whether the freemium DBP feature is currently available (includes async checks like product availability).
     @Published private(set) var isFeatureAvailable: Bool = false
-
-    /// Whether the feature flag is enabled (synchronous — no async dependencies).
-    var isFeatureFlagEnabled: Bool {
-        freemiumDBPFeature.isFeatureFlagEnabled
-    }
-
-    /// Whether the current display window has expired (7 days elapsed).
-    @Published private(set) var isDisplayWindowExpired: Bool = false
 
     /// The view model representing the promotion, which updates based on the user's state. Returns `nil` if the feature is not enabled
     @Published
@@ -54,11 +42,6 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// Callback invoked when scan results arrive, allowing the delegate
     /// to trigger a re-evaluation of eligibility via refreshEligibility().
     var onScanResultsUpdated: (() -> Void)?
-
-    var displayWindowStartDate: Date? {
-        get { freemiumDBPUserStateManager.displayWindowStartDate }
-        set { freemiumDBPUserStateManager.displayWindowStartDate = newValue }
-    }
 
     /// Whether the user dismissed the promotion before queue integration (legacy).
     /// Read-only — current dismissals are handled by PromoService.
@@ -92,16 +75,12 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// Publisher that emits when contextual onboarding is completed
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
 
-    /// Provides the current date. In debug/review builds, may return a simulated date for testing.
-    let dateProvider: () -> Date
-
     init(freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          notificationCenter: NotificationCenter = .default,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
-         contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Empty<Bool, Never>().eraseToAnyPublisher(),
-         dateProvider: @escaping () -> Date = Date.init) {
+         contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Empty<Bool, Never>().eraseToAnyPublisher()) {
 
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.freemiumDBPFeature = freemiumDBPFeature
@@ -109,22 +88,12 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
-        self.dateProvider = dateProvider
 
         isFeatureAvailable = freemiumDBPFeature.isAvailable
-        updateDisplayWindowExpiredState()
 
         subscribeToFeatureAvailabilityUpdates()
         observeFreemiumDBPNotifications()
         observeContextualOnboardingCompletion()
-    }
-
-    func updateDisplayWindowExpiredState() {
-        guard let startDate = displayWindowStartDate else {
-            isDisplayWindowExpired = false
-            return
-        }
-        isDisplayWindowExpired = dateProvider().timeIntervalSince(startDate) >= Constants.displayWindowDuration
     }
 
     @MainActor

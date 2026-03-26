@@ -81,15 +81,7 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     var isEligible: Bool {
-        // Active display window (including expired) — skip async checks (product availability)
-        // but respect the feature flag. Expiry is handled in show(), which clears the date
-        // and returns .ignored(cooldown:). We must return eligible here so show() gets called.
-        if coordinator.displayWindowStartDate != nil {
-            return coordinator.isFeatureFlagEnabled
-        }
-
-        // No display window — full eligibility check
-        return coordinator.isFeatureAvailable
+        coordinator.isFeatureAvailable
     }
 
     private let refreshSubject = PassthroughSubject<Void, Never>()
@@ -97,13 +89,7 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
         coordinator.$isFeatureAvailable
             .combineLatest(refreshSubject.prepend(()))
-            .map { [weak coordinator] isAvailable, _ in
-                guard let coordinator else { return false }
-                if coordinator.displayWindowStartDate != nil {
-                    return coordinator.isFeatureFlagEnabled
-                }
-                return isAvailable
-            }
+            .map { isAvailable, _ in isAvailable }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -121,23 +107,16 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        // Guard against double-show: if a previous show() is still suspended, resume it first
         resumeContinuation(with: .noChange)
 
         // Honor legacy dismissals from before queue integration.
-        // Only applies to pre-scan banner — if scan results exist, the variant changed.
         if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil && !force {
             return .ignored()
         }
 
-        if coordinator.displayWindowStartDate == nil {
-            coordinator.displayWindowStartDate = coordinator.dateProvider()
-        }
-
-        coordinator.updateDisplayWindowExpiredState()
-        if coordinator.isDisplayWindowExpired {
-            coordinator.displayWindowStartDate = nil
-            coordinator.updateDisplayWindowExpiredState()
+        // Display window: if the promo has been shown for 7+ days, enter cooldown.
+        if let promoShownDate = history.lastShown,
+           Date().timeIntervalSince(promoShownDate) >= .days(7) {
             return .ignored(cooldown: .days(28))
         }
 

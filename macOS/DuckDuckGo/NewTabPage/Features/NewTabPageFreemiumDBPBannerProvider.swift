@@ -78,18 +78,49 @@ extension NewTabPageDataModel.FreemiumPIRBannerMessage {
 final class FreemiumDBPPromoDelegate: PromoDelegate {
 
     private let coordinator: FreemiumDBPPromotionViewCoordinator
+    private let historyProvider: PromoHistoryProviding?
+    private let promoId: String?
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     var isEligible: Bool {
-        coordinator.isFeatureAvailable
+        if coordinator.isFeatureAvailable { return true }
+
+        // Fast-path: if the promo was shown within the last 7 days, consider
+        // it eligible even before async product availability settles. This
+        // avoids missing the NTP trigger on app restart during a display window.
+        if let historyProvider, let promoId,
+           let record = currentHistoryRecord(from: historyProvider, promoId: promoId),
+           let lastShown = record.lastShown,
+           Date().timeIntervalSince(lastShown) < .days(7) {
+            return true
+        }
+
+        return false
     }
 
     private let refreshSubject = PassthroughSubject<Void, Never>()
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        coordinator.$isFeatureAvailable
-            .combineLatest(refreshSubject.prepend(()))
-            .map { isAvailable, _ in isAvailable }
+        let featurePublisher = coordinator.$isFeatureAvailable
+
+        guard let historyProvider, let promoId else {
+            return featurePublisher
+                .combineLatest(refreshSubject.prepend(()))
+                .map { isAvailable, _ in isAvailable }
+                .removeDuplicates()
+                .eraseToAnyPublisher()
+        }
+
+        return featurePublisher
+            .combineLatest(
+                refreshSubject.prepend(()),
+                historyProvider.historyPublisher(for: promoId)
+            )
+            .map { isAvailable, _, record in
+                if isAvailable { return true }
+                guard let lastShown = record?.lastShown else { return false }
+                return Date().timeIntervalSince(lastShown) < .days(7)
+            }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -98,11 +129,27 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
         refreshSubject.send(())
     }
 
-    init(coordinator: FreemiumDBPPromotionViewCoordinator) {
+    init(coordinator: FreemiumDBPPromotionViewCoordinator,
+         historyProvider: PromoHistoryProviding? = nil,
+         promoId: String? = nil) {
         self.coordinator = coordinator
+        self.historyProvider = historyProvider
+        self.promoId = promoId
         coordinator.onScanResultsUpdated = { [weak self] in
             self?.refreshEligibility()
         }
+    }
+
+    /// Reads the current history record synchronously from the publisher's cached value.
+    private func currentHistoryRecord(from provider: PromoHistoryProviding, promoId: String) -> PromoHistoryRecord? {
+        var record: PromoHistoryRecord?
+        // historyPublisher is backed by a CurrentValueSubject, so the first
+        // emission is synchronous and available immediately on subscription.
+        let cancellable = provider.historyPublisher(for: promoId)
+            .first()
+            .sink { record = $0 }
+        cancellable.cancel()
+        return record
     }
 
     @MainActor

@@ -191,6 +191,11 @@ final class TabCollectionViewModel: NSObject {
         if tabCollection.tabs.isEmpty {
             appendNewTab(with: homePage)
         }
+        // Materialize the selected tab if suspended — selectUnpinnedTab does this
+        // on user-initiated selection, but init sets selectionIndex directly.
+        if case .suspended = tabCollection.tabs[safe: selectionIndex.item] {
+            materialize(at: selectionIndex)
+        }
         self.selectionIndex = selectionIndex
     }
 

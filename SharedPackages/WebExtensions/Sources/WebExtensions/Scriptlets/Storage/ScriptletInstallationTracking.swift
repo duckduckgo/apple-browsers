@@ -22,7 +22,6 @@ import Foundation
 /// and provides the cache root needed during installation.
 @available(macOS 15.4, iOS 18.4, *)
 public protocol ScriptletInstallationTracking {
-    var cacheRootDirectory: URL { get }
     func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
     func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType)
 }

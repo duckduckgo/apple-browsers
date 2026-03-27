@@ -26,6 +26,7 @@ public final class WebExtensionScriptletCoordinator {
     private let scriptletProvider: ScriptletProviding
     private let installationTracker: ScriptletInstallationTracking
     private let installer: ScriptletInstalling
+    private let cacheRootDirectory: URL
 
     public weak var installationPathResolver: (any WebExtensionInstallationPathResolving)?
 
@@ -37,11 +38,13 @@ public final class WebExtensionScriptletCoordinator {
         scriptletProvider: ScriptletProviding,
         installationTracker: ScriptletInstallationTracking,
         installer: ScriptletInstalling,
+        cacheRootDirectory: URL,
         installationPathResolver: any WebExtensionInstallationPathResolving
     ) {
         self.scriptletProvider = scriptletProvider
         self.installationTracker = installationTracker
         self.installer = installer
+        self.cacheRootDirectory = cacheRootDirectory
         self.installationPathResolver = installationPathResolver
     }
 
@@ -137,7 +140,7 @@ public final class WebExtensionScriptletCoordinator {
         }
 
         do {
-            try await installer.installScriptlets(scriptlets, cacheRootDirectory: installationTracker.cacheRootDirectory, to: installationDirectory)
+            try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
             installationTracker.setInstalledVersion(currentVersion, for: type)
             Logger.webExtensions.info("[Scriptlets] ✅ Installed scriptlets v\(currentVersion) for '\(type.rawValue)'")
             try await installationPathResolver?.reloadExtension(for: type)

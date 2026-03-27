@@ -54,7 +54,8 @@ public enum ScriptletManagerFactory {
         return ScriptletConfiguration(
             provider: manager,
             installationTracker: store,
-            installer: installer
+            installer: installer,
+            cacheRootDirectory: baseDirectory
         )
     }
 }

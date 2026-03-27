@@ -102,6 +102,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 scriptletProvider: scriptletConfiguration.provider,
                 installationTracker: scriptletConfiguration.installationTracker,
                 installer: scriptletConfiguration.installer,
+                cacheRootDirectory: scriptletConfiguration.cacheRootDirectory,
                 installationPathResolver: self
             )
             self.scriptletCoordinator = coordinator

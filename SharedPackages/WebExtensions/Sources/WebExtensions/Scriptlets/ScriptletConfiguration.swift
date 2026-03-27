@@ -26,14 +26,17 @@ public struct ScriptletConfiguration {
     public let provider: ScriptletProviding
     public let installationTracker: ScriptletInstallationTracking
     public let installer: ScriptletInstalling
+    public let cacheRootDirectory: URL
 
     public init(
         provider: ScriptletProviding,
         installationTracker: ScriptletInstallationTracking,
-        installer: ScriptletInstalling = ScriptletInstaller()
+        installer: ScriptletInstalling = ScriptletInstaller(),
+        cacheRootDirectory: URL
     ) {
         self.provider = provider
         self.installationTracker = installationTracker
         self.installer = installer
+        self.cacheRootDirectory = cacheRootDirectory
     }
 }

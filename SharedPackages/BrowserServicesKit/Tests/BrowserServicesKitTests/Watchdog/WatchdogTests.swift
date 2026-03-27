@@ -42,20 +42,32 @@ final class WatchdogTests: XCTestCase {
 
     // MARK: - Mock Helper
 
-    private final class FiredEventsStore: @unchecked Sendable {
+    private final class ThreadsafeStore<T>: @unchecked Sendable {
         private let lock = NSLock()
-        private var _events: [Watchdog.Event] = []
+        private var storage = [T]()
 
-        var events: [Watchdog.Event] {
-            lock.lock()
-            defer { lock.unlock() }
-            return _events
+        var allValues: [T] {
+            lock.withLock {
+                storage
+            }
         }
 
-        func append(_ event: Watchdog.Event) {
-            lock.lock()
-            defer { lock.unlock() }
-            _events.append(event)
+        var isEmpty: Bool {
+            lock.withLock {
+                storage.isEmpty
+            }
+        }
+
+        func append(_ event: T) {
+            lock.withLock {
+                storage.append(event)
+            }
+        }
+
+        func removeAll() {
+            lock.withLock {
+                storage.removeAll()
+            }
         }
     }
 
@@ -135,9 +147,9 @@ final class WatchdogTests: XCTestCase {
     func testPausePreventsHangDetection() async throws {
         let pauseWatchdog = Watchdog(settings: .quickIntervals)
 
-        var receivedStates: [Watchdog.DetectionState] = []
-        let cancellable = pauseWatchdog.detectionStatePublisher.sink {
-            receivedStates.append($0)
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = pauseWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
         }
 
         pauseWatchdog.start()
@@ -146,9 +158,11 @@ final class WatchdogTests: XCTestCase {
         XCTAssertTrue(pauseWatchdog.isPaused, "Should be paused")
 
         // Block main thread while paused - should not trigger hang detection
-        try await blockMainThread(for: 0.5, andSleepFor: 0.6)
+        try await blockMainThread(until: {
+            receivedStates.allValues.containsState(.hanging)
+        }, timeout: WatchdogSettings.quickIntervals.maximumHangDuration * 2)
 
-        XCTAssertTrue(receivedStates.isEmpty, "Should not detect any hangs while paused")
+        XCTAssertTrue(receivedStates.allValues.isEmpty, "Should not detect any hangs while paused")
 
         cancellable.cancel()
         pauseWatchdog.stop()
@@ -157,14 +171,13 @@ final class WatchdogTests: XCTestCase {
     func testResumeAfterPauseDetectsHangs() async throws {
         let resumeWatchdog = Watchdog(settings: .quickIntervals)
 
-        var receivedStates: [Watchdog.DetectionState] = []
-        let cancellable = resumeWatchdog.detectionStatePublisher.sink {
-            receivedStates.append($0)
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = resumeWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
         }
 
         resumeWatchdog.start()
         resumeWatchdog.pause()
-
         XCTAssertTrue(resumeWatchdog.isPaused, "Should be paused")
 
         resumeWatchdog.resume()
@@ -172,14 +185,12 @@ final class WatchdogTests: XCTestCase {
         XCTAssertFalse(resumeWatchdog.isPaused, "Should not be paused after resume")
 
         // Block the main thread - should be detected
-        try await blockMainThread(for: 0.5, andSleepFor: 0.7)
-
-        XCTAssertFalse(receivedStates.isEmpty, "Should detect hangs after resume")
-        let hangingState = receivedStates.first {
-            $0 == .hanging
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
         }
 
-        XCTAssertNotNil(hangingState, "Should transition to hanging state after resume")
+        XCTAssertFalse(receivedStates.isEmpty, "Should detect hangs after resume")
+        XCTAssertTrue(receivedStates.allValues.containsState(.hanging), "Should transition to hanging state after resume")
 
         cancellable.cancel()
         resumeWatchdog.stop()
@@ -189,7 +200,6 @@ final class WatchdogTests: XCTestCase {
 
     func testDeinitStopsWatchdog() async {
         var optionalWatchdog: Watchdog? = Watchdog(settings: .quickIntervals)
-
         optionalWatchdog?.start()
 
         XCTAssertTrue(optionalWatchdog?.isRunning == true)
@@ -297,139 +307,108 @@ final class WatchdogTests: XCTestCase {
     func testWatchdogDetectsMainThreadHang() async throws {
         let hangWatchdog = Watchdog(settings: .quickIntervals)
 
-        var receivedStates: [Watchdog.DetectionState] = []
-        let cancellable = hangWatchdog.detectionStatePublisher.sink {
-            receivedStates.append($0)
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = hangWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
         }
 
         hangWatchdog.start()
         XCTAssertTrue(hangWatchdog.isRunning)
 
-        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-
-        try await blockMainThread(for: 1, andSleepFor: 0.5)
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
+        }
 
         XCTAssertFalse(receivedStates.isEmpty, "Should detect hangs")
-        XCTAssertNotNil(receivedStates.first { $0 == .hanging }, "Should transition to hanging state")
+        XCTAssertTrue(receivedStates.allValues.containsState(.hanging), "Should transition to hanging state")
 
         cancellable.cancel()
         hangWatchdog.stop()
     }
     
-    //    // MARK: - State Transitions
-    //
-    //    func testHangStateTransitions() async throws {
-    //        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1200194497630846/task/1211604496994582?focus=true")
-    //
-    //        let minimumDuration = 0.2
-    //        let maximumDuration = 1.0
-    //        let checkInterval   = 0.1
-    //
-    //        let mockKill = MockKillAppFunction()
-    //        let watchdog = Watchdog(minimumHangDuration: minimumDuration, maximumHangDuration: maximumDuration, checkInterval: checkInterval, requiredRecoveryHeartbeats: 2, killAppFunction: mockKill.killApp)
-    //
-    //        var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
-    //        let cancellable = await watchdog.hangStatePublisher
-    //            .sink { state, duration in
-    //                receivedStates.append((state, duration))
-    //            }
-    //
-    //        await watchdog.start()
-    //
-    //        // Helper function to wait for a specific state
-    //        func waitForState(_ targetState: Watchdog.HangState, timeout: TimeInterval = 3.0) async {
-    //            let expectation = XCTestExpectation(description: "\(targetState) state reached")
-    //            Task.detached {
-    //                while !receivedStates.contains(where: { $0.hangState == targetState }) {
-    //                    try? await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-    //                }
-    //                expectation.fulfill()
-    //            }
-    //            await fulfillment(of: [expectation], timeout: timeout)
-    //        }
-    //
-    //        // Helper function to block main thread
-    //        func blockMainThread(for duration: TimeInterval) {
-    //            Task.detached {
-    //                DispatchQueue.main.sync {
-    //                    let startTime = Date()
-    //                    while Date().timeIntervalSince(startTime) < duration {
-    //                    }
-    //                }
-    //            }
-    //        }
-    //
-    //        // Test 1: Responsive -> Hanging
-    //        blockMainThread(for: minimumDuration + 0.1) // 0.3s - enough to trigger hanging but allow recovery
-    //        await waitForState(.hanging)
-    //
-    //        let hangingState = receivedStates.first { $0.hangState == .hanging }
-    //        XCTAssertNotNil(hangingState, "Should transition to hanging state")
-    //
-    //        // Test 2: Hanging -> Responsive (recovery)
-    //        await waitForState(.responsive)
-    //        let responsiveState = receivedStates.first { $0.hangState == .responsive }
-    //        XCTAssertNotNil(responsiveState, "Should recover to responsive state")
-    //
-    //        // Test 3: Responsive -> Hanging -> Timeout
-    //        blockMainThread(for: maximumDuration + (checkInterval * 2))
-    //        await waitForState(.timeout)
-    //
-    //        let timeoutState = receivedStates.first { $0.hangState == .timeout }
-    //        XCTAssertNotNil(timeoutState, "Should transition to timeout state")
-    //        XCTAssertNotNil(timeoutState?.duration, "Should include hang duration")
-    //        XCTAssertGreaterThan(timeoutState?.duration ?? 0, maximumDuration, "Duration should exceed maximum")
-    //
-    //        // Test 4: Verify state sequence
-    //        let stateSequence = receivedStates.map { $0.hangState }
-    //        XCTAssert(stateSequence.prefix(4) == [.hanging, .responsive, .hanging, .timeout], "Should follow expected state sequence")
-    //
-    //        cancellable.cancel()
-    //        await watchdog.stop()
-    //    }
+    // MARK: - State Transitions
+
+    func testHangStateTransitions() async throws {
+        let hangWatchdog = Watchdog(settings: .quickIntervals)
+
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = hangWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
+
+        hangWatchdog.start()
+
+        // Test 1: Responsive -> Hanging
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
+        }
+
+        XCTAssertTrue(receivedStates.allValues.containsState(.hanging), "Should transition to .hanging state")
+
+        // Test 2: Hanging -> Responsive (recovery)
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
+
+        XCTAssertTrue(receivedStates.allValues.containsState(.responsive), "Should recover to .responsive state")
+
+        receivedStates.removeAll()
+
+        // Test 3: Responsive -> Hanging -> Timeout
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.timeout)
+        }
+
+        XCTAssertTrue(receivedStates.allValues.containsState(.timeout), "Should transition to .timeout state")
+
+        receivedStates.removeAll()
+
+        // Test 4: Timeout -> Responsive (responsive)
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
+
+        XCTAssertTrue(receivedStates.allValues.containsState(.responsive), "Should transition to .responsive state")
+
+        cancellable.cancel()
+        hangWatchdog.stop()
+    }
 }
 
 // MARK: - Helpers
 
 private extension WatchdogTests {
 
-    func blockMainThread(for duration: TimeInterval, andSleepFor sleepDuration: TimeInterval) async throws {
+    func blockMainThread(until condition: @escaping () -> Bool, timeout: TimeInterval = 3.0) async throws {
         await withUnsafeContinuation { continuation in
             DispatchQueue.main.async {
-                let startTime = Date()
-                while Date().timeIntervalSince(startTime) < duration {
+                let deadline = Date().addingTimeInterval(timeout)
+                while condition() == false && Date() < deadline {
                     // NO-OP
                 }
 
                 continuation.resume()
             }
         }
-
-        try await Task.sleep(nanoseconds: UInt64(sleepDuration * Double(NSEC_PER_SEC)))
     }
+
+    func sleep(until condition: @escaping () -> Bool, timeout: TimeInterval = 3.0) async {
+        let task = Task.detached {
+            let deadline = Date().addingTimeInterval(timeout)
+            while condition() == false && Date() < deadline {
+                try? await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+            }
+        }
+
+        await task.value
+    }
+
 }
 
+private extension Collection where Element == Watchdog.DetectionState {
 
-private extension Collection where Element == Watchdog.Event {
-
-    var numberOfHangNotRecoveredEvents: Int {
-        count { event in
-            if case .uiHangNotRecovered = event {
-                return true
-            }
-
-            return false
-        }
-    }
-
-    var numberOfHangRecoveredEvents: Int {
-        count { event in
-            if case .uiHangRecovered = event {
-                return true
-            }
-
-            return false
-        }
+    func containsState(_ state: Watchdog.DetectionState) -> Bool {
+        contains { $0 == state }
     }
 }
 

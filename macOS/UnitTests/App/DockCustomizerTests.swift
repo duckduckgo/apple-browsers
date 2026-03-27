@@ -183,7 +183,7 @@ final class DockCustomizerTests: XCTestCase {
                 .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
         }
 
-        let threeDaysAgo = Date().addingTimeInterval(-3 * 24 * 60 * 60)
+        let threeDaysAgo = Date().addingTimeInterval(.days(-3))
         UserDefaultsWrapper<Any>.sharedDefaults
             .set(threeDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
 
@@ -215,7 +215,7 @@ final class DockCustomizerTests: XCTestCase {
         }
 
         let defaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
-        let threeDaysAgo = Date().addingTimeInterval(-3 * 24 * 60 * 60)
+        let threeDaysAgo = Date().addingTimeInterval(.days(-3))
         defaults.set(threeDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
 
         let buildType = ApplicationBuildTypeMock()

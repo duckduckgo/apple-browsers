@@ -39,6 +39,7 @@ final class DockPlistDockMembershipProvider: DockMembershipProviding {
         guard let bundleIdentifier,
               let dockPlistDict = NSDictionary(contentsOf: dockPlistURL) as? [String: AnyObject],
               let persistentApps = dockPlistDict["persistent-apps"] as? [[String: AnyObject]] else {
+            assertionFailure("Could not read Dock plist or bundle identifier is nil.")
             return false
         }
 
@@ -103,15 +104,12 @@ final class DockCustomizer: DockCustomization {
         self.positionProvider = positionProvider
         self.keyValueStore = keyValueStore
         self.dockMembershipProvider = dockMembershipProvider
-
-        if !applicationBuildType.isAppStoreBuild {
-            startTimer()
-        }
     }
 
     func synchronizeNotificationVisibilityWithFirstLaunchDate() {
         guard !applicationBuildType.isAppStoreBuild else { return }
         shouldShowNotificationPrivate = shouldShowNotification
+        startTimer()
     }
 
     private var dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("Preferences/com.apple.dock.plist")
@@ -121,7 +119,7 @@ final class DockCustomizer: DockCustomization {
     }
 
     private func startTimer() {
-        Timer.publish(every: 12 * 60 * 60, on: .main, in: .common)
+        Timer.publish(every: .hours(12), on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }

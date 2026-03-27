@@ -20,6 +20,7 @@ import XCTest
 import Combine
 @testable import WebExtensions
 
+@MainActor
 final class ScriptletManagerTests: XCTestCase {
 
     var mockConfigProvider: MockScriptletConfigProvider!

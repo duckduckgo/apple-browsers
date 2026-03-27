@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import os.log
 
+@MainActor
 @available(macOS 15.4, iOS 18.4, *)
 public final class ScriptletManager: ScriptletProviding {
 
@@ -34,7 +35,7 @@ public final class ScriptletManager: ScriptletProviding {
     private var activeExtensionTypes: Set<DuckDuckGoWebExtensionType> = []
     private var configCancellable: AnyCancellable?
 
-    public init(
+    nonisolated public init(
         configProvider: ScriptletConfigProviding,
         fetcher: ScriptletFetching,
         validator: ScriptletValidating,
@@ -128,16 +129,20 @@ public final class ScriptletManager: ScriptletProviding {
         configCancellable = configProvider.configUpdatedPublisher
             .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
             .sink { [weak self] in
-                guard let self = self else { return }
-
-                for extensionType in self.activeExtensionTypes {
-                    self.currentFetchTasks[extensionType]?.cancel()
-
-                    self.currentFetchTasks[extensionType] = Task { [weak self] in
-                        await self?.refreshIfNeeded(for: extensionType)
-                    }
+                MainActor.assumeIsolated {
+                    self?.refreshAllActiveExtensions()
                 }
             }
+    }
+
+    private func refreshAllActiveExtensions() {
+        for extensionType in activeExtensionTypes {
+            currentFetchTasks[extensionType]?.cancel()
+
+            currentFetchTasks[extensionType] = Task { [weak self] in
+                await self?.refreshIfNeeded(for: extensionType)
+            }
+        }
     }
 
     private func fetchAndUpdate(for extensionType: DuckDuckGoWebExtensionType, manifest: ScriptletManifest) async {

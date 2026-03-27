@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import os.log
 
+@MainActor
 @available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionScriptletCoordinator {
 
@@ -77,16 +78,14 @@ public final class WebExtensionScriptletCoordinator {
         cancellables[type] = scriptletProvider.availabilityPublisher(for: type)
             .dropFirst()
             .sink { [weak self] availability in
-                guard let self = self else { return }
-
                 switch availability {
                 case .notAvailable, .updating:
                     break
 
                 case .available(let scriptlets):
                     Logger.webExtensions.debug("[Scriptlets] 🔄 Scriptlets updated for '\(type.rawValue)' (\(scriptlets.count) scriptlet(s))")
-                    Task {
-                        await self.installScriptlets(scriptlets, for: type)
+                    Task { @MainActor [weak self] in
+                        await self?.installScriptlets(scriptlets, for: type)
                     }
                 }
             }

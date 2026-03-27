@@ -152,6 +152,9 @@ public final class WebExtensionFeatureFlagHandler {
         isEmbeddedExtensionFlagEnabled = false
         embeddedExtensionEnableTask?.cancel()
         embeddedExtensionEnableTask = nil
-        webExtensionManagerProvider()?.uninstallEmbeddedExtension(type: .embedded)
+        let provider = webExtensionManagerProvider
+        Task { @MainActor in
+            provider()?.uninstallEmbeddedExtension(type: .embedded)
+        }
     }
 }

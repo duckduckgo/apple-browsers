@@ -73,6 +73,7 @@ public protocol WebExtensionManaging: AnyObject {
 
     /// Uninstalls an embedded extension of the given type if it's currently installed.
     @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
     func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType)
 
     /// Finds an installed extension by its embedded type.
@@ -112,5 +113,6 @@ public protocol WebExtensionManaging: AnyObject {
 
     /// Clears all cached scriptlets from disk and resets in-memory state.
     @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
     func clearCachedScriptlets()
 }

@@ -47,6 +47,7 @@ extension WebExtensionManager {
 
     /// Uninstalls an embedded extension of the given type if it's currently installed.
     /// - Parameter type: The type of embedded extension to uninstall.
+    @MainActor
     public func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
         guard let installed = installedEmbeddedExtension(for: type) else {
             return

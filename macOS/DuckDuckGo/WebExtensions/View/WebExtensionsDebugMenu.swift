@@ -108,7 +108,9 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func clearCachedScriptlets() {
-        webExtensionManager.clearCachedScriptlets()
+        Task { @MainActor in
+            webExtensionManager.clearCachedScriptlets()
+        }
     }
 
     @objc func openExtensionsFolderInFinder() {

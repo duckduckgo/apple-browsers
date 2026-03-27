@@ -265,6 +265,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
     }
 
+    @MainActor
     public func clearCachedScriptlets() {
         scriptletConfiguration?.provider.clearCachedScriptlets()
     }

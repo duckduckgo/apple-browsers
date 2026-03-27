@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 
+@MainActor
 @available(macOS 15.4, iOS 18.4, *)
 public protocol ScriptletProviding {
     func start(for extensionType: DuckDuckGoWebExtensionType) async

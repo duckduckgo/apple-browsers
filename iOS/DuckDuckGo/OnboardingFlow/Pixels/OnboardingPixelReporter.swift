@@ -118,10 +118,17 @@ protocol OnboardingDaxDialogsReporting {
     func measureTryVisitSiteDialogDismissButtonTapped()
     func measureTrackersDialogDismissButtonTapped()
     func measureFireDialogDismissButtonTapped()
+    func measureDuckAIExperimentFireButtonCTAAction()
+    func measureDuckAIExperimentFinalDialogImpression()
     func measureEndOfJourneyDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogDismissButtonTapped()
     func measureSubscriptionDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
+}
+
+extension OnboardingDaxDialogsReporting {
+    func measureDuckAIExperimentFireButtonCTAAction() {}
+    func measureDuckAIExperimentFinalDialogImpression() {}
 }
 
 protocol OnboardingAddToDockReporting {
@@ -220,7 +227,6 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         }
         // TODO: validate from the Experiment Design
         static let conversionWindow: ConversionWindow = 0...0
-        static let subfeatureID = AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue
     }
 
     func measureSkipOnboardingCTAAction() {
@@ -309,7 +315,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         }
 
         experimentPixel.fireExperimentPixel(
-            for: DuckAIQueryExperimentMetric.subfeatureID,
+            for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
             metric: metricName.rawValue,
             conversionWindowDays: DuckAIQueryExperimentMetric.conversionWindow,
             value: promptSource.rawValue
@@ -379,6 +385,14 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureFireDialogDismissButtonTapped() {
         fire(event: .onboardingFireDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureDuckAIExperimentFireButtonCTAAction() {
+        fire(event: .onboardingDuckAIExperimentFireButtonCTAPressed, unique: false)
+    }
+
+    func measureDuckAIExperimentFinalDialogImpression() {
+        fire(event: .onboardingDuckAIExperimentFinalDialogShownUnique, unique: true)
     }
 
     func measureEndOfJourneyDialogNewTabDismissButtonTapped() {

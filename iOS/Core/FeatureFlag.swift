@@ -232,7 +232,7 @@ public enum FeatureFlag: String {
     case onboardingSearchExperience
 
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1213320237636425?focus=true
-    case onboardingDuckAIQueryExperiment
+    case onboardingDuckAIQueryExperiment = "aichat-onboarding"
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472842661
     case storeSerpSettings

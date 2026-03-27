@@ -178,6 +178,10 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
             )
             .onboardingDaxDialogStyle()
             .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+            .onFirstAppear { [weak self] in
+                self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
+                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+            }
         )
     }
 }

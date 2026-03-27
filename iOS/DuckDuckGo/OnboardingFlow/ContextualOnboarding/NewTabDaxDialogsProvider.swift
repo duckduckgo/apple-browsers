@@ -77,19 +77,9 @@ final class NewTabDaxDialogsProvider: NewTabDaxDialogProviding {
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         // TODO: Re-enable `featureFlagger.isFeatureOn(.onboardingRebranding)` once forced-style validation is complete.
         if DaxDialogs.shouldForceRebrandedOnboarding {
-            AnyView(rebrandedDaxDialogsFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss))
+            rebrandedDaxDialogsFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
         } else {
-            AnyView(
-                OnboardingFinalDialog(
-                    logoPosition: .top,
-                    message: message,
-                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                    dismissAction: onDismiss,
-                    onManualDismiss: onDismiss
-                )
-                .onboardingDaxDialogStyle()
-                .onboardingContextualBackgroundStyle(background: .illustratedGradient)
-            )
+            legacyDaxDialogsFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
         }
     }
 

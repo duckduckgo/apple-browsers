@@ -104,7 +104,7 @@ extension RebrandedNewTabDaxDialogFactory {
             .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
             }
         )
     }

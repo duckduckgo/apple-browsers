@@ -163,47 +163,6 @@ public final class SuggestionsReader: SuggestionsReading {
         }
     }
 
-    // MARK: - Result Comparison
-
-    /// Finds the result with the most recent chat timestamp from multiple domain results.
-    /// - Parameter results: Array of suggestion results from different domains
-    /// - Returns: The result containing the most recently edited chat, or nil if no results
-    nonisolated static func findMostRecentResult(
-        from results: [(pinned: [AIChatSuggestion], recent: [AIChatSuggestion])]
-    ) -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])? {
-        guard !results.isEmpty else { return nil }
-
-        var bestResult: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])?
-        var bestMostRecentDate: Date?
-
-        for suggestions in results {
-            let mostRecentDate = mostRecentTimestamp(from: suggestions)
-
-            if let currentMostRecent = mostRecentDate {
-                if bestMostRecentDate == nil || currentMostRecent > bestMostRecentDate! {
-                    bestResult = suggestions
-                    bestMostRecentDate = currentMostRecent
-                }
-            } else if bestResult == nil {
-                // No timestamps but no result yet, use this one
-                bestResult = suggestions
-            }
-        }
-
-        return bestResult
-    }
-
-    /// Finds the most recent timestamp from a suggestions result.
-    /// - Parameter suggestions: Tuple of pinned and recent suggestions
-    /// - Returns: The most recent date from all suggestions, or nil if none have timestamps
-    nonisolated static func mostRecentTimestamp(
-        from suggestions: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
-    ) -> Date? {
-        let mostRecentFromPinned = suggestions.pinned.compactMap(\.timestamp).max()
-        let mostRecentFromRecent = suggestions.recent.compactMap(\.timestamp).max()
-        return [mostRecentFromPinned, mostRecentFromRecent].compactMap { $0 }.max()
-    }
-
     @MainActor
     public func tearDown() {
         if let webView {

@@ -43,7 +43,7 @@ private final class TypingAnimationState: ObservableObject {
     private var timer: Timer?
     /// Once set, `start()` becomes a no-op until `stop()` resets this flag.
     private var skipped = false
-    private static let typingInterval: TimeInterval = 0.025
+    private static let typingInterval: TimeInterval = 0.020
 
     func start(text: String, onFinished: (() -> Void)? = nil) {
         guard !skipped else { return }
@@ -57,13 +57,17 @@ private final class TypingAnimationState: ObservableObject {
 
         var index = text.startIndex
         let t = Timer(timeInterval: Self.typingInterval, repeats: true) { [weak self] timer in
-            guard let self, timer.isValid else { return }
-            text.formIndex(after: &index)
-            displayedText = String(text[..<index])
-            if index == text.endIndex {
-                timer.invalidate()
-                self.timer = nil
-                onFinished?()
+            // Timer is added to RunLoop.main so it always fires on the main thread;
+            // assumeIsolated lets the compiler verify @MainActor property access is safe.
+            MainActor.assumeIsolated {
+                guard let self, timer.isValid else { return }
+                text.formIndex(after: &index)
+                self.displayedText = String(text[..<index])
+                if index == text.endIndex {
+                    timer.invalidate()
+                    self.timer = nil
+                    onFinished?()
+                }
             }
         }
         // .common mode keeps the timer firing during scroll and other UI interactions.

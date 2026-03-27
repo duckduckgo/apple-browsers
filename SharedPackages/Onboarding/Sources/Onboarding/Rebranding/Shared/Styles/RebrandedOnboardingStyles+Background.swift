@@ -175,7 +175,7 @@ extension OnboardingRebranding.OnboardingStyles {
             // No overlap = no adjustment needed
             // This handles floating keyboards, split keyboards, or keyboards that don't reach the image
             guard !intersection.isNull, intersection.height > 0 else {
-                return imageOffsetY
+                return keyboardImageOffsetY
             }
 
             // Calculate where the image currently is (bottom edge in global coordinates) + image offset Y.

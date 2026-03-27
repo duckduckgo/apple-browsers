@@ -161,7 +161,8 @@ final class MockOmniBar: OmniBar {
         var isFireButtonHidden: Bool = true
         var isTabSwitcherButtonHidden: Bool = true
         var isPasswordsButtonHidden: Bool = true
-        var layoutMode: OmniBarLayoutMode = .compact
+        private(set) var layoutMode: OmniBarLayoutMode = .compact
+        func setLayoutMode(_ mode: OmniBarLayoutMode, animated: Bool) { layoutMode = mode }
 
     }
 }

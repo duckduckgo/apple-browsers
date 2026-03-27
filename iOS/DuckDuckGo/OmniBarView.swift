@@ -147,5 +147,6 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isFullAIChatHidden: Bool { get set }
     var isFireButtonHidden: Bool { get set }
     var isTabSwitcherButtonHidden: Bool { get set }
-    var layoutMode: OmniBarLayoutMode { get set }
+    var layoutMode: OmniBarLayoutMode { get }
+    func setLayoutMode(_ mode: OmniBarLayoutMode, animated: Bool)
 }

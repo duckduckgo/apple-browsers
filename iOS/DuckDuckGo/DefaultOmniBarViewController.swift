@@ -246,29 +246,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             newMode = .expanded
         }
 
-        if omniBarView.layoutMode != newMode {
-            if isPhoneLandscape {
-                if newMode == .compact {
-                    UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
-                        self.omniBarView.leadingButtonsContainer.alpha = 0
-                        self.omniBarView.trailingButtonsContainer.alpha = 0
-                        self.omniBarView.layoutMode = .compact
-                        self.omniBarView.layoutIfNeeded()
-                    }
-                } else {
-                    self.omniBarView.leadingButtonsContainer.alpha = 0
-                    self.omniBarView.trailingButtonsContainer.alpha = 0
-                    UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
-                        self.omniBarView.leadingButtonsContainer.alpha = 1
-                        self.omniBarView.trailingButtonsContainer.alpha = 1
-                        self.omniBarView.layoutMode = newMode
-                        self.omniBarView.layoutIfNeeded()
-                    }
-                }
-            } else {
-                omniBarView.layoutMode = newMode
-            }
-        }
+        omniBarView.setLayoutMode(newMode, animated: isPhoneLandscape)
 
         let hasTrailingAccessory = state.showAIChatButton || state.showAIChatModeToggle
         let hasAdjacentButton = state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton

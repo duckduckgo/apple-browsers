@@ -205,22 +205,50 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
-    var layoutMode: OmniBarLayoutMode = .compact {
-        didSet {
-            guard oldValue != layoutMode else { return }
-            let showButtons = layoutMode != .compact
-            leadingButtonsContainer.isHidden = !showButtons
-            trailingButtonsContainer.isHidden = !showButtons
-            readableSearchAreaWidthConstraint?.isActive = showButtons
-            largeSizeSpacingConstraint?.isActive = showButtons
+    private(set) var layoutMode: OmniBarLayoutMode = .compact
 
-            let isLandscape = layoutMode == .phoneLandscape
-            leadingButtonsContainer.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : 0
-            trailingButtonsContainer.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : 0
-            stackView.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : Metrics.expandedSizeSpacing
-            stackViewLeadingConstraint?.constant = isLandscape ? Metrics.phoneLandscapeEdgePadding : Metrics.textAreaHorizontalPadding
-            stackViewTrailingConstraint?.constant = isLandscape ? -Metrics.phoneLandscapeEdgePadding : -Metrics.textAreaHorizontalPadding
+    func setLayoutMode(_ newMode: OmniBarLayoutMode, animated: Bool = false) {
+        guard layoutMode != newMode else { return }
+
+        if animated {
+            layoutIfNeeded()
+            let entering = newMode == .compact
+            if entering {
+                UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
+                    self.leadingButtonsContainer.alpha = 0
+                    self.trailingButtonsContainer.alpha = 0
+                    self.applyLayoutMode(newMode)
+                    self.layoutIfNeeded()
+                }
+            } else {
+                leadingButtonsContainer.alpha = 0
+                trailingButtonsContainer.alpha = 0
+                UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
+                    self.leadingButtonsContainer.alpha = 1
+                    self.trailingButtonsContainer.alpha = 1
+                    self.applyLayoutMode(newMode)
+                    self.layoutIfNeeded()
+                }
+            }
+        } else {
+            applyLayoutMode(newMode)
         }
+    }
+
+    private func applyLayoutMode(_ newMode: OmniBarLayoutMode) {
+        layoutMode = newMode
+        let showButtons = newMode != .compact
+        leadingButtonsContainer.isHidden = !showButtons
+        trailingButtonsContainer.isHidden = !showButtons
+        readableSearchAreaWidthConstraint?.isActive = showButtons
+        largeSizeSpacingConstraint?.isActive = showButtons
+
+        let isLandscape = newMode == .phoneLandscape
+        leadingButtonsContainer.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : 0
+        trailingButtonsContainer.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : 0
+        stackView.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : Metrics.expandedSizeSpacing
+        stackViewLeadingConstraint?.constant = isLandscape ? Metrics.phoneLandscapeEdgePadding : Metrics.textAreaHorizontalPadding
+        stackViewTrailingConstraint?.constant = isLandscape ? -Metrics.phoneLandscapeEdgePadding : -Metrics.textAreaHorizontalPadding
     }
 
     var isUsingSmallTopSpacing: Bool = false {

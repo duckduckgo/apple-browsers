@@ -17,14 +17,12 @@
 //
 
 import Foundation
-import os.log
 
 public final class StubScriptletValidator: ScriptletValidating {
 
     public init() {}
 
     public func validate(_ fetched: [FetchedScriptlet]) throws {
-        Logger.webExtensions.debug("[Scriptlets] ✓ Stub validator: passing through \(fetched.count) scriptlet(s) without validation")
         for item in fetched {
             guard String(data: item.data, encoding: .utf8) != nil else {
                 throw ScriptletError.invalidEncoding(name: item.descriptor.name)

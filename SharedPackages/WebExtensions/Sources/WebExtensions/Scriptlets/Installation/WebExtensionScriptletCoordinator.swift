@@ -50,20 +50,17 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     public func onExtensionEnabled(for type: DuckDuckGoWebExtensionType) async {
-        guard !enabledTypes.contains(type) else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ Extension '\(type.rawValue)' already enabled, skipping")
-            return
-        }
+        guard !enabledTypes.contains(type) else { return }
         enabledTypes.insert(type)
 
-        Logger.webExtensions.debug("[Scriptlets] ▶️ Extension '\(type.rawValue)' enabled, installing scriptlets")
+        Logger.webExtensions.info("[Scriptlets] Enabled scriptlet handling for '\(type.rawValue)'")
         await scriptletProvider.start(for: type)
         subscribeToUpdates(for: type)
         await installCurrentScriptlets(for: type)
     }
 
     public func onExtensionDisabled(for type: DuckDuckGoWebExtensionType) {
-        Logger.webExtensions.debug("[Scriptlets] ⏸️ Extension '\(type.rawValue)' disabled")
+        Logger.webExtensions.info("[Scriptlets] Disabled scriptlet handling for '\(type.rawValue)'")
         enabledTypes.remove(type)
         installationTasks[type]?.cancel()
         installationTasks.removeValue(forKey: type)
@@ -83,7 +80,6 @@ public final class WebExtensionScriptletCoordinator {
                     break
 
                 case .available(let scriptlets):
-                    Logger.webExtensions.debug("[Scriptlets] 🔄 Scriptlets updated for '\(type.rawValue)' (\(scriptlets.count) scriptlet(s))")
                     Task { @MainActor [weak self] in
                         await self?.installScriptlets(scriptlets, for: type)
                     }
@@ -93,24 +89,19 @@ public final class WebExtensionScriptletCoordinator {
 
     private func resolveInstallationDirectory(for type: DuckDuckGoWebExtensionType) -> URL? {
         guard let directory = installationPathResolver?.installedExtensionPath(for: type) else {
-            Logger.webExtensions.warning("[Scriptlets] ⚠️ No installation directory available for '\(type.rawValue)'")
+            Logger.webExtensions.warning("[Scriptlets] No installation directory available for '\(type.rawValue)'")
             return nil
         }
         return directory
     }
 
     private func installCurrentScriptlets(for type: DuckDuckGoWebExtensionType) async {
-        guard let scriptlets = scriptletProvider.scriptlets(for: type) else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No scriptlets available for installation to '\(type.rawValue)'")
-            return
-        }
-
+        guard let scriptlets = scriptletProvider.scriptlets(for: type) else { return }
         await installScriptlets(scriptlets, for: type)
     }
 
     private func installScriptlets(_ scriptlets: [Scriptlet], for type: DuckDuckGoWebExtensionType) async {
         if let existingTask = installationTasks[type] {
-            Logger.webExtensions.debug("[Scriptlets] ⏳ Waiting for existing installation to complete for '\(type.rawValue)'")
             await existingTask.value
         }
 
@@ -129,10 +120,7 @@ public final class WebExtensionScriptletCoordinator {
         }
 
         let installedVersion = installationTracker.installedVersion(for: type)
-        guard currentVersion != installedVersion else {
-            Logger.webExtensions.debug("[Scriptlets] ✓ Scriptlets v\(currentVersion) already installed for '\(type.rawValue)', skipping")
-            return
-        }
+        guard currentVersion != installedVersion else { return }
 
         guard let installationDirectory = resolveInstallationDirectory(for: type) else {
             return
@@ -141,10 +129,10 @@ public final class WebExtensionScriptletCoordinator {
         do {
             try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
             installationTracker.setInstalledVersion(currentVersion, for: type)
-            Logger.webExtensions.info("[Scriptlets] ✅ Installed scriptlets v\(currentVersion) for '\(type.rawValue)'")
+            Logger.webExtensions.info("[Scriptlets] Installed v\(currentVersion) for '\(type.rawValue)'")
             try await installationPathResolver?.reloadExtension(for: type)
         } catch {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to install scriptlets to '\(type.rawValue)': \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to install scriptlets for '\(type.rawValue)': \(error.localizedDescription)")
         }
     }
 }

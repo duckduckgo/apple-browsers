@@ -31,16 +31,12 @@ public final class ScriptletConfigProvider: ScriptletConfigProviding {
     }
 
     public func currentManifest(for extensionType: DuckDuckGoWebExtensionType) -> ScriptletManifest? {
-        guard let feature = privacyFeature(for: extensionType) else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No privacy feature mapping for '\(extensionType.rawValue)'")
-            return nil
-        }
+        guard let feature = privacyFeature(for: extensionType) else { return nil }
 
         let settings = privacyConfigManager.privacyConfig.settings(for: feature)
 
         guard let version = settings["version"] as? String,
               let scriptletsDict = settings["scriptlets"] as? [String: [String: Any]] else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No scriptlet manifest in privacy config for '\(extensionType.rawValue)'")
             return nil
         }
 
@@ -54,11 +50,10 @@ public final class ScriptletConfigProvider: ScriptletConfigProviding {
         }
 
         guard !descriptors.isEmpty else {
-            Logger.webExtensions.warning("[Scriptlets] ⚠️ Scriptlet manifest found but no valid descriptors for '\(extensionType.rawValue)'")
+            Logger.webExtensions.warning("[Scriptlets] Manifest found but no valid descriptors for '\(extensionType.rawValue)'")
             return nil
         }
 
-        Logger.webExtensions.debug("[Scriptlets] ✓ Manifest retrieved for '\(extensionType.rawValue)': v\(version) with \(descriptors.count) descriptor(s)")
         return ScriptletManifest(version: version, scriptlets: descriptors)
     }
 

@@ -29,8 +29,7 @@ public final class ScriptletFetcher: ScriptletFetching {
     }
 
     public func fetch(_ descriptors: [ScriptletDescriptor]) async throws -> [FetchedScriptlet] {
-        Logger.webExtensions.debug("[Scriptlets] 📡 Fetching \(descriptors.count) scriptlet(s) in parallel")
-        let results = try await withThrowingTaskGroup(of: FetchedScriptlet.self) { group in
+        try await withThrowingTaskGroup(of: FetchedScriptlet.self) { group in
             for descriptor in descriptors {
                 group.addTask {
                     try await self.fetchSingle(descriptor)
@@ -43,25 +42,21 @@ public final class ScriptletFetcher: ScriptletFetching {
             }
             return results
         }
-        Logger.webExtensions.info("[Scriptlets] ✅ Successfully fetched \(results.count) scriptlet(s)")
-        return results
     }
 
     private func fetchSingle(_ descriptor: ScriptletDescriptor) async throws -> FetchedScriptlet {
-        Logger.webExtensions.debug("[Scriptlets] 🌐 Fetching '\(descriptor.name)' from \(descriptor.url.absoluteString)")
         guard let request = APIRequestV2(url: descriptor.url, method: .get) else {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to create request for '\(descriptor.name)'")
+            Logger.webExtensions.error("[Scriptlets] Failed to create request for '\(descriptor.name)'")
             throw ScriptletError.emptyResponse(name: descriptor.name)
         }
 
         let response = try await apiService.fetch(request: request)
 
         guard let data = response.data, !data.isEmpty else {
-            Logger.webExtensions.error("[Scriptlets] ❌ Empty response for '\(descriptor.name)'")
+            Logger.webExtensions.error("[Scriptlets] Empty response for '\(descriptor.name)'")
             throw ScriptletError.emptyResponse(name: descriptor.name)
         }
 
-        Logger.webExtensions.debug("[Scriptlets] ✓ Fetched '\(descriptor.name)' (\(data.count) bytes)")
         return FetchedScriptlet(descriptor: descriptor, data: data)
     }
 }

@@ -47,11 +47,8 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
     }
 
     public func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets? {
-        Logger.webExtensions.debug("[Scriptlets] 📂 Loading cached scriptlets for '\(extensionType.rawValue)'")
-
         guard let metadata = loadMetadata(),
               let cached = metadata.extensions[extensionType.rawValue] else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No cached metadata found for '\(extensionType.rawValue)'")
             return nil
         }
 
@@ -59,31 +56,24 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
             let fileURL = baseDirectory.appendingPathComponent(scriptlet.relativeCachedPath)
             let exists = fileManager.fileExists(atPath: fileURL.path)
             if !exists {
-                Logger.webExtensions.warning("[Scriptlets] ⚠️ Cached file missing: \(scriptlet.relativeCachedPath)")
+                Logger.webExtensions.warning("[Scriptlets] Cached file missing: \(scriptlet.relativeCachedPath)")
             }
             return exists
         }
 
-        guard !validScriptlets.isEmpty else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No scriptlet files found in cache for '\(extensionType.rawValue)'")
-            return nil
-        }
+        guard !validScriptlets.isEmpty else { return nil }
 
-        Logger.webExtensions.info("[Scriptlets] ✅ Loaded \(validScriptlets.count) scriptlet(s) from cache for '\(extensionType.rawValue)' v\(cached.version)")
         return CachedScriptlets(version: cached.version, scriptlets: validScriptlets)
     }
 
     @discardableResult
     public func save(_ fetched: [FetchedScriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType) throws -> [Scriptlet] {
-        Logger.webExtensions.debug("[Scriptlets] 💾 Saving \(fetched.count) scriptlet(s) v\(version) for '\(extensionType.rawValue)'")
-
         let extensionDirectory = self.extensionDirectory(for: extensionType)
         let safeVersion = sanitizedDirectoryName(version)
         let tempDirectory = fileManager.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathComponent(safeVersion)
 
-        Logger.webExtensions.debug("[Scriptlets] 📝 Writing scriptlets to temporary directory")
         try fileManager.createDirectory(at: tempDirectory, withIntermediateDirectories: true, attributes: nil)
 
         var scriptlets: [Scriptlet] = []
@@ -105,7 +95,6 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
 
         let backupDirectory = extensionDirectory.appendingPathExtension("backup")
 
-        Logger.webExtensions.debug("[Scriptlets] 🔄 Creating backup and moving to final location")
         try? fileManager.removeItem(at: backupDirectory)
         try? fileManager.moveItem(at: extensionDirectory, to: backupDirectory)
 
@@ -115,18 +104,15 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
             try? fileManager.removeItem(at: backupDirectory)
 
             updateMetadata(for: extensionType, version: version, scriptlets: scriptlets)
-
-            Logger.webExtensions.info("[Scriptlets] ✅ Successfully saved \(fetched.count) scriptlet(s) v\(version) for '\(extensionType.rawValue)'")
             return scriptlets
         } catch {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to save scriptlets for '\(extensionType.rawValue)', restoring backup: \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to save scriptlets for '\(extensionType.rawValue)', restoring backup: \(error.localizedDescription)")
             try? fileManager.moveItem(at: backupDirectory, to: extensionDirectory)
             throw ScriptletError.storageFailed(underlying: error.localizedDescription)
         }
     }
 
     public func clear(for extensionType: DuckDuckGoWebExtensionType) {
-        Logger.webExtensions.debug("[Scriptlets] 🗑️ Clearing cached scriptlets for '\(extensionType.rawValue)'")
         let extensionDirectory = self.extensionDirectory(for: extensionType)
         try? fileManager.removeItem(at: extensionDirectory)
 
@@ -134,16 +120,12 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
         metadata.extensions.removeValue(forKey: extensionType.rawValue)
         saveMetadata(metadata)
         clearInstalledVersion(for: extensionType)
-
-        Logger.webExtensions.info("[Scriptlets] ✅ Cleared scriptlet cache for '\(extensionType.rawValue)'")
     }
 
     public func clearAll() {
-        Logger.webExtensions.debug("[Scriptlets] 🗑️ Clearing all cached scriptlets")
         try? fileManager.removeItem(at: baseDirectory)
         defaults.removeObject(forKey: metadataKey)
         clearAllInstalledVersions()
-        Logger.webExtensions.info("[Scriptlets] ✅ Cleared all scriptlet caches")
     }
 
     public func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
@@ -195,7 +177,7 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
             let metadata = try JSONDecoder().decode(ScriptletCacheMetadata.self, from: data)
             return metadata
         } catch {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to decode metadata: \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to decode metadata: \(error.localizedDescription)")
             return nil
         }
     }
@@ -205,7 +187,7 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
             let data = try JSONEncoder().encode(metadata)
             defaults.set(data, forKey: metadataKey)
         } catch {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to encode metadata: \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to encode metadata: \(error.localizedDescription)")
         }
     }
 

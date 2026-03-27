@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import os.log
 
 public final class ScriptletInstaller: ScriptletInstalling {
 
@@ -28,9 +27,6 @@ public final class ScriptletInstaller: ScriptletInstalling {
     }
 
     public func installScriptlets(_ scriptlets: [Scriptlet], cacheRootDirectory: URL, to installationDirectory: URL) async throws {
-        Logger.webExtensions.debug("[Scriptlets] 📦 Installing \(scriptlets.count) scriptlet(s) to '\(installationDirectory.path)'")
-
-        Logger.webExtensions.debug("[Scriptlets] 🗂️ Preparing directory: \(installationDirectory.path)")
         try prepareDirectory(installationDirectory)
 
         for scriptlet in scriptlets {
@@ -43,15 +39,11 @@ public final class ScriptletInstaller: ScriptletInstalling {
             }
 
             if fileManager.fileExists(atPath: targetFile.path) {
-                Logger.webExtensions.debug("[Scriptlets] 🔄 Overwriting existing scriptlet at '\(scriptlet.path)'")
                 try fileManager.removeItem(at: targetFile)
             }
 
-            Logger.webExtensions.debug("[Scriptlets] 📋 Copying scriptlet '\(scriptlet.relativeCachedPath)' to \(scriptlet.path)")
             try fileManager.copyItem(at: sourceFile, to: targetFile)
         }
-
-        Logger.webExtensions.info("[Scriptlets] ✅ Successfully installed \(scriptlets.count) scriptlet(s) to '\(installationDirectory.path)'")
     }
 
     private func prepareDirectory(_ directory: URL) throws {

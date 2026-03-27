@@ -80,7 +80,6 @@ public final class ScriptletManager: ScriptletProviding {
     // MARK: - Lifecycle
 
     public func start(for extensionType: DuckDuckGoWebExtensionType) async {
-        Logger.webExtensions.debug("[Scriptlets] 🔄 Starting scriptlet manager for '\(extensionType.rawValue)'")
         activeExtensionTypes.insert(extensionType)
         loadCachedScriptlets(for: extensionType)
         await refreshIfNeeded(for: extensionType)
@@ -88,24 +87,18 @@ public final class ScriptletManager: ScriptletProviding {
     }
 
     public func clearCachedScriptlets() {
-        Logger.webExtensions.debug("[Scriptlets] 🗑️ Clearing all cached scriptlets and resetting state")
+        Logger.webExtensions.info("[Scriptlets] Clearing all cached scriptlets")
         store.clearAll()
         availabilities.removeAll()
     }
 
     public func refreshIfNeeded(for extensionType: DuckDuckGoWebExtensionType) async {
-        guard let manifest = configProvider.currentManifest(for: extensionType) else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No manifest available for '\(extensionType.rawValue)', skipping refresh")
-            return
-        }
+        guard let manifest = configProvider.currentManifest(for: extensionType) else { return }
 
         let cachedVersion = store.cachedVersion(for: extensionType)
-        guard manifest.version != cachedVersion else {
-            Logger.webExtensions.debug("[Scriptlets] ✓ Already on latest version \(manifest.version) for '\(extensionType.rawValue)'")
-            return
-        }
+        guard manifest.version != cachedVersion else { return }
 
-        Logger.webExtensions.info("[Scriptlets] 🔄 Refreshing scriptlets for '\(extensionType.rawValue)': \(cachedVersion ?? "none") → \(manifest.version)")
+        Logger.webExtensions.info("[Scriptlets] Refreshing '\(extensionType.rawValue)': \(cachedVersion ?? "none") -> \(manifest.version)")
         await fetchAndUpdate(for: extensionType, manifest: manifest)
     }
 
@@ -115,11 +108,10 @@ public final class ScriptletManager: ScriptletProviding {
         guard let cached = store.loadCached(for: extensionType),
               let currentManifest = configProvider.currentManifest(for: extensionType),
               cached.version == currentManifest.version else {
-            Logger.webExtensions.debug("[Scriptlets] ⏭️ No valid cache found for '\(extensionType.rawValue)'")
             return
         }
 
-        Logger.webExtensions.info("[Scriptlets] ✅ Loaded \(cached.scriptlets.count) cached scriptlet(s) v\(cached.version) for '\(extensionType.rawValue)'")
+        Logger.webExtensions.info("[Scriptlets] Loaded \(cached.scriptlets.count) cached scriptlet(s) v\(cached.version) for '\(extensionType.rawValue)'")
         availabilities[extensionType] = .available(cached.scriptlets)
     }
 
@@ -149,32 +141,21 @@ public final class ScriptletManager: ScriptletProviding {
         let existingScriptlets = scriptlets(for: extensionType)
 
         if let existing = existingScriptlets {
-            Logger.webExtensions.debug("[Scriptlets] 🔄 Updating scriptlets for '\(extensionType.rawValue)' (keeping \(existing.count) existing during update)")
             availabilities[extensionType] = .updating(existing)
-        } else {
-            Logger.webExtensions.debug("[Scriptlets] 🔄 Fetching scriptlets for '\(extensionType.rawValue)' (no existing scriptlets)")
         }
 
         do {
-            Logger.webExtensions.debug("[Scriptlets] 📥 Fetching \(manifest.scriptlets.count) scriptlet(s) for '\(extensionType.rawValue)'")
             let fetched = try await fetcher.fetch(manifest.scriptlets)
-
-            Logger.webExtensions.debug("[Scriptlets] ✓ Validating \(fetched.count) fetched scriptlet(s) for '\(extensionType.rawValue)'")
             try validator.validate(fetched)
-
-            Logger.webExtensions.debug("[Scriptlets] 💾 Saving \(fetched.count) validated scriptlet(s) for '\(extensionType.rawValue)'")
             let scriptlets = try store.save(fetched, version: manifest.version, for: extensionType)
 
             availabilities[extensionType] = .available(scriptlets)
-            Logger.webExtensions.info("[Scriptlets] ✅ Successfully updated to version \(manifest.version) with \(scriptlets.count) scriptlet(s) for '\(extensionType.rawValue)'")
-
+            Logger.webExtensions.info("[Scriptlets] Updated to v\(manifest.version) with \(scriptlets.count) scriptlet(s) for '\(extensionType.rawValue)'")
         } catch {
-            Logger.webExtensions.error("[Scriptlets] ❌ Failed to fetch/update scriptlets for '\(extensionType.rawValue)': \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to fetch/update scriptlets for '\(extensionType.rawValue)': \(error.localizedDescription)")
             if let existing = existingScriptlets {
-                Logger.webExtensions.warning("[Scriptlets] ⚠️ Keeping \(existing.count) existing scriptlet(s) for '\(extensionType.rawValue)' after error")
                 availabilities[extensionType] = .available(existing)
             } else {
-                Logger.webExtensions.warning("[Scriptlets] ⚠️ No scriptlets available for '\(extensionType.rawValue)' after error")
                 availabilities[extensionType] = .notAvailable
             }
         }

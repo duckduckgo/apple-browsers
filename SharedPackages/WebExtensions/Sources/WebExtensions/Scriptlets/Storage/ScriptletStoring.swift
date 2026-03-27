@@ -21,6 +21,7 @@ import Foundation
 @available(macOS 15.4, iOS 18.4, *)
 public protocol ScriptletStoring {
     var cacheRootDirectory: URL { get }
+    func cachedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
     func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets?
     @discardableResult
     func save(_ fetched: [FetchedScriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType) throws -> [Scriptlet]

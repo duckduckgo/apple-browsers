@@ -30,7 +30,6 @@ public final class ScriptletManager: ScriptletProviding {
 
     @Published private var availabilities: [DuckDuckGoWebExtensionType: ScriptletAvailability] = [:]
 
-    private var lastSuccessfulVersions: [DuckDuckGoWebExtensionType: String] = [:]
     private var currentFetchTasks: [DuckDuckGoWebExtensionType: Task<Void, Never>] = [:]
     private var activeExtensionTypes: Set<DuckDuckGoWebExtensionType> = []
     private var configCancellable: AnyCancellable?
@@ -70,7 +69,7 @@ public final class ScriptletManager: ScriptletProviding {
     }
 
     public func scriptletVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
-        lastSuccessfulVersions[extensionType]
+        store.cachedVersion(for: extensionType)
     }
 
     public func isReady(for extensionType: DuckDuckGoWebExtensionType) -> Bool {
@@ -95,14 +94,13 @@ public final class ScriptletManager: ScriptletProviding {
         Logger.webExtensions.debug("[Scriptlets] 🔄 Starting scriptlet manager for '\(extensionType.rawValue)'")
         activeExtensionTypes.insert(extensionType)
         loadCachedScriptlets(for: extensionType)
-        subscribeToConfigUpdatesIfNeeded()
         await refreshIfNeeded(for: extensionType)
+        subscribeToConfigUpdatesIfNeeded()
     }
 
     public func clearCachedScriptlets() {
         Logger.webExtensions.debug("[Scriptlets] 🗑️ Clearing all cached scriptlets and resetting state")
         store.clearAll()
-        lastSuccessfulVersions.removeAll()
         availabilities.removeAll()
     }
 
@@ -112,12 +110,13 @@ public final class ScriptletManager: ScriptletProviding {
             return
         }
 
-        guard manifest.version != lastSuccessfulVersions[extensionType] else {
+        let cachedVersion = store.cachedVersion(for: extensionType)
+        guard manifest.version != cachedVersion else {
             Logger.webExtensions.debug("[Scriptlets] ✓ Already on latest version \(manifest.version) for '\(extensionType.rawValue)'")
             return
         }
 
-        Logger.webExtensions.info("[Scriptlets] 🔄 Refreshing scriptlets for '\(extensionType.rawValue)': \(self.lastSuccessfulVersions[extensionType] ?? "none") → \(manifest.version)")
+        Logger.webExtensions.info("[Scriptlets] 🔄 Refreshing scriptlets for '\(extensionType.rawValue)': \(cachedVersion ?? "none") → \(manifest.version)")
         await fetchAndUpdate(for: extensionType, manifest: manifest)
     }
 
@@ -133,7 +132,6 @@ public final class ScriptletManager: ScriptletProviding {
 
         Logger.webExtensions.info("[Scriptlets] ✅ Loaded \(cached.scriptlets.count) cached scriptlet(s) v\(cached.version) for '\(extensionType.rawValue)'")
         availabilities[extensionType] = .available(cached.scriptlets)
-        lastSuccessfulVersions[extensionType] = cached.version
     }
 
     private func subscribeToConfigUpdatesIfNeeded() {
@@ -175,7 +173,6 @@ public final class ScriptletManager: ScriptletProviding {
             let scriptlets = try store.save(fetched, version: manifest.version, for: extensionType)
 
             availabilities[extensionType] = .available(scriptlets)
-            lastSuccessfulVersions[extensionType] = manifest.version
             Logger.webExtensions.info("[Scriptlets] ✅ Successfully updated to version \(manifest.version) with \(scriptlets.count) scriptlet(s) for '\(extensionType.rawValue)'")
 
         } catch {

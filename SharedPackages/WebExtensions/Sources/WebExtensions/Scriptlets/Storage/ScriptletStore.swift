@@ -42,6 +42,10 @@ public final class ScriptletStore: ScriptletStoring {
         baseDirectory
     }
 
+    public func cachedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
+        loadMetadata()?.extensions[extensionType.rawValue]?.version
+    }
+
     public func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets? {
         Logger.webExtensions.debug("[Scriptlets] 📂 Loading cached scriptlets for '\(extensionType.rawValue)'")
 

@@ -33,6 +33,10 @@ final class MockScriptletStore: ScriptletStoring {
         FileManager.default.temporaryDirectory.appendingPathComponent("mock-cache")
     }
 
+    func cachedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
+        cachedScriptlets?.version
+    }
+
     func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets? {
         cachedScriptlets
     }

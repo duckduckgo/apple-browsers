@@ -89,6 +89,7 @@ public extension PixelKit {
 
         // UserScript
         public static let jsFile = "jsFile"
+        public static let userScriptSource = "source"
     }
 
     enum Values {

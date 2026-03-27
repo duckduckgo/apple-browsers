@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Mukautettu URL-osoite: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Readerin poissulkemat verkkotunnukset (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Tuo kirjanmerkkitiedosto...";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Katsot Duck Playerissa!\nTäällä ei ole kohdennettuja mainoksia.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Voimassa oleva kynnysarvo: %@ s (ohitus)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Voimassa oleva kynnysarvo: konfiguraation oletusarvo (ei ohitusta)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Sähköpostisuojaus";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Ei aktiivisia tilauksia";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Ei poissuljettuja verkkotunnuksia";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Olemassa olevaa tilausta ei löytynyt";

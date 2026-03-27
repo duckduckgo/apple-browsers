@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Персонализиран URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Изключени домейни от Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортиране на файл с отметки...";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Гледате в Duck Player!\nТук няма насочени реклами.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Ефективен праг: %@ s (заместване)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Ефективен праг: конфигурация по подразбиране (без заместване)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Няма активни абонаменти";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Няма изключени домейни";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Не е намерен съществуващ абонамент";

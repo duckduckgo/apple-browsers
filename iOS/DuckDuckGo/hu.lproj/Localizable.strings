@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Egyéni URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Sötét olvasó által kizárt tartományok (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Könyvjelzőfájl importálása…";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "A Duck Playerben nézed!\nItt nincsenek célzott hirdetések.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effektív küszöbérték: %@ s (felülbírálás)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effektív küszöbérték: konfiguráció alapértelmezés (felülbírálás nélkül)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-mail védelem";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Nincsenek aktív előfizetéseid";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nincsenek kizárt tartományok";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nem található meglévő előfizetés";

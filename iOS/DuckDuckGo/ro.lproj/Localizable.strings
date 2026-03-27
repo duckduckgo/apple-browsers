@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "URL personalizat: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domenii excluse de Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importă fișierul cu marcaje...";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Urmărești în Duck Player!\nAici nu există reclame direcționate.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Prag efectiv: %@ s (ignoră)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Prag efectiv: implicit configurație (fără ignorare)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protecția comunicațiilor prin e-mail";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Nu există abonamente active";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nu există domenii excluse";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nu s-a găsit niciun abonament";

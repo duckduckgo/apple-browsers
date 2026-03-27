@@ -615,6 +615,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Verify locale list
+        run: python3 scripts/translation-pr-checks/verify_locale_list.py --platform macOS
+
       - name: Verify string extraction to strings files
         env:
           CHANGED_FILES: ${{ needs.release-build.outputs.changed_files }}
@@ -634,6 +637,31 @@ jobs:
 
       - name: Check translations
         run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform macOS
+
+      - name: Check for orphaned translations
+        id: orphaned-translations
+        run: |
+          output=$(python3 scripts/translation-pr-checks/check_deleted_string_translations.py --platform macOS 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "Deleted strings with orphaned translations found"; then
+            echo "has_orphans=true" >> "$GITHUB_OUTPUT"
+            # Escape newlines for GitHub Actions output
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "message<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$output" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR with orphaned translations
+        if: steps.orphaned-translations.outputs.has_orphans == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORPHAN_MESSAGE: ${{ steps.orphaned-translations.outputs.message }}
+        run: |
+          body=$(printf '## ⚠️ Orphaned Translations Detected\n\n%s\n\n> This is an automated warning. The PR will not be blocked.' "$ORPHAN_MESSAGE")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$body"
 
   create-asana-task:
     name: Create Asana Task

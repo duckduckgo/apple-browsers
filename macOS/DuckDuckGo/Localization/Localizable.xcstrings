@@ -81003,7 +81003,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Чтобы всегда пользоваться актуальной версией DuckDuckGo, включите автоматическое обновление в разделе %1$@ > %2$@ > %3$@."
+            "value" : "Чтобы всегда пользоваться актуальной версией DuckDuckGo, включите автоматическое обновление в разделе %1$@ > %2$@ > %3$@."
           }
         }
       }
@@ -81784,6 +81784,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удерживая клавишу control, нажмите на значок DuckDuckGo и выберите **Параметры > Держать на док-панели**."
+          }
+        }
+      }
+    },
+    "preferences.add-to-dock.show-me-how" : {
+      "comment" : "Opens a short video demonstrating how to add the app to the Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anleitung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Me How"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muéstrame cómo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me montrer comment faire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dammi indicazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tonen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż, jak to zrobić"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar-me como"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать, как"
           }
         }
       }

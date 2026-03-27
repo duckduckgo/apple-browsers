@@ -356,6 +356,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1202500774821704/task/1212559012504218
     case autoplayBlocking
 
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213554455515126?focus=true
     case customXSafariRedirectHandling
 
@@ -364,6 +365,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case duckAIVoiceShortcut
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213687255181524
+    case fireproofingETLDPlus1
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
@@ -404,6 +408,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autoplayBlocking,
              .customXSafariRedirectHandling,
              .syncAutoRestore,
+             .fireproofingETLDPlus1,
              .subscriptionPromoForReinstallers,
              .screenTimeCleaning:
             .enabled
@@ -526,6 +531,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .customXSafariRedirectHandling,
              .simplifiedSyncSetupExperiment,
              .duckAIVoiceShortcut,
+             .fireproofingETLDPlus1,
              .screenTimeCleaning,
              .aiChatContextualFireButton,
              .minimalChromeInLandscape:
@@ -799,6 +805,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.simplifiedSyncSetupExperiment))
         case .duckAIVoiceShortcut:
             return .remoteReleasable(.subfeature(AIChatSubfeature.voiceShortcut))
+        case .fireproofingETLDPlus1:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireproofingETLDPlus1))
         case .screenTimeCleaning:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .aiChatContextualFireButton:

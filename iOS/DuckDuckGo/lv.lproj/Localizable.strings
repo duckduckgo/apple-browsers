@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Pielāgots URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader izslēgtie domēni (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importēt grāmatzīmes failu...";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Tu skaties Duck Player!\nŠeit nav mērķtiecīgu reklāmu.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektīvais slieksnis: %@ s (pārrakstīšana)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektīvais slieksnis: konfigurācijas noklusējuma iestatījums (bez pārrakstīšanas)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-pasta aizsardzība";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Nav aktīvu abonementu";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nav izslēgtu domēnu";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nav atrasts neviens esošs abonements";

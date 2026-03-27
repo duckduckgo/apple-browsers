@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Vlastná URL adresa: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Vylúčené domény Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importovať súbor so záložkami...";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Sleduješ v Duck Playeri!\nNie sú tu žiadne cielené reklamy.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektívny prah: %@ s (prepísať)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektívny prah: predvolená konfigurácia (bez prepísania)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrana e-mailu";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Žiadne aktívne predplatné";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Žiadne vylúčené domény";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nebolo nájdené žiadne existujúce predplatné";

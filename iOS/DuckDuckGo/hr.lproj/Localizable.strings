@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Prilagođeni URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domene isključene iz Dark Readera (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Uvezi datoteku knjižnih oznaka...";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Gledaš u Duck Playeru!\nOvdje nema ciljanih oglasa.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektivni prag: %@ s (nadjačaj)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektivni prag: zadana konfiguracija (bez nadjačavanja)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Zaštita e-pošte";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Nema aktivnih pretplata";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nema isključenih domena";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nema postojeće pretplate";

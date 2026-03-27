@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Pasirinktinis URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "„Dark Reader“ domenų išimtys (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuoti žymės failą...";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Tu žiūri „Duck Player“!\nČia nėra tikslinių reklamų.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Taikomas slenkstis: %@ s (perrašyti)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Taikomas slenkstis: numatytoji konfigūracija (be perrašymo)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "El. pašto apsauga";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Nėra aktyvių prenumeratų";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nėra neįtrauktų domenų";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nerasta jokių esamų prenumeratų";

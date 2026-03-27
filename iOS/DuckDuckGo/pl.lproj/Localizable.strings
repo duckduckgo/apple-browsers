@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Niestandardowy adres URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domeny wykluczone w Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuj plik zakładek...";
@@ -1647,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Oglądasz w Duck Player!\nNie ma tu reklam ukierunkowanych.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Obowiązujący próg: %@ s (nadpisany)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Obowiązujący próg: domyślna konfiguracja (bez nadpisania)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrona poczty e-mail";
@@ -2600,7 +2593,6 @@
 "No active subscriptions" = "Brak aktywnych subskrypcji";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Brak wykluczonych domen";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nie znaleziono istniejącej subskrypcji";

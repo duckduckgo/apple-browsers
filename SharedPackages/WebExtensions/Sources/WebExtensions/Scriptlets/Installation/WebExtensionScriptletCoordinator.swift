@@ -35,7 +35,7 @@ public final class WebExtensionScriptletCoordinator {
     public init(
         scriptletProvider: ScriptletProviding,
         installer: ScriptletInstalling,
-        installationPathResolver: (any WebExtensionInstallationPathResolving)? = nil
+        installationPathResolver: any WebExtensionInstallationPathResolving
     ) {
         self.scriptletProvider = scriptletProvider
         self.installer = installer

@@ -129,9 +129,6 @@ public final class SuggestionsReader: SuggestionsReading {
         maxChats: Int,
         script: AIChatSuggestionsUserScript
     ) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
-        var results: [(pinned: [AIChatSuggestion], recent: [AIChatSuggestion])] = []
-        var lastError: Error?
-
         // When query is empty, only show chats from the last week
         let since: Int64?
         if query == nil || query?.isEmpty == true {
@@ -146,31 +143,23 @@ public final class SuggestionsReader: SuggestionsReading {
         let navigationResult = await navigateToSite(domain)
         if case .failure(let error) = navigationResult {
             Logger.aiChat.debug("SuggestionsReader: Navigation to \(domain) failed: \(error.localizedDescription)")
-            lastError = error
-        } else {
-            // Fetch suggestions
-            let fetchResult = await withCheckedContinuation { continuation in
-                // Resume any previous continuation to avoid leaking a suspended caller
-                self.fetchContinuation?.resume(returning: .failure(ReaderError.operationSuperseded))
-                self.fetchContinuation = continuation
-                script.fetchChats(query: query, maxChats: maxChats, since: since)
-            }
-
-            switch fetchResult {
-            case .success(let suggestions):
-                results.append(suggestions)
-            case .failure(let error):
-                Logger.aiChat.debug("SuggestionsReader: Fetch from \(domain) failed: \(error.localizedDescription)")
-                lastError = error
-            }
+            return .failure(error)
         }
 
-        if let bestResult = Self.findMostRecentResult(from: results) {
-            return .success(bestResult)
-        } else if let error = lastError {
+        // Fetch suggestions
+        let fetchResult = await withCheckedContinuation { continuation in
+            // Resume any previous continuation to avoid leaking a suspended caller
+            self.fetchContinuation?.resume(returning: .failure(ReaderError.operationSuperseded))
+            self.fetchContinuation = continuation
+            script.fetchChats(query: query, maxChats: maxChats, since: since)
+        }
+
+        switch fetchResult {
+        case .success(let suggestions):
+            return .success(suggestions)
+        case .failure(let error):
+            Logger.aiChat.debug("SuggestionsReader: Fetch from \(domain) failed: \(error.localizedDescription)")
             return .failure(error)
-        } else {
-            return .failure(ReaderError.webViewNotInitialized)
         }
     }
 

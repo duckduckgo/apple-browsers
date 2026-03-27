@@ -28,7 +28,10 @@ final class UpdateNotificationPresenterTests: XCTestCase {
 
     func testShowUpdateNotification_updated_callsShowNotificationPopover() {
         let expectation = expectation(description: "showNotificationPopover called")
-        let presenter = makePresenter(showNotificationPopover: { _ in expectation.fulfill() })
+        let presenter = makePresenter(showNotificationPopover: { _ in
+            expectation.fulfill()
+            return true
+        })
 
         presenter.showUpdateNotification(for: .updated)
 
@@ -37,7 +40,10 @@ final class UpdateNotificationPresenterTests: XCTestCase {
 
     func testShowUpdateNotification_downgraded_callsShowNotificationPopover() {
         let expectation = expectation(description: "showNotificationPopover called")
-        let presenter = makePresenter(showNotificationPopover: { _ in expectation.fulfill() })
+        let presenter = makePresenter(showNotificationPopover: { _ in
+            expectation.fulfill()
+            return true
+        })
 
         presenter.showUpdateNotification(for: .downgraded)
 
@@ -47,6 +53,7 @@ final class UpdateNotificationPresenterTests: XCTestCase {
     func testShowUpdateNotification_noChange_doesNotCallShowNotificationPopover() {
         let presenter = makePresenter(showNotificationPopover: { _ in
             XCTFail("showNotificationPopover should not be called for .noChange")
+            return false
         })
 
         presenter.showUpdateNotification(for: .noChange)
@@ -63,6 +70,7 @@ final class UpdateNotificationPresenterTests: XCTestCase {
             shouldSuppress: { true },
             showNotificationPopover: { _ in
                 XCTFail("showNotificationPopover should not be called when suppressed")
+                return false
             }
         )
 
@@ -78,6 +86,7 @@ final class UpdateNotificationPresenterTests: XCTestCase {
             shouldSuppress: { true },
             showNotificationPopover: { _ in
                 XCTFail("showNotificationPopover should not be called when suppressed")
+                return false
             }
         )
 
@@ -92,7 +101,10 @@ final class UpdateNotificationPresenterTests: XCTestCase {
         let expectation = expectation(description: "showNotificationPopover called")
         let presenter = makePresenter(
             shouldSuppress: { false },
-            showNotificationPopover: { _ in expectation.fulfill() }
+            showNotificationPopover: { _ in
+                expectation.fulfill()
+                return true
+            }
         )
 
         presenter.showUpdateNotification(for: .updated)
@@ -106,7 +118,10 @@ final class UpdateNotificationPresenterTests: XCTestCase {
         let expectation = expectation(description: "showNotificationPopover called")
         let presenter = makePresenter(
             shouldSuppress: { true },
-            showNotificationPopover: { _ in expectation.fulfill() }
+            showNotificationPopover: { _ in
+                expectation.fulfill()
+                return true
+            }
         )
 
         presenter.showUpdateNotification(for: .regular, areAutomaticUpdatesEnabled: true)
@@ -118,7 +133,7 @@ final class UpdateNotificationPresenterTests: XCTestCase {
 
     private func makePresenter(
         shouldSuppress: @escaping () -> Bool = { false },
-        showNotificationPopover: @escaping (PopoverMessageViewController) -> Void = { _ in }
+        showNotificationPopover: @escaping (PopoverMessageViewController) -> Bool = { _ in true }
     ) -> UpdateNotificationPresenter {
         UpdateNotificationPresenter(
             pixelFiring: nil,

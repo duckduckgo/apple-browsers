@@ -29,12 +29,12 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
 
     private let pixelFiring: PixelFiring?
     private let shouldSuppressPostUpdateNotification: () -> Bool
-    private let showNotificationPopover: @MainActor (PopoverMessageViewController) -> Void
+    private let showNotificationPopover: @MainActor (PopoverMessageViewController) -> Bool
     private var currentPopover: PopoverMessageViewController?
 
     init(pixelFiring: PixelFiring?,
          shouldSuppressPostUpdateNotification: @escaping () -> Bool = { false },
-         showNotificationPopover: @escaping @MainActor (PopoverMessageViewController) -> Void) {
+         showNotificationPopover: @escaping @MainActor (PopoverMessageViewController) -> Bool) {
         self.pixelFiring = pixelFiring
         self.shouldSuppressPostUpdateNotification = shouldSuppressPostUpdateNotification
         self.showNotificationPopover = showNotificationPopover
@@ -105,8 +105,9 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
                 self?.currentPopover = nil
             })
 
-            self.currentPopover = viewController
-            self.showNotificationPopover(viewController)
+            if self.showNotificationPopover(viewController) {
+                self.currentPopover = viewController
+            }
         }
     }
 

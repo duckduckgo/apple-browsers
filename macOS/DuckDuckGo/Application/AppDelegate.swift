@@ -1512,14 +1512,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let wc = self?.windowControllersManager.lastKeyMainWindowController
                             ?? self?.windowControllersManager.mainWindowControllers.last,
                       let button = wc.mainViewController.navigationBarViewController.optionsButton else {
-                    return
+                    return false
                 }
                 let parent = wc.mainViewController
                 guard parent.view.window?.isKeyWindow == true,
                       (parent.presentedViewControllers ?? []).isEmpty else {
-                    return
+                    return false
                 }
                 popover.show(onParent: parent, relativeTo: button)
+                return true
             }
         )
 

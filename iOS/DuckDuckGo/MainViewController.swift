@@ -2085,6 +2085,10 @@ class MainViewController: UIViewController {
     
     private var isInPhoneLandscapeLayout: Bool = false
 
+    var isUsingSingleBar: Bool {
+        AppWidthObserver.shared.isLargeWidth || isInPhoneLandscapeLayout
+    }
+
     private func setPhoneLandscapeMode(_ enabled: Bool) {
         isInPhoneLandscapeLayout = enabled
         viewCoordinator.omniBar.isPhoneLandscape = enabled
@@ -2140,7 +2144,7 @@ class MainViewController: UIViewController {
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
-        if !AppWidthObserver.shared.isLargeWidth && !isInPhoneLandscapeLayout {
+        if !isUsingSingleBar {
             if !daxDialogsManager.shouldShowFireButtonPulse {
                 ViewHighlighter.hideAll()
             }
@@ -3287,7 +3291,7 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
-        browsingMenu.useCombinedBarLayout = viewCoordinator.toolbar.isHidden
+        browsingMenu.isUsingSingleBar = isUsingSingleBar
         browsingMenu.onDismiss = { wasActionSelected in
             self.showMenuHighlighterIfNeeded()
             self.viewCoordinator.menuToolbarButton.isEnabled = true

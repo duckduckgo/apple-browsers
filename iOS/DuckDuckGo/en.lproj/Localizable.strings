@@ -3154,8 +3154,11 @@ Take back control of your personal information with the browser designed for dat
 /* Option to always default the omnibar toggle to Duck.ai */
 "settings.default.omnibar.mode.duckai" = "Duck.ai";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Default toggle position when opening a new tab.";
+
 /* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "New Tab Toggle Position";
+"settings.default.omnibar.mode.header" = "Toggle Position";
 
 /* Option to remember the last used omnibar toggle position */
 "settings.default.omnibar.mode.last.used" = "Last Used";

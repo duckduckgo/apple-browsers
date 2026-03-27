@@ -86,16 +86,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     var isBookmarksButtonHidden: Bool {
-        get { bookmarksButtonView.isHidden && trailingBookmarksButtonView.isHidden }
+        get { bookmarksButtonView.isHidden && leadingBookmarksButtonView.isHidden }
         set {
             bookmarksButtonView.isHidden = newValue
-            trailingBookmarksButtonView.isHidden = newValue
+            leadingBookmarksButtonView.isHidden = newValue
         }
     }
 
     func setBookmarksPosition(leading: Bool, hidden: Bool) {
-        bookmarksButtonView.isHidden = leading ? hidden : true
-        trailingBookmarksButtonView.isHidden = leading ? true : hidden
+        leadingBookmarksButtonView.isHidden = leading ? hidden : true
+        bookmarksButtonView.isHidden = leading ? true : hidden
     }
 
     var isPasswordsButtonHidden: Bool {
@@ -319,7 +319,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     let settingsButtonView = BrowserChromeButton()
     let bookmarksButtonView = BrowserChromeButton()
     /// Needed because UIStackView doesn't support reparenting — one in leading, one in trailing.
-    let trailingBookmarksButtonView = BrowserChromeButton()
+    let leadingBookmarksButtonView = BrowserChromeButton()
     let passwordsButtonView = BrowserChromeButton()
     let menuButtonView = BrowserChromeButton()
     let forwardButtonView = BrowserChromeButton()
@@ -431,7 +431,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsContainer.addArrangedSubview(backButtonView)
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
         leadingButtonsContainer.addArrangedSubview(externalRefreshButtonView)
-        leadingButtonsContainer.addArrangedSubview(bookmarksButtonView)
+        leadingButtonsContainer.addArrangedSubview(leadingBookmarksButtonView)
         leadingButtonsContainer.addArrangedSubview(passwordsButtonView)
 
         searchAreaAlignmentView.addSubview(searchAreaStackView)
@@ -443,7 +443,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         trailingButtonsContainer.addArrangedSubview(fireButtonView)
         trailingButtonsContainer.addArrangedSubview(tabSwitcherContainerView)
-        trailingButtonsContainer.addArrangedSubview(trailingBookmarksButtonView)
+        trailingButtonsContainer.addArrangedSubview(bookmarksButtonView)
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
@@ -535,7 +535,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         DefaultOmniBarView.activateItemSizeConstraints(for: forwardButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: externalRefreshButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
-        DefaultOmniBarView.activateItemSizeConstraints(for: trailingBookmarksButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: leadingBookmarksButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: passwordsButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: fireButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: menuButtonView)
@@ -620,8 +620,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
         DefaultOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
 
-        trailingBookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
-        DefaultOmniBarView.setUpCommonProperties(for: trailingBookmarksButtonView)
+        leadingBookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
+        DefaultOmniBarView.setUpCommonProperties(for: leadingBookmarksButtonView)
 
         passwordsButtonView.setImage(DesignSystemImages.Glyphs.Size24.key)
         DefaultOmniBarView.setUpCommonProperties(for: passwordsButtonView)
@@ -667,7 +667,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         backButtonView.addTarget(self, action: #selector(backButtonTap), for: .touchUpInside)
         settingsButtonView.addTarget(self, action: #selector(settingsButtonTap), for: .touchUpInside)
         bookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
-        trailingBookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
+        leadingBookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
         passwordsButtonView.addTarget(self, action: #selector(passwordsButtonTap), for: .touchUpInside)
         menuButtonView.addTarget(self, action: #selector(menuButtonTap), for: .touchUpInside)
         externalRefreshButtonView.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
@@ -729,9 +729,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         bookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Bookmarks"
         bookmarksButtonView.accessibilityTraits = .button
 
-        trailingBookmarksButtonView.accessibilityLabel = "Bookmarks"
-        trailingBookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BookmarksTrailing"
-        trailingBookmarksButtonView.accessibilityTraits = .button
+        leadingBookmarksButtonView.accessibilityLabel = "Bookmarks"
+        leadingBookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BookmarksLeading"
+        leadingBookmarksButtonView.accessibilityTraits = .button
 
         passwordsButtonView.accessibilityLabel = "Passwords"
         passwordsButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Passwords"

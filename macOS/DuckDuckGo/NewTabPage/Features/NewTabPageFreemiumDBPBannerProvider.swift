@@ -166,12 +166,6 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
             return .ignored()
         }
 
-        // Display window: if the promo has been shown for 7+ days, enter cooldown.
-        if let promoShownDate = history.lastShown,
-           dateProvider().timeIntervalSince(promoShownDate) >= .days(7) {
-            return .ignored(cooldown: .days(28))
-        }
-
         coordinator.refreshViewModel()
 
         return await withCheckedContinuation { continuation in

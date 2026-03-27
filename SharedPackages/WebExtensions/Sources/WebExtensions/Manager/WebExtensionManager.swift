@@ -26,16 +26,13 @@ import WebKit
 public struct ScriptletConfiguration {
 
     public let provider: ScriptletProviding
-    public let extensionType: DuckDuckGoWebExtensionType
     public let installer: ScriptletInstalling
 
     public init(
         provider: ScriptletProviding,
-        extensionType: DuckDuckGoWebExtensionType,
         installer: ScriptletInstalling = ScriptletInstaller()
     ) {
         self.provider = provider
-        self.extensionType = extensionType
         self.installer = installer
     }
 }
@@ -121,7 +118,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             let coordinator = WebExtensionScriptletCoordinator(
                 scriptletProvider: scriptletConfiguration.provider,
                 installer: scriptletConfiguration.installer,
-                extensionType: scriptletConfiguration.extensionType,
                 installationPathResolver: self
             )
             self.scriptletCoordinator = coordinator
@@ -305,10 +301,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func loadInstalledExtensions() async {
-        if let scriptletConfiguration {
-            await scriptletConfiguration.provider.start(for: scriptletConfiguration.extensionType)
-        }
-
         eventsListener.controller = controller
 
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
@@ -358,7 +350,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let knownIdentifiers = Set(installationStore.installedExtensions.map(\.uniqueIdentifier))
         storageProvider.cleanupOrphanedExtensions(keeping: knownIdentifiers)
 
-        scriptletCoordinator?.start()
+        for ext in installationStore.installedExtensions {
+            if let type = ext.embeddedType {
+                await scriptletCoordinator?.onExtensionEnabled(for: type)
+            }
+        }
 
         notifyUpdate()
     }

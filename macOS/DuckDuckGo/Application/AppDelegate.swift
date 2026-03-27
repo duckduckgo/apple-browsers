@@ -1853,8 +1853,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         return ScriptletConfiguration(
-            provider: scriptletManager,
-            extensionType: .adBlockingExtension
+            provider: scriptletManager
         )
     }
 

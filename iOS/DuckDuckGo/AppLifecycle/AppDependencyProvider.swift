@@ -121,8 +121,7 @@ final class AppDependencyProvider: DependencyProvider {
         )
 
         return ScriptletConfiguration(
-            provider: scriptletManager,
-            extensionType: .adBlockingExtension
+            provider: scriptletManager
         )
     }
 

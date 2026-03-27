@@ -52,9 +52,7 @@ extension WebExtensionManager {
             return
         }
 
-        if type == scriptletCoordinator?.extensionType {
-            scriptletCoordinator?.onExtensionDisabled()
-        }
+        scriptletCoordinator?.onExtensionDisabled(for: type)
 
         Logger.webExtensions.info("🗑️ Uninstalling embedded extension: \(type.rawValue)")
         do {
@@ -84,15 +82,14 @@ extension WebExtensionManager {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
 
-                    if descriptor.type == scriptletCoordinator?.extensionType {
-                        scriptletCoordinator?.onExtensionDisabled()
-                    }
+                    scriptletCoordinator?.onExtensionDisabled(for: descriptor.type)
 
                     try uninstallExtension(identifier: installed.uniqueIdentifier)
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
                     Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
+                    await scriptletCoordinator?.onExtensionEnabled(for: descriptor.type)
                 }
             } else {
                 Logger.webExtensions.info("📦 Installing embedded extension \(descriptor.type.rawValue) v\(bundledMetadata.version ?? "?")")
@@ -150,9 +147,7 @@ extension WebExtensionManager {
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()
 
-            if type == scriptletCoordinator?.extensionType {
-                await scriptletCoordinator?.onExtensionEnabled()
-            }
+            await scriptletCoordinator?.onExtensionEnabled(for: type)
         } catch {
             Logger.webExtensions.error("❌ Failed to load embedded extension '\(identifier)': \(error.localizedDescription)")
             unregisterHandlers(for: identifier)

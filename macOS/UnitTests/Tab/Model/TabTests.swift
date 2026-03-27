@@ -431,6 +431,43 @@ final class TabTests: XCTestCase {
         XCTAssertFalse(tab.webView.configuration.preferences[.mediaSessionEnabled])
     }
 
+    // MARK: - canReportBrokenSite
+
+    @MainActor func testCanReportBrokenSiteIsTrueForURLContent() {
+        tab = Tab(content: .url(.duckDuckGo, source: .ui))
+        XCTAssertTrue(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForHistoryContent() {
+        tab = Tab(content: .history(pane: nil))
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForSettingsContent() {
+        tab = Tab(content: .settings(pane: nil))
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForBookmarksContent() {
+        tab = Tab(content: .bookmarks)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForNewtabContent() {
+        tab = Tab(content: .newtab)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForReleaseNotesContent() {
+        tab = Tab(content: .releaseNotes)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsTrueForAIChatContent() {
+        tab = Tab(content: .aiChat(.duckDuckGo))
+        XCTAssertTrue(tab.canReportBrokenSite)
+    }
+
 }
 
 private extension Tab {

@@ -55,9 +55,9 @@ final class UIInteractionManager {
                 }
                 group.addTask {
                     await self.autoClearService.waitForDataCleared()
-                    // Handle URL and shortcutItem after data clearing, so the page is loaded when the auth screen is dismissed.
+                    // Handle URL, shortcut item, and user activities after data clearing, so UI is ready when auth is dismissed.
                     switch launchAction {
-                    case .openURL, .handleShortcutItem:
+                    case .openURL, .handleShortcutItem, .handleUserActivity:
                         await self.launchActionHandler.handleLaunchAction(launchAction)
                     case .standardLaunch:
                         break // Do nothing here for standardLaunch

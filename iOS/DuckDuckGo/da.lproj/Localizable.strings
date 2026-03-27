@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Tilpasset URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Udelukkede domæner fra Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer bogmærkefil...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Ingen aktive abonnementer";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Ingen udelukkede domæner";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Intet eksisterende abonnement blev fundet";

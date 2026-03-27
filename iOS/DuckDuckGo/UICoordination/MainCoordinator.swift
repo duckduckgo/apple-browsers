@@ -49,6 +49,14 @@ protocol ShortcutItemHandling {
 }
 
 @MainActor
+protocol UserActivityHandling {
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool
+
+}
+
+@MainActor
 final class MainCoordinator {
 
     let controller: MainViewController
@@ -69,6 +77,7 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var dataImportUserActivityHandler: DataImportUserActivityHandling?
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellables = Set<AnyCancellable>()
@@ -616,6 +625,28 @@ extension MainCoordinator: ShortcutItemHandling {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
         Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+    }
+
+}
+
+extension MainCoordinator: UserActivityHandling {
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
+        switch userActivity.activityType {
+        case DataImportUserActivityHandler.browserKitImportActivityType:
+            if dataImportUserActivityHandler == nil {
+                dataImportUserActivityHandler = makeDataImportUserActivityHandler()
+            }
+            return dataImportUserActivityHandler?.handle(userActivity) ?? false
+        default:
+            Logger.general.debug("Unhandled user activity type: \(userActivity.activityType)")
+            return false
+        }
+    }
+
+    private func makeDataImportUserActivityHandler() -> DataImportUserActivityHandler {
+        DataImportUserActivityHandler()
     }
 
 }

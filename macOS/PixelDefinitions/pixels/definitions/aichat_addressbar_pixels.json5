@@ -140,5 +140,26 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_delete_button_clicked": {
+        "description": "Fired when user clicks the delete button on a recent chat suggestion in the address bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_delete_confirmed": {
+        "description": "Fired when user confirms deletion of a recent chat suggestion in the address bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_delete_cancelled": {
+        "description": "Fired when user cancels deletion of a recent chat suggestion in the address bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

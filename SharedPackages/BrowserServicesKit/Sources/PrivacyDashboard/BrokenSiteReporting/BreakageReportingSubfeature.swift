@@ -28,7 +28,7 @@ public class BreakageReportingSubfeature: Subfeature {
 
     private weak var targetWebview: WKWebView?
     private var timer: Timer?
-    private var completionHandler: ((PerformanceMetrics?, DetectorData?, [Double]?) -> Void)?
+    private var completionHandler: ((PerformanceMetrics?, [Double]?, String?) -> Void)?
     private var currentPerformanceMetrics: PerformanceMetrics?
 
     public init(targetWebview: WKWebView) {
@@ -53,14 +53,6 @@ public class BreakageReportingSubfeature: Subfeature {
         let performanceMetrics = PerformanceMetrics(from: expandedMetrics)
         self.currentPerformanceMetrics = performanceMetrics
 
-        // Parse detector data from payload if present
-        let detectorData: DetectorData?
-        if let detectorDataDict = payload["detectorData"] as? [String: Any] {
-            detectorData = DetectorData(from: detectorDataDict)
-        } else {
-            detectorData = nil
-        }
-
         let jsPerformanceMetrics: [Double]?
         if let jsPerformance = payload["jsPerformance"] as? [Double] {
             jsPerformanceMetrics = jsPerformance
@@ -68,11 +60,14 @@ public class BreakageReportingSubfeature: Subfeature {
             jsPerformanceMetrics = nil
         }
 
-        completionHandler?(performanceMetrics, detectorData, jsPerformanceMetrics)
+        // breakageData arrives percent-encoded from content-scope-scripts; decode it here at the source
+        let rawBreakageData = payload["breakageData"] as? String
+        let breakageData = rawBreakageData.flatMap { $0.removingPercentEncoding ?? $0 }
+        completionHandler?(performanceMetrics, jsPerformanceMetrics, breakageData)
         return nil
     }
 
-    public func notifyHandler(completion: @escaping (PerformanceMetrics?, DetectorData?, [Double]?) -> Void) {
+    public func notifyHandler(completion: @escaping (PerformanceMetrics?, [Double]?, String?) -> Void) {
         guard let broker, let targetWebview else { completion(nil, nil, nil); return }
 
         completionHandler = completion

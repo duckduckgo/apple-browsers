@@ -203,7 +203,7 @@ class SwitchBarButtonsView: UIView {
 
         separatorView.backgroundColor = UIColor(designSystemColor: .decorationPrimary)
 
-        searchGoToButton.setImage(DesignSystemImages.Glyphs.Size24.searchFindGoTo)
+        searchGoToButton.setImage(DesignSystemImages.Glyphs.Size24.searchFind)
         searchGoToButton.addAction(UIAction { [weak self] _ in self?.onSearchGoToTapped?() }, for: .touchUpInside)
     }
 

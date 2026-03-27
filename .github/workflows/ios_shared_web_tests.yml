@@ -89,7 +89,7 @@ jobs:
       run: |
         xcodebuild build \
           -workspace DuckDuckGo.xcworkspace \
-          -scheme "DuckDuckGo Privacy Browser" \
+          -scheme "macOS Browser" \
           -configuration Debug \
           -destination "platform=macOS" \
           -derivedDataPath DerivedData \
@@ -151,5 +151,5 @@ jobs:
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-project: ${{ vars.APPLE_CI_FAILING_TESTS_PROJECT_ID }}
           asana-section: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_SHARED_WEB_TESTS_SECTION_ID }}
-          asana-task-name: GH Workflow Failure - Apple Shared Web Tests
-          asana-task-description: The Apple Shared Web Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          asana-task-name: GH Workflow Failure - Apple Shared Web Tests (iOS or macOS)
+          asana-task-description: The Apple Shared Web Tests workflow has failed (iOS and/or macOS). See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

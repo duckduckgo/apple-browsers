@@ -185,6 +185,26 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setExpanded(expanded, animated: animated)
     }
 
+    func setExpandedWithToggleHidden(_ expanded: Bool) {
+        inputBarView.setExpandedWithToggleHidden(expanded)
+    }
+
+    func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        inputBarView.animateToggleReveal(additionalAnimations: additionalAnimations, completion: completion)
+    }
+
+    func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        inputBarView.animateToggleHide(additionalAnimations: additionalAnimations, completion: completion)
+    }
+
+    func animateDismissReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        inputBarView.animateDismissReveal(additionalAnimations: additionalAnimations, completion: completion)
+    }
+
+    func animateDismissHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        inputBarView.animateDismissHide(additionalAnimations: additionalAnimations, completion: completion)
+    }
+
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
         inputBarView.setInputMode(mode, animated: animated)
     }

@@ -140,8 +140,16 @@
                 "description": "Error code: 12201, 12202, 12203, 12204, 12205, 12206",
                 "type": "string"
             },
-            "underlyingErrorDomain",
-            "underlyingErrorCode"
+            {
+                "keyPattern": "^ud[0-9]?$",
+                "type": "string",
+                "description": "Underlying error domain at any depth"
+            },
+            {
+                "keyPattern": "^ue[0-9]?$",
+                "type": "integer",
+                "description": "Underlying error code at any depth"
+            }
         ]
     },
     "m_subscription_tier-options_unexpected-pro-tier": {

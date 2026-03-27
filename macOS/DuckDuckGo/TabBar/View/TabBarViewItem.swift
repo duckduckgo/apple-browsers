@@ -162,7 +162,7 @@ final class TabBarItemCellView: NSView {
     private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
-    fileprivate lazy var backgroundView = TabBackgroundView()
+    private lazy var backgroundView = TabBackgroundView()
     fileprivate lazy var faviconView = TabFaviconView()
     fileprivate lazy var titleView = TabTitleView()
 
@@ -575,6 +575,14 @@ final class TabBarItemCellView: NSView {
     func startSpinnerIfNeeded(isLoading: Bool, error: WKError?, url: URL?) {
         faviconView.startSpinnerIfNeeded(isLoading: isLoading, url: url, error: error)
     }
+
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool, animated: Bool = true) {
+        guard displaysTabsAnimations else {
+            return
+        }
+
+        backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: animated)
+    }
 }
 
 extension TabBarItemCellView: ThemeUpdateListening {
@@ -845,7 +853,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
             updateSubviews()
 
-            cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+            cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
             updateUsedPermissions()
         }
     }
@@ -1537,7 +1545,7 @@ extension TabBarViewItem: MouseClickViewDelegate {
         delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
         self.isMouseOver = isMouseOver
 
-        cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+        cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
 
         view.needsLayout = true
         eventMonitor = isMouseOver ? NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in

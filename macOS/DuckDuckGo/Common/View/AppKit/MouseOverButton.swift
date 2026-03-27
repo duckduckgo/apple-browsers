@@ -42,10 +42,6 @@ internal class MouseOverButton: NSButton, Hoverable {
     @IBInspectable dynamic var backgroundInset: NSPoint = .zero
     @IBInspectable dynamic var mustAnimateOnMouseOver: Bool = false
 
-    private enum Animations {
-        static let duration: TimeInterval = 0.15
-    }
-
     @IBInspectable var mouseOverTintColor: NSColor? {
         didSet {
             updateTintColor()
@@ -183,16 +179,8 @@ internal class MouseOverButton: NSButton, Hoverable {
     }
 
     func updateTintColor() {
-        guard mustAnimateOnMouseOver && !isMouseDown else {
-            NSAppearance.withAppAppearance {
-                self.contentTintColor = currentTintColor()
-            }
-            return
-        }
-
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = Animations.duration
-            self.animator().contentTintColor = currentTintColor()
+        NSAppearance.withAppAppearance {
+            self.contentTintColor = currentTintColor()
         }
     }
 

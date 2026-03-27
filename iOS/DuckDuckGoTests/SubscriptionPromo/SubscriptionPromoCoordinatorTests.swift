@@ -159,6 +159,29 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
         XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.freeTrial], "true")
     }
 
+    // MARK: - handleCTAAction origin
+
+    func testHandleCTAPostsNotificationWithSkippedOnboardingOrigin() {
+        // Given
+        var capturedDeepLink: SettingsViewModel.SettingsDeepLinkSection?
+        let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
+            capturedDeepLink = notification.object as? SettingsViewModel.SettingsDeepLinkSection
+            return true
+        }
+
+        // When
+        sut.handleCTAAction()
+
+        // Then
+        wait(for: [notificationExpectation], timeout: 1.0)
+        if case let .subscriptionFlow(redirectURLComponents) = capturedDeepLink {
+            let originValue = redirectURLComponents?.queryItems?.first(where: { $0.name == "origin" })?.value
+            XCTAssertEqual(originValue, SubscriptionFunnelOrigin.skippedOnboarding.rawValue)
+        } else {
+            XCTFail("Expected subscriptionFlow deep link")
+        }
+    }
+
     // MARK: - handleCTAAction pixels
 
     func testHandleCTAFiresTapPixelWithReturningUserParams() {

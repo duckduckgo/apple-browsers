@@ -279,8 +279,7 @@ extension AppDelegate {
     static func openReportABrowserProblem(_ sender: Any?, category: ProblemCategory? = nil, subcategory: SubCategory? = nil) {
         var window: NSWindow?
 
-        // Check if we can report broken site (same logic as openReportBrokenSite)
-        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReportBrokenSite ?? false
 
         let formView = ReportProblemFormFlowView(
             canReportBrokenSite: canReportBrokenSite,
@@ -1916,7 +1915,7 @@ extension AppDelegate: NSMenuItemValidation {
             return areTherePasswords
 
         case #selector(AppDelegate.openReportBrokenSite(_:)):
-            return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+            return Application.appDelegate.windowControllersManager.selectedTab?.canReportBrokenSite ?? false
 
         default:
             return true

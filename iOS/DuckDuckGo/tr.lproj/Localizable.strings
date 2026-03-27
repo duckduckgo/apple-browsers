@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Özel URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader Hariç Tutulan Alan Adları (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Yer İşaretleri Dosyasını İçe Aktar...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Aktif abonelik yok";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Hariç tutulan alan adı yok";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Abonelik bulunamadı";

@@ -67,39 +67,39 @@ final class StartupMetricsPixelTests: XCTestCase {
     }
 
     func testParametersIncludeAppDelegateInitWhenProvided() {
-        let pixel = buildStartupMetricsPixel(appDelegateInit: 0.15)
+        let pixel = buildStartupMetricsPixel(appDelegateInit: 0.151)
 
-        XCTAssertEqual(pixel.parameters?["app_delegate_init"], "100")
+        XCTAssertEqual(pixel.parameters?["app_delegate_init"], "150")
     }
 
     func testParametersIncludeMainMenuInitWhenProvided() {
-        let pixel = buildStartupMetricsPixel(mainMenuInit: 0.15)
+        let pixel = buildStartupMetricsPixel(mainMenuInit: 0.157)
 
-        XCTAssertEqual(pixel.parameters?["main_menu_init"], "100")
+        XCTAssertEqual(pixel.parameters?["main_menu_init"], "155")
     }
 
     func testParametersIncludeAppWillFinishLaunchingWhenProvided() {
         let pixel = buildStartupMetricsPixel(appWillFinishLaunching: 0.25)
 
-        XCTAssertEqual(pixel.parameters?["app_will_finish_launching"], "200")
+        XCTAssertEqual(pixel.parameters?["app_will_finish_launching"], "250")
     }
 
     func testParametersIncludeAppDidFinishLaunchingBeforeStateRestorationWhenProvided() {
         let pixel = buildStartupMetricsPixel(appDidFinishLaunchingBeforeStateRestoration: 0.35)
 
-        XCTAssertEqual(pixel.parameters?["app_did_finish_launching_before_state_restoration"], "300")
+        XCTAssertEqual(pixel.parameters?["app_did_finish_launching_before_state_restoration"], "350")
     }
 
     func testParametersIncludeAppDidFinishLaunchingAfterStateRestorationWhenProvided() {
-        let pixel = buildStartupMetricsPixel(appDidFinishLaunchingAfterStateRestoration: 0.45)
+        let pixel = buildStartupMetricsPixel(appDidFinishLaunchingAfterStateRestoration: 0.459)
 
-        XCTAssertEqual(pixel.parameters?["app_did_finish_launching_after_state_restoration"], "400")
+        XCTAssertEqual(pixel.parameters?["app_did_finish_launching_after_state_restoration"], "455")
     }
 
     func testParametersIncludeAppStateRestorationWhenPositive() {
         let pixel = buildStartupMetricsPixel(appStateRestoration: 0.75)
 
-        XCTAssertEqual(pixel.parameters?["app_state_restoration"], "500")
+        XCTAssertEqual(pixel.parameters?["app_state_restoration"], "750")
     }
 
     func testParametersExcludeAppStateRestorationWhenZero() {
@@ -111,19 +111,19 @@ final class StartupMetricsPixelTests: XCTestCase {
     func testParametersIncludeInitToWillFinishLaunching() {
         let pixel = buildStartupMetricsPixel(initToWillFinishLaunching: 0.15)
 
-        XCTAssertEqual(pixel.parameters?["init_to_will_finish_launching"], "100")
+        XCTAssertEqual(pixel.parameters?["init_to_will_finish_launching"], "150")
     }
 
     func testParametersIncludeAppWillFinishToDidFinishLaunching() {
         let pixel = buildStartupMetricsPixel(appWillFinishToDidFinishLaunching: 1.5)
 
-        XCTAssertEqual(pixel.parameters?["app_will_finish_to_app_did_finish_launching"], "1000")
+        XCTAssertEqual(pixel.parameters?["app_will_finish_to_app_did_finish_launching"], "1500")
     }
 
     func testParametersIncludeTimeToInteractive() {
-        let pixel = buildStartupMetricsPixel(timeToInteractive: 2.5)
+        let pixel = buildStartupMetricsPixel(timeToInteractive: 2.529)
 
-        XCTAssertEqual(pixel.parameters?["time_to_interactive"], "2000")
+        XCTAssertEqual(pixel.parameters?["time_to_interactive"], "2525")
     }
 
     func testParametersIncludeWindowsWhenProvided() {
@@ -173,10 +173,10 @@ final class StartupMetricsPixelTests: XCTestCase {
         XCTAssertEqual(pixel.parameters?["active_processor_count"], "4")
     }
 
-    func testDurationsAreBucketedAsMilliseconds() {
-        let pixel = buildStartupMetricsPixel(appDelegateInit: 1.5)
+    func testDurationsAreRoundedToFiveMilliseconds() {
+        let pixel = buildStartupMetricsPixel(appDelegateInit: 1.508)
 
-        XCTAssertEqual(pixel.parameters?["app_delegate_init"], "1000")
+        XCTAssertEqual(pixel.parameters?["app_delegate_init"], "1505")
     }
 
     func testWindowCountIsBucketed() {

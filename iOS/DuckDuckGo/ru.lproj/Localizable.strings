@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Пользовательский URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Исключенные домены Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортировать файл с закладками...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Нет активных подписок";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Нет исключенных доменов";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Подписка не найдена";

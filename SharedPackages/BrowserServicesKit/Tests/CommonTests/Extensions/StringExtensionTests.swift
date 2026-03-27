@@ -381,4 +381,51 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual(hash, expectedSHA256)
     }
 
+    // MARK: - applyingReplacements
+
+    func testApplyingMultipleReplacements() {
+        let template = "var a = $A$; var b = $B$; var c = $C$;"
+        let result = template.applyingReplacements([
+            "$A$": "1",
+            "$B$": "2",
+            "$C$": "3"
+        ])
+
+        XCTAssertEqual(result, "var a = 1; var b = 2; var c = 3;")
+    }
+
+    func testApplyingReplacementsReplacesAllOccurrencesOfRepeatedKey() {
+        let template = "var a = $A$; var a2 = $A$;"
+        let result = template.applyingReplacements(["$A$": "hello"])
+
+        XCTAssertEqual(result, "var a = hello; var a2 = hello;")
+    }
+
+    func testApplyingReplacementsDoesNotReExpandValues() {
+        let template = "var a = $A$; var b = $B$;"
+        let result = template.applyingReplacements([
+            "$A$": "1",
+            "$B$": "$A$"
+        ])
+
+        XCTAssertEqual(result, "var a = 1; var b = $A$;")
+    }
+
+    func testApplyingReplacementsWithEmptyDictionary() {
+        let template = "var a = $A$;"
+        let result = template.applyingReplacements([:])
+
+        XCTAssertEqual(result, template)
+    }
+
+    func testApplyingReplacementsIgnoresEmptyKey() {
+        let template = "hello"
+        let result = template.applyingReplacements([
+            "": "INSERTED",
+            "hello": "world"
+        ])
+
+        XCTAssertEqual(result, "world")
+    }
+
 }

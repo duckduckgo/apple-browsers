@@ -68,6 +68,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
     private var textAreaTopPaddingConstraint: NSLayoutConstraint?
     private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
+    private var stackViewLeadingConstraint: NSLayoutConstraint?
+    private var stackViewTrailingConstraint: NSLayoutConstraint?
 
     let fieldContainerLayoutGuide = UILayoutGuide()
 
@@ -86,16 +88,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var isBookmarksButtonHidden: Bool {
         get { bookmarksButtonView.isHidden && trailingBookmarksButtonView.isHidden }
         set {
-            if isPhoneLandscapeLayout {
-                // iPhone landscape: bookmarks in leading, trailing hidden
-                bookmarksButtonView.isHidden = newValue
-                trailingBookmarksButtonView.isHidden = true
-            } else {
-                // iPad / iPhone portrait: bookmarks in trailing (original position)
-                bookmarksButtonView.isHidden = true
-                trailingBookmarksButtonView.isHidden = newValue
-            }
+            bookmarksButtonView.isHidden = newValue
+            trailingBookmarksButtonView.isHidden = newValue
         }
+    }
+
+    func setBookmarksPosition(leading: Bool, hidden: Bool) {
+        bookmarksButtonView.isHidden = leading ? hidden : true
+        trailingBookmarksButtonView.isHidden = leading ? true : hidden
     }
 
     var isPasswordsButtonHidden: Bool {
@@ -205,23 +205,21 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
-    var isUsingCompactLayout: Bool = false {
+    var layoutMode: OmniBarLayoutMode = .compact {
         didSet {
-            guard oldValue != isUsingCompactLayout else { return }
-            leadingButtonsContainer.isHidden = isUsingCompactLayout
-            trailingButtonsContainer.isHidden = isUsingCompactLayout
+            guard oldValue != layoutMode else { return }
+            let showButtons = layoutMode != .compact
+            leadingButtonsContainer.isHidden = !showButtons
+            trailingButtonsContainer.isHidden = !showButtons
+            readableSearchAreaWidthConstraint?.isActive = showButtons
+            largeSizeSpacingConstraint?.isActive = showButtons
 
-            readableSearchAreaWidthConstraint?.isActive = !isUsingCompactLayout
-            largeSizeSpacingConstraint?.isActive = !isUsingCompactLayout
-        }
-    }
-
-    var isPhoneLandscapeLayout: Bool = false {
-        didSet {
-            guard oldValue != isPhoneLandscapeLayout else { return }
-            let spacing: CGFloat = isPhoneLandscapeLayout ? 16 : 0
-            leadingButtonsContainer.spacing = spacing
-            trailingButtonsContainer.spacing = spacing
+            let isLandscape = layoutMode == .phoneLandscape
+            leadingButtonsContainer.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : 0
+            trailingButtonsContainer.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : 0
+            stackView.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : Metrics.expandedSizeSpacing
+            stackViewLeadingConstraint?.constant = isLandscape ? Metrics.phoneLandscapeEdgePadding : Metrics.textAreaHorizontalPadding
+            stackViewTrailingConstraint?.constant = isLandscape ? -Metrics.phoneLandscapeEdgePadding : -Metrics.textAreaHorizontalPadding
         }
     }
 
@@ -463,9 +461,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         searchAreaStackView.translatesAutoresizingMaskIntoConstraints = false
 
+        let leadingConstraint = stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding)
+        let trailingConstraint = stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
+        stackViewLeadingConstraint = leadingConstraint
+        stackViewTrailingConstraint = trailingConstraint
+
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
-            stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
+            leadingConstraint,
+            trailingConstraint,
             textAreaTopPaddingConstraint,
             textAreaBottomPaddingConstraint,
 
@@ -933,6 +936,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             bottom: 0,
             trailing: expandedSizeSpacing
         )
+
+        static let phoneLandscapeButtonSpacing: CGFloat = 10.0
+        static let phoneLandscapeEdgePadding: CGFloat = 4.0
     }
 
     private struct Constant {

@@ -60,12 +60,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
-    var isPhoneLandscape: Bool = false {
-        didSet {
-            guard oldValue != isPhoneLandscape else { return }
-            barView.isPhoneLandscapeLayout = isPhoneLandscape
-        }
-    }
+    var isPhoneLandscape: Bool = false
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode = .search
@@ -700,7 +695,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isAbortButtonHidden = !state.showAbort
         barView.isBackButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showBackButton
         barView.isForwardButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showForwardButton
-        barView.isBookmarksButtonHidden = isPhoneLandscape ? state.isBrowsing : !state.showBookmarksButton
+        let bookmarksHidden = isPhoneLandscape ? state.isBrowsing : !state.showBookmarksButton
+        barView.setBookmarksPosition(leading: isPhoneLandscape, hidden: bookmarksHidden)
         barView.isPasswordsButtonHidden = isPhoneLandscape ? state.isBrowsing : true
         barView.isAIChatButtonHidden = !state.showAIChatButton
         barView.isFireButtonHidden = !isPhoneLandscape

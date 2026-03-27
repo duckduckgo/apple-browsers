@@ -19,6 +19,15 @@
 
 import UIKit
 
+enum OmniBarLayoutMode {
+    /// No external buttons visible, full-width search bar (iPhone portrait, iPad compact, editing)
+    case compact
+    /// External buttons with wide spacing (iPad full width)
+    case expanded
+    /// External buttons with tight spacing (iPhone landscape minimal chrome)
+    case phoneLandscape
+}
+
 protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     var text: String? { get set }
@@ -93,7 +102,8 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     func hideButtons()
     func revealButtons()
-    
+    func setBookmarksPosition(leading: Bool, hidden: Bool)
+
     // Fire mode
     func refreshFireMode(fireMode: Bool)
 }
@@ -137,5 +147,5 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isFullAIChatHidden: Bool { get set }
     var isFireButtonHidden: Bool { get set }
     var isTabSwitcherButtonHidden: Bool { get set }
-    var isPhoneLandscapeLayout: Bool { get set }
+    var layoutMode: OmniBarLayoutMode { get set }
 }

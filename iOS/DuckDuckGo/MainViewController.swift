@@ -1062,6 +1062,9 @@ class MainViewController: UIViewController {
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         }
+        if isInPhoneLandscapeLayout {
+            applyPhoneLandscapeWidth()
+        }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
     }
@@ -2030,7 +2033,7 @@ class MainViewController: UIViewController {
 
     private func applyWidth(for size: CGSize? = nil) {
 
-        if AppWidthObserver.shared.isPhoneLandscape {
+        if isInPhoneLandscapeLayout {
             setPhoneLandscapeMode(false)
             viewCoordinator.setNavBarContainerExpandableHeight(false)
         }
@@ -2074,14 +2077,17 @@ class MainViewController: UIViewController {
         if AppWidthObserver.shared.isLargeWidth {
             self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
         } else {
+            self.suggestionTrayController?.coversFullScreen = isInPhoneLandscapeLayout
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
     }
     
+    private var isInPhoneLandscapeLayout: Bool = false
+
     private func setPhoneLandscapeMode(_ enabled: Bool) {
+        isInPhoneLandscapeLayout = enabled
         viewCoordinator.omniBar.isPhoneLandscape = enabled
-        AppWidthObserver.shared.isPhoneLandscape = enabled
     }
 
     private func applyLargeWidth() {
@@ -2106,12 +2112,17 @@ class MainViewController: UIViewController {
         setPhoneLandscapeMode(true)
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = true
+        // Push the hidden toolbar off-screen so content container extends to the bottom
+        let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
+        viewCoordinator.constraints.toolbarBottom.constant = bottomHeight
         viewCoordinator.omniBar.enterPadState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         if appSettings.currentAddressBarPosition.isBottom {
             viewCoordinator.setNavBarContainerBottomToKeyboard()
             viewCoordinator.setNavBarContainerExpandableHeight(true)
+        } else {
+            viewCoordinator.setNavBarContainerExpandableHeight(false)
         }
 
         swipeTabsCoordinator?.isEnabled = true
@@ -3276,6 +3287,7 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
+        browsingMenu.useCombinedBarLayout = viewCoordinator.toolbar.isHidden
         browsingMenu.onDismiss = { wasActionSelected in
             self.showMenuHighlighterIfNeeded()
             self.viewCoordinator.menuToolbarButton.isEnabled = true

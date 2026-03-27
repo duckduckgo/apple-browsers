@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Kohandatud URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Readeri välistatud domeenid (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Impordi järjehoidjate fail...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Aktiivseid tellimusi ei ole";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Välistatud domeenid puuduvad";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Olemasolevat tellimust ei leitud";

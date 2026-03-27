@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import Combine
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -30,6 +29,13 @@ extension Preferences {
         @ObservedObject var defaultBrowserModel: DefaultBrowserPreferences
         @ObservedObject var dockModel: DockPreferencesModel
         let protectionStatus: PrivacyProtectionStatus?
+
+        private var isPresentingAddToDockDemoVideo: Binding<Bool> {
+            Binding(
+                get: { dockModel.isPresentingAddToDockDemoVideo },
+                set: { dockModel.isPresentingAddToDockDemoVideo = $0 }
+            )
+        }
 
         var body: some View {
             PreferencePane(UserText.defaultBrowser, spacing: 4) {
@@ -107,19 +113,23 @@ extension Preferences {
                                 HStack(alignment: .top) {
                                     Image(nsImage: DesignSystemImages.Glyphs.Size16.addToTaskbar)
                                         .foregroundColor(Color(.linkBlue))
-                                    VStack(alignment: .leading) {
-                                        Text(UserText.addToDockInstructions)
-                                            .padding(.bottom, 8)
-                                        TextMenuItemCaption(UserText.addToDockInstructionsCaption)
-                                        TextButton(UserText.learnMore) {
-                                            dockModel.openAddToDockHelpURL()
-                                        }
+                                    Text(UserText.addToDockInstructions)
+                                }
+                                VStack(alignment: .leading, spacing: 1) {
+                                    TextMenuItemCaption(UserText.addToDockInstructionsCaption)
+                                    TextButton(UserText.addToDockShowMeHow) {
+                                        dockModel.showAddToDockDemoVideo()
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
+            .sheet(isPresented: isPresentingAddToDockDemoVideo) {
+                PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
+                                      videoSize: DockPreferencesModel.demoVideoSize,
+                                      isPresented: isPresentingAddToDockDemoVideo)
             }
         }
     }

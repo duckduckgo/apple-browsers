@@ -184,6 +184,7 @@ final class QuitSurveyViewModel: ObservableObject {
 
     func selectPositiveResponse() {
         fireSurveyThumbsUp()
+        persistor?.hasSelectedThumbsUp = true
         state = .positiveResponse
         startAutoQuitTimer()
     }
@@ -195,6 +196,7 @@ final class QuitSurveyViewModel: ObservableObject {
 
     func goBack() {
         stopAutoQuitTimer()
+        persistor?.hasSelectedThumbsUp = nil
         selectedOptions.removeAll()
         feedbackText = ""
         clearDomainState()
@@ -263,7 +265,9 @@ final class QuitSurveyViewModel: ObservableObject {
         let affectedDomains = effectiveDomains.isEmpty ? nil : effectiveDomains.sorted().joined(separator: ",")
         fireThumbsDownPixelSubmission(reasons: reasons, affectedDomains: affectedDomains)
 
-        // Store reasons for the return user pixel (fired on next app launch)
+        // Store reasons for the return user pixel (fired on next app launch).
+        // Clear any prior thumbs-up flag — a submitted thumbs-down overrides it.
+        persistor?.hasSelectedThumbsUp = nil
         persistor?.pendingReturnUserReasons = reasons
 
         feedbackSender.sendFeedback(feedback) { [weak self] in

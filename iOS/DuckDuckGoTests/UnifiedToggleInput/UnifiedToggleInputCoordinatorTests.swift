@@ -345,7 +345,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertEqual(sut.viewController.cardPosition, .top)
         XCTAssertTrue(sut.viewController.usesOmnibarMargins)
-        XCTAssertTrue(sut.viewController.showsDismissButton)
+        XCTAssertFalse(sut.viewController.showsDismissButton)
         XCTAssertTrue(sut.viewController.isToolbarSubmitHidden)
     }
 
@@ -1081,7 +1081,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         let userScript = makeTestUserScript()
         sut.bindToTab(userScript, hasExistingChat: false)
-        XCTAssertFalse(sut.viewController.handler.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
     }
 
     func test_handlerHasSubmittedPrompt_syncedAfterUnbind() {
@@ -1128,6 +1128,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
+    func unifiedToggleInputDidRequestVoiceSearch() {}
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

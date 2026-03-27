@@ -53,6 +53,7 @@ import PixelKit
 import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
+import ScreenTimeDataCleaner
 import ServiceManagement
 import Subscription
 import SyncDataProviders
@@ -842,7 +843,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dockPreferences = DockPreferencesModel(
             featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
-            windowControllersManager: windowControllersManager,
             pixelFiring: PixelKit.shared
         )
         accessibilityPreferences = AccessibilityPreferences()
@@ -1277,6 +1277,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? store.set(build, for: \.installBuild)
             }
         }
+        dockCustomization.synchronizeNotificationVisibilityWithFirstLaunchDate()
 
         setupWebExtensions()
 
@@ -1397,6 +1398,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         profilerToken.stop()
     }
 
+    func applicationDidResignActive(_ notification: Notification) {
+        cleanScreenTimeDataOnMacOS26()
+    }
+
+    private func cleanScreenTimeDataOnMacOS26() {
+        guard featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
+        guard #available(macOS 26, *) else { return }
+        Task {
+            await ScreenTimeDataCleaner().removeScreenTimeData()
+        }
+    }
+
     private func fireFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
@@ -1501,7 +1514,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
-        let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
+        let notificationPresenter = UpdateNotificationPresenter(
+            pixelFiring: PixelKit.shared,
+            shouldSuppressPostUpdateNotification: { [weak self] in
+                let wc = self?.windowControllersManager.lastKeyMainWindowController
+                            ?? self?.windowControllersManager.mainWindowControllers.last
+                return wc?.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.content == .releaseNotes
+            },
+            showNotificationPopover: { [weak self] popover in
+                guard let wc = self?.windowControllersManager.lastKeyMainWindowController
+                            ?? self?.windowControllersManager.mainWindowControllers.last,
+                      let button = wc.mainViewController.navigationBarViewController.optionsButton else {
+                    return false
+                }
+                let parent = wc.mainViewController
+                guard parent.view.window?.isKeyWindow == true,
+                      (parent.presentedViewControllers ?? []).isEmpty else {
+                    return false
+                }
+                popover.show(onParent: parent, relativeTo: button)
+                return true
+            }
+        )
 
         if buildType.isAppStoreBuild {
             guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {

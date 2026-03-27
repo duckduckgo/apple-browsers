@@ -191,6 +191,7 @@ private extension Watchdog {
 
         cancelTimer()
         running = false
+        paused = false
 
         logger.info("Watchdog stopped monitoring")
     }
@@ -200,7 +201,6 @@ private extension Watchdog {
         timer = nil
     }
 }
-
 
 // MARK: - Monitoring
 
@@ -277,14 +277,20 @@ private extension Watchdog {
 
         /// # Recovery: We'll loop back into this state, should the heartbeat become stale again
         case .recovery(let reason, let heartbeatCount):
+            /// # Re-enqueue:
+            ///     If we started hanging again, loop thru `recovery` (or go straight to `.hanging` if we haven't done so before)
             if secondsSinceLastHeartbeat > settings.minimumHangDuration {
-                return .recovery(after: reason, heartbeatCount: 0)
+                let previouslyHanging = reason == .hanging
+                return previouslyHanging ? .hanging : .recovery(after: reason, heartbeatCount: 0)
             }
 
+            /// # Track the number of Heartbeats, until we match the recovery settings
+            ///
             if heartbeatCount < settings.requiredRecoveryHeartbeats {
                 return .recovery(after: reason, heartbeatCount: heartbeatCount + 1)
             }
 
+            /// # Recovered State will track the `uiHangRecovered` only if we came from `.hanging`. Timeouts are doomed
             return .recovered(after: reason)
 
         case .recovered:
@@ -394,7 +400,5 @@ private extension DispatchTime {
 
 private extension Double {
 
-    static var nanosecondsPerSecond: Double {
-        Double(NSEC_PER_SEC)
-    }
+    static let nanosecondsPerSecond = Double(NSEC_PER_SEC)
 }

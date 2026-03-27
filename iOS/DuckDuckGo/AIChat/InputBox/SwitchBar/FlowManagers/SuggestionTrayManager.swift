@@ -250,7 +250,7 @@ final class SuggestionTrayManager: NSObject {
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType, animated: Bool) {
         guard let suggestionTray = suggestionTrayViewController else { return }
-        
+
         let canShowSuggestion =
             suggestionTray.canShow(for: type, animated: animated) ||
             (type == .favorites && suggestionTray.hasRemoteMessages)

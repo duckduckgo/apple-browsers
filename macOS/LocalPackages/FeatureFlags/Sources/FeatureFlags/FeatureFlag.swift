@@ -347,13 +347,13 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .promoQueue,
                 .lazyMenuRebuild,
                 .websitesHistoryFirstTimeQuitSurvey,
-                .screenTimeCleaning:
+                .screenTimeCleaning,
+                .addToDockAppStore:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
              .tabAnimations,
-             .addToDockAppStore,
              .aiChatRemoveSuggestion:
             .internalOnly
         default:

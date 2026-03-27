@@ -1966,7 +1966,7 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
-/* No comment provided by engineer. */
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
 "fireButtonAnimation.fireRising.legacy.name" = "Inferno Classic";
 
 /* No comment provided by engineer. */

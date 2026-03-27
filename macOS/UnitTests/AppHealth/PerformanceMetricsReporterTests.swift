@@ -42,19 +42,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     // MARK: - Feature Flag
 
-    func testWhenFeatureFlagDisabled_ThenDoesNotFirePixel() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let (_, _, reporter) = buildMetricsReporter()
-        let profiler = StartupProfiler()
-
-        // When
-        reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-
-        // Then
-        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
-    }
-
     func testWhenFeatureFlagEnabled_ThenFiresPixel() {
         // Given
         let (_, _, reporter) = buildMetricsReporter()

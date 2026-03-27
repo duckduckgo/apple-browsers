@@ -54,7 +54,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     var canStartFavoriteFlow = false
 
     var isShowingFireDialog: Bool = false
-    var isShowingFinalDialog: Bool = false
     var shouldShowPrivacyButtonPulse: Bool = false
     var isShowingSearchSuggestions: Bool = false
     var isShowingSitesSuggestions: Bool = false
@@ -144,8 +143,6 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     var hasSeenOnboarding: Bool = false
 
     var isShowingFireDialog: Bool = false
-
-    var isShowingFinalDialog: Bool = false
 
     var shouldShowPrivacyButtonPulse: Bool = false
 

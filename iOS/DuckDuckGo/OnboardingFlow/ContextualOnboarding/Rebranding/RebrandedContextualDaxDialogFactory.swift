@@ -142,7 +142,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 onManualDismiss: onManualDismiss
             )
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryASearchCompleted, animationContext: .default)
+        .applyAnimatedContextualOnboardingBackground(backgroundType: .tryASearchCompleted)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
         }
@@ -171,7 +171,7 @@ private extension RebrandedContextualDaxDialogFactory {
             viewModel: viewModel,
             onManualDismiss: onManualDismiss
         )
-        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP, animationContext: .default)
+        .applyAnimatedContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
@@ -223,7 +223,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 onManualDismiss: onManualDismiss
             )
         }
-        .applyContextualOnboardingBackground(backgroundType: .trackers, animationContext: .default)
+        .applyAnimatedContextualOnboardingBackground(backgroundType: .trackers)
         .onAppear { [weak delegate] in
             delegate?.didShowContextualOnboardingTrackersDialog()
         }
@@ -257,7 +257,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 onManualDismiss: onManualDismiss
             )
         }
-        .applyContextualOnboardingBackground(backgroundType: .fireDialog, animationContext: .default)
+        .applyAnimatedContextualOnboardingBackground(backgroundType: .fireDialog)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
         }
@@ -291,7 +291,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 onManualDismiss: onManualDismiss
             )
         }
-        .applyContextualOnboardingBackground(backgroundType: .endOfJourney, animationContext: .default)
+        .applyAnimatedContextualOnboardingBackground(backgroundType: .endOfJourney)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)

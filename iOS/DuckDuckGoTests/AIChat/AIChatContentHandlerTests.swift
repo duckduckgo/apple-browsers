@@ -624,7 +624,6 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
-    func responseReceived(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? { nil }
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? { nil }

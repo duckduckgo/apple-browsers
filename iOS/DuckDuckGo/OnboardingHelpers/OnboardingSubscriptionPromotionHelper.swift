@@ -56,12 +56,6 @@ protocol OnboardingSubscriptionPromotionHelping {
 /// as well as handling experiment tracking and pixel firing.
 struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping {
 
-    /// Constants used by the helper.
-    enum Constants {
-        /// The origin parameter value for this Subscriptionpromotion funnel.
-        static let origin = "funnel_onboarding_ios"
-    }
-
     /// The feature flagging service used to determine if the promotion should be shown.
     private let featureFlagger: FeatureFlagger
 
@@ -107,17 +101,9 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
 
     /// Provides the URL components for redirecting as part of the onboarding promotion experiment.
     ///
-    /// The origin encodes the user's returning/new status and free trial eligibility for attribution.
-    ///
     /// - Returns: URL components for the experiment, or `nil` if not applicable.
     func redirectURLComponents() -> URLComponents? {
-        let origin: SubscriptionFunnelOrigin = switch (isReturningUser, isFreeTrialEligible) {
-        case (true, true): .onboardingReinstallFreeTrial
-        case (true, false): .onboardingReinstallSubscribe
-        case (false, true): .onboardingNewInstallFreeTrial
-        case (false, false): .onboardingNewInstallSubscribe
-        }
-        return SubscriptionURL.purchaseURLComponentsWithOrigin(origin.rawValue)
+        SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue)
     }
 
     /// Fires a pixel when the onboarding promotion is shown to the user.

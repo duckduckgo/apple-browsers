@@ -576,7 +576,6 @@ class MainViewController: UIViewController {
 
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
-        AppWidthObserver.shared.isPhoneLandscapeEnabled = featureFlagger.isFeatureOn(.minimalChromeInLandscape)
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
         applyWidth()
 

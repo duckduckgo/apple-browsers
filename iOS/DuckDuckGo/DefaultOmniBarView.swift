@@ -216,7 +216,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
-    var isPhoneLandscapeLayout: Bool = false
+    var isPhoneLandscapeLayout: Bool = false {
+        didSet {
+            guard oldValue != isPhoneLandscapeLayout else { return }
+            let spacing: CGFloat = isPhoneLandscapeLayout ? 16 : 0
+            leadingButtonsContainer.spacing = spacing
+            trailingButtonsContainer.spacing = spacing
+        }
+    }
 
     var isUsingSmallTopSpacing: Bool = false {
         didSet {

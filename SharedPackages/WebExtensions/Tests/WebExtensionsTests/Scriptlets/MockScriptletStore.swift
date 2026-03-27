@@ -56,5 +56,20 @@ final class MockScriptletStore: ScriptletStoring {
     func clearAll() {
         clearAllCallCount += 1
         cachedScriptlets = nil
+        installedVersions.removeAll()
+    }
+
+    private var installedVersions: [String: String] = [:]
+
+    func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
+        installedVersions[extensionType.rawValue]
+    }
+
+    func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType) {
+        installedVersions[extensionType.rawValue] = version
+    }
+
+    func clearInstalledVersion(for extensionType: DuckDuckGoWebExtensionType) {
+        installedVersions.removeValue(forKey: extensionType.rawValue)
     }
 }

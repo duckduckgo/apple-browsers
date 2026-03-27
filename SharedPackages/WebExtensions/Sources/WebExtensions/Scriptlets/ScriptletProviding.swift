@@ -25,8 +25,12 @@ public protocol ScriptletProviding {
     func availability(for extensionType: DuckDuckGoWebExtensionType) -> ScriptletAvailability
     func availabilityPublisher(for extensionType: DuckDuckGoWebExtensionType) -> AnyPublisher<ScriptletAvailability, Never>
     func scriptlets(for extensionType: DuckDuckGoWebExtensionType) -> [Scriptlet]?
+    func scriptletVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
     func isReady(for extensionType: DuckDuckGoWebExtensionType) -> Bool
     func refreshIfNeeded(for extensionType: DuckDuckGoWebExtensionType) async
     var cacheRootDirectory: URL { get }
     func clearCachedScriptlets()
+
+    func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
+    func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType)
 }

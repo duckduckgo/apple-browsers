@@ -96,12 +96,24 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     private func installScriptlets(_ scriptlets: [Scriptlet]) async {
+        guard let currentVersion = scriptletProvider.scriptletVersion(for: extensionType) else {
+            return
+        }
+
+        let installedVersion = scriptletProvider.installedVersion(for: extensionType)
+        guard currentVersion != installedVersion else {
+            Logger.webExtensions.debug("[Scriptlets] ✓ Scriptlets v\(currentVersion) already installed for '\(self.extensionType.rawValue)', skipping")
+            return
+        }
+
         guard let installationDirectory = resolveInstallationDirectory() else {
             return
         }
 
         do {
             try await installer.installScriptlets(scriptlets, cacheRootDirectory: scriptletProvider.cacheRootDirectory, to: installationDirectory)
+            scriptletProvider.setInstalledVersion(currentVersion, for: extensionType)
+            Logger.webExtensions.info("[Scriptlets] ✅ Installed scriptlets v\(currentVersion) for '\(self.extensionType.rawValue)'")
             try await installationPathResolver?.reloadExtension(for: extensionType)
         } catch {
             Logger.webExtensions.error("[Scriptlets] ❌ Failed to install scriptlets to '\(self.extensionType.rawValue)': \(error.localizedDescription)")

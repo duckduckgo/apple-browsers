@@ -26,4 +26,8 @@ public protocol ScriptletStoring {
     func save(_ fetched: [FetchedScriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType) throws -> [Scriptlet]
     func clear(for extensionType: DuckDuckGoWebExtensionType)
     func clearAll()
+
+    func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
+    func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType)
+    func clearInstalledVersion(for extensionType: DuckDuckGoWebExtensionType)
 }

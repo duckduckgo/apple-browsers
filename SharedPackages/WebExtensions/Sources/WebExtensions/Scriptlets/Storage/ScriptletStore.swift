@@ -26,6 +26,7 @@ public final class ScriptletStore: ScriptletStoring {
     private let defaults: UserDefaults
     private let fileManager: FileManager
     private let metadataKey = "scriptlets.cache.metadata"
+    private let installedVersionKeyPrefix = "scriptlets.installed.version."
 
     public init(
         baseDirectory: URL,
@@ -128,6 +129,7 @@ public final class ScriptletStore: ScriptletStoring {
         var metadata = loadMetadata() ?? ScriptletCacheMetadata()
         metadata.extensions.removeValue(forKey: extensionType.rawValue)
         saveMetadata(metadata)
+        clearInstalledVersion(for: extensionType)
 
         Logger.webExtensions.info("[Scriptlets] ✅ Cleared scriptlet cache for '\(extensionType.rawValue)'")
     }
@@ -136,7 +138,30 @@ public final class ScriptletStore: ScriptletStoring {
         Logger.webExtensions.debug("[Scriptlets] 🗑️ Clearing all cached scriptlets")
         try? fileManager.removeItem(at: baseDirectory)
         defaults.removeObject(forKey: metadataKey)
+        clearAllInstalledVersions()
         Logger.webExtensions.info("[Scriptlets] ✅ Cleared all scriptlet caches")
+    }
+
+    public func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
+        defaults.string(forKey: installedVersionKey(for: extensionType))
+    }
+
+    public func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType) {
+        defaults.set(version, forKey: installedVersionKey(for: extensionType))
+    }
+
+    public func clearInstalledVersion(for extensionType: DuckDuckGoWebExtensionType) {
+        defaults.removeObject(forKey: installedVersionKey(for: extensionType))
+    }
+
+    private func installedVersionKey(for extensionType: DuckDuckGoWebExtensionType) -> String {
+        installedVersionKeyPrefix + extensionType.rawValue
+    }
+
+    private func clearAllInstalledVersions() {
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(installedVersionKeyPrefix) {
+            defaults.removeObject(forKey: key)
+        }
     }
 
     private func extensionDirectory(for extensionType: DuckDuckGoWebExtensionType) -> URL {

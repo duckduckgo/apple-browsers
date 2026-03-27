@@ -170,6 +170,60 @@ final class ScriptletStoreTests: XCTestCase {
         XCTAssertEqual(store.cacheRootDirectory, tempDirectory)
     }
 
+    // MARK: - Installed Version Tracking
+
+    func testWhenNoInstalledVersionThenReturnsNil() {
+        XCTAssertNil(store.installedVersion(for: .adBlockingExtension))
+    }
+
+    func testWhenInstalledVersionSetThenCanBeRetrieved() {
+        store.setInstalledVersion("1.0", for: .adBlockingExtension)
+
+        XCTAssertEqual(store.installedVersion(for: .adBlockingExtension), "1.0")
+    }
+
+    func testWhenInstalledVersionClearedThenReturnsNil() {
+        store.setInstalledVersion("1.0", for: .adBlockingExtension)
+        store.clearInstalledVersion(for: .adBlockingExtension)
+
+        XCTAssertNil(store.installedVersion(for: .adBlockingExtension))
+    }
+
+    func testWhenClearCalledThenInstalledVersionIsAlsoCleared() throws {
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/test.js", content: "test")],
+            version: "1.0",
+            for: .adBlockingExtension)
+        store.setInstalledVersion("1.0", for: .adBlockingExtension)
+
+        store.clear(for: .adBlockingExtension)
+
+        XCTAssertNil(store.installedVersion(for: .adBlockingExtension))
+    }
+
+    func testWhenClearAllCalledThenAllInstalledVersionsAreCleared() {
+        store.setInstalledVersion("1.0", for: .adBlockingExtension)
+        store.setInstalledVersion("2.0", for: .embedded)
+
+        store.clearAll()
+
+        XCTAssertNil(store.installedVersion(for: .adBlockingExtension))
+        XCTAssertNil(store.installedVersion(for: .embedded))
+    }
+
+    func testWhenInstalledVersionSetForMultipleExtensionsThenTrackedIndependently() {
+        store.setInstalledVersion("1.0", for: .adBlockingExtension)
+        store.setInstalledVersion("2.0", for: .embedded)
+
+        XCTAssertEqual(store.installedVersion(for: .adBlockingExtension), "1.0")
+        XCTAssertEqual(store.installedVersion(for: .embedded), "2.0")
+
+        store.clearInstalledVersion(for: .adBlockingExtension)
+
+        XCTAssertNil(store.installedVersion(for: .adBlockingExtension))
+        XCTAssertEqual(store.installedVersion(for: .embedded), "2.0")
+    }
+
     // MARK: - Helpers
 
     private func makeFetchedScriptlet(name: String, content: String) -> FetchedScriptlet {

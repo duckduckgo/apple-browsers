@@ -69,12 +69,24 @@ public final class ScriptletManager: ScriptletProviding {
         }
     }
 
+    public func scriptletVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
+        lastSuccessfulVersions[extensionType]
+    }
+
     public func isReady(for extensionType: DuckDuckGoWebExtensionType) -> Bool {
         scriptlets(for: extensionType) != nil
     }
 
     public var cacheRootDirectory: URL {
         store.cacheRootDirectory
+    }
+
+    public func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
+        store.installedVersion(for: extensionType)
+    }
+
+    public func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType) {
+        store.setInstalledVersion(version, for: extensionType)
     }
 
     // MARK: - Lifecycle
@@ -128,7 +140,7 @@ public final class ScriptletManager: ScriptletProviding {
         guard configCancellable == nil else { return }
 
         configCancellable = configProvider.configUpdatedPublisher
-            .receive(on: DispatchQueue.main)
+            .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self = self else { return }
 

@@ -144,6 +144,19 @@ final class WatchdogTests: XCTestCase {
         watchdog.stop()
     }
 
+    func testPauseWhenNotRunningIsNoOp() {
+        watchdog.pause()
+        XCTAssertFalse(watchdog.isPaused, "Should not be paused when pause called without running")
+        XCTAssertFalse(watchdog.isRunning, "Should not be running")
+    }
+
+    func testResumeWhenNotPausedIsNoOp() {
+        watchdog.start()
+        watchdog.resume()
+        XCTAssertTrue(watchdog.isRunning, "Should still be running")
+        XCTAssertFalse(watchdog.isPaused, "Should not be paused")
+    }
+
     func testPausePreventsHangDetection() async throws {
         let pauseWatchdog = Watchdog(settings: .quickIntervals)
 
@@ -373,6 +386,144 @@ final class WatchdogTests: XCTestCase {
         cancellable.cancel()
         hangWatchdog.stop()
     }
+
+    // MARK: - Recovery States
+
+    func testRecoveryStatesAfterHanging() async throws {
+        let recoveryWatchdog = Watchdog(settings: .quickIntervals)
+
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = recoveryWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
+
+        recoveryWatchdog.start()
+
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
+        }
+
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
+
+        XCTAssertTrue(receivedStates.allValues.containsRecovery(after: .hanging), "Should go through recovery state")
+        XCTAssertTrue(receivedStates.allValues.containsState(.recovered(after: .hanging)), "Should go through recovered state")
+
+        cancellable.cancel()
+        recoveryWatchdog.stop()
+    }
+
+    func testRecoveryStatesAfterTimeout() async throws {
+        let recoveryWatchdog = Watchdog(settings: .quickIntervals)
+
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = recoveryWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
+
+        recoveryWatchdog.start()
+
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.timeout)
+        }
+
+        receivedStates.removeAll()
+
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
+
+        XCTAssertTrue(receivedStates.allValues.containsRecovery(after: .timeout), "Should go through recovery state after timeout")
+        XCTAssertTrue(receivedStates.allValues.containsState(.recovered(after: .timeout)), "Should go through recovered state after timeout")
+
+        cancellable.cancel()
+        recoveryWatchdog.stop()
+    }
+
+    // MARK: - Event Reporting
+
+    func testHangRecoveredEventFires() async throws {
+        let firedEvents = ThreadsafeStore<Watchdog.Event>()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, _ in
+            firedEvents.append(event)
+        }
+        let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
+
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
+
+        eventWatchdog.start()
+
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
+        }
+
+        await sleep {
+            receivedStates.allValues.containsState(.recovered(after: .hanging))
+        }
+
+        XCTAssertTrue(firedEvents.allValues.containsEvent(Watchdog.Event.uiHangRecovered), "Should fire uiHangRecovered event")
+
+        cancellable.cancel()
+        eventWatchdog.stop()
+    }
+
+    func testHangNotRecoveredEventFires() async throws {
+        let firedEvents = ThreadsafeStore<Watchdog.Event>()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, _ in
+            firedEvents.append(event)
+        }
+        let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
+
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
+
+        eventWatchdog.start()
+
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.timeout)
+        }
+
+        XCTAssertTrue(firedEvents.allValues.containsEvent(Watchdog.Event.uiHangNotRecovered), "Should fire uiHangNotRecovered event")
+
+        cancellable.cancel()
+        eventWatchdog.stop()
+    }
+
+    func testNoHangRecoveredEventAfterTimeoutRecovery() async throws {
+        let firedEvents = ThreadsafeStore<Watchdog.Event>()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, _ in
+            firedEvents.append(event)
+        }
+        let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
+
+        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
+
+        eventWatchdog.start()
+
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.timeout)
+        }
+
+        receivedStates.removeAll()
+
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
+
+        XCTAssertFalse(firedEvents.allValues.containsEvent(Watchdog.Event.uiHangRecovered), "Should not fire uiHangRecovered after timeout recovery")
+
+        cancellable.cancel()
+        eventWatchdog.stop()
+    }
 }
 
 // MARK: - Helpers
@@ -409,6 +560,29 @@ private extension Collection where Element == Watchdog.DetectionState {
 
     func containsState(_ state: Watchdog.DetectionState) -> Bool {
         contains { $0 == state }
+    }
+
+    func containsRecovery(after origin: Watchdog.RecoveryOrigin) -> Bool {
+        contains {
+            if case .recovery(let o, _) = $0, o == origin { return true }
+            return false
+        }
+    }
+}
+
+private extension Collection where Element == Watchdog.Event {
+
+    func containsEvent(_ eventCase: (Int) -> Watchdog.Event) -> Bool {
+        let reference = eventCase(0)
+        return contains {
+            switch ($0, reference) {
+            case (.uiHangRecovered, .uiHangRecovered),
+                 (.uiHangNotRecovered, .uiHangNotRecovered):
+                return true
+            default:
+                return false
+            }
+        }
     }
 }
 

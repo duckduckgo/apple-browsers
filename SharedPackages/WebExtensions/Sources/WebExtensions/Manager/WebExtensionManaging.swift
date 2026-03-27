@@ -115,4 +115,19 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func clearCachedScriptlets()
+
+    /// Returns debug information about cached and installed scriptlets for all known extension types.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func scriptletDebugInfo() -> [ScriptletDebugInfo]
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public struct ScriptletDebugInfo: Identifiable {
+    public let extensionType: DuckDuckGoWebExtensionType
+    public let cachedVersion: String?
+    public let installedVersion: String?
+    public let scriptletPaths: [String]
+
+    public var id: String { extensionType.rawValue }
 }

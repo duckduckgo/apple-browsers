@@ -65,6 +65,8 @@ public final class WebExtensionScriptletCoordinator {
         installationTasks[type]?.cancel()
         installationTasks.removeValue(forKey: type)
         cancellables.removeValue(forKey: type)
+        installationTracker.clearInstalledVersion(for: type)
+        scriptletProvider.stop(for: type)
     }
 
     // MARK: - Private

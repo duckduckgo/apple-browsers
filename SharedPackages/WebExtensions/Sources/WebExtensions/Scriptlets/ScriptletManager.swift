@@ -86,6 +86,12 @@ public final class ScriptletManager: ScriptletProviding {
         subscribeToConfigUpdatesIfNeeded()
     }
 
+    public func stop(for extensionType: DuckDuckGoWebExtensionType) {
+        activeExtensionTypes.remove(extensionType)
+        currentFetchTasks[extensionType]?.cancel()
+        currentFetchTasks.removeValue(forKey: extensionType)
+    }
+
     public func clearCachedScriptlets() {
         Logger.webExtensions.info("[Scriptlets] Clearing all cached scriptlets")
         store.clearAll()

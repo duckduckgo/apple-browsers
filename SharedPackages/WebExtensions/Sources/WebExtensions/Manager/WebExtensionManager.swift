@@ -166,6 +166,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
             pixelFiring.fire(.installed)
+
+            if let type = metadata.type {
+                await scriptletCoordinator?.onExtensionEnabled(for: type)
+            }
         } catch {
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
             unregisterHandlers(for: identifier)
@@ -180,7 +184,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public func uninstallExtension(identifier: String) throws {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
+        let embeddedType = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
         installationStore.remove(uniqueIdentifier: identifier)
+
+        if let embeddedType {
+            scriptletConfiguration?.installationTracker.clearInstalledVersion(for: embeddedType)
+        }
 
         unregisterHandlers(for: identifier)
 
@@ -268,6 +277,26 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func clearCachedScriptlets() {
         scriptletConfiguration?.provider.clearCachedScriptlets()
+    }
+
+    @MainActor
+    public func scriptletDebugInfo() -> [ScriptletDebugInfo] {
+        guard let config = scriptletConfiguration else { return [] }
+
+        return DuckDuckGoWebExtensionType.allCases.compactMap { type in
+            let cachedVersion = config.provider.scriptletVersion(for: type)
+            let installedVersion = config.installationTracker.installedVersion(for: type)
+            let scriptletPaths = config.provider.scriptlets(for: type)?.map(\.path)
+
+            guard cachedVersion != nil || installedVersion != nil else { return nil }
+
+            return ScriptletDebugInfo(
+                extensionType: type,
+                cachedVersion: cachedVersion,
+                installedVersion: installedVersion,
+                scriptletPaths: scriptletPaths ?? []
+            )
+        }
     }
 
     @MainActor

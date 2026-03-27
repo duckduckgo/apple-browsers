@@ -24,4 +24,5 @@ import Foundation
 public protocol ScriptletInstallationTracking {
     func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
     func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType)
+    func clearInstalledVersion(for extensionType: DuckDuckGoWebExtensionType)
 }

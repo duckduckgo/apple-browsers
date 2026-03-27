@@ -29,5 +29,6 @@ public protocol ScriptletProviding {
     func scriptletVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
     func isReady(for extensionType: DuckDuckGoWebExtensionType) -> Bool
     func refreshIfNeeded(for extensionType: DuckDuckGoWebExtensionType) async
+    func stop(for extensionType: DuckDuckGoWebExtensionType)
     func clearCachedScriptlets()
 }

@@ -515,6 +515,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor func clearCachedScriptlets() {}
+    @MainActor func scriptletDebugInfo() -> [ScriptletDebugInfo] { [] }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

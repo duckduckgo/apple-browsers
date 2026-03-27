@@ -188,12 +188,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     private func resumeActiveContinuation(with result: Result<Void, Error>) {
         let continuation = activeContinuation
         activeContinuation = nil
-        switch result {
-        case .success:
-            continuation?.resume()
-        case .failure(let error):
-            continuation?.resume(throwing: error)
-        }
+        continuation?.resume(with: result)
     }
 
     func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {

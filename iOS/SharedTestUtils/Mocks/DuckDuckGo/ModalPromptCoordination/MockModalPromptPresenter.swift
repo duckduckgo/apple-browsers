@@ -45,6 +45,29 @@ final class MockModalPromptPresenter: ModalPromptPresenter {
     }
 }
 
+@MainActor
+final class MockDismissibleViewController: UIViewController {
+    private(set) var didCallDismiss = false
+    private(set) var capturedDismissAnimated: Bool?
+    var dismissCompletion: (() -> Void)?
+
+    private(set) var didCallPresent = false
+    private(set) var capturedPresentedViewController: UIViewController?
+
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        didCallDismiss = true
+        capturedDismissAnimated = flag
+        dismissCompletion = completion
+        completion?()
+    }
+
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        didCallPresent = true
+        capturedPresentedViewController = viewControllerToPresent
+        completion?()
+    }
+}
+
 final class MockModalPromptScheduler: ModalPromptScheduling {
     private(set) var didCallSchedule = false
     private(set) var capturedScheduledDelay: TimeInterval?

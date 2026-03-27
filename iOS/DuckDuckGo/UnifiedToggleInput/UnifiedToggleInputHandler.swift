@@ -179,7 +179,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             buttonState = .stopGeneratingOnly
         } else if !currentText.isEmpty {
             buttonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat {
+        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
             buttonState = isVoiceSearchEnabled ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if isVoiceSearchEnabled {
             buttonState = .voiceOnly

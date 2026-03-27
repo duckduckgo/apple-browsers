@@ -30,7 +30,7 @@ import Utilities
 /// **Menu Items:**
 /// - "Fire Test Trigger" (debug/review builds only) – sends a test notification to trigger promos that listen for it
 /// - For each promo: parent item with status, submenu with Force Show, Undismiss, Undismiss + Clear History
-/// - "Advance Simulated Date by 1 Day" – advances the simulated "now" for cooldown checks
+/// - "Advance Simulated Date …" – advances the simulated "now" for cooldown checks and expires active promo sessions whose logical timeout deadline has passed
 /// - "Reset Simulated Date" – clears the simulated date (disabled when none set)
 /// - "Reset All Promo State" – clears debug date override and all promo history
 /// - When no promos: disabled "No promos registered"
@@ -250,6 +250,7 @@ final class PromoDebugMenu: NSMenu {
 
     private func advanceSimulatedDate(by interval: TimeInterval) {
         debugSimulatedDateStore.advance(by: interval)
+        NSApp.delegateTyped.promoService?.reconcileActivePromoTimeoutsAfterSimulatedDateAdvance()
     }
 
     @objc private func resetSimulatedDate() {

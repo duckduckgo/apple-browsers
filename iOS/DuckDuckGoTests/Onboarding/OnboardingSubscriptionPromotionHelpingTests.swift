@@ -177,55 +177,15 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
 
     // MARK: - Redirect URL Tests
 
-    func testRedirectURLReturningUserFreeTrial() {
-        // Given
-        mockStatisticsStore.variant = VariantIOS.returningUser.name
-        mockSubscriptionManager.isEligibleForFreeTrialResult = true
-
+    func testRedirectURLAlwaysUsesOnboardingOrigin() {
         // When
         let components = sut.redirectURLComponents()
 
         // Then
         XCTAssertNotNil(components)
-        XCTAssertEqual(components?.queryItems?.first(where: { $0.name == "origin" })?.value, SubscriptionFunnelOrigin.onboardingReinstallFreeTrial.rawValue)
-    }
-
-    func testRedirectURLReturningUserSubscribe() {
-        // Given
-        mockStatisticsStore.variant = VariantIOS.returningUser.name
-        mockSubscriptionManager.isEligibleForFreeTrialResult = false
-
-        // When
-        let components = sut.redirectURLComponents()
-
-        // Then
-        XCTAssertNotNil(components)
-        XCTAssertEqual(components?.queryItems?.first(where: { $0.name == "origin" })?.value, SubscriptionFunnelOrigin.onboardingReinstallSubscribe.rawValue)
-    }
-
-    func testRedirectURLNewUserFreeTrial() {
-        // Given
-        mockStatisticsStore.variant = nil
-        mockSubscriptionManager.isEligibleForFreeTrialResult = true
-
-        // When
-        let components = sut.redirectURLComponents()
-
-        // Then
-        XCTAssertNotNil(components)
-        XCTAssertEqual(components?.queryItems?.first(where: { $0.name == "origin" })?.value, SubscriptionFunnelOrigin.onboardingNewInstallFreeTrial.rawValue)
-    }
-
-    func testRedirectURLNewUserSubscribe() {
-        // Given
-        mockStatisticsStore.variant = nil
-        mockSubscriptionManager.isEligibleForFreeTrialResult = false
-
-        // When
-        let components = sut.redirectURLComponents()
-
-        // Then
-        XCTAssertNotNil(components)
-        XCTAssertEqual(components?.queryItems?.first(where: { $0.name == "origin" })?.value, SubscriptionFunnelOrigin.onboardingNewInstallSubscribe.rawValue)
+        XCTAssertEqual(
+            components?.queryItems?.first(where: { $0.name == "origin" })?.value,
+            SubscriptionFunnelOrigin.onboarding.rawValue
+        )
     }
 }

@@ -348,12 +348,12 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .lazyMenuRebuild,
                 .websitesHistoryFirstTimeQuitSurvey,
                 .screenTimeCleaning,
-                .addToDockAppStore:
+                .addToDockAppStore,
+                .tabAnimations:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
-             .tabAnimations,
              .aiChatRemoveSuggestion:
             .internalOnly
         default:

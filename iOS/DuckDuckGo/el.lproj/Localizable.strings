@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Προσαρμοσμένη διεύθυνση URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Εξαιρούμενοι τομείς από το Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Εισαγωγή αρχείου σελιδοδεικτών...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Δεν υπάρχουν ενεργές συνδρομές";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Δεν υπάρχουν εξαιρούμενοι τομείς";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Δεν βρέθηκε υπάρχουσα συνδρομή";

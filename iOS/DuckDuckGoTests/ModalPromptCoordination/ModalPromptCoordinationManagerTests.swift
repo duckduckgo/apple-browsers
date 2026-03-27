@@ -367,4 +367,49 @@ final class ModalPromptCoordinationManagerTests {
         // THEN
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
+
+    // MARK: - OmniBarEditingState Present-On-Top Tests
+
+    @Test("Check Modal Is Presented On Top When Non-OmniBar ViewController Is Presented")
+    func whenNonOmniBarViewControllerIsPresentedThenFallbackPathIsUsed() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let someVC = MockDismissibleViewController()
+        presenterMock.presentedViewController = someVC
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            modalPromptScheduling: schedulerMock
+        )
+
+        // WHEN
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        schedulerMock.executeScheduledBlock()
+
+        // THEN — fallback presents on the presenter directly
+        #expect(presenterMock.didCallPresent)
+        #expect(!someVC.didCallPresent)
+    }
+
+    @Test("Check Modal Presents Directly When No ViewController Is Presented")
+    func whenNoPresentedViewControllerThenModalPresentsDirectly() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        presenterMock.presentedViewController = nil
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            modalPromptScheduling: schedulerMock
+        )
+
+        // WHEN
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        schedulerMock.executeScheduledBlock()
+
+        // THEN
+        #expect(presenterMock.didCallPresent)
+        #expect(provider.didCallDidPresentModal)
+    }
 }

@@ -1154,22 +1154,27 @@ class MainViewController: UIViewController {
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
-        guard isNavigationBarEffectivelyAtBottom else { return }
-
         let coordinator = unifiedToggleInputCoordinator
-        let isOmnibarActive = coordinator?.isOmnibarSession == true
         let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
 
         let baseInputHeight: CGFloat
-        if coordinator?.isAITabExpanded == true, let coordinator {
+        if let coordinator, coordinator.isAITabExpanded || coordinator.isOmnibarSession {
             baseInputHeight = coordinator.omnibarEditingHeight()
         } else {
             baseInputHeight = omniBarHeight
         }
 
+        if !isNavigationBarEffectivelyAtBottom {
+            if !isAITabCollapsed, let coordinator, coordinator.isOmnibarSession {
+                self.viewCoordinator.constraints.navigationBarContainerHeight.constant = baseInputHeight
+            }
+            return
+        }
+
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
-        if !isOmnibarActive, !isAITabCollapsed {
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
+        if !isAITabCollapsed {
+            let newHeight = max(baseInputHeight, containerHeight)
+            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = newHeight
         }
 
         if appSettings.currentAddressBarPosition.isBottom, let currentTab {

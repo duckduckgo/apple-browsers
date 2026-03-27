@@ -22,6 +22,31 @@ import Common
 import os.log
 import Persistence
 
+/// Supplies whether a bundle identifier appears in the user Dock plist (`persistent-apps`).
+/// Injected so unit tests do not depend on the host machine’s Dock or whether the debug app is pinned.
+protocol DockMembershipProviding {
+    func isBundleIdentifierInDock(_ bundleIdentifier: String?) -> Bool
+}
+
+final class DockPlistDockMembershipProvider: DockMembershipProviding {
+    private let dockPlistURL: URL
+
+    init(dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("Preferences/com.apple.dock.plist")) {
+        self.dockPlistURL = dockPlistURL
+    }
+
+    func isBundleIdentifierInDock(_ bundleIdentifier: String?) -> Bool {
+        guard let bundleIdentifier,
+              let dockPlistDict = NSDictionary(contentsOf: dockPlistURL) as? [String: AnyObject],
+              let persistentApps = dockPlistDict["persistent-apps"] as? [[String: AnyObject]] else {
+            assertionFailure("Could not read Dock plist or bundle identifier is nil.")
+            return false
+        }
+
+        return persistentApps.contains(where: { ($0["tile-data"] as? [String: AnyObject])?["bundle-identifier"] as? String == bundleIdentifier })
+    }
+}
+
 protocol DockCustomization: AnyObject {
     /// Whether the running build may programmatically add the app to the Dock (false for App Store sandbox builds).
     var supportsAddingToDock: Bool { get }
@@ -35,11 +60,18 @@ protocol DockCustomization: AnyObject {
     /// The notification mentiond here is the blue dot notification shown in the more options menu.
     /// The blue dot is also show in the Add To Dock menu item.
     ///
-    /// The requriments for the blue dot show to shown are the following:
-    /// - Two days passed since first lauch.
-    /// - We didn't show it in the past (this means the blue dot was shown, the user opened the more options menu and then closed it)
+    /// Requirements for the blue dot:
+    /// - Two days passed since first launch.
+    /// - We did not already dismiss it via the more options menu (`wasNotificationShownToUser`).
+    /// - The app is not already in the Dock (`isAddedToDock`).
     var shouldShowNotification: Bool { get }
     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> { get }
+    /// Recomputes published notification visibility from `shouldShowNotification`.
+    ///
+    /// Call from `applicationDidFinishLaunching` after `firstLaunchDate` is set for a new install.
+    /// `DockCustomizer.init` must not assign `shouldShowNotificationPrivate` from `AppDelegate.firstLaunchDate`:
+    /// before that runs, `firstLaunchDate` falls back to a default “old” date so eligibility would be wrong.
+    func synchronizeNotificationVisibilityWithFirstLaunchDate()
     func didCloseMoreOptionsMenu()
     func resetData()
 }
@@ -56,6 +88,7 @@ final class DockCustomizer: DockCustomization {
     private let applicationBuildType: ApplicationBuildType
     private let positionProvider: DockPositionProviding
     private let keyValueStore: KeyValueStoring
+    private let dockMembershipProvider: DockMembershipProviding
 
     @Published private var shouldShowNotificationPrivate: Bool = false
     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> {
@@ -65,15 +98,18 @@ final class DockCustomizer: DockCustomization {
 
     init(applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          positionProvider: DockPositionProviding = DockPositionProvider(),
-         keyValueStore: KeyValueStoring = UserDefaults.standard) {
+         keyValueStore: KeyValueStoring = UserDefaults.standard,
+         dockMembershipProvider: DockMembershipProviding = DockPlistDockMembershipProvider()) {
         self.applicationBuildType = applicationBuildType
         self.positionProvider = positionProvider
         self.keyValueStore = keyValueStore
+        self.dockMembershipProvider = dockMembershipProvider
+    }
 
-        if !applicationBuildType.isAppStoreBuild {
-            shouldShowNotificationPrivate = shouldShowNotification
-            startTimer()
-        }
+    func synchronizeNotificationVisibilityWithFirstLaunchDate() {
+        guard !applicationBuildType.isAppStoreBuild else { return }
+        shouldShowNotificationPrivate = shouldShowNotification
+        startTimer()
     }
 
     private var dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("Preferences/com.apple.dock.plist")
@@ -83,7 +119,7 @@ final class DockCustomizer: DockCustomization {
     }
 
     private func startTimer() {
-        Timer.publish(every: 12 * 60 * 60, on: .main, in: .common)
+        Timer.publish(every: .hours(12), on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
@@ -98,19 +134,14 @@ final class DockCustomizer: DockCustomization {
     }
 
     var shouldShowNotification: Bool {
-        AppDelegate.twoDaysPassedSinceFirstLaunch && !didWeShowNotificationToUser
+        AppDelegate.twoDaysPassedSinceFirstLaunch
+            && !didWeShowNotificationToUser
+            && !isAddedToDock
     }
 
-    // This checks whether the bundle identifier of the current bundle
-    // is present in the 'persistent-apps' array of the Dock's plist.
+    // Whether the main bundle’s identifier appears in the Dock plist’s `persistent-apps`.
     var isAddedToDock: Bool {
-        guard let bundleIdentifier = Bundle.main.bundleIdentifier,
-              let dockPlistDict = dockPlistDict,
-              let persistentApps = dockPlistDict["persistent-apps"] as? [[String: AnyObject]] else {
-            return false
-        }
-
-        return persistentApps.contains(where: { ($0["tile-data"] as? [String: AnyObject])?["bundle-identifier"] as? String == bundleIdentifier })
+        dockMembershipProvider.isBundleIdentifierInDock(Bundle.main.bundleIdentifier)
     }
 
     func didCloseMoreOptionsMenu() {

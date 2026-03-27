@@ -106,14 +106,24 @@ final class ModalPromptCoordinationService {
             return
         }
 
-        guard viewController.presentedViewController == nil || viewController.presentedViewController?.isBeingDismissed == true else {
+        let presented = viewController.presentedViewController
+        let isOmniBarEditing = presented is OmniBarEditingStateViewController
+        guard presented == nil || presented?.isBeingDismissed == true || isOmniBarEditing else {
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A modal is already presented.")
             return
         }
 
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ App Launched from standard source.")
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ Onboarding has been seen.")
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ No Modal is currently presented.")
+        let presentationStatusMessage: String
+        if isOmniBarEditing {
+            presentationStatusMessage = "OmniBar editing sheet is presented; evaluating modal prompts."
+        } else if presented?.isBeingDismissed == true {
+            presentationStatusMessage = "A modal is being dismissed; evaluating modal prompts."
+        } else {
+            presentationStatusMessage = "No Modal is currently presented."
+        }
+        Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ \(presentationStatusMessage, privacy: .public)")
         modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
     }
 

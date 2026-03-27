@@ -667,5 +667,7 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
      func didCloseMoreOptionsMenu() { }
 
+     func synchronizeNotificationVisibilityWithFirstLaunchDate() { }
+
      func resetData() { }
  }

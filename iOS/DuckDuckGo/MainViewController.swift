@@ -1224,18 +1224,18 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
 
         // Omnibar tab switcher button (for iPhone landscape combined bar)
-        let omniBarTSButton = TabSwitcherStaticButton()
-        omniBarTSButton.delegate = self
-        omniBarTSButton.translatesAutoresizingMaskIntoConstraints = false
+        let omniBarTabSwitcher = TabSwitcherStaticButton()
+        omniBarTabSwitcher.delegate = self
+        omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
         let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
-        container.addSubview(omniBarTSButton)
+        container.addSubview(omniBarTabSwitcher)
         NSLayoutConstraint.activate([
-            omniBarTSButton.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            omniBarTSButton.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            omniBarTSButton.widthAnchor.constraint(equalToConstant: 34),
-            omniBarTSButton.heightAnchor.constraint(equalToConstant: 44),
+            omniBarTabSwitcher.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            omniBarTabSwitcher.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            omniBarTabSwitcher.widthAnchor.constraint(equalToConstant: 34),
+            omniBarTabSwitcher.heightAnchor.constraint(equalToConstant: 44),
         ])
-        omniBarTabSwitcherButton = omniBarTSButton
+        omniBarTabSwitcherButton = omniBarTabSwitcher
 
         // Omnibar fire button (for iPhone landscape combined bar)
         viewCoordinator.omniBar.barView.onFirePressed = { [weak self] in

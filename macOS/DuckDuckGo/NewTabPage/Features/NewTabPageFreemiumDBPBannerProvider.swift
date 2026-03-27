@@ -90,6 +90,7 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
         // it eligible even before async product availability settles. This
         // avoids missing the NTP trigger on app restart during a display window.
         if let historyProvider, let promoId,
+           coordinator.isFeatureFlagEnabled,
            let record = currentHistoryRecord(from: historyProvider, promoId: promoId),
            let lastShown = record.lastShown,
            dateProvider().timeIntervalSince(lastShown) < .days(7) {
@@ -117,8 +118,9 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
                 refreshSubject.prepend(()),
                 historyProvider.historyPublisher(for: promoId)
             )
-            .map { [dateProvider] isAvailable, _, record in
+            .map { [weak coordinator, dateProvider] isAvailable, _, record in
                 if isAvailable { return true }
+                guard let coordinator, coordinator.isFeatureFlagEnabled else { return false }
                 guard let lastShown = record?.lastShown else { return false }
                 return dateProvider().timeIntervalSince(lastShown) < .days(7)
             }

@@ -276,7 +276,6 @@ public final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManager 
     public var didPostFirstProfileSavedNotification = false
     public var didPostResultsNotification = false
     public var didDismissHomePagePromotion = false
-    public var displayWindowStartDate: Date?
     public var firstProfileSavedTimestamp: Date?
     public var upgradeToSubscriptionTimestamp: Date?
     public var firstScanResults: FreemiumDBPMatchResults?

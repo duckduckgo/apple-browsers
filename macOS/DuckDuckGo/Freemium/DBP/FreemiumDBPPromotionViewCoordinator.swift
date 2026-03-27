@@ -54,6 +54,11 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         freemiumDBPUserStateManager.firstScanResults
     }
 
+    /// Whether the feature flag is enabled (synchronous — no async dependencies).
+    var isFeatureFlagEnabled: Bool {
+        freemiumDBPFeature.isFeatureFlagEnabled
+    }
+
     /// The user state manager, which tracks the user's activation status and scan results.
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 

@@ -28,7 +28,6 @@ final class FreemiumDBPUserStateManagerTests: XCTestCase {
         static let didDismissHomePagePromotion = "macos.browser.freemium.dbp.did.post.dismiss.home.page.promotion"
         static let firstProfileSavedTimestamp = "macos.browser.freemium.dbp.first.profile.saved.timestamp"
         static let firstScanResults = "macos.browser.freemium.dbp.first.scan.results"
-        static let displayWindowStartDate = "macos.browser.freemium.dbp.display.window.start.date"
         static let upgradeToSubscriptionTimestamp = "macos.browser.freemium.dbp.upgrade.to.subscription.timestamp"
     }
 
@@ -205,25 +204,6 @@ final class FreemiumDBPUserStateManagerTests: XCTestCase {
         XCTAssertEqual(result?.brokerCount, scanResults.brokerCount)
     }
 
-    func testSetsDisplayWindowStartDate() {
-        let sut = DefaultFreemiumDBPUserStateManager(userDefaults: testUserDefaults)
-        XCTAssertNil(testUserDefaults.value(forKey: Keys.displayWindowStartDate))
-
-        sut.displayWindowStartDate = Date()
-
-        XCTAssertNotNil(testUserDefaults.value(forKey: Keys.displayWindowStartDate))
-    }
-
-    func testGetsDisplayWindowStartDate() {
-        let sut = DefaultFreemiumDBPUserStateManager(userDefaults: testUserDefaults)
-        XCTAssertNil(sut.displayWindowStartDate)
-        testUserDefaults.setValue(Date(), forKey: Keys.displayWindowStartDate)
-
-        let result = sut.displayWindowStartDate
-
-        XCTAssertNotNil(result)
-    }
-
     func testResetAllStateResetsAllProperties() {
         // Given
         let sut = DefaultFreemiumDBPUserStateManager(userDefaults: testUserDefaults)
@@ -234,7 +214,6 @@ final class FreemiumDBPUserStateManagerTests: XCTestCase {
         sut.didDismissHomePagePromotion = true
         let scanResults = FreemiumDBPMatchResults(matchesCount: 10, brokerCount: 5)
         sut.firstScanResults = scanResults
-        sut.displayWindowStartDate = Date()
 
         // When
         sut.resetAllState()
@@ -245,7 +224,6 @@ final class FreemiumDBPUserStateManagerTests: XCTestCase {
         XCTAssertFalse(sut.didPostFirstProfileSavedNotification)
         XCTAssertFalse(sut.didPostResultsNotification)
         XCTAssertNil(sut.firstScanResults)
-        XCTAssertNil(sut.displayWindowStartDate)
         XCTAssertFalse(sut.didDismissHomePagePromotion)
     }
 

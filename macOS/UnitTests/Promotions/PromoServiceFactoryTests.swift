@@ -77,8 +77,8 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertEqual(promo.initiated, .app)
         XCTAssertEqual(promo.promoType.severity, .medium)
         XCTAssertEqual(promo.context, .newTabPage)
-        XCTAssertFalse(promo.respectsGlobalCooldown)
-        XCTAssertFalse(promo.setsGlobalCooldown)
+        XCTAssertTrue(promo.respectsGlobalCooldown)
+        XCTAssertTrue(promo.setsGlobalCooldown)
         XCTAssertNil(promo.delegate)
     }
 

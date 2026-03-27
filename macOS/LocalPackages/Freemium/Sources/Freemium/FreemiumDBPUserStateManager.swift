@@ -64,9 +64,6 @@ public protocol FreemiumDBPUserStateManager {
     /// The results of the user's first scan, stored as a `FreemiumDBPMatchResults` object.
     var firstScanResults: FreemiumDBPMatchResults? { get set }
 
-    /// The date when the current display window started. Persisted across app restarts.
-    var displayWindowStartDate: Date? { get set }
-
     /// A Date value that stores the timestamp of when the user upgraded from Freemium to a Paid Subscription
     var upgradeToSubscriptionTimestamp: Date? { get set }
 
@@ -87,7 +84,6 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         static let didDismissHomePagePromotion = "macos.browser.freemium.dbp.did.post.dismiss.home.page.promotion"
         static let firstProfileSavedTimestamp = "macos.browser.freemium.dbp.first.profile.saved.timestamp"
         static let firstScanResults = "macos.browser.freemium.dbp.first.scan.results"
-        static let displayWindowStartDate = "macos.browser.freemium.dbp.display.window.start.date"
         static let upgradeToSubscriptionTimestamp = "macos.browser.freemium.dbp.upgrade.to.subscription.timestamp"
     }
 
@@ -160,18 +156,6 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         }
     }
 
-    /// Tracks the date when the current display window started.
-    ///
-    /// - Uses the `UserDefaults` key: `macos.browser.freemium.dbp.display.window.start.date`.
-    public var displayWindowStartDate: Date? {
-        get {
-            userDefaults.value(forKey: Keys.displayWindowStartDate) as? Date
-        }
-        set {
-            userDefaults.set(newValue, forKey: Keys.displayWindowStartDate)
-        }
-    }
-
     /// Tracks whether the user has dismissed the homepage promotion.
     ///
     /// - Uses the `UserDefaults` key: `macos.browser.freemium.dbp.did.post.dismiss.home.page.promotion`.
@@ -215,7 +199,6 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         userDefaults.removeObject(forKey: Keys.didPostFirstProfileSavedNotification)
         userDefaults.removeObject(forKey: Keys.didPostResultsNotification)
         userDefaults.removeObject(forKey: Keys.firstScanResults)
-        userDefaults.removeObject(forKey: Keys.displayWindowStartDate)
         userDefaults.removeObject(forKey: Keys.didDismissHomePagePromotion)
         userDefaults.removeObject(forKey: Keys.upgradeToSubscriptionTimestamp)
     }

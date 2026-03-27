@@ -23,12 +23,13 @@ import PrivacyConfig
 @available(macOS 15.4, iOS 18.4, *)
 public enum ScriptletManagerFactory {
 
-    public static func makeManager(
+    public static func makeConfiguration(
         privacyConfigManager: PrivacyConfigurationManaging,
         apiService: APIService,
         baseDirectory: URL,
-        defaults: UserDefaults = .standard
-    ) -> ScriptletManager {
+        defaults: UserDefaults = .standard,
+        installer: ScriptletInstalling = ScriptletInstaller()
+    ) -> ScriptletConfiguration {
 
         let configProvider = ScriptletConfigProvider(
             privacyConfigManager: privacyConfigManager
@@ -43,11 +44,17 @@ public enum ScriptletManagerFactory {
             defaults: defaults
         )
 
-        return ScriptletManager(
+        let manager = ScriptletManager(
             configProvider: configProvider,
             fetcher: fetcher,
             validator: validator,
             store: store
+        )
+
+        return ScriptletConfiguration(
+            provider: manager,
+            installationTracker: store,
+            installer: installer
         )
     }
 }

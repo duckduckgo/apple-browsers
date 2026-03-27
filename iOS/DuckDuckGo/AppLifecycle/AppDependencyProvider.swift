@@ -114,14 +114,10 @@ final class AppDependencyProvider: DependencyProvider {
             .first!
             .appendingPathComponent("Scriptlets", isDirectory: true)
 
-        let scriptletManager = ScriptletManagerFactory.makeManager(
+        return ScriptletManagerFactory.makeConfiguration(
             privacyConfigManager: configurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory
-        )
-
-        return ScriptletConfiguration(
-            provider: scriptletManager
         )
     }
 

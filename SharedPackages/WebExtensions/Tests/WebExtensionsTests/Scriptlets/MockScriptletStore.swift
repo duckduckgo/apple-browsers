@@ -19,7 +19,7 @@
 import Foundation
 @testable import WebExtensions
 
-final class MockScriptletStore: ScriptletStoring {
+final class MockScriptletStore: ScriptletStoring, ScriptletInstallationTracking {
 
     var cachedScriptlets: CachedScriptlets?
     var savedFetched: [FetchedScriptlet]?

@@ -28,9 +28,5 @@ public protocol ScriptletProviding {
     func scriptletVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
     func isReady(for extensionType: DuckDuckGoWebExtensionType) -> Bool
     func refreshIfNeeded(for extensionType: DuckDuckGoWebExtensionType) async
-    var cacheRootDirectory: URL { get }
     func clearCachedScriptlets()
-
-    func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
-    func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType)
 }

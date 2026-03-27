@@ -1846,14 +1846,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let scriptletsDirectory = URL.sandboxApplicationSupportURL
             .appendingPathComponent("Scriptlets", isDirectory: true)
 
-        let scriptletManager = ScriptletManagerFactory.makeManager(
+        return ScriptletManagerFactory.makeConfiguration(
             privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory
-        )
-
-        return ScriptletConfiguration(
-            provider: scriptletManager
         )
     }
 

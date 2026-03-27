@@ -1,5 +1,5 @@
 //
-//  ScriptletStoring.swift
+//  ScriptletInstallationTracking.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,16 +18,11 @@
 
 import Foundation
 
+/// Tracks which scriptlet version has been installed into a web extension
+/// and provides the cache root needed during installation.
 @available(macOS 15.4, iOS 18.4, *)
-public protocol ScriptletStoring {
+public protocol ScriptletInstallationTracking {
     var cacheRootDirectory: URL { get }
-    func cachedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
-    func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets?
-    @discardableResult
-    func save(_ fetched: [FetchedScriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType) throws -> [Scriptlet]
-    func clear(for extensionType: DuckDuckGoWebExtensionType)
-    func clearAll()
     func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
     func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType)
-    func clearInstalledVersion(for extensionType: DuckDuckGoWebExtensionType)
 }

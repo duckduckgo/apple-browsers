@@ -20,7 +20,7 @@ import Foundation
 import os.log
 
 @available(macOS 15.4, iOS 18.4, *)
-public final class ScriptletStore: ScriptletStoring {
+public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracking {
 
     private let baseDirectory: URL
     private let defaults: UserDefaults

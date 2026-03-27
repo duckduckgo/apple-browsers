@@ -24,6 +24,7 @@ import os.log
 public final class WebExtensionScriptletCoordinator {
 
     private let scriptletProvider: ScriptletProviding
+    private let installationTracker: ScriptletInstallationTracking
     private let installer: ScriptletInstalling
 
     public weak var installationPathResolver: (any WebExtensionInstallationPathResolving)?
@@ -34,10 +35,12 @@ public final class WebExtensionScriptletCoordinator {
 
     public init(
         scriptletProvider: ScriptletProviding,
+        installationTracker: ScriptletInstallationTracking,
         installer: ScriptletInstalling,
         installationPathResolver: any WebExtensionInstallationPathResolving
     ) {
         self.scriptletProvider = scriptletProvider
+        self.installationTracker = installationTracker
         self.installer = installer
         self.installationPathResolver = installationPathResolver
     }
@@ -123,7 +126,7 @@ public final class WebExtensionScriptletCoordinator {
             return
         }
 
-        let installedVersion = scriptletProvider.installedVersion(for: type)
+        let installedVersion = installationTracker.installedVersion(for: type)
         guard currentVersion != installedVersion else {
             Logger.webExtensions.debug("[Scriptlets] ✓ Scriptlets v\(currentVersion) already installed for '\(type.rawValue)', skipping")
             return
@@ -134,8 +137,8 @@ public final class WebExtensionScriptletCoordinator {
         }
 
         do {
-            try await installer.installScriptlets(scriptlets, cacheRootDirectory: scriptletProvider.cacheRootDirectory, to: installationDirectory)
-            scriptletProvider.setInstalledVersion(currentVersion, for: type)
+            try await installer.installScriptlets(scriptlets, cacheRootDirectory: installationTracker.cacheRootDirectory, to: installationDirectory)
+            installationTracker.setInstalledVersion(currentVersion, for: type)
             Logger.webExtensions.info("[Scriptlets] ✅ Installed scriptlets v\(currentVersion) for '\(type.rawValue)'")
             try await installationPathResolver?.reloadExtension(for: type)
         } catch {

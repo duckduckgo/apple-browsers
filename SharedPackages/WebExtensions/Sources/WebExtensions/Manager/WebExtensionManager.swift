@@ -20,23 +20,6 @@ import Foundation
 import os.log
 import WebKit
 
-/// Bundles the dependencies for the scriptlet subsystem.
-/// Pass to `WebExtensionManager` to enable automatic scriptlet management.
-@available(macOS 15.4, iOS 18.4, *)
-public struct ScriptletConfiguration {
-
-    public let provider: ScriptletProviding
-    public let installer: ScriptletInstalling
-
-    public init(
-        provider: ScriptletProviding,
-        installer: ScriptletInstalling = ScriptletInstaller()
-    ) {
-        self.provider = provider
-        self.installer = installer
-    }
-}
-
 /// Manages web extensions including installation, loading, and lifecycle.
 /// Platform-specific behavior is delegated to the windowTabProvider and lifecycleDelegate.
 @available(macOS 15.4, iOS 18.4, *)
@@ -117,6 +100,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         if let scriptletConfiguration {
             let coordinator = WebExtensionScriptletCoordinator(
                 scriptletProvider: scriptletConfiguration.provider,
+                installationTracker: scriptletConfiguration.installationTracker,
                 installer: scriptletConfiguration.installer,
                 installationPathResolver: self
             )

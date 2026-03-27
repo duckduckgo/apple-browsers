@@ -76,18 +76,6 @@ public final class ScriptletManager: ScriptletProviding {
         scriptlets(for: extensionType) != nil
     }
 
-    public var cacheRootDirectory: URL {
-        store.cacheRootDirectory
-    }
-
-    public func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
-        store.installedVersion(for: extensionType)
-    }
-
-    public func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType) {
-        store.setInstalledVersion(version, for: extensionType)
-    }
-
     // MARK: - Lifecycle
 
     public func start(for extensionType: DuckDuckGoWebExtensionType) async {

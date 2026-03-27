@@ -17,13 +17,15 @@
 //  limitations under the License.
 //
 
+import WebKit
+
 extension TabViewController {
 
     @MainActor
     public func executeScript(_ javaScriptString: String,
                               args: [String: Any] = [:]) async -> Result<Any?, any Error> {
         do {
-            var result = try await webView.callAsyncJavaScript(
+            let result = try await webView.callAsyncJavaScript(
                 javaScriptString,
                 arguments: args,
                 in: nil,
@@ -31,6 +33,14 @@ extension TabViewController {
             )
             return .success(result)
         } catch {
+            let nsError = error as NSError
+            if nsError.domain == "WKErrorDomain",
+               let jsMessage = nsError.userInfo["WKJavaScriptExceptionMessage"] as? String {
+                let line = nsError.userInfo["WKJavaScriptExceptionLineNumber"] as? Int
+                let col = nsError.userInfo["WKJavaScriptExceptionColumnNumber"] as? Int
+                let detail = "JS: \(jsMessage) (line:\(line ?? 0) col:\(col ?? 0))"
+                return .failure(NSError(domain: "WebDriverJS", code: nsError.code, userInfo: [NSLocalizedDescriptionKey: detail]))
+            }
             return .failure(error)
         }
     }

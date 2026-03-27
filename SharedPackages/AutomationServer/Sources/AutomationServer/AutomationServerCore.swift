@@ -579,8 +579,9 @@ public final class AutomationServerCore {
             let jsonString = encodeToJsonString(value)
             return .success(jsonString)
         case .failure(let error):
-            Logger.automationServer.error("Error executing script: \(error)")
-            return .failure(.scriptExecutionFailed)
+            Logger.automationServer.error("Error executing script: \(error.localizedDescription)")
+            let errorJson = encodeToJsonString(["error": "scriptExecutionFailed", "message": error.localizedDescription])
+            return .success(errorJson)
         }
     }
 

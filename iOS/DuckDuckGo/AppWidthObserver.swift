@@ -47,6 +47,8 @@ public class AppWidthObserver {
     private init() {}
 
     func willResize(toWidth width: CGFloat) -> Bool {
+        guard isPad || isPhoneLandscapeEnabled else { return false }
+
         if width != currentWidth {
             currentWidth = width
             return true
@@ -54,5 +56,9 @@ public class AppWidthObserver {
 
         return false
     }
+
+    /// Set to true when the minimalChromeInLandscape feature flag is on.
+    /// Allows iPhone to participate in width-change tracking for landscape transitions.
+    var isPhoneLandscapeEnabled: Bool = false
 
 }

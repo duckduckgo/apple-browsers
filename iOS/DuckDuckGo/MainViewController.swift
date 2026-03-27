@@ -576,9 +576,10 @@ class MainViewController: UIViewController {
 
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
+        AppWidthObserver.shared.isPhoneLandscapeEnabled = featureFlagger.isFeatureOn(.minimalChromeInLandscape)
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
         applyWidth()
-        
+
         registerForApplicationEvents()
         registerForCookiesManagedNotification()
         registerForSettingsChangeNotifications()
@@ -1979,7 +1980,12 @@ class MainViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        
+
+        let isKeyboardShowing = omniBar.isTextFieldEditing
+        if isKeyboardShowing {
+            omniBar.barView.textField.suppressResignFirstResponder = true
+        }
+
         if AppWidthObserver.shared.willResize(toWidth: size.width) {
             applyWidth(for: size)
         }
@@ -1987,13 +1993,13 @@ class MainViewController: UIViewController {
         self.showMenuHighlighterIfNeeded()
         updateChromeForDuckPlayer()
 
-        let isKeyboardShowing = omniBar.isTextFieldEditing
         coordinator.animate { _ in
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
         } completion: { _ in
+            self.omniBar.barView.textField.suppressResignFirstResponder = false
             if isKeyboardShowing {
-                self.omniBar.beginEditing(animated: true)
+                self.omniBar.beginEditing(animated: false)
             }
 
             ViewHighlighter.updatePositions()

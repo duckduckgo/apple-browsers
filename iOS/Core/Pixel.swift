@@ -201,6 +201,9 @@ public struct PixelParameters {
 
     // New Address Bar Picker
     public static let selection = "selection"
+
+    // Fire animation
+    public static let fireAnimation = "fireAnimationType"
 }
 
 public struct PixelValues {

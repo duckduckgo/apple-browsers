@@ -80,6 +80,7 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
     private let coordinator: FreemiumDBPPromotionViewCoordinator
     private let historyProvider: PromoHistoryProviding?
     private let promoId: String?
+    private let dateProvider: () -> Date
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     var isEligible: Bool {
@@ -91,7 +92,7 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
         if let historyProvider, let promoId,
            let record = currentHistoryRecord(from: historyProvider, promoId: promoId),
            let lastShown = record.lastShown,
-           Date().timeIntervalSince(lastShown) < .days(7) {
+           dateProvider().timeIntervalSince(lastShown) < .days(7) {
             return true
         }
 
@@ -116,10 +117,10 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
                 refreshSubject.prepend(()),
                 historyProvider.historyPublisher(for: promoId)
             )
-            .map { isAvailable, _, record in
+            .map { [dateProvider] isAvailable, _, record in
                 if isAvailable { return true }
                 guard let lastShown = record?.lastShown else { return false }
-                return Date().timeIntervalSince(lastShown) < .days(7)
+                return dateProvider().timeIntervalSince(lastShown) < .days(7)
             }
             .removeDuplicates()
             .eraseToAnyPublisher()
@@ -131,10 +132,12 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
 
     init(coordinator: FreemiumDBPPromotionViewCoordinator,
          historyProvider: PromoHistoryProviding? = nil,
-         promoId: String? = nil) {
+         promoId: String? = nil,
+         dateProvider: @escaping () -> Date = Date.init) {
         self.coordinator = coordinator
         self.historyProvider = historyProvider
         self.promoId = promoId
+        self.dateProvider = dateProvider
         coordinator.onScanResultsUpdated = { [weak self] in
             self?.refreshEligibility()
         }
@@ -163,7 +166,7 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
 
         // Display window: if the promo has been shown for 7+ days, enter cooldown.
         if let promoShownDate = history.lastShown,
-           Date().timeIntervalSince(promoShownDate) >= .days(7) {
+           dateProvider().timeIntervalSince(promoShownDate) >= .days(7) {
             return .ignored(cooldown: .days(28))
         }
 

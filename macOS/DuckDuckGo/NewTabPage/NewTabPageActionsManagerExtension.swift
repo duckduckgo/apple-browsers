@@ -166,10 +166,20 @@ extension NewTabPageActionsManager {
             // evaluation and restore. The delegate uses promoService history
             // to fast-path eligibility during an active display window,
             // avoiding the wait for async product availability checks.
+            let dateProvider: () -> Date
+            let buildType = StandardApplicationBuildType()
+            if buildType.isDebugBuild || buildType.isReviewBuild {
+                let debugDateStore = DebugSimulatedDateStore(keyValueStore: keyValueStore)
+                dateProvider = { debugDateStore.simulatedDate ?? Date() }
+            } else {
+                dateProvider = Date.init
+            }
+
             let delegate = FreemiumDBPPromoDelegate(
                 coordinator: coordinator,
                 historyProvider: promoService,
-                promoId: PromoServiceFactory.freemiumDBP.id
+                promoId: PromoServiceFactory.freemiumDBP.id,
+                dateProvider: dateProvider
             )
             promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: delegate)
 

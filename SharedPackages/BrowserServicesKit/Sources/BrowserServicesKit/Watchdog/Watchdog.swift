@@ -191,7 +191,6 @@ private extension Watchdog {
 
         cancelTimer()
         running = false
-        paused = false
 
         logger.info("Watchdog stopped monitoring")
     }

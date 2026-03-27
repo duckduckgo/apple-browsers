@@ -82,6 +82,7 @@ class MainViewCoordinator {
 
         var navigationBarContainerTop: NSLayoutConstraint!
         var navigationBarContainerBottom: NSLayoutConstraint!
+        var navigationBarContainerBottomSafeAreaFloor: NSLayoutConstraint?
         var navigationBarContainerHeight: NSLayoutConstraint!
         var navigationBarContainerMinHeight: NSLayoutConstraint!
         var navigationBarCollectionViewSafeAreaBottom: NSLayoutConstraint!
@@ -395,10 +396,19 @@ class MainViewCoordinator {
 
     func setNavBarContainerBottomToKeyboard() {
         constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+
         constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
             .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
-        constraints.navigationBarContainerBottom.constant = 0
+        constraints.navigationBarContainerBottom.priority = .defaultHigh
         constraints.navigationBarContainerBottom.isActive = true
+
+        // Prevent the nav bar from going below safe area when keyboard is hidden
+        let safeAreaFloor = navigationBarContainer.bottomAnchor
+            .constraint(lessThanOrEqualTo: superview.safeAreaLayoutGuide.bottomAnchor)
+        safeAreaFloor.isActive = true
+        constraints.navigationBarContainerBottomSafeAreaFloor = safeAreaFloor
+
         isNavBarContainerBottomKeyboardBased = true
     }
 
@@ -418,6 +428,8 @@ class MainViewCoordinator {
 
     private func setNavBarContainerBottomToToolbar() {
         constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor = nil
         constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
             .constraint(equalTo: toolbar.topAnchor)
         constraints.navigationBarContainerBottom.constant = 0

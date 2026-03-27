@@ -172,10 +172,18 @@ public final class ScriptletStore: ScriptletStoring {
         baseDirectory.appendingPathComponent(extensionType.rawValue)
     }
 
-    /// Replaces path-unsafe characters so the version can be used as a single directory component.
+    private static let allowedDirectoryCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: ".-_"))
+
+    /// Strips characters not safe for a single directory component using an allowlist
+    /// of alphanumerics, dots, hyphens, and underscores.
     private func sanitizedDirectoryName(_ value: String) -> String {
-        value.replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "..", with: "_")
+        let sanitized = String(value.unicodeScalars.map {
+            Self.allowedDirectoryCharacters.contains($0) ? Character($0) : Character("_")
+        })
+        guard !sanitized.isEmpty, sanitized != ".", sanitized != ".." else {
+            return "_"
+        }
+        return sanitized
     }
 
     private func loadMetadata() -> ScriptletCacheMetadata? {

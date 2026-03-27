@@ -237,5 +237,6 @@ private final class MockDockCustomization: DockCustomization {
     }
 
     func didCloseMoreOptionsMenu() {}
+    func synchronizeNotificationVisibilityWithFirstLaunchDate() {}
     func resetData() {}
 }

@@ -58,6 +58,10 @@ class DockCustomizerMock: DockCustomization {
         // No-op
     }
 
+    func synchronizeNotificationVisibilityWithFirstLaunchDate() {
+        // No-op
+    }
+
     func resetData() {
         // No-op
     }

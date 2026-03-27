@@ -771,7 +771,8 @@ private struct OnboardingSuggestionChips: View {
                     Image(uiImage: item.image)
                         .frame(width: OnboardingSuggestionsChipsMetrics.suggestionChipIconSize.width, height: OnboardingSuggestionsChipsMetrics.suggestionChipIconSize.height)
                     Text(item.visibleTitle)
-                        .frame(alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer(minLength: 0)
                 }
             },

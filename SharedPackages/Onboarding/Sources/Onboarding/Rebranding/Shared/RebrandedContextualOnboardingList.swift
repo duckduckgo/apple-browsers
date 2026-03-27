@@ -63,7 +63,8 @@ public extension OnboardingRebranding {
                     icon
                         .frame(width: iconSize.width, height: iconSize.height)
                     Text(item.visibleTitle)
-                        .frame(alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer(minLength: 0)
                 }
             }

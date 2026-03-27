@@ -2858,7 +2858,7 @@ https://duckduckgo.com/mac";
 "scoped.fire.confirmation.downloads.warning" = "This will cancel downloads in progress.";
 
 /* Subtitle for Duck.ai experiment scoped fire confirmation dialog */
-"scoped.fire.confirmation.duckai.experiment.subtitle" = "This chat will be cleared from your device.";
+"scoped.fire.confirmation.duckai.experiment.subtitle" = "This chat will be deleted from your device.";
 
 /* Title for Duck.ai experiment scoped fire confirmation dialog */
 "scoped.fire.confirmation.duckai.experiment.title" = "Delete chats?";

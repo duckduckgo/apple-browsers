@@ -161,7 +161,7 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
 
     // MARK: - handleCTAAction origin
 
-    func testHandleCTAPostsNotificationWithReinstallModalOrigin() {
+    func testHandleCTAPostsNotificationWithSkippedOnboardingOrigin() {
         // Given
         var capturedDeepLink: SettingsViewModel.SettingsDeepLinkSection?
         let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
@@ -176,7 +176,7 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
         wait(for: [notificationExpectation], timeout: 1.0)
         if case let .subscriptionFlow(redirectURLComponents) = capturedDeepLink {
             let originValue = redirectURLComponents?.queryItems?.first(where: { $0.name == "origin" })?.value
-            XCTAssertEqual(originValue, SubscriptionFunnelOrigin.reinstallModal.rawValue)
+            XCTAssertEqual(originValue, SubscriptionFunnelOrigin.skippedOnboarding.rawValue)
         } else {
             XCTFail("Expected subscriptionFlow deep link")
         }

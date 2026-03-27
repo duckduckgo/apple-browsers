@@ -148,6 +148,6 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     }
 
     private func redirectOrigin() -> SubscriptionFunnelOrigin {
-        .reinstallModal
+        .skippedOnboarding
     }
 }

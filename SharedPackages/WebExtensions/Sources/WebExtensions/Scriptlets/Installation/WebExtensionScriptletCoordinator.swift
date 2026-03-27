@@ -29,6 +29,8 @@ public final class WebExtensionScriptletCoordinator {
     public weak var installationPathResolver: (any WebExtensionInstallationPathResolving)?
 
     private var cancellables: [DuckDuckGoWebExtensionType: AnyCancellable] = [:]
+    private var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
+    private var installationTasks: [DuckDuckGoWebExtensionType: Task<Void, Never>] = [:]
 
     public init(
         scriptletProvider: ScriptletProviding,
@@ -41,6 +43,12 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     public func onExtensionEnabled(for type: DuckDuckGoWebExtensionType) async {
+        guard !enabledTypes.contains(type) else {
+            Logger.webExtensions.debug("[Scriptlets] ⏭️ Extension '\(type.rawValue)' already enabled, skipping")
+            return
+        }
+        enabledTypes.insert(type)
+
         Logger.webExtensions.debug("[Scriptlets] ▶️ Extension '\(type.rawValue)' enabled, installing scriptlets")
         await scriptletProvider.start(for: type)
         subscribeToUpdates(for: type)
@@ -49,6 +57,9 @@ public final class WebExtensionScriptletCoordinator {
 
     public func onExtensionDisabled(for type: DuckDuckGoWebExtensionType) {
         Logger.webExtensions.debug("[Scriptlets] ⏸️ Extension '\(type.rawValue)' disabled")
+        enabledTypes.remove(type)
+        installationTasks[type]?.cancel()
+        installationTasks.removeValue(forKey: type)
         cancellables.removeValue(forKey: type)
     }
 
@@ -93,6 +104,21 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     private func installScriptlets(_ scriptlets: [Scriptlet], for type: DuckDuckGoWebExtensionType) async {
+        if let existingTask = installationTasks[type] {
+            Logger.webExtensions.debug("[Scriptlets] ⏳ Waiting for existing installation to complete for '\(type.rawValue)'")
+            await existingTask.value
+        }
+
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.performInstallation(scriptlets, for: type)
+        }
+        installationTasks[type] = task
+        await task.value
+        installationTasks.removeValue(forKey: type)
+    }
+
+    private func performInstallation(_ scriptlets: [Scriptlet], for type: DuckDuckGoWebExtensionType) async {
         guard let currentVersion = scriptletProvider.scriptletVersion(for: type) else {
             return
         }

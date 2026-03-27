@@ -883,14 +883,6 @@ private extension DataBrokerProtectionIOSManager {
             self.queueManager.stop()
         }
 
-        await performImmediateScanOperations {
-            backgroundAssertion.release()
-        }
-    }
-
-    private func performImmediateScanOperations(
-        completion: @escaping () -> Void
-    ) async {
         await checkForEmailConfirmationData()
         queueManager.startImmediateScanOperationsIfPermitted(
             showWebView: false,
@@ -906,7 +898,7 @@ private extension DataBrokerProtectionIOSManager {
             }
 
             DispatchQueue.main.async {
-                completion()
+                backgroundAssertion.release()
             }
         }
     }
@@ -989,11 +981,26 @@ extension DataBrokerProtectionIOSManager: DBPContinuedProcessingDelegate {
             }
         }
 
-        await performImmediateScanOperations { [weak self] in
-            Task { [weak self] in
-                await self?.continuedProcessingCoordinator.didEmit(event: .scanPhaseCompleted)
+        await checkForEmailConfirmationData()
+        queueManager.startImmediateScanOperationsIfPermitted(
+            showWebView: false,
+            jobDependencies: jobDependencies,
+            errorHandler: { [weak self] errors in
+                if errors?.oneTimeError == nil {
+                    self?.eventsHandler.fire(.firstScanCompleted)
+                }
             }
-            backgroundAssertion.release()
+        ) { [weak self] in
+            if let hasMatches = try? self?.database.hasMatches(), hasMatches {
+                self?.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
+            }
+
+            DispatchQueue.main.async {
+                Task { [weak self] in
+                    await self?.continuedProcessingCoordinator.didEmit(event: .scanPhaseCompleted)
+                }
+                backgroundAssertion.release()
+            }
         }
     }
 

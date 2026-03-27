@@ -443,7 +443,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    func deactivateToOmnibar() {
+    func deactivateToOmnibar(resetView: Bool = true) {
         guard isOmnibarSession else { return }
         displayState = .hidden
         cardPosition = .bottom
@@ -452,26 +452,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         textState = .empty
         clearAttachments()
 
-        let renderState = computeRenderState()
-        viewController.apply(renderState.viewConfig, animated: false)
-        viewController.deactivateInput()
-
-        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
-        intentSubject.send(.hideOmnibarEditing)
-    }
-
-    func deactivateToOmnibarWithoutViewReset() {
-        guard isOmnibarSession else { return }
-        displayState = .hidden
-        cardPosition = .bottom
-        isInputVisibleForKeyboard = true
-        viewController.text = ""
-        textState = .empty
-        clearAttachments()
-        viewController.deactivateInput()
-
-        let renderState = computeRenderState()
-        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
+        if resetView {
+            let renderState = computeRenderState()
+            viewController.apply(renderState.viewConfig, animated: false)
+            viewController.deactivateInput()
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
+        } else {
+            viewController.deactivateInput()
+            let renderState = computeRenderState()
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
+        }
         intentSubject.send(.hideOmnibarEditing)
     }
 

@@ -119,13 +119,7 @@ extension MainViewController {
             let background: UIColor = (mode == .aiChat)
                 ? UIColor(singleUseColor: .duckAIContextualSheetBackground)
                 : UIColor(designSystemColor: .panel)
-            viewCoordinator.navigationBarContainer.backgroundColor = background
-            viewCoordinator.unifiedInputContentContainer?.backgroundColor = background
-            if let webView = currentTab?.webView {
-                webView.backgroundColor = background
-                webView.scrollView.backgroundColor = background
-                webView.underPageBackgroundColor = background
-            }
+            applyUnifiedInputBackground(background)
             viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         }
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
@@ -383,13 +377,7 @@ extension MainViewController {
     private func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
         switch intent {
         case .showCollapsed:
-            viewCoordinator.navigationBarContainer.backgroundColor = nil
-            viewCoordinator.unifiedInputContentContainer?.backgroundColor = .clear
-            if unifiedToggleInputCoordinator?.isAITabState == true, let webView = currentTab?.webView {
-                webView.backgroundColor = nil
-                webView.scrollView.backgroundColor = nil
-                webView.underPageBackgroundColor = nil
-            }
+            applyUnifiedInputBackground(nil, forAITabOnly: true)
             viewCoordinator.showUnifiedToggleInput()
             viewCoordinator.suggestionTrayContainer.isHidden = true
             if let coordinator = unifiedToggleInputCoordinator {
@@ -401,14 +389,7 @@ extension MainViewController {
             viewCoordinator.showUnifiedToggleInput()
             if let coordinator = unifiedToggleInputCoordinator {
                 if coordinator.isAITabState {
-                    let duckAIBackground = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-                    viewCoordinator.navigationBarContainer.backgroundColor = duckAIBackground
-                    viewCoordinator.unifiedInputContentContainer?.backgroundColor = duckAIBackground
-                    if let webView = currentTab?.webView {
-                        webView.backgroundColor = duckAIBackground
-                        webView.scrollView.backgroundColor = duckAIBackground
-                        webView.underPageBackgroundColor = duckAIBackground
-                    }
+                    applyUnifiedInputBackground(UIColor(singleUseColor: .duckAIContextualSheetBackground))
                 }
                 updateUnifiedInputContentVisibility(for: coordinator)
             }
@@ -460,6 +441,18 @@ extension MainViewController {
         updateFloatingSubmitVisibility()
     }
 
+    private func applyUnifiedInputBackground(_ color: UIColor?, forAITabOnly: Bool = false) {
+        viewCoordinator.navigationBarContainer.backgroundColor = color
+        viewCoordinator.unifiedInputContentContainer?.backgroundColor = color ?? .clear
+        if !forAITabOnly || unifiedToggleInputCoordinator?.isAITabState == true {
+            if let webView = currentTab?.webView {
+                webView.backgroundColor = color
+                webView.scrollView.backgroundColor = color
+                webView.underPageBackgroundColor = color
+            }
+        }
+    }
+
     func recomputeOmnibarEditingHeightIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
               coordinator.isOmnibarSession else { return }
@@ -468,13 +461,7 @@ extension MainViewController {
     }
 
     private func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
-        viewCoordinator.navigationBarContainer.backgroundColor = nil
-        viewCoordinator.unifiedInputContentContainer?.backgroundColor = .clear
-        if coordinator.isAITabState, let webView = currentTab?.webView {
-            webView.backgroundColor = nil
-            webView.scrollView.backgroundColor = nil
-            webView.underPageBackgroundColor = nil
-        }
+        applyUnifiedInputBackground(nil, forAITabOnly: true)
         let isTopPosition = coordinator.cardPosition == .top
         if isTopPosition && coordinator.isToggleEnabled {
             coordinator.viewController.animateToggleHide(additionalAnimations: { [weak self] in
@@ -486,7 +473,7 @@ extension MainViewController {
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.deactivateToOmnibarWithoutViewReset()
+                coordinator.deactivateToOmnibar(resetView: false)
             })
         } else if isTopPosition {
             coordinator.viewController.animateDismissHide(additionalAnimations: { [weak self] in
@@ -495,7 +482,7 @@ extension MainViewController {
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.deactivateToOmnibarWithoutViewReset()
+                coordinator.deactivateToOmnibar(resetView: false)
             })
         } else {
             coordinator.deactivateToOmnibar()

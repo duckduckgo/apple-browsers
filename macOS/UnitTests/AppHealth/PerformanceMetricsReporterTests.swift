@@ -152,7 +152,7 @@ private extension PerformanceMetricsReporterTests {
     func buildMetricsReporter(restorePreviousSession: Bool = false) -> (SystemEnvironment, WindowContext, PerformanceMetricsReporter) {
         let environment = SystemEnvironment(architecture: "ARM", activeProcessorCount: 8, isOnBattery: false)
         let windowContext = WindowContext(standardTabs: 5, pinnedTabs: 1, windows: 1)
-        let reporter = PerformanceMetricsReporter(environment: environment, featureFlagger: mockFeatureFlagger, pixelFiring: mockPixelFiring, previousSessionRestored: restorePreviousSession, windowContext: windowContext)
+        let reporter = PerformanceMetricsReporter(environment: environment, pixelFiring: mockPixelFiring, previousSessionRestored: restorePreviousSession, windowContext: windowContext)
 
         return (environment, windowContext, reporter)
     }

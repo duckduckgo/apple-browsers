@@ -1174,7 +1174,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let metricsReporter = PerformanceMetricsReporter(
-            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             previousSessionRestored: startupPreferences.restorePreviousSession,
             windowContext: WindowContext(windowControllersManager: windowControllersManager)

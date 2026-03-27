@@ -22,15 +22,13 @@ import PrivacyConfig
 
 final class PerformanceMetricsReporter: StartupProfilerDelegate {
 
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private let previousSessionRestored: Bool
     private let windowContextProvider: () -> WindowContext
     private let environmentProvider: () -> SystemEnvironment
 
-    init(environment: @autoclosure @escaping () -> SystemEnvironment = .current, featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?, previousSessionRestored: Bool, windowContext: @autoclosure @escaping () -> WindowContext) {
+    init(environment: @autoclosure @escaping () -> SystemEnvironment = .current, pixelFiring: PixelFiring?, previousSessionRestored: Bool, windowContext: @autoclosure @escaping () -> WindowContext) {
         self.environmentProvider = environment
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.previousSessionRestored = previousSessionRestored
         self.windowContextProvider = windowContext

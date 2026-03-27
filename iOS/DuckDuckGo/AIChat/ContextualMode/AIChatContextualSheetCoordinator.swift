@@ -190,11 +190,12 @@ final class AIChatContextualSheetCoordinator {
 
 private extension AIChatContextualSheetCoordinator {
     
-    func presentExistingSheet(_ sheetVC: UIViewController, from presentingVC: UIViewController) {
+    func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController, from presentingVC: UIViewController) {
         guard sheetVC.presentingViewController == nil else { return }
+        sheetVC.configureSheetPresentation()
         presentingVC.present(sheetVC, animated: true)
     }
-    
+
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?) {
         if let restoreURL {
             sessionState.restoreChat(with: restoreURL)

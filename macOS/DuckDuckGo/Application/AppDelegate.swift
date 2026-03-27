@@ -53,6 +53,7 @@ import PixelKit
 import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
+import ScreenTimeDataCleaner
 import ServiceManagement
 import Subscription
 import SyncDataProviders
@@ -1277,6 +1278,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? store.set(build, for: \.installBuild)
             }
         }
+        dockCustomization.synchronizeNotificationVisibilityWithFirstLaunchDate()
 
         setupWebExtensions()
 
@@ -1395,6 +1397,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         PixelKit.fire(GeneralPixel.launch, doNotEnforcePrefix: true)
         profilerToken.stop()
+    }
+
+    func applicationDidResignActive(_ notification: Notification) {
+        cleanScreenTimeDataOnMacOS26()
+    }
+
+    private func cleanScreenTimeDataOnMacOS26() {
+        guard featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
+        guard #available(macOS 26, *) else { return }
+        Task {
+            await ScreenTimeDataCleaner().removeScreenTimeData()
+        }
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {

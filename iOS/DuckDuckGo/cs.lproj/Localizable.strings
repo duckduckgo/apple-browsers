@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "Vlastní URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domény vyloučené z Dark Readeru (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importovat soubor se záložkami...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Žádná aktivní předplatná";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Žádné vyloučené domény";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Žádná existující předplatná nebyla nalezena";

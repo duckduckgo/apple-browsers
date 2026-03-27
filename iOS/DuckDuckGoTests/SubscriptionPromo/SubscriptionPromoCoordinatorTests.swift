@@ -221,7 +221,7 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
         sut = makeSUT()
 
         // Then
-        XCTAssertEqual(sut.proceedButtonText(), UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree)
+        XCTAssertEqual(sut.proceedButtonText(), UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.tryItFree)
     }
 
     func testProceedButtonTextShowsLearnMoreWhenNotEligible() {

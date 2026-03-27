@@ -1,4 +1,4 @@
-name: iOS - Shared Web Tests
+name: Apple - Shared Web Tests
 
 on:
   workflow_dispatch:
@@ -20,8 +20,8 @@ on:
         required: true
 
 jobs:
-  shared-web-tests:
-    name: Shared web tests
+  ios-shared-web-tests:
+    name: iOS shared web tests
 
     runs-on: macos-26
     timeout-minutes: 30
@@ -51,14 +51,91 @@ jobs:
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
-        name: BuildLogs
+        name: iOS-BuildLogs
+        path: |
+            tmp/test_out_*.log
+        retention-days: 7
+
+  macos-shared-web-tests:
+    name: macOS shared web tests
+
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Checkout shared web tests
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        repository: duckduckgo/shared-web-tests
+        path: tmp/shared-web-tests
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install prerequisites
+      run: |
+        if ! command -v cargo > /dev/null 2>&1; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        fi
+
+    - name: Build macOS app
+      run: |
+        xcodebuild build \
+          -workspace DuckDuckGo.xcworkspace \
+          -scheme "DuckDuckGo Privacy Browser" \
+          -configuration Debug \
+          -destination "platform=macOS" \
+          -derivedDataPath DerivedData \
+          ONLY_ACTIVE_ARCH=YES \
+          DEBUG_INFORMATION_FORMAT=dwarf \
+          COMPILER_INDEX_STORE_ENABLE=NO
+
+    - name: Build and run tests
+      run: |
+        cd tmp/shared-web-tests
+
+        if ! npm run build; then
+          echo "npm build failed."
+          exit 1
+        fi
+
+        if ! grep -q "Start web-platform-tests hosts" /etc/hosts; then
+          sudo -- sh -c 'npm run install-hosts'
+        fi
+
+        cd webdriver && cargo build && cd ..
+
+        MACOS_APP_PATH="$(pwd)/../../DerivedData/Build/Products/Debug/DuckDuckGo.app"
+        export MACOS_APP_PATH
+        export TARGET_PLATFORM=macos
+
+        source build/_venv3/bin/activate 2>/dev/null || true
+        TARGET_PLATFORM=macos ./build/wpt run \
+          --product duckduckgo \
+          --binary webdriver/target/debug/ddgdriver \
+          --log-mach - --log-mach-level info \
+          duckduckgo \
+          | tee "../../tmp/test_out_macos_$(date +"%Y%m%d_%H%M%S").log"
+
+    - name: Upload logs when workflow failed
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: macOS-BuildLogs
         path: |
             tmp/test_out_*.log
         retention-days: 7
 
   create-asana-task:
     name: Create Asana Task
-    needs: [shared-web-tests]
+    needs: [ios-shared-web-tests, macos-shared-web-tests]
 
     if: failure()
 
@@ -74,5 +151,5 @@ jobs:
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-project: ${{ vars.APPLE_CI_FAILING_TESTS_PROJECT_ID }}
           asana-section: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_SHARED_WEB_TESTS_SECTION_ID }}
-          asana-task-name: GH Workflow Failure - iOS Shared Web Tests
-          asana-task-description: The iOS Shared Web Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          asana-task-name: GH Workflow Failure - Apple Shared Web Tests
+          asana-task-description: The Apple Shared Web Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

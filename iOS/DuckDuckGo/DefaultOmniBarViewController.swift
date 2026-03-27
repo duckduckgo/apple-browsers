@@ -194,16 +194,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     // MARK: - Layout
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
-        if isPhoneLandscape {
-            // In phone landscape, the compact layout animation handles the transition.
-            // Skip the dismiss button animation to avoid layout conflicts.
-            oldView.isHidden = true
-            oldView.alpha = 0
-            newView.isHidden = false
-            newView.alpha = 1
-            newView.transform = .identity
-            return
-        }
 
         dismissButtonAnimator?.stopAnimation(true)
         let animationDuration: CGFloat = 0.25

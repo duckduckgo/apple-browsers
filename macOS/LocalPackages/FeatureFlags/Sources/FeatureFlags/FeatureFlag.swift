@@ -270,10 +270,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
-    /// Startup Metrics Feature Flag
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
-    case startupMetrics
-
     /// Private Process Name Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
@@ -343,7 +339,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
-                .startupMetrics,
                 .promoQueue,
                 .lazyMenuRebuild,
                 .websitesHistoryFirstTimeQuitSurvey,
@@ -445,7 +440,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
-                .startupMetrics,
                 .privateProcessName,
                 .aiChatChromeSidebar,
                 .webViewLookUpAction,
@@ -628,8 +622,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
         case .aiChatSidebarFloating:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating))
-        case .startupMetrics:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
         case .aiChatChromeSidebar:

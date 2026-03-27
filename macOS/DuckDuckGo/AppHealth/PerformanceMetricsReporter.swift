@@ -38,7 +38,7 @@ final class PerformanceMetricsReporter: StartupProfilerDelegate {
 
     @MainActor
     func startupProfiler(_ profiler: StartupProfiler, didCompleteWithMetrics metrics: StartupMetrics) {
-        guard featureFlagger.isFeatureOn(.startupMetrics), let pixelFiring else {
+        guard let pixelFiring else {
             return
         }
 

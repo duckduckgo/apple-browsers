@@ -57,7 +57,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testWhenFeatureFlagEnabled_ThenFiresPixel() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
@@ -72,7 +71,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testFiredPixelHasCorrectName() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
@@ -87,7 +85,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testPixelIncludesSystemEnvironmentProperties() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (environment, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
@@ -104,7 +101,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testPixelIncludesSessionRestorationState() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter(restorePreviousSession: true)
         let profiler = StartupProfiler()
 
@@ -119,7 +115,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testPixelIncludesWindowAndTabCount() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
@@ -136,7 +131,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testPixelIncludesTimingMetrics() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
         let metrics = buildStartupMetrics(appDelegateInitDuration: 0.15, mainMenuInitDuration: 0.25, timeToInteractiveDuration: 2.5)
         let profiler = StartupProfiler()

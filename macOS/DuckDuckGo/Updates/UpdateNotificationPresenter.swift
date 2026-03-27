@@ -70,14 +70,16 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
     }
 
     func showUpdateNotification(for updateStatus: AppUpdateStatus) {
-        guard !shouldSuppressPostUpdateNotification() else { return }
+        Task { @MainActor [weak self] in
+            guard let self, !self.shouldSuppressPostUpdateNotification() else { return }
 
-        switch updateStatus {
-        case .noChange: break
-        case .updated:
-            showUpdateNotification(icon: NSImage.successCheckmark, text: UserText.browserUpdatedNotification, buttonText: UserText.viewDetails)
-        case .downgraded:
-            showUpdateNotification(icon: NSImage.successCheckmark, text: UserText.browserDowngradedNotification, buttonText: UserText.viewDetails)
+            switch updateStatus {
+            case .noChange: break
+            case .updated:
+                self.showUpdateNotification(icon: .successCheckmark, text: UserText.browserUpdatedNotification, buttonText: UserText.viewDetails)
+            case .downgraded:
+                self.showUpdateNotification(icon: .successCheckmark, text: UserText.browserDowngradedNotification, buttonText: UserText.viewDetails)
+            }
         }
     }
 

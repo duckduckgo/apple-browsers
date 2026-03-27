@@ -39,6 +39,7 @@ protocol TabCollectionViewModelDelegate: AnyObject {
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?)
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel)
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMaterializeTabAt index: Int)
 
 }
 
@@ -875,17 +876,13 @@ final class TabCollectionViewModel: NSObject {
             }
 
             // Detect materialization: existing UUID but inner object changed from suspended to loaded
-            var didMaterialize = false
-            for anyTab in newTabs where !addedUUIDs.contains(anyTab.uuid) {
+            for (index, anyTab) in newTabs.enumerated() where !addedUUIDs.contains(anyTab.uuid) {
                 if case .loaded(let tab) = anyTab, self.tabViewModels[tab.uuid] is SuspendedTabViewModel {
                     self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
-                    didMaterialize = true
+                    self.updateSelectedTabViewModel()
+                    self.delegate?.tabCollectionViewModel(self, didMaterializeTabAt: index)
+                    break
                 }
-            }
-            if didMaterialize {
-                self.updateSelectedTabViewModel()
-                // Trigger tab bar reload so items re-subscribe to the new TabViewModels
-                self.delegate?.tabCollectionViewModelDidMultipleChanges(self)
             }
 
             // Make sure the tab is burner if it is supposed to be

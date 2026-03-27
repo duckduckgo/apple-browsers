@@ -53,6 +53,12 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
         didSelectCalled = true
     }
 
+    var didMaterializeCalled = false
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMaterializeTabAt index: Int) {
+        didMaterializeCalled = true
+    }
+
     var didMultipleChangesCalled = false
 
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel) {

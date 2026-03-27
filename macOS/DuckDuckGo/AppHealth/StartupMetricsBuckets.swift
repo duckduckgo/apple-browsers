@@ -92,35 +92,12 @@ enum StartupMetricsBuckets {
         bucketMillisecondsAsInt(seconds).description
     }
 
-    /// Returns the `TimeInterval` (in seconds) expressed in milliseconds and returns the lower bound of the matching bucket.
-    /// - Returns: `0, 100, 200, 300, 400, 500, 1000, 2000, 3000, 5000, 10000`
+    /// Returns the `TimeInterval` expressed as milliseconds, rounded down to 5ms
     ///
     private static func bucketMillisecondsAsInt(_ seconds: TimeInterval) -> Int {
         let ms = Int(seconds * 1000)
+        let remainder = (ms % 5)
 
-        switch ms {
-        case ..<100:
-            return 0
-        case ..<200:
-            return 100
-        case ..<300:
-            return 200
-        case ..<400:
-            return 300
-        case ..<500:
-            return 400
-        case ..<1000:
-            return 500
-        case ..<2000:
-            return 1000
-        case ..<3000:
-            return 2000
-        case ..<5000:
-            return 3000
-        case ..<10000:
-            return 5000
-        default:
-            return 10000
-        }
+        return ms - remainder
     }
 }

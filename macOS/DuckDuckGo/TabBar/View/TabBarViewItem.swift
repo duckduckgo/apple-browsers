@@ -141,7 +141,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private enum TextFieldMaskGradientSize {
-        static let width: CGFloat = 6
+        static let width: CGFloat = 32
         static let trailingSpace: CGFloat = 0
         static let trailingSpaceWithButton: CGFloat = 20
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
@@ -162,7 +162,7 @@ final class TabBarItemCellView: NSView {
     private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
-    fileprivate lazy var backgroundView = TabBackgroundView()
+    private lazy var backgroundView = TabBackgroundView()
     fileprivate lazy var faviconView = TabFaviconView()
     fileprivate lazy var titleView = TabTitleView()
 
@@ -328,21 +328,22 @@ final class TabBarItemCellView: NSView {
         closeButton.toolTip = UserText.closeTab
         closeButton.setAccessibilityLabel(UserText.closeTab)
         closeButton.setAccessibilityIdentifier("TabBarViewItem.closeButton")
-        closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
+        closeButton.mustAnimateOnMouseOver = displaysTabsAnimations
 
         permissionButton.setAccessibilityIdentifier("TabBarViewItem.permissionButton")
         // Accessibility label and toolTip are updated in `updateUsedPermissions`
-        permissionButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        permissionButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
         audioButton.setAccessibilityIdentifier("TabBarViewItem.muteButton")
         // Accessibility Title and toolTip are updated in `updateAudioPlayState`
-        audioButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        audioButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
         crashIndicatorButton.setAccessibilityIdentifier("TabBarViewItem.crashButton")
         crashIndicatorButton.toolTip = UserText.tabCrashPopoverTitle
         crashIndicatorButton.setAccessibilityTitle(UserText.tabCrashPopoverTitle)
         crashIndicatorButton.setAccessibilityLabel(UserText.tabCrashPopoverMessage)
-        crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
+        crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
 
         addSubview(faviconView)
         addSubview(crashIndicatorButton)
@@ -573,6 +574,14 @@ final class TabBarItemCellView: NSView {
 
     func startSpinnerIfNeeded(isLoading: Bool, error: WKError?, url: URL?) {
         faviconView.startSpinnerIfNeeded(isLoading: isLoading, url: url, error: error)
+    }
+
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool, animated: Bool = true) {
+        guard displaysTabsAnimations else {
+            return
+        }
+
+        backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: animated)
     }
 }
 
@@ -844,7 +853,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
             updateSubviews()
 
-            cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+            cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
             updateUsedPermissions()
         }
     }
@@ -1063,10 +1072,13 @@ final class TabBarViewItem: NSCollectionViewItem {
             CATransaction.commit()
         }
 
+        let tabStyleProvider = theme.tabStyleProvider
+
         withoutAnimation {
             if displaysTabsAnimations {
                 cell.mouseOverView.backgroundColor = nil
                 cell.mouseOverView.mouseOverColor = nil
+                cell.closeButton.cornerRadius = isSelected ? tabStyleProvider.tabButtonActionsSelectedCornerRadius : tabStyleProvider.tabButtonActionsHighlightedCornerRadius
 
             } else if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
@@ -1533,7 +1545,7 @@ extension TabBarViewItem: MouseClickViewDelegate {
         delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
         self.isMouseOver = isMouseOver
 
-        cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+        cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
 
         view.needsLayout = true
         eventMonitor = isMouseOver ? NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in

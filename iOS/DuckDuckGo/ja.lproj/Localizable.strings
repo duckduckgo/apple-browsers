@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "カスタムURL：%@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader 除外ドメイン (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "ブックマークファイルをインポート...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "アクティブなサブスクリプションはありません";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "除外ドメインなし";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "既存のサブスクリプションが見つかりません";

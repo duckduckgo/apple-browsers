@@ -1217,7 +1217,6 @@
 "Custom URL: %@" = "URL po meri: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Izključene domene temnega bralnika (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Uvozi datoteko zaznamkov ...";
@@ -2600,7 +2599,6 @@
 "No active subscriptions" = "Ni aktivnih naročnin";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Ni izključenih domen";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Ni najdena obstoječa naročnina";

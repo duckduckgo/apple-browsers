@@ -392,12 +392,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        switchBarHandler.microphoneButtonTappedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.handleMicrophoneButtonTapped()
-            }
-            .store(in: &cancellables)
     }
 
     private func updateLayoutForCurrentOrientation() {

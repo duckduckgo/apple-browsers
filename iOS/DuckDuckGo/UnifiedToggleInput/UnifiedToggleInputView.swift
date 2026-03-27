@@ -409,6 +409,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
+
         cardView.layer.borderWidth = showToolbar ? 0.5 : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
 
@@ -458,6 +459,8 @@ final class UnifiedToggleInputView: UIView {
         dismissButton.alpha = 0
         updateCardTrailingConstraint()
 
+        let showToolbar = toggleView.selectedMode == .aiChat
+
         UIView.animate(
             withDuration: Constants.animationDuration,
             delay: 0,
@@ -469,6 +472,13 @@ final class UnifiedToggleInputView: UIView {
                 self.toggleView.alpha = 1
                 self.inputTopConstraint.constant = Constants.toggleBottomPadding
                 self.dismissButton.alpha = 1
+                if showToolbar {
+                    self.toolbarHeightConstraint.constant = 56
+                    self.toolsToolbar.alpha = 1
+                    self.cardView.layer.borderWidth = 0.5
+                    self.cardView.layer.borderColor = self.expandedBorderColor
+                }
+                self.updateAttachmentsStripLayout()
                 additionalAnimations?()
                 self.layoutIfNeeded()
             },

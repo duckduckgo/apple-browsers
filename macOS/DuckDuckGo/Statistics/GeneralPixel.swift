@@ -23,6 +23,7 @@ import ContentBlocking
 import DDGSync
 import PixelKit
 import Suggestions
+import enum UserScript.UserScriptError
 
 enum GeneralPixel: PixelKitEvent {
 
@@ -571,7 +572,7 @@ enum GeneralPixel: PixelKitEvent {
      * - App crashes after this pixel is fired.
      * - Useful for investigating the underlying error causing the failure.
      */
-    case userScriptLoadJSFailed(jsFile: String, error: Error)
+    case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
 
     case attributionXattrCanary(variantMatch: String, originMatch: String)
 
@@ -1477,9 +1478,10 @@ enum GeneralPixel: PixelKitEvent {
             }
             return nil
 
-        case let .userScriptLoadJSFailed(jsFile, error):
+        case let .userScriptLoadJSFailed(jsFile, error, source):
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
+            params[PixelKit.Parameters.userScriptSource] = source.rawValue
             return params
 
         case .attributionXattrCanary(let variantMatch, let originMatch):

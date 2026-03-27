@@ -26,7 +26,7 @@ struct AIChatDeepLinkHandler {
     /// Handles AI Chat deep links (text and voice), dismissing any presented modal first.
     func handleDeepLink(_ url: URL, on mainViewController: MainViewController, voiceMode: Bool = false) {
         if voiceMode {
-            fireVoicePixel(url)
+            fireAIVoiceChatPixel(url)
         } else {
             firePixel(url)
         }
@@ -55,7 +55,7 @@ struct AIChatDeepLinkHandler {
         return false
     }
 
-    private func fireVoicePixel(_ url: URL) {
+    private func fireAIVoiceChatPixel(_ url: URL) {
         if let source = url.getParameter(named: WidgetSourceType.sourceKey) {
             Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: source])
         }

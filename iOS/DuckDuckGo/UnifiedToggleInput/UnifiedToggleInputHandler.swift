@@ -58,6 +58,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         didSet { updateButtonState() }
     }
 
+    var isAIVoiceChatEnabled: Bool = false {
+        didSet { updateButtonState() }
+    }
+
+    var hidesVoiceButton: Bool = false {
+        didSet { updateButtonState() }
+    }
+
     var isToggleEnabled: Bool {
         didSet { updateButtonState() }
     }
@@ -173,6 +181,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
+        let voiceAvailable = !hidesVoiceButton && isVoiceSearchEnabled && !(isAIVoiceChatEnabled && currentToggleState == .aiChat)
+
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
             buttonState = .stopGeneratingAndSearchGoTo
         } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
@@ -180,8 +190,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         } else if !currentText.isEmpty {
             buttonState = .clearOnly
         } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
-            buttonState = isVoiceSearchEnabled ? .voiceAndSearchGoTo : .searchGoToOnly
-        } else if isVoiceSearchEnabled {
+            buttonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
+        } else if voiceAvailable {
             buttonState = .voiceOnly
         } else {
             buttonState = .noButtons

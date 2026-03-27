@@ -270,9 +270,14 @@ final class AIChatOmnibarController {
     }
 
     /// The model ID to use for the current submission.
-    /// Returns "image-generation" when image generation mode is active, otherwise the user's selected model.
+    /// Returns nil when image generation mode is active — the mode field handles routing.
     var effectiveModelId: String? {
-        isImageGenerationMode ? "image-generation" : currentModelId
+        isImageGenerationMode ? nil : currentModelId
+    }
+
+    /// The mode to include in the prompt payload (e.g., "image-generation").
+    var effectiveMode: String? {
+        isImageGenerationMode ? "image-generation" : nil
     }
 
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.
@@ -390,8 +395,9 @@ final class AIChatOmnibarController {
 
         PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-        // Capture mode before async work — cleanup() may reset it
+        // Capture mode/model before async work — cleanup() may reset isImageGenerationMode
         let modelId = effectiveModelId
+        let mode = effectiveMode
 
         Task { @MainActor in
             // Wait for any pending image resizes to complete
@@ -409,8 +415,8 @@ final class AIChatOmnibarController {
                 with: .query(trimmedText, shouldAutoSubmit: true),
                 behavior: .currentTab
             )
-            // Re-set prompt after tab opener to include images and model selection (tab opener overwrites with a plain query)
-            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, images: images, modelId: modelId)
+            // Re-set prompt after tab opener to include images, model selection, and mode (tab opener overwrites with a plain query)
+            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, images: images, modelId: modelId, mode: mode)
             promptHandler.setData(prompt)
 
             self.isImageGenerationMode = false

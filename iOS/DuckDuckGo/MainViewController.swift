@@ -310,6 +310,9 @@ class MainViewController: UIViewController {
         aiChatSettings: aiChatSettings,
         iPadTabFeature: aichatIPadTabFeature
     )
+    private var iPadAIChatQuery = ""
+    private var allowIPadAIAutocompleteShow = false
+    private var isAwaitingIPadHistoryRefreshAfterModeSwitch = false
 
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
@@ -2153,6 +2156,14 @@ class MainViewController: UIViewController {
     }
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
+        if iPadTabChatHistoryCoordinator.isInstalled {
+            if case .autocomplete = type,
+               isModeToggleInAIChatMode,
+               !allowIPadAIAutocompleteShow {
+                return
+            }
+        }
+
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
         if !isUsingSingleBar {
@@ -3152,7 +3163,9 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onAIChatQueryUpdated(_ query: String) {
+        iPadAIChatQuery = query
         iPadTabChatHistoryCoordinator.updateQuery(query)
+        updateIPadURLFallbackSuggestions()
     }
 
     func didRequestCurrentURL() -> URL? {
@@ -3177,6 +3190,9 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQueryUpdated(_ updatedQuery: String) {
+        if iPadTabChatHistoryCoordinator.isInstalled {
+            iPadAIChatQuery = updatedQuery
+        }
         // During iPad mode toggle transitions, text can be copied to the textField
         // which triggers this method even in duck.ai mode — suppress suggestions.
         if isModeToggleInAIChatMode {
@@ -3698,6 +3714,13 @@ extension MainViewController: OmniBarDelegate {
                 searchContainer: viewCoordinator.omniBar.barView.searchContainer,
                 keyboardLayoutGuide: view.keyboardLayoutGuide
             )
+            iPadTabChatHistoryCoordinator.onSuggestionsVisibilityChanged = { [weak self] hasSuggestions in
+                guard let self else { return }
+                if self.isAwaitingIPadHistoryRefreshAfterModeSwitch {
+                    self.isAwaitingIPadHistoryRefreshAfterModeSwitch = false
+                }
+                self.updateIPadURLFallbackSuggestions()
+            }
 
             guard expandedOmniBarDismissTapGesture == nil else { return }
             let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))
@@ -3706,6 +3729,9 @@ extension MainViewController: OmniBarDelegate {
             expandedOmniBarDismissTapGesture = tap
         } else {
             iPadTabChatHistoryCoordinator.tearDown()
+            iPadAIChatQuery = ""
+            suggestionTrayController?.suggestionFilter = .all
+            suggestionTrayController?.additionalTopInset = 0
 
             if let tap = expandedOmniBarDismissTapGesture {
                 viewCoordinator.contentContainer.removeGestureRecognizer(tap)
@@ -3716,6 +3742,70 @@ extension MainViewController: OmniBarDelegate {
 
     @objc private func dismissExpandedOmniBar() {
         performCancel()
+    }
+
+    /// Shows URL-only suggestions below the AI text input only when chat history has no matches.
+    private func updateIPadURLFallbackSuggestions() {
+        let effectiveQuery = currentIPadAIQuery()
+        iPadAIChatQuery = effectiveQuery
+
+        guard iPadTabChatHistoryCoordinator.isInstalled else {
+            suggestionTrayController?.suggestionFilter = .all
+            suggestionTrayController?.additionalTopInset = 0
+            return
+        }
+        guard isModeToggleInAIChatMode else {
+            suggestionTrayController?.suggestionFilter = .all
+            suggestionTrayController?.additionalTopInset = 0
+            return
+        }
+        if isAwaitingIPadHistoryRefreshAfterModeSwitch {
+            hideSuggestionTrayContainerForIPadAI()
+            return
+        }
+
+        let shouldShowURLFallback = !effectiveQuery.isBlank && !iPadTabChatHistoryCoordinator.hasSuggestions
+        if shouldShowURLFallback {
+            suggestionTrayController?.suggestionFilter = .urlsOnly
+            suggestionTrayController?.additionalTopInset = iPadURLFallbackTopInset()
+            allowIPadAIAutocompleteShow = true
+            let didShow = tryToShowSuggestionTray(.autocomplete(query: effectiveQuery))
+            allowIPadAIAutocompleteShow = false
+            if !didShow {
+                hideSuggestionTrayContainerForIPadAI()
+            }
+        } else {
+            suggestionTrayController?.suggestionFilter = .all
+            suggestionTrayController?.additionalTopInset = 0
+            hideSuggestionTrayContainerForIPadAI()
+        }
+    }
+
+    private func iPadURLFallbackTopInset() -> CGFloat {
+        guard let searchContainer = viewCoordinator.omniBar.barView.searchContainer else {
+            return 0
+        }
+        let spacing: CGFloat = 12
+        let containerFrame = searchContainer.convert(searchContainer.bounds, to: viewCoordinator.contentContainer)
+        return max(0, containerFrame.maxY) + spacing
+    }
+
+    private func currentIPadAIQuery() -> String {
+        guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else {
+            return iPadAIChatQuery
+        }
+        if let expandable = omniBarVC.expandableBarView, expandable.isSearchAreaExpanded {
+            return expandable.aiChatTextView.text ?? ""
+        }
+        return omniBarVC.text ?? iPadAIChatQuery
+    }
+
+    /// Hides only the tray container during iPad duck.ai transitions.
+    /// Keeps tray content alive to avoid remove/reinstall flicker when toggling modes.
+    private func hideSuggestionTrayContainerForIPadAI() {
+        viewCoordinator.omniBar.showSeparator()
+        viewCoordinator.suggestionTrayContainer.isHidden = true
+        currentTab?.webView.accessibilityElementsHidden = false
     }
 
     // MARK: - Experimental Address Bar (pixels only)
@@ -3789,6 +3879,22 @@ extension MainViewController: OmniBarDelegate {
     func onToggleModeSwitched() {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        iPadAIChatQuery = currentIPadAIQuery()
+        guard iPadTabChatHistoryCoordinator.isInstalled else { return }
+        if isModeToggleInAIChatMode {
+            // Hide visible search suggestions immediately, but keep content alive
+            // to avoid raw teardown/reinstall flashes during quick mode toggles.
+            hideSuggestionTrayContainerForIPadAI()
+            isAwaitingIPadHistoryRefreshAfterModeSwitch = !iPadAIChatQuery.isBlank
+            iPadTabChatHistoryCoordinator.updateQuery(iPadAIChatQuery)
+            if !isAwaitingIPadHistoryRefreshAfterModeSwitch {
+                updateIPadURLFallbackSuggestions()
+            }
+        } else {
+            isAwaitingIPadHistoryRefreshAfterModeSwitch = false
+            suggestionTrayController?.suggestionFilter = .all
+            suggestionTrayController?.additionalTopInset = 0
         }
     }
 

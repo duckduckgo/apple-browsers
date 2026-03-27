@@ -75,6 +75,8 @@ final class BrowsingMenuViewController: UIViewController {
 
     var onDismiss: ((_ wasActionSelected: Bool) -> Void)?
 
+    var useCombinedBarLayout: Bool = false
+
     class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, productSurfaceTelemetry: ProductSurfaceTelemetry) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
             BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, daxDialogsManager: daxDialogsManager, appSettings: appSettings, productSurfaceTelemetry: productSurfaceTelemetry, coder: coder)
@@ -137,7 +139,7 @@ final class BrowsingMenuViewController: UIViewController {
     }
 
     private func configureArrow(with color: UIColor) {
-        guard AppWidthObserver.shared.shouldUseCombinedBar else {
+        guard useCombinedBarLayout else {
             arrowView.isHidden = true
             return
         }
@@ -245,7 +247,7 @@ final class BrowsingMenuViewController: UIViewController {
               let windowBounds = guideView.window?.bounds
         else { return }
 
-        let isCombinedBar = AppWidthObserver.shared.shouldUseCombinedBar
+        let isCombinedBar = useCombinedBarLayout
         let isIPhoneLandscape = traitCollection.containsTraits(in: UITraitCollection(verticalSizeClass: .compact))
 
         topConstraint.isActive = !isCombinedBar

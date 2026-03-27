@@ -117,7 +117,7 @@ final class BrowsingMenuAnimator: NSObject, UIViewControllerAnimatedTransitionin
     }
 
     private class func menuOriginFrameForAnimation(for controller: BrowsingMenuViewController) -> CGRect {
-        if AppWidthObserver.shared.shouldUseCombinedBar {
+        if controller.useCombinedBarLayout {
             let frame = controller.menuView.frame
             var rect = frame.offsetBy(dx: frame.width - 100, dy: 0)
             rect.size.width = 100

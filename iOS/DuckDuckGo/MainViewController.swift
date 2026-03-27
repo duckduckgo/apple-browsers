@@ -2129,7 +2129,7 @@ class MainViewController: UIViewController {
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
-        if !AppWidthObserver.shared.shouldUseCombinedBar {
+        if !AppWidthObserver.shared.isLargeWidth && !isInPhoneLandscapeLayout {
             if !daxDialogsManager.shouldShowFireButtonPulse {
                 ViewHighlighter.hideAll()
             }

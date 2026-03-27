@@ -736,7 +736,8 @@ class TabViewController: UIViewController {
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        borderView.bottomAlpha = isLargeWidth ? 0 : barsVisibilityPercent
+        let hideBottomBorder = isLargeWidth || (chromeDelegate?.isToolbarHidden == true)
+        borderView.bottomAlpha = hideBottomBorder ? 0 : barsVisibilityPercent
         updateContentInsetAdjustment()
     }
 

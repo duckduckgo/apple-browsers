@@ -84,19 +84,17 @@ struct FireproofingWorking {
     }
 
     private func addDomain(_ domain: String) {
-        guard let controller = controller else { return }
         fireproofing.addToAllowed(domain: domain)
         favicons.loadFavicon(forDomain: domain, intoCache: .fireproof, fromCache: .tabs)
         let displayDomain = fireproofing.displayDomain(for: domain)
-        FireproofingAlert.showFireproofEnabledMessage(usingController: controller, worker: self, forDomain: displayDomain, undoDomain: domain)
+        FireproofingAlert.showFireproofEnabledMessage(forDomain: displayDomain)
     }
 
     private func removeDomain(_ domain: String) {
-        guard let controller = controller else { return }
         fireproofing.remove(domain: domain)
         favicons.removeFireproofFavicon(forDomain: domain)
         let displayDomain = fireproofing.displayDomain(for: domain)
-        FireproofingAlert.showFireproofDisabledMessage(usingController: controller, worker: self, forDomain: displayDomain, undoDomain: domain)
+        FireproofingAlert.showFireproofDisabledMessage(forDomain: displayDomain)
     }
 
 }

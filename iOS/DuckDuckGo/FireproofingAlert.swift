@@ -22,25 +22,14 @@ import Core
 
 class FireproofingAlert {
 
-    static func showFireproofDisabledMessage(usingController controller: UIViewController,
-                                             worker: FireproofingWorking,
-                                             forDomain domain: String,
-                                             undoDomain: String) {
-
+    static func showFireproofDisabledMessage(forDomain domain: String) {
         let message = UserText.fireproofingRemovalConfirmMessage.format(arguments: domain)
-        ActionMessageView.present(message: message, actionTitle: UserText.actionGenericUndo, onAction: {
-            worker.handleUserEnablingFireproofing(forDomain: undoDomain)
-        })
+        ActionMessageView.present(message: message)
     }
 
-    static func showFireproofEnabledMessage(usingController controller: UIViewController,
-                                            worker: FireproofingWorking,
-                                            forDomain domain: String,
-                                            undoDomain: String) {
+    static func showFireproofEnabledMessage(forDomain domain: String) {
         let message = UserText.fireproofingConfirmMessage.format(arguments: domain)
-        ActionMessageView.present(message: message, actionTitle: UserText.actionGenericUndo, onAction: {
-            worker.handleUserDisablingFireproofing(forDomain: undoDomain)
-        })
+        ActionMessageView.present(message: message)
     }
     
     static func showConfirmFireproofWebsite(usingController controller: UIViewController,

@@ -2781,6 +2781,9 @@
 "onboarding.skip.title" = "Am înțeles! O să omit celelalte sfaturi.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Încearcă gratuit!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Încearcă gratuit!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3061,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Acest site vrea să se deschidă în Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "NE-AM REDEFINIT BRANDUL";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Jurnale de procesare recente";

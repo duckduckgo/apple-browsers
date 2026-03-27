@@ -2781,6 +2781,9 @@
 "onboarding.skip.title" = "Jag förstår! Jag hoppar över de andra tipsen.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Prova gratis!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Prova gratis!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3061,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Webbplatsen vill öppnas i Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "MED ETT NYTT NAMN";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Senaste bearbetningsloggar";

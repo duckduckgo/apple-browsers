@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Du tittar i Duck Player!\nHär finns inga riktade annonser.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effektiv tröskel: %@ s (åsidosättning)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effektiv tröskel: konfigurationsstandard (ingen åsidosättning)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-postskydd";
 

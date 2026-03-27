@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Katsot Duck Playerissa!\nTäällä ei ole kohdennettuja mainoksia.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Voimassa oleva kynnysarvo: %@ s (ohitus)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Voimassa oleva kynnysarvo: konfiguraation oletusarvo (ei ohitusta)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Sähköpostisuojaus";
 

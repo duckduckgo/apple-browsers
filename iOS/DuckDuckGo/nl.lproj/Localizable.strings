@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Je kijkt in Duck Player!\nVrij van gerichte advertenties.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effectieve drempel: %@ s (overschrijven)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effectieve drempelwaarde: standaardconfiguratie (geen overschrijving)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-mailbescherming";
 

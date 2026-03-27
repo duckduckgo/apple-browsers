@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Duck Player'da izliyorsunuz!\nBurada hedefli reklam yok.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Etkin eşik: %@ s (geçersiz kılma)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Etkin eşik: yapılandırma varsayılanı (geçersiz kılma yok)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-posta Koruması";
 

@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Sleduješ v přehrávači Duck Player!\nNejsou zde žádné cílené reklamy.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektivní prahová hodnota: %@ s (přepsat)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektivní prahová hodnota: výchozí konfigurace (bez přepsání)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrana e-mailu";
 

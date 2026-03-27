@@ -108,7 +108,9 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func uninstallAllExtensions() {
-        webExtensionManager.uninstallAllExtensions()
+        Task { @MainActor in
+            webExtensionManager.uninstallAllExtensions()
+        }
     }
 
     @objc func clearCachedScriptlets() {

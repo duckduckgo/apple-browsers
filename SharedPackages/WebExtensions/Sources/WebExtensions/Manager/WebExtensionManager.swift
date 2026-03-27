@@ -213,14 +213,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         notifyUpdate()
     }
 
+    @MainActor
     @discardableResult
     public func uninstallAllExtensions() -> [Result<Void, Error>] {
-        let identifiers = installationStore.installedExtensions.map(\.uniqueIdentifier)
-        Logger.webExtensions.debug("🔄 Uninstalling all extensions (count: \(identifiers.count))")
+        let installedExtensions = installationStore.installedExtensions
+        Logger.webExtensions.debug("🔄 Uninstalling all extensions (count: \(installedExtensions.count))")
 
-        let results: [Result<Void, Error>] = identifiers.map { identifier in
+        let results: [Result<Void, Error>] = installedExtensions.map { ext in
+            if let type = ext.embeddedType {
+                scriptletCoordinator?.onExtensionDisabled(for: type)
+            }
             do {
-                try uninstallExtension(identifier: identifier)
+                try uninstallExtension(identifier: ext.uniqueIdentifier)
                 return .success(())
             } catch {
                 return .failure(error)

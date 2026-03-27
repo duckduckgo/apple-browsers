@@ -481,6 +481,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func installExtension(from sourceURL: URL) async throws {}
     func uninstallExtension(identifier: String) throws {}
 
+    @MainActor
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>] {
         uninstallAllExtensionsCalled = true

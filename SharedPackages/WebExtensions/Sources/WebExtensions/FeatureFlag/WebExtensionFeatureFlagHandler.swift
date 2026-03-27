@@ -134,8 +134,12 @@ public final class WebExtensionFeatureFlagHandler {
         isWebExtensionsFlagEnabled = false
         webExtensionsEnableTask?.cancel()
         webExtensionsEnableTask = nil
-        webExtensionManagerProvider()?.uninstallAllExtensions()
-        onFeatureFlagDisabled()
+        let provider = webExtensionManagerProvider
+        let onDisabled = onFeatureFlagDisabled
+        Task { @MainActor in
+            provider()?.uninstallAllExtensions()
+            onDisabled()
+        }
     }
 
     private func handleEmbeddedExtensionFlagEnabled() {

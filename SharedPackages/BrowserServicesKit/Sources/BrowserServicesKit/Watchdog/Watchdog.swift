@@ -28,8 +28,9 @@ public struct WatchdogSettings {
     let minimumHangDuration: TimeInterval
     let maximumHangDuration: TimeInterval
     let requiredRecoveryHeartbeats: Int
+    let timeoutRepeatCooldown: TimeInterval
 
-    public static let `default` = WatchdogSettings(checkInterval: 0.5, minimumHangDuration: 2.0, maximumHangDuration: 5.0, requiredRecoveryHeartbeats: 4)
+    public static let `default` = WatchdogSettings(checkInterval: 0.5, minimumHangDuration: 2.0, maximumHangDuration: 5.0, requiredRecoveryHeartbeats: 4, timeoutRepeatCooldown: 60.0)
 }
 
 // MARK: - A watchdog that monitors the main thread for hangs. Hangs of at least one second will be reported via a pixel.
@@ -304,8 +305,14 @@ private extension Watchdog {
             timestamps.signalHangDetected(secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, checkInterval: settings.checkInterval)
 
         case .timeout:
+            if let elapsed = timestamps.secondsSinceLastTimeoutFire, elapsed < settings.timeoutRepeatCooldown {
+                logger.info("Main thread Timeout Reached: Within Cooldown Period")
+                return
+            }
+
             logger.info("Main thread Timeout Reached. Last heartbeat [\(secondsSinceLastHeartbeat)s] ago")
             fireHangEvent(Watchdog.Event.uiHangNotRecovered, secondsSinceHangStarted: secondsSinceHangStarted)
+            timestamps.signalTimeoutFired()
 
         case .responsive:
             logger.info("Main thread hang ended after Hanging for [\(secondsSinceHangStarted)] seconds")
@@ -343,6 +350,7 @@ private final class WatchdogTracker {
     private let lock = NSLock()
     private var heartbeatTimestamp: DispatchTime = .now()
     private var hangStartTimestamp: DispatchTime?
+    private var timeoutFireTimestamp: DispatchTime?
 
     func signalHeartbeat() {
         lock.withLock {
@@ -360,6 +368,12 @@ private final class WatchdogTracker {
     func signalHangRecovered() {
         lock.withLock {
             hangStartTimestamp = nil
+        }
+    }
+
+    func signalTimeoutFired() {
+        lock.withLock {
+            timeoutFireTimestamp = .now()
         }
     }
 
@@ -381,6 +395,10 @@ private final class WatchdogTracker {
 
     var secondsSinceHangStarted: TimeInterval {
         lastHangStartTimestamp?.secondsElapsedSinceNow ?? .zero
+    }
+
+    var secondsSinceLastTimeoutFire: TimeInterval? {
+        timeoutFireTimestamp?.secondsElapsedSinceNow
     }
 }
 

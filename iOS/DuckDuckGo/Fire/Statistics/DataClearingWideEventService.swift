@@ -94,7 +94,7 @@ final class DataClearingWideEventService {
             eventData?[keyPath: action.statusPath] = .success
         case .failure(let error):
             eventData?[keyPath: action.statusPath] = .failure
-            eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error, description: (error as? DataClearingWideEventError)?.description)
+            eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error)
         }
     }
 
@@ -114,7 +114,7 @@ final class DataClearingWideEventService {
             eventData?[keyPath: action.statusPath] = .success
         case .failure(let error):
             eventData?[keyPath: action.statusPath] = .failure
-            eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error, description: (error as? DataClearingWideEventError)?.description)
+            eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error)
         }
     }
 
@@ -219,17 +219,3 @@ private extension FireRequest {
     }
 }
 
-/// Custom error type for data clearing actions that don't propagate actual errors
-/// but contain assertions, logs, or precondition failures.
-///
-/// Use this error type for Pattern B actions (Assert/Log Only) to surface error
-/// conditions to wide event tracking without modifying the original assertion/log statements.
-public struct DataClearingWideEventError: Error {
-    /// Human-readable description of the error condition.
-    /// Typically contains the text from assert(), assertFailure(), or Logger.error() calls.
-    public let description: String
-
-    public init(description: String) {
-        self.description = description
-    }
-}

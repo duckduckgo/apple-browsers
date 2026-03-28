@@ -278,7 +278,7 @@ private extension Watchdog {
         /// # Recovery: We'll loop back into this state, should the heartbeat become stale again
         case .recovery(let reason, let heartbeatCount):
             /// # Re-enqueue:
-            ///     If we started hanging again, loop thru `recovery` (or go straight to `.hanging` if we haven't done so before)
+            ///     Stay in `.recovery` if we've been thru `.timeout` already, in order to avoid over-reporting the pixel
             if secondsSinceLastHeartbeat > settings.minimumHangDuration {
                 let previouslyHanging = reason == .hanging
                 return previouslyHanging ? .hanging : .recovery(after: reason, heartbeatCount: 0)
@@ -302,7 +302,7 @@ private extension Watchdog {
         switch heartbeatState {
         case .hanging:
             logger.info("Main thread hang detected! Last heartbeat [\(secondsSinceLastHeartbeat)s] ago")
-            timestamps.signalHangDetected(secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, checkInterval: settings.checkInterval)
+            timestamps.signalHangDetectedIfNeeded(secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, checkInterval: settings.checkInterval)
 
         case .timeout:
             if let elapsed = timestamps.secondsSinceLastTimeoutFire, elapsed < settings.timeoutRepeatCooldown {
@@ -358,8 +358,12 @@ private final class WatchdogTracker {
         }
     }
 
-    func signalHangDetected(secondsSinceLastHeartbeat: TimeInterval, checkInterval: TimeInterval) {
+    func signalHangDetectedIfNeeded(secondsSinceLastHeartbeat: TimeInterval, checkInterval: TimeInterval) {
         lock.withLock {
+            guard hangStartTimestamp == nil else {
+                return
+            }
+
             let delta = max(secondsSinceLastHeartbeat - checkInterval / 2, 0)
             hangStartTimestamp = DispatchTime.now(subtractingSeconds: delta)
         }

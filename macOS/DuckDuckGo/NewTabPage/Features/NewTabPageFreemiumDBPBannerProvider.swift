@@ -84,60 +84,43 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     var isEligible: Bool {
-        // Legacy dismissal from before queue integration — never eligible
-        // unless the banner variant changed (scan results arrived).
-        if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil {
-            return false
+        let record: PromoHistoryRecord? = if let historyProvider, let promoId {
+            currentHistoryRecord(from: historyProvider, promoId: promoId)
+        } else {
+            nil
         }
-
-        if coordinator.isFeatureAvailable { return true }
-
-        // Fast-path: if the promo was shown within the last 7 days, consider
-        // it eligible even before async product availability settles. This
-        // avoids missing the NTP trigger on app restart during a display window.
-        if let historyProvider, let promoId,
-           coordinator.isFeatureFlagEnabled,
-           let record = currentHistoryRecord(from: historyProvider, promoId: promoId),
-           let lastShown = record.lastShown,
-           dateProvider().timeIntervalSince(lastShown) < .days(7) {
-            return true
-        }
-
-        return false
+        return computeEligibility(isFeatureAvailable: coordinator.isFeatureAvailable, historyRecord: record)
     }
 
     private let refreshSubject = PassthroughSubject<Void, Never>()
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        let featurePublisher = coordinator.$isFeatureAvailable
-
-        guard let historyProvider, let promoId else {
-            return featurePublisher
-                .combineLatest(refreshSubject.prepend(()))
-                .map { [weak coordinator] isAvailable, _ in
-                    guard let coordinator else { return false }
-                    if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil { return false }
-                    return isAvailable
-                }
-                .removeDuplicates()
-                .eraseToAnyPublisher()
+        let historyPublisher: AnyPublisher<PromoHistoryRecord?, Never> = if let historyProvider, let promoId {
+            historyProvider.historyPublisher(for: promoId)
+        } else {
+            Just(nil).eraseToAnyPublisher()
         }
 
-        return featurePublisher
-            .combineLatest(
-                refreshSubject.prepend(()),
-                historyProvider.historyPublisher(for: promoId)
-            )
-            .map { [weak coordinator, dateProvider] isAvailable, _, record in
-                guard let coordinator else { return false }
-                if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil { return false }
-                if isAvailable { return true }
-                guard coordinator.isFeatureFlagEnabled else { return false }
-                guard let lastShown = record?.lastShown else { return false }
-                return dateProvider().timeIntervalSince(lastShown) < .days(7)
+        return coordinator.$isFeatureAvailable
+            .combineLatest(refreshSubject.prepend(()), historyPublisher)
+            .map { [weak self] isAvailable, _, record in
+                self?.computeEligibility(isFeatureAvailable: isAvailable, historyRecord: record) ?? false
             }
             .removeDuplicates()
             .eraseToAnyPublisher()
+    }
+
+    /// Single source of truth for eligibility logic.
+    private func computeEligibility(isFeatureAvailable: Bool, historyRecord: PromoHistoryRecord?) -> Bool {
+        if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil { return false }
+        if isFeatureAvailable { return true }
+
+        // Fast-path: if the promo was shown within the last 7 days, consider
+        // it eligible even before async product availability settles. This
+        // avoids missing the NTP trigger on app restart during a display window.
+        guard coordinator.isFeatureFlagEnabled else { return false }
+        guard let lastShown = historyRecord?.lastShown else { return false }
+        return dateProvider().timeIntervalSince(lastShown) < .days(7)
     }
 
     func refreshEligibility() {

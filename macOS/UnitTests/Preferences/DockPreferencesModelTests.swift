@@ -28,7 +28,6 @@ final class DockPreferencesModelTests: XCTestCase {
 
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockDockCustomizer: MockDockCustomization!
-    private var windowControllersManager: WindowControllersManagerMock!
     private var mockPixelFiring: PixelKitMock!
 
     override func setUpWithError() throws {
@@ -36,14 +35,12 @@ final class DockPreferencesModelTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockDockCustomizer = MockDockCustomization()
         mockDockCustomizer.supportsAddingToDock = true
-        windowControllersManager = WindowControllersManagerMock()
         mockPixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
         mockFeatureFlagger = nil
         mockDockCustomizer = nil
-        windowControllersManager = nil
         mockPixelFiring = nil
         super.tearDown()
     }
@@ -55,7 +52,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         XCTAssertTrue(model.canAddToDock)
@@ -66,7 +62,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         XCTAssertFalse(model.canAddToDock)
@@ -79,7 +74,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         XCTAssertTrue(model.canShowDockInstructions)
@@ -90,10 +84,13 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         XCTAssertFalse(model.canShowDockInstructions)
+    }
+
+    func testDockInstructionsVideoAssetIsNotNil() {
+        XCTAssertNotNil(DockPreferencesModel.demoVideoURL)
     }
 
     // MARK: - isAddedToDock
@@ -103,7 +100,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         XCTAssertFalse(model.isAddedToDock)
@@ -114,7 +110,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         XCTAssertTrue(model.isAddedToDock)
@@ -124,7 +119,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         model.addToDock(from: .defaultBrowser)
@@ -138,7 +132,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         model.addToDock(from: .defaultBrowser)
@@ -150,7 +143,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         model.addToDock(from: .general)
@@ -163,7 +155,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: nil
         )
         model.addToDock(from: .defaultBrowser)
@@ -182,7 +173,6 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: mockPixelFiring
         )
         model.addToDock(from: .defaultBrowser)
@@ -198,24 +188,23 @@ final class DockPreferencesModelTests: XCTestCase {
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: mockPixelFiring
         )
         model.addToDock(from: .general)
         mockPixelFiring.verifyExpectations()
     }
 
-    func testWhenLearnMoreClickedThenExpectedPixelIsFired() {
-        mockPixelFiring.expectedFireCalls = [ExpectedFireCall(pixel: GeneralPixel.settingsAddToDockLearnMoreClicked, frequency: .dailyAndCount)]
-        mockDockCustomizer.supportsAddingToDock = false
+    func testWhenShowMeHowClickedThenExpectedPixelIsFiredAndSheetFlagIsSet() {
+        mockPixelFiring.expectedFireCalls = [ExpectedFireCall(pixel: GeneralPixel.settingsAddToDockShowMeHowClicked, frequency: .dailyAndCount)]
         let model = DockPreferencesModel(
             featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
-            windowControllersManager: windowControllersManager,
             pixelFiring: mockPixelFiring
         )
-        model.openAddToDockHelpURL()
+        XCTAssertFalse(model.isPresentingAddToDockDemoVideo)
+        model.showAddToDockDemoVideo()
         mockPixelFiring.verifyExpectations()
+        XCTAssertTrue(model.isPresentingAddToDockDemoVideo)
     }
 }
 

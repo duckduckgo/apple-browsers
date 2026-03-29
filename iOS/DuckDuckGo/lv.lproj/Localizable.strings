@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Tu skaties Duck Player!\nŠeit nav mērķtiecīgu reklāmu.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektīvais slieksnis: %@ s (pārrakstīšana)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektīvais slieksnis: konfigurācijas noklusējuma iestatījums (bez pārrakstīšanas)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-pasta aizsardzība";
 

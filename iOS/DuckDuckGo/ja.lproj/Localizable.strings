@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Duck Playerで視聴中です！\nここにはターゲティング広告はありません。";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "有効閾値：%@秒（オーバーライド）";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "有効閾値：構成デフォルト（オーバーライドなし）";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "メール保護";
 

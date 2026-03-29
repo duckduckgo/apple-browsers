@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Urmărești în Duck Player!\nAici nu există reclame direcționate.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Prag efectiv: %@ s (ignoră)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Prag efectiv: implicit configurație (fără ignorare)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protecția comunicațiilor prin e-mail";
 

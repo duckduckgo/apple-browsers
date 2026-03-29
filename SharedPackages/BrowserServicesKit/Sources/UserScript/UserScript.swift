@@ -67,13 +67,9 @@ extension UserScript {
     /// Only suitable for immutable bundle resources. Replacements are applied
     /// fresh on each call against the cached template.
     public static func loadJS(_ jsFile: String, from bundle: Bundle, withReplacements replacements: [String: String] = [:]) throws -> String {
-        var js = try JSFileCache.content(forFile: jsFile, in: bundle)
+        let js = try JSFileCache.content(forFile: jsFile, in: bundle)
 
-        for (key, value) in replacements {
-            js = js.replacingOccurrences(of: key, with: value, options: .literal)
-        }
-
-        return js
+        return js.applyingReplacements(replacements)
     }
 
     fileprivate nonisolated static func prepareScriptSource(from source: String) -> String {

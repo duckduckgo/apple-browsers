@@ -102,8 +102,7 @@ final class UpdatesDebugMenu: NSMenu {
     }
 
     @objc func showBrowserUpdatedPopover() {
-        let presenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
-        presenter.showUpdateNotification(for: .updated)
+        Application.appDelegate.updateController?.notificationPresenter.showUpdateNotification(for: .updated)
     }
 
     // MARK: - Custom Feed URL

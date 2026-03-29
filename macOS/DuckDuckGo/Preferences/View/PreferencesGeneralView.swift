@@ -57,6 +57,13 @@ extension Preferences {
             firePinnedTabsPixel(newMode)
         }
 
+        private var isPresentingAddToDockDemoVideo: Binding<Bool> {
+            Binding(
+                get: { dockModel.isPresentingAddToDockDemoVideo },
+                set: { dockModel.isPresentingAddToDockDemoVideo = $0 }
+            )
+        }
+
         var body: some View {
             PreferencePane(UserText.general) {
 
@@ -100,13 +107,12 @@ extension Preferences {
                             HStack(alignment: .top) {
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.addToTaskbar)
                                     .foregroundColor(Color(.linkBlue))
-                                VStack(alignment: .leading) {
-                                    Text(UserText.addToDockInstructions)
-                                        .padding(.bottom, 8)
-                                    TextMenuItemCaption(UserText.addToDockInstructionsCaption)
-                                    TextButton(UserText.learnMore) {
-                                        dockModel.openAddToDockHelpURL()
-                                    }
+                                Text(UserText.addToDockInstructions)
+                            }
+                            VStack(alignment: .leading, spacing: 1) {
+                                TextMenuItemCaption(UserText.addToDockInstructionsCaption)
+                                TextButton(UserText.addToDockShowMeHow) {
+                                    dockModel.showAddToDockDemoVideo()
                                 }
                             }
                         }
@@ -316,6 +322,11 @@ extension Preferences {
                         }
                     }
                 }
+            }
+            .sheet(isPresented: isPresentingAddToDockDemoVideo) {
+                PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
+                                      videoSize: DockPreferencesModel.demoVideoSize,
+                                      isPresented: isPresentingAddToDockDemoVideo)
             }
         }
     }

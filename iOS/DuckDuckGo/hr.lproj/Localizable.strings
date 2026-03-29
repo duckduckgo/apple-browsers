@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Gledaš u Duck Playeru!\nOvdje nema ciljanih oglasa.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektivni prag: %@ s (nadjačaj)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektivni prag: zadana konfiguracija (bez nadjačavanja)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Zaštita e-pošte";
 

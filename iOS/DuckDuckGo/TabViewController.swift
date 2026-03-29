@@ -1114,7 +1114,8 @@ class TabViewController: UIViewController {
     }
 
     func enableFireproofingForDomain(_ domain: String) {
-        FireproofingAlert.showConfirmFireproofWebsite(usingController: self, forDomain: domain) { [weak self] in
+        let displayDomain = fireproofing.displayDomain(for: domain)
+        FireproofingAlert.showConfirmFireproofWebsite(usingController: self, forDomain: displayDomain) { [weak self] in
             Pixel.fire(pixel: .browsingMenuFireproof)
             self?.fireproofingWorker?.handleUserEnablingFireproofing(forDomain: domain)
         }

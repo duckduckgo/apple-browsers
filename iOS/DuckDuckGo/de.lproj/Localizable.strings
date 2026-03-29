@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Du verwendest den Duck Player!\nHier gibt es keine gezielte Werbung.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effektiver Schwellenwert: %@ s (Überschreibung)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effektiver Schwellenwert: Konfigurationsstandard (keine Überschreibung)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-Mail-Schutz";
 

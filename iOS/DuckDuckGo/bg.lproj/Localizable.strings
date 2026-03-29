@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Гледате в Duck Player!\nТук няма насочени реклами.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Ефективен праг: %@ s (заместване)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Ефективен праг: конфигурация по подразбиране (без заместване)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
 

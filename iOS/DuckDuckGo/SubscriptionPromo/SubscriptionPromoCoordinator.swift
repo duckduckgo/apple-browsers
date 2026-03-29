@@ -148,11 +148,6 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     }
 
     private func redirectOrigin() -> SubscriptionFunnelOrigin {
-        switch (isReturningUser, isFreeTrialEligible) {
-        case (true, true): return .onboardingReinstallFreeTrial
-        case (true, false): return .onboardingReinstallSubscribe
-        case (false, true): return .onboardingNewInstallFreeTrial
-        case (false, false): return .onboardingNewInstallSubscribe
-        }
+        .skippedOnboarding
     }
 }

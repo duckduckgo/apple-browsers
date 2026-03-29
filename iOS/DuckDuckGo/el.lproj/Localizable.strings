@@ -1647,12 +1647,6 @@
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Παρακολουθείτε στο Duck Player!\nΚαμία στοχευμένη διαφήμιση εδώ.";
 
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Ισχύον όριο: %@ s (παράκαμψη)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Ισχύον όριο: προεπιλογή διαμόρφωσης (χωρίς παράκαμψη)";
-
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Προστασία email";
 

@@ -6,19 +6,9 @@ on:
     - cron: '0 2 * * *' # Run at 2 AM UTC
   workflow_call:
     secrets:
-      APPLE_API_KEY_BASE64:
-        required: true
-      APPLE_API_KEY_ID:
-        required: true
-      APPLE_API_KEY_ISSUER:
-        required: true
       ASANA_ACCESS_TOKEN:
         required: true
-      MATCH_PASSWORD:
-        required: true
       SSH_PRIVATE_KEY_DUCKSANS_FONT:
-        required: true
-      SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
 
 jobs:
@@ -80,23 +70,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-
-    - name: Setup Ruby and dependencies
-      uses: ./.github/actions/setup-ruby
-      with:
-        working-directory: macOS
-        cache-key-prefix: macos-ruby
-
-    - name: Sync code signing assets
-      id: sync-signing
-      env:
-        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      working-directory: macOS
-      run: bundle exec fastlane sync_signing_ci
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version

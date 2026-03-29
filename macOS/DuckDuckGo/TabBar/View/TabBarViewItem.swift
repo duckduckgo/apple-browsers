@@ -1042,9 +1042,12 @@ final class TabBarViewItem: NSCollectionViewItem {
         tabViewModel.isSuspendedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isSuspended in
-                let alpha: CGFloat = isSuspended ? 0.5 : 1.0
-                self?.cell.faviconView.alphaValue = alpha
-                self?.cell.titleView.alphaValue = alpha
+                guard let self else {
+                    return
+                }
+                let alpha: CGFloat = isSuspended && featureFlagger.isFeatureOn(.tabSuspensionDebugging) ? 0.5 : 1.0
+                cell.faviconView.alphaValue = alpha
+                cell.titleView.alphaValue = alpha
             }
             .store(in: &cancellables)
     }
@@ -1752,9 +1755,7 @@ extension TabBarViewItem {
     static let mediumWidth = (TabBarViewItem.Width.maximum + TabBarViewItem.Width.minimum) / 2
     @MainActor
     final class PreviewViewController: NSViewController, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout, TabBarViewItemDelegate {
-        func tabBarViewItemSuspendAction(_: TabBarViewItem) {
-
-        }
+        func tabBarViewItemSuspendAction(_: TabBarViewItem) {}
 
         final class TabBarViewModelMock: TabBarViewModel {
             var url: URL?

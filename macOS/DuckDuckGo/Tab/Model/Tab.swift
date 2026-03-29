@@ -1389,7 +1389,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             navigation.navigationAction.sourceFrame.securityOrigin
         }
         if !securityOrigin.isEmpty || self.hasCommittedContent {
-            // don’t reset the initially passed parent tab SecurityOrigin to an empty one for "about:blank" page
+            // don't reset the initially passed parent tab SecurityOrigin to an empty one for "about:blank" page
             self.securityOrigin = securityOrigin
         }
 

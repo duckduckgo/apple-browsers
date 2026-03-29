@@ -111,7 +111,9 @@ jobs:
           sudo -- sh -c 'npm run install-hosts'
         fi
 
-        cd webdriver && cargo build && cd ..
+        pushd webdriver
+        cargo build
+        popd
 
         MACOS_APP_PATH="$(pwd)/../../DerivedData/Build/Products/Debug/DuckDuckGo.app"
         export MACOS_APP_PATH

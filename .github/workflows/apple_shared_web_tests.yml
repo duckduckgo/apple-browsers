@@ -162,7 +162,7 @@ jobs:
         cargo build
         popd
 
-        MACOS_APP_PATH="$(pwd)/../../DerivedData/Build/Products/Debug/DuckDuckGo.app"
+        MACOS_APP_PATH="$(pwd)/../../DerivedData/Build/Products/CI/DuckDuckGo.app"
         export MACOS_APP_PATH
         export TARGET_PLATFORM=macos
 

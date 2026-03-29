@@ -2,9 +2,24 @@ name: Apple - Shared Web Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform(s) to run"
+        default: both
+        type: choice
+        options:
+          - both
+          - ios
+          - macos
   schedule:
     - cron: '0 2 * * *' # Run at 2 AM UTC
   workflow_call:
+    inputs:
+      platform:
+        description: "Platform(s) to run"
+        required: false
+        type: string
+        default: both
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -24,6 +39,7 @@ on:
 jobs:
   ios-shared-web-tests:
     name: iOS shared web tests
+    if: ${{ github.event_name == 'schedule' || inputs.platform != 'macos' }}
 
     runs-on: macos-26
     timeout-minutes: 30
@@ -66,6 +82,7 @@ jobs:
 
   macos-shared-web-tests:
     name: macOS shared web tests
+    if: ${{ github.event_name == 'schedule' || inputs.platform != 'ios' }}
 
     runs-on: macos-26
     timeout-minutes: 30
@@ -140,6 +157,8 @@ jobs:
           -configuration CI \
           -destination "platform=macOS" \
           -derivedDataPath DerivedData \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
           ONLY_ACTIVE_ARCH=YES \
           DEBUG_INFORMATION_FORMAT=dwarf \
           COMPILER_INDEX_STORE_ENABLE=NO \
@@ -148,6 +167,8 @@ jobs:
     - name: Build and run tests
       run: |
         cd tmp/shared-web-tests
+        log_path="../../tmp/test_out_macos_$(date +"%Y%m%d_%H%M%S").log"
+        mkdir -p "$(dirname "$log_path")"
 
         if ! npm run build; then
           echo "npm build failed."
@@ -172,7 +193,7 @@ jobs:
           --binary webdriver/target/debug/ddgdriver \
           --log-mach - --log-mach-level info \
           duckduckgo \
-          | tee "../../tmp/test_out_macos_$(date +"%Y%m%d_%H%M%S").log"
+          2>&1 | tee "$log_path"
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
@@ -187,7 +208,7 @@ jobs:
     name: Create Asana Task
     needs: [ios-shared-web-tests, macos-shared-web-tests]
 
-    if: failure()
+    if: ${{ always() && github.event_name == 'schedule' && (needs.ios-shared-web-tests.result == 'failure' || needs.ios-shared-web-tests.result == 'cancelled' || needs.macos-shared-web-tests.result == 'failure' || needs.macos-shared-web-tests.result == 'cancelled') }}
 
     runs-on: ubuntu-latest
 

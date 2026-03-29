@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funkcie AI";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Vybrať fotografiu";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Urobiť fotografiu";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existujúce záložky sa nebudú duplikovať.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Vlastná URL adresa: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Vylúčené domény Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importovať súbor so záložkami...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Sleduješ v Duck Playeri!\nNie sú tu žiadne cielené reklamy.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektívny prah: %@ s (prepísať)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektívny prah: predvolená konfigurácia (bez prepísania)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrana e-mailu";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Žiadne aktívne predplatné";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Žiadne vylúčené domény";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nebolo nájdené žiadne existujúce predplatné";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Dobrý deň.";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Vieš o tomto?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Chceš obnoviť záložky, heslá a ďalšie údaje z predchádzajúcej synchronizácie DuckDuckGo?";

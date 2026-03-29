@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI značajke";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Odaberi fotografiju";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Snimi fotografiju";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Postojeće knjižne oznake neće se duplicirati.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Prilagođeni URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domene isključene iz Dark Readera (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Uvezi datoteku knjižnih oznaka...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Gledaš u Duck Playeru!\nOvdje nema ciljanih oglasa.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektivni prag: %@ s (nadjačaj)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektivni prag: zadana konfiguracija (bez nadjačavanja)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Zaštita e-pošte";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Nema aktivnih pretplata";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nema isključenih domena";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nema postojeće pretplate";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Bok!";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Jeste li znali?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Želiš li vratiti svoje oznake, lozinke i još mnogo toga iz prethodne DuckDuckGo sinkronizacije?";

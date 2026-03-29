@@ -197,14 +197,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
     
     func buildVoiceModeURL() -> URL {
-        guard var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
-            return aiChatSettings.aiChatURL
-        }
-        var queryItems = components.queryItems ?? []
-        queryItems.removeAll { $0.name == AIChatURLParameters.modeName }
-        queryItems.append(URLQueryItem(name: AIChatURLParameters.modeName, value: AIChatURLParameters.voiceModeValue))
-        components.queryItems = queryItems
-        return components.url ?? aiChatSettings.aiChatURL
+        AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL)
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {

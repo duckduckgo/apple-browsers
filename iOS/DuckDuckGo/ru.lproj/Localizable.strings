@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Функции ИИ";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Выбрать фото";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Сделать фото";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Существующие закладки дублироваться не будут.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Пользовательский URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Исключенные домены Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортировать файл с закладками...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Вы просматриваете в Duck Player!\nЗдесь нет целевой рекламы.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Эффективный порог: %@ с (переопределение)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Эффективный порог: конфигурация по умолчанию (без переопределения)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита электронной почты";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Нет активных подписок";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Нет исключенных доменов";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Подписка не найдена";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Привет!";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Знаете ли вы?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Восстановить закладки, пароли и другие данные из предыдущей синхронизации DuckDuckGo?";

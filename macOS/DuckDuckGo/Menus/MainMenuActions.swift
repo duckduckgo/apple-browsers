@@ -207,7 +207,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: Any?) {
-        DockCustomizer().addToDock()
+        guard dockCustomization.addToDock() else { return }
         PixelKit.fire(GeneralPixel.userAddedToDockFromMainMenu)
     }
 
@@ -279,8 +279,7 @@ extension AppDelegate {
     static func openReportABrowserProblem(_ sender: Any?, category: ProblemCategory? = nil, subcategory: SubCategory? = nil) {
         var window: NSWindow?
 
-        // Check if we can report broken site (same logic as openReportBrokenSite)
-        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReportBrokenSite ?? false
 
         let formView = ReportProblemFormFlowView(
             canReportBrokenSite: canReportBrokenSite,
@@ -814,7 +813,7 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-        Application.appDelegate.dockCustomization?.resetData()
+        dockCustomization.resetData()
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {
@@ -823,6 +822,10 @@ extension AppDelegate {
 
     @objc func setLaunchDayAWeekInThePast(_ sender: Any?) {
         UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func setLaunchDay10DaysInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.daysAgo(10), forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
     @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
@@ -1514,6 +1517,12 @@ extension MainViewController {
         WindowsManager.openNewWindow(with: tab)
     }
 
+    @objc func newTabNextToActive(_ sender: Any?) {
+        guard let (tab, _) = getActiveTabAndIndex() else { return }
+
+        tabCollectionViewModel.insertNewTab(after: tab, with: .newtab, selected: true)
+    }
+
     @objc func duplicateTab(_ sender: Any?) {
         guard let (_, index) = getActiveTabAndIndex() else { return }
 
@@ -1906,7 +1915,7 @@ extension AppDelegate: NSMenuItemValidation {
             return areTherePasswords
 
         case #selector(AppDelegate.openReportBrokenSite(_:)):
-            return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+            return Application.appDelegate.windowControllersManager.selectedTab?.canReportBrokenSite ?? false
 
         default:
             return true

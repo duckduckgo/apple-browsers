@@ -95,7 +95,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         action: #selector(customizeResponsesTapped)
     )
 
-    private lazy var imageButton: UIButton = makeToolButton(
+    private(set) lazy var imageButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size24.attach,
         accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
         action: #selector(attachTapped)

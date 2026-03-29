@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI funkciók";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Fénykép kiválasztása";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Fénykép készítése";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "A meglévő könyvjelzők nem kettőződnek.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Egyéni URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Sötét olvasó által kizárt tartományok (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Könyvjelzőfájl importálása…";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "A Duck Playerben nézed!\nItt nincsenek célzott hirdetések.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effektív küszöbérték: %@ s (felülbírálás)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effektív küszöbérték: konfiguráció alapértelmezés (felülbírálás nélkül)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-mail védelem";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Nincsenek aktív előfizetéseid";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nincsenek kizárt tartományok";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nem található meglévő előfizetés";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Szia!";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Tudtad?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Szeretnéd visszaállítani a könyvjelzőidet, a jelszavaidat és az egyéb dolgokat az előző DuckDuckGo-szinkronizálásból?";

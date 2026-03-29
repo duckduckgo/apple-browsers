@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-funktioner";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Vælg billede";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Tag et billede";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Eksisterende bogmærker duplikeres ikke.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Tilpasset URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Udelukkede domæner fra Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer bogmærkefil...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Du ser i Duck Player!\nIngen målrettede annoncer her.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effektiv tærskel: %@ s (tilsidesættelse)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effektiv tærskel: konfigurationsstandard (ingen tilsidesættelse)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-mailbeskyttelse";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Ingen aktive abonnementer";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Ingen udelukkede domæner";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Intet eksisterende abonnement blev fundet";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hej";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Vidste du?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vil du gendanne dine bogmærker, adgangskoder og andet fra din tidligere DuckDuckGo-synkronisering?";

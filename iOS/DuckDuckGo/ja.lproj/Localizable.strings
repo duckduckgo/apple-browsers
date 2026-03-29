@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI機能";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "写真を選択";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "写真を撮影";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "既存のブックマークは複製されません。";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "カスタムURL：%@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader 除外ドメイン (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "ブックマークファイルをインポート...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Duck Playerで視聴中です！\nここにはターゲティング広告はありません。";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "有効閾値：%@秒（オーバーライド）";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "有効閾値：構成デフォルト（オーバーライドなし）";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "メール保護";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "アクティブなサブスクリプションはありません";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "除外ドメインなし";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "既存のサブスクリプションが見つかりません";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "こんにちは。";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "知ってた？";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "以前のDuckDuckGoの同期からブックマークやパスワードなどを復元したいですか？";

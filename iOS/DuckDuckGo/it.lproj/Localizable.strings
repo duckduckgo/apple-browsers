@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funzionalità IA";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Scegli foto";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Scatta una foto";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "I segnalibri già presenti non saranno duplicati.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "URL personalizzato: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domini esclusi da Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importa il file dei segnalibri...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Stai guardando in Duck Player!\nNon riceverai annunci mirati.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Soglia effettiva: %@ s (override)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Soglia effettiva: configurazione predefinita (senza sovrascrittura)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protezione email";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Nessun abbonamento attivo";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nessun dominio escluso";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nessun abbonamento trovato";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Ciao.";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Lo sapevi?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vuoi ripristinare i tuoi segnalibri, le password e altro ancora dalla precedente sincronizzazione con DuckDuckGo?";

@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Caracteristici AI";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Alege o fotografie";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Fă o fotografie";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Marcajele existente nu vor fi duplicate.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "URL personalizat: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domenii excluse de Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importă fișierul cu marcaje...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Urmărești în Duck Player!\nAici nu există reclame direcționate.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Prag efectiv: %@ s (ignoră)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Prag efectiv: implicit configurație (fără ignorare)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protecția comunicațiilor prin e-mail";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Nu există abonamente active";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nu există domenii excluse";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nu s-a găsit niciun abonament";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Salut!";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Știai?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vrei să restaurezi marcajele, parolele și alte elemente din sincronizarea anterioară DuckDuckGo?";

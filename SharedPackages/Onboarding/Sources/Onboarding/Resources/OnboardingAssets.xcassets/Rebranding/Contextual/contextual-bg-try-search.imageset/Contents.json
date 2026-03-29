@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "contextual-bg-try-search-light.png",
+      "filename" : "contextual-bg-try-search-tall-light.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -12,12 +12,12 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-try-search-dark.png",
+      "filename" : "contextual-bg-try-search-tall-dark.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "contextual-bg-try-search-light@2x.png",
+      "filename" : "contextual-bg-try-search-tall-light@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
@@ -28,12 +28,12 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-try-search-dark@2x.png",
+      "filename" : "contextual-bg-try-search-tall-dark@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "contextual-bg-try-search-light@3x.png",
+      "filename" : "contextual-bg-try-search-tall-light@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     },
@@ -44,7 +44,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-try-search-dark@3x.png",
+      "filename" : "contextual-bg-try-search-tall-dark@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Mākslīgā intelekta funkcijas";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Izvēlēties fotoattēlu";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Uzņemt fotoattēlu";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Esošās grāmatzīmes netiks dublētas.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Pielāgots URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader izslēgtie domēni (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importēt grāmatzīmes failu...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Tu skaties Duck Player!\nŠeit nav mērķtiecīgu reklāmu.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektīvais slieksnis: %@ s (pārrakstīšana)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektīvais slieksnis: konfigurācijas noklusējuma iestatījums (bez pārrakstīšanas)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-pasta aizsardzība";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Nav aktīvu abonementu";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nav izslēgtu domēnu";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nav atrasts neviens esošs abonements";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Sveiki!";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Vai zināji?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vai vēlies atjaunot grāmatzīmes, paroles un citus datus no iepriekšējās DuckDuckGo sinhronizācijas?";

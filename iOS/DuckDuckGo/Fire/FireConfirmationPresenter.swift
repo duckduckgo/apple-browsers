@@ -86,7 +86,7 @@ struct FireConfirmationPresenter {
                                                    onCancel: @escaping () -> Void) {
             let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                             source: pixelSource,
-                                                            daxDialogsManager: daxDialogsManager,
+                                                            fireContext: .default(daxDialogsManager: daxDialogsManager),
                                                             browsingMode: browsingMode,
                 onConfirm: { [weak viewController] fireOptions in
                     viewController?.dismiss(animated: true) {

@@ -40,6 +40,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         } else if let urlContext = connectionOptions.urlContexts.first {
             // We should be supporting opening multiple URLs at once
             appStateMachine.handle(.openURL(urlContext.url))
+        } else if let userActivity = connectionOptions.userActivities.first {
+            appStateMachine.handle(.handleUserActivity(userActivity))
         }
     }
 
@@ -79,6 +81,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, willContinueUserActivity userActivity: NSUserActivity) -> Bool {
         true
+    }
+
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        appStateMachine.handle(.handleUserActivity(userActivity))
     }
 
     /// See: `LaunchActionHandler.swift` -> `openURL(_:)`

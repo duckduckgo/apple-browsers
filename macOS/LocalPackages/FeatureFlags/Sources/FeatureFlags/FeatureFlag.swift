@@ -270,10 +270,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
-    /// Startup Metrics Feature Flag
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
-    case startupMetrics
-
     /// Private Process Name Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
@@ -300,9 +296,19 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
     case tabAnimations
 
+    /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
+    case lazyMenuRebuild
+
     /// Enables the "Add to dock" onboarding step and setting for App Store builds
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725466401987?focus=true
     case addToDockAppStore
+
+    /// Enables removing individual AI chat suggestions from the omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
+    case aiChatRemoveSuggestion
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
+    case screenTimeCleaning
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -333,15 +339,17 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
-                .startupMetrics,
                 .promoQueue,
-                .websitesHistoryFirstTimeQuitSurvey:
+                .lazyMenuRebuild,
+                .websitesHistoryFirstTimeQuitSurvey,
+                .screenTimeCleaning,
+                .addToDockAppStore,
+                .tabAnimations:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
-             .tabAnimations,
-             .addToDockAppStore:
+             .aiChatRemoveSuggestion:
             .internalOnly
         default:
             .disabled
@@ -432,15 +440,17 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
-                .startupMetrics,
                 .privateProcessName,
                 .aiChatChromeSidebar,
                 .webViewLookUpAction,
                 .promoQueue,
                 .semaphoreAlwaysVisible,
-                .websitesHistoryFirstTimeQuitSurvey,
                 .tabAnimations,
-                .addToDockAppStore:
+                .aiChatRemoveSuggestion,
+                .lazyMenuRebuild,
+                .websitesHistoryFirstTimeQuitSurvey,
+                .addToDockAppStore,
+                .screenTimeCleaning:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -612,8 +622,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
         case .aiChatSidebarFloating:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating))
-        case .startupMetrics:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
         case .aiChatChromeSidebar:
@@ -628,8 +636,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .tabAnimations:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
+        case .lazyMenuRebuild:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
         case .addToDockAppStore:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addToDockAppStore))
+        case .aiChatRemoveSuggestion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion))
+        case .screenTimeCleaning:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning))
         }
     }
 }

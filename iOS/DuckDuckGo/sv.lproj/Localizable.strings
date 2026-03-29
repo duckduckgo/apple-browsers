@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-funktioner";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Välj foto";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Ta ett foto";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Befintliga bokmärken kommer inte att kopieras.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Anpassad URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Exkluderade domäner från Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importera bokmärkesfil ...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Du tittar i Duck Player!\nHär finns inga riktade annonser.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effektiv tröskel: %@ s (åsidosättning)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effektiv tröskel: konfigurationsstandard (ingen åsidosättning)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-postskydd";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Inga aktiva abonnemang";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Inga uteslutna domäner";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Inget befintligt abonnemang hittades";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hej!";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Visste du det?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vill du återställa dina bokmärken, lösenord med mera från din tidigare DuckDuckGo-synkronisering?";

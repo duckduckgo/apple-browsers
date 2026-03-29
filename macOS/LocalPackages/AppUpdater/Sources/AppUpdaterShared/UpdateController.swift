@@ -44,6 +44,7 @@ public protocol SparkleUpdateControllerFactory {
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
                             allowCustomUpdateFeed: Bool,
+                            isAutoUpdatePaused: @escaping () -> Bool,
                             wideEvent: WideEventManaging,
                             isOnboardingFinished: @escaping () -> Bool,
                             openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateControlling

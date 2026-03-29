@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Fonctionnalités de l'IA";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Choisir une photo";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Prends une photo";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Les signets existants ne seront pas dupliqués.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "URL personnalisée : %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Domaines exclus par Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer un fichier de signets...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Vous regardez du contenu dans Duck Player !\nPas de publicités ciblées ici.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Seuil effectif : %@ s (remplacement)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Seuil effectif : configuration par défaut (sans remplacement)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protection des e-mails";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Aucun abonnement actif";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Aucun domaine exclu";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Pas d'abonnement trouvé";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Bonjour.";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Le saviez-vous ?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vous souhaitez rétablir les signets, mots de passe et autres de votre précédente synchronisation DuckDuckGo ?";

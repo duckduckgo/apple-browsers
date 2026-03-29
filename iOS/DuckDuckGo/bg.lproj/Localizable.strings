@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Функции с изкуствен интелект";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Изберете снимка";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Направете снимка";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Съществуващите отметки няма да бъдат дублирани.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Персонализиран URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Изключени домейни от Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортиране на файл с отметки...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Гледате в Duck Player!\nТук няма насочени реклами.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Ефективен праг: %@ s (заместване)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Ефективен праг: конфигурация по подразбиране (без заместване)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Няма активни абонаменти";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Няма изключени домейни";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Не е намерен съществуващ абонамент";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Здравейте.";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Знаете ли, че?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Искате да възстановите отметки, пароли и други данни от предишната синхронизация с DuckDuckGo?";

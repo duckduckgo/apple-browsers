@@ -40,7 +40,9 @@ struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
-    private let fireproofing: Fireproofing = UserDefaultsFireproofing()
+    private let fireproofing: Fireproofing = UserDefaultsFireproofing(
+        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) }
+    )
     private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
@@ -77,6 +79,9 @@ struct Launching: LaunchingHandling {
         // MARK: - Application Setup
         // Handles one-time application setup during launch
         try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+
+        // Migrate existing fireproofed domains to eTLD+1 store
+        fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
 
         // Set idleReturnNewUser at launch (before statistics load) so new vs existing users get the correct after-inactivity default.
         IdleReturnCohort.setCohortIfNeeded(
@@ -180,6 +185,13 @@ struct Launching: LaunchingHandling {
             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
+        // Subscription promo for reinstallers / skipped-onboarding users
+        let subscriptionPromoCoordinator = SubscriptionPromoCoordinator(
+            featureFlagger: featureFlagger,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+        )
+        let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
+
         // Initialise modal prompts coordination
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
@@ -198,6 +210,8 @@ struct Launching: LaunchingHandling {
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
                 winBackOfferCoordinator: winBackOfferService.coordinator,
+                subscriptionPromoPresenter: subscriptionPromoPresenter,
+                subscriptionPromoCoordinator: subscriptionPromoCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies
             )
         )

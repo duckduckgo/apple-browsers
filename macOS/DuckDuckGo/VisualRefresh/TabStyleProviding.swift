@@ -30,13 +30,15 @@ protocol TabStyleProviding {
     var pinnedTabWidth: CGFloat { get }
 
     var shouldShowSShapedTab: Bool { get }
+    var shouldShowTabSeparators: Bool { get }
     var selectedTabColor: NSColor { get }
     var hoverTabColor: NSColor { get }
     var isRoundedBackgroundPresentOnHover: Bool { get }
     var tabSpacing: CGFloat { get }
     var applyTabShadow: Bool { get }
     var standardTabCornerRadius: CGFloat { get }
-    var tabButtonActionsCornerRadius: CGFloat { get }
+    var tabButtonActionsSelectedCornerRadius: CGFloat { get }
+    var tabButtonActionsHighlightedCornerRadius: CGFloat { get }
 }
 
 final class LegacyTabStyleProvider: TabStyleProviding {
@@ -48,13 +50,15 @@ final class LegacyTabStyleProvider: TabStyleProviding {
     let pinnedTabWidth: CGFloat = 34
     let pinnedTabHeight: CGFloat = 34
     let shouldShowSShapedTab = false
+    let shouldShowTabSeparators = true
     let selectedTabColor: NSColor = .navigationBarBackground
     let hoverTabColor: NSColor = .tabMouseOver
     let isRoundedBackgroundPresentOnHover = false
     let tabSpacing: CGFloat = 0
     let applyTabShadow: Bool = false
     let standardTabCornerRadius: CGFloat = 8
-    let tabButtonActionsCornerRadius: CGFloat = 2
+    let tabButtonActionsSelectedCornerRadius: CGFloat = 2
+    let tabButtonActionsHighlightedCornerRadius: CGFloat = 2
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
@@ -71,13 +75,53 @@ final class NewlineTabStyleProvider: TabStyleProviding {
     let pinnedTabWidth: CGFloat = 38
     let pinnedTabHeight: CGFloat = 38
     let shouldShowSShapedTab = true
+    let shouldShowTabSeparators = true
     let isRoundedBackgroundPresentOnHover = true
     let tabSpacing: CGFloat = 1
     let applyTabShadow: Bool = true
     let standardTabCornerRadius: CGFloat = 10.0
-    let tabButtonActionsCornerRadius: CGFloat = 5
+    let tabButtonActionsSelectedCornerRadius: CGFloat = 5
+    let tabButtonActionsHighlightedCornerRadius: CGFloat = 5
 
     init(palette: ThemeColors) {
         self.palette = palette
+    }
+}
+
+final class TabAnimationsStyleProvider: TabStyleProviding {
+    private let palette: ThemeColors
+
+    var separatorColor: NSColor { palette.surfaceDecorationTertiary }
+    var selectedTabColor: NSColor { palette.surfacePrimary }
+    var hoverTabColor: NSColor { palette.controlsFillPrimary }
+
+    let separatorHeight: CGFloat = 16
+    let tabsScrollViewHeight: CGFloat = 38
+    let pinnedTabsContainerViewHeight: CGFloat = 38
+    let standardTabHeight: CGFloat = 38
+    let pinnedTabWidth: CGFloat = 38
+    let pinnedTabHeight: CGFloat = 38
+    let shouldShowSShapedTab = true
+    let shouldShowTabSeparators = false
+    let isRoundedBackgroundPresentOnHover = true
+    let tabSpacing: CGFloat = 0
+    let applyTabShadow: Bool = false
+    let standardTabCornerRadius: CGFloat = 10.0
+    let tabButtonActionsSelectedCornerRadius: CGFloat = 6
+    let tabButtonActionsHighlightedCornerRadius: CGFloat = 4
+
+    init(palette: ThemeColors) {
+        self.palette = palette
+    }
+}
+
+struct TabStyleProvidingFactory {
+
+    static func buildStyleProvider(palette: ThemeColors, displaysTabsAnimations: Bool) -> TabStyleProviding {
+        if displaysTabsAnimations {
+            return TabAnimationsStyleProvider(palette: palette)
+        }
+
+        return NewlineTabStyleProvider(palette: palette)
     }
 }

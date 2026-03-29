@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Özellikleri";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Fotoğraf Seç";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Fotoğraf Çek";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Mevcut yer imleri çoğaltılmayacaktır.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "Özel URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader Hariç Tutulan Alan Adları (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Yer İşaretleri Dosyasını İçe Aktar...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Duck Player'da izliyorsunuz!\nBurada hedefli reklam yok.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Etkin eşik: %@ s (geçersiz kılma)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Etkin eşik: yapılandırma varsayılanı (geçersiz kılma yok)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-posta Koruması";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "Aktif abonelik yok";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Hariç tutulan alan adı yok";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Abonelik bulunamadı";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Merhaba.";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Biliyor muydunuz?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Önceki DuckDuckGo senkronizasyonundan yer işaretleri, şifreler ve daha fazlasını geri yüklemek mi istiyorsunuz?";

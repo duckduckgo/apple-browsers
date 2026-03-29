@@ -499,6 +499,7 @@ class MainViewController: UIViewController {
             remoteMessagingImageLoader: remoteMessagingImageLoader,
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
             appSettings: appSettings,
+            subscriptionManager: subscriptionManager,
             internalUserCommands: internalUserCommands)
     }()
 
@@ -1153,22 +1154,27 @@ class MainViewController: UIViewController {
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
-        guard isNavigationBarEffectivelyAtBottom else { return }
-
         let coordinator = unifiedToggleInputCoordinator
-        let isOmnibarActive = coordinator?.isOmnibarSession == true
         let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
 
         let baseInputHeight: CGFloat
-        if coordinator?.isAITabExpanded == true, let coordinator {
+        if let coordinator, coordinator.isAITabExpanded || coordinator.isOmnibarSession {
             baseInputHeight = coordinator.omnibarEditingHeight()
         } else {
             baseInputHeight = omniBarHeight
         }
 
+        if !isNavigationBarEffectivelyAtBottom {
+            if !isAITabCollapsed, let coordinator, coordinator.isOmnibarSession {
+                self.viewCoordinator.constraints.navigationBarContainerHeight.constant = baseInputHeight
+            }
+            return
+        }
+
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
-        if !isOmnibarActive, !isAITabCollapsed {
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
+        if !isAITabCollapsed {
+            let newHeight = max(baseInputHeight, containerHeight)
+            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = newHeight
         }
 
         if appSettings.currentAddressBarPosition.isBottom, let currentTab {
@@ -1336,8 +1342,8 @@ class MainViewController: UIViewController {
     private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
         if targetTab.isAITab {
             return EscapeHatchModel(
-                title: UserText.omnibarFullAIChatModeDisplayTitle,
-                subtitle: "Duck.ai",
+                title: targetTab.aiChatConversationTitle ?? UserText.omnibarFullAIChatModeDisplayTitle,
+                subtitle: UserText.omnibarFullAIChatModeDisplayTitle,
                 isAITab: true,
                 domain: nil,
                 targetTab: targetTab
@@ -1423,6 +1429,7 @@ class MainViewController: UIViewController {
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
+                                                  subscriptionManager: subscriptionManager,
                                                   internalUserCommands: internalUserCommands,
                                                   narrowLayoutInLandscape: narrowLayoutInLandscape
         )
@@ -2767,6 +2774,7 @@ class MainViewController: UIViewController {
     }
 
     func onDuckAIVoiceModeRequested() {
+        Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.ntp.rawValue])
         openAIChatInVoiceMode()
     }
 
@@ -3362,6 +3370,20 @@ extension MainViewController: OmniBarDelegate {
         } else {
             segueToSettings()
         }
+    }
+
+    override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
+        if motion == .motionShake, featureFlagger.internalUserDecider.isInternalUser || isDebugBuild {
+            var topVC: UIViewController = self
+            while let presented = topVC.presentedViewController {
+                topVC = presented
+            }
+            if !(topVC is DebugScreensViewController),
+               !((topVC as? UINavigationController)?.viewControllers.first is DebugScreensViewController) {
+                segueToDebugSettings()
+            }
+        }
+        super.motionEnded(motion, with: event)
     }
 
     func performCancel() {
@@ -4019,6 +4041,14 @@ extension MainViewController: TabDelegate {
     
     func tabDidRequestFireButtonPulse(tab: TabViewController) {
         showFireButtonPulse()
+    }
+
+    func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
+        let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
+                                     privacyConfig: privacyConfigurationManager)
+        Task { @MainActor in
+            await cleaner.deleteAIChat(chatID: chatID)
+        }
     }
     
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool) {
@@ -5120,6 +5150,10 @@ extension MainViewController {
         case .downloads:
             self.segueToDownloads()
 
+        case .duckAIVoice:
+            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue])
+            self.openAIChatInVoiceMode()
+
         default:
             assertionFailure("Unexpected case \(button)")
         }
@@ -5167,6 +5201,10 @@ extension MainViewController {
 
         case .zoom:
             showTextZoomEditorIfPossible()
+
+        case .duckAIVoice:
+            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue])
+            openAIChatInVoiceMode()
 
         default:
             assertionFailure("Unexpected case: \(button)")

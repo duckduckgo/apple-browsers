@@ -202,6 +202,12 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Características de la IA";
 
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Elige foto";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Hacer una foto";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Los marcadores existentes no se duplicarán.";
 
@@ -1211,7 +1217,6 @@
 "Custom URL: %@" = "URL personalizada: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dominios excluidos de Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importar archivo de marcadores...";
@@ -1641,12 +1646,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "¡Estás viendo en Duck Player!\nSin anuncios segmentados aquí.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Umbral efectivo: %@ s (anular)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Umbral efectivo: configuración predeterminada (sin anulación)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protección del correo electrónico";
@@ -2594,7 +2593,6 @@
 "No active subscriptions" = "No hay suscripciones activas";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "No hay dominios excluidos";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "No se ha encontrado ninguna suscripción existente";
@@ -2736,6 +2734,9 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hola.";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "¿Sabías?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "¿Quieres restaurar tus marcadores, contraseñas y más de tu sincronización anterior con DuckDuckGo?";

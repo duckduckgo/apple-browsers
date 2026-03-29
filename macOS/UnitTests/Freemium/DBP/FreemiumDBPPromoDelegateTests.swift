@@ -72,9 +72,9 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
-    // MARK: - show()
+    // MARK: - Legacy dismissal (eligibility)
 
-    func testShow_returnsIgnoredForLegacyDismissal_whenPreScanBanner() async {
+    func testIsEligible_falseForLegacyDismissal_whenPreScanBanner() {
         mockUserStateManager.didDismissHomePagePromotion = true
         mockUserStateManager.firstScanResults = nil
 
@@ -87,11 +87,10 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         )
         sut = FreemiumDBPPromoDelegate(coordinator: coordinator)
 
-        let result = await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
-        XCTAssertEqual(result, .ignored())
+        XCTAssertFalse(sut.isEligible)
     }
 
-    func testShow_ignoresLegacyDismissal_whenScanResultsExist() async {
+    func testIsEligible_trueForLegacyDismissal_whenScanResultsExist() {
         mockUserStateManager.didDismissHomePagePromotion = true
         mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 3, brokerCount: 1)
 
@@ -104,40 +103,10 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         )
         sut = FreemiumDBPPromoDelegate(coordinator: coordinator)
 
-        let task = Task {
-            await sut.show(history: PromoHistoryRecord(id: "test"), force: false)
-        }
-        try? await Task.sleep(nanoseconds: 50_000_000)
-
-        XCTAssertNotNil(coordinator.viewModel)
-
-        sut.hide()
-        _ = await task.value
+        XCTAssertTrue(sut.isEligible)
     }
 
-    func testShow_ignoresLegacyDismissal_whenForced() async {
-        mockUserStateManager.didDismissHomePagePromotion = true
-        mockUserStateManager.firstScanResults = nil
-
-        coordinator = FreemiumDBPPromotionViewCoordinator(
-            freemiumDBPUserStateManager: mockUserStateManager,
-            freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: MockFreemiumDBPPresenter(),
-            dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
-            contextualOnboardingPublisher: Empty<Bool, Never>().eraseToAnyPublisher()
-        )
-        sut = FreemiumDBPPromoDelegate(coordinator: coordinator)
-
-        let task = Task {
-            await sut.show(history: PromoHistoryRecord(id: "test"), force: true)
-        }
-        try? await Task.sleep(nanoseconds: 50_000_000)
-
-        XCTAssertNotNil(coordinator.viewModel)
-
-        sut.hide()
-        _ = await task.value
-    }
+    // MARK: - show()
 
     func testShow_suspendsAndWaitsForUserAction() async {
         let task = Task {

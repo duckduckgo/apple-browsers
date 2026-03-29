@@ -84,6 +84,12 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     var isEligible: Bool {
+        // Legacy dismissal from before queue integration — never eligible
+        // unless the banner variant changed (scan results arrived).
+        if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil {
+            return false
+        }
+
         if coordinator.isFeatureAvailable { return true }
 
         // Fast-path: if the promo was shown within the last 7 days, consider
@@ -108,7 +114,11 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
         guard let historyProvider, let promoId else {
             return featurePublisher
                 .combineLatest(refreshSubject.prepend(()))
-                .map { isAvailable, _ in isAvailable }
+                .map { [weak coordinator] isAvailable, _ in
+                    guard let coordinator else { return false }
+                    if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil { return false }
+                    return isAvailable
+                }
                 .removeDuplicates()
                 .eraseToAnyPublisher()
         }
@@ -119,8 +129,10 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
                 historyProvider.historyPublisher(for: promoId)
             )
             .map { [weak coordinator, dateProvider] isAvailable, _, record in
+                guard let coordinator else { return false }
+                if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil { return false }
                 if isAvailable { return true }
-                guard let coordinator, coordinator.isFeatureFlagEnabled else { return false }
+                guard coordinator.isFeatureFlagEnabled else { return false }
                 guard let lastShown = record?.lastShown else { return false }
                 return dateProvider().timeIntervalSince(lastShown) < .days(7)
             }
@@ -160,11 +172,6 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
         resumeContinuation(with: .noChange)
-
-        // Honor legacy dismissals from before queue integration.
-        if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil && !force {
-            return .ignored()
-        }
 
         coordinator.refreshViewModel()
 

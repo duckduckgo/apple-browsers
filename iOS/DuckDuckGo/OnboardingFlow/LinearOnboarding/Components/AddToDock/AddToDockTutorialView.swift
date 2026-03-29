@@ -101,6 +101,7 @@ struct AddToDockTutorialView: View {
     }
 
     private var videoPlayer: some View {
+        // Calculate the height of the video based on the width it takes maintaining its aspect ratio
         let heightRatio = videoPlayerWidth * (Self.videoSize.height / Self.videoSize.width)
         let scale = videoPlayerWidth / Self.videoSize.width
         return PlayerView(coordinator: videoPlayerModel)

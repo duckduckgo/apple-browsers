@@ -24,7 +24,7 @@ protocol WebRTCUserScriptDelegate: AnyObject {
     @MainActor func webRTCUserScript(_ script: WebRTCUserScript, didChangeConnectionActive active: Bool)
 }
 
-/// Receives `webRTCConnectionChanged` notifications from the Content Scope Scripts `webRtc` feature.
+/// Receives `webRTCConnectionChanged` notifications from the Content Scope Scripts `webRtcDetection` feature.
 /// Used to prevent tab suspension while a page has an open peer connection.
 final class WebRTCUserScript: NSObject, Subfeature {
 
@@ -34,7 +34,7 @@ final class WebRTCUserScript: NSObject, Subfeature {
 
     let messageOriginPolicy: MessageOriginPolicy = .all
 
-    static public let featureName: String = "webRtc"
+    static public let featureName: String = "webRtcDetection"
     var featureName: String {
         Self.featureName
     }

@@ -91667,18 +91667,6 @@
         }
       }
     },
-    "resume.tab" : {
-      "comment" : "Menu item. Resume a suspended tab",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Resume Tab"
-          }
-        }
-      }
-    },
     "sad.att.add-to-dock.banner.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock",
       "extractionState" : "extracted_with_value",
@@ -99394,18 +99382,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Конфиденциальный поиск"
-          }
-        }
-      }
-    },
-    "suspend.tab" : {
-      "comment" : "Menu item. Suspend a background tab to free memory",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Suspend Tab"
           }
         }
       }

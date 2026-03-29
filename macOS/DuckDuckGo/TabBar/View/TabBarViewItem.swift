@@ -1509,7 +1509,8 @@ extension TabBarViewItem: NSMenuDelegate {
         guard !isPinned else { return }
         guard case .url = tabViewModel?.tabContent else { return }
         let isSuspended = tabViewModel?.isSuspended ?? false
-        let title = isSuspended ? UserText.resumeTab : UserText.suspendTab
+        // This item is only ever visible to internal users so we don't need translations.
+        let title = isSuspended ? "Resume Tab" : "Suspend Tab"
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
         menuItem.target = self
         // Can't suspend the currently active tab, one playing audio/video, one with an active form, or an active WebRTC connection

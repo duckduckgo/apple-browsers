@@ -31,14 +31,22 @@ extension OnboardingRebranding {
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
 
-        var title = UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle
+        let title: String
         let message: String
         let cta: String
         let dismissAction: () -> Void
-        let onManualDismiss: () -> Void
+        let onManualDismiss: (() -> Void)?
+
+        init(title: String = UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle, message: String, cta: String, dismissAction: @escaping () -> Void, onManualDismiss: (() -> Void)? = nil) {
+            self.title = title
+            self.message = message
+            self.cta = cta
+            self.dismissAction = dismissAction
+            self.onManualDismiss = onManualDismiss
+        }
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+            OnboardingBubbleView(tailPosition: nil) {
                 OnboardingRebranding.ContextualDaxDialogContent(
                     orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
                     title: AttributedString(title),
@@ -56,6 +64,9 @@ extension OnboardingRebranding {
                     .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                     .buttonStyle(theme.primaryButtonStyle.style)
                 }
+            }
+            .ifLet(onManualDismiss) { view, onDismiss in
+                view.onboardingDismissable(onDismiss)
             }
             .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)

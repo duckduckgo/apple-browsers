@@ -173,8 +173,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
                 logoPosition: .top,
                 message: message,
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                dismissAction: onDismiss,
-                onManualDismiss: onDismiss
+                dismissAction: onDismiss
             )
             .onboardingDaxDialogStyle()
             .onboardingContextualBackgroundStyle(background: .illustratedGradient)

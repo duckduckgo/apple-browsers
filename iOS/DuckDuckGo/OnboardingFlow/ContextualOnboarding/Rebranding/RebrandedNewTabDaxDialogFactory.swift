@@ -95,8 +95,7 @@ extension RebrandedNewTabDaxDialogFactory {
                     OnboardingRebranding.OnboardingEndOfJourneyDialog(
                         message: message,
                         cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                        dismissAction: onDismiss,
-                        onManualDismiss: onDismiss
+                        dismissAction: onDismiss
                     )
                 }
                 .scrollIfNeeded()

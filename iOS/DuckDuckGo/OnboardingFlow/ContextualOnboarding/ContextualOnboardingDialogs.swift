@@ -221,13 +221,13 @@ struct OnboardingFinalDialog: View {
     let message: String
     let cta: String
     let dismissAction: () -> Void
-    let onManualDismiss: () -> Void
+    let onManualDismiss: (() -> Void)?
 
     init(logoPosition: DaxDialogLogoPosition,
          message: String,
          cta: String,
          dismissAction: @escaping () -> Void,
-         onManualDismiss: @escaping () -> Void) {
+         onManualDismiss: (() -> Void)? = nil) {
         self.logoPosition = logoPosition
         self.message = message
         self.cta = cta
@@ -243,7 +243,8 @@ struct OnboardingFinalDialog: View {
                     titleFont: Font(UIFont.daxTitle3()),
                     message: message.attributedString(
                         withPlaceholder: UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken,
-                        replacedByImage: DesignSystemImages.Glyphs.Size16.aiChat,
+                        replacedByImage: DesignSystemImages.Glyphs.Size16.aiChatOnboarding,
+                        horizontalPadding: 0,
                         verticalOffset: -2
                     ) ?? NSAttributedString(string: message),
                     messageFont: Font.system(size: 16),

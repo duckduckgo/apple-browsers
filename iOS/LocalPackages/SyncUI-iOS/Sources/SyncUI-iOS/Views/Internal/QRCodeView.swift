@@ -24,13 +24,20 @@ import SwiftUI
 struct QRCodeView: View {
     let string: String
     let desiredSize: Int
+    let backgroundColor: Color
+
+    init(string: String, desiredSize: Int, backgroundColor: Color = .white) {
+        self.string = string
+        self.desiredSize = desiredSize
+        self.backgroundColor = backgroundColor
+    }
 
     var body: some View {
         Image(uiImage: generateQRCode(from: string, renderSize: 2 * desiredSize))
             .resizable()
             .interpolation(.none)
             .padding(4)
-            .background(Color.white)
+            .background(backgroundColor)
             .frame(width: CGFloat(desiredSize), height: CGFloat(desiredSize))
     }
 

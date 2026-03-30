@@ -2072,7 +2072,37 @@ public struct UserText {
     public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
     
     public static let aiChatSettingsBrowserShortcutsSectionTitle = NSLocalizedString("duckai.settings.browserShortcuts.section.title", value: "Browser shortcuts", comment: "Title for section that groups shortcuts related to browser")
-    
+
+    // MARK: - Duck.ai Shortcut Promo Screens
+
+    public static let duckAIShortcutsSectionHeader = NotLocalizedString("duckai.shortcuts.section.header", value: "Shortcuts", comment: "Section header for Duck.ai shortcuts in AI Chat settings")
+
+    public static let duckAISettingsAddWidget = NotLocalizedString("duckai.settings.add.widget", value: "Add Duck.ai Widget to Home Screen", comment: "AI Chat settings row for adding the Duck.ai widget to home screen")
+
+    public static let duckAISettingsAddControlCenterWidget = NotLocalizedString("duckai.settings.add.control-center.widget", value: "Add Duck.ai to Control Center", comment: "AI Chat settings row for adding Duck.ai to Control Center")
+
+    public static let duckAISettingsControlWithSiri = NotLocalizedString("duckai.settings.control.with.siri", value: "Talk with Duck.ai via Siri", comment: "AI Chat settings row for learning how to talk with Duck.ai via Siri")
+
+    public static let settingsAddDuckAIWidget = NotLocalizedString("settings.add.widget.duckai", value: "Add Duck.ai Shortcuts to Your Home Screen", comment: "Title for the Duck.ai widget education screen")
+
+    public static let addDuckAIWidgetSettingsThirdParagraph = NotLocalizedString("duckai.addWidget.settings.thirdParagraph", value: "Find and select **DuckDuckGo**, then swipe to **Custom Shortcuts** and select **Add Widget**", comment: "Third paragraph of the Duck.ai widget education screen")
+
+    public static let addDuckAIWidgetSettingsFourthParagraph = NotLocalizedString("duckai.addWidget.settings.fourthParagraph", value: "Tap the widget to edit it, then set **Duck.ai** and **Duck.ai Voice** as your shortcuts", comment: "Fourth paragraph of the Duck.ai widget education screen")
+
+    public static let controlCenterDuckAIWidgetEducationNavBarTitle = NotLocalizedString("duckai.control.center.education.navBar.title", value: "Add Duck.ai Voice Shortcut to Your Control Center", comment: "Navigation bar title for Duck.ai Control Center education screen")
+
+    public static let controlCenterDuckAIWidgetEducationParagraph = NotLocalizedString("control.center.duckai.widget.education.paragraph", value: "Find **DuckDuckGo** in the list, then tap **Duck.ai Voice** to add it", comment: "Fourth paragraph of the Control Center Duck.ai Widget Education screen")
+
+    public static let duckAISiriEducationScreenTitle = NotLocalizedString("duckai.siri.education.screen.title", value: "Talk with Duck.ai using Siri!", comment: "Title for the Duck.ai Siri education screen")
+
+    public static let duckAISiriEducationScreenDescription = NotLocalizedString("duckai.siri.education.screen.description", value: "Siri Shortcuts let you start a Duck.ai voice chat with a quick voice command, like \"Siri, start DuckDuckGo Voice Chat\". It's a fast, hands-free way to chat with Duck.ai.", comment: "Description for the Duck.ai Siri education screen")
+
+    public static let duckAISiriEducationScreenExample1 = NotLocalizedString("duckai.siri.education.screen.example1", value: "Siri, start DuckDuckGo Voice Chat.", comment: "Duck.ai Siri education screen example command 1")
+
+    public static let duckAISiriEducationScreenExample2 = NotLocalizedString("duckai.siri.education.screen.example2", value: "Siri, talk to DuckDuckGo.", comment: "Duck.ai Siri education screen example command 2")
+
+    public static let duckAISiriEducationScreenExample3 = NotLocalizedString("duckai.siri.education.screen.example3", value: "Siri, voice chat with DuckDuckGo.", comment: "Duck.ai Siri education screen example command 3")
+
     public static let aiChatSettingsAllowFollowUpQuestionsSectionTitle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.title", value: "Search shortcuts", comment: "Title for section that groups settings related to search results")
     
     public static let aiChatSettingsAllowFollowUpQuestionsToggle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.toggle", value: "Ask Follow-Up Questions", comment: "Toggle text to enable/disable Duck.ai to ask follow-up questions")

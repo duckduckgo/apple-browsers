@@ -43,7 +43,6 @@
 /* Title shown to the user when adding the Voice Search lock screen widget */
 "lock.screen.widget.voice.title" = "Voice Search";
 
-
 /* Description for the control widget when connecting */
 "vpn.control.widget.connecting" = "Connecting...";
 

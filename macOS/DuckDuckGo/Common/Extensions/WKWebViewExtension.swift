@@ -508,6 +508,7 @@ struct _WKCaptureDevices: OptionSet {
     static let display = Self(rawValue: 1 << 2)
 }
 
+// https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
 struct _WKRenderingProgressEvents: OptionSet {
     let rawValue: UInt
 

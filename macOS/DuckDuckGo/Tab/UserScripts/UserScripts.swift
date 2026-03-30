@@ -250,7 +250,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentBlockerRulesScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
-        autofillScript,
+        autofillScript
     ]
 
     @MainActor

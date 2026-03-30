@@ -266,8 +266,13 @@ private extension AIChatContextualInputViewController {
     }
 
     internal func updateQuickActions() {
-        let actions: [AIChatContextualQuickAction] = [.summarize]
-        quickActionsView.configure(with: actions)
+        if isContextualSheetImprovementsEnabled {
+            let actions: [AIChatContextualQuickAction] = isContextChipVisible ? [.summarizePage] : [.askAboutPage]
+            quickActionsView.configure(with: actions)
+        } else {
+            let actions: [AIChatContextualQuickAction] = [.summarize]
+            quickActionsView.configure(with: actions)
+        }
     }
 
     func configureWelcomeLabel() {

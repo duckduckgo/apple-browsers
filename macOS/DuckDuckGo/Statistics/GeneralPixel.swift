@@ -291,7 +291,7 @@ enum GeneralPixel: PixelKitEvent {
     case userAddedToDockFromMoreOptionsMenu
     case userAddedToDockFromDefaultBrowserSection
     case serpAddedToDock
-    case settingsAddToDockLearnMoreClicked
+    case settingsAddToDockShowMeHowClicked
 
     // SERP Settings
     // See macOS/PixelDefinitions/pixels/serp_settings_pixels.json5
@@ -1001,7 +1001,7 @@ enum GeneralPixel: PixelKitEvent {
         case .userAddedToDockFromMoreOptionsMenu: return "m_mac_user_added_to_dock_from_more_options_menu"
         case .userAddedToDockFromDefaultBrowserSection: return "m_mac_user_added_to_dock_from_default_browser_section"
         case .serpAddedToDock: return "m_mac_serp_added_to_dock"
-        case .settingsAddToDockLearnMoreClicked: return "m_mac_settings_add-to-dock_learn-more-clicked"
+        case .settingsAddToDockShowMeHowClicked: return "m_mac_settings_add-to-dock_show-me-how-clicked"
 
         case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
         case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
@@ -1867,7 +1867,7 @@ enum GeneralPixel: PixelKitEvent {
                 .userScriptLoadJSFailed,
                 .attributionXattrCanary:
             return [.pixelSource]
-        case .settingsAddToDockLearnMoreClicked:
+        case .settingsAddToDockShowMeHowClicked:
             return nil
         }
     }

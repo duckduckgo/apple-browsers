@@ -189,7 +189,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
                 dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
                                                       dockCustomizer: DockCustomizerMock(),
-                                                      windowControllersManager: windowControllersManager,
                                                       pixelFiring: nil),
                 accessibilityPreferences: AccessibilityPreferences(),
                 duckPlayer: DuckPlayer(

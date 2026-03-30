@@ -21,6 +21,7 @@ import Foundation
 import Persistence
 import PrivacyConfig
 import Common
+import Core
 
 public final class LaunchOptionsHandler {
 
@@ -72,8 +73,11 @@ public final class LaunchOptionsHandler {
         self.systemVersion = systemVersion
     }
 
-    public var onboardingStatus: OnboardingStatus {
-        // TODO: Temporary override for dev validation; remove when onboarding should no longer launch on every app start.
+    // TODO: Temporary override for dev validation; remove when onboarding should no longer launch on every app start.
+    // This is a lazy var (not a computed property) so the side-effect resets run exactly once per app
+    // launch, not on every access. DaxDialogs.isEnabled calls onboardingStatus repeatedly, so a computed
+    // property with resets would wipe mid-session state (e.g. the AI chat switch bar setting) on every check.
+    public lazy var onboardingStatus: OnboardingStatus = {
         userDefaults.removeObject(forKey: Self.isOnboardingCompleted)
 
         userDefaults.set(false, forKey: "com.duckduckgo.tutorials.hasSeenOnboarding")
@@ -94,6 +98,10 @@ public final class LaunchOptionsHandler {
         userDefaults.set(false, forKey: "com.duckduckgo.ios.privacyButtonPulseShown")
         userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingFinalDialogSeen")
         userDefaults.set(false, forKey: "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown")
+        // Remove from standard UserDefaults (migration source) and app config group so that the
+        // AI chat switch bar resets cleanly on each dev launch, without risking a secondary-migration error.
+        userDefaults.removeObject(forKey: "aichat.settings.showAIChatExperimentalSearchInput")
+        UserDefaults(suiteName: Global.appConfigurationGroupName)?.removeObject(forKey: "aichat.settings.showAIChatExperimentalSearchInput")
         return .overridden(.developer(completed: false))
 
         // Apple Issue affecting persistence storage on iPad 17.7.7
@@ -114,7 +122,7 @@ public final class LaunchOptionsHandler {
         }
 
         return .notOverridden
-    }
+    }()
 
     /// Returns the automation port if set, nil otherwise.
     /// Port must be in the valid UInt16 range (1-65535).

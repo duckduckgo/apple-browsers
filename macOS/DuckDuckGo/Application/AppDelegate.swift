@@ -843,7 +843,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dockPreferences = DockPreferencesModel(
             featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
-            windowControllersManager: windowControllersManager,
             pixelFiring: PixelKit.shared
         )
         accessibilityPreferences = AccessibilityPreferences()
@@ -1175,7 +1174,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let metricsReporter = PerformanceMetricsReporter(
-            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             previousSessionRestored: startupPreferences.restorePreviousSession,
             windowContext: WindowContext(windowControllersManager: windowControllersManager)
@@ -1515,7 +1513,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
-        let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
+        let notificationPresenter = UpdateNotificationPresenter(
+            pixelFiring: PixelKit.shared,
+            shouldSuppressPostUpdateNotification: { [weak self] in
+                let wc = self?.windowControllersManager.lastKeyMainWindowController
+                            ?? self?.windowControllersManager.mainWindowControllers.last
+                return wc?.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.content == .releaseNotes
+            },
+            showNotificationPopover: { [weak self] popover in
+                guard let wc = self?.windowControllersManager.lastKeyMainWindowController
+                            ?? self?.windowControllersManager.mainWindowControllers.last,
+                      let button = wc.mainViewController.navigationBarViewController.optionsButton else {
+                    return false
+                }
+                let parent = wc.mainViewController
+                guard parent.view.window?.isKeyWindow == true,
+                      (parent.presentedViewControllers ?? []).isEmpty else {
+                    return false
+                }
+                popover.show(onParent: parent, relativeTo: button)
+                return true
+            }
+        )
 
         if buildType.isAppStoreBuild {
             guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {

@@ -211,4 +211,125 @@ final class ScriptletManagerTests: XCTestCase {
         XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
         XCTAssertEqual(mockStore.clearCacheCallCount, 0)
     }
+
+    func testWhenStartedThenScriptletVersionDelegatesToStore() async {
+        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertEqual(manager.scriptletVersion(for: testExtensionType), "1.0")
+    }
+
+    func testWhenStoppedThenExtensionTypeIsRemovedFromActive() async {
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
+        await manager.start(for: testExtensionType)
+
+        manager.stop(for: testExtensionType)
+
+        let descriptor = ScriptletDescriptor(
+            name: "test.js",
+            url: URL(string: "https://example.com/test.js")!,
+            signature: "sig"
+        )
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "2.0", scriptlets: [descriptor])
+        mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("test".utf8))]
+
+        mockConfigProvider.configUpdateSubject.send()
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(mockFetcher.fetchCallCount, 0)
+    }
+
+    func testWhenClearCachedScriptletsCalledThenStoreIsClearedAndAvailabilitiesReset() async {
+        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .available(scriptlets))
+
+        manager.clearCachedScriptlets()
+
+        XCTAssertEqual(mockStore.clearAllCallCount, 1)
+        XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
+    }
+
+    func testWhenValidatorFailsThenAvailabilityRemainsNotAvailable() async {
+        let descriptor = ScriptletDescriptor(
+            name: "test.js",
+            url: URL(string: "https://example.com/test.js")!,
+            signature: "sig"
+        )
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [descriptor])
+        mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("test".utf8))]
+        mockValidator.shouldThrowError = true
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
+        XCTAssertNil(mockStore.savedFetched)
+    }
+
+    func testWhenValidatorFailsWithExistingScriptletsThenKeepsExisting() async {
+        let existingScriptlet = Scriptlet(path: "existing.js", relativeCachedPath: "ext/1.0/existing.js")
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: [existingScriptlet])
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .available([existingScriptlet]))
+
+        let descriptor = ScriptletDescriptor(
+            name: "new.js",
+            url: URL(string: "https://example.com/new.js")!,
+            signature: "sig"
+        )
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "2.0", scriptlets: [descriptor])
+        mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("new".utf8))]
+        mockValidator.shouldThrowError = true
+
+        mockConfigProvider.configUpdateSubject.send()
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .available([existingScriptlet]))
+    }
+
+    func testWhenCachedVersionMatchesManifestThenNoFetchIsTriggered() async {
+        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertEqual(mockFetcher.fetchCallCount, 0)
+        XCTAssertEqual(manager.availability(for: testExtensionType), .available(scriptlets))
+    }
+
+    func testAvailabilityPublisherEmitsUpdates() async {
+        var receivedValues: [ScriptletAvailability] = []
+        var cancellable: AnyCancellable?
+
+        cancellable = manager.availabilityPublisher(for: testExtensionType)
+            .sink { availability in
+                receivedValues.append(availability)
+            }
+
+        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
+
+        await manager.start(for: testExtensionType)
+
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertTrue(receivedValues.contains(.notAvailable))
+        XCTAssertTrue(receivedValues.contains(.available(scriptlets)))
+
+        cancellable?.cancel()
+    }
 }

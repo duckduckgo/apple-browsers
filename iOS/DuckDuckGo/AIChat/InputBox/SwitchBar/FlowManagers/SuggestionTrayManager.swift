@@ -34,7 +34,7 @@ struct SuggestionTrayDependencies {
     let favoritesViewModel: FavoritesListInteracting
     let bookmarksDatabase: CoreDataDatabase
     let historyManager: HistoryManaging
-    let tabsModel: TabsModel
+    let tabsModelProvider: () -> TabsModelManaging
     let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider
@@ -49,7 +49,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
-    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchTabToIndex index: Int)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
 }
 
 /// Manages the suggestion tray functionality including favorites and autocomplete
@@ -121,7 +121,7 @@ final class SuggestionTrayManager: NSObject {
                 favoritesViewModel: self.dependencies.favoritesViewModel,
                 bookmarksDatabase: self.dependencies.bookmarksDatabase,
                 historyManager: self.dependencies.historyManager,
-                tabsModel: self.dependencies.tabsModel,
+                tabsModelProvider: self.dependencies.tabsModelProvider,
                 featureFlagger: self.dependencies.featureFlagger,
                 appSettings: self.dependencies.appSettings,
                 aiChatSettings: self.dependencies.aiChatSettings,
@@ -297,7 +297,7 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
         // no-op this is handled by the main view controller on a real new tab page
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
-        delegate?.suggestionTrayManager(self, requestsSwitchTabToIndex: index)
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+        delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
     }
 }

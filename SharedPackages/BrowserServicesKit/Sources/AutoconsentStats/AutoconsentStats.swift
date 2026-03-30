@@ -91,7 +91,7 @@ public protocol AutoconsentStatsCollecting {
     /**
      * This function clears all autoconsent stats from the storage.
      */
-    func clearAutoconsentStats() async
+    func clearAutoconsentStats() async -> Result<Void, Error>
 }
 
 public actor AutoconsentStats: AutoconsentStatsCollecting {
@@ -182,16 +182,23 @@ public actor AutoconsentStats: AutoconsentStatsCollecting {
         )
     }
 
-    public func clearAutoconsentStats() async {
+    public func clearAutoconsentStats() async -> Result<Void, Error> {
+        var capturedError: Error?
         do {
             try keyValueStore.removeObject(forKey: Constants.totalCookiePopUpsBlockedKey)
             try keyValueStore.removeObject(forKey: Constants.totalClicksMadeBlockingCookiePopUpsKey)
             try keyValueStore.removeObject(forKey: Constants.totalTimeSpentBlockingCookiePopUpsKey)
         } catch {
+            capturedError = error
             errorEvents?.fire(.failedToClearAutoconsentStats(error))
         }
 
         statsUpdateSubject.send()
+
+        if let error = capturedError {
+            return .failure(error)
+        }
+        return .success(())
     }
 
 }

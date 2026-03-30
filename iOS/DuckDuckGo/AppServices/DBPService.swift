@@ -126,6 +126,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
+    var isWebViewUserAgentOn: Bool {
+        false
+    }
+
     init(appDependencies: DependencyProvider) {
         self.appDependencies = appDependencies
     }

@@ -54,6 +54,7 @@ struct FireCoordinatorTests {
                                faviconManagement: faviconManagement,
                                windowControllersManager: windowControllersManager,
                                pixelFiring: pixelFiring,
+                               wideEventManaging: WideEventMock(),
                                historyProvider: MockHistoryViewDataProvider(),
                                fireViewModel: fireViewModel,
                                tabViewModelGetter: ({ _ in tabCollectionViewModel }),
@@ -63,21 +64,11 @@ struct FireCoordinatorTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_IncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
-        let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
         let currentTime = CACurrentMediaTime()
-        dataClearingPixelsReporter.timeProvider = { currentTime }
-        let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
-            duration: 0,
-            option: "current_tab",
-            domains: "History,TabsAndWindows,CookiesAndSiteData,ChatHistory",
-            path: "burn_entity",
-            autoClear: "false"
-        )
         pixelFiring.expectedFireCalls = [
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard),
-            .init(pixel: expectedDataClearingPixel, frequency: .standard)
+            .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard)
         ]
 
         let result = FireDialogResult(clearingOption: .currentTab,
@@ -93,20 +84,9 @@ struct FireCoordinatorTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
-        let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = CACurrentMediaTime()
-        dataClearingPixelsReporter.timeProvider = { currentTime }
-        let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
-            duration: 0,
-            option: "current_tab",
-            domains: "History,TabsAndWindows,CookiesAndSiteData",
-            path: "burn_entity",
-            autoClear: "false"
-        )
         pixelFiring.expectedFireCalls = [
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard),
-            .init(pixel: expectedDataClearingPixel, frequency: .standard)
+            .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard)
         ]
 
         let result = FireDialogResult(clearingOption: .currentTab,
@@ -122,21 +102,10 @@ struct FireCoordinatorTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_IncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
-        let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = CACurrentMediaTime()
-        dataClearingPixelsReporter.timeProvider = { currentTime }
-        let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
-            duration: 0,
-            option: "current_window",
-            domains: "History,TabsAndWindows,CookiesAndSiteData,ChatHistory",
-            path: "burn_entity",
-            autoClear: "false"
-        )
         pixelFiring.expectedFireCalls = [
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard),
-            .init(pixel: expectedDataClearingPixel, frequency: .standard)
+            .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard)
         ]
 
         let result = FireDialogResult(clearingOption: .currentWindow,
@@ -152,20 +121,9 @@ struct FireCoordinatorTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
-        let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = CACurrentMediaTime()
-        dataClearingPixelsReporter.timeProvider = { currentTime }
-        let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
-            duration: 0,
-            option: "current_window",
-            domains: "History,TabsAndWindows,CookiesAndSiteData",
-            path: "burn_entity",
-            autoClear: "false"
-        )
         pixelFiring.expectedFireCalls = [
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard),
-            .init(pixel: expectedDataClearingPixel, frequency: .standard)
+            .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard)
         ]
 
         let result = FireDialogResult(clearingOption: .currentWindow,
@@ -181,21 +139,10 @@ struct FireCoordinatorTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForAllData_IncludingChatHistory_WhenAllHistoryIsSelected() async throws {
         let coordinator = makeCoordinator()
-        let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = CACurrentMediaTime()
-        dataClearingPixelsReporter.timeProvider = { currentTime }
-        let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
-            duration: 0,
-            option: "all_data",
-            domains: "History,TabsAndWindows,CookiesAndSiteData,ChatHistory",
-            path: "burn_all",
-            autoClear: "false"
-        )
         pixelFiring.expectedFireCalls = [
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard),
-            .init(pixel: expectedDataClearingPixel, frequency: .standard)
+            .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard)
         ]
 
         let result = FireDialogResult(clearingOption: .allData,
@@ -211,20 +158,9 @@ struct FireCoordinatorTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForAllData_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
-        let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = CACurrentMediaTime()
-        dataClearingPixelsReporter.timeProvider = { currentTime }
-        let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
-            duration: 0,
-            option: "all_data",
-            domains: "History,TabsAndWindows,CookiesAndSiteData",
-            path: "burn_all",
-            autoClear: "false"
-        )
         pixelFiring.expectedFireCalls = [
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard),
-            .init(pixel: expectedDataClearingPixel, frequency: .standard)
+            .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard)
         ]
 
         let result = FireDialogResult(clearingOption: .allData,

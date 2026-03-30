@@ -1941,17 +1941,20 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
     public let isClickActionDelayReductionOptimizationOn: Bool
+    public let isWebViewUserAgentOn: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
                 isEmailConfirmationDecouplingFeatureOn: Bool = false,
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
-                isClickActionDelayReductionOptimizationOn: Bool = false) {
+                isClickActionDelayReductionOptimizationOn: Bool = false,
+                isWebViewUserAgentOn: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
         self.isClickActionDelayReductionOptimizationOn = isClickActionDelayReductionOptimizationOn
+        self.isWebViewUserAgentOn = isWebViewUserAgentOn
     }
 }
 
@@ -2011,6 +2014,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
     public var featureFlagger: DBPFeatureFlagging
+    public var applicationNameForUserAgent: String?
     public var wideEvent: WideEventManaging?
     public var isAuthenticatedUserProvider: () async -> Bool = { true }
 

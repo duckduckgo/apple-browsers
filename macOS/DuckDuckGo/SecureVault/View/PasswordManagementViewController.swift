@@ -417,16 +417,19 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func openImportBrowserDataWindow(_ sender: Any?) {
         self.dismiss()
+        ensureMainWindowExists()
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @IBAction func openExportLogins(_ sender: Any) {
         self.dismiss()
+        ensureMainWindowExists()
         NSApp.sendAction(#selector(AppDelegate.openExportLogins(_:)), to: nil, from: sender)
     }
 
     @IBAction func onImportClicked(_ sender: NSButton) {
         self.dismiss()
+        ensureMainWindowExists()
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
     }
 
@@ -442,11 +445,26 @@ final class PasswordManagementViewController: NSViewController {
         guard let autofillDeleteAllPasswordsExecutor = builder.buildExecutor() else { return }
         let presenter = builder.buildPresenter()
 
+        let needsWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window == nil
+        if needsWindow {
+            self.dismiss()
+            ensureMainWindowExists()
+        }
+
         presenter.show(actionExecutor: autofillDeleteAllPasswordsExecutor) {
             self.refreshData {
                 self.select(category: .logins)
             }
             PixelKit.fire(GeneralPixel.autofillManagementDeleteAllLogins)
+        }
+    }
+
+    /// Opens a new browser window if no main window is currently available.
+    /// This is needed when actions are triggered from the status bar popover
+    /// without any browser window being open.
+    private func ensureMainWindowExists() {
+        if Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window == nil {
+            Application.appDelegate.windowControllersManager.openNewWindow()
         }
     }
 

@@ -26,6 +26,7 @@ public enum SyncError: Error, Equatable {
         case notFoundInSecureStorage = "not-found-in-secure-storage"
         case userTurnedOffSync = "user-turned-off"
         case userDeletedAccount = "user-deleted-account"
+        case userStartedFreshSetup = "user-started-fresh-setup"
         case unauthenticatedRequest = "unauthenticated-request"
         case serverEnvironmentUpdated = "server-environment-updated"
     }

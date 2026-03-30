@@ -28,6 +28,9 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureSkipOnboardingCTAAction = false
     private(set) var didCallMeasureConfirmSkipOnboardingCTAAction = false
     private(set) var didCallMeasureResumeOnboardingCTAAction = false
+    private(set) var didCallMeasureAutoRestoreOnboardingPromptShown = false
+    private(set) var didCallMeasureAutoRestoreOnboardingRestoreTapped = false
+    private(set) var didCallMeasureAutoRestoreOnboardingSkipTapped = false
     private(set) var didCallMeasureBrowserComparisonImpression = false
     private(set) var didCallMeasureChooseBrowserCTAAction = false
     private(set) var didCallMeasureChooseAppIconImpression = false
@@ -82,6 +85,18 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureResumeOnboardingCTAAction() {
         didCallMeasureResumeOnboardingCTAAction = true
+    }
+
+    func measureAutoRestoreOnboardingPromptShown() {
+        didCallMeasureAutoRestoreOnboardingPromptShown = true
+    }
+
+    func measureAutoRestoreOnboardingRestoreCTAAction() {
+        didCallMeasureAutoRestoreOnboardingRestoreTapped = true
+    }
+
+    func measureAutoRestoreOnboardingSkipCTAAction() {
+        didCallMeasureAutoRestoreOnboardingSkipTapped = true
     }
 
     func measureBrowserComparisonImpression() {

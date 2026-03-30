@@ -78,6 +78,9 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureSkipOnboardingCTAAction()
     func measureConfirmSkipOnboardingCTAAction()
     func measureResumeOnboardingCTAAction()
+    func measureAutoRestoreOnboardingPromptShown()
+    func measureAutoRestoreOnboardingRestoreCTAAction()
+    func measureAutoRestoreOnboardingSkipCTAAction()
     func measureBrowserComparisonImpression()
     func measureChooseBrowserCTAAction()
     func measureChooseAppIconImpression()
@@ -203,6 +206,18 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
     func measureResumeOnboardingCTAAction() {
         fire(event: .onboardingIntroResumeOnboardingCTAPressed, unique: false)
+    }
+
+    func measureAutoRestoreOnboardingPromptShown() {
+        fire(event: .syncAutoRestoreOnboardingPromptShownUnique, unique: true)
+    }
+
+    func measureAutoRestoreOnboardingRestoreCTAAction() {
+        fire(event: .syncAutoRestoreOnboardingRestoreTappedUnique, unique: true)
+    }
+
+    func measureAutoRestoreOnboardingSkipCTAAction() {
+        fire(event: .syncAutoRestoreOnboardingSkipTappedUnique, unique: true)
     }
 
     func measureOnboardingIntroImpression() {

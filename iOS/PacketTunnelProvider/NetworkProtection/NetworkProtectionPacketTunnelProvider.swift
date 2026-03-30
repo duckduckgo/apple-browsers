@@ -519,7 +519,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             experimentManager: nil
         )
 
-        self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
+        self.wideEvent = WideEvent(useMockRequests: {
+#if DEBUG || REVIEW || ALPHA
+            true
+#else
+            false
+#endif
+        }(),
+                                   featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
@@ -545,7 +552,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
-                                                              userDefaults: UserDefaults.standard) { accessType, error in
+                                                            userDefaults: UserDefaults.standard) { accessType, error in
             let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
                               PixelParameters.subscriptionKeychainError: error.localizedDescription,
                               PixelParameters.source: KeychainErrorSource.vpn.rawValue,
@@ -566,17 +573,17 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         }))
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
-                                                                               baseURL: subscriptionEnvironment.serviceEnvironment.url)
+                                                                             baseURL: subscriptionEnvironment.serviceEnvironment.url)
         let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService)
         let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                               oAuthClient: authClient,
-                                                               userDefaults: UserDefaults.standard,
-                                                               subscriptionEndpointService: subscriptionEndpointService,
-                                                               subscriptionEnvironment: subscriptionEnvironment,
-                                                               pixelHandler: pixelHandler,
-                                                               initForPurchase: false,
-                                                               wideEvent: wideEvent,
-                                                               isAuthV2WideEventEnabled: {
+                                                             oAuthClient: authClient,
+                                                             userDefaults: UserDefaults.standard,
+                                                             subscriptionEndpointService: subscriptionEndpointService,
+                                                             subscriptionEnvironment: subscriptionEnvironment,
+                                                             pixelHandler: pixelHandler,
+                                                             initForPurchase: false,
+                                                             wideEvent: wideEvent,
+                                                             isAuthV2WideEventEnabled: {
 #if DEBUG
             return true // Allow the refresh event when using staging in debug mode, for easier testing
 #else

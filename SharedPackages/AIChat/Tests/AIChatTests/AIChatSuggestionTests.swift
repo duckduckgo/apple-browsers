@@ -142,6 +142,58 @@ final class AIChatSuggestionTests: XCTestCase {
         XCTAssertNil(suggestion.timestamp)
     }
 
+    // MARK: - Title Sanitization Tests
+
+    func testInit_WithNewlineInTitle_CollapsesToSpace() {
+        let suggestion = AIChatSuggestion(id: "1", title: "Hello\nWorld", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello World")
+    }
+
+    func testInit_WithCarriageReturnInTitle_CollapsesToSpace() {
+        let suggestion = AIChatSuggestion(id: "1", title: "Hello\r\nWorld", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello World")
+    }
+
+    func testInit_WithConsecutiveNewlines_CollapsesToSingleSpace() {
+        let suggestion = AIChatSuggestion(id: "1", title: "Hello\n\n\nWorld", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello World")
+    }
+
+    func testInit_WithLeadingAndTrailingNewlines_Trimmed() {
+        let suggestion = AIChatSuggestion(id: "1", title: "\nHello World\n", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello World")
+    }
+
+    func testInit_WithLeadingAndTrailingWhitespace_Trimmed() {
+        let suggestion = AIChatSuggestion(id: "1", title: "  Hello World  ", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello World")
+    }
+
+    func testInit_WithMultipleSpaces_CollapsedToSingle() {
+        let suggestion = AIChatSuggestion(id: "1", title: "Hello   World", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello World")
+    }
+
+    func testInit_WithNewlinesBetweenWords_CollapsedToSpace() {
+        let suggestion = AIChatSuggestion(id: "1", title: "Hello\nBeautiful\r\nWorld", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello Beautiful World")
+    }
+
+    func testInit_WithNewlinesSurroundedBySpaces_CollapsedToSingleSpace() {
+        let suggestion = AIChatSuggestion(id: "1", title: "Hello \n World", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello World")
+    }
+
+    func testInit_WithCleanTitle_Unchanged() {
+        let suggestion = AIChatSuggestion(id: "1", title: "Hello World", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "Hello World")
+    }
+
+    func testInit_WithOnlyNewlines_BecomesEmpty() {
+        let suggestion = AIChatSuggestion(id: "1", title: "\n\n\n", isPinned: false, chatId: "c1")
+        XCTAssertEqual(suggestion.title, "")
+    }
+
     // MARK: - Equatable Tests
 
     func testEquatable_WithSameValues_ReturnsTrue() {

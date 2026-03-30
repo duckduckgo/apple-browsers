@@ -30,9 +30,6 @@ extension OnboardingRebranding {
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
 
-        var message = UserText.Onboarding.ContextualOnboarding.onboardingFirstSearchDoneMessage
-        var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
-
         @State private var showNextScreen: Bool = false
 
         let shouldFollowUp: Bool
@@ -56,7 +53,8 @@ extension OnboardingRebranding {
         private var searchDoneContent: some View {
             OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                message: message
+                title: UserText.Onboarding.ContextualOnboarding.Rebranding.onboardingFirstSearchDoneTitle,
+                message: UserText.Onboarding.ContextualOnboarding.Rebranding.onboardingFirstSearchDoneMessage
             ) {
                 Button {
                     gotItAction()
@@ -66,7 +64,7 @@ extension OnboardingRebranding {
                         }
                     }
                 } label: {
-                    Text(cta)
+                    Text(UserText.Onboarding.ContextualOnboarding.onboardingGotItButton)
                 }
                 .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                 .buttonStyle(theme.primaryButtonStyle.style)

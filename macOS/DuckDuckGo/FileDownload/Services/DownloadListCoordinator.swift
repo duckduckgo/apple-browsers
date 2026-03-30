@@ -96,7 +96,7 @@ final class DownloadListCoordinator {
                     } catch {
                         Logger.fileDownload.debug("❗️ coordinator: drop item \(item.identifier): \(error)")
                         // remove item from db removing temp files if needed without sending a `.removed` update
-                        cleanupTempFiles(for: item)
+                        _ = cleanupTempFiles(for: item)
                         filePresenters[item.identifier] = nil
                         filePresenterCancellables[item.identifier] = nil
                         self.items[item.identifier] = nil
@@ -199,7 +199,7 @@ final class DownloadListCoordinator {
         dispatchPrecondition(condition: .onQueue(.main))
 
         if let identifier = item?.identifier {
-            updateItem(withId: identifier) { item in
+            _ = updateItem(withId: identifier) { item in
                 // restarting existing download
                 item?.error = nil
                 item?.progress = task.progress
@@ -246,7 +246,7 @@ final class DownloadListCoordinator {
     @MainActor
     private func addItemIfNeededAndSubscribe(to presenters: (destination: FilePresenter, tempFile: FilePresenter?), for initialItem: DownloadListItem) {
         Logger.fileDownload.debug("coordinator: add/update \(initialItem.identifier)")
-        updateItem(withId: initialItem.identifier) { item in
+        _ = updateItem(withId: initialItem.identifier) { item in
             if item == nil { item = initialItem }
         }
         subscribeToPresenters(presenters, of: initialItem)
@@ -263,7 +263,7 @@ final class DownloadListCoordinator {
         .scan((oldURL: nil, newURL: nil, fileBookmarkData: nil)) { (oldURL: $0.newURL, newURL: $1.0, fileBookmarkData: $1.1) }
         .sink { [weak self] oldURL, newURL, fileBookmarkData in
             DispatchQueue.main.asyncOrNow {
-                self?.updateItem(withId: item.identifier) { [id=item.identifier] item in
+                _ = self?.updateItem(withId: item.identifier) { [id=item.identifier] item in
                     guard !Self.checkIfFileWasRemoved(oldURL: oldURL, newURL: newURL) else {
                         Logger.fileDownload.debug("coordinator: destination file removed \(id)")
                         item = nil
@@ -292,7 +292,7 @@ final class DownloadListCoordinator {
         .scan((oldURL: nil, newURL: nil, fileBookmarkData: nil)) { (oldURL: $0.newURL, newURL: $1.0, fileBookmarkData: $1.1) }
         .sink { [weak self] oldURL, newURL, fileBookmarkData in
             DispatchQueue.main.asyncOrNow {
-                self?.updateItem(withId: item.identifier) { [id=item.identifier] item in
+                _ = self?.updateItem(withId: item.identifier) { [id=item.identifier] item in
                     guard !Self.checkIfFileWasRemoved(oldURL: oldURL, newURL: newURL) else {
                         Logger.fileDownload.debug("coordinator: temp file removed \(id)")
                         item = nil
@@ -367,7 +367,7 @@ final class DownloadListCoordinator {
 
         self.downloadTaskCancellables[task] = nil
 
-        return updateItem(withId: initialItem.identifier) { item in
+        let updateResult = updateItem(withId: initialItem.identifier) { item in
             if let fireWindowSession = (item ?? initialItem).fireWindowSession,
                !fireWindowSession.isActive {
                 // remove finished downloads from the list instantly for downloads in already closed burner window
@@ -390,15 +390,22 @@ final class DownloadListCoordinator {
                 item?.tempURL = nil
             }
         }
+
+        switch updateResult {
+        case .success(let item):
+            return item
+        case .failure:
+            return nil
+        }
     }
 
     @MainActor
     @discardableResult
-    private func updateItem(withId identifier: UUID, mutate: (inout DownloadListItem?) -> Void) -> DownloadListItem? {
+    private func updateItem(withId identifier: UUID, mutate: (inout DownloadListItem?) -> Void) -> Result<DownloadListItem?, Error> {
         let original = self.items[identifier]
         var modified = original
         mutate(&modified)
-        guard modified?.modified != original?.modified else { return modified }
+        guard modified?.modified != original?.modified else { return .success(modified) }
 
         self.items[identifier] = modified
 
@@ -416,31 +423,37 @@ final class DownloadListCoordinator {
             if original != nil {
                 self.updatesSubject.send(Update(kind: .removed, item: item))
             }
-            cleanupTempFiles(for: item)
+
+            let cleanupResult = cleanupTempFiles(for: item)
             filePresenters[item.identifier] = nil
             filePresenterCancellables[item.identifier] = nil
             store.remove(item)
+
+            if case .failure(let error) = cleanupResult {
+                return .failure(error)
+            }
         }
-        return modified
+        return .success(modified)
     }
 
-    private func cleanupTempFiles(for item: DownloadListItem) {
+    private func cleanupTempFiles(for item: DownloadListItem) -> Result<Void, Error> {
         let fm = FileManager.default
+        var firstError: Error?
+
         do {
             try filePresenters[item.identifier]?.tempFile?.coordinateWrite(with: .forDeleting, using: { url in
                 Logger.fileDownload.debug("🦀 coordinator: removing \"\(url.path)\" (\(item.identifier))")
                 try fm.removeItem(at: url)
             })
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnDownloadsError(error))
             Logger.fileDownload.error("🦀 coordinator: failed to remove temp file: \(error)")
+            firstError = error
         }
 
         struct DestinationFileNotEmpty: Error {}
         do {
             guard let presenter = filePresenters[item.identifier]?.destination,
                   (try? presenter.url?.resourceValues(forKeys: [.fileSizeKey]).fileSize) == 0 else {
-                dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnDownloadsError(DestinationFileNotEmpty()))
                 throw DestinationFileNotEmpty()
             }
             try presenter.coordinateWrite(with: .forDeleting, using: { url in
@@ -448,11 +461,16 @@ final class DownloadListCoordinator {
                 try fm.removeItem(at: url)
             })
         } catch is DestinationFileNotEmpty {
-            // don‘t delete non-empty destination file
+            // don't delete non-empty destination file
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnDownloadsError(error))
             Logger.fileDownload.error("🦀 coordinator: failed to remove destination file: \(error)")
+            firstError = firstError ?? error
         }
+
+        if let firstError {
+            return .failure(firstError)
+        }
+        return .success(())
     }
 
     private func downloadRestartedCallback(for item: DownloadListItem, webView: WKWebView, presenters: (destination: FilePresenter, tempFile: FilePresenter)?) -> @MainActor (WebKitDownload) -> Void {
@@ -551,12 +569,21 @@ final class DownloadListCoordinator {
     }
 
     @MainActor
-    func cleanupInactiveDownloads(for fireWindowSession: FireWindowSessionRef?) {
+    func cleanupInactiveDownloads(for fireWindowSession: FireWindowSessionRef?) -> Result<Void, Error> {
         Logger.fileDownload.debug("coordinator: cleanupInactiveDownloads")
 
+        var firstError: Error?
         for (id, item) in self.items where item.fireWindowSession == fireWindowSession && item.progress == nil {
-            remove(downloadWithIdentifier: id)
+            let result = remove(downloadWithIdentifier: id)
+            if case .failure(let error) = result, firstError == nil {
+                firstError = error
+            }
         }
+
+        if let firstError {
+            return .failure(firstError)
+        }
+        return .success(())
     }
 
     @MainActor
@@ -565,31 +592,47 @@ final class DownloadListCoordinator {
 
         for (id, item) in self.items where item.fireWindowSession == fireWindowSession {
             item.progress?.cancel()
-            remove(downloadWithIdentifier: id)
+            _ = remove(downloadWithIdentifier: id)
         }
         fireWindowSessionsProgress[fireWindowSession] = nil
     }
 
     @MainActor
-    func cleanupInactiveDownloads(for baseDomains: Set<String>, tld: TLD) {
+    func cleanupInactiveDownloads(for baseDomains: Set<String>, tld: TLD) -> Result<Void, Error> {
         Logger.fileDownload.debug("coordinator: cleanupInactiveDownloads for \(baseDomains)")
 
+        var firstError: Error?
         for (id, item) in self.items where item.progress == nil {
             let websiteUrlBaseDomain = tld.eTLDplus1(item.websiteURL?.host) ?? ""
             let itemUrlBaseDomain = tld.eTLDplus1(item.downloadURL.host) ?? ""
             if baseDomains.contains(websiteUrlBaseDomain) ||
                 baseDomains.contains(itemUrlBaseDomain) {
-                remove(downloadWithIdentifier: id)
+                let result = remove(downloadWithIdentifier: id)
+                if case .failure(let error) = result, firstError == nil {
+                    firstError = error
+                }
             }
         }
+
+        if let firstError {
+            return .failure(firstError)
+        }
+        return .success(())
     }
 
     @MainActor
-    func remove(downloadWithIdentifier identifier: UUID) {
+    func remove(downloadWithIdentifier identifier: UUID) -> Result<Void, Error> {
         Logger.fileDownload.debug("coordinator: remove \(identifier)")
 
-        updateItem(withId: identifier) { item in
+        let result = updateItem(withId: identifier) { item in
             item = nil
+        }
+
+        switch result {
+        case .success:
+            return .success(())
+        case .failure(let error):
+            return .failure(error)
         }
     }
 

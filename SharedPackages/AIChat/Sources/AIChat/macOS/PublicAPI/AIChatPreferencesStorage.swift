@@ -49,6 +49,8 @@ public protocol AIChatPreferencesStorage {
 
     var lastUsedSidebarWidth: Double? { get set }
 
+    var hasAcceptedTermsAndConditions: Bool { get set }
+
     func reset()
 }
 
@@ -144,6 +146,11 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.lastUsedSidebarWidth = newValue }
     }
 
+    public var hasAcceptedTermsAndConditions: Bool {
+        get { userDefaults.hasAcceptedTermsAndConditions }
+        set { userDefaults.hasAcceptedTermsAndConditions = newValue }
+    }
+
     public func reset() {
         userDefaults.isAIFeaturesEnabled = UserDefaults.isAIFeaturesEnabledDefaultValue
         userDefaults.showAIChatShortcutOnNewTabPage = UserDefaults.showAIChatShortcutOnNewTabPageDefaultValue
@@ -155,6 +162,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.showSearchAndDuckAIToggle = UserDefaults.showSearchAndDuckAIToggleDefaultValue
         userDefaults.userDidSeeToggleOnboarding = false
         userDefaults.lastUsedSidebarWidth = nil
+        userDefaults.hasAcceptedTermsAndConditions = false
     }
 }
 
@@ -170,6 +178,7 @@ private extension UserDefaults {
         static let showSearchAndDuckAIToggle = "aichat.showSearchAndDuckAIToggle"
         static let userDidSeeToggleOnboarding = "aichat.userDidSeeToggleOnboarding"
         static let lastUsedSidebarWidth = "aichat.sidebar.lastUsedWidth"
+        static let hasAcceptedTermsAndConditions = "aichat.hasAcceptedTermsAndConditions"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
@@ -328,6 +337,16 @@ private extension UserDefaults {
             } else {
                 removeObject(forKey: Keys.lastUsedSidebarWidth)
             }
+        }
+    }
+
+    var hasAcceptedTermsAndConditions: Bool {
+        get {
+            value(forKey: Keys.hasAcceptedTermsAndConditions) as? Bool ?? false
+        }
+
+        set {
+            set(newValue, forKey: Keys.hasAcceptedTermsAndConditions)
         }
     }
 }

@@ -46,6 +46,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let tabManager: TabManager
     let syncPausedStateManager: any SyncPausedStateManaging
     let fireproofing: Fireproofing
+    let favicons: FaviconManaging
     let websiteDataManager: WebsiteDataManaging
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let keyValueStore: ThrowingKeyValueStoring
@@ -56,6 +57,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let subscriptionDataReporter: SubscriptionDataReporting
     let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
     let webExtensionManager: WebExtensionManaging?
+    let syncAutoRestoreHandler: SyncAutoRestoreHandling
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -64,6 +66,7 @@ class SettingsLegacyViewProvider: ObservableObject {
          tabManager: TabManager,
          syncPausedStateManager: any SyncPausedStateManaging,
          fireproofing: Fireproofing,
+         favicons: FaviconManaging,
          websiteDataManager: WebsiteDataManaging,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          keyValueStore: ThrowingKeyValueStoring,
@@ -73,7 +76,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         webExtensionManager: WebExtensionManaging?) {
+         webExtensionManager: WebExtensionManaging?,
+         syncAutoRestoreHandler: SyncAutoRestoreHandling) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -81,6 +85,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.tabManager = tabManager
         self.syncPausedStateManager = syncPausedStateManager
         self.fireproofing = fireproofing
+        self.favicons = favicons
         self.websiteDataManager = websiteDataManager
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.keyValueStore = keyValueStore
@@ -91,6 +96,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.webExtensionManager = webExtensionManager
+        self.syncAutoRestoreHandler = syncAutoRestoreHandler
     }
     
     enum LegacyView {
@@ -124,7 +130,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     private func instantiateFireproofingController() -> UIViewController {
         let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
         return storyboard.instantiateViewController(identifier: "FireProofSites") { coder in
-            return FireproofingSettingsViewController(coder: coder, fireproofing: self.fireproofing, websiteDataManager: self.websiteDataManager)
+            return FireproofingSettingsViewController(coder: coder, fireproofing: self.fireproofing, favicons: self.favicons, websiteDataManager: self.websiteDataManager)
         }
     }
 
@@ -138,6 +144,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     private func instantiateDebugController() -> UIViewController {
         return DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
+            syncAutoRestoreHandler: self.syncAutoRestoreHandler,
             bookmarksDatabase: self.bookmarksDatabase,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
@@ -179,7 +186,8 @@ class SettingsLegacyViewProvider: ObservableObject {
                                           appSettings: self.appSettings,
                                           syncPausedStateManager: self.syncPausedStateManager,
                                           source: source,
-                                          pairingInfo: pairingInfo)
+                                          pairingInfo: pairingInfo,
+                                          syncAutoRestoreHandler: syncAutoRestoreHandler)
     }
 
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,

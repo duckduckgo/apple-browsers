@@ -203,8 +203,8 @@ class TabPreviewsSourceTests: XCTestCase {
         
         let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
         source.prepare()
-        source.removeAllPreviews()
-        
+        _ = source.removeAllPreviews()
+
         do {
             let storeBlock: (String) throws -> Void = { name in
                 let pngFile = storeURL.appendingPathComponent("\(name).png")

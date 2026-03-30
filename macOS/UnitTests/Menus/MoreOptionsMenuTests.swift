@@ -104,7 +104,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
     @MainActor
     private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
-                                      dockCustomizer: DockCustomization?,
+                                      dockCustomizer: DockCustomization,
                                       freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
@@ -501,10 +501,12 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenDockCustomizerIsNotAvailableThenAddToDockMenuItemIsNotVisible() {
+    func testWhenAddingToDockIsNotSupportedThenAddToDockMenuItemIsNotVisible() {
         defaultBrowserProvider.isDefault = false
+        dockCustomizer.supportsAddingToDock = false
+        dockCustomizer.dockStatus = false
 
-        setupMoreOptionsMenu(dockCustomizer: nil)
+        setupMoreOptionsMenu()
         moreOptionsMenu.update()
 
         XCTAssertNotEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
@@ -986,6 +988,12 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
     }
     var isAvailableSubject = PassthroughSubject<Bool, Never>()
 
+    var mockFeatureFlagEnabled: Bool?
+
+    var isFeatureFlagEnabled: Bool {
+        mockFeatureFlagEnabled ?? featureAvailable
+    }
+
     var isAvailable: Bool {
         featureAvailable
     }
@@ -1002,5 +1010,129 @@ final class MockFreemiumDBPPresenter: FreemiumDBPPresenter {
 
     func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol? = nil) {
         didCallShowFreemium = true
+    }
+}
+
+// MARK: - Lazy submenu population tests
+
+@MainActor
+final class LazyMoreOptionsMenuSubMenuTests: XCTestCase {
+
+    // MARK: FeedbackSubMenu
+
+    func testFeedbackSubMenuHasPlaceholderBeforeOpenWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = FeedbackSubMenu(targetting: NSObject(),
+                                     authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
+                                     internalUserDecider: MockInternalUserDecider(),
+                                     moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                     featureFlagger: featureFlagger)
+        XCTAssertEqual(submenu.items.count, 1)
+    }
+
+    func testFeedbackSubMenuIsPopulatedAfterMenuNeedsUpdateWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = FeedbackSubMenu(targetting: self,
+                                     authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
+                                     internalUserDecider: MockInternalUserDecider(),
+                                     moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                     featureFlagger: featureFlagger)
+        submenu.menuNeedsUpdate(submenu)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    func testFeedbackSubMenuIsBuiltEagerlyWhenFlagIsOff() {
+        let featureFlagger = MockFeatureFlagger()
+        let submenu = FeedbackSubMenu(targetting: NSObject(),
+                                     authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
+                                     internalUserDecider: MockInternalUserDecider(),
+                                     moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                     featureFlagger: featureFlagger)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    // MARK: ZoomSubMenu
+
+    func testZoomSubMenuHasPlaceholderBeforeOpenWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = ZoomSubMenu(targetting: NSObject(),
+                                  tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
+                                  moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                  featureFlagger: featureFlagger)
+        XCTAssertEqual(submenu.items.count, 1)
+    }
+
+    func testZoomSubMenuIsPopulatedAfterMenuNeedsUpdateWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
+        let submenu = ZoomSubMenu(targetting: self,
+                                  tabCollectionViewModel: tabCollectionViewModel,
+                                  moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                  featureFlagger: featureFlagger)
+        submenu.menuNeedsUpdate(submenu)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    func testZoomSubMenuIsBuiltEagerlyWhenFlagIsOff() {
+        let featureFlagger = MockFeatureFlagger()
+        let submenu = ZoomSubMenu(targetting: NSObject(),
+                                  tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
+                                  moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                  featureFlagger: featureFlagger)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    // MARK: LoginsSubMenu
+
+    func testLoginsSubMenuHasPlaceholderBeforeOpenWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = LoginsSubMenu(targetting: NSObject(),
+                                    passwordManagerCoordinator: PasswordManagerCoordinator(bitwardenManagement: nil),
+                                    moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                    featureFlagger: featureFlagger)
+        XCTAssertEqual(submenu.items.count, 1)
+    }
+
+    func testLoginsSubMenuIsPopulatedAfterMenuNeedsUpdateWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = LoginsSubMenu(targetting: self,
+                                    passwordManagerCoordinator: PasswordManagerCoordinator(bitwardenManagement: nil),
+                                    moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                    featureFlagger: featureFlagger)
+        submenu.menuNeedsUpdate(submenu)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    func testLoginsSubMenuIsBuiltEagerlyWhenFlagIsOff() {
+        let featureFlagger = MockFeatureFlagger()
+        let submenu = LoginsSubMenu(targetting: NSObject(),
+                                    passwordManagerCoordinator: PasswordManagerCoordinator(bitwardenManagement: nil),
+                                    moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                    featureFlagger: featureFlagger)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    // MARK: HelpSubMenu
+
+    func testHelpSubMenuHasPlaceholderBeforeOpenWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = HelpSubMenu(targetting: NSObject(),
+                                  featureFlagger: featureFlagger)
+        XCTAssertEqual(submenu.items.count, 1)
+    }
+
+    func testHelpSubMenuIsPopulatedAfterMenuNeedsUpdateWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = HelpSubMenu(targetting: self,
+                                  featureFlagger: featureFlagger)
+        submenu.menuNeedsUpdate(submenu)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    func testHelpSubMenuIsBuiltEagerlyWhenFlagIsOff() {
+        let featureFlagger = MockFeatureFlagger()
+        let submenu = HelpSubMenu(targetting: NSObject(),
+                                  featureFlagger: featureFlagger)
+        XCTAssertGreaterThan(submenu.items.count, 1)
     }
 }

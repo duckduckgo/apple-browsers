@@ -27,6 +27,7 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         private let title: String
+        private let message: String
         private let skipOnboardingView: AnyView?
         private let continueAction: () -> Void
         private let skipAction: () -> Void
@@ -36,12 +37,14 @@ extension OnboardingRebranding.OnboardingView {
 
         init(
             title: String,
+            message: String,
             skipOnboardingView: AnyView?,
             showContent: Binding<Bool>,
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
             self.title = title
+            self.message = message
             self.skipOnboardingView = skipOnboardingView
             self._showContent = showContent
             self.continueAction = continueAction
@@ -63,6 +66,12 @@ extension OnboardingRebranding.OnboardingView {
                     textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
                 ),
                 title: {
                     Text(title)

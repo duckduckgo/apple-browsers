@@ -63,7 +63,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
-        var newTabPageShownPixelSender: NewTabPageShownPixelSender
         var aiChatSessionStore: AIChatSessionStoring
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
@@ -150,7 +149,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSessionStore: AIChatSessionStoring? = nil,
-                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
                      themeManager: ThemeManaging? = nil
     ) {
@@ -216,7 +214,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
-                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
                   themeManager: themeManager ?? NSApp.delegateTyped.themeManager
         )
@@ -267,7 +264,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSessionStore: AIChatSessionStoring,
-         newTabPageShownPixelSender: NewTabPageShownPixelSender,
          tabCrashAggregator: TabCrashAggregator,
          themeManager: ThemeManaging
     ) {
@@ -350,7 +346,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           featureFlagger: featureFlagger,
                                                           contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                           aiChatMenuConfiguration: aiChatMenuConfiguration,
-                                                          newTabPageShownPixelSender: newTabPageShownPixelSender,
                                                           aiChatSessionStore: aiChatSessionStore,
                                                           tabCrashAggregator: tabCrashAggregator,
                                                           tabsPreferences: tabsPreferences,
@@ -789,6 +784,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @Published private(set) var canGoForward: Bool = false
     @Published private(set) var canGoBack: Bool = false
     @Published private(set) var canReload: Bool = false
+
+    /// Whether the current tab content is a real web page that can be reported as broken.
+    /// `.url` and `.aiChat` tabs are eligible — internal pages such as History and Settings are not.
+    var canReportBrokenSite: Bool {
+        switch content {
+        case .url, .aiChat: return true
+        default: return false
+        }
+    }
 
     @MainActor
     var backHistoryItems: [BackForwardListItem] {
@@ -1502,9 +1506,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
         // Fire error page shown pixel when error page is actually loaded
         if error.code == WKError.Code.webContentProcessTerminated {
-            PixelKit.fire(ErrorPagePixel.errorPageShownWebkitTermination)
+            PixelKit.fire(ErrorPagePixel.errorPageShownWebkitTermination, frequency: .dailyAndStandard)
         } else {
-            PixelKit.fire(ErrorPagePixel.errorPageShownOther(error: error))
+            PixelKit.fire(ErrorPagePixel.errorPageShownOther(error: error), frequency: .dailyAndStandard)
         }
 
         if alternate {

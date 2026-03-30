@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import SwiftUIExtensions
 import Combine
 import BrowserServicesKit
@@ -28,10 +29,18 @@ protocol DefaultBrowserAndDockPromptPresenting {
     /// This is used, for example, to close the banner in all windows when it gets closed in one.
     var bannerDismissedPublisher: AnyPublisher<Void, Never> { get }
 
+    /// Dismisses the provided prompt type. Call from PromoDelegate.hide().
+    @MainActor
+    func dismissPrompt(_ type: DefaultBrowserAndDockPromptPresentationType) async
+
     /// Attempts to show the SAD/ATT prompt to the user, either as a popover or a banner, based on the user's eligibility for the experiment.
     ///
     /// - Parameter popoverAnchorProvider: A closure that provides the anchor view for the popover. If the popover is eligible to be shown, it will be displayed relative to this view.
     /// - Parameter bannerViewHandler: A closure that takes a `BannerMessageViewController` instance, which can be used to configure and present the banner.
+    /// - Parameter inactiveUserModalWindowProvider: A closure that provides the window for presenting the inactive user modal, if that prompt type is eligible to be shown.
+    /// - Parameter expectedType: When non-nil, if the coordinator returns a different type, `onNoShow` is invoked since the caller will not receive a dismiss event.
+    /// - Parameter forceShow: DEBUG ONLY. An optional parameter that allows forcing the prompt to be shown, bypassing the eligibility checks.
+    /// - Parameter onNoShow: Optional callback invoked when no prompt is shown (e.g. `getPromptType()` returns nil, a different type is shown, or anchors are nil). Used by PromoDelegate to avoid hanging continuations.
     ///
     /// The function first checks the user's eligibility for the experiment. Depending on which cohort the user falls into, the function will attempt to show either a popover or a banner.
     ///
@@ -42,7 +51,23 @@ protocol DefaultBrowserAndDockPromptPresenting {
     /// The popover is more ephemeral and will only be shown in a single window, while the banner is more persistent and will be shown in all windows until the user takes an action on it.
     func tryToShowPrompt(popoverAnchorProvider: @escaping () -> NSView?,
                          bannerViewHandler: @escaping (BannerMessageViewController) -> Void,
-                         inactiveUserModalWindowProvider: @escaping () -> NSWindow?)
+                         inactiveUserModalWindowProvider: @escaping () -> NSWindow?,
+                         expectedType: DefaultBrowserAndDockPromptPresentationType?,
+                         forceShow: Bool,
+                         onNoShow: (() -> Void)?)
+}
+
+extension DefaultBrowserAndDockPromptPresenting {
+    func tryToShowPrompt(popoverAnchorProvider: @escaping () -> NSView?,
+                         bannerViewHandler: @escaping (BannerMessageViewController) -> Void,
+                         inactiveUserModalWindowProvider: @escaping () -> NSWindow?) {
+        tryToShowPrompt(popoverAnchorProvider: popoverAnchorProvider,
+                        bannerViewHandler: bannerViewHandler,
+                        inactiveUserModalWindowProvider: inactiveUserModalWindowProvider,
+                        expectedType: nil,
+                        forceShow: false,
+                        onNoShow: nil)
+    }
 }
 
 enum DefaultBrowserAndDockPromptPresentationType: Equatable {
@@ -82,6 +107,18 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         bannerDismissedSubject.eraseToAnyPublisher()
     }
 
+    @MainActor
+    func dismissPrompt(_ type: DefaultBrowserAndDockPromptPresentationType) async {
+        switch type {
+        case .active(.banner):
+            dismissBanner()
+        case .active(.popover):
+            popover?.close()
+        case .inactive:
+            await dismissInactiveUserModal()
+        }
+    }
+
     /// **PROMPT ORCHESTRATOR**
     ///
     /// Called from `MainViewController.showSetAsDefaultAndAddToDockIfNeeded()` when a window becomes key.
@@ -114,19 +151,39 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     /// - `getBanner()`, `showPopover()`, `showInactiveUserModal()` - create and display prompts
     func tryToShowPrompt(popoverAnchorProvider: @escaping () -> NSView?,
                          bannerViewHandler: @escaping (BannerMessageViewController) -> Void,
-                         inactiveUserModalWindowProvider: @escaping () -> NSWindow?) {
-        guard let type = coordinator.getPromptType() else { return }
+                         inactiveUserModalWindowProvider: @escaping () -> NSWindow?,
+                         expectedType: DefaultBrowserAndDockPromptPresentationType? = nil,
+                         forceShow: Bool = false,
+                         onNoShow: (() -> Void)? = nil) {
+        guard let type = forceShow ? expectedType : coordinator.getPromptType() else {
+            onNoShow?()
+            return
+        }
+
+        if let expectedType, type != expectedType {
+            onNoShow?()
+            return
+        }
 
         func showPrompt() {
             switch type {
             case .active(.banner):
-                guard let banner = getBanner() else { return }
+                guard let banner = getBanner() else {
+                    onNoShow?()
+                    return
+                }
                 bannerViewHandler(banner)
             case .active(.popover):
-                guard let view = popoverAnchorProvider() else { return }
+                guard let view = popoverAnchorProvider() else {
+                    onNoShow?()
+                    return
+                }
                 showPopover(below: view)
             case .inactive:
-                guard let window = inactiveUserModalWindowProvider() else { return }
+                guard let window = inactiveUserModalWindowProvider() else {
+                    onNoShow?()
+                    return
+                }
                 showInactiveUserModal(over: window)
             }
 
@@ -296,8 +353,9 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     }
 
     private func dismissInactiveUserModal() async {
-        await inactiveUserModal?.contentViewController?.dismiss()
-        inactiveUserModal = nil
+        guard let inactiveUserModal else { return }
+        self.inactiveUserModal = nil
+        await inactiveUserModal.contentViewController?.dismiss()
     }
 
     private func dismissAllPrompts(onCompletion: (() -> Void)? = nil) {

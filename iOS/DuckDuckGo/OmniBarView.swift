@@ -90,6 +90,9 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     func hideButtons()
     func revealButtons()
+    
+    // Fire mode
+    func refreshFireMode(fireMode: Bool)
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

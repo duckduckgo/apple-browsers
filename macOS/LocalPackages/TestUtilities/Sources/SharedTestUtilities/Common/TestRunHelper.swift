@@ -199,9 +199,9 @@ extension TestRunHelper: XCTestObservation {
         }
 
         // Check for non-nil variables that should be cleaned up
-#if !CI
-        checkTestCaseVariables(testCase)
-#endif
+        if ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true {
+            checkTestCaseVariables(testCase)
+        }
 
         if !testCase.disableDeallocationChecksForTests.map({ $0.dropping(suffix: "WithCompletionHandler:") }).contains(testCase.name.dropping(suffix: "]").components(separatedBy: " ").last!),
            !TestRunHelper.shared.loadedViews.isEmpty {

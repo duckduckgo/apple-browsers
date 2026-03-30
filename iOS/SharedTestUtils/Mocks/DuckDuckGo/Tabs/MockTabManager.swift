@@ -22,10 +22,16 @@ import Foundation
 
 @MainActor
 class MockTabManager: TabManaging {
-    nonisolated(unsafe) var count: Int = 0
+    var currentTabsModel: TabsModelManaging = TabsModel(desktop: false)
+    var allTabsModel: TabsModelReading = TabsModel(desktop: false)
+    var currentBrowsingMode: BrowsingMode = .normal
+    
     private(set) var prepareAllTabsExceptCurrentCalled = false
+    private(set) var prepareAllTabsExceptCurrentBrowsingMode: BrowsingMode?
     private(set) var prepareCurrentTabCalled = false
+    private(set) var prepareCurrentTabBrowsingMode: BrowsingMode?
     nonisolated(unsafe) private(set) var removeAllCalled = false
+    nonisolated(unsafe) private(set) var removeAllBrowsingMode: BrowsingMode?
     var prepareTabCalled = false
     private(set) var prepareTabCalledWith: Tab?
     
@@ -43,16 +49,20 @@ class MockTabManager: TabManaging {
     private(set) var controllerForTabCalled = false
     private(set) var controllerForTabCalledWith: Tab?
     
-    func prepareAllTabsExceptCurrentForDataClearing() {
+    func prepareAllTabsExceptCurrentForDataClearing(browsingMode: BrowsingMode? = nil) {
         prepareAllTabsExceptCurrentCalled = true
+        prepareAllTabsExceptCurrentBrowsingMode = browsingMode
     }
     
-    func prepareCurrentTabForDataClearing() {
+    func prepareCurrentTabForDataClearing(browsingMode: BrowsingMode? = nil) {
         prepareCurrentTabCalled = true
+        prepareCurrentTabBrowsingMode = browsingMode
     }
     
-    nonisolated func removeAll() {
+    nonisolated func removeAll(browsingMode: BrowsingMode? = nil) -> Result<Void, Error> {
         removeAllCalled = true
+        removeAllBrowsingMode = browsingMode
+        return .success(())
     }
 
     func viewModelForCurrentTab() -> DuckDuckGo.TabViewModel? {
@@ -90,5 +100,18 @@ class MockTabManager: TabManaging {
         closeTabAndNavigateToHomepageCalled = true
         closeTabAndNavigateToHomepageCalledWith = tab
         closeTabAndNavigateToHomepageClearTabHistory = clearTabHistory
+    }
+    
+    private(set) var setBrowsingModeCalled = false
+    private(set) var setBrowsingModeCalledWith: BrowsingMode?
+    
+    func setBrowsingMode(_ mode: BrowsingMode) {
+        setBrowsingModeCalled = true
+        setBrowsingModeCalledWith = mode
+    }
+
+    var tabsModelForModeReturnValue: TabsModelManaging = TabsModel(desktop: false)
+    func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
+        return tabsModelForModeReturnValue
     }
 }

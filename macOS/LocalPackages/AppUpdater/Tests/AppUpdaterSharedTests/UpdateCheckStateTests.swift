@@ -58,8 +58,7 @@ final class UpdateCheckStateTests: XCTestCase {
             build: "100",
             date: Date(),
             releaseNotes: ["Mock release notes"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
+            releaseNotesSubscription: []
         )
     }
 

@@ -23,8 +23,10 @@ import Foundation
 class MockTutorialSettings: TutorialSettings {
     var lastVersionSeen: Int { 0 }
     var hasSeenOnboarding: Bool
+    var hasSkippedOnboarding: Bool
 
-    init(hasSeenOnboarding: Bool) {
+    init(hasSeenOnboarding: Bool, hasSkippedOnboarding: Bool = false) {
         self.hasSeenOnboarding = hasSeenOnboarding
+        self.hasSkippedOnboarding = hasSkippedOnboarding
     }
 }

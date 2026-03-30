@@ -19,10 +19,11 @@
 enum BuildFlags {
 
     static var isProductionBuild: Bool {
-#if DEBUG || REVIEW || ALPHA || EXPERIMENTAL
-        return false
-#else
-        return true
-#endif
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
+            return false
+        } else {
+            return true
+        }
     }
 }

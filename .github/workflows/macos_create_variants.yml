@@ -27,6 +27,8 @@ on:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
+      SSH_PRIVATE_KEY_DUCKSANS_FONT:
+        required: true
 
 jobs:
 

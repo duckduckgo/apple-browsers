@@ -109,7 +109,6 @@ private final class MockSparkleUpdateController: NSObject, SparkleUpdateControll
 
     func makeReleaseNotesUserScript(
         pixelFiring: PixelFiring?,
-        keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
     ) -> Subfeature {
         fatalError("Not expected")

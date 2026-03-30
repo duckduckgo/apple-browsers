@@ -78,7 +78,7 @@ final class FeatureFlagLocalOverridesTests: XCTestCase {
     func testThatOverridesAreNilByDefault() {
         XCTAssertNil(overrides.override(for: TestFeatureFlag.nonOverridableFlag))
         XCTAssertNil(overrides.override(for: TestFeatureFlag.overridableFlagDisabledByDefault))
-        XCTAssertNil(overrides.override(for: TestFeatureFlag.overridableFlagEnabledByDefault))
+        XCTAssertNil(overrides.override(for: TestFeatureFlag.overridableFlagInternalByDefault))
     }
 
     func testWhenFlagIsNotOverridableThenOverrideHasNoEffect() throws {
@@ -87,8 +87,8 @@ final class FeatureFlagLocalOverridesTests: XCTestCase {
     }
 
     func testWhenFlagIsOverridableThenToggleOverrideChangesFlagValue() throws {
-        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagEnabledByDefault)
-        XCTAssertFalse(try XCTUnwrap(overrides.override(for: TestFeatureFlag.overridableFlagEnabledByDefault)))
+        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagInternalByDefault)
+        XCTAssertFalse(try XCTUnwrap(overrides.override(for: TestFeatureFlag.overridableFlagInternalByDefault)))
 
         overrides.toggleOverride(for: TestFeatureFlag.overridableFlagDisabledByDefault)
         XCTAssertTrue(try XCTUnwrap(overrides.override(for: TestFeatureFlag.overridableFlagDisabledByDefault)))
@@ -107,21 +107,21 @@ final class FeatureFlagLocalOverridesTests: XCTestCase {
 
     func testWhenFlagOverrideChangesThenActionHandlerIsCalled() throws {
         overrides.toggleOverride(for: TestFeatureFlag.overridableFlagDisabledByDefault)
-        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagEnabledByDefault)
+        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagInternalByDefault)
         overrides.toggleOverride(for: TestFeatureFlag.overridableFlagDisabledByDefault)
-        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagEnabledByDefault)
-        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagEnabledByDefault)
-        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagEnabledByDefault)
+        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagInternalByDefault)
+        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagInternalByDefault)
+        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagInternalByDefault)
 
         XCTAssertEqual(
             actionHandler.calls,
             [
                 .init(rawValue: TestFeatureFlag.overridableFlagDisabledByDefault.rawValue, isEnabled: true, cohort: nil),
-                .init(rawValue: TestFeatureFlag.overridableFlagEnabledByDefault.rawValue, isEnabled: false, cohort: nil),
+                .init(rawValue: TestFeatureFlag.overridableFlagInternalByDefault.rawValue, isEnabled: false, cohort: nil),
                 .init(rawValue: TestFeatureFlag.overridableFlagDisabledByDefault.rawValue, isEnabled: false, cohort: nil),
-                .init(rawValue: TestFeatureFlag.overridableFlagEnabledByDefault.rawValue, isEnabled: true, cohort: nil),
-                .init(rawValue: TestFeatureFlag.overridableFlagEnabledByDefault.rawValue, isEnabled: false, cohort: nil),
-                .init(rawValue: TestFeatureFlag.overridableFlagEnabledByDefault.rawValue, isEnabled: true, cohort: nil)
+                .init(rawValue: TestFeatureFlag.overridableFlagInternalByDefault.rawValue, isEnabled: true, cohort: nil),
+                .init(rawValue: TestFeatureFlag.overridableFlagInternalByDefault.rawValue, isEnabled: false, cohort: nil),
+                .init(rawValue: TestFeatureFlag.overridableFlagInternalByDefault.rawValue, isEnabled: true, cohort: nil)
             ]
         )
     }
@@ -170,7 +170,7 @@ final class FeatureFlagLocalOverridesTests: XCTestCase {
     func testClearAllOverrides() throws {
         overrides.toggleOverride(for: TestFeatureFlag.nonOverridableFlag)
         overrides.toggleOverride(for: TestFeatureFlag.overridableFlagDisabledByDefault)
-        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagEnabledByDefault)
+        overrides.toggleOverride(for: TestFeatureFlag.overridableFlagInternalByDefault)
         actionHandler.calls.removeAll()
 
         overrides.clearAllOverrides(for: TestFeatureFlag.self)
@@ -178,7 +178,7 @@ final class FeatureFlagLocalOverridesTests: XCTestCase {
             actionHandler.calls,
             [
                 .init(rawValue: TestFeatureFlag.overridableFlagDisabledByDefault.rawValue, isEnabled: false, cohort: nil),
-                .init(rawValue: TestFeatureFlag.overridableFlagEnabledByDefault.rawValue, isEnabled: true, cohort: nil)
+                .init(rawValue: TestFeatureFlag.overridableFlagInternalByDefault.rawValue, isEnabled: true, cohort: nil)
             ]
         )
     }

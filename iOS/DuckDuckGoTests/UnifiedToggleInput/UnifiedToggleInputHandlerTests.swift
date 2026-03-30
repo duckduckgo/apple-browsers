@@ -238,4 +238,62 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         sut.updateBarPosition(isTop: false)
         XCTAssertFalse(sut.isTopBarPosition)
     }
+
+    // MARK: - Stop Generating Button State
+
+    func test_isGenerating_collapsed_aiChat_showsStopGeneratingOnly() {
+        sut.isGenerating = true
+        XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
+    }
+
+    func test_isGenerating_collapsed_toggleDisabled_showsStopGeneratingAndSearchGoTo() {
+        sut.isToggleEnabled = false
+        sut.isGenerating = true
+        XCTAssertEqual(sut.buttonState, .stopGeneratingAndSearchGoTo)
+    }
+
+    func test_isGenerating_expanded_doesNotShowStopInCollapsedBar() {
+        sut.isExpanded = true
+        sut.isGenerating = true
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
+    func test_isGenerating_searchMode_doesNotShowStop() {
+        sut.setToggleState(.search)
+        sut.isGenerating = true
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
+    func test_isGenerating_withText_stopOutranksClear() {
+        sut.updateCurrentText("hello")
+        sut.isGenerating = true
+        XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
+    }
+
+    func test_isGenerating_false_restoresNormalState() {
+        sut.isGenerating = true
+        XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
+        sut.isGenerating = false
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
+    func test_isGenerating_false_withText_showsClear() {
+        sut.updateCurrentText("hello")
+        sut.isGenerating = true
+        XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
+        sut.isGenerating = false
+        XCTAssertEqual(sut.buttonState, .clearOnly)
+    }
+
+    // MARK: - Stop Generating Publisher
+
+    func test_stopGeneratingButtonTapped_firesPublisher() {
+        let expectation = expectation(description: "stopGeneratingButtonTappedPublisher fires")
+        sut.stopGeneratingButtonTappedPublisher
+            .sink { expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.stopGeneratingButtonTapped()
+        waitForExpectations(timeout: 1)
+    }
 }

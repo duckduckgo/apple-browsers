@@ -89,7 +89,16 @@ public class Tab: NSObject, NSCoding {
     var isAITab: Bool {
         type == .aiChat
     }
-    
+
+    /// The conversation-specific title for Duck.ai tabs (e.g. "Pricing notation in decimals").
+    ///
+    /// Returns `nil` for non-AI tabs or when the page title hasn't loaded yet.
+    /// The `" at DuckDuckGo"` suffix is stripped automatically by `Link.displayTitle`.
+    var aiChatConversationTitle: String? {
+        guard isAITab, let title = link?.title, !title.isEmpty else { return nil }
+        return link?.displayTitle
+    }
+
     /// URL of the Dax Easter Egg logo for this tab, displayed in the privacy icon and used for full-screen presentation.
     var daxEasterEggLogoURL: String? {
         didSet {
@@ -138,7 +147,7 @@ public class Tab: NSObject, NSCoding {
                 daxEasterEggLogoURL: String? = nil,
                 contextualChatURL: String? = nil,
                 supportsTabHistory: Bool = true,
-                fireTab: Bool = false,
+                fireTab: Bool,
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
@@ -194,7 +203,7 @@ public class Tab: NSObject, NSCoding {
 
     public override func isEqual(_ other: Any?) -> Bool {
         guard let other = other as? Tab else { return false }
-        return link == other.link && fireTab == other.fireTab
+        return uid == other.uid
     }
     
     func toggleDesktopMode() {

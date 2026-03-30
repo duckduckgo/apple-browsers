@@ -261,6 +261,14 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
+    var pageContextConsumedPublisher: AnyPublisher<Void, Never> {
+        PassthroughSubject<Void, Never>().eraseToAnyPublisher()
+    }
+
+    var pageContextRemovedPublisher: AnyPublisher<Void, Never> {
+        PassthroughSubject<Void, Never>().eraseToAnyPublisher()
+    }
+
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
         chatRestorationDataSubject.eraseToAnyPublisher()
     }

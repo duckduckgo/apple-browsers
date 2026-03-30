@@ -103,10 +103,10 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
 
     private func makeTabsModel() -> TabsModel {
         let model = TabsModel(desktop: false)
-        model.add(tab: Tab(uid: "uid1", link: Link(title: "Example", url: URL(string: "https://example.com")!)))
-        model.add(tab: Tab(uid: "uid2", link: Link(title: "Different", url: URL(string: "https://different.com")!)))
-        model.add(tab: Tab(uid: "uid3", link: Link(title: "DDG", url: URL(string: "https://duckduckgo.com")!)))
-        model.add(tab: Tab(uid: "uid4", link: Link(title: "Example", url: URL(string: "https://example.com")!)))
+        model.insert(tab: Tab(uid: "uid1", link: Link(title: "Example", url: URL(string: "https://example.com")!)), placement: .atEnd, selectNewTab: true)
+        model.insert(tab: Tab(uid: "uid2", link: Link(title: "Different", url: URL(string: "https://different.com")!)), placement: .atEnd, selectNewTab: true)
+        model.insert(tab: Tab(uid: "uid3", link: Link(title: "DDG", url: URL(string: "https://duckduckgo.com")!)), placement: .atEnd, selectNewTab: true)
+        model.insert(tab: Tab(uid: "uid4", link: Link(title: "Example", url: URL(string: "https://example.com")!)), placement: .atEnd, selectNewTab: true)
         return model
     }
 

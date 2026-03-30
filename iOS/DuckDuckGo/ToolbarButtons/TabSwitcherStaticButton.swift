@@ -93,6 +93,16 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
         }
     }
 
+    var isFireMode: Bool {
+        get {
+            tabSwitcherView.isFireMode
+        }
+
+        set {
+            tabSwitcherView.isFireMode = newValue
+        }
+    }
+
     func animateUpdate(update: @escaping () -> Void) {
         let animator1 = UIViewPropertyAnimator(duration: 0.25, curve: .easeIn) {
             self.tabSwitcherView.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)

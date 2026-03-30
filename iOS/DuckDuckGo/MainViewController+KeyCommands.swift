@@ -179,21 +179,17 @@ extension MainViewController {
     @objc func keyboardNextTab() {
         guard tabSwitcherController == nil else { return }
         
-        guard let tab = currentTab else { return }
-        guard let index = tabManager.model.indexOf(tab: tab.tabModel) else { return }
-        let targetTabIndex = index + 1 >= tabManager.model.count ? 0 : index + 1
+        guard let targetTab = tabManager.currentTabsModel.nextTab else { return }
         performCancel()
-        select(tabAt: targetTabIndex)
+        selectTab(targetTab)
     }
     
     @objc func keyboardPreviousTab() {
         guard tabSwitcherController == nil else { return }
         
-        guard let tab = currentTab else { return }
-        guard let index = tabManager.model.indexOf(tab: tab.tabModel) else { return }
-        let targetTabIndex = index - 1 < 0 ? tabManager.model.count - 1 : index - 1
+        guard let targetTab = tabManager.currentTabsModel.previousTab else { return }
         performCancel()
-        select(tabAt: targetTabIndex)
+        selectTab(targetTab)
     }
     
     @objc func keyboardShowAllTabs() {

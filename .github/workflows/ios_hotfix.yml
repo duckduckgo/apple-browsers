@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: 'ios-release'
+  group: '${{ github.workflow }}'
   cancel-in-progress: false
 
 jobs:
@@ -57,7 +57,7 @@ jobs:
             github_handle:"${{ github.actor }}" \
             is_hotfix:"true"
 
-      # Necessary as make_release_branch will checkout a hotfix branch and the plugins may be differnet
+      # Necessary as make_release_branch will checkout a hotfix branch and the plugins may be different
       - name: Setup Ruby and dependencies (after branch checkout)
         uses: ./.github/actions/setup-ruby
         with:

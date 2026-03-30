@@ -271,7 +271,8 @@ final class WindowsManager {
             mainViewController: mainViewController,
             fireWindowSession: fireWindowSession,
             fireViewModel: fireCoordinator.fireViewModel,
-            themeManager: NSApp.delegateTyped.themeManager
+            themeManager: NSApp.delegateTyped.themeManager,
+            featureFlagger: NSApp.delegateTyped.featureFlagger
         )
     }
 

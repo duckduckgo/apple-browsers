@@ -20,6 +20,7 @@
 import XCTest
 @testable import Core
 import PrivacyConfig
+@testable import DuckDuckGo
 
 final class LaunchOptionsHandlerTests: XCTestCase {
     private static let suiteName = "testing_launchOptionsHandler"
@@ -100,6 +101,75 @@ final class LaunchOptionsHandlerTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(result, .notOverridden)
+    }
+
+    func testStartupOnboardingDecisionShowsOnboardingWhenNotOverriddenAndOnboardingNotSeen() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(onboardingStatus: .notOverridden, tutorialSettings: tutorialSettings)
+
+        // THEN
+        XCTAssertTrue(decision.shouldShowOnboarding)
+    }
+
+    func testStartupOnboardingDecisionSkipsOnboardingWhenDeveloperOverrideMarksItCompleted() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.developer(completed: true)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        XCTAssertFalse(decision.shouldShowOnboarding)
+    }
+
+    func testStartupOnboardingDecisionShowsOnboardingWhenDeveloperOverrideMarksItIncomplete() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.developer(completed: false)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        XCTAssertTrue(decision.shouldShowOnboarding)
+    }
+
+    func testStartupOnboardingDecisionPersistsUITestCompletionOverride() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.uiTests(completed: true)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        XCTAssertFalse(decision.shouldShowOnboarding)
+        XCTAssertTrue(tutorialSettings.hasSeenOnboarding)
+    }
+
+    func testStartupOnboardingDecisionPersistsUITestIncompleteOverride() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.uiTests(completed: false)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        XCTAssertTrue(decision.shouldShowOnboarding)
+        XCTAssertFalse(tutorialSettings.hasSeenOnboarding)
     }
 
     // MARK: - App Variant

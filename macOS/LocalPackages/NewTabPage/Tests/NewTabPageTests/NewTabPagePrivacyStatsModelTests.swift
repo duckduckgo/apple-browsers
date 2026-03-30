@@ -46,8 +46,9 @@ final class CapturingPrivacyStats: PrivacyStatsCollecting {
         return privacyStatsTotalCount
     }
 
-    func clearPrivacyStats() async {
+    func clearPrivacyStats() async -> Result<Void, Error> {
         clearPrivacyStatsCallCount += 1
+        return .success(())
     }
 
     func handleAppTermination() async {
@@ -89,8 +90,9 @@ final class CapturingAutoconsentStats: AutoconsentStatsCollecting {
         )
     }
 
-    func clearAutoconsentStats() async {
+    func clearAutoconsentStats() async -> Result<Void, Error> {
         clearAutoconsentStatsCallCount += 1
+        return .success(())
     }
 
     var recordAutoconsentActionCalls: [(clicksMade: Int64, timeSpent: TimeInterval)] = []

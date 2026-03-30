@@ -31,7 +31,7 @@ struct Simulated {
         try? BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: BookmarksDatabase.make())
 
         rootViewController = UIStoryboard.init(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()!
-        let blockingDelegate = BlockingNavigationDelegate()
+        let blockingDelegate = BlockingNavigationDelegate(fireMode: false)
         let webView = blockingDelegate.prepareWebView()
         rootViewController.view.addSubview(webView)
         rootViewController.view.backgroundColor = .red

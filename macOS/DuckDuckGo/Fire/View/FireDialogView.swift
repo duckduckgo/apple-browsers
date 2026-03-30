@@ -718,7 +718,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
         Just(shouldDisplayCleanAIChatHistoryOption).eraseToAnyPublisher()
     }
-    func cleanAIChatHistory() {}
+    func cleanAIChatHistory() async -> Result<Void, Error> {
+        return .success(())
+    }
 }
 @available(macOS 14.0, *)
 #Preview("Fire Dialog", traits: FireDialogView.Constants.viewSize.fixedLayout) {

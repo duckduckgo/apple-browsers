@@ -45,3 +45,7 @@ Contact us at https://duckduckgo.com/feedback if you have feedback, questions or
 ## License
 
 DuckDuckGo is distributed under the Apache 2.0 [license](https://github.com/duckduckgo/apple-browsers/blob/master/LICENSE.md).
+
+Copyright 2026 DuckDuckGo
+
+Duck Sans is a proprietary typeface created by Fontwerk and licensed to DuckDuckGo under commercial terms. Duck Sans font files are not licensed under the Apache License, Version 2.0, or covered by any open-source license applicable to this repository. You may not extract, copy, distribute, modify, or use Duck Sans font files for any purpose outside of running this software as distributed by DuckDuckGo. If you are building this software from source and do not have a valid Duck Sans license, the build system will substitute a placeholder font. Redistributions of compiled builds that include Duck Sans must retain this notice. All rights in and to Duck Sans are reserved by Fontwerk (fontwerk.com).

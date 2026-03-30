@@ -16,19 +16,26 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Foundation
+import XCTest
 
 final class MemoryUsageTests: XCTestCase {
 
     private var application: XCUIApplication!
 
+    override class func setUp() {
+        super.setUp()
+
+        /// Avoids First-Run State
+        UITests.dismissNotificationCenterMessages()
+
+        /// Disable Session Restoration
+        UITests.setupInitialState(shouldRestoreSession: false)
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-
-        /// Avoids First-Run State
-        UITests.firstRun()
     }
 
     func testMemoryAllocationsAfterLaunch() throws {

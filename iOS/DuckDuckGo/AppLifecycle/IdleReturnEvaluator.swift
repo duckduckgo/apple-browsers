@@ -78,7 +78,7 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
 
     enum IdleReturnEvaluatorConstants {
         static let idleThresholdSecondsSettingKey = "idleThresholdSeconds"
-        static let defaultIdleThresholdSeconds = 60 // 1 minute
+        static let defaultIdleThresholdSeconds = 300 // 5 minutes
         static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.showNTPAfterIdleReturn
     }
 

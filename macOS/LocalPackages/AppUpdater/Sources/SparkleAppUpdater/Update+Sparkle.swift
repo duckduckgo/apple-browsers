@@ -20,20 +20,8 @@ import AppUpdaterShared
 import Foundation
 import Sparkle
 
-extension PendingUpdateInfo {
-    init(from item: SUAppcastItem) {
-        let (notes, notesSubscription) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)
-        self.init(version: item.displayVersionString,
-                  build: item.versionString,
-                  date: item.date ?? Date(),
-                  releaseNotes: notes,
-                  releaseNotesSubscription: notesSubscription,
-                  isCritical: item.isCriticalUpdate)
-    }
-}
-
 extension Update {
-    convenience init(appcastItem: SUAppcastItem, isInstalled: Bool, needsLatestReleaseNote: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
+    convenience init(appcastItem: SUAppcastItem, isInstalled: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
         let isCritical = appcastItem.isCriticalUpdate
         let version = appcastItem.displayVersionString
         let build = appcastItem.versionString
@@ -47,19 +35,7 @@ extension Update {
                   date: date,
                   releaseNotes: releaseNotes,
                   releaseNotesSubscription: releaseNotesSubscription,
-                  needsLatestReleaseNote: needsLatestReleaseNote,
                   dateFormatterProvider: dateFormatterProvider())
     }
 
-    convenience init(pendingUpdateInfo: PendingUpdateInfo, isInstalled: Bool, needsLatestReleaseNote: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
-        self.init(isInstalled: isInstalled,
-                  type: pendingUpdateInfo.isCritical ? .critical : .regular,
-                  version: pendingUpdateInfo.version,
-                  build: pendingUpdateInfo.build,
-                  date: pendingUpdateInfo.date,
-                  releaseNotes: pendingUpdateInfo.releaseNotes,
-                  releaseNotesSubscription: pendingUpdateInfo.releaseNotesSubscription,
-                  needsLatestReleaseNote: needsLatestReleaseNote,
-                  dateFormatterProvider: dateFormatterProvider())
-    }
 }

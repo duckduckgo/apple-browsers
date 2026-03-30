@@ -47,7 +47,8 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                                         dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
                                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
-                                                        featureFlagger: MockDBPFeatureFlagger())
+                                                        featureFlagger: MockDBPFeatureFlagger(),
+                                                        applicationNameForUserAgent: nil)
     }
 
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {
@@ -266,7 +267,8 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
             emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
             captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            applicationNameForUserAgent: nil
         )
 
         // When
@@ -295,7 +297,8 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
             emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
             captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            applicationNameForUserAgent: nil
         )
 
         // When
@@ -324,7 +327,8 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
             emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
             captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            applicationNameForUserAgent: nil
         )
 
         // When

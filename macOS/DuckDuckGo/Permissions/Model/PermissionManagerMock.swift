@@ -67,19 +67,19 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     var burnPermissionsCalled = false
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @MainActor @escaping () -> Void) {
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @MainActor @escaping (Result<Void, Error>) -> Void) {
         savedPermissions = savedPermissions.filter { fireproofDomains.isFireproof(fireproofDomain: $0.key) }
         burnPermissionsCalled = true
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
     }
 
     var burnPermissionsOfDomainsCalled = false
-    func burnPermissions(of baseDomains: Set<String>, tld: Common.TLD, completion: @MainActor @escaping () -> Void) {
+    func burnPermissions(of baseDomains: Set<String>, tld: Common.TLD, completion: @MainActor @escaping (Result<Void, Error>) -> Void) {
         burnPermissionsOfDomainsCalled = true
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
     }
 

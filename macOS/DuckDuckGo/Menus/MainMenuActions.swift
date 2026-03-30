@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Cocoa
 import Common
 import Configuration
+import Networking
 import Crashes
 import FeatureFlags
 import History
@@ -206,7 +207,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: Any?) {
-        DockCustomizer().addToDock()
+        guard dockCustomization.addToDock() else { return }
         PixelKit.fire(GeneralPixel.userAddedToDockFromMainMenu)
     }
 
@@ -278,8 +279,7 @@ extension AppDelegate {
     static func openReportABrowserProblem(_ sender: Any?, category: ProblemCategory? = nil, subcategory: SubCategory? = nil) {
         var window: NSWindow?
 
-        // Check if we can report broken site (same logic as openReportBrokenSite)
-        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReportBrokenSite ?? false
 
         let formView = ReportProblemFormFlowView(
             canReportBrokenSite: canReportBrokenSite,
@@ -519,6 +519,14 @@ extension AppDelegate {
 
     // MARK: - Debug
 
+    @objc func debugClearWebViewCache(_ sender: Any?) {
+        WKWebsiteDataStore.default().removeData(
+            ofTypes: [WKWebsiteDataTypeDiskCache,
+                      WKWebsiteDataTypeMemoryCache,
+                      WKWebsiteDataTypeOfflineWebApplicationCache],
+            modifiedSince: .distantPast) { }
+    }
+
     @MainActor
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
@@ -626,6 +634,14 @@ extension AppDelegate {
 
     @objc func crashOnCxxException(_ sender: Any?) {
         throwTestCppException()
+    }
+
+    @objc func crashOnCoreDataException(_ sender: Any?) {
+        DispatchQueue.main.async {
+            NSException(name: NSExceptionName("_NSCoreDataException"),
+                        reason: "Simulated _NSCoreDataException from Debug menu",
+                        userInfo: nil).raise()
+        }
     }
 
     @MainActor @objc func simulateMemoryPressureCritical(_ sender: Any?) {
@@ -805,7 +821,7 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-        Application.appDelegate.dockCustomization?.resetData()
+        dockCustomization.resetData()
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {
@@ -814,6 +830,10 @@ extension AppDelegate {
 
     @objc func setLaunchDayAWeekInThePast(_ sender: Any?) {
         UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func setLaunchDay10DaysInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.daysAgo(10), forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
     @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
@@ -876,20 +896,45 @@ extension AppDelegate {
     }
 
     private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) async throws {
+        let configManager = Application.appDelegate.configurationManager
+        let hadOverride = configurationURLProvider.isURLOverridden(for: .privacyConfiguration)
+        let previousCustomURL: URL? = hadOverride ? configurationURLProvider.url(for: .privacyConfiguration) : nil
         try configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
-        await Application.appDelegate.configurationManager.refreshNow(isDebug: true)
+        do {
+            try await configManager.fetchPrivacyConfiguration(isDebug: true)
+        } catch {
+            try? configurationURLProvider.setCustomURL(previousCustomURL, for: .privacyConfiguration)
+            throw error
+        }
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
         } else {
             Logger.config.log("New configuration URL reset to default")
         }
+        Task {
+            await configManager.refreshNow(isDebug: true)
+        }
     }
 
-    private func showErrorAlert(message: String) {
+    private func readableErrorMessage(for error: Swift.Error) -> String {
+        if case APIRequest.Error.urlSession(let urlError) = error {
+            return urlError.localizedDescription
+        }
+        if case ConfigurationFetcher.Error.apiRequest(let apiError) = error,
+           case APIRequest.Error.urlSession(let urlError) = apiError {
+            return urlError.localizedDescription
+        }
+        if case ConfigurationFetcher.Error.invalidPayload = error {
+            return "The server returned data that is not a valid privacy configuration."
+        }
+        return error.localizedDescription
+    }
+
+    private func showConfigurationFetchErrorAlert(url: URL, error: Swift.Error) {
         let alert = NSAlert()
-        alert.messageText = "Error"
-        alert.informativeText = message
-        alert.alertStyle = .warning
+        alert.messageText = "Configuration Fetch Failed"
+        alert.informativeText = "Failed to fetch privacy configuration from:\n\(url.absoluteString)\n\nError: \(readableErrorMessage(for: error))"
+        alert.alertStyle = .critical
         alert.runModal()
     }
 
@@ -897,9 +942,9 @@ extension AppDelegate {
         let alert = NSAlert()
         alert.messageText = "Configuration Update Complete"
         if let configurationUrl {
-            alert.informativeText = "Privacy configuration URL has been set to:\n\(configurationUrl.absoluteString)\n\nThe configuration refresh operation has completed. Check the logs for any errors."
+            alert.informativeText = "Privacy configuration has been successfully fetched and applied from:\n\(configurationUrl.absoluteString)"
         } else {
-            alert.informativeText = "Privacy configuration has been reset to use the default settings.\n\nThe configuration refresh operation has completed. Check the logs for any errors."
+            alert.informativeText = "Privacy configuration has been reset to the default URL and successfully refreshed."
         }
         alert.alertStyle = .informational
         alert.runModal()
@@ -919,8 +964,8 @@ extension AppDelegate {
                 do {
                     try await setPrivacyConfigurationUrl(newConfigurationUrl)
                     showConfigurationUpdateCompleteAlert(configurationUrl: newConfigurationUrl)
-                } catch let error {
-                    showErrorAlert(message: error.localizedDescription)
+                } catch {
+                    showConfigurationFetchErrorAlert(url: newConfigurationUrl, error: error)
                 }
             }
         }
@@ -931,8 +976,9 @@ extension AppDelegate {
             do {
                 try await setPrivacyConfigurationUrl(nil)
                 showConfigurationUpdateCompleteAlert(configurationUrl: nil)
-            } catch let error {
-                showErrorAlert(message: error.localizedDescription)
+            } catch {
+                let defaultURL = configurationURLProvider.url(for: .privacyConfiguration)
+                showConfigurationFetchErrorAlert(url: defaultURL, error: error)
             }
         }
     }
@@ -1270,6 +1316,16 @@ extension MainViewController {
         }
     }
 
+    @objc func toggleDuckAIChromeButtonVisibility(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
+        duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .duckAI)
+    }
+
+    @objc func toggleDuckAIChromeSidebarButtonVisibility(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
+        duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .sidebar)
+    }
+
     @objc func toggleAutofillShortcut(_ sender: Any) {
         pinningManager.togglePinning(for: .autofill)
     }
@@ -1469,6 +1525,12 @@ extension MainViewController {
         WindowsManager.openNewWindow(with: tab)
     }
 
+    @objc func newTabNextToActive(_ sender: Any?) {
+        guard let (tab, _) = getActiveTabAndIndex() else { return }
+
+        tabCollectionViewModel.insertNewTab(after: tab, with: .newtab, selected: true)
+    }
+
     @objc func duplicateTab(_ sender: Any?) {
         guard let (_, index) = getActiveTabAndIndex() else { return }
 
@@ -1616,13 +1678,13 @@ extension MainViewController {
     }
 
     @objc func showSaveCredentialsPopover(_ sender: Any?) {
-#if DEBUG || REVIEW
+#if DEBUG
         NotificationCenter.default.post(name: .ShowSaveCredentialsPopover, object: nil)
 #endif
     }
 
     @objc func showCredentialsSavedPopover(_ sender: Any?) {
-#if DEBUG || REVIEW
+#if DEBUG
         NotificationCenter.default.post(name: .ShowCredentialsSavedPopover, object: nil)
 #endif
     }
@@ -1861,7 +1923,7 @@ extension AppDelegate: NSMenuItemValidation {
             return areTherePasswords
 
         case #selector(AppDelegate.openReportBrokenSite(_:)):
-            return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+            return Application.appDelegate.windowControllersManager.selectedTab?.canReportBrokenSite ?? false
 
         default:
             return true

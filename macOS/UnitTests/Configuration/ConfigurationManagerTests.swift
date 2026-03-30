@@ -18,6 +18,7 @@
 
 import Combine
 import Configuration
+import Networking
 import PrivacyConfigTestsUtils
 import TrackerRadarKit
 import XCTest
@@ -89,6 +90,57 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertEqual(operationLog.steps.count, 6, "Should have exactly 6 operations.")
     }
 
+    // MARK: - fetchPrivacyConfiguration
+
+    func test_WhenFetchPrivacyConfiguration_ThenReloadAndCompilationHappen() async throws {
+        // GIVEN
+        operationLog.clear()
+
+        // WHEN
+        try await configManager.fetchPrivacyConfiguration(isDebug: true)
+
+        // THEN
+        let allSteps = Set(operationLog.steps)
+        XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted))
+        XCTAssertTrue(allSteps.contains(.reloadPrivacyConfig))
+        XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation))
+        XCTAssertEqual(operationLog.steps.count, 3)
+    }
+
+    func test_WhenFetchPrivacyConfiguration_AndFetchFails_ThenErrorPropagates() async {
+        // GIVEN
+        mockFetcher.shouldFailPrivacyFetch = true
+        operationLog.clear()
+
+        // WHEN / THEN
+        do {
+            try await configManager.fetchPrivacyConfiguration(isDebug: true)
+            XCTFail("Expected error to be thrown")
+        } catch {
+            let allSteps = Set(operationLog.steps)
+            XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted))
+            XCTAssertFalse(allSteps.contains(.reloadPrivacyConfig))
+            XCTAssertFalse(allSteps.contains(.contentBlockingScheduleCompilation))
+        }
+    }
+
+    func test_WhenFetchPrivacyConfiguration_And304Received_ThenTreatedAsSuccess() async throws {
+        // GIVEN
+        mockFetcher.privacyFetchError = APIRequest.Error.invalidStatusCode(304)
+        operationLog.clear()
+
+        // WHEN
+        try await configManager.fetchPrivacyConfiguration(isDebug: true)
+
+        // THEN
+        let allSteps = Set(operationLog.steps)
+        XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted))
+        XCTAssertTrue(allSteps.contains(.reloadPrivacyConfig))
+        XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation))
+    }
+
+    // MARK: - refreshNow
+
     func test_WhenRefreshNow_ThenPrivacyConfigFetchAndReloadBeforeTrackerDataSetFetch() async throws {
         // GIVEN
         operationLog.clear()
@@ -133,6 +185,7 @@ private enum ConfigurationStep: String, Equatable {
 private class MockConfigurationFetcher: ConfigurationFetching {
     var operationLog: OperationLog
     var shouldFailPrivacyFetch = false
+    var privacyFetchError: Swift.Error?
 
     init(operationLog: OperationLog) {
         self.operationLog = operationLog
@@ -148,6 +201,9 @@ private class MockConfigurationFetcher: ConfigurationFetching {
             break
         case .privacyConfiguration:
             operationLog.append(.fetchPrivacyConfigStarted)
+            if let error = privacyFetchError {
+                throw error
+            }
             if shouldFailPrivacyFetch {
                 throw NSError(domain: "TestError", code: 1, userInfo: nil)
             }

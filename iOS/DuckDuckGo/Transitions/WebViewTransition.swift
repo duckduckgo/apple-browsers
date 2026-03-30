@@ -75,7 +75,7 @@ class FromWebViewTransition: WebViewTransition {
         tabSwitcherViewController.prepareForPresentation()
         
         guard let webView = mainViewController.currentTab?.webView,
-              let tab = mainViewController.tabManager.model.currentTab,
+              let tab = mainViewController.tabManager.currentTabsModel.currentTab,
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab)
         else {
             tabSwitcherViewController.view.alpha = 1

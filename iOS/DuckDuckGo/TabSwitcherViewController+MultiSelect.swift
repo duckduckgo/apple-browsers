@@ -22,7 +22,6 @@ import BrowserServicesKit
 import Core
 import Bookmarks
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 // MARK: Source agnostic action implementations
 extension TabSwitcherViewController {
@@ -56,7 +55,7 @@ extension TabSwitcherViewController {
     }
 
     func bookmarkTabAt(_ indexPath: IndexPath) {
-        guard let tab = tabsModel.safeGetTabAt(indexPath.row), let link = tab.link else { return }
+        guard let tab = tabsModel.get(tabAt: indexPath.row), let link = tab.link else { return }
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: self.bookmarksDatabase, syncService: self.syncService)
         viewModel.createBookmark(title: link.displayTitle, url: link.url)
         ActionMessageView.present(message: UserText.tabsBookmarked(withCount: 1),
@@ -91,7 +90,7 @@ extension TabSwitcherViewController {
             UIView.transition(with: view,
                               duration: 0.3,
                               options: .transitionCrossDissolve, animations: {
-                self.refreshTitle()
+                self.refreshTitleViews()
                 self.collectionView.reloadData()
             }, completion: { _ in
                 self.isProcessingUpdates = false
@@ -115,6 +114,7 @@ extension TabSwitcherViewController {
                 tabViewModel: nil,
                 pixelSource: .tabSwitcher,
                 daxDialogsManager: daxDialogsManager,
+                browsingMode: selectedBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAll(fireRequest)
                 },
@@ -132,13 +132,16 @@ extension TabSwitcherViewController {
         self.isEditing = true
         collectionView.reloadData()
         updateUIForSelectionMode()
+        refreshTitleViews()
     }
 
-    func transitionFromMultiSelect() {
+    func transitionFromMultiSelect(reloadCollectionView: Bool = true) {
         self.isEditing = false
-        collectionView.reloadData()
+        if reloadCollectionView {
+            collectionView.reloadData()
+        }
         updateUIForSelectionMode()
-        refreshTitle()
+        refreshTitleViews()
     }
 
     func closeAllTabs() {
@@ -199,6 +202,7 @@ extension TabSwitcherViewController {
         DailyPixel.fire(pixel: .tabSwitcherDeselectAllDaily)
         collectionView.reloadData()
         updateUIForSelectionMode()
+        refreshTitleViews()
     }
 
     func selectAllTabs() {
@@ -209,6 +213,7 @@ extension TabSwitcherViewController {
             collectionView.selectItem(at: IndexPath(row: $0, section: 0), animated: true, scrollPosition: [])
         }
         updateUIForSelectionMode()
+        refreshTitleViews()
     }
 
     func shareTabs(_ tabs: [Tab]) {
@@ -268,14 +273,17 @@ extension TabSwitcherViewController {
         } else {
             state = AppWidthObserver.shared.isLargeWidth
                 ? .largeSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
-                             containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                             containsWebPages: containsWebPages, showAIChat: showAIChatButton,
+                             canDismissOnEmpty: canDismissOnEmpty)
                 : .regularSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
-                               containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                               containsWebPages: containsWebPages, showAIChat: showAIChatButton,
+                               canDismissOnEmpty: canDismissOnEmpty)
         }
 
         barsHandler.update(state)
         barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
 
+        titleBarView.topItem?.titleView = isEditing ? nil : segmentedPickerHostingController?.view
         titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
         titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
         toolbar.items = barsHandler.bottomBarItems
@@ -284,144 +292,57 @@ extension TabSwitcherViewController {
     }
     
     func createMultiSelectionMenu() -> UIMenu {
-
-        let otherTabCount = max(0, tabsModel.count - selectedTabs.count)
-        let selectedTabs = selectedTabs.map { self.tabsModel.safeGetTabAt($0.row) }.compactMap { $0 }
-        let selectedTabsContainsWebPages = selectedTabs.contains(where: { $0.link != nil })
-        let canShare = selectedTabsContainsWebPages
-        let canAddBookmarks = selectedTabsContainsWebPages
-        let canCloseOther = !selectedTabs.isEmpty && otherTabCount > 0
-        let canBookmarkAll = selectedTabs.isEmpty && self.tabsModel.tabs.contains(where: { $0.link != nil })
-        let canShowDeselectAll = interfaceMode.isLarge && selectedTabs.count == tabsModel.count
-        let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabsModel.count
-        let canClose = interfaceMode.isLarge && selectedTabs.count > 0
-
-        let items = [
-
-            UIMenu(title: "", options: .displayInline, children: [
-                canShowDeselectAll ? action(UserText.deselectAllTabs, DesignSystemImages.Glyphs.Size16.checkCircle, { [weak self] in
-                    self?.deselectAllTabs()
-                }) : nil,
-                canShowSelectAll ? action(UserText.selectAllTabs, DesignSystemImages.Glyphs.Size16.checkCircle, { [weak self] in
-                    self?.selectAllTabs()
-                }) : nil,
-            ].compactMap { $0 }),
-
-            UIMenu(title: "", options: .displayInline, children: [
-                canShare ? action(UserText.shareLinks(withCount: selectedTabs.count), DesignSystemImages.Glyphs.Size16.shareApple, { [weak self] in
-                    self?.selectModeShareLinks()
-                }) : nil,
-                canAddBookmarks ? action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), DesignSystemImages.Glyphs.Size16.bookmarkAdd, { [weak self] in
-                    self?.selectModeBookmarkSelected()
-                }) : nil,
-            ].compactMap { $0 }),
-
-            UIMenu(title: "", options: .displayInline, children: [
-                // Always use plural here
-                canCloseOther ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), DesignSystemImages.Glyphs.Size16.tabCloseAlt, { [weak self] in
-                    self?.selectModeCloseOtherTabs()
-                }) : nil,
-            ].compactMap { $0 }),
-
-            UIMenu(title: "", options: .displayInline, children: [
-                canClose ? destructive(UserText.closeTabs(withCount: selectedTabs.count), imageForCloseTabs(selectedTabs.count), { [weak self] in
-                    self?.selectModeCloseSelectedTabs()
-                }) : nil,
-            ].compactMap { $0 }),
-
-            UIMenu(title: "", options: .displayInline, children: [
-                canBookmarkAll ? action(UserText.tabSwitcherBookmarkAllTabs, DesignSystemImages.Glyphs.Size16.bookmarkAll, { [weak self] in
-                    self?.selectModeBookmarkAll()
-                }) : nil,
-            ].compactMap { $0 })
-        ]
-
-        canShowSelectionMenu = !items.allSatisfy(\.children.isEmpty)
-
-        let deferredElement = UIDeferredMenuElement.uncached { completion in
-            Pixel.fire(pixel: .tabSwitcherSelectModeMenuClicked)
-            completion(items)
-        }
-
-        return UIMenu(title: "", children: [
-            deferredElement
-        ])
+        let selectedIndexPaths = selectedTabs
+        let selectedTabObjects = selectedIndexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
+        let state = TabSwitcherMultiSelectMenuState(
+            selectedCount: selectedTabObjects.count,
+            totalCount: tabsModel.count,
+            selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
+            allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil })
+        )
+        canShowSelectionMenu = state.canShowSelectionMenu
+        return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(
+            onDeselectAll: { [weak self] in self?.deselectAllTabs() },
+            onSelectAll: { [weak self] in self?.selectAllTabs() },
+            onShare: { [weak self] in self?.selectModeShareLinks() },
+            onBookmarkSelected: { [weak self] in self?.selectModeBookmarkSelected() },
+            onCloseOther: { [weak self] in self?.selectModeCloseOtherTabs() },
+            onCloseSelected: { [weak self] in self?.selectModeCloseSelectedTabs() },
+            onBookmarkAll: { [weak self] in self?.selectModeBookmarkAll() }
+        ))
     }
-    
+
     func createEditMenu() -> UIMenu {
-        let items = [
-            // Force plural version for the menu - this really means "switch to select tabs mode"
-            action(UserText.tabSwitcherSelectTabs(withCount: 2), DesignSystemImages.Glyphs.Size16.checkCircle, { [weak self] in
-                self?.editMenuEnterSelectMode()
-            }),
-
-            UIMenu(title: "", options: [.displayInline], children: [
-                destructive(UserText.closeAllTabs, DesignSystemImages.Glyphs.Size16.tabCloseAlt, { [weak self] in
-                    self?.editMenuCloseAllTabs()
-                })
-            ]),
-        ]
-
-        let deferredElement = UIDeferredMenuElement.uncached { completion in
-            Pixel.fire(pixel: .tabSwitcherEditMenuClicked)
-            completion(items)
-        }
-
-        return UIMenu(children: [
-            deferredElement
-        ])
+        return menuBuilder.editMenu(actions: TabSwitcherEditMenuActions(
+            onEnterSelectMode: { [weak self] in self?.editMenuEnterSelectMode() },
+            onCloseAll: { [weak self] in self?.editMenuCloseAllTabs() }
+        ))
     }
 
-    /// Takes indexes of tabs to create long menu for.  Interally creates tab array for those indexes, then passes either tabs or indexes to the handles in order to try and reduce the amount of
-    ///  converting from [Int] -> [Tab] operations.
+    /// Takes indexes of tabs to create long menu for.  Internally creates tab array for those
+    /// indexes, then passes either tabs or indexes to the handlers to reduce [Int] -> [Tab] conversions.
     func createLongPressMenuForTabs(atIndexPaths indexPaths: [IndexPath]) -> UIMenu {
-        let tabs = indexPaths.map { tabsModel.safeGetTabAt($0.row) }.compactMap { $0 }
+        let tabs = indexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
         let containsWebPages = tabs.contains(where: { $0.link != nil })
-    
+
         let title = tabs.count > 1 ? UserText.numberOfSelectedTabsForMenuTitle(withCount: tabs.count)
             // If there's a single web page tab use the hostname, failing that don't provide a title
             : tabs.first?.link?.url.host?.droppingWwwPrefix() ?? ""
-        
-        let canCloseOthers = tabs.count < tabsModel.count
-        
-        // Show selection if it's a single tab, but NOT if it's the home page in selection mode ¯\_(ツ)_/¯
-        // See point 3: https://app.asana.com/0/1209499866654340/1209424833903137
-        // See point 4: https://app.asana.com/0/1209499866654340/1209424833902043
-        // Also: https://app.asana.com/0/1209499866654340/1209503836757555
-        let canSelect = !isEditing && tabs.count == 1 && (containsWebPages || !isEditing)
-        
-        return UIMenu(title: title, children: [
-            UIMenu(title: "", options: .displayInline, children: [
-                containsWebPages ? action(UserText.shareLinks(withCount: tabs.count), DesignSystemImages.Glyphs.Size16.shareApple, { [weak self] in
-                    self?.longPressMenuShareLinks(tabs: tabs)
-                }) : nil,
-                containsWebPages ? action(UserText.bookmarkSelectedTabs(withCount: tabs.count), DesignSystemImages.Glyphs.Size16.bookmarkAdd, { [weak self] in
-                    self?.longPressMenuBookmarkTabs(indexPaths: indexPaths)
-                }) : nil,
-                canSelect ? action(UserText.tabSwitcherSelectTabs(withCount: 1), DesignSystemImages.Glyphs.Size16.checkCircle, { [weak self] in
-                    self?.longPressMenuSelectTabs(indexPaths: indexPaths)
-                }) : nil,
-            ].compactMap { $0 }),
-            
-            UIMenu(title: "", options: .displayInline, children: [
-                destructive(UserText.closeTabs(withCount: tabs.count), imageForCloseTabs(tabs.count), { [weak self] in
-                    self?.longPressMenuCloseTabs(indexPaths: indexPaths)
-                })
-            ]),
 
-            UIMenu(title: "", options: .displayInline, children: [
-                // Always use plural here
-                canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), imageForCloseTabs(2), { [weak self] in
-                    self?.longPressMenuCloseOtherTabs(retainingIndexPaths: indexPaths)
-                }) : nil
-            ].compactMap { $0 }),
-        ].compactMap { $0 })
-    }
-
-    private func imageForCloseTabs(_ count: Int) -> UIImage {
-        return count < 2 ?
-            DesignSystemImages.Glyphs.Size16.closeOutline :
-            DesignSystemImages.Glyphs.Size16.tabCloseAlt
+        let state = TabSwitcherLongPressMenuState(
+            pressedCount: tabs.count,
+            totalCount: tabsModel.count,
+            pressedContainsWebPages: containsWebPages,
+            isEditing: isEditing,
+            title: title
+        )
+        return menuBuilder.longPressMenu(state: state, actions: TabSwitcherLongPressMenuActions(
+            onShare: { [weak self] in self?.longPressMenuShareLinks(tabs: tabs) },
+            onBookmark: { [weak self] in self?.longPressMenuBookmarkTabs(indexPaths: indexPaths) },
+            onSelect: { [weak self] in self?.longPressMenuSelectTabs(indexPaths: indexPaths) },
+            onClose: { [weak self] in self?.longPressMenuCloseTabs(indexPaths: indexPaths) },
+            onCloseOther: { [weak self] in self?.longPressMenuCloseOtherTabs(retainingIndexPaths: indexPaths) }
+        ))
     }
 
     private func shouldShowBookmarkThisPageLongPressMenuItem(_ tab: Tab, _ bookmarksModel: MenuBookmarksViewModel) -> Bool {
@@ -487,7 +408,7 @@ extension TabSwitcherViewController {
     }
 
     func selectModeShareLinks() {
-        shareTabs(selectedTabs.compactMap { tabsModel.safeGetTabAt($0.row) })
+        shareTabs(selectedTabs.compactMap { tabsModel.get(tabAt: $0.row) })
     }
 
 }
@@ -500,7 +421,7 @@ extension TabSwitcherViewController {
     }
 
     func longPressMenuShareSelectedLinks() {
-        shareTabs(selectedTabs.map { tabsModel.safeGetTabAt($0.row) }.compactMap { $0 })
+        shareTabs(selectedTabs.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 })
     }
 
     func longPressMenuBookmarkTabs(indexPaths: [IndexPath]) {
@@ -528,6 +449,7 @@ extension TabSwitcherViewController {
             (collectionView.cellForItem(at: path) as? TabViewCell)?.refreshSelectionAppearance()
         }
         updateUIForSelectionMode()
+        refreshTitleViews()
     }
 
     func longPressMenuCloseTabs(indexPaths: [IndexPath]) {
@@ -554,29 +476,6 @@ extension TabSwitcherViewController {
         closeOtherTabs(retainingIndexPaths: indexPaths,
                        pixel: .tabSwitcherLongPressCloseOtherTabs,
                        dailyPixel: .tabSwitcherLongPressCloseOtherTabsDaily)
-    }
-
-}
-
-// MARK: UIAction factories
-extension TabSwitcherViewController {
-    
-    func action(_ title: String, _ image: UIImage? = nil, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: title, image: image) { _ in
-            handler()
-        }
-    }
-
-    func action(image: UIImage, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: "", image: image) { _ in
-            handler()
-        }
-    }
-    
-    func destructive(_ title: String, _ image: UIImage, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: title, image: image, attributes: .destructive) { _ in
-            handler()
-        }
     }
 
 }

@@ -240,7 +240,6 @@ extension UserDefaults {
         case toastDismissStreakCounter = "brokenSitePrompt.toast-dismiss-streak-counter"
 
         // SAD/ATT Debug
-        case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
         case debugSetDefaultAndAddToDockPromptInstallDateKey = "com.duckduckgo.debug.setDefaultAndAddToDockPromptInstallDate"
 
         // Win-back Offer Debug

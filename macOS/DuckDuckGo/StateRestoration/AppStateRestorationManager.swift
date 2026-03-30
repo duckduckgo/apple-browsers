@@ -144,8 +144,8 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         return state
     }
 
-    func clearLastSessionState() {
-        service.clearState(sync: true)
+    func clearLastSessionState() -> Result<Void, Error> {
+        return service.clearState(sync: true)
     }
 
     // Cleans all stored snapshots except snapshots listed in the state
@@ -187,7 +187,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         appDidTerminateAsExpected = true
         sessionRestorePromptCoordinator.applicationWillTerminate()
         if isInInitialState {
-            service.clearState(sync: true)
+            _ = service.clearState(sync: true)
         } else {
             persistAppState(sync: true)
         }

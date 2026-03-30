@@ -77,13 +77,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     struct UpdateCheckResult {
         let item: SUAppcastItem
         let isInstalled: Bool
-        let needsLatestReleaseNote: Bool
-
-        init(item: SUAppcastItem, isInstalled: Bool, needsLatestReleaseNote: Bool = false) {
-            self.item = item
-            self.isInstalled = isInstalled
-            self.needsLatestReleaseNote = needsLatestReleaseNote
-        }
     }
 
     private var cachedUpdateResult: UpdateCheckResult? {
@@ -99,7 +92,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult, progress: UpdateCycleProgress? = nil) {
-        latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled, needsLatestReleaseNote: cachedUpdateResult.needsLatestReleaseNote)
+        latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled)
         let isInstalled = latestUpdate?.isInstalled == false
         // Use passed progress if available (avoids @Published willSet timing issue)
         let currentProgress = progress ?? progressState.updateProgress
@@ -137,15 +130,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
-    private var pendingUpdateInfo: PendingUpdateInfo? {
-        get {
-            try? settings.pendingUpdateInfo
-        }
-        set {
-            try? settings.set(newValue, for: \.pendingUpdateInfo)
-        }
-    }
-
     public var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     public var lastUpdateNotificationShownDate: Date = .distantPast
 
@@ -162,7 +146,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     public var areAutomaticUpdatesEnabled: Bool {
         get {
-            (try? settings.automaticUpdates) ?? true
+            if manualUpdateRemovalHandler.shouldHideManualUpdateOption { return true }
+            return (try? settings.automaticUpdates) ?? true
         }
         set {
             let oldValue = areAutomaticUpdatesEnabled
@@ -194,13 +179,9 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
     }
 
-    public var needsNotificationDot: Bool {
-        get {
-            (try? settings.pendingUpdateShown) ?? false
-        }
-        set {
-            try? settings.set(newValue, for: \.pendingUpdateShown)
-            notificationDotSubject.send(newValue)
+    public var needsNotificationDot: Bool = false {
+        didSet {
+            notificationDotSubject.send(needsNotificationDot)
         }
     }
 
@@ -226,34 +207,29 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
-    private let allowCustomUpdateFeed: Bool
+    private let manualUpdateRemovalHandler: ManualUpdateRemovalHandling
+    private let allowCustomUpdateFeedOverride: Bool
+    private let isAutoUpdatePaused: () -> Bool
+
+    private var allowCustomUpdateFeed: Bool {
+        allowCustomUpdateFeedOverride || internalUserDecider.isInternalUser
+    }
     private let pixelFiring: PixelFiring?
     private let isOnboardingFinished: () -> Bool
     private let openUpdatesPageAction: () -> Void
 
     /// Computes whether automatic downloads should be enabled.
     /// Static for testability - no controller state needed.
-    public static func resolveAutoDownloadEnabled(allowCustomUpdateFeed: Bool,
-                                                  featureFlagger: FeatureFlagger,
+    public static func resolveAutoDownloadEnabled(isAutoUpdatePaused: Bool,
                                                   userPreference: Bool) -> Bool {
-        // Custom update feed is only allowed in DEBUG/REVIEW builds.
-        guard allowCustomUpdateFeed else {
-            return userPreference
-        }
-
-#if DEBUG
-        let isUnsignedAutoUpdateEnabled = featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-#else // REVIEW
-        let isUnsignedAutoUpdateEnabled = featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
-#endif
-        return isUnsignedAutoUpdateEnabled && userPreference
+        guard !isAutoUpdatePaused else { return false }
+        return userPreference
     }
 
     /// Instance wrapper for the static method - convenience for non-static contexts.
     private func resolveAutoDownloadEnabled(userPreference: Bool) -> Bool {
         Self.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: allowCustomUpdateFeed,
-            featureFlagger: featureFlagger,
+            isAutoUpdatePaused: isAutoUpdatePaused(),
             userPreference: userPreference
         )
     }
@@ -262,17 +238,21 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
+                manualUpdateRemovalHandler: ManualUpdateRemovalHandling,
                 pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
                 allowCustomUpdateFeed: Bool,
+                isAutoUpdatePaused: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging,
                 isOnboardingFinished: @escaping () -> Bool,
                 openUpdatesPage: @escaping () -> Void = {}) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
-        self.allowCustomUpdateFeed = allowCustomUpdateFeed
+        self.manualUpdateRemovalHandler = manualUpdateRemovalHandler
+        self.allowCustomUpdateFeedOverride = allowCustomUpdateFeed
+        self.isAutoUpdatePaused = isAutoUpdatePaused
         self.internalUserDecider = internalUserDecider
         self.notificationPresenter = notificationPresenter
         self.pixelFiring = pixelFiring
@@ -283,7 +263,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
         // Capture the current value before initializing updateWideEvent
-        let currentAutomaticUpdatesEnabled = (try? settings.automaticUpdates) ?? true
+        let currentAutomaticUpdatesEnabled = manualUpdateRemovalHandler.shouldHideManualUpdateOption
+            || ((try? settings.automaticUpdates) ?? true)
         self.updateWideEvent = SparkleUpdateWideEvent(
             wideEventManager: wideEvent,
             internalUserDecider: internalUserDecider,
@@ -293,8 +274,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
         // Compute effective auto-download state before super.init() using static method
         let shouldAutoDownload = Self.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: allowCustomUpdateFeed,
-            featureFlagger: featureFlagger,
+            isAutoUpdatePaused: isAutoUpdatePaused(),
             userPreference: currentAutomaticUpdatesEnabled
         )
 
@@ -330,6 +310,13 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.updateWideEvent.cleanupAbandonedFlows()
 
         _ = try? configureUpdater()
+
+        pixelFiring?.fire(
+            UpdateFlowPixels.updateConfigurationDaily(
+                configuration: areAutomaticUpdatesEnabled ? "automatic" : "manual"
+            ),
+            frequency: .daily
+        )
 
         validateUpdateExpectations()
     }
@@ -475,12 +462,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     // MARK: - Private
-
-    private func cachePendingUpdate(from item: SUAppcastItem) {
-        let info = PendingUpdateInfo(from: item)
-        pendingUpdateInfo = info
-        Logger.updates.log("Cached pending update info for version \(info.version) build \(info.build)")
-    }
 
     @discardableResult
     private func configureUpdater() throws -> SPUUpdater? {
@@ -651,8 +632,6 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
         pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
 
-        cachePendingUpdate(from: item)
-
         updateWideEvent.didFindUpdate(
             version: item.displayVersionString,
             build: item.versionString,
@@ -669,13 +648,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
         Logger.updates.log("Already up to date: \(item.displayVersionString, privacy: .public) (\(item.versionString, privacy: .public))")
 
-        let needsLatestReleaseNote = {
-            guard let reason = nsError.userInfo[SPUNoUpdateFoundReasonKey] as? Int else { return false }
-            return reason == Int(Sparkle.SPUNoUpdateFoundReason.onNewerThanLatestVersion.rawValue)
-        }()
-        cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true, needsLatestReleaseNote: needsLatestReleaseNote)
-
-        cachePendingUpdate(from: item)
+        cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true)
 
         updateWideEvent.didFindNoUpdate()
     }

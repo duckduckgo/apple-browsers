@@ -424,6 +424,13 @@ extension SyncErrorHandler: SyncErrorHandling {
             default:
                 syncIsPaused(errorType: .invalidLoginCredentials)
             }
+        case .unauthenticatedWhileLoggedIn:
+            switch modelType {
+            case .aiChats:
+                syncIsPaused(errorType: .invalidLoginCredentials)
+            default:
+                break
+            }
         case .unexpectedStatusCode(418), .unexpectedStatusCode(429):
             syncIsPaused(errorType: .tooManyRequests)
             PixelKit.fire(modelType.tooManyRequestsPixel, frequency: .legacyDailyNoSuffix)

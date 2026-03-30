@@ -21,15 +21,19 @@ import Foundation
 import UIKit
 import UIComponents
 import SwiftUI
+import DesignResourcesKit
 
 /// Manages the Dax logo view display and positioning
 final class DaxLogoManager {
     
     // MARK: - Properties
 
+    private let isFireTab: Bool
+
     private var logoContainerView: UIView = UIView()
 
     private lazy var daxLogoView = AnimatedDaxLogoView()
+    private var fireTabHostingController: UIHostingController<FireModeEmptyStateView>?
 
     private var isHomeDaxVisible: Bool = false
     private var isAIDaxVisible: Bool = false
@@ -40,51 +44,32 @@ final class DaxLogoManager {
 
     private(set) var containerYCenterConstraint: NSLayoutConstraint?
 
+    // MARK: - Initialization
+
+    init(isFireTab: Bool = false) {
+        self.isFireTab = isFireTab
+    }
+
     // MARK: - Public Methods
     
-    func installInViewController(_ parentController: UIViewController, asSubviewOf parentView: UIView, barView: UIView, isTopBarPosition: Bool) {
+    func installInViewController(_ parentController: UIViewController,
+                                 asSubviewOf parentView: UIView,
+                                 anchorView: UIView,
+                                 isTopBarPosition: Bool,
+                                 escapeHatch: EscapeHatchModel? = nil,
+                                 onEscapeHatchTap: (() -> Void)? = nil) {
 
         logoContainerView.translatesAutoresizingMaskIntoConstraints = false
-        logoContainerView.isUserInteractionEnabled = false
+        logoContainerView.isUserInteractionEnabled = isFireTab
         parentView.addSubview(logoContainerView)
 
-        logoContainerView.addSubview(daxLogoView)
-        daxLogoView.frame = logoContainerView.bounds
-        daxLogoView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        daxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
-
-        let centeringGuide = UILayoutGuide()
-        centeringGuide.identifier = "DaxLogoCenteringGuide"
-        parentView.addLayoutGuide(centeringGuide)
-
-        containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
-
-        if isTopBarPosition {
-            NSLayoutConstraint.activate([
-                barView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
-                parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)
-            ])
+        if isFireTab {
+            installFireTabContent(in: parentController, escapeHatch: escapeHatch, onEscapeHatchTap: onEscapeHatchTap)
+            installFireTabConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
         } else {
-            NSLayoutConstraint.activate([
-                parentView.topAnchor.constraint(equalTo: centeringGuide.topAnchor),
-                parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor, constant: DefaultOmniBarView.expectedHeight)
-            ])
+            installDaxLogoContent()
+            installDaxLogoConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
         }
-
-        NSLayoutConstraint.activate([
-
-            // Position layout centering guide vertically between top view and keyboard
-            parentView.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
-            parentView.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
-
-            // Center within the layout guide
-            logoContainerView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
-            logoContainerView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
-            logoContainerView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
-            logoContainerView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
-            logoContainerView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
-            containerYCenterConstraint!
-        ])
 
         parentView.bringSubviewToFront(logoContainerView)
     }
@@ -114,14 +99,102 @@ final class DaxLogoManager {
         updateState()
     }
 
-    private func updateState() {
-        if forcedHidden {
-            daxLogoView.alpha = 0
-            return
+    // MARK: - Private Methods
+
+    private func installFireTabConstraints(parentView: UIView, anchorView: UIView, isTopBarPosition: Bool) {
+        if isTopBarPosition {
+            NSLayoutConstraint.activate([
+                logoContainerView.topAnchor.constraint(equalTo: anchorView.bottomAnchor),
+                logoContainerView.bottomAnchor.constraint(equalTo: parentView.keyboardLayoutGuide.topAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
+                logoContainerView.bottomAnchor.constraint(equalTo: anchorView.topAnchor)
+            ])
         }
-        if isHomeDaxVisible != isAIDaxVisible {
-            // Keep progress in one state, only update alpha
-            daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
+
+        NSLayoutConstraint.activate([
+            logoContainerView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
+            logoContainerView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor)
+        ])
+    }
+
+    private func installDaxLogoConstraints(parentView: UIView, anchorView: UIView, isTopBarPosition: Bool) {
+        let centeringGuide = UILayoutGuide()
+        centeringGuide.identifier = "DaxLogoCenteringGuide"
+        parentView.addLayoutGuide(centeringGuide)
+
+        containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
+
+        if isTopBarPosition {
+            NSLayoutConstraint.activate([
+                anchorView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
+                parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                parentView.topAnchor.constraint(equalTo: centeringGuide.topAnchor),
+                parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor, constant: DefaultOmniBarView.expectedHeight)
+            ])
+        }
+
+        NSLayoutConstraint.activate([
+
+            // Position layout centering guide vertically between top view and keyboard
+            parentView.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
+            parentView.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
+
+            // Center within the layout guide
+            logoContainerView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
+            logoContainerView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
+            logoContainerView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
+            logoContainerView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
+            logoContainerView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
+            containerYCenterConstraint!
+        ])
+    }
+
+    private func installFireTabContent(in parentController: UIViewController,
+                                       escapeHatch: EscapeHatchModel?,
+                                       onEscapeHatchTap: (() -> Void)?) {
+        let hostingController = UIHostingController(
+            rootView: FireModeEmptyStateView(type: .tab,
+                                             escapeHatch: escapeHatch,
+                                             onEscapeHatchTap: onEscapeHatchTap))
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        parentController.addChild(hostingController)
+        logoContainerView.addSubview(hostingController.view)
+
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor)
+        ])
+
+        hostingController.didMove(toParent: parentController)
+        fireTabHostingController = hostingController
+    }
+
+    private func installDaxLogoContent() {
+        logoContainerView.addSubview(daxLogoView)
+        daxLogoView.frame = logoContainerView.bounds
+        daxLogoView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        daxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+    }
+
+    private func updateState() {
+        let resolvedAlpha: CGFloat
+
+        if forcedHidden {
+            resolvedAlpha = 0
+        } else if isHomeDaxVisible != isAIDaxVisible {
+            if !isFireTab {
+                daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
+            }
 
             let homeLogoProgress = 1 - progress
             let aiLogoProgress = progress
@@ -132,14 +205,20 @@ final class DaxLogoManager {
             let daxAlpha = homeDaxAlphaCoefficient * homeLogoProgress
             let aiAlpha = aiDaxAlphaCoefficient * aiLogoProgress
 
-            daxLogoView.alpha = max(daxAlpha, aiAlpha)
+            resolvedAlpha = max(daxAlpha, aiAlpha)
         } else if isHomeDaxVisible && isAIDaxVisible {
-            // Modify progress, don't modify alpha
-            daxLogoView.updateProgress(progress)
+            if !isFireTab {
+                daxLogoView.updateProgress(progress)
+            }
 
-            daxLogoView.alpha = 1
+            resolvedAlpha = 1
         } else {
-            daxLogoView.alpha = 0
+            resolvedAlpha = 0
+        }
+
+        logoContainerView.alpha = resolvedAlpha
+        if isFireTab {
+            logoContainerView.isUserInteractionEnabled = resolvedAlpha > 0
         }
 
         containerYCenterConstraint?.constant = escapeHatchBaseOffset

@@ -276,13 +276,15 @@ private struct CustomPickerButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                (isSelected ? item.selectedImage : item.unselectedImage)
+                (isSelected ? item.selectedCustomView : item.unselectedCustomView)
                     .font(configuration.font)
                     .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
 
-                Text(item.text)
-                    .font(configuration.font)
-                    .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+                if let text = item.text {
+                    Text(text)
+                        .font(configuration.font)
+                        .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+                }
             }
             .contentShape(Rectangle())
         }
@@ -296,22 +298,39 @@ private struct CustomPickerButton: View {
 ///
 /// Each item contains text and images for both selected and unselected states.
 /// The picker automatically switches between these images based on the selection state.
+///
+/// Alternatively, provide custom views via ``init(text:selectedCustomView:unselectedCustomView:)``
+/// to render arbitrary SwiftUI content instead of plain images.
 public struct ImageSegmentedPickerItem: Identifiable, Hashable {
     public let id = UUID()
-    public let text: String
-    public let selectedImage: Image
-    public let unselectedImage: Image
+    public let text: String?
+    public let selectedCustomView: AnyView
+    public let unselectedCustomView: AnyView
 
-    /// Creates a new picker item.
+    /// Creates a new picker item with images.
     ///
     /// - Parameters:
     ///   - text: The text label for the item.
     ///   - selectedImage: The image to display when selected.
     ///   - unselectedImage: The image to display when not selected.
-    public init(text: String, selectedImage: Image, unselectedImage: Image) {
+    public init(text: String?, selectedImage: Image, unselectedImage: Image) {
         self.text = text
-        self.selectedImage = selectedImage
-        self.unselectedImage = unselectedImage
+        self.selectedCustomView = AnyView(selectedImage)
+        self.unselectedCustomView = AnyView(unselectedImage)
+    }
+
+    /// Creates a new picker item with custom overlay views.
+    ///
+    /// - Parameters:
+    ///   - text: The text label for the item.
+    ///   - selectedCustomView: The view to display when selected.
+    ///   - unselectedCustomView: The view to display when not selected.
+    public init(text: String?,
+                selectedCustomView: AnyView,
+                unselectedCustomView: AnyView) {
+        self.text = text
+        self.selectedCustomView = selectedCustomView
+        self.unselectedCustomView = unselectedCustomView
     }
 
     public func hash(into hasher: inout Hasher) {

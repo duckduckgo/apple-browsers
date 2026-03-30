@@ -34,6 +34,7 @@ protocol OmniBar: AnyObject {
     // Updates text and calls a query update function
     func updateQuery(_ query: String?)
     func refreshText(forUrl url: URL?, forceFullURL: Bool)
+    func refreshFireMode(fireMode: Bool)
 
     func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode)
     func endEditing()

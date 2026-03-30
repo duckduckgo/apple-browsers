@@ -29,8 +29,9 @@ public final class MockAIChatHistoryCleaner {
     }
 
     @MainActor
-    public func cleanAIChatHistory() async {
+    public func cleanAIChatHistory() async -> Result<Void, Error> {
         didCleanAIChatHistory = true
+        return .success(())
     }
 
     public init(showCleanOption: Bool = false) {

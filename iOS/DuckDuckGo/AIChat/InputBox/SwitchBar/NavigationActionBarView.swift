@@ -241,7 +241,7 @@ final class NavigationActionBarView: UIView {
     }
     
     @objc private func searchTapped() {
-        viewModel.onSearchTapped()
+        viewModel.searchButtonTapped()
     }
 
     // MARK: - UI Updates
@@ -292,6 +292,21 @@ final class NavigationActionBarView: UIView {
         let isValidURL = viewModel.isCurrentTextValidURL
         let isSearchMode = viewModel.isSearchMode
         let isUsingFadeOutAnimation = viewModel.isUsingFadeOutAnimation
+        let isVoiceMode = viewModel.shouldShowVoiceModeButton
+
+        if isVoiceMode {
+            searchButton.isShadowHidden = !isFloating
+            searchButton.setIcon(DesignSystemImages.Glyphs.Size24.voice)
+            let backgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+            let pressedBackgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccentTertiary) : UIColor(designSystemColor: .accentTertiary)
+            searchButton.setColors(foreground: UIColor(designSystemColor: .accentContentPrimary),
+                                   background: backgroundColor,
+                                   pressedForeground: UIColor(designSystemColor: .accentContentPrimary),
+                                   pressedBackground: pressedBackgroundColor)
+            searchButton.isEnabled = true
+            searchButton.alpha = 1.0
+            return
+        }
 
         let icon: UIImage? = {
             if isSearchMode && !isValidURL {
@@ -311,10 +326,12 @@ final class NavigationActionBarView: UIView {
                                    pressedForeground: UIColor(designSystemColor: .icons),
                                    pressedBackground: UIColor(designSystemColor: .surface))
         } else {
+            let backgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+            let pressedBackgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccentTertiary) : UIColor(designSystemColor: .accentTertiary)
             searchButton.setColors(foreground: UIColor(designSystemColor: .accentContentPrimary),
-                                   background: UIColor(designSystemColor: .accent),
+                                   background: backgroundColor,
                                    pressedForeground: UIColor(designSystemColor: .accentContentPrimary),
-                                   pressedBackground: UIColor(designSystemColor: .accentTertiary))
+                                   pressedBackground: pressedBackgroundColor)
         }
         searchButton.isEnabled = hasText
         
@@ -326,8 +343,9 @@ final class NavigationActionBarView: UIView {
     private func updateButtonVisibility() {
         let hasText = viewModel.hasText
         let isUsingFadeOutAnimation = viewModel.isUsingFadeOutAnimation
+        let isVoiceMode = viewModel.shouldShowVoiceModeButton
 
-        let shouldShowMicButton = viewModel.shouldShowMicButton
+        let shouldShowMicButton = viewModel.shouldShowMicButton && !isVoiceMode
         microphoneButton.isHidden = !shouldShowMicButton
         microphoneButton.alpha = shouldShowMicButton ? 1.0 : 0.0
 
@@ -336,7 +354,9 @@ final class NavigationActionBarView: UIView {
         newLineButton.alpha = shouldShowNewLineButton ? 1.0 : 0.0
 
         let shouldShowSearchButton: Bool
-        if isUsingFadeOutAnimation {
+        if isVoiceMode {
+            shouldShowSearchButton = true
+        } else if isUsingFadeOutAnimation {
             if viewModel.isSearchMode && !isFloating {
                 shouldShowSearchButton = false
             } else if viewModel.isSearchMode && viewModel.isTopBarPosition {
@@ -349,8 +369,12 @@ final class NavigationActionBarView: UIView {
         }
         searchButton.isHidden = !shouldShowSearchButton
 
-        let useInactiveStyle = isUsingFadeOutAnimation && !hasText
-        searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : (useInactiveStyle ? 1.0 : 0.5)) : 0.0
+        if isVoiceMode {
+            searchButton.alpha = 1.0
+        } else {
+            let useInactiveStyle = isUsingFadeOutAnimation && !hasText
+            searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : (useInactiveStyle ? 1.0 : 0.5)) : 0.0
+        }
     }
 
     // MARK: - Touch Handling

@@ -81,6 +81,7 @@ public struct PixelParameters {
     public static let storeAfterDeletionDiffCount = "store_after_deletion_diff_count"
     public static let storageAfterDeletionDiffCount = "storage_after_deletion_diff_count"
 
+    public static let tabsModelOperation = "operation"
     public static let tabsModelCount = "tabs_model_count"
     public static let tabControllerCacheCount = "tab_controller_cache_count"
 
@@ -106,6 +107,10 @@ public struct PixelParameters {
     public static let isInternalUser = "is_internal_user"
 
     public static let enabled = "enabled"
+
+    // Onboarding subscription promotion
+    public static let returningUser = "ru"
+    public static let freeTrial = "free_trial"
 
     // Email manager
     public static let emailKeychainAccessType = "access_type"

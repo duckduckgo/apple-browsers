@@ -26,6 +26,7 @@ import Kingfisher
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
     var sections: [BrowsingMenuModel.Section]
+    var preferredDetentItemCount: Int?
 }
 
 struct BrowsingMenuSheetView: View {
@@ -134,6 +135,8 @@ struct BrowsingMenuSheetView: View {
             }
         })
         .tint(Color(designSystemColor: .textPrimary))
+        .modifier(ScrollIndicatorsFlashOnAppearIfAvailable())
+
     }
 
     @ViewBuilder
@@ -523,4 +526,14 @@ private extension View {
 
 private extension Color {
     static let rowBackgroundColor: Color = .init(designSystemColor: .surfaceTertiary)
+}
+
+private struct ScrollIndicatorsFlashOnAppearIfAvailable: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content.scrollIndicatorsFlash(onAppear: true)
+        } else {
+            content
+        }
+    }
 }

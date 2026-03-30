@@ -57,15 +57,15 @@ struct ReturnToTabCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabelText))
-        .accessibilityHint(Text("Switches to this tab"))
+        .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
         .accessibilityIdentifier("NTP.escapeHatch.card")
     }
 
     private var accessibilityLabelText: String {
         if model.subtitle.isEmpty {
-            return "Return to \(model.title)"
+            return String(format: UserText.escapeHatchReturnToAccessibilityLabelFormat, model.title)
         }
-        return "Return to \(model.title), \(model.subtitle)"
+        return String(format: UserText.escapeHatchReturnToWithSubtitleAccessibilityLabelFormat, model.title, model.subtitle)
     }
 
     private var returnToLabel: some View {
@@ -78,7 +78,7 @@ struct ReturnToTabCard: View {
     private var iconView: some View {
         Group {
             if model.isAITab {
-                Image(uiImage: DesignSystemImages.Color.Size24.aiChatGradient)
+                Image(uiImage: UIImage(resource: .duckAIDefault))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
             } else if let domain = model.domain {
@@ -93,7 +93,7 @@ struct ReturnToTabCard: View {
     }
 
     private var returnToLabelText: String {
-        "Return to..."
+        UserText.escapeHatchReturnToLabel
     }
 }
 
@@ -135,7 +135,7 @@ private enum Metrics {
             subtitle: "en.wikipedia.org/wiki/Tokamak",
             isAITab: false,
             domain: "en.wikipedia.org",
-            targetTabIndex: 0
+            targetTab: Tab(fireTab: false)
         ),
         onTap: {}
     )
@@ -150,7 +150,7 @@ private enum Metrics {
             subtitle: "Duck.ai",
             isAITab: true,
             domain: nil,
-            targetTabIndex: 0
+            targetTab: Tab(fireTab: false)
         ),
         onTap: {}
     )

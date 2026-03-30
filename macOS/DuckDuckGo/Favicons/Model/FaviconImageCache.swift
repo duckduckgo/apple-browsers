@@ -44,14 +44,14 @@ protocol FaviconImageCaching {
     func cleanOld(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager) async
 
     @MainActor
-    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async -> Result<Void, Error>
 
     @MainActor
     func burnDomains(_ baseDomains: Set<String>,
                      exceptBookmarks bookmarkManager: BookmarkManager,
                      exceptSavedLogins logins: Set<String>,
                      exceptHistoryDomains history: Set<String>,
-                     tld: TLD) async
+                     tld: TLD) async -> Result<Void, Error>
 }
 
 final class FaviconImageCache: FaviconImageCaching {
@@ -141,9 +141,9 @@ final class FaviconImageCache: FaviconImageCaching {
 
     // MARK: - Burning
 
-    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async -> Result<Void, Error> {
         let bookmarkedHosts = bookmarkManager.allHosts()
-        await removeFavicons { favicon in
+        return await removeFavicons { favicon in
             guard let host = favicon.documentUrl.host else {
                 return false
             }
@@ -158,9 +158,9 @@ final class FaviconImageCache: FaviconImageCaching {
                      exceptBookmarks bookmarkManager: BookmarkManager,
                      exceptSavedLogins logins: Set<String>,
                      exceptHistoryDomains history: Set<String>,
-                     tld: TLD) async {
+                     tld: TLD) async -> Result<Void, Error> {
         let bookmarkedHosts = bookmarkManager.allHosts()
-        await removeFavicons { favicon in
+        return await removeFavicons { favicon in
             guard let host = favicon.documentUrl.host, let baseDomain = tld.eTLDplus1(host) else { return false }
             return baseDomains.contains(baseDomain)
                 && !bookmarkedHosts.contains(host)
@@ -172,21 +172,23 @@ final class FaviconImageCache: FaviconImageCaching {
     // MARK: - Private
 
     @MainActor
-    private func removeFavicons(filter isRemoved: (Favicon) -> Bool) async {
+    private func removeFavicons(filter isRemoved: (Favicon) -> Bool) async -> Result<Void, Error> {
         let faviconsToRemove = entries.values.filter(isRemoved)
         faviconsToRemove.forEach { entries[$0.url] = nil }
 
-        await removeFaviconsFromStore(faviconsToRemove)
+        return await removeFaviconsFromStore(faviconsToRemove)
     }
 
-    private func removeFaviconsFromStore(_ favicons: [Favicon]) async {
-        guard !favicons.isEmpty else { return }
+    private func removeFaviconsFromStore(_ favicons: [Favicon]) async -> Result<Void, Error> {
+        guard !favicons.isEmpty else { return .success(()) }
 
         do {
             try await storing.removeFavicons(favicons)
             Logger.favicons.debug("Favicons removed successfully.")
+            return .success(())
         } catch {
             Logger.favicons.error("Removing of favicons failed: \(error.localizedDescription)")
+            return .failure(error)
         }
     }
 }

@@ -49,6 +49,8 @@ final class AIChatTabExtension {
         self.isLoadedInSidebar = isLoadedInSidebar
         self.featureDiscovery = featureDiscovery
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
+        pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
+        pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
         chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
@@ -99,6 +101,18 @@ final class AIChatTabExtension {
             }
             .store(in: &userScriptCancellables)
 
+        aiChatUserScript.handler.pageContextConsumedPublisher
+            .sink { [weak self] _ in
+                self?.pageContextConsumedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
+
+        aiChatUserScript.handler.pageContextRemovedPublisher
+            .sink { [weak self] _ in
+                self?.pageContextRemovedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
+
         aiChatUserScript.handler.chatRestorationDataPublisher
             .sink { [weak self] data in
                 self?.chatRestorationDataSubject.send(data)
@@ -108,6 +122,12 @@ final class AIChatTabExtension {
 
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     let pageContextRequestedPublisher: AnyPublisher<Void, Never>
+
+    private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
+    let pageContextConsumedPublisher: AnyPublisher<Void, Never>
+
+    private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
+    let pageContextRemovedPublisher: AnyPublisher<Void, Never>
 
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
@@ -213,6 +233,8 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
 }
 

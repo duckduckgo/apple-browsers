@@ -22,7 +22,6 @@ import Combine
 import Common
 import Foundation
 import Navigation
-import Persistence
 import WebKit
 
 public struct ReleaseNotesValues: Codable {
@@ -43,7 +42,9 @@ public struct ReleaseNotesValues: Codable {
     let lastUpdate: UInt
     let releaseTitle: String?
     let releaseNotes: [String]?
-    let releaseNotesSubscription: [String]?
+    /// The key must stay `releaseNotesPrivacyPro` (not `releaseNotesSubscription`)
+    /// for compatibility with ContentScopeScripts.
+    let releaseNotesPrivacyPro: [String]?
     let downloadProgress: Double?
     let automaticUpdate: Bool?
 }
@@ -111,7 +112,7 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
     @MainActor
     public func navigationDidFinish(_ navigation: Navigation) {
         guard AppVersion.runType != .uiTests, navigation.url == releaseNotesURL else { return }
-        if updateController.latestUpdate?.needsLatestReleaseNote == true {
+        if updateController.needsLatestReleaseNote {
             updateController.checkForUpdateSkippingRollout()
         }
     }
@@ -125,7 +126,7 @@ extension ReleaseNotesValues {
          lastUpdate: UInt,
          releaseTitle: String? = nil,
          releaseNotes: [String]? = nil,
-         releaseNotesSubscription: [String]? = nil,
+         releaseNotesPrivacyPro: [String]? = nil,
          downloadProgress: Double? = nil,
          automaticUpdate: Bool?) {
         self.status = status.rawValue
@@ -134,47 +135,20 @@ extension ReleaseNotesValues {
         self.lastUpdate = lastUpdate
         self.releaseTitle = releaseTitle
         self.releaseNotes = releaseNotes
-        self.releaseNotesSubscription = releaseNotesSubscription
+        self.releaseNotesPrivacyPro = releaseNotesPrivacyPro
         self.downloadProgress = downloadProgress
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: any SparkleUpdateControlling, keyValueStore: ThrowingKeyValueStoring) {
+    init(from updateController: any SparkleUpdateControlling) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
-        // Fall back to cached release notes if necessary
-        // This happens when there's no connectivity,
-        // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
-            let settings = keyValueStore.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
-            if let cached = try? settings.pendingUpdateInfo {
-                let releaseTitle = Update.releaseDateFormatter().string(from: cached.date)
-
-                let cachedVersion = "\(cached.version) (\(cached.build))"
-                let status = {
-                    if currentVersion == cachedVersion {
-                        return ReleaseNotesValues.Status.loaded
-                    } else if case .updateCycleNotStarted = updateController.updateProgress {
-                        return .loading
-                    } else {
-                        return updateController.updateProgress.toStatus
-                    }
-                }()
-
-                self.init(status: status,
-                          currentVersion: currentVersion,
-                          latestVersion: cachedVersion,
-                          lastUpdate: lastUpdate,
-                          releaseTitle: releaseTitle,
-                          releaseNotes: cached.releaseNotes,
-                          releaseNotesSubscription: cached.releaseNotesSubscription,
-                          downloadProgress: 0.00,
-                          automaticUpdate: updateController.areAutomaticUpdatesEnabled)
-                return
-            }
-
-            self.init(status: .loadingError,
+            // When the update cycle is actively running we're still loading;
+            // otherwise treat missing update info as a loading error.
+            let status: Status = updateController.updateProgress.isIdle ? .loadingError : .loading
+            self.init(status: status,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,
                       automaticUpdate: updateController.areAutomaticUpdatesEnabled)
@@ -206,7 +180,7 @@ extension ReleaseNotesValues {
                   lastUpdate: lastUpdate,
                   releaseTitle: latestUpdate.title,
                   releaseNotes: latestUpdate.releaseNotes,
-                  releaseNotesSubscription: latestUpdate.releaseNotesSubscription,
+                  releaseNotesPrivacyPro: latestUpdate.releaseNotesSubscription,
                   downloadProgress: downloadProgress,
                   automaticUpdate: automaticUpdate)
     }

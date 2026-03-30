@@ -27,13 +27,51 @@ extension BrowsingMenuModel {
         verticalSizeClass: UIUserInterfaceSizeClass?
     ) -> CGFloat {
         let isCompact = verticalSizeClass == .compact
-        return estimatedContentHeight(
+        let allItemCount = sections.reduce(0) { $0 + $1.items.count }
+        return estimatedHeight(
+            itemCount: allItemCount,
+            sectionCount: sections.count,
             includesWebsiteInfo: headerDataSource.isHeaderVisible,
-            includesCloseButtonHeader: isCompact && !headerDataSource.isHeaderVisible
+            includesCloseButtonHeader: isCompact && !headerDataSource.isHeaderVisible,
+            adjustingForFold: false
         )
     }
 
-    private func estimatedContentHeight(includesWebsiteInfo: Bool, includesCloseButtonHeader: Bool) -> CGFloat {
+    func estimatedInitialDetentHeight(
+        headerDataSource: BrowsingMenuHeaderDataSource,
+        verticalSizeClass: UIUserInterfaceSizeClass?
+    ) -> CGFloat? {
+        guard let preferredDetentItemCount else { return nil }
+
+        var remainingItems = preferredDetentItemCount
+        var sectionCount = 0
+        var itemCount = 0
+
+        for section in sections {
+            guard remainingItems > 0 else { break }
+            sectionCount += 1
+            let take = min(section.items.count, remainingItems)
+            itemCount += take
+            remainingItems -= take
+        }
+
+        let isCompact = verticalSizeClass == .compact
+        return estimatedHeight(
+            itemCount: itemCount,
+            sectionCount: sectionCount,
+            includesWebsiteInfo: headerDataSource.isHeaderVisible,
+            includesCloseButtonHeader: isCompact && !headerDataSource.isHeaderVisible,
+            adjustingForFold: true
+        )
+    }
+
+    private func estimatedHeight(
+        itemCount: Int,
+        sectionCount: Int,
+        includesWebsiteInfo: Bool,
+        includesCloseButtonHeader: Bool,
+        adjustingForFold: Bool
+    ) -> CGFloat {
         typealias Metrics = BrowsingMenuSheetView.Metrics
 
         let headerFont = UIFont.daxCaption()
@@ -56,13 +94,12 @@ extension BrowsingMenuModel {
         let minTotalVerticalPadding: CGFloat = 16
         let rowHeight = max(Metrics.defaultListRowHeight, rowFont.lineHeight + minTotalVerticalPadding)
 
-        let itemCount = sections.reduce(0) { $0 + $1.items.count }
-        let menuSectionCount = sections.count
-
         // When header section has content (header buttons), there's an additional gap
         // between it and the first menu section
         let hasHeaderSectionContent = !headerItems.isEmpty
-        let sectionGapsCount = hasHeaderSectionContent ? menuSectionCount : max(0, menuSectionCount - 1)
+        let sectionGapsCount = hasHeaderSectionContent ? sectionCount : max(0, sectionCount - 1)
+
+        let foldAdjustment = adjustingForFold ? -(rowHeight / 2) : 0
 
         return websiteHeaderHeight
             + headerButtonsHeight
@@ -70,5 +107,6 @@ extension BrowsingMenuModel {
             + (CGFloat(sectionGapsCount) * Metrics.listSectionSpacing)
             + Metrics.listTopPadding
             + Metrics.grabberHeight
+            + foldAdjustment
     }
 }

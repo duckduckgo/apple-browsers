@@ -142,7 +142,7 @@ extension SubscriptionRestoreWideEventData {
 
 private extension SubscriptionRestoreWideEventData {
 
-    static func appleAccountBucket(_ ms: Double) -> Int {
+    static func appleAccountBucket(_ ms: Int) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000
@@ -154,7 +154,7 @@ private extension SubscriptionRestoreWideEventData {
         }
     }
 
-    static func emailAddressBucket(_ ms: Double) -> Int {
+    static func emailAddressBucket(_ ms: Int) -> Int {
         switch ms {
         case 0..<10000: return 10000
         case 10000..<30000: return 30000

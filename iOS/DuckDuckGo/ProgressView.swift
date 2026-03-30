@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import DesignResourcesKit
 
 @IBDesignable
 class ProgressView: UIView, CAAnimationDelegate {
@@ -32,7 +33,9 @@ class ProgressView: UIView, CAAnimationDelegate {
     
     private var progressLayer = CAGradientLayer()
     private var progressMask = CALayer()
-    
+
+    private var fireMode = false
+
     // Actual progress, as reported by WKWebView.
     private var currentProgress: CGFloat = 0.0
     // Currently displayed progress, used to prepare next animation.
@@ -203,15 +206,30 @@ class ProgressView: UIView, CAAnimationDelegate {
 }
 
 extension ProgressView {
-    
+
+    func updateFireModeAppearance(fireMode: Bool) {
+        self.fireMode = fireMode
+        decorate()
+    }
+
     private func decorate() {
-        let theme = ThemeManager.shared.currentTheme
+        let darkColor: UIColor
+        let lightColor: UIColor
+        if fireMode {
+            darkColor = UIColor(singleUseColor: .fireModeAccent)
+            lightColor = UIColor(singleUseColor: .fireModeAccent)
+        } else {
+            let theme = ThemeManager.shared.currentTheme
+            darkColor = theme.progressBarGradientDarkColor
+            lightColor = theme.progressBarGradientLightColor
+        }
+
         var colors = [CGColor]()
         for _ in 0...6 {
-            colors.append(theme.progressBarGradientDarkColor.cgColor)
-            colors.append(theme.progressBarGradientLightColor.cgColor)
+            colors.append(darkColor.cgColor)
+            colors.append(lightColor.cgColor)
         }
-        
+
         progressLayer.colors = colors
     }
 

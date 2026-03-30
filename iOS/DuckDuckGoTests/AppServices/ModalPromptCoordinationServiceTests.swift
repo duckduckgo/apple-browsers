@@ -19,6 +19,7 @@
 
 import UIKit
 import Foundation
+import Combine
 import Testing
 import PersistenceTestingUtils
 @testable import DuckDuckGo
@@ -188,6 +189,28 @@ final class ModalPromptCoordinationServiceTests {
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
     }
 
+    @Test("Check Modal Is Presented When OmniBarEditingStateViewController Is Presented")
+    func whenOmniBarEditingStateIsPresentedThenModalIsPresented() {
+        // GIVEN
+        launchSourceManagerMock.source = .standard
+        contextualOnboardingMock.hasSeenOnboarding = true
+        presenterMock.presentedViewController = OmniBarEditingStateViewController(
+            switchBarHandler: MockSwitchBarHandler(),
+            escapeHatch: nil
+        )
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
+            modalPromptCoordinationManager: managerMock
+        )
+
+        // WHEN
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // THEN
+        #expect(managerMock.didCallPresentModalPromptIfNeeded)
+    }
+
     @Test("Check Modal Is Not Presented When Multiple Conditions Fail")
     func whenMultipleConditionsFailThenModalIsNotPresented() {
         // GIVEN
@@ -211,6 +234,7 @@ final class ModalPromptCoordinationServiceTests {
         "Check Provider Priority Order",
         arguments: [
             ProviderPriority.winBackOffer,
+            .subscriptionPromo,
             .newAddressBarPicker,
             .defaultBrowser,
             .whatsNew
@@ -225,6 +249,7 @@ final class ModalPromptCoordinationServiceTests {
             newAddressBarPicker: MockModalPromptProvider(shouldReturnPrompt: priority == .newAddressBarPicker),
             defaultBrowser: MockModalPromptProvider(shouldReturnPrompt: priority == .defaultBrowser),
             winBackOffer: MockModalPromptProvider(shouldReturnPrompt: priority == .winBackOffer),
+            subscriptionPromo: MockModalPromptProvider(shouldReturnPrompt: priority == .subscriptionPromo),
             whatsNew: MockModalPromptProvider(shouldReturnPrompt: priority == .whatsNew),
         )
 
@@ -261,6 +286,7 @@ extension ModalPromptProviders {
     func provider(for priority: ProviderPriority) -> ModalPromptProvider? {
         switch priority {
         case .winBackOffer: return winBackOffer
+        case .subscriptionPromo: return subscriptionPromo
         case .defaultBrowser: return defaultBrowser
         case .newAddressBarPicker: return newAddressBarPicker
         case .whatsNew: return whatsNew
@@ -271,15 +297,17 @@ extension ModalPromptProviders {
 
 enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
     case winBackOffer = 0
-    case newAddressBarPicker = 1
-    case defaultBrowser = 2
-    case whatsNew = 3
+    case subscriptionPromo = 1
+    case newAddressBarPicker = 2
+    case defaultBrowser = 3
+    case whatsNew = 4
 
     var index: Int { rawValue }
 
     var description: String {
         switch self {
         case .winBackOffer: return "WinBackOffer"
+        case .subscriptionPromo: return "SubscriptionPromo"
         case .newAddressBarPicker: return "NewAddressBarPicker"
         case .defaultBrowser: return "DefaultBrowser"
         case .whatsNew: return "WhatsNew"
@@ -294,4 +322,40 @@ private final class MockDismissingViewController: UIViewController {
         get { _isBeingDismissed }
         set { _isBeingDismissed = newValue }
     }
+}
+
+private final class MockSwitchBarHandler: SwitchBarHandling {
+    var currentText: String = ""
+    var currentToggleState: TextEntryMode = .search
+    var isVoiceSearchEnabled: Bool = false
+    var hasUserInteractedWithText: Bool = false
+    var isCurrentTextValidURL: Bool = false
+    var buttonState: SwitchBarButtonState = .noButtons
+    var isTopBarPosition: Bool = true
+    var isToggleEnabled: Bool = false
+    var isFireTab: Bool = false
+    var isUsingExpandedBottomBarHeight: Bool = false
+    var isUsingFadeOutAnimation: Bool = false
+    var hasSubmittedPrompt: Bool = false
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
+    var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
+    var modeParameters: [String: String] { [:] }
+    func updateCurrentText(_ text: String) {}
+    func submitText(_ text: String) {}
+    func setToggleState(_ state: TextEntryMode) {}
+    func clearText() {}
+    func microphoneButtonTapped() {}
+    func markUserInteraction() {}
+    func clearButtonTapped() {}
+    func searchGoToButtonTapped() {}
+    func stopGeneratingButtonTapped() {}
+    func updateBarPosition(isTop: Bool) {}
 }

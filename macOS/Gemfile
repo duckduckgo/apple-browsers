@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'fastlane', '2.232.1'
+gem 'fastlane', '2.232.2'
 gem 'httparty'
 
 plugins_path = File.join(File.dirname(__FILE__), 'fastlane', 'Pluginfile')

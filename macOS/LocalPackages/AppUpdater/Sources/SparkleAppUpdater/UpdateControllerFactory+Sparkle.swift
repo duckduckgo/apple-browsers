@@ -38,15 +38,22 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
                                    notificationPresenter: any UpdateNotificationPresenting,
                                    keyValueStore: any ThrowingKeyValueStoring,
                                    allowCustomUpdateFeed: Bool,
+                                   isAutoUpdatePaused: @escaping () -> Bool,
                                    wideEvent: WideEventManaging,
                                    isOnboardingFinished: @escaping () -> Bool,
                                    openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateControlling {
+        let manualUpdateRemovalHandler = ManualUpdateRemovalHandler(
+            settings: keyValueStore.throwingKeyedStoring(),
+            featureFlagger: featureFlagger
+        )
         return SparkleUpdateController(internalUserDecider: internalUserDecider,
                                        featureFlagger: featureFlagger,
+                                       manualUpdateRemovalHandler: manualUpdateRemovalHandler,
                                        pixelFiring: pixelFiring,
                                        notificationPresenter: notificationPresenter,
                                        keyValueStore: keyValueStore,
                                        allowCustomUpdateFeed: allowCustomUpdateFeed,
+                                       isAutoUpdatePaused: isAutoUpdatePaused,
                                        wideEvent: wideEvent,
                                        isOnboardingFinished: isOnboardingFinished,
                                        openUpdatesPage: openUpdatesPage)

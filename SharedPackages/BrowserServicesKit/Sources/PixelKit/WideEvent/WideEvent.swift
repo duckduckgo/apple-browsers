@@ -64,8 +64,8 @@ public final class WideEvent: WideEventManaging {
     private let failureEventMapping: EventMapping<WideEventFailureEvent>?
     private let featureFlagProvider: WideEventFeatureFlagProviding
 
-    public init(storage: WideEventStoring = WideEventUserDefaultsStorage(),
-                sender: WideEventSending = DefaultWideEventSender(),
+    public init(storage: WideEventStoring,
+                sender: WideEventSending,
                 sampler: WideEventSampling? = nil,
                 failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,
                 featureFlagProvider: WideEventFeatureFlagProviding) {
@@ -74,6 +74,21 @@ public final class WideEvent: WideEventManaging {
         self.sampler = sampler ?? DefaultWideEventSampler()
         self.failureEventMapping = failureEventMapping
         self.featureFlagProvider = featureFlagProvider
+    }
+
+    public convenience init(
+        useMockRequests: Bool = false,
+        storage: WideEventStoring = WideEventUserDefaultsStorage(),
+        failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,
+        featureFlagProvider: WideEventFeatureFlagProviding
+    ) {
+        self.init(
+            storage: storage,
+            sender: DefaultWideEventSender(useMockRequests: useMockRequests),
+            sampler: DefaultWideEventSampler(),
+            failureEventMapping: failureEventMapping,
+            featureFlagProvider: featureFlagProvider
+        )
     }
 
     // MARK: - Public API

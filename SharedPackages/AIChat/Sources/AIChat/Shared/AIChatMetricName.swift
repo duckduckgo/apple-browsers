@@ -25,6 +25,7 @@ public enum AIChatMetricName: String, Codable {
     case userDidSelectFirstHistoryItem
     case userDidCreateNewChat
     case userDidTapKeyboardReturnKey
+    case userDidAcceptTermsAndConditions
 }
 
 // Model tier for AI Chat metrics

@@ -215,7 +215,8 @@ private extension AIChatPageContextHandler {
             url: context.url,
             content: context.content,
             truncated: context.truncated,
-            fullContentLength: context.fullContentLength
+            fullContentLength: context.fullContentLength,
+            attachable: context.attachable
         )
     }
 

@@ -146,8 +146,11 @@ final class WideEventTests: XCTestCase {
 
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
-        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
-                              featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true))
+        wideEvent = WideEvent(
+            useMockRequests: true,
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
+            featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+        )
         capturedPixels.removeAll()
         setupMockPixelKit()
     }

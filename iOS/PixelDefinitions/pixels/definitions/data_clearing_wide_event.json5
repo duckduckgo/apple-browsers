@@ -1,0 +1,149 @@
+{
+    // Defined in https://app.asana.com/1/137249556945/task/1212683300907458?focus=true
+    "m_ios_wide_data_clearing": {
+        "description": "Wide pixel sent at the end of a data clearing flow on iOS",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            // Standard wide event parameters
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventErrorDescription",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
+
+            // Wide event type identifier
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-data-clearing"]
+            },
+
+            // Feature identifier
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["data-clearing"]
+            },
+
+            // Feature data
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Reason for the current status",
+                "enum": ["partial_data", "timeout"]
+            },
+            {
+                "key": "feature.data.ext.included_options",
+                "type": "string",
+                "description": "Comma-separated list of specific options selected (tabs, data, aiChats) (iOS only)",
+                "enum": ["tabs", "data", "aiChats", "tabs,data", "tabs,aiChats", "data,aiChats", "tabs,data,aiChats"]
+            },
+            {
+                "key": "feature.data.ext.trigger",
+                "type": "string",
+                "description": "What initiated the clearing flow",
+                "enum": ["manualFire", "autoClearOnLaunch", "autoClearOnForeground", "fireModeAutoClear"]
+            },
+            {
+                "key": "feature.data.ext.scope",
+                "type": "string",
+                "description": "Scope of the clearing action",
+                "enum": ["tab", "fireMode", "normalMode", "all"]
+            },
+            {
+                "key": "feature.data.ext.source",
+                "type": "string",
+                "description": "Entry point that triggered the data clearing flow",
+                "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear"]
+            },
+
+            // Overall latency
+            {
+                "key": "feature.data.ext.overall_latency_ms",
+                "type": "integer",
+                "description": "Duration from start of clearing attempt to end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+            },
+
+            // Per-action status - all 20 iOS actions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_url_caches|clear_daxDialogs_held_URL_data|clear_website_data\\.remove_observations_data|clear_website_data\\.remove_all_containers_after_delay|delete_contextual_aiChat|clear_website_data_fire_mode|clear_autoconsent_management_cache_fire_mode|forget_text_zoom_fire_mode)_status",
+                "type": "string",
+                "description": "Final status of each clearing action",
+                "enum": ["SUCCESS", "FAILURE"]
+            },
+
+            // Per-action latency - all 20 iOS actions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_url_caches|clear_daxDialogs_held_URL_data|clear_website_data\\.remove_observations_data|clear_website_data\\.remove_all_containers_after_delay|delete_contextual_aiChat|clear_website_data_fire_mode|clear_autoconsent_management_cache_fire_mode|forget_text_zoom_fire_mode)_latency_ms",
+                "type": "integer",
+                "description": "Duration from start of action to end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+            },
+
+            // Per-action error domains - all 20 iOS actions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_url_caches|clear_daxDialogs_held_URL_data|clear_website_data\\.remove_observations_data|clear_website_data\\.remove_all_containers_after_delay|delete_contextual_aiChat|clear_website_data_fire_mode|clear_autoconsent_management_cache_fire_mode|forget_text_zoom_fire_mode)_error\\.domain",
+                "type": "string",
+                "description": "Top level error domain for action failures",
+                "examples": ["DataClearingWideEventError", "NSCocoaErrorDomain", "com.duckduckgo.history"]
+            },
+
+            // Per-action error codes - all 20 iOS actions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_url_caches|clear_daxDialogs_held_URL_data|clear_website_data\\.remove_observations_data|clear_website_data\\.remove_all_containers_after_delay|delete_contextual_aiChat|clear_website_data_fire_mode|clear_autoconsent_management_cache_fire_mode|forget_text_zoom_fire_mode)_error\\.code",
+                "type": "integer",
+                "description": "Top level error code for action failures"
+            },
+
+            // Per-action error descriptions - all 20 iOS actions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_url_caches|clear_daxDialogs_held_URL_data|clear_website_data\\.remove_observations_data|clear_website_data\\.remove_all_containers_after_delay|delete_contextual_aiChat|clear_website_data_fire_mode|clear_autoconsent_management_cache_fire_mode|forget_text_zoom_fire_mode)_error\\.description",
+                "type": "string",
+                "description": "Human-readable error description for action failures",
+                "examples": [
+                    "coordinatorNotInitialized",
+                    "fileRemovalFailed",
+                    "databaseSaveFailed",
+                    "historyNotLoaded",
+                    "directoryCreationFailed",
+                    "fileMoveOperationFailed",
+                    "databaseOpenFailed"
+                ]
+            },
+
+            // Per-action underlying error domains - all 20 iOS actions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_url_caches|clear_daxDialogs_held_URL_data|clear_website_data\\.remove_observations_data|clear_website_data\\.remove_all_containers_after_delay|delete_contextual_aiChat|clear_website_data_fire_mode|clear_autoconsent_management_cache_fire_mode|forget_text_zoom_fire_mode)_error\\.underlying_domain[0-9]?",
+                "type": "string",
+                "description": "Underlying error domain for action failures",
+                "examples": ["NSPOSIXErrorDomain", "NSURLErrorDomain", "SQLite.Result"]
+            },
+
+            // Per-action underlying error codes - all 20 iOS actions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_url_caches|clear_daxDialogs_held_URL_data|clear_website_data\\.remove_observations_data|clear_website_data\\.remove_all_containers_after_delay|delete_contextual_aiChat|clear_website_data_fire_mode|clear_autoconsent_management_cache_fire_mode|forget_text_zoom_fire_mode)_error\\.underlying_code[0-9]?",
+                "type": "integer",
+                "description": "Underlying error code for action failures"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the flow",
+                "enum": ["funnel_default_ios"]
+            }
+        ]
+    }
+}

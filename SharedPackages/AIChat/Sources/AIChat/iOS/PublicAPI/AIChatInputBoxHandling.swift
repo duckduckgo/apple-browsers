@@ -26,15 +26,22 @@ public protocol AIChatInputBoxHandling {
     var didSubmitPrompt: PassthroughSubject<String, Never> { get }
     var didSubmitQuery: PassthroughSubject<String, Never> { get }
     var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
+    var didPressCustomizeResponsesButton: PassthroughSubject<Void, Never> { get }
+
+    var persistedModelId: String? { get }
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { get }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { get }
     var aiChatStatus: AIChatStatusValue { get set }
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility { get set }
+
+    var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }
+    var attachmentUsage: AIChatAttachmentUsage? { get set }
 }
 
 public enum AIChatStatusValue: String, Codable {
     case startStreamNewPrompt = "start_stream:new_prompt"
+    case startStreamRestartStream = "start_stream:restart_stream"
     case loading
     case streaming
     case error
@@ -51,5 +58,25 @@ public enum AIChatInputBoxVisibility: String, Codable {
 
 public struct AIChatStatus: Codable {
     public let status: AIChatStatusValue
+    public let attachments: AIChatAttachmentUsage?
+}
+
+public struct AIChatAttachmentUsage: Codable, Equatable {
+    public let imagesUsed: Int
+    public let filesUsed: Int
+    public let fileSizeBytesUsed: Int
+
+    public init(imagesUsed: Int, filesUsed: Int, fileSizeBytesUsed: Int) {
+        self.imagesUsed = imagesUsed
+        self.filesUsed = filesUsed
+        self.fileSizeBytesUsed = fileSizeBytesUsed
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        imagesUsed = try container.decodeIfPresent(Int.self, forKey: .imagesUsed) ?? 0
+        filesUsed = try container.decodeIfPresent(Int.self, forKey: .filesUsed) ?? 0
+        fileSizeBytesUsed = try container.decodeIfPresent(Int.self, forKey: .fileSizeBytesUsed) ?? 0
+    }
 }
 #endif

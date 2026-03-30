@@ -112,7 +112,9 @@ class SwitchBarTextEntryViewController: UIViewController {
         textEntryView.layer.cornerRadius = Metrics.containerCornerRadius
         textEntryView.layer.masksToBounds = true
         
-        containerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+        containerView.backgroundColor = handler.isFireTab ?
+        UIColor(singleUseColor: .fireModeBackground) :
+        UIColor(designSystemColor: .urlBar)
         containerView.applyActiveShadow()
     }
 

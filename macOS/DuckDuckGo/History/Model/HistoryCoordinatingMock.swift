@@ -61,31 +61,31 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
 
     public var burnAllCalled = false
     public var onBurnAll: (() -> Void)?
-    public func burnAll(completion: @escaping @MainActor () -> Void) {
+    public func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         burnAllCalled = true
         onBurnAll?()
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
     }
 
     public var burnDomainsCalled = false
     public var onBurnDomains: (() -> Void)?
-    public func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
+    public func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
         burnDomainsCalled = true
         onBurnDomains?()
         MainActor.assumeMainThread {
-            completion([])
+            completion(.success([]))
         }
     }
 
     public var burnVisitsCalled = false
     public var onBurnVisits: (() -> Void)?
-    public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
+    public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         burnVisitsCalled = true
         onBurnVisits?()
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
     }
 
@@ -120,12 +120,12 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
     public var resetCookiePopupBlockedCalled = false
     public var resetCookiePopupBlockedDomains: Set<String>?
     public var resetCookiePopupBlockedTLD: Common.TLD?
-    public func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
+    public func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         resetCookiePopupBlockedCalled = true
         resetCookiePopupBlockedDomains = domains
         resetCookiePopupBlockedTLD = tld
         MainActor.assumeMainThread {
-            completion()
+            completion(.success(()))
         }
     }
 
@@ -142,12 +142,10 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
         return historySuggestionsStub
     }
 
-    public var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
-
     @MainActor
     public func delete(_ visits: [History.Visit]) async {
         await withCheckedContinuation { continuation in
-            burnVisits(visits) {
+            burnVisits(visits) { _ in
                 continuation.resume()
             }
         }

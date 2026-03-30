@@ -8,9 +8,9 @@ appId: com.duckduckgo.mobile.ios
 - pressKey: Enter
 - assertVisible: You can sync with your other devices later.
 - tapOn: Turn On Sync & Backup
-- assertVisible: Save Recovery Code
+- assertVisible: Recover Your Data Easily
 - tapOn: Copy Code
 - tapOn: Next
-- assertVisible: Your Data is Synced!
+- assertVisible: Your data is synced!
 - tapOn: Done
 - assertVisible: Sync Enabled

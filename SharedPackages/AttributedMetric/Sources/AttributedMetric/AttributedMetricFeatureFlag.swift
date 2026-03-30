@@ -44,13 +44,13 @@ public enum AttributedMetricFeatureFlag: String {
 
 extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
 
-    public var defaultValue: Bool {
+    public var defaultValue: FeatureFlagDefaultValue {
         switch self {
         case .attributedMetrics, .emitAllMetrics, .retention, .canEmitRetention,
              .searchDaysAvg, .canEmitSearchDaysAvg, .searchCountAvg, .canEmitSearchCountAvg,
              .adClickCountAvg, .canEmitAdClickCountAvg, .aiUsageAvg, .canEmitAIUsageAvg,
              .subscriptionRetention, .canEmitSubscriptionRetention, .syncDevices, .canEmitSyncDevices:
-            return false
+            return .disabled
         }
     }
 

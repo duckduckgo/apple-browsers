@@ -17,8 +17,10 @@
 //
 
 import SwiftUI
+import Combine
 #if os(iOS)
 import MetricBuilder
+import UIKit
 #endif
 
 public enum ContextualOnboardingBackgroundType {
@@ -28,14 +30,15 @@ public enum ContextualOnboardingBackgroundType {
     case trackers
     case fireDialog
     case endOfJourney
+    case endOfJourneyNTP
     case privacyProTrial
 
     var alignment: Alignment {
         switch self {
         case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog:
             return .bottomTrailing
-        case .endOfJourney, .privacyProTrial:
-            return .center
+        case .endOfJourney, .endOfJourneyNTP, .privacyProTrial:
+            return .bottom
         }
     }
 
@@ -53,10 +56,18 @@ public enum ContextualOnboardingBackgroundType {
             return OnboardingRebrandingImages.Contextual.trackerBlockedBackground
         case .endOfJourney:
             return OnboardingRebrandingImages.Contextual.endOfJourneyBackground
+        case .endOfJourneyNTP:
+            return OnboardingRebrandingImages.Contextual.endOfJourneyBackgroundNewTab
         case .privacyProTrial:
             return OnboardingRebrandingImages.Contextual.subscriptionPromoBackground
         }
     }
+}
+
+private enum ContextualBackgroundStyleMetrics {
+    static let referenceBackgroundImageHeight: CGFloat = 290
+    static let referenceBackgroundImageOffset: CGFloat = 90
+    static let backgroundImageKeyboardAnimation = Animation.easeOut(duration: 0.16)
 }
 
 extension OnboardingRebranding.OnboardingStyles {
@@ -66,38 +77,125 @@ extension OnboardingRebranding.OnboardingStyles {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.onboardingTheme) private var theme
 
-        let backgroundType: ContextualOnboardingBackgroundType
-        let imageOffsetY: CGFloat
+        #if os(iOS)
+        @StateObject private var keyboardResponder: KeyboardResponder
+        private let keyboardBehavior: KeyboardBehavior
+        #endif
+
+        @State private var imageHeight: CGFloat = 0
+        @State private var imageBottomY: CGFloat = 0
+
+        private let backgroundType: ContextualOnboardingBackgroundType
+        private let imageOffsetY: CGFloat
+
+        #if os(iOS)
+        init(backgroundType: ContextualOnboardingBackgroundType, imageOffsetY: CGFloat, keyboardBehavior: KeyboardBehavior) {
+            self.backgroundType = backgroundType
+            self.keyboardBehavior = keyboardBehavior
+            self.imageOffsetY = imageOffsetY
+            _keyboardResponder = StateObject(wrappedValue: KeyboardResponder(isEnabled: keyboardBehavior.isEnabled))
+        }
+        #elseif os(macOS)
+        init(backgroundType: ContextualOnboardingBackgroundType, imageOffsetY: CGFloat) {
+            self.backgroundType = backgroundType
+            self.imageOffsetY = imageOffsetY
+        }
+        #endif
 
         func body(content: Content) -> some View {
-            ZStack {
-                theme.colorPalette.background
-                    .ignoresSafeArea()
+                ZStack {
+                    theme.colorPalette.background
+                        .ignoresSafeArea()
 
-                VStack {
-                    Spacer()
-                    backgroundType.image
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: backgroundType.alignment == .center ? nil : maxHeightMetrics) // Center-aligned backgrounds have no height constraint to prevent cropping on iPad and landscape
-                        .background(
-                            GeometryReader { proxy in
-                                Color.clear
-                                    .preference(key: BackgroundIllustrationHeightPreferenceKey.self, value: proxy.size.height)
-                            }
-                        )
-                        .offset(y: imageOffsetY)
+                    ZStack(alignment: backgroundType.alignment) {
+                        Color.clear
+                            .ignoresSafeArea()
+
+                            backgroundType.image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: maxHeightMetrics)
+                                .background(
+                                    GeometryReader { proxy in
+                                        Color.clear
+                                            .preference(key: BackgroundIllustrationHeightPreferenceKey.self, value: proxy.size.height)
+                                            .preference(key: BackgroundIllustrationBottomPreferenceKey.self, value: proxy.frame(in: .global).maxY)
+                                    }
+                                )
+                                .offset(y: calculateImageOffset())
+                        #if os(iOS)
+                                .animation(ContextualBackgroundStyleMetrics.backgroundImageKeyboardAnimation, value: keyboardResponder.keyboardFrame)
+                        #endif
+
+                    }
+                    .frame(maxWidth: .infinity, alignment: backgroundType.alignment)
+                    .clipped()
+                    .ignoresSafeArea(edges: ignoresSafeAreaEdges)
+                    .onPreferenceChange(BackgroundIllustrationHeightPreferenceKey.self) { height in
+                        imageHeight = height
+                    }
+                    .onPreferenceChange(BackgroundIllustrationBottomPreferenceKey.self) { bottomY in
+                        #if os(iOS)
+                        // Only capture the image's natural bottom position when keyboard is hidden.
+                        // This breaks the circular dependency that caused infinite render loops:
+                        // - When keyboard is hidden: capture the stable reference position
+                        // - When keyboard is visible: ignore updates (image position changes due to offset, not layout)
+                        // Without this guard, moving the image would update this value, which would
+                        // recalculate the offset, which would move the image again, creating a loop.
+                        if imageBottomY == 0 || keyboardResponder.keyboardFrame.height == 0 {
+                            imageBottomY = bottomY
+                        }
+                        #endif
+                    }
+
+                    content
                 }
-                .frame(maxWidth: .infinity, alignment: backgroundType.alignment)
-                .clipped()
-                .ignoresSafeArea(.container, edges: ignoresSafeAreaEdges)
+                .ignoresSafeArea(.keyboard)
+        }
 
-                content
-            }
+        // Calculates the vertical offset needed to adjust the background image when the keyboard appears.
+        // The offset calculation works as follows:
+        // 1. Get the keyboard frame in global coordinates (from KeyboardResponder)
+        // 2. Use the captured natural image bottom position (imageBottomY) as stable reference
+        // 3. Calculate how much to move the image so it extends 90 pixels (scaled) behind the keyboard
+        private func calculateImageOffset() -> CGFloat {
+            #if os(iOS)
+            // If screen does not respond to keyboard notifications, return default imageOffsetY
+            guard keyboardBehavior.isEnabled else { return imageOffsetY }
+
+            // Early exit if image height hasn't been captured yet
+            guard imageHeight > 0 else { return imageOffsetY }
+
+            // Inset of the image calculated from the reference image + reference offset scaled for actual image size.
+            let keyboardImageOffsetY = ContextualBackgroundStyleMetrics.referenceBackgroundImageOffset * imageHeight / ContextualBackgroundStyleMetrics.referenceBackgroundImageHeight
+
+            // Early exit if no keyboard is visible
+            guard keyboardResponder.keyboardFrame.height > 0 else { return keyboardImageOffsetY }
+
+            // Early exit if we haven't captured the natural image position yet
+            guard imageBottomY > 0 else { return imageOffsetY }
+
+            let keyboardFrame = keyboardResponder.keyboardFrame
+
+            // Calculate the "effective" current bottom (accounting for the image extending beyond visible area)
+            // We subtract the offset because the image is taller than needed to extend behind keyboard
+            let currentImageBottom = imageBottomY - keyboardImageOffsetY
+
+            // Calculate where we want the image bottom to be (keyboard top + extension to go behind rounded corners)
+            let targetImageBottom = keyboardFrame.minY + keyboardImageOffsetY
+
+            // Calculate how much to move the image
+            let offset = targetImageBottom - currentImageBottom
+
+            return offset
+            #else
+            return imageOffsetY
+            #endif
         }
 
         #if os(iOS)
-        private static let maxHeightMetricsBuilder = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
+        private static let maxHeightContextualAssets = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200) // Contextual assets have smaller height than new tab page ones.
+        private static let maxHeightNewTabPageAssets = MetricBuilder<CGFloat?>(default: nil).iPad(290).iPhone(landscape: 290)
         // iPhone excludes .bottom to prevent background from being covered by the address bar when it is positioned at the bottom
         private static let ignoreSafeAreaEdgesBuilder = MetricBuilder<Edge.Set>(default: [.horizontal]).iPad([.bottom, .horizontal])
         #endif
@@ -105,7 +203,12 @@ extension OnboardingRebranding.OnboardingStyles {
         var maxHeightMetrics: CGFloat? {
             #if os(iOS)
             // iOS uses responsive metrics based on device type
-            return Self.maxHeightMetricsBuilder.build(v: vSizeClass, h: hSizeClass)
+            switch backgroundType {
+            case .tryASearchCompleted, .trackers, .fireDialog, .endOfJourney:
+                return Self.maxHeightContextualAssets.build(v: vSizeClass, h: hSizeClass)
+            case .tryASearch, .tryVisitingASiteNTP, .endOfJourneyNTP, .privacyProTrial:
+                return Self.maxHeightNewTabPageAssets.build(v: vSizeClass, h: hSizeClass)
+            }
             #else
             // macOS: Fixed value. Customise when implementing macOS contextual onboarding.
             return nil
@@ -130,14 +233,12 @@ extension OnboardingRebranding.OnboardingStyles {
         let backgroundType: ContextualOnboardingBackgroundType
         let animation: Animation
         let delay: TimeInterval
+        let keyboardBehavior: KeyboardBehavior
 
         func body(content: Content) -> some View {
             content
                 .modifier(
-                    ContextualBackgroundStyle(
-                        backgroundType: backgroundType,
-                        imageOffsetY: didAppear ? 0 : imageHeight + 16
-                    )
+                    backgroundStyle
                 )
                 .onPreferenceChange(BackgroundIllustrationHeightPreferenceKey.self) { imageHeight in
                     guard imageHeight > 0 else { return }
@@ -148,6 +249,21 @@ extension OnboardingRebranding.OnboardingStyles {
                     }
                 }
         }
+
+        private var backgroundStyle: ContextualBackgroundStyle {
+            #if os(iOS)
+            ContextualBackgroundStyle(
+                backgroundType: backgroundType,
+                imageOffsetY: didAppear ? 0 : imageHeight + 16,
+                keyboardBehavior: keyboardBehavior
+            )
+            #elseif os(macOS)
+            ContextualBackgroundStyle(
+                backgroundType: backgroundType,
+                imageOffsetY: didAppear ? 0 : imageHeight + 16
+            )
+            #endif
+        }
     }
 
 }
@@ -155,6 +271,13 @@ extension OnboardingRebranding.OnboardingStyles {
 // MARK: - Helpers
 
 private struct BackgroundIllustrationHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct BackgroundIllustrationBottomPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
@@ -184,18 +307,113 @@ public struct BackgroundAnimationContext {
     public static let `default` = BackgroundAnimationContext(animation: .easeInOut(duration: 0.3), delay: 0.1)
 }
 
+/// Defines how the contextual onboarding background should respond to keyboard appearance.
+public enum KeyboardBehavior: Equatable {
+    /// Adjusts the background image position when the keyboard appears to keep it visible.
+    /// The image will move up so its bottom edge sits at the keyboard's top edge plus an offset calculated dynamically based on the image size.
+    case adjustForKeyboard
+
+    /// Does not adjust for keyboard - background remains in its original position.
+    case ignoreKeyboard
+
+    var isEnabled: Bool {
+        self != .ignoreKeyboard
+    }
+}
+
 public extension View {
 
-    /// Applies the contextual onboarding background illustration.
+    /// Applies a keyboard-aware background for new tab page onboarding dialogs.
     ///
-    /// If an animation context is provided, the illustration animates in from the bottom edge.
-    @ViewBuilder
-    func applyContextualOnboardingBackground(backgroundType: ContextualOnboardingBackgroundType, animationContext: BackgroundAnimationContext? = nil) -> some View {
-        if let animationContext {
-            self.modifier(OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(backgroundType: backgroundType, animation: animationContext.animation, delay: animationContext.delay))
-        } else {
-            self.modifier(OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(backgroundType: backgroundType, imageOffsetY: 0))
-        }
+    /// This modifier is designed for onboarding dialogs shown on the new tab page where
+    /// keyboard interaction is expected (e.g., search input). The background will automatically
+    /// adjust its position when the keyboard appears to remain visible.
+    ///
+    /// The background appears immediately without entrance animation.
+    ///
+    /// - Parameter backgroundType: The type of background illustration to display.
+    func applyNewTabOnboardingBackground(
+        backgroundType: ContextualOnboardingBackgroundType
+    ) -> some View {
+        #if os(iOS)
+            self.modifier(
+                OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
+                    backgroundType: backgroundType,
+                    imageOffsetY: 0,
+                    keyboardBehavior: .adjustForKeyboard
+                )
+            )
+        #elseif os(macOS)
+            self.modifier(
+                OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
+                    backgroundType: backgroundType,
+                    imageOffsetY: 0
+                )
+            )
+        #endif
+    }
+
+    /// Applies an animated background for contextual onboarding dialogs.
+    ///
+    /// This modifier is designed for onboarding dialogs shown during browsing (contextual).
+    /// The background animates in from the bottom edge with a fade/slide effect.
+    ///
+    /// No keyboard adjustment is performed as these dialogs don't typically involve keyboard interaction.
+    ///
+    /// - Parameters:
+    ///   - backgroundType: The type of background illustration to display.
+    ///   - animationContext: Animation configuration. Defaults to `.default`.
+    func applyAnimatedContextualOnboardingBackground(
+        backgroundType: ContextualOnboardingBackgroundType,
+        animationContext: BackgroundAnimationContext = .default
+    ) -> some View {
+        self.modifier(
+            OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(
+                backgroundType: backgroundType,
+                animation: animationContext.animation,
+                delay: animationContext.delay,
+                keyboardBehavior: .ignoreKeyboard
+            )
+        )
     }
 
 }
+
+#if os(iOS)
+/// Observable object that tracks keyboard frame changes.
+///
+/// This class listens to keyboard notifications and publishes the keyboard's frame
+/// in global screen coordinates. Views can observe these changes to adjust their layout
+/// when the keyboard appears or disappears.
+public final class KeyboardResponder: ObservableObject {
+    /// The current keyboard frame in global screen coordinates.
+    /// Returns `.zero` when the keyboard is hidden or when keyboard observation is disabled.
+    @Published public private(set) var keyboardFrame: CGRect = .zero
+
+    private var cancellables: Set<AnyCancellable> = []
+
+    /// Creates a keyboard responder.
+    ///
+    /// - Parameter isEnabled: Whether to observe keyboard notifications. When `false`,
+    ///   no notifications are observed and `keyboardFrame` will always be `.zero`.
+    public init(isEnabled: Bool = true) {
+        guard isEnabled else { return }
+
+        NotificationCenter.default
+            .publisher(for: UIResponder.keyboardWillShowNotification)
+            .map { notification in
+                (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero
+            }
+            .assign(to: \.keyboardFrame, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        NotificationCenter.default
+            .publisher(for: UIResponder.keyboardWillHideNotification)
+            .map { _ in
+                CGRect.zero
+            }
+            .assign(to: \.keyboardFrame, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+}
+#endif

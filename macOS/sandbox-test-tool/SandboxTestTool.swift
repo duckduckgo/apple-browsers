@@ -46,6 +46,9 @@ final class SandboxTestToolApp: NSApplication {
 
         super.init()
 
+        // Keep the helper out of the active app cycle so browser tests do not depend on app focus.
+        setActivationPolicy(.prohibited)
+
         _delegate = SandboxTestToolAppDelegate()
         self.delegate = _delegate
     }
@@ -65,12 +68,13 @@ final class SandboxTestToolAppDelegate: NSObject, NSApplicationDelegate {
 
         super.init()
 
-        DistributedNotificationCenter.default().addObserver(forName: SandboxTestNotification.terminate.name, object: nil, queue: nil, using: terminate)
-        DistributedNotificationCenter.default().addObserver(forName: SandboxTestNotification.ping.name, object: nil, queue: nil, using: ping)
-        DistributedNotificationCenter.default().addObserver(forName: SandboxTestNotification.openFile.name, object: nil, queue: nil, using: openFile)
-        DistributedNotificationCenter.default().addObserver(forName: SandboxTestNotification.openFileWithoutBookmark.name, object: nil, queue: nil, using: openFile)
-        DistributedNotificationCenter.default().addObserver(forName: SandboxTestNotification.openBookmarkWithFilePresenter.name, object: nil, queue: nil, using: openBookmarkWithFilePresenter)
-        DistributedNotificationCenter.default().addObserver(forName: SandboxTestNotification.closeFilePresenter.name, object: nil, queue: nil, using: closeFilePresenter)
+        let center = DistributedNotificationCenter.default()
+        center.addObserver(self, selector: #selector(terminate(_:)), name: SandboxTestNotification.terminate.name, object: nil, suspensionBehavior: .deliverImmediately)
+        center.addObserver(self, selector: #selector(ping(_:)), name: SandboxTestNotification.ping.name, object: nil, suspensionBehavior: .deliverImmediately)
+        center.addObserver(self, selector: #selector(openFile(_:)), name: SandboxTestNotification.openFile.name, object: nil, suspensionBehavior: .deliverImmediately)
+        center.addObserver(self, selector: #selector(openFile(_:)), name: SandboxTestNotification.openFileWithoutBookmark.name, object: nil, suspensionBehavior: .deliverImmediately)
+        center.addObserver(self, selector: #selector(openBookmarkWithFilePresenter(_:)), name: SandboxTestNotification.openBookmarkWithFilePresenter.name, object: nil, suspensionBehavior: .deliverImmediately)
+        center.addObserver(self, selector: #selector(closeFilePresenter(_:)), name: SandboxTestNotification.closeFilePresenter.name, object: nil, suspensionBehavior: .deliverImmediately)
 
         NSURL.swizzleStopAccessingSecurityScopedResource { [unowned self] url in
             post(.stopAccessingSecurityScopedResourceCalled, with: url.path)
@@ -85,12 +89,12 @@ final class SandboxTestToolAppDelegate: NSObject, NSApplicationDelegate {
         logger.log("🚦 didFinishLaunching\n")
     }
 
-    private func ping(_ notification: Notification) {
+    @objc private func ping(_ notification: Notification) {
         logger.log("➡️  ping")
         post(.pong, with: notification.object as? String)
     }
 
-    private func openFile(_ notification: Notification) {
+    @objc private func openFile(_ notification: Notification) {
         logger.log("➡️  openFile \(notification.object as? String ?? "<nil>")")
         guard let filePath = notification.object as? String else {
             post(.error, with: "No file path provided")
@@ -132,7 +136,7 @@ final class SandboxTestToolAppDelegate: NSObject, NSApplicationDelegate {
     private var filePresenters = [URL: FilePresenter]()
     private var filePresenterCancellables = [URL: Set<AnyCancellable>]()
 
-    private func openBookmarkWithFilePresenter(_ notification: Notification) {
+    @objc private func openBookmarkWithFilePresenter(_ notification: Notification) {
         logger.log("📕 openBookmarkWithFilePresenter")
         guard let object = notification.object as? String, let bookmark = Data(base64Encoded: object) else {
             post(.error, with: CocoaError(CocoaError.Code.coderReadCorrupt).encoded("Invalid bookmark data"))
@@ -155,7 +159,7 @@ final class SandboxTestToolAppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func closeFilePresenter(_ notification: Notification) {
+    @objc private func closeFilePresenter(_ notification: Notification) {
         guard let path = notification.object as? String else {
             post(.error, with: CocoaError(CocoaError.Code.coderReadCorrupt).encoded("Should provide file path to close Presenter"))
             return
@@ -166,14 +170,14 @@ final class SandboxTestToolAppDelegate: NSObject, NSApplicationDelegate {
         filePresenters[url] = nil
     }
 
-    private func terminate(_ notification: Notification) {
+    @objc private func terminate(_ notification: Notification) {
         logger.log("😵 terminate\n---------------")
         NSApp.terminate(self)
     }
 
     private func post(_ name: SandboxTestNotification, with object: String? = nil) {
         logger.log("📮 \(name.rawValue)\(object != nil ? ": \(object!)" : "")")
-        DistributedNotificationCenter.default().post(name: .init(name.rawValue), object: object)
+        DistributedNotificationCenter.default().postNotificationName(.init(name.rawValue), object: object, userInfo: nil, deliverImmediately: true)
     }
 
 }

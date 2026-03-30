@@ -2074,7 +2074,7 @@ final class WebCacheManagerMock: WebCacheManager {
     }
 
     var clearCalled = false
-    override func clear(baseDomains: Set<String>? = nil) async {
+    override func clear(baseDomains: Set<String>? = nil, dataClearingWideEventService: DataClearingWideEventService? = nil) async {
         clearCalled = true
     }
 }

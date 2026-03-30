@@ -23,6 +23,7 @@ import Bookmarks
 import BrowserServicesKit
 import Core
 import RemoteMessaging
+import Subscription
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
@@ -67,6 +68,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          appSettings: AppSettings,
+         faviconsCache: FavoritesFaviconCaching,
+         subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          appWidthObserver: AppWidthObserver = .shared) {
@@ -78,10 +81,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
 
-        newTabPageViewModel = NewTabPageViewModel()
+        newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
-                                            faviconLoader: faviconLoader)
+                                            faviconLoader: faviconLoader,
+                                            faviconsCache: faviconsCache)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
@@ -101,10 +105,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
         if let model {
-            let index = model.targetTabIndex
+            let targetTab = model.targetTab
             newTabPageViewModel.onEscapeHatchTap = { [weak self] in
                 guard let self else { return }
-                self.delegate?.newTabPageDidRequestSwitchToTab(self, index: index)
+                self.delegate?.newTabPageDidRequestSwitchToTab(self, tab: targetTab)
             }
         } else {
             newTabPageViewModel.onEscapeHatchTap = nil

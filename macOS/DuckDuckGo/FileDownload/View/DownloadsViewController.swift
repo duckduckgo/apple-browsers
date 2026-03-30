@@ -424,7 +424,7 @@ final class DownloadsViewController: NSViewController {
 
     private func setupDragAndDrop() {
         tableView.registerForDraggedTypes([.fileURL])
-        tableView.setDraggingSourceOperationMask(NSDragOperation.none, forLocal: true)
+        tableView.setDraggingSourceOperationMask(NSDragOperation.copy, forLocal: true)
         tableView.setDraggingSourceOperationMask(NSDragOperation.move, forLocal: false)
     }
 }

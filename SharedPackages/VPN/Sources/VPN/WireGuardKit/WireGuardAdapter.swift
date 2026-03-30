@@ -446,12 +446,6 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
                 self.packetTunnelProvider?.reasserting = true
             }
 
-            defer {
-                if reassert {
-                    self.packetTunnelProvider?.reasserting = false
-                }
-            }
-
             do {
                 let settingsGenerator = try self.makeSettingsGenerator(with: tunnelConfiguration)
                 let settings = settingsGenerator.generateNetworkSettings()
@@ -489,8 +483,14 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
                     fatalError()
                 }
 
+                if reassert {
+                    self.packetTunnelProvider?.reasserting = false
+                }
                 completionHandler(nil)
             } catch let error as WireGuardAdapterError {
+                if reassert {
+                    self.packetTunnelProvider?.reasserting = false
+                }
                 completionHandler(error)
             } catch {
                 fatalError()

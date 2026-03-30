@@ -54,7 +54,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private var featureFlagger: FeatureFlagger
     private let historyManager: HistoryManaging
     private let bookmarksDatabase: CoreDataDatabase
-    private let tabsModel: TabsModel
+    private let tabsModel: TabsModelManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let featureDiscovery: FeatureDiscovery
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
@@ -84,7 +84,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
          bookmarksDatabase: CoreDataDatabase,
          appSettings: AppSettings,
          historyMessageManager: HistoryMessageManager = HistoryMessageManager(),
-         tabsModel: TabsModel,
+         tabsModel: TabsModelManaging,
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettingsProvider,
          featureDiscovery: FeatureDiscovery,

@@ -32,6 +32,7 @@ public protocol EmailConfirmationJobDependencyProviding {
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var featureFlagger: DBPFeatureFlagging { get }
+    var applicationNameForUserAgent: String? { get }
     var wideEvent: WideEventManaging? { get }
 }
 
@@ -45,6 +46,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let featureFlagger: DBPFeatureFlagging
+    public let applicationNameForUserAgent: String?
     public let wideEvent: WideEventManaging?
 
     public init(from brokerDependencies: BrokerProfileJobDependencyProviding) {
@@ -57,6 +59,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.captchaService = brokerDependencies.captchaService
         self.vpnBypassService = brokerDependencies.vpnBypassService
         self.featureFlagger = brokerDependencies.featureFlagger
+        self.applicationNameForUserAgent = brokerDependencies.applicationNameForUserAgent
         self.wideEvent = brokerDependencies.wideEvent
     }
 
@@ -69,6 +72,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 captchaService: CaptchaServiceProtocol,
                 vpnBypassService: VPNBypassFeatureProvider?,
                 featureFlagger: DBPFeatureFlagging,
+                applicationNameForUserAgent: String?,
                 wideEvent: WideEventManaging? = nil) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
@@ -79,6 +83,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
         self.featureFlagger = featureFlagger
+        self.applicationNameForUserAgent = applicationNameForUserAgent
         self.wideEvent = wideEvent
     }
 }

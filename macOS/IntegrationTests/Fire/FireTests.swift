@@ -427,6 +427,7 @@ final class FireTests: XCTestCase {
                         closeWindows: true,
                         clearSiteData: true,
                         clearChatHistory: false,
+                        dataClearingWideEventService: nil,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
@@ -486,6 +487,7 @@ final class FireTests: XCTestCase {
                         closeWindows: false,
                         clearSiteData: true,
                         clearChatHistory: false,
+                        dataClearingWideEventService: nil,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
@@ -548,7 +550,7 @@ final class FireTests: XCTestCase {
                         closeWindows: false,
                         clearSiteData: true,
                         clearChatHistory: true,
-        ) {
+                        dataClearingWideEventService: nil) {
             burningExpectation.fulfill()
         }
 
@@ -577,7 +579,7 @@ final class FireTests: XCTestCase {
                         closeWindows: true,
                         clearSiteData: true,
                         clearChatHistory: false,
-        ) {
+                        dataClearingWideEventService: nil) {
             burningExpectation.fulfill()
         }
 
@@ -648,7 +650,8 @@ final class FireTests: XCTestCase {
         fire.burnEntity(.none(selectedDomains: Set()),
                         includingHistory: false,
                         includeCookiesAndSiteData: true,
-                        includeChatHistory: false) {
+                        includeChatHistory: false,
+                        dataClearingWideEventService: nil) {
             XCTAssertFalse(autoconsentStats.clearAutoconsentStatsCalled)
             burningExpectation.fulfill()
         }
@@ -688,7 +691,8 @@ final class FireTests: XCTestCase {
         await fire.burnEntity(entity,
                              includingHistory: false,  // Key: not clearing history
                              includeCookiesAndSiteData: true,
-                             includeChatHistory: false) {
+                             includeChatHistory: false,
+                             dataClearingWideEventService: nil) {
             expectation.fulfill()
         }
 
@@ -729,7 +733,8 @@ final class FireTests: XCTestCase {
         await fire.burnEntity(entity,
                              includingHistory: true,  // Key: clearing history
                              includeCookiesAndSiteData: true,
-                             includeChatHistory: false) {
+                             includeChatHistory: false,
+                             dataClearingWideEventService: nil) {
             expectation.fulfill()
         }
 
@@ -768,7 +773,8 @@ final class FireTests: XCTestCase {
         await fire.burnEntity(entity,
                              includingHistory: false,
                              includeCookiesAndSiteData: false,  // Key: not clearing cookies
-                             includeChatHistory: false) {
+                             includeChatHistory: false,
+                             dataClearingWideEventService: nil) {
             expectation.fulfill()
         }
 

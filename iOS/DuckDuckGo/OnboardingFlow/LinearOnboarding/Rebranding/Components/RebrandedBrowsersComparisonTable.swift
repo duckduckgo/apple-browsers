@@ -115,6 +115,7 @@ private struct FeatureRow: View {
                 HStack(alignment: .center, spacing: ComparisonTableMetrics.featureTextSpacing) {
                     feature.type.icon
                         .resizable()
+                        .frame(width: 24.0, height: 24.0)
                         .aspectRatio(contentMode: .fit)
                         .frame(width: ComparisonTableMetrics.featureIconSize, height: ComparisonTableMetrics.featureIconSize)
 

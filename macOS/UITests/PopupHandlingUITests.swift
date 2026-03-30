@@ -939,6 +939,13 @@ final class PopupHandlingUITests: UITestCase {
             line: line
         )
 
+        // Wait for the "Pop-Up Blocked" to disappear
+        let blockedPopover = app.popovers.containing(.staticText, where: .keyPath(\.value, equalTo: "Pop-Up Blocked")).element
+        _=blockedPopover.waitForExistence(timeout: 1) // give some time for the popover to appear
+        XCTAssertTrue(blockedPopover.waitForNonExistence(timeout: UITests.Timeouts.elementExistence))
+        // wait for the animation to complete
+        sleep(2)
+
         // Click button to open context menu and verify count
         button.click()
 

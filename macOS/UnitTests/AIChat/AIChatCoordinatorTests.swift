@@ -746,6 +746,36 @@ final class AIChatCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.isSidebarOpen(for: tab2))
     }
 
+    func testSwitchingBetweenTabs_keepsPerTabSidebarContent() {
+        // Given
+        let tabA = "tab-a"
+        let tabB = "tab-b"
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: false)
+
+        // Open chat on tab A and remember its VC.
+        mockSidebarHost.currentTabID = tabA
+        coordinator.toggleSidebar()
+        let tabAViewController = mockSessionStore.sessions[tabA]?.chatViewController
+        XCTAssertNotNil(tabAViewController)
+        XCTAssertTrue(mockSidebarHost.embeddedViewController === tabAViewController)
+
+        // Open chat on tab B and remember its VC.
+        mockSidebarHost.currentTabID = tabB
+        coordinator.revealChat(for: prompt)
+        let tabBViewController = mockSessionStore.sessions[tabB]?.chatViewController
+        XCTAssertNotNil(tabBViewController)
+        XCTAssertTrue(mockSidebarHost.embeddedViewController === tabBViewController)
+        XCTAssertFalse(tabAViewController === tabBViewController)
+
+        // When - switch back to tab A.
+        mockSidebarHost.currentTabID = tabA
+        coordinator.sidebarHostDidSelectTab(with: tabA)
+
+        // Then - sidebar should show tab A's own controller, not tab B's.
+        XCTAssertTrue(mockSidebarHost.embeddedViewController === tabAViewController)
+        XCTAssertFalse(mockSidebarHost.embeddedViewController === tabBViewController)
+    }
+
     // MARK: - Detach / Attach Tests
 
     func testDetachSidebar_movesToFloatingWindow() {
@@ -963,6 +993,7 @@ class MockAIChatSidebarHosting: AIChatSidebarHosting {
     var burnerMode: BurnerMode = .regular
 
     var embeddedViewController: NSViewController?
+    private var embeddedControllersInContainer: [NSViewController] = []
     private(set) var isResizeHandleVisible = false
 
     init() {
@@ -973,6 +1004,12 @@ class MockAIChatSidebarHosting: AIChatSidebarHosting {
     var sidebarContainerScreenFrame: NSRect?
 
     func embedChatViewController(_ vc: NSViewController, for tabID: TabIdentifier?) {
+        embeddedControllersInContainer.removeAll { $0 !== vc }
+        if let existingIndex = embeddedControllersInContainer.firstIndex(where: { $0 === vc }) {
+            embeddedViewController = embeddedControllersInContainer[existingIndex]
+            return
+        }
+        embeddedControllersInContainer.append(vc)
         embeddedViewController = vc
     }
 

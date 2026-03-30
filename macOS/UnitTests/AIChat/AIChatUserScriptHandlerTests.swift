@@ -73,7 +73,7 @@ struct AIChatUserScriptHandlerTests {
     private var windowControllersManager: WindowControllersManagerMock
     private var notificationCenter = NotificationCenter()
     private var pixelFiring = PixelKitMock()
-    private var syncErrorHandler = SyncErrorHandler()
+    private var syncErrorHandler = SyncErrorHandler(alertPresenter: CapturingAlertPresenter())
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
     private var mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
@@ -606,6 +606,30 @@ struct AIChatUserScriptHandlerTests {
         let payloadResponse = try #require(response as? AIChatPayloadResponse)
         let tokenPayload = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncToken)
         #expect(tokenPayload.token == "scoped-token")
+        #expect(syncService.mainTokenRescopeScopes == ["ai_chats"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getScopedSyncAuthToken returns sync off when token rescope returns unauthenticated while logged in", .timeLimit(.minutes(1)))
+    func testThatGetScopedSyncAuthTokenReturnsSyncOffWhenRescopeReturnsUnauthenticatedWhileLoggedIn() async throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: SyncAccount(deviceId: "id",
+                                                                                   deviceName: "name",
+                                                                                   deviceType: "desktop",
+                                                                                   userId: "user",
+                                                                                   primaryKey: Data(),
+                                                                                   secretKey: Data(),
+                                                                                   token: nil,
+                                                                                   state: .active))
+        syncService.mainTokenRescopeError = SyncError.unauthenticatedWhileLoggedIn
+
+        let testHandler = await MainActor.run {
+            makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+        }
+
+        let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage.mock())
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "sync off")
         #expect(syncService.mainTokenRescopeScopes == ["ai_chats"])
     }
 

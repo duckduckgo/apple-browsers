@@ -54,7 +54,7 @@ class MainViewCoordinator {
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
     private var savedStatusBackgroundColor: UIColor?
-    private var inlineEditingStatusBackgroundColor: UIColor?
+    private var omnibarStatusBackgroundColor: UIColor?
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
 
@@ -186,12 +186,8 @@ class MainViewCoordinator {
     // MARK: - AI Tab Native Input Layout
 
     func showUnifiedToggleInput() {
-        navigationBarCollectionView.layer.removeAllAnimations()
-        unifiedToggleInputContainer.layer.removeAllAnimations()
-        constraints.navigationBarContainerTop.isActive = false
-        if !constraints.navigationBarContainerBottom.isActive {
-            constraints.navigationBarContainerBottom.isActive = true
-        }
+        setAddressBarTopActive(false)
+        setAddressBarBottomActive(true)
         setNavBarContainerBottomToToolbar()
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         unifiedToggleInputContainer.isHidden = false
@@ -200,15 +196,36 @@ class MainViewCoordinator {
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
     }
 
-    func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
-        guard isNavigationChromeHidden else {
-            unifiedToggleInputContainer.backgroundColor = .clear
-            inputView?.backgroundColor = .clear
-            return
+    @MainActor
+    func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
+        navigationBarCollectionView.layer.removeAllAnimations()
+        unifiedToggleInputContainer.layer.removeAllAnimations()
+        navigationBarCollectionView.isUserInteractionEnabled = false
+
+        navigationBarCollectionView.alpha = 0
+        unifiedToggleInputContainer.alpha = 1
+        unifiedToggleInputContainer.isHidden = false
+        unifiedToggleInputContainer.backgroundColor = .clear
+
+        if omnibarStatusBackgroundColor == nil {
+            omnibarStatusBackgroundColor = statusBackground.backgroundColor
         }
+        let inlineBackground = UIColor(designSystemColor: .panel)
+        statusBackground.backgroundColor = inlineBackground
+        suggestionTrayContainer.backgroundColor = inlineBackground
+
+        navigationBarContainer.backgroundColor = inlineBackground
+
+        navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
+
+        constraints.navigationBarContainerHeight.constant = expandedHeight
+        superview.layoutIfNeeded()
+    }
+
+    func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
         if isExpanded {
-            inputView?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-            unifiedToggleInputContainer.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+            inputView?.backgroundColor = statusBackground.backgroundColor
+            unifiedToggleInputContainer.backgroundColor = .clear
         } else {
             inputView?.backgroundColor = .clear
             unifiedToggleInputContainer.backgroundColor = .clear
@@ -216,7 +233,7 @@ class MainViewCoordinator {
     }
 
     @MainActor
-    func restoreNavBarToToolbarForInlineInactive() {
+    func restoreNavBarToToolbarForOmnibarInactive() {
         guard addressBarPosition.isBottom else { return }
         if !constraints.navigationBarContainerBottom.isActive {
             constraints.navigationBarContainerBottom.isActive = true
@@ -224,68 +241,28 @@ class MainViewCoordinator {
         setNavBarContainerBottomToToolbar()
     }
 
-    @MainActor
-    func restoreNavBarToKeyboardForInlineActive() {
-        guard addressBarPosition.isBottom else { return }
-        if !constraints.navigationBarContainerBottom.isActive {
-            constraints.navigationBarContainerBottom.isActive = true
-        }
-        setNavBarContainerBottomToKeyboard()
-    }
 
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
         unifiedToggleInputContainer.backgroundColor = .clear
+        setNavBarContainerBottomToToolbar()
         if addressBarPosition == .top {
-            setNavBarContainerBottomToToolbar()
-            constraints.navigationBarContainerBottom.isActive = false
-            constraints.navigationBarContainerTop.isActive = true
-        } else {
-            setNavBarContainerBottomToToolbar()
+            setAddressBarBottomActive(false)
+            setAddressBarTopActive(true)
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
     }
 
-    // MARK: - Inline Editing Layout
+    // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func showUnifiedToggleInputInline(expandedHeight: CGFloat) {
-        navigationBarCollectionView.layer.removeAllAnimations()
-        unifiedToggleInputContainer.layer.removeAllAnimations()
-        navigationBarCollectionView.layer.removeAllAnimations()
-        navigationBarCollectionView.isUserInteractionEnabled = false
-        unifiedToggleInputContainer.alpha = 0
-        unifiedToggleInputContainer.isHidden = false
-        unifiedToggleInputContainer.backgroundColor = .clear
-        if inlineEditingStatusBackgroundColor == nil {
-            inlineEditingStatusBackgroundColor = statusBackground.backgroundColor
-        }
-        let inlineBackground = UIColor(designSystemColor: .panel)
-        statusBackground.backgroundColor = inlineBackground
-        navigationBarContainer.backgroundColor = inlineBackground
-        suggestionTrayContainer.backgroundColor = inlineBackground
-
-        if addressBarPosition.isBottom {
-            setNavBarContainerBottomToKeyboard()
-        }
-
-        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
-            self.navigationBarCollectionView.alpha = 0
-            self.unifiedToggleInputContainer.alpha = 1
-            self.constraints.navigationBarContainerHeight.constant = expandedHeight
-            self.superview.layoutIfNeeded()
-        }
-        navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
-    }
-
-    @MainActor
-    func hideUnifiedToggleInputInline() {
+    func hideUnifiedToggleInputOmnibar() {
         if addressBarPosition.isBottom {
             setNavBarContainerBottomToToolbar()
         }
 
-        let savedColor = inlineEditingStatusBackgroundColor
-        inlineEditingStatusBackgroundColor = nil
+        let savedColor = omnibarStatusBackgroundColor
+        omnibarStatusBackgroundColor = nil
 
         UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
             self.navigationBarCollectionView.alpha = 1
@@ -326,8 +303,16 @@ class MainViewCoordinator {
     // MARK: - AI Tab Chrome
 
     func showAITabChrome() {
+        cancelInFlightLayoutAnimations()
         showAIChatTabChatHeader()
         setNavigationChromeHidden(true)
+    }
+
+    private func cancelInFlightLayoutAnimations() {
+        contentContainer.layer.removeAllAnimations()
+        navigationBarContainer.layer.removeAllAnimations()
+        statusBackground.layer.removeAllAnimations()
+        superview.layer.removeAllAnimations()
     }
 
     func hideAITabChrome() {
@@ -418,15 +403,6 @@ class MainViewCoordinator {
         constraints.contentContainerBottomToToolbarTop.isActive = mode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = mode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
-    }
-
-    private func setNavBarContainerBottomToKeyboard() {
-        constraints.navigationBarContainerBottom.isActive = false
-        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
-            .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
-        constraints.navigationBarContainerBottom.constant = 0
-        constraints.navigationBarContainerBottom.isActive = true
-        isNavBarContainerBottomKeyboardBased = true
     }
 
     private func setNavBarContainerBottomToToolbar() {

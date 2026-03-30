@@ -58,6 +58,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     var isShowingSearchSuggestions: Bool = false
     var isShowingSitesSuggestions: Bool = false
     var isShowingSubscriptionPromotion: Bool = false
+
     var shouldShowFireButtonPulse: Bool = false
     var isAddFavoriteFlow: Bool = false
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
@@ -117,8 +118,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     }
 
-    func clearHeldURLData() {
-
+    func clearHeldURLData() -> Result<Void, Error> {
+        return .success(())
     }
 
     func fireButtonPulseStarted() {
@@ -151,7 +152,6 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     var isAddFavoriteFlow: Bool = false
 
     var isShowingSubscriptionPromotion: Bool = false
-
     var subscriptionPromotionDialogSeen: Bool = false
 
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
@@ -184,8 +184,9 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func resumeRegularFlow() {}
 
-    func clearHeldURLData() {
+    func clearHeldURLData() -> Result<Void, Error> {
         clearHeldURLDataCallCount += 1
+        return .success(())
     }
 
     func fireButtonPulseStarted() {}

@@ -32,7 +32,7 @@ protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
-    func tabDidRequestNewTab(_ tab: TabViewController, fireTab: Bool)
+    func tabDidRequestNewTab(_ tab: TabViewController)
     
     func newTab(reuseExisting: Bool)
 
@@ -116,6 +116,8 @@ protocol TabDelegate: AnyObject {
     func tabContentProcessDidTerminate(tab: TabViewController)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
+
+    func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String)
 
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool)
 

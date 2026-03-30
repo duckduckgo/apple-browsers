@@ -52,7 +52,7 @@ final class AIChatHistoryManagerTests: XCTestCase {
 
     // MARK: - Text Subscription Tests
 
-    func testSubscribeToTextChanges_FetchesSuggestionsOnTextChange() {
+    func testSubscribeToTextChanges_FetchesSuggestionsOnTextChange() async {
         let textSubject = PassthroughSubject<String, Never>()
         sut.subscribeToTextChanges(textSubject)
 
@@ -66,14 +66,14 @@ final class AIChatHistoryManagerTests: XCTestCase {
         let predicate = NSPredicate { _, _ in
             self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
         }
-        let expectation = expectation(for: predicate, evaluatedWith: nil)
-        wait(for: [expectation], timeout: 5.0)
+        let exp = expectation(for: predicate, evaluatedWith: nil)
+        await fulfillment(of: [exp], timeout: 5.0)
 
         XCTAssertEqual(mockSuggestionsReader.fetchSuggestionsCallCount, 1)
         XCTAssertEqual(mockSuggestionsReader.lastQuery, "test query")
     }
 
-    func testSubscribeToTextChanges_EmptyQueryFetchesRecentChats() {
+    func testSubscribeToTextChanges_EmptyQueryFetchesRecentChats() async {
         let textSubject = PassthroughSubject<String, Never>()
         sut.subscribeToTextChanges(textSubject)
 
@@ -82,8 +82,8 @@ final class AIChatHistoryManagerTests: XCTestCase {
         let predicate = NSPredicate { _, _ in
             self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
         }
-        let expectation = expectation(for: predicate, evaluatedWith: nil)
-        wait(for: [expectation], timeout: 5.0)
+        let exp = expectation(for: predicate, evaluatedWith: nil)
+        await fulfillment(of: [exp], timeout: 5.0)
 
         XCTAssertNil(mockSuggestionsReader.lastQuery)
     }
@@ -220,7 +220,7 @@ final class AIChatHistoryManagerTests: XCTestCase {
         XCTAssertEqual(tableView?.alwaysBounceVertical, true)
     }
 
-    func testInstallInContainerView_FetchesSuggestionsImmediately() {
+    func testInstallInContainerView_FetchesSuggestionsImmediately() async {
         let containerView = UIView()
         let parentVC = UIViewController()
 
@@ -229,8 +229,8 @@ final class AIChatHistoryManagerTests: XCTestCase {
         let predicate = NSPredicate { _, _ in
             self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
         }
-        let expectation = expectation(for: predicate, evaluatedWith: nil)
-        wait(for: [expectation], timeout: 5.0)
+        let exp = expectation(for: predicate, evaluatedWith: nil)
+        await fulfillment(of: [exp], timeout: 5.0)
 
         XCTAssertEqual(mockSuggestionsReader.fetchSuggestionsCallCount, 1)
         XCTAssertNil(mockSuggestionsReader.lastQuery)

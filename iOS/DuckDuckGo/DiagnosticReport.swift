@@ -112,7 +112,7 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
         group.enter()
 
         Task {
-            cookies = await DDGWebsiteDataStoreProvider.current().httpCookieStore.allCookies()
+            cookies = await DDGWebsiteDataStoreProvider.current(fireMode: false).httpCookieStore.allCookies()
             group.leave()
         }
 
@@ -132,7 +132,7 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
     func tabsReport() -> String {
         """
         ### Tabs Report
-        Tabs: \(tabManager?.count ?? -1)
+        Tabs: \(tabManager?.allTabsModel.count ?? -1)
         """
     }
 

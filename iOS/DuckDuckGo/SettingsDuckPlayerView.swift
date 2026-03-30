@@ -66,6 +66,7 @@ struct SettingsDuckPlayerView: View {
                     .daxBodyRegular()
                     .accentColor(Color.init(designSystemColor: .accent))
                 }
+                .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
             }
 

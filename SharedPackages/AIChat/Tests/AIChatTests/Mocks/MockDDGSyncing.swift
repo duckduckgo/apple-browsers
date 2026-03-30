@@ -120,6 +120,8 @@ final class MockDDGSyncing: DDGSyncing {
     var serverEnvironment: ServerEnvironment { .production }
 
     func initializeIfNeeded() {}
+    func enableSyncFromPreservedAccount() async throws {}
+    func removePreservedSyncAccount() throws {}
     func createAccount(deviceName: String, deviceType: String) async throws {}
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> [RegisteredDevice] { [] }
     func remoteConnect() throws -> RemoteConnecting { fatalError("Not implemented") }

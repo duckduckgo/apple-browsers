@@ -36,13 +36,13 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity)
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion)
     func unifiedInputEditingStateDidSelectChatHistory(url: URL)
-    func unifiedInputEditingStateDidRequestSwitchTab(toIndex index: Int)
+    func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
 }
 
 final class UnifiedInputContentContainerViewController: UIViewController {
 
-    enum InlineHeaderDisplayMode: Equatable {
+    enum HeaderDisplayMode: Equatable {
         case hidden
         case active
         case inactive
@@ -71,13 +71,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private var isLandscapeOrientation: Bool = false {
         didSet {
-            isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
+            isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
+        }
+    }
+    var forceBottomBarLayout: Bool = false {
+        didSet {
+            isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
         }
     }
     private var isUsingTopBarPosition: Bool
     private var isAdjustedForTopBar: Bool
     private(set) var currentSectionTitle: String?
-    private var inlineHeaderDisplayMode: InlineHeaderDisplayMode = .hidden
+    private var headerDisplayMode: HeaderDisplayMode = .hidden
 
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
@@ -182,10 +187,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateSectionTitle()
     }
 
-    func setInlineHeaderDisplayMode(_ mode: InlineHeaderDisplayMode) {
-        guard inlineHeaderDisplayMode != mode else { return }
-        inlineHeaderDisplayMode = mode
-        renderInlineHeader()
+    func setHeaderDisplayMode(_ mode: HeaderDisplayMode) {
+        guard headerDisplayMode != mode else { return }
+        headerDisplayMode = mode
+        renderHeader()
     }
 
     func setText(_ text: String) {
@@ -285,7 +290,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let text = computedSectionTitleText()
         currentSectionTitle = text.isEmpty ? nil : text
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets.top = Metrics.contentTopInset
-        renderInlineHeader()
+        renderHeader()
     }
 
     private func computedSectionTitleText() -> String {
@@ -364,7 +369,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, barView: contentContainerView, isTopBarPosition: false)
+        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, anchorView: contentContainerView, isTopBarPosition: false)
     }
 
     private func setupSubscriptions() {
@@ -387,12 +392,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        switchBarHandler.microphoneButtonTappedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.handleMicrophoneButtonTapped()
-            }
-            .store(in: &cancellables)
     }
 
     private func updateLayoutForCurrentOrientation() {
@@ -401,7 +400,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateSectionTitle()
     }
 
-    private func renderInlineHeader() {
+    private func renderHeader() {
         if isUsingTopBarPosition {
             if let currentSectionTitle, !currentSectionTitle.isEmpty {
                 inlineHeaderView.isHidden = false
@@ -416,7 +415,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             return
         }
 
-        switch inlineHeaderDisplayMode {
+        switch headerDisplayMode {
         case .hidden:
             inlineHeaderView.isHidden = true
             inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
@@ -466,8 +465,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     // MARK: - Action Handlers
 
     private func handleMicrophoneButtonTapped() {
+        guard isViewLoaded, view.window != nil, !view.isHidden, !(view.superview?.isHidden ?? true) else { return }
         SpeechRecognizer.requestMicAccess { [weak self] permission in
-            guard let self else { return }
+            guard let self,
+                  self.view.window != nil,
+                  self.view.superview?.isHidden != true else { return }
             if permission {
                 let preferredTarget: VoiceSearchTarget? = (self.switchBarHandler.currentToggleState == .aiChat) ? .AIChat : .SERP
                 self.showVoiceSearch(preferredTarget: preferredTarget)
@@ -576,8 +578,8 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
         delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
     }
 
-    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchTabToIndex index: Int) {
-        delegate?.unifiedInputEditingStateDidRequestSwitchTab(toIndex: index)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
+        delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
     }
 }
 
@@ -586,22 +588,11 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
 extension UnifiedInputContentContainerViewController: VoiceSearchViewControllerDelegate {
 
     func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
-        if let text = query {
-            switchBarHandler.updateCurrentText(text)
-        }
-
         controller.dismiss(animated: true) { [weak self] in
             guard let self, let query else { return }
-            self.handleVoiceSearchCompletion(with: query, for: target)
-        }
-    }
-
-    private func handleVoiceSearchCompletion(with query: String, for target: VoiceSearchTarget) {
-        switch target {
-        case .SERP:
-            delegate?.unifiedInputEditingStateDidSubmitQuery(query)
-        case .AIChat:
-            delegate?.unifiedInputEditingStateDidSubmitPrompt(query, tools: nil)
+            let mode: TextEntryMode = (target == .AIChat) ? .aiChat : .search
+            self.switchBarHandler.setToggleState(mode)
+            self.switchBarHandler.submitText(query)
         }
     }
 }

@@ -65,7 +65,8 @@ final class SwitchBarHandlerTests: XCTestCase {
             storage: mockStorage, aiChatSettings: MockAIChatSettingsProvider(),
             sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
             featureFlagger: featureFlagger ?? mockFeatureFlagger,
-            devicePlatform: devicePlatform
+            devicePlatform: devicePlatform,
+            isFireTab: false
         )
     }
 

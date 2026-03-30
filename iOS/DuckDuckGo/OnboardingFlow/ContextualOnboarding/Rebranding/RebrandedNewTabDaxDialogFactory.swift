@@ -77,7 +77,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         return FadeInView {
             OnboardingRebranding.OnboardingTrySearchDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryASearch)
+        .applyNewTabOnboardingBackground(backgroundType: .tryASearch)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryAnonymousSearchMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTrySearchUnique)
@@ -105,7 +105,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         return FadeInView {
             OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
+        .applyNewTabOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
@@ -122,7 +122,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         FadeInView {
             OnboardingRebranding.OnboardingAddFavorite(message: message)
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
+        .applyNewTabOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
     }
 
 }
@@ -149,7 +149,7 @@ private extension RebrandedNewTabDaxDialogFactory {
             }
             .scrollIfNeeded()
         }
-        .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
+        .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
@@ -186,7 +186,7 @@ private extension RebrandedNewTabDaxDialogFactory {
 
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
         let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
-        let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.skip
+        let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
 
         return FadeInView {
             OnboardingRebranding.OnboardingSubscriptionPromoDialog(
@@ -214,7 +214,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                 }
             )
         }
-        .applyContextualOnboardingBackground(backgroundType: .privacyProTrial)
+        .applyNewTabOnboardingBackground(backgroundType: .privacyProTrial)
         .onFirstAppear { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireImpressionPixel()
             self?.daxDialogsFlowCoordinator.subscriptionPromotionDialogSeen = true

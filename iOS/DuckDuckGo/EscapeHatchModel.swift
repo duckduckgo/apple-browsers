@@ -25,5 +25,5 @@ struct EscapeHatchModel: Equatable {
     let subtitle: String
     let isAITab: Bool
     let domain: String?
-    let targetTabIndex: Int
+    let targetTab: Tab
 }

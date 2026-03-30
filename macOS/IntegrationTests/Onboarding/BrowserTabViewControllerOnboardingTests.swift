@@ -93,6 +93,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var showSearchAndDuckAIToggle: Bool = true
     var userDidSeeToggleOnboarding: Bool = false
     var lastUsedSidebarWidth: Double?
+    var hasAcceptedTermsAndConditions: Bool = false
 
     let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
@@ -115,6 +116,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showSearchAndDuckAIToggle = true
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
+        hasAcceptedTermsAndConditions = false
     }
 }
 
@@ -151,8 +153,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         autoreleasepool {
             featureFlagger = MockFeatureFlagger()
             featureFlagger.featuresStub = [
-                FeatureFlag.contextualOnboarding.rawValue: true,
-                FeatureFlag.newTabPagePerTab.rawValue: true
+                FeatureFlag.contextualOnboarding.rawValue: true
             ]
             pixelReporter = CapturingOnboardingPixelReporter()
             dialogProvider = MockDialogsProvider()
@@ -186,6 +187,9 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     featureFlagger: MockFeatureFlagger()
                 ),
                 aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+                dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
+                                                      dockCustomizer: DockCustomizerMock(),
+                                                      pixelFiring: nil),
                 accessibilityPreferences: AccessibilityPreferences(),
                 duckPlayer: DuckPlayer(
                     preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
@@ -222,7 +226,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.featuresStub = [FeatureFlag.newTabPagePerTab.rawValue: true]
+        featureFlagger.featuresStub = [:]
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 
@@ -649,3 +653,21 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
         dismissedDialog = dialogType
     }
 }
+ private class DockCustomizerMock: DockCustomization {
+
+     var supportsAddingToDock: Bool { false }
+     var isAddedToDock: Bool { false }
+     var shouldShowNotification: Bool { false }
+     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> {
+         Just(false).eraseToAnyPublisher()
+     }
+
+     @discardableResult
+     func addToDock() -> Bool { false }
+
+     func didCloseMoreOptionsMenu() { }
+
+     func synchronizeNotificationVisibilityWithFirstLaunchDate() { }
+
+     func resetData() { }
+ }

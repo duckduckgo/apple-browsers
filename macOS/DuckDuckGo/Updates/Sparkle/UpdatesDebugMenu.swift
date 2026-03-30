@@ -23,18 +23,21 @@ import Common
 import CryptoKit
 import os.log
 import Persistence
+import PrivacyConfig
 import PixelKit
 
 final class UpdatesDebugMenu: NSMenu {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
+    private let internalUserDecider: InternalUserDecider
 
-    init(keyValueStore: ThrowingKeyValueStoring) {
+    init(keyValueStore: ThrowingKeyValueStoring, internalUserDecider: InternalUserDecider) {
         self.settings = keyValueStore.throwingKeyedStoring()
+        self.internalUserDecider = internalUserDecider
         super.init(title: "")
 
         buildItems {
             let buildType = StandardApplicationBuildType()
-            if buildType.isSparkleBuild && (buildType.isDebugBuild || buildType.isReviewBuild) {
+            if buildType.isSparkleBuild && (buildType.isDebugBuild || buildType.isReviewBuild || internalUserDecider.isInternalUser) {
                 NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
                     .targetting(self)
                 NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
@@ -43,6 +46,11 @@ final class UpdatesDebugMenu: NSMenu {
                     .targetting(self)
                 NSMenuItem.separator()
             }
+            NSMenuItem(title: "Simulate New User", action: #selector(simulateNewUser))
+                .targetting(self)
+            NSMenuItem(title: "Simulate Legacy User", action: #selector(simulateLegacyUser))
+                .targetting(self)
+            NSMenuItem.separator()
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                 .targetting(self)
             NSMenuItem.separator()
@@ -61,6 +69,26 @@ final class UpdatesDebugMenu: NSMenu {
         fatalError("init(coder:) has not been implemented")
     }
 
+    @objc func simulateNewUser() {
+        try? settings.set(1, for: \.installBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Simulating New User"
+        alert.informativeText = "Install build metadata has been set. Close and reopen Settings for changes to take effect."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    @objc func simulateLegacyUser() {
+        try? settings.removeValue(for: \.installBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Simulating Legacy User"
+        alert.informativeText = "Install build metadata has been cleared. Close and reopen Settings for changes to take effect."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
     @objc func testUpdateSuccessOnNextLaunch() {
         SparkleDebugHelper.configureExpectedUpdateSuccess()
     }
@@ -74,8 +102,7 @@ final class UpdatesDebugMenu: NSMenu {
     }
 
     @objc func showBrowserUpdatedPopover() {
-        let presenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
-        presenter.showUpdateNotification(for: .updated)
+        Application.appDelegate.updateController?.notificationPresenter.showUpdateNotification(for: .updated)
     }
 
     // MARK: - Custom Feed URL

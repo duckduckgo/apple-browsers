@@ -2,7 +2,8 @@
   "data" : [
     {
       "filename" : "OnboardingLandingLogoAnimation.lottie",
-      "idiom" : "universal"
+      "idiom" : "universal",
+      "universal-type-identifier" : "io.dotlottie.lottie"
     }
   ],
   "info" : {

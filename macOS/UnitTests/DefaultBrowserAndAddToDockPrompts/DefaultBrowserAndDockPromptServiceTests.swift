@@ -36,7 +36,9 @@ final class DefaultBrowserAndDockPromptServiceTests: XCTestCase {
         sut = DefaultBrowserAndDockPromptService(privacyConfigManager: privacyConfigManagerMock,
                                                  keyValueStore: storeMock,
                                                  notificationPresenter: notificationPresenterMock,
-                                                 isOnboardingCompletedProvider: { true })
+                                                 uiHosting: { nil },
+                                                 isOnboardingCompletedProvider: { true },
+                                                 dockCustomization: DockCustomizerMock())
     }
 
     override func tearDownWithError() throws {

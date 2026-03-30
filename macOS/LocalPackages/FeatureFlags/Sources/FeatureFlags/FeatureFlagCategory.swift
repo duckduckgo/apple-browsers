@@ -58,9 +58,12 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .standaloneMigration,
+                .aiChatMultiplePageContexts,
                 .aiChatSidebarResizable,
+                .aiChatSidebarFloating,
+                .aiChatChromeSidebar,
                 .aiChatNtpRecentChats,
-                .aiChatSidebarFloating:
+                .aiChatRemoveSuggestion:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -73,7 +76,8 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .sync
         case .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
-                .appStoreUpdateFlow:
+                .appStoreUpdateFlow,
+                .automaticUpdatesOnly:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
@@ -81,7 +85,8 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .vpn
         case .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
-                .dbpClickActionDelayReductionOptimization:
+                .dbpClickActionDelayReductionOptimization,
+                .dbpWebViewUserAgent:
             return .dbp
         case .paidAIChat,
                 .supportsAlternateStripePaymentFlow,

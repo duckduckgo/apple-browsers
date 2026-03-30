@@ -39,7 +39,6 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeBrowsingMenuHeaderContent() -> [BrowsingMenuEntry]
 
     func makeNewTabEntry() -> BrowsingMenuEntry
-    func makeNewFireTabEntry() -> BrowsingMenuEntry?
     func makeChatEntry() -> BrowsingMenuEntry?
     func makeSettingsEntry() -> BrowsingMenuEntry
     func makeShareEntry() -> BrowsingMenuEntry

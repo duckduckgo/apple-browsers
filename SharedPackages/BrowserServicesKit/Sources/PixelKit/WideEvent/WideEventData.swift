@@ -338,9 +338,9 @@ extension WideEventErrorData: WideEventParameterProviding {
 
 extension WideEvent.MeasuredInterval {
 
-    public var durationMilliseconds: Double? {
+    public var durationMilliseconds: Int? {
         guard let start, let end else { return nil }
-        return max(end.timeIntervalSince(start) * 1000, 0)
+        return max(Int(end.timeIntervalSince(start) * 1000), 0)
     }
 
     public func stringValue(_ bucket: DurationBucket) -> String? {
@@ -355,12 +355,12 @@ extension WideEvent.MeasuredInterval {
 
 public enum DurationBucket {
     case noBucketing
-    case bucketed((Double) -> Int)
+    case bucketed((Int) -> Int)
 
-    func apply(_ ms: Double) -> Int {
+    func apply(_ ms: Int) -> Int {
         switch self {
         case .noBucketing:
-            return Int(ms)
+            return ms
         case .bucketed(let fn):
             return fn(ms)
         }

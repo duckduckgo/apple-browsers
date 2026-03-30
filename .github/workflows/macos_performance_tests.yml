@@ -58,10 +58,12 @@ jobs:
     timeout-minutes: 60
 
     steps:
-    - name: Register SSH key for certificates repository access
+    - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
       uses: actions/checkout@v4
@@ -152,11 +154,6 @@ jobs:
       run: |
         log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
-
-    - name: Override XCTest Baseline HW Specs
-      working-directory: macOS
-      run: |
-        ./scripts/override-test-baseline-specs.sh
 
     - name: Build Performance Tests
       working-directory: macOS

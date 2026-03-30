@@ -129,8 +129,12 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
     private func networkInterface(forInterfaceNamed interfaceName: String) async throws -> NWInterface {
         try await withCheckedThrowingContinuation { continuation in
             let monitor = NWPathMonitor()
+            var didResume = false
 
             monitor.pathUpdateHandler = { path in
+                guard !didResume else { return }
+                didResume = true
+
                 Logger.networkProtectionConnectionTester.log("All interfaces: \(String(describing: path.availableInterfaces), privacy: .public)")
 
                 guard let tunnelInterface = path.availableInterfaces.first(where: { $0.name == interfaceName }) else {

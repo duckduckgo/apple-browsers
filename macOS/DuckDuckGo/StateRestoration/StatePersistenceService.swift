@@ -65,14 +65,19 @@ final class StatePersistenceService {
         write(data, sync: sync)
     }
 
-    func clearState(sync: Bool = false) {
+    func clearState(sync: Bool) -> Result<Void, Error> {
         dispatchPrecondition(condition: .onQueue(.main))
 
         job?.cancel()
+
+        var capturedResult: Result<Void, Error>?
         job = DispatchWorkItem {
-            self.performClearState()
+            capturedResult = self.performClearState()
         }
         queue.dispatch(job!, sync: sync)
+
+        // sync is always true in production code; sync is only false for tests in persistState/write methods
+        return capturedResult ?? .success(())
     }
 
     func flush() {
@@ -84,26 +89,39 @@ final class StatePersistenceService {
     }
 
     // perform state clearing synchronously, called from `clearState(sync:)` on `StateRestorationManager.queue`
-    func performClearState() {
+    func performClearState() -> Result<Void, Error> {
         lastSessionStateArchive = nil
+        var firstError: Error?
+
         let location = URL.persistenceLocation(for: self.fileName)
         do {
             try fileStore.removeOrThrow(fileAtURL: location)
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
+            if firstError == nil {
+                firstError = error
+            }
         }
 
         do {
             try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.lastLoadedStateFileName))
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
+            if firstError == nil {
+                firstError = error
+            }
         }
 
         do {
             try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.oldStateFileName))
         } catch {
-            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
+            if firstError == nil {
+                firstError = error
+            }
         }
+
+        if let error = firstError {
+            return .failure(error)
+        }
+        return .success(())
     }
 
     /// rename `persistentState` to `persistentState.1` after the state was loaded

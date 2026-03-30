@@ -105,6 +105,19 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func initializeIfNeeded()
 
     /**
+     Enables Sync using a preserved account when Sync is currently inactive.
+     */
+    func enableSyncFromPreservedAccount() async throws
+
+    /**
+     Removes an inactive preserved Sync account.
+
+     This does not send logout/delete requests to Sync servers and is intended as a fallback
+     when a remote disconnect attempt fails.
+     */
+    func removePreservedSyncAccount() throws
+
+    /**
      Creates an account.
 
      Account creation has the following flow:

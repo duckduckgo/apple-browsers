@@ -44,6 +44,7 @@ public protocol SparkleUpdateControllerFactory {
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
                             allowCustomUpdateFeed: Bool,
+                            isAutoUpdatePaused: @escaping () -> Bool,
                             wideEvent: WideEventManaging,
                             isOnboardingFinished: @escaping () -> Bool,
                             openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateControlling
@@ -94,7 +95,6 @@ public protocol UpdateController: UpdateControllerObjC {
     /// - **Sparkle**: Set to `true` when update is downloaded/available, cleared after user action
     ///
     /// **Usage**: Visual indicator in main menu "DuckDuckGo" item and Settings gear icon.
-    /// Persists across app launches until user acknowledges the update.
     var needsNotificationDot: Bool { get set }
     var notificationDotPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -258,7 +258,6 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
 
     func makeReleaseNotesUserScript(
         pixelFiring: PixelFiring?,
-        keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
     ) -> Subfeature
 }
@@ -282,6 +281,14 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
 }
 
 extension UpdateController {
+
+    /// Whether release notes need a fresh update check to populate data.
+    ///
+    /// After removing cached release notes, this is true when no update data
+    /// has been fetched yet (e.g. release notes opened before startup check completes).
+    public var needsLatestReleaseNote: Bool {
+        latestUpdate == nil
+    }
 
     private var isUpdateNotificationAllowed: Bool {
         Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)

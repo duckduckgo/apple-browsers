@@ -61,21 +61,22 @@ final class TabBarViewItemTests: XCTestCase {
         tabBarViewItem.subscribe(to: tabBarViewModel)
         tabBarViewItem.menuNeedsUpdate(menu)
 
-        XCTAssertEqual(menu.item(at: 0)?.title, UserText.duplicateTab)
-        XCTAssertEqual(menu.item(at: 1)?.title, UserText.pinTab)
-        XCTAssertEqual(menu.item(at: 2)?.title, UserText.muteTab)
-        XCTAssertTrue(menu.item(at: 3)?.isSeparatorItem ?? false)
-        XCTAssertEqual(menu.item(at: 4)?.title, UserText.fireproofSite)
-        XCTAssertEqual(menu.item(at: 5)?.title, UserText.bookmarkThisPage)
-        XCTAssertTrue(menu.item(at: 6)?.isSeparatorItem ?? false)
-        XCTAssertEqual(menu.item(at: 7)?.title, UserText.bookmarkAllTabs)
-        XCTAssertTrue(menu.item(at: 8)?.isSeparatorItem ?? false)
-        XCTAssertEqual(menu.item(at: 9)?.title, UserText.closeTab)
-        XCTAssertEqual(menu.item(at: 10)?.title, UserText.closeOtherTabs)
-        XCTAssertEqual(menu.item(at: 11)?.title, UserText.moveTabToNewWindow)
+        XCTAssertEqual(menu.item(at: 0)?.title, UserText.newTabToTheRight)
+        XCTAssertEqual(menu.item(at: 1)?.title, UserText.duplicateTab)
+        XCTAssertEqual(menu.item(at: 2)?.title, UserText.pinTab)
+        XCTAssertEqual(menu.item(at: 3)?.title, UserText.muteTab)
+        XCTAssertTrue(menu.item(at: 4)?.isSeparatorItem ?? false)
+        XCTAssertEqual(menu.item(at: 5)?.title, UserText.fireproofSite)
+        XCTAssertEqual(menu.item(at: 6)?.title, UserText.bookmarkThisPage)
+        XCTAssertTrue(menu.item(at: 7)?.isSeparatorItem ?? false)
+        XCTAssertEqual(menu.item(at: 8)?.title, UserText.bookmarkAllTabs)
+        XCTAssertTrue(menu.item(at: 9)?.isSeparatorItem ?? false)
+        XCTAssertEqual(menu.item(at: 10)?.title, UserText.closeTab)
+        XCTAssertEqual(menu.item(at: 11)?.title, UserText.closeOtherTabs)
+        XCTAssertEqual(menu.item(at: 12)?.title, UserText.moveTabToNewWindow)
 
         // Check "Close Other Tabs" submenu
-        guard let submenu = menu.item(at: 10)?.submenu else {
+        guard let submenu = menu.item(at: 11)?.submenu else {
             XCTFail("\"Close Other Tabs\" menu item should have a submenu")
             return
         }
@@ -100,9 +101,9 @@ final class TabBarViewItemTests: XCTestCase {
         tabBarViewItem.subscribe(to: tabBarViewModel)
         tabBarViewItem.menuNeedsUpdate(menu)
 
-        XCTAssertFalse(menu.item(at: 1)?.isSeparatorItem ?? true)
-        XCTAssertEqual(menu.item(at: 2)?.title, UserText.muteTab)
-        XCTAssertTrue(menu.item(at: 3)?.isSeparatorItem ?? false)
+        XCTAssertFalse(menu.item(at: 2)?.isSeparatorItem ?? true)
+        XCTAssertEqual(menu.item(at: 3)?.title, UserText.muteTab)
+        XCTAssertTrue(menu.item(at: 4)?.isSeparatorItem ?? false)
     }
 
     @MainActor
@@ -111,9 +112,9 @@ final class TabBarViewItemTests: XCTestCase {
         tabBarViewItem.subscribe(to: tabBarViewModel)
         tabBarViewItem.menuNeedsUpdate(menu)
 
-        XCTAssertFalse(menu.item(at: 1)?.isSeparatorItem ?? true)
-        XCTAssertEqual(menu.item(at: 2)?.title, UserText.unmuteTab)
-        XCTAssertTrue(menu.item(at: 3)?.isSeparatorItem ?? false)
+        XCTAssertFalse(menu.item(at: 2)?.isSeparatorItem ?? true)
+        XCTAssertEqual(menu.item(at: 3)?.title, UserText.unmuteTab)
+        XCTAssertTrue(menu.item(at: 4)?.isSeparatorItem ?? false)
     }
 
     func testWhenURLIsNotBookmarkedThenBookmarkThisPageIsShown() {

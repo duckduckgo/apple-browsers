@@ -31,9 +31,26 @@ if [[ -z "${CONTAINER_PATH}" ]]; then
     exit 1
 fi
 
-LOG_FILE="${CONTAINER_PATH}/Library/Caches/pixel-validation-log.txt"
+PIXEL_LOG_FILE="${CONTAINER_PATH}/Library/Caches/pixel-validation-log.txt"
+PIXELKIT_LOG_FILE="${CONTAINER_PATH}/Library/Caches/pixelkit-validation-log.txt"
 
-if [[ ! -f "${LOG_FILE}" ]]; then
+FOUND_ANY=false
+
+cd "${BASE_DIR}"
+
+if [[ -f "${PIXEL_LOG_FILE}" ]]; then
+    FOUND_ANY=true
+    echo "Validating Pixel log..."
+    npm run validate-pixel-debug-logs "${PIXEL_DEFINITIONS_PATH}" "${PIXEL_LOG_FILE}" "${PIXEL_PREFIX}"
+fi
+
+if [[ -f "${PIXELKIT_LOG_FILE}" ]]; then
+    FOUND_ANY=true
+    echo "Validating PixelKit log..."
+    npm run validate-pixel-debug-logs "${PIXEL_DEFINITIONS_PATH}" "${PIXELKIT_LOG_FILE}" "${PIXEL_PREFIX}"
+fi
+
+if [[ "${FOUND_ANY}" == false ]]; then
     echo "No pixel logs found."
     echo ""
     echo "Make sure you:"
@@ -41,7 +58,3 @@ if [[ ! -f "${LOG_FILE}" ]]; then
     echo "  2. Triggered some pixels during your session"
     exit 0
 fi
-
-# Run the npm validation script
-cd "${BASE_DIR}"
-npm run validate-pixel-debug-logs "${PIXEL_DEFINITIONS_PATH}" "${LOG_FILE}" "${PIXEL_PREFIX}"

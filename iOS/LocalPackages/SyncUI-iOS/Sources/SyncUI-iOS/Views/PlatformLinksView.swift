@@ -202,6 +202,15 @@ private class CopyableUIView: UIView {
     }
 }
 
-#Preview {
-    PlatformLinksView(model: SyncSettingsViewModel(isOnDevEnvironment: { true }, switchToProdEnvironment: {}), source: .activated)
+struct PlatformLinksView_Previews: PreviewProvider {
+    static var previews: some View {
+        PlatformLinksView(
+            model: SyncSettingsViewModel(
+                isOnDevEnvironment: { true },
+                switchToProdEnvironment: {},
+                autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+            ),
+            source: .activated
+        )
+    }
 }

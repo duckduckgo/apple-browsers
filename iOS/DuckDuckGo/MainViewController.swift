@@ -2620,6 +2620,14 @@ class MainViewController: UIViewController {
     }
 
     private func showExperimentFireDialogAfterAIChatResponseIfReady() {
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+            if experimentDuckAIFireOnboardingFlow.state != .completed {
+                experimentDuckAIFireOnboardingFlow.state = .idle
+            }
+            setExperimentFireControlsLocked(false)
+            return
+        }
+
         if onboardingTransitionInProgress {
             experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
             let workItem = DispatchWorkItem { [weak self] in

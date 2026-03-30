@@ -108,6 +108,11 @@ struct FireConfirmationPresenter {
             
             let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
             let hostingController = makeHostingController(with: confirmationView)
+            // Prevent swipe-to-dismiss for the experiment flow: the user must make an
+            // explicit choice (fire or cancel) to keep the locked-controls state consistent.
+            if confirmationType == .duckAIExperiment {
+                hostingController.isModalInPresentation = true
+            }
             let presentingWidth = viewController.view.frame.width
             configurePresentation(for: hostingController,
                                   source: source,

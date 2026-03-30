@@ -30,7 +30,7 @@ import Utilities
 /// **Menu Items:**
 /// - "Fire Test Trigger" (debug/review builds only) – sends a test notification to trigger promos that listen for it
 /// - For each promo: parent item with status, submenu with Force Show, Undismiss, Undismiss + Clear History
-/// - "Advance Simulated Date by 1 Day" – advances the simulated "now" for cooldown checks
+/// - "Advance Simulated Date …" – advances the simulated "now" for cooldown checks and expires active promo sessions whose logical timeout deadline has passed
 /// - "Reset Simulated Date" – clears the simulated date (disabled when none set)
 /// - "Reset All Promo State" – clears debug date override and all promo history
 /// - When no promos: disabled "No promos registered"
@@ -141,6 +141,14 @@ final class PromoDebugMenu: NSMenu {
         advanceDayItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.advanceSimulatedDate1Day)
         addItem(advanceDayItem)
 
+        let advanceWeekItem = NSMenuItem(title: "Advance Simulated Date by 1 Week", action: #selector(advanceSimulatedDateByWeek), keyEquivalent: "")
+        advanceWeekItem.target = self
+        addItem(advanceWeekItem)
+
+        let advanceMonthItem = NSMenuItem(title: "Advance Simulated Date by 1 Month", action: #selector(advanceSimulatedDateByMonth), keyEquivalent: "")
+        advanceMonthItem.target = self
+        addItem(advanceMonthItem)
+
         let resetDateItem = NSMenuItem(title: "Reset Simulated Date", action: #selector(resetSimulatedDate), keyEquivalent: "")
         resetDateItem.target = self
         resetDateItem.isEnabled = debugSimulatedDateStore.simulatedDate != nil
@@ -228,12 +236,21 @@ final class PromoDebugMenu: NSMenu {
         advanceSimulatedDate(by: .day)
     }
 
+    @objc private func advanceSimulatedDateByWeek() {
+        advanceSimulatedDate(by: .days(7))
+    }
+
+    @objc private func advanceSimulatedDateByMonth() {
+        advanceSimulatedDate(by: .days(30))
+    }
+
     @objc private func advanceSimulatedDateByHour() {
         advanceSimulatedDate(by: .hours(1))
     }
 
     private func advanceSimulatedDate(by interval: TimeInterval) {
         debugSimulatedDateStore.advance(by: interval)
+        NSApp.delegateTyped.promoService?.reconcileActivePromoTimeoutsAfterSimulatedDateAdvance()
     }
 
     @objc private func resetSimulatedDate() {

@@ -179,6 +179,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.fireButton.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
         self.duckChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        self.duckChatButton.accessibilityIdentifier = "TabSwitcher.Button.DuckChat"
         self.plusButton.accessibilityLabel = UserText.keyCommandNewTab
         self.doneButton.accessibilityLabel = UserText.navigationTitleDone
         self.editButton.accessibilityLabel = UserText.actionGenericEdit

@@ -194,6 +194,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     // MARK: - Layout
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
+
         dismissButtonAnimator?.stopAnimation(true)
         let animationDuration: CGFloat = 0.25
 
@@ -235,7 +236,17 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     override func updateInterface(from oldState: any OmniBarState, to state: any OmniBarState) {
         super.updateInterface(from: oldState, to: state)
 
-        omniBarView.isUsingCompactLayout = !state.hasLargeWidth
+        let isLandscapeEditing = isPhoneLandscape && barView.textField.isEditing
+        let newMode: OmniBarLayoutMode
+        if !state.hasLargeWidth || isLandscapeEditing {
+            newMode = .compact
+        } else if isPhoneLandscape {
+            newMode = .phoneLandscape
+        } else {
+            newMode = .expanded
+        }
+
+        omniBarView.setLayoutMode(newMode, animated: isPhoneLandscape)
 
         let hasTrailingAccessory = state.showAIChatButton || state.showAIChatModeToggle
         let hasAdjacentButton = state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton

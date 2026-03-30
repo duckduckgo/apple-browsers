@@ -326,9 +326,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
-    case crashCollectionDisableKeysSorting
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
@@ -395,7 +392,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
-             .crashCollectionDisableKeysSorting,
              .freeTrialConversionWideEvent,
              .crashCollectionLimitCallStackTreeDepth,
              .tabSwitcherTrackerCount,
@@ -579,8 +575,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                .newDeviceSyncPrompt,
                .migrateKeychainAccessibility,
                .productTelemeterySurfaceUsage,
-               .crashCollectionLimitCallStackTreeDepth,
-               .crashCollectionDisableKeysSorting:
+               .crashCollectionLimitCallStackTreeDepth:
             return false
         }
     }
@@ -784,8 +779,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.burnSingleTab))
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
-        case .crashCollectionDisableKeysSorting:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
         case .crashCollectionLimitCallStackTreeDepth:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
         case .onboardingRebranding:

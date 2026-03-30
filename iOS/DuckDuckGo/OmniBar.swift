@@ -28,6 +28,8 @@ protocol OmniBar: AnyObject {
 
     var omniDelegate: OmniBarDelegate? { get set }
 
+    var isPhoneLandscape: Bool { get set }
+
     var isTextFieldEditing: Bool { get }
     var text: String? { get set }
 

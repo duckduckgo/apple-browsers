@@ -204,6 +204,7 @@ class MainViewController: UIViewController {
 
     weak var tabSwitcherController: TabSwitcherViewController?
     var tabSwitcherButton: TabSwitcherButton?
+    var omniBarTabSwitcherButton: TabSwitcherButton?
 
     let gestureBookmarksButton = GestureToolbarButton()
 
@@ -624,7 +625,7 @@ class MainViewController: UIViewController {
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
         applyWidth()
-        
+
         registerForApplicationEvents()
         registerForCookiesManagedNotification()
         registerForSettingsChangeNotifications()
@@ -1141,6 +1142,9 @@ class MainViewController: UIViewController {
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         }
+        if isInPhoneLandscapeLayout {
+            applyPhoneLandscapeWidth()
+        }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
     }
@@ -1298,6 +1302,25 @@ class MainViewController: UIViewController {
 
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
+
+        // Omnibar tab switcher button (for iPhone landscape combined bar)
+        let omniBarTabSwitcher = TabSwitcherStaticButton()
+        omniBarTabSwitcher.delegate = self
+        omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
+        let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
+        container.addSubview(omniBarTabSwitcher)
+        NSLayoutConstraint.activate([
+            omniBarTabSwitcher.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            omniBarTabSwitcher.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            omniBarTabSwitcher.widthAnchor.constraint(equalToConstant: 34),
+            omniBarTabSwitcher.heightAnchor.constraint(equalToConstant: 44),
+        ])
+        omniBarTabSwitcherButton = omniBarTabSwitcher
+
+        // Omnibar fire button (for iPhone landscape combined bar)
+        viewCoordinator.omniBar.barView.onFirePressed = { [weak self] in
+            self?.onFirePressed()
+        }
     }
     
     private func initBookmarksButton() {
@@ -1989,9 +2012,15 @@ class MainViewController: UIViewController {
     private func refreshTabIcon() {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.currentTabsModel.count)
         assert(tabSwitcherButton != nil)
-        tabSwitcherButton?.tabCount = tabManager.currentTabsModel.count
-        tabSwitcherButton?.hasUnread = tabManager.currentTabsModel.hasUnread
-        tabSwitcherButton?.isFireMode = tabManager.currentBrowsingMode == .fire
+        let count = tabManager.currentTabsModel.count
+        let hasUnread = tabManager.currentTabsModel.hasUnread
+        let isFireMode = tabManager.currentBrowsingMode == .fire
+        tabSwitcherButton?.tabCount = count
+        tabSwitcherButton?.hasUnread = hasUnread
+        tabSwitcherButton?.isFireMode = isFireMode
+        omniBarTabSwitcherButton?.tabCount = count
+        omniBarTabSwitcherButton?.hasUnread = hasUnread
+        omniBarTabSwitcherButton?.isFireMode = isFireMode
     }
 
     private func refreshOmniBar() {
@@ -2095,21 +2124,28 @@ class MainViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        
-        if AppWidthObserver.shared.willResize(toWidth: size.width) {
-            applyWidth()
+
+        let isKeyboardShowing = omniBar.isTextFieldEditing
+        if isKeyboardShowing {
+            omniBar.barView.textField.suppressResignFirstResponder = true
+        }
+
+        let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
+            && (AppWidthObserver.shared.isPad || isInPhoneLandscapeLayout || featureFlagger.isFeatureOn(.minimalChromeInLandscape))
+        if needsWidthUpdate {
+            applyWidth(for: size)
         }
 
         self.showMenuHighlighterIfNeeded()
         updateChromeForDuckPlayer()
 
-        let isKeyboardShowing = omniBar.isTextFieldEditing
         coordinator.animate { _ in
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
         } completion: { _ in
+            self.omniBar.barView.textField.suppressResignFirstResponder = false
             if isKeyboardShowing {
-                self.omniBar.beginEditing(animated: true)
+                self.omniBar.beginEditing(animated: false)
             }
 
             ViewHighlighter.updatePositions()
@@ -2132,10 +2168,24 @@ class MainViewController: UIViewController {
         orientationPixelWorker = worker
     }
 
-    private func applyWidth() {
+    private func isPhoneLandscapeMode(for size: CGSize? = nil) -> Bool {
+        guard featureFlagger.isFeatureOn(.minimalChromeInLandscape) else { return false }
+        let size = size ?? view.bounds.size
+        return !AppWidthObserver.shared.isPad
+            && (size.width > size.height)
+    }
+
+    private func applyWidth(for size: CGSize? = nil) {
+
+        if isInPhoneLandscapeLayout {
+            setPhoneLandscapeMode(false)
+            viewCoordinator.setNavBarContainerExpandableHeight(false)
+        }
 
         if AppWidthObserver.shared.isLargeWidth {
             applyLargeWidth()
+        } else if isPhoneLandscapeMode(for: size) {
+            applyPhoneLandscapeWidth()
         } else {
             applySmallWidth()
         }
@@ -2173,11 +2223,23 @@ class MainViewController: UIViewController {
         if AppWidthObserver.shared.isLargeWidth {
             self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
         } else {
+            self.suggestionTrayController?.coversFullScreen = isInPhoneLandscapeLayout
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
     }
     
+    private var isInPhoneLandscapeLayout: Bool = false
+
+    var isUsingSingleBar: Bool {
+        AppWidthObserver.shared.isLargeWidth || isInPhoneLandscapeLayout
+    }
+
+    private func setPhoneLandscapeMode(_ enabled: Bool) {
+        isInPhoneLandscapeLayout = enabled
+        viewCoordinator.omniBar.isPhoneLandscape = enabled
+    }
+
     private func applyLargeWidth() {
         viewCoordinator.tabBarContainer.isHidden = false
         viewCoordinator.toolbar.isHidden = true
@@ -2196,6 +2258,26 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.isEnabled = true
     }
 
+    private func applyPhoneLandscapeWidth() {
+        setPhoneLandscapeMode(true)
+        viewCoordinator.tabBarContainer.isHidden = true
+        viewCoordinator.toolbar.isHidden = true
+        // Push the hidden toolbar off-screen so content container extends to the bottom
+        let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
+        viewCoordinator.constraints.toolbarBottom.constant = bottomHeight
+        viewCoordinator.omniBar.enterPadState()
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+
+        if appSettings.currentAddressBarPosition.isBottom {
+            viewCoordinator.setNavBarContainerBottomToKeyboard()
+            viewCoordinator.setNavBarContainerExpandableHeight(true)
+        } else {
+            viewCoordinator.setNavBarContainerExpandableHeight(false)
+        }
+
+        swipeTabsCoordinator?.isEnabled = true
+    }
+
     @discardableResult
     func tryToShowSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) -> Bool {
         let canShow = suggestionTrayController?.canShow(for: type) ?? false
@@ -2208,7 +2290,7 @@ class MainViewController: UIViewController {
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
-        if !AppWidthObserver.shared.isLargeWidth {
+        if !isUsingSingleBar {
             if !daxDialogsManager.shouldShowFireButtonPulse {
                 ViewHighlighter.hideAll()
             }
@@ -3252,7 +3334,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var isToolbarHidden: Bool {
-        return viewCoordinator.toolbar.alpha < 1
+        return viewCoordinator.toolbar.isHidden || viewCoordinator.toolbar.alpha < 1
     }
 
     var toolbarHeight: CGFloat {
@@ -3535,6 +3617,7 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
+        browsingMenu.isUsingSingleBar = isUsingSingleBar
         browsingMenu.onDismiss = { wasActionSelected in
             self.showMenuHighlighterIfNeeded()
             self.viewCoordinator.menuToolbarButton.isEnabled = true
@@ -4243,6 +4326,9 @@ extension MainViewController: TabDelegate {
             }
             tabSwitcherButton?.animateUpdate {
                 self.tabSwitcherButton?.tabCount += 1
+            }
+            omniBarTabSwitcherButton?.animateUpdate {
+                self.omniBarTabSwitcherButton?.tabCount += 1
             }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)

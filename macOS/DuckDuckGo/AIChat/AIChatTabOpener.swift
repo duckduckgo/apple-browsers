@@ -175,9 +175,12 @@ extension WindowControllersManager: AIChatTabManaging {
 
         switch linkOpenBehavior {
         case .currentTab:
-            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isDuckAIURL {
+            if let currentTab = tabCollectionViewModel?.selectedTab, currentTab.url?.isDuckAIURL == true {
                 if hasPrompt {
-                    tabCollectionViewModel?.selectedTab?.reload()
+                    currentTab.reload()
+                } else if url.getParameter(named: "chatID") != nil {
+                    // Navigate to a specific existing chat — must load even if already on duck.ai
+                    show(url: url, source: .ui, newTab: false)
                 }
             } else {
                 show(url: url, source: .ui, newTab: false)

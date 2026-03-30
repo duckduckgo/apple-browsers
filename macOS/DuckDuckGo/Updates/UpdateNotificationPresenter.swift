@@ -28,10 +28,16 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
     static let presentationTimeInterval: TimeInterval = 10
 
     private let pixelFiring: PixelFiring?
+    private let shouldSuppressPostUpdateNotification: () -> Bool
+    private let showNotificationPopover: @MainActor (PopoverMessageViewController) -> Bool
     private var currentPopover: PopoverMessageViewController?
 
-    init(pixelFiring: PixelFiring?) {
+    init(pixelFiring: PixelFiring?,
+         shouldSuppressPostUpdateNotification: @escaping () -> Bool = { false },
+         showNotificationPopover: @escaping @MainActor (PopoverMessageViewController) -> Bool) {
         self.pixelFiring = pixelFiring
+        self.shouldSuppressPostUpdateNotification = shouldSuppressPostUpdateNotification
+        self.showNotificationPopover = showNotificationPopover
     }
 
     func showUpdateNotification(for updateType: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {
@@ -64,12 +70,16 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
     }
 
     func showUpdateNotification(for updateStatus: AppUpdateStatus) {
-        switch updateStatus {
-        case .noChange: break
-        case .updated:
-            showUpdateNotification(icon: NSImage.successCheckmark, text: UserText.browserUpdatedNotification, buttonText: UserText.viewDetails)
-        case .downgraded:
-            showUpdateNotification(icon: NSImage.successCheckmark, text: UserText.browserDowngradedNotification, buttonText: UserText.viewDetails)
+        Task { @MainActor [weak self] in
+            guard let self, !self.shouldSuppressPostUpdateNotification() else { return }
+
+            switch updateStatus {
+            case .noChange: break
+            case .updated:
+                self.showUpdateNotification(icon: .successCheckmark, text: UserText.browserUpdatedNotification, buttonText: UserText.viewDetails)
+            case .downgraded:
+                self.showUpdateNotification(icon: .successCheckmark, text: UserText.browserDowngradedNotification, buttonText: UserText.viewDetails)
+            }
         }
     }
 
@@ -79,28 +89,15 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
-            guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController ?? Application.appDelegate.windowControllersManager.mainWindowControllers.last,
-                  let button = windowController.mainViewController.navigationBarViewController.optionsButton else {
-                return
-            }
-
-            let parentViewController = windowController.mainViewController
-
-            guard parentViewController.view.window?.isKeyWindow == true, (parentViewController.presentedViewControllers ?? []).isEmpty else {
-                return
-            }
-
-            let buttonAction: (() -> Void)? = { [weak self] in
-                self?.openUpdatesPage()
-            }
-
             let viewController = PopoverMessageViewController(message: text,
                                                               image: icon,
                                                               autoDismissDuration: Self.presentationTimeInterval,
                                                               shouldShowCloseButton: true,
                                                               presentMultiline: presentMultiline,
                                                               buttonText: buttonText,
-                                                              buttonAction: buttonAction,
+                                                              buttonAction: { [weak self] in
+                self?.openUpdatesPage()
+            },
                                                               clickAction: { [weak self] in
                 self?.openUpdatesPage()
             },
@@ -108,8 +105,9 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
                 self?.currentPopover = nil
             })
 
-            self.currentPopover = viewController
-            viewController.show(onParent: parentViewController, relativeTo: button)
+            if self.showNotificationPopover(viewController) {
+                self.currentPopover = viewController
+            }
         }
     }
 

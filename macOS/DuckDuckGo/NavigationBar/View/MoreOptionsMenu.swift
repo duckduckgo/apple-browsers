@@ -84,7 +84,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let freemiumDBPFeature: FreemiumDBPFeature
     private let freemiumDBPPresenter: FreemiumDBPPresenter
     private let appearancePreferences: AppearancePreferences
-    private var dockCustomizer: DockCustomization?
+    private let dockCustomizer: DockCustomization
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let featureFlagger: FeatureFlagger
     private let freeTrialBadgePersistor: FreeTrialBadgePersisting
@@ -126,7 +126,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         dockCustomizer: DockCustomization?,
+         dockCustomizer: DockCustomization,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
@@ -199,7 +199,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-        if let dockCustomizer = self.dockCustomizer,
+        if dockCustomizer.supportsAddingToDock,
            dockCustomizer.isAddedToDock == false {
 
             if dockCustomizer.shouldShowNotification {
@@ -294,8 +294,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: NSMenuItem) {
+        guard dockCustomizer.supportsAddingToDock, dockCustomizer.addToDock() else { return }
         PixelKit.fire(GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)
-        dockCustomizer?.addToDock()
     }
 
     @MainActor
@@ -760,7 +760,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     func menuDidClose(_ menu: NSMenu) {
-        dockCustomizer?.didCloseMoreOptionsMenu()
+        dockCustomizer.didCloseMoreOptionsMenu()
     }
 
     override func performActionForItem(at index: Int) {

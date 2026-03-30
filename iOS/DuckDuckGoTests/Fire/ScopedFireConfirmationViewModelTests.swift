@@ -311,10 +311,10 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                          onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {
         return ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                source: source,
+                                               fireContext: .default(daxDialogsManager: daxDialogsManager),
                                                downloadManager: mockDownloadManager,
                                                keyValueStore: mockKeyValueStore,
                                                appSettings: mockAppSettings,
-                                               daxDialogsManager: daxDialogsManager,
                                                browsingMode: browsingMode,
                                                onConfirm: onConfirm,
                                                onCancel: onCancel)

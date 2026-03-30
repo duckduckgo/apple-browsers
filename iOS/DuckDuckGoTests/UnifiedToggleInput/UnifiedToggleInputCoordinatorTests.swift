@@ -345,7 +345,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertEqual(sut.viewController.cardPosition, .top)
         XCTAssertTrue(sut.viewController.usesOmnibarMargins)
-        XCTAssertTrue(sut.viewController.showsDismissButton)
+        XCTAssertFalse(sut.viewController.showsDismissButton)
         XCTAssertTrue(sut.viewController.isToolbarSubmitHidden)
     }
 
@@ -1058,6 +1058,54 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - Handler hasSubmittedPrompt Sync
+
+    func test_handlerHasSubmittedPrompt_syncedAfterPromptSubmit() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    func test_handlerHasSubmittedPrompt_syncedAfterStartNewChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.startNewChat()
+        XCTAssertFalse(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    func test_handlerHasSubmittedPrompt_syncedAfterBindWithExistingChat() {
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    func test_handlerHasSubmittedPrompt_syncedAfterBindWithNewChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: false)
+        XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    func test_handlerHasSubmittedPrompt_syncedAfterUnbind() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unbind()
+        XCTAssertFalse(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    // MARK: - startNewChat Text Clearing
+
+    func test_startNewChat_clearsText() {
+        sut.showExpanded()
+        sut.viewController.text = "draft message"
+        sut.startNewChat()
+        XCTAssertEqual(sut.viewController.text, "")
+    }
+
+    func test_startNewChat_resetsTextState() {
+        sut.showExpanded()
+        sut.viewController.text = "draft message"
+        sut.startNewChat()
+        XCTAssertEqual(sut.textState, .empty)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
@@ -1080,6 +1128,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
+    func unifiedToggleInputDidRequestVoiceSearch() {}
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

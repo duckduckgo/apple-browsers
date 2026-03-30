@@ -474,6 +474,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     var webExtensionIdentifiers: [String] { [] }
     var controller: WKWebExtensionController { WKWebExtensionController() }
     var eventsListener: WebExtensionEventsListening { MockEventsListener() }
+    var extensionsDirectory: URL { URL(fileURLWithPath: "/tmp") }
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
 
     func loadInstalledExtensions() async {}
@@ -501,7 +502,13 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
         nil
     }
 
+    func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? {
+        nil
+    }
+
     func unloadAllExtensions() {}
+
+    func reloadExtension(identifier: String) async throws {}
 
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }

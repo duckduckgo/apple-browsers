@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Rakenduse uuesti installimisel taastatakse selle seadme andmed automaatselt.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Kui installid DuckDuckGo rakenduse uuesti, küsime, kas soovid oma andmed selles seadmes taastada.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Jätka funktsiooni Sync & Backup seanssi, et taastada järjehoidjad, paroolid ja muu või jätka uue seadistusega.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Sees";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Rakenduse uuesti installimisel taastatakse su andmed automaatselt. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Taasta andmed rakenduse uuesti installimisel";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Salvesta taastamise PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Kui kaotad oma seadme, vajad seda taastamiskoodi, et taastada sünkroonitud andmed.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Kasuta seda koodi oma andmete taastamiseks, kui kaotad juurdepääsu sellele seadmele. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Sisesta tekstiline kood käsitsi";

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 public enum AIChatURLParameters {
     public static let promptQueryName = "q"
     public static let autoSubmitPromptQueryName = "prompt"
@@ -23,4 +25,16 @@ public enum AIChatURLParameters {
     public static let toolChoiceName = "toolChoice"
     public static let modeName = "mode"
     public static let voiceModeValue = "voice"
+
+    /// Appends `?mode=voice` to the given base URL.
+    public static func voiceModeURL(from baseURL: URL) -> URL {
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            return baseURL
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == modeName }
+        queryItems.append(URLQueryItem(name: modeName, value: voiceModeValue))
+        components.queryItems = queryItems
+        return components.url ?? baseURL
+    }
 }

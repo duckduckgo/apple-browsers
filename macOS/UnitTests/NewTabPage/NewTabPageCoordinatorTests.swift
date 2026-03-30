@@ -182,7 +182,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             pinningManager: MockPinningManager(),
-            fireDailyPixel: { self.firePixelCalls.append($0) }
+            fireDailyPixel: { self.firePixelCalls.append($0) },
+            dockCustomization: DockCustomizerMock()
         )
     }
 

@@ -142,15 +142,18 @@ public class WebCacheManager: WebsiteDataManaging {
     let dataStoreIDManager: DataStoreIDManaging
     let dataStoreCleaner: WebsiteDataStoreCleaning
     let observationsCleaner: ObservationsDataCleaning
+    let isFireproofingETLDPlus1Enabled: () -> Bool
 
     public init(cookieStorage: MigratableCookieStorage,
                 fireproofing: Fireproofing,
                 dataStoreIDManager: DataStoreIDManaging,
+                isFireproofingETLDPlus1Enabled: @escaping () -> Bool = { true },
                 dataStoreCleaner: WebsiteDataStoreCleaning = DefaultWebsiteDataStoreCleaner(),
                 observationsCleaner: ObservationsDataCleaning = DefaultObservationsDataCleaner()) {
         self.cookieStorage = cookieStorage
         self.fireproofing = fireproofing
         self.dataStoreIDManager = dataStoreIDManager
+        self.isFireproofingETLDPlus1Enabled = isFireproofingETLDPlus1Enabled
         self.dataStoreCleaner = dataStoreCleaner
         self.observationsCleaner = observationsCleaner
     }
@@ -179,7 +182,8 @@ public class WebCacheManager: WebsiteDataManaging {
         let startTime = CACurrentMediaTime()
         let cookieStore = dataStore.httpCookieStore
         let cookies = await cookieStore.allCookies()
-        for cookie in cookies where domains.contains(where: { HTTPCookie.cookieDomain(cookie.domain, matchesTestDomain: $0) }) {
+        let tld = TLD()
+        for cookie in cookies where shouldRemoveCookie(cookie, forDomains: domains, tld: tld) {
             await cookieStore.deleteCookie(cookie)
         }
         let totalTime = CACurrentMediaTime() - startTime
@@ -232,6 +236,18 @@ public class WebCacheManager: WebsiteDataManaging {
 }
 
 extension WebCacheManager {
+
+    private func shouldRemoveCookie(_ cookie: HTTPCookie, forDomains domains: [String], tld: TLD) -> Bool {
+        if domains.contains(where: { HTTPCookie.cookieDomain(cookie.domain, matchesTestDomain: $0) }) {
+            return true
+        }
+
+        guard isFireproofingETLDPlus1Enabled() else { return false }
+
+        let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
+        guard let cookieETLDPlus1 = tld.eTLDplus1(cookieDomain) else { return false }
+        return domains.contains(where: { tld.eTLDplus1($0) == cookieETLDPlus1 })
+    }
 
     private func performMigrationIfNeeded(dataStoreIDManager: DataStoreIDManaging,
                                           cookieStorage: MigratableCookieStorage,

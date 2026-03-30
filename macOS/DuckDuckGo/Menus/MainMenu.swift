@@ -177,7 +177,7 @@ final class MainMenu: NSMenu {
 
     private let featureFlagger: FeatureFlagger
     private let isLazyMenuRebuild: Bool
-    private let dockCustomizer: DockCustomization?
+    private let dockCustomizer: DockCustomization
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let internalUserDecider: InternalUserDecider
@@ -200,7 +200,7 @@ final class MainMenu: NSMenu {
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
-         dockCustomizer: DockCustomization? = nil,
+         dockCustomizer: DockCustomization,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
@@ -559,7 +559,7 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
-        addToDockMenuItem.isHidden = dockCustomizer?.isAddedToDock ?? true // always hidden in sandboxed build
+        addToDockMenuItem.isHidden = !dockCustomizer.supportsAddingToDock || dockCustomizer.isAddedToDock
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.
@@ -902,6 +902,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Add To Dock more options menu notification", action: #selector(AppDelegate.resetAddToDockFeatureNotification))
                 NSMenuItem(title: "Reset Launch Date To Today", action: #selector(AppDelegate.resetLaunchDateToToday))
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
+                NSMenuItem(title: "Set Launch Date 10 Days In the Past", action: #selector(AppDelegate.setLaunchDay10DaysInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
 
@@ -1075,7 +1076,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
             if StandardApplicationBuildType().isSparkleBuild {
-                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
+                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
             }
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "Promo Queue")

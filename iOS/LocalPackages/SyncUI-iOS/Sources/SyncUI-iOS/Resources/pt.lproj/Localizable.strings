@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Restaura automaticamente os teus dados neste dispositivo se reinstalares a aplicação.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Se reinstalares a aplicação DuckDuckGo, perguntaremos se queres restaurar os teus dados neste dispositivo.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Retoma a tua sessão do Sync & Backup para restaurar os teus marcadores, palavras-passe e mais, ou continua com uma nova configuração.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Ligado";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Restaura automaticamente os teus dados se reinstalares a aplicação. Os dados de Sync & Backup não podem ser recuperados após 18 meses de inatividade.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Restaurar na reinstalação da aplicação";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Guardar PDF de recuperação";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Se perderes o teu dispositivo, precisas deste código de recuperação para restaurares os dados sincronizados.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Usa este código para restaurar os teus dados caso percas o acesso a este dispositivo. Não é possível recuperar os dados de Sync & Backup após 18 meses de inatividade. [Sabe mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Introduzir manualmente o código";

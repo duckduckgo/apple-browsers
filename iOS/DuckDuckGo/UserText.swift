@@ -63,6 +63,9 @@ public struct UserText {
     public static let scopedFireConfirmationDownloadsWarning = NSLocalizedString("scoped.fire.confirmation.downloads.warning", value: "This will cancel downloads in progress.", comment: "Warning message that deleting will cancel any active downloads")
     public static let scopedFireConfirmationNewTabsInfo = NSLocalizedString("scoped.fire.confirmation.new.tabs.info", value: "New tabs you created can also be deleted individually.", comment: "Informational message explaining that new tabs can also be deleted individually")
 
+    public static let contextualChatDeleteConfirmationTitle = NSLocalizedString("contextual.chat.delete.confirmation.title", value: "Delete this chat?", comment: "Title for the confirmation dialog when deleting a contextual AI chat")
+    public static let contextualChatDeleteConfirmationButton = NSLocalizedString("contextual.chat.delete.confirmation.button", value: "Delete Chat", comment: "Button to confirm deleting a contextual AI chat")
+
     public static func scopedFireConfirmationTabsDeletedToast(tabCount: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "scoped.fire.confirmation.tabs.deleted.toast", value: nil, table: nil)
         return String.localizedStringWithFormat(format, tabCount)
@@ -93,6 +96,7 @@ public struct UserText {
     public static let actionPrint = NSLocalizedString("action.title.print", value: "Print", comment: "Print action in the menu header")
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
     public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
+    public static let actionDuckAIVoice = NSLocalizedString("action.title.duckai.voice", value: "Duck.ai Voice", comment: "Open Duck.ai Voice mode action")
     public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "New Chat", comment: "Start new AI Chat action in the menu list")
     public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
@@ -2076,6 +2080,8 @@ public struct UserText {
     public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
+
+    public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Quick Actions
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize This Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")

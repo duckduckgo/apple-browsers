@@ -133,13 +133,18 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
             view.removeTrackingArea(trackingArea)
         }
 
-        onDismiss?()
     }
 
     override func viewDidAppear() {
         super.viewDidAppear()
         createTrackingArea()
         scheduleAutoDismissTimer()
+    }
+
+    override func viewDidDisappear() {
+        super.viewDidDisappear()
+        onDismiss?()
+        onDismiss = nil
     }
 
     func show(onParent parent: NSViewController, rect: NSRect, of view: NSView, preferredEdge: NSRectEdge = .maxY) {

@@ -193,6 +193,11 @@
                 "description": "Comma-separated JS performance values"
             },
             {
+                "key": "breakageData",
+                "type": "string",
+                "description": "Breakage detector payload"
+            },
+            {
                 "key": "isPirEnabled",
                 "type": "string",
                 "description": "Whether Personal Information Removal is enabled. Only sent when true.",
@@ -494,6 +499,11 @@
                 "key": "jsPerformance",
                 "type": "string",
                 "description": "Comma-separated JS performance values"
+            },
+            {
+                "key": "breakageData",
+                "type": "string",
+                "description": "Breakage detector payload"
             },
             {
                 "key": "isPirEnabled",

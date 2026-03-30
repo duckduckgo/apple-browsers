@@ -19,10 +19,13 @@
 
 import AIChat
 import Combine
+import Common
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Lottie
 import OSLog
+import PrivacyConfig
 import SwiftUI
 import UIKit
 
@@ -65,6 +68,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the user submits a prompt from native input
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String)
+
+    /// Called when the user confirms chat deletion from the fire button confirmation
+    func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController)
 }
 
 /// Contextual sheet view controller. Configures UX and actions.
@@ -82,6 +88,9 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let sheetCornerRadius: CGFloat = 24
         static let contentTopPadding: CGFloat = 8
         static let dimmingAlpha: CGFloat = 0.3
+        static let iPadPopoverWidth: CGFloat = 375
+        static let iPadPopoverDefaultHeight: CGFloat = 520
+        static let maxHeightRatio: CGFloat = 0.9
     }
 
     // MARK: - Types
@@ -98,6 +107,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let webViewControllerFactory: WebViewControllerFactory
     private let pixelHandler: AIChatContextualModePixelFiring
+    private let appSettings: AppSettings
+    private let featureFlagger: FeatureFlagger
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
     private var cancellables = Set<AnyCancellable>()
@@ -113,6 +124,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Dimming view added to the presenting view controller's view for contrast
     private var dimmingView: UIView?
+
+    /// Whether the fire confirmation is currently shown
+    private var isShowingFireConfirmation = false
 
     // MARK: - UI Components
 
@@ -193,6 +207,25 @@ final class AIChatContextualSheetViewController: UIViewController {
         return view
     }()
 
+    private lazy var rightButtonStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 0
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var fireButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(DesignSystemImages.Glyphs.Size24.fire, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(fireButtonTapped), for: .touchUpInside)
+        button.accessibilityTraits = .button
+        return button
+    }()
+
     private lazy var closeButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
@@ -224,12 +257,16 @@ final class AIChatContextualSheetViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          webViewControllerFactory: @escaping WebViewControllerFactory,
-         pixelHandler: AIChatContextualModePixelFiring) {
+         pixelHandler: AIChatContextualModePixelFiring,
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.webViewControllerFactory = webViewControllerFactory
         self.pixelHandler = pixelHandler
+        self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -297,6 +334,22 @@ final class AIChatContextualSheetViewController: UIViewController {
         .portrait
     }
 
+    // MARK: - Sheet Configuration
+
+    func configureSheetPresentation() {
+        guard let sheet = sheetPresentationController else { return }
+
+        sheet.delegate = self
+        presentationController?.delegate = self
+        sheet.detents = [.medium(), .large()]
+        sheet.selectedDetentIdentifier = .medium
+        sheet.largestUndimmedDetentIdentifier = .medium
+        sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        sheet.prefersGrabberVisible = true
+        sheet.prefersEdgeAttachedInCompactHeight = true
+        sheet.preferredCornerRadius = Constants.sheetCornerRadius
+    }
+
     // MARK: - Actions
 
     @objc private func expandButtonTapped() {
@@ -309,6 +362,11 @@ final class AIChatContextualSheetViewController: UIViewController {
     @objc private func newChatButtonTapped() {
         pixelHandler.fireNewChatButtonTapped()
         delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
+    }
+
+    @objc private func fireButtonTapped() {
+        pixelHandler.fireFireButtonTapped()
+        showFireConfirmation()
     }
 
     @objc private func closeButtonTapped() {
@@ -376,11 +434,17 @@ private extension AIChatContextualSheetViewController {
         expandToLargeDetent()
     }
 
-    func expandToLargeDetent() {
-        guard let sheet = sheetPresentationController else { return }
+    func expandToLargeDetent(completion: (() -> Void)? = nil) {
+        guard let sheet = sheetPresentationController else {
+            completion?()
+            return
+        }
+        CATransaction.begin()
+        CATransaction.setCompletionBlock(completion)
         sheet.animateChanges {
             sheet.selectedDetentIdentifier = .large
         }
+        CATransaction.commit()
     }
 
     /// Called when user taps the X button on a chip.
@@ -439,6 +503,137 @@ private extension AIChatContextualSheetViewController {
         chipView.configure(state: .attached(title: context.title, favicon: context.favicon))
         chipView.onRemove = onRemove
         return chipView
+    }
+
+    // MARK: - Fire Confirmation
+
+    func showFireConfirmation() {
+        isShowingFireConfirmation = true
+
+        let presentConfirmation = { [weak self] in
+            guard let self else { return }
+            self.presentFireConfirmationController()
+        }
+
+        if DevicePlatform.isIpad {
+            expandToLargeDetent(completion: presentConfirmation)
+        } else {
+            expandToLargeDetent()
+            presentConfirmation()
+        }
+    }
+
+    private func presentFireConfirmationController() {
+        let viewModel = ScopedFireConfirmationViewModel(
+            tabViewModel: nil,
+            source: .browsing,
+            fireContext: .contextualChat(onDelete: { [weak self] in
+                self?.handleDeleteChatConfirmed()
+            }),
+            browsingMode: .normal,
+            onConfirm: { _ in },
+            onCancel: { [weak self] in
+                self?.dismissFireConfirmation()
+            }
+        )
+
+        let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+        let hostingController = UIHostingController(rootView: confirmationView)
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        hostingController.modalTransitionStyle = .coverVertical
+        hostingController.modalPresentationStyle = DevicePlatform.isIpad ? .popover : .pageSheet
+
+        if DevicePlatform.isIpad {
+            configureIPadPopoverPresentation(for: hostingController, confirmationView: confirmationView)
+        } else {
+            configureIPhoneSheetPresentation(for: hostingController, confirmationView: confirmationView)
+        }
+
+        present(hostingController, animated: true)
+    }
+
+    private func configureIPadPopoverPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
+                                                  confirmationView: ScopedFireConfirmationView) {
+        if let popover = hostingController.popoverPresentationController {
+            popover.sourceView = fireButton
+            popover.sourceRect = fireButton.bounds
+
+            if #available(iOS 16.0, *) {
+                let sizingController = UIHostingController(rootView: confirmationView)
+                sizingController.disableSafeArea()
+                let contentHeight = sizingController.sizeThatFits(in: CGSize(width: Constants.iPadPopoverWidth, height: .infinity)).height
+                hostingController.preferredContentSize = CGSize(width: Constants.iPadPopoverWidth, height: contentHeight)
+            } else {
+                hostingController.preferredContentSize = CGSize(width: Constants.iPadPopoverWidth, height: Constants.iPadPopoverDefaultHeight)
+            }
+        }
+    }
+
+    private func configureIPhoneSheetPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
+                                                  confirmationView: ScopedFireConfirmationView) {
+        if let sheet = hostingController.sheetPresentationController {
+            if #available(iOS 16.0, *) {
+                let sizingController = UIHostingController(rootView: confirmationView)
+                sizingController.disableSafeArea()
+                let contentHeight = sizingController.sizeThatFits(in: CGSize(width: view.frame.width, height: .infinity)).height
+                sheet.detents = [.custom { context in
+                    min(contentHeight, context.maximumDetentValue * Constants.maxHeightRatio)
+                }]
+            } else {
+                sheet.detents = [.large()]
+            }
+            sheet.prefersGrabberVisible = false
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = Constants.sheetCornerRadius
+            }
+        }
+    }
+
+    func dismissFireConfirmation() {
+        isShowingFireConfirmation = false
+        dismiss(animated: true)
+    }
+
+    func handleDeleteChatConfirmed() {
+        pixelHandler.fireFireButtonConfirmed()
+        isShowingFireConfirmation = false
+        dismiss(animated: true) { [weak self] in
+            self?.playFireAnimationAndDismiss()
+        }
+    }
+
+    func playFireAnimationAndDismiss() {
+        let animationType = appSettings.currentFireButtonAnimation
+        guard let composition = animationType.composition else {
+            delegate?.aiChatContextualSheetViewControllerDidConfirmDeleteChat(self)
+            return
+        }
+
+        guard let window = view.window,
+              let snapshot = window.snapshotView(afterScreenUpdates: false) else {
+            delegate?.aiChatContextualSheetViewControllerDidConfirmDeleteChat(self)
+            return
+        }
+
+        window.addSubview(snapshot)
+
+        let animationView = LottieAnimationView(animation: composition)
+        animationView.contentMode = .scaleAspectFill
+        animationView.animationSpeed = CGFloat(animationType.speed)
+        animationView.frame = window.frame
+        window.addSubview(animationView)
+
+        let speed = animationType.speed
+        let duration = Double(composition.duration) / speed
+        let delay = duration * animationType.transition
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            snapshot.removeFromSuperview()
+        }
+
+        self.delegate?.aiChatContextualSheetViewControllerDidConfirmDeleteChat(self)
+        animationView.play(fromProgress: 0, toProgress: 1) { [weak animationView] _ in
+            animationView?.removeFromSuperview()
+        }
     }
 }
 
@@ -561,6 +756,7 @@ private extension AIChatContextualSheetViewController {
                 webVC.loadChatURL(defaultURL)
                 isWebViewVisible = false
             }
+            fireButton.isHidden = true
             if contextualInputViewController.parent != nil {
                 updateChipUI(chipState: viewState.chipState)
             } else {
@@ -571,6 +767,7 @@ private extension AIChatContextualSheetViewController {
             if !isWebViewVisible {
                 transitionToWebView()
             }
+            fireButton.isHidden = false
         }
 
     }
@@ -618,7 +815,16 @@ private extension AIChatContextualSheetViewController {
         titleContainer.addArrangedSubview(titleLabel)
 
         headerView.addSubview(rightButtonContainer)
-        rightButtonContainer.addSubview(closeButton)
+        rightButtonContainer.addSubview(rightButtonStack)
+        if featureFlagger.isFeatureOn(for: FeatureFlag.aiChatContextualFireButton) {
+            rightButtonStack.addArrangedSubview(fireButton)
+            fireButton.isHidden = true
+            NSLayoutConstraint.activate([
+                fireButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+                fireButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            ])
+        }
+        rightButtonStack.addArrangedSubview(closeButton)
 
         view.addSubview(contentContainerView)
 
@@ -661,10 +867,11 @@ private extension AIChatContextualSheetViewController {
             rightButtonContainer.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -Constants.headerHorizontalPadding),
             rightButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-            closeButton.topAnchor.constraint(equalTo: rightButtonContainer.topAnchor),
-            closeButton.leadingAnchor.constraint(equalTo: rightButtonContainer.leadingAnchor),
-            closeButton.trailingAnchor.constraint(equalTo: rightButtonContainer.trailingAnchor),
-            closeButton.bottomAnchor.constraint(equalTo: rightButtonContainer.bottomAnchor),
+            rightButtonStack.topAnchor.constraint(equalTo: rightButtonContainer.topAnchor),
+            rightButtonStack.leadingAnchor.constraint(equalTo: rightButtonContainer.leadingAnchor),
+            rightButtonStack.trailingAnchor.constraint(equalTo: rightButtonContainer.trailingAnchor),
+            rightButtonStack.bottomAnchor.constraint(equalTo: rightButtonContainer.bottomAnchor),
+
             closeButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             closeButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
@@ -677,10 +884,14 @@ private extension AIChatContextualSheetViewController {
     
     func updateButtonContainerCornerRadii() {
         let leftHeight = leftButtonContainer.bounds.height
-        leftButtonContainer.layer.cornerRadius = leftHeight / 2
+        if leftHeight > 0 {
+            leftButtonContainer.layer.cornerRadius = leftHeight / 2
+        }
 
         let rightHeight = rightButtonContainer.bounds.height
-        rightButtonContainer.layer.cornerRadius = rightHeight / 2
+        if rightHeight > 0 {
+            rightButtonContainer.layer.cornerRadius = rightHeight / 2
+        }
     }
 
     func updateShadowPath() {
@@ -694,6 +905,7 @@ private extension AIChatContextualSheetViewController {
 
     func configureModalPresentation() {
         modalPresentationStyle = .pageSheet
+        configureSheetPresentation()
     }
 
     func showDimmingView(animated: Bool) {
@@ -749,20 +961,6 @@ private extension AIChatContextualSheetViewController {
         if isWebViewVisible && isCurrentlyMediumDetent {
             expandToLargeDetent()
         }
-    }
-
-    func configureSheetPresentation() {
-        guard let sheet = sheetPresentationController else { return }
-
-        sheet.delegate = self
-        presentationController?.delegate = self
-        sheet.detents = [.medium(), .large()]
-        sheet.selectedDetentIdentifier = .medium
-        sheet.largestUndimmedDetentIdentifier = .medium
-        sheet.prefersScrollingExpandsWhenScrolledToEdge = false
-        sheet.prefersGrabberVisible = true
-        sheet.prefersEdgeAttachedInCompactHeight = true
-        sheet.preferredCornerRadius = Constants.sheetCornerRadius
     }
 }
 

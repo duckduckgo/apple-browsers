@@ -43,6 +43,7 @@ class StatisticsLoaderTests: XCTestCase {
         mockStatisticsStore = MockStatisticsStore()
         testee = StatisticsLoader(statisticsStore: mockStatisticsStore,
                                   attributionPixelHandler: mockAttributionsPixelHandler,
+                                  dockCustomization: DockCustomizerMock(),
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
                                   fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true })
     }

@@ -25,15 +25,18 @@ final class MockScriptletFetcher: ScriptletFetching {
     var lastFetchedDescriptors: [ScriptletDescriptor]?
     var fetchedScriptlets: [FetchedScriptlet] = []
     var shouldThrowError = false
+    var onFetch: (() -> Void)?
 
     func fetch(_ descriptors: [ScriptletDescriptor]) async throws -> [FetchedScriptlet] {
         fetchCallCount += 1
         lastFetchedDescriptors = descriptors
 
         if shouldThrowError {
+            onFetch?()
             throw ScriptletError.emptyResponse(name: "test")
         }
 
+        onFetch?()
         return fetchedScriptlets
     }
 }

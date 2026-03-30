@@ -118,9 +118,12 @@ final class ScriptletManagerTests: XCTestCase {
         mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("test".utf8))]
         mockStore.scriptletsToReturn = [scriptlet]
 
+        let fetchExpectation = expectation(description: "Fetch triggered by config update")
+        mockFetcher.onFetch = { fetchExpectation.fulfill() }
+
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await fulfillment(of: [fetchExpectation], timeout: 2.0)
 
         XCTAssertEqual(mockFetcher.fetchCallCount, 1)
         XCTAssertEqual(manager.availability(for: testExtensionType), .available([scriptlet]))
@@ -158,9 +161,12 @@ final class ScriptletManagerTests: XCTestCase {
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "2.0", scriptlets: [descriptor])
         mockFetcher.shouldThrowError = true
 
+        let fetchExpectation = expectation(description: "Fetch attempted")
+        mockFetcher.onFetch = { fetchExpectation.fulfill() }
+
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        await fulfillment(of: [fetchExpectation], timeout: 2.0)
 
         XCTAssertEqual(manager.availability(for: testExtensionType), .available([existingScriptlet]))
     }
@@ -174,12 +180,19 @@ final class ScriptletManagerTests: XCTestCase {
 
         XCTAssertEqual(manager.availability(for: testExtensionType), .available(scriptlets))
 
+        let availabilityExpectation = expectation(description: "Availability becomes notAvailable")
+        let cancellable = manager.availabilityPublisher(for: testExtensionType)
+            .dropFirst()
+            .filter { $0 == .notAvailable }
+            .first()
+            .sink { _ in availabilityExpectation.fulfill() }
+
         mockConfigProvider.manifests[testExtensionType] = nil
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await fulfillment(of: [availabilityExpectation], timeout: 2.0)
+        cancellable.cancel()
 
-        XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
         XCTAssertNil(manager.scriptlets(for: testExtensionType))
         XCTAssertEqual(mockStore.clearCacheCallCount, 1)
         XCTAssertEqual(mockStore.clearCacheExtensionType, testExtensionType)
@@ -195,12 +208,19 @@ final class ScriptletManagerTests: XCTestCase {
 
         XCTAssertEqual(manager.availability(for: testExtensionType), .available(scriptlets))
 
+        let availabilityExpectation = expectation(description: "Availability becomes notAvailable")
+        let cancellable = manager.availabilityPublisher(for: testExtensionType)
+            .dropFirst()
+            .filter { $0 == .notAvailable }
+            .first()
+            .sink { _ in availabilityExpectation.fulfill() }
+
         mockConfigProvider.manifests[testExtensionType] = nil
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await fulfillment(of: [availabilityExpectation], timeout: 2.0)
+        cancellable.cancel()
 
-        XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
         XCTAssertEqual(mockStore.installedVersion(for: testExtensionType), "1.0")
     }
 
@@ -239,9 +259,13 @@ final class ScriptletManagerTests: XCTestCase {
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "2.0", scriptlets: [descriptor])
         mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("test".utf8))]
 
+        let fetchExpectation = expectation(description: "Fetch should not be called")
+        fetchExpectation.isInverted = true
+        mockFetcher.onFetch = { fetchExpectation.fulfill() }
+
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        await fulfillment(of: [fetchExpectation], timeout: 1.0)
 
         XCTAssertEqual(mockFetcher.fetchCallCount, 0)
     }
@@ -295,9 +319,12 @@ final class ScriptletManagerTests: XCTestCase {
         mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("new".utf8))]
         mockValidator.shouldThrowError = true
 
+        let fetchExpectation = expectation(description: "Fetch attempted")
+        mockFetcher.onFetch = { fetchExpectation.fulfill() }
+
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        await fulfillment(of: [fetchExpectation], timeout: 2.0)
 
         XCTAssertEqual(manager.availability(for: testExtensionType), .available([existingScriptlet]))
     }
@@ -314,25 +341,30 @@ final class ScriptletManagerTests: XCTestCase {
     }
 
     func testAvailabilityPublisherEmitsUpdates() async {
-        var receivedValues: [ScriptletAvailability] = []
-        var cancellable: AnyCancellable?
+        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
 
-        cancellable = manager.availabilityPublisher(for: testExtensionType)
+        let availableExpectation = expectation(description: "Publisher emits available")
+        var receivedNotAvailable = false
+
+        let cancellable = manager.availabilityPublisher(for: testExtensionType)
             .sink { availability in
-                receivedValues.append(availability)
+                if availability == .notAvailable {
+                    receivedNotAvailable = true
+                }
+                if availability == .available(scriptlets) {
+                    availableExpectation.fulfill()
+                }
             }
 
-        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
         mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
 
         await manager.start(for: testExtensionType)
 
-        try? await Task.sleep(nanoseconds: 50_000_000)
+        await fulfillment(of: [availableExpectation], timeout: 2.0)
 
-        XCTAssertTrue(receivedValues.contains(.notAvailable))
-        XCTAssertTrue(receivedValues.contains(.available(scriptlets)))
+        XCTAssertTrue(receivedNotAvailable)
 
-        cancellable?.cancel()
+        cancellable.cancel()
     }
 }

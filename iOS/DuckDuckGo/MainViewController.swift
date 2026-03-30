@@ -2687,7 +2687,7 @@ class MainViewController: UIViewController {
 
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         DispatchQueue.main.async {
-            newTabPageViewController.showExperimentCompletionDialog(message: message)
+            newTabPageViewController.showDuckAIOnboardingExperimentCompletionDialog(message: message)
         }
     }
 

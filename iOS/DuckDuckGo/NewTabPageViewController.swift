@@ -292,7 +292,7 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 
 extension NewTabPageViewController {
 
-    func showExperimentCompletionDialog(message: String) {
+    func showDuckAIOnboardingExperimentCompletionDialog(message: String) {
         dismissHostingController(didFinishNTPOnboarding: false)
 
         let onDismiss = { [weak self] in

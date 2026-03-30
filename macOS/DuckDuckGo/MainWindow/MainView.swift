@@ -44,7 +44,7 @@ final class MainView: NSView {
     let findInPageContainerView = NSView().hidden()
     let bookmarksBarContainerView = NSView()
     let bannerContainerView = NSView()
-    let fireContainerView = NSView().hidden()
+    let fireContainerView = NSView()
     let aiChatOmnibarContainerView: NSView = .init()
     let aiChatOmnibarTextContainerView: PassthroughView = .init()
 

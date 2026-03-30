@@ -62,16 +62,7 @@ final class MainViewController: NSViewController {
         return vc
     }()
 
-    private let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
-    private(set) lazy var fireViewController: FireViewController = {
-        let vc = FireViewController.create(
-            tabCollectionViewModel: tabCollectionViewModel,
-            fireViewModel: fireCoordinator.fireViewModel,
-            visualizeFireAnimationDecider: visualizeFireAnimationDecider
-        )
-        addAndLayoutChild(vc, into: mainView.fireContainerView)
-        return vc
-    }()
+    let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
     let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
     let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
@@ -192,7 +183,6 @@ final class MainViewController: NSViewController {
         self.pinningManager = pinningManager
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         self.aiChatTabOpener = aiChatTabOpener
-        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -302,6 +292,7 @@ final class MainViewController: NSViewController {
                                                                          pinningManager: pinningManager,
                                                                          memoryUsageMonitor: memoryUsageMonitor)
 
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
@@ -345,6 +336,7 @@ final class MainViewController: NSViewController {
         addAndLayoutChild(bookmarksBarViewController, into: mainView.bookmarksBarContainerView)
         addAndLayoutChild(navigationBarViewController, into: mainView.navigationBarContainerView)
         addAndLayoutChild(browserTabViewController, into: mainView.webContainerView)
+        addAndLayoutChild(fireViewController, into: mainView.fireContainerView)
         addAndLayoutChild(aiChatOmnibarContainerViewController, into: mainView.aiChatOmnibarContainerView)
         addAndLayoutChild(aiChatOmnibarTextContainerViewController, into: mainView.aiChatOmnibarTextContainerView)
     }
@@ -498,9 +490,7 @@ final class MainViewController: NSViewController {
         if isLazyVar(named: "findInPageViewController", initializedIn: self) {
             findInPageViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         }
-        if isLazyVar(named: "fireViewController", initializedIn: self) {
-            fireViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        }
+        fireViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         bookmarksBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         aiChatOmnibarContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         aiChatOmnibarTextContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)

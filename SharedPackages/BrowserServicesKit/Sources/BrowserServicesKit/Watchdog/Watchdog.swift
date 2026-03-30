@@ -37,19 +37,6 @@ public struct WatchdogSettings {
 
 public final class Watchdog: @unchecked Sendable {
 
-    public enum RecoveryOrigin: String {
-        case hanging
-        case timeout
-    }
-
-    public enum DetectionState: Equatable {
-        case responsive
-        case hanging
-        case timeout
-        case recovery(after: RecoveryOrigin, heartbeatCount: Int)
-        case recovered(after: RecoveryOrigin)
-    }
-
     public enum Event {
         case uiHangNotRecovered(durationSeconds: Int)
         case uiHangRecovered(durationSeconds: Int)
@@ -67,13 +54,13 @@ public final class Watchdog: @unchecked Sendable {
 
     // MARK: - State
     private var timestamps: WatchdogTracker
-    private var detectionState: DetectionState
+    private var detectionState: WatchdogDetectionState
     private var running: Bool = false
     private var paused: Bool = false
 
     // MARK: - Observability / Unit Testing Helpers
-    private let detectionStateSubject = PassthroughSubject<(DetectionState), Never>()
-    internal var detectionStatePublisher: AnyPublisher<(DetectionState), Never> {
+    private let detectionStateSubject = PassthroughSubject<(WatchdogDetectionState), Never>()
+    internal var detectionStatePublisher: AnyPublisher<(WatchdogDetectionState), Never> {
         detectionStateSubject.eraseToAnyPublisher()
     }
 
@@ -229,7 +216,7 @@ private extension Watchdog {
         let secondsSinceLastHeartbeat = timestamps.secondsSinceLastHeartbeat
         let secondsSinceHangStarted = timestamps.secondsSinceHangStarted
 
-        let nextState = nextState(currentState: detectionState, secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, secondsSinceHangStarted: secondsSinceHangStarted)
+        let nextState = WatchdogDetectionState.nextState(currentState: detectionState, settings: settings, secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, secondsSinceHangStarted: secondsSinceHangStarted)
         if nextState == detectionState {
             return
         }
@@ -244,61 +231,7 @@ private extension Watchdog {
 
 private extension Watchdog {
 
-    /// # Flows:
-    ///     .responsive > .hanging -> .recovery > .recovered >.responsive
-    ///     .responsive > .hanging -> .timeout -> .recovery -> .recovered > .responsive
-    func nextState(currentState: DetectionState, secondsSinceLastHeartbeat: TimeInterval, secondsSinceHangStarted: TimeInterval) -> DetectionState {
-        switch currentState {
-        case .responsive where secondsSinceLastHeartbeat > settings.minimumHangDuration:
-            return .hanging
-
-        case .responsive:
-            return .responsive
-
-        /// # Hanging: Enter Recovery if we're seeing heartbeats again
-        case .hanging:
-            if secondsSinceLastHeartbeat <= settings.minimumHangDuration {
-                return .recovery(after: .hanging, heartbeatCount: 0)
-            }
-
-            if secondsSinceHangStarted <= settings.maximumHangDuration {
-                return .hanging
-            }
-
-            return .timeout
-
-        /// # Timeout: Enter Recovery if we're seeing heartbeats again
-        case .timeout:
-            if secondsSinceLastHeartbeat <= settings.minimumHangDuration {
-                return .recovery(after: .timeout, heartbeatCount: 0)
-            }
-
-            return .timeout
-
-        /// # Recovery: We'll loop back into this state, should the heartbeat become stale again
-        case .recovery(let reason, let heartbeatCount):
-            /// # Re-enqueue:
-            ///     Stay in `.recovery` if we've been thru `.timeout` already, in order to avoid over-reporting the pixel
-            if secondsSinceLastHeartbeat > settings.minimumHangDuration {
-                let previouslyHanging = reason == .hanging
-                return previouslyHanging ? .hanging : .recovery(after: reason, heartbeatCount: 0)
-            }
-
-            /// # Track the number of Heartbeats, until we match the recovery settings
-            ///
-            if heartbeatCount < settings.requiredRecoveryHeartbeats {
-                return .recovery(after: reason, heartbeatCount: heartbeatCount + 1)
-            }
-
-            /// # Recovered State will track the `uiHangRecovered` only if we came from `.hanging`. Timeouts are doomed
-            return .recovered(after: reason)
-
-        case .recovered:
-            return .responsive
-        }
-    }
-
-    func processActions(for heartbeatState: DetectionState, secondsSinceLastHeartbeat: TimeInterval, secondsSinceHangStarted: TimeInterval) {
+    func processActions(for heartbeatState: WatchdogDetectionState, secondsSinceLastHeartbeat: TimeInterval, secondsSinceHangStarted: TimeInterval) {
         switch heartbeatState {
         case .hanging:
             logger.info("Main thread hang detected! Last heartbeat [\(secondsSinceLastHeartbeat)s] ago")
@@ -341,85 +274,4 @@ private extension Watchdog {
 
         eventMapper?.fire(eventFactory(reportedSecond))
     }
-}
-
-// MARK: - WatchdogTracker
-
-private final class WatchdogTracker {
-
-    private let lock = NSLock()
-    private var heartbeatTimestamp: DispatchTime = .now()
-    private var hangStartTimestamp: DispatchTime?
-    private var timeoutFireTimestamp: DispatchTime?
-
-    func signalHeartbeat() {
-        lock.withLock {
-            heartbeatTimestamp = .now()
-        }
-    }
-
-    func signalHangDetectedIfNeeded(secondsSinceLastHeartbeat: TimeInterval, checkInterval: TimeInterval) {
-        lock.withLock {
-            guard hangStartTimestamp == nil else {
-                return
-            }
-
-            let delta = max(secondsSinceLastHeartbeat - checkInterval / 2, 0)
-            hangStartTimestamp = DispatchTime.now(subtractingSeconds: delta)
-        }
-    }
-
-    func signalHangRecovered() {
-        lock.withLock {
-            hangStartTimestamp = nil
-        }
-    }
-
-    func signalTimeoutFired() {
-        lock.withLock {
-            timeoutFireTimestamp = .now()
-        }
-    }
-
-    var lastHeartbeatTimestamp: DispatchTime {
-        lock.withLock {
-            heartbeatTimestamp
-        }
-    }
-
-    var lastHangStartTimestamp: DispatchTime? {
-        lock.withLock {
-            hangStartTimestamp
-        }
-    }
-
-    var secondsSinceLastHeartbeat: TimeInterval {
-        lastHeartbeatTimestamp.secondsElapsedSinceNow
-    }
-
-    var secondsSinceHangStarted: TimeInterval {
-        lastHangStartTimestamp?.secondsElapsedSinceNow ?? .zero
-    }
-
-    var secondsSinceLastTimeoutFire: TimeInterval? {
-        timeoutFireTimestamp?.secondsElapsedSinceNow
-    }
-}
-
-private extension DispatchTime {
-
-    var secondsElapsedSinceNow: TimeInterval {
-        let delta = DispatchTime.now().uptimeNanoseconds - uptimeNanoseconds
-        return TimeInterval(Double(delta) / .nanosecondsPerSecond)
-    }
-
-    static func now(subtractingSeconds delta: TimeInterval) -> DispatchTime {
-        let adjustmentNanoseconds = delta * .nanosecondsPerSecond
-        return DispatchTime(uptimeNanoseconds: DispatchTime.now().uptimeNanoseconds - UInt64(adjustmentNanoseconds))
-    }
-}
-
-private extension Double {
-
-    static let nanosecondsPerSecond = Double(NSEC_PER_SEC)
 }

@@ -269,9 +269,10 @@ extension WKUserContentController {
 
 extension URL {
     static let duckAi = URL(string: "https://duck.ai")!
+    static let duckDuckGo = URL(string: "https://duckduckgo.com")!
 
     static let aiChatDomains: [URL] = [
-        URL(string: "https://duckduckgo.com")!,
+        .duckDuckGo,
         .duckAi
     ]
 }

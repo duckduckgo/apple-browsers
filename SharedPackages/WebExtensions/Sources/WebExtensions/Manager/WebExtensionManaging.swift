@@ -58,6 +58,7 @@ public protocol WebExtensionManaging: AnyObject {
 
     /// Uninstalls an extension with the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
     func uninstallExtension(identifier: String) throws
 
     /// Uninstalls all extensions.

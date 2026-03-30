@@ -479,7 +479,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
 
     func loadInstalledExtensions() async {}
     func installExtension(from sourceURL: URL) async throws {}
-    func uninstallExtension(identifier: String) throws {}
+    @MainActor func uninstallExtension(identifier: String) throws {}
 
     @MainActor
     @discardableResult

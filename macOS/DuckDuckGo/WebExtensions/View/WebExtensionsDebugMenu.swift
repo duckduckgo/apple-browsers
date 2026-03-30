@@ -181,6 +181,8 @@ final class WebExtensionSubMenu: NSMenu {
             return
         }
 
-        try? webExtensionManager.uninstallExtension(identifier: extensionIdentifier)
+        Task { @MainActor in
+            try? webExtensionManager.uninstallExtension(identifier: extensionIdentifier)
+        }
     }
 }

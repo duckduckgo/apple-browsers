@@ -181,6 +181,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         notifyUpdate()
     }
 
+    @MainActor
     public func uninstallExtension(identifier: String) throws {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
@@ -188,7 +189,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         installationStore.remove(uniqueIdentifier: identifier)
 
         if let embeddedType {
-            scriptletConfiguration?.installationTracker.clearInstalledVersion(for: embeddedType)
+            scriptletCoordinator?.onExtensionDisabled(for: embeddedType)
         }
 
         unregisterHandlers(for: identifier)

@@ -55,7 +55,12 @@ extension WKError {
 }
 extension NSError {
     public var sslErrorType: SSLErrorType? {
-        guard let errorCode = self.userInfo[SSLErrorCodeKey] as? Int32 else { return nil }
+        guard let errorCode = self.userInfo[SSLErrorCodeKey] as? Int32 else {
+            if let underlyingError = self.userInfo[NSUnderlyingErrorKey] as? NSError {
+                return SSLErrorType(errorCode: Int32(underlyingError.code))
+            }
+            return nil
+        }
         let sslErrorType = SSLErrorType(errorCode: errorCode)
         return sslErrorType
     }

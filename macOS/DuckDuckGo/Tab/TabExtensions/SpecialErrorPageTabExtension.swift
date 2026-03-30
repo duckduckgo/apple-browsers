@@ -177,12 +177,7 @@ extension SpecialErrorPageTabExtension: NavigationResponder {
             errorData = .maliciousSite(kind: error.threatKind, url: url)
 
         case is URLError where error.isServerCertificateUntrusted:
-            guard let errorType = error.sslErrorType else {
-                assertionFailure("Missing SSL error type")
-                errorData = nil
-                return
-            }
-
+            let errorType = error.sslErrorType ?? .invalid
             let domain: String = url.host ?? url.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true)
             errorData = .ssl(type: errorType, domain: domain, eTldPlus1: tld.eTLDplus1(domain) ?? domain)
 

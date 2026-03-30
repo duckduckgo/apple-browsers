@@ -202,12 +202,12 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isDuckAIExperimentFlow)
     }
 
-    func testWhenDuckAIExperimentFlowThenSubtitleUsesDuckAIExperimentSubtitle() {
+    func testWhenDuckAIExperimentFlowThenSubtitleIsNil() {
         // Given
         let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
 
         // Then
-        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDuckAIExperimentSubtitle)
+        XCTAssertNil(sut.subtitle)
     }
 
     func testWhenDuckAIExperimentFlowAndBurnThisTabCalledThenRequestUsesAIChatsOption() {

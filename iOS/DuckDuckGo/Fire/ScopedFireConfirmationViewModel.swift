@@ -110,7 +110,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
 
     var headerTitle: String {
         if flow == .duckAIExperiment {
-            return UserText.scopedFireConfirmationDuckAIExperimentTitle
+            return UserText.contextualChatDeleteConfirmationTitle
         }
 
         if case .contextualChat = fireContext {
@@ -140,6 +140,10 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
 
     var tabScopeButtonTitle: String {
+        if flow == .duckAIExperiment {
+            return UserText.contextualChatDeleteConfirmationButton
+        }
+
         guard let tab = tabViewModel?.tab, tab.isAITab else {
             return UserText.scopedFireConfirmationDeleteThisTabButton
         }
@@ -186,7 +190,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// 7. Otherwise → return nil
     private func computeSubtitle() -> String? {
         if flow == .duckAIExperiment {
-            return UserText.scopedFireConfirmationDuckAIExperimentSubtitle
+            return nil
         }
 
         // Skip all subtitles if in onboarding

@@ -1535,8 +1535,8 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     func renderingProgressDidChange(progressEvents: UInt) {
         // Emit only after first paint event, when the white background content is not visible anymore
-        // https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
-        if progressEvents & 2 != 0 {
+        let events = _WKRenderingProgressEvents(rawValue: progressEvents)
+        if events.contains(.firstVisuallyNonEmptyLayout) {
             webViewRenderingProgressDidChangePublisher.send()
         }
     }

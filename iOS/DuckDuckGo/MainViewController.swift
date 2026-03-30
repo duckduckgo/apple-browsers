@@ -3714,7 +3714,7 @@ extension MainViewController: OmniBarDelegate {
                 searchContainer: viewCoordinator.omniBar.barView.searchContainer,
                 keyboardLayoutGuide: view.keyboardLayoutGuide
             )
-            iPadTabChatHistoryCoordinator.onSuggestionsVisibilityChanged = { [weak self] hasSuggestions in
+            iPadTabChatHistoryCoordinator.onSuggestionsVisibilityChanged = { [weak self] _ in
                 guard let self else { return }
                 if self.isAwaitingIPadHistoryRefreshAfterModeSwitch {
                     self.isAwaitingIPadHistoryRefreshAfterModeSwitch = false

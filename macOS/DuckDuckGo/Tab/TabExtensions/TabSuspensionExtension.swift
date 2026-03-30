@@ -18,24 +18,15 @@
 
 import Combine
 import Foundation
-import Navigation
 import WebKit
-
-protocol TabSuspensionUserScriptProvider {
-    var formFocusUserScript: FormFocusUserScript { get }
-    var webRTCUserScript: WebRTCUserScript { get }
-}
-extension UserScripts: TabSuspensionUserScriptProvider {}
 
 final class TabSuspensionExtension {
 
     private var cancellables = Set<AnyCancellable>()
-    private weak var formFocusScript: FormFocusUserScript?
-    private weak var webRTCScript: WebRTCUserScript?
 
     private var audioState: WKWebView.AudioState = .unmuted(isPlayingAudio: false)
-    private var hasActiveFormInput: Bool = false
-    private var hasActiveWebRTCConnection: Bool = false
+    private var hasActiveFormInput: Bool = false // TODO: to be implemented
+    private var hasActiveWebRTCConnection: Bool = false // TODO: to be implemented
     private var tabContent: Tab.TabContent = .none
 
     var canBeSuspended: Bool {
@@ -44,21 +35,11 @@ final class TabSuspensionExtension {
     }
 
     init(
-        scriptsPublisher: some Publisher<some TabSuspensionUserScriptProvider, Never>,
         webViewPublisher: some Publisher<WKWebView, Never>,
         contentPublisher: some Publisher<Tab.TabContent, Never>
     ) {
         contentPublisher.sink { [weak self] content in
             self?.tabContent = content
-        }.store(in: &cancellables)
-
-        scriptsPublisher.sink { [weak self] scripts in
-            Task { @MainActor in
-                self?.formFocusScript = scripts.formFocusUserScript
-                self?.formFocusScript?.delegate = self
-                self?.webRTCScript = scripts.webRTCUserScript
-                self?.webRTCScript?.delegate = self
-            }
         }.store(in: &cancellables)
 
         webViewPublisher.sink { [weak self] webView in
@@ -72,29 +53,7 @@ final class TabSuspensionExtension {
     }
 }
 
-extension TabSuspensionExtension: FormFocusUserScriptDelegate {
-    @MainActor
-    func formFocusUserScript(_ script: FormFocusUserScript, didChangeFocus focused: Bool) {
-        hasActiveFormInput = focused
-    }
-}
-
-extension TabSuspensionExtension: WebRTCUserScriptDelegate {
-    @MainActor
-    func webRTCUserScript(_ script: WebRTCUserScript, didChangeConnectionActive active: Bool) {
-        hasActiveWebRTCConnection = active
-    }
-}
-
-extension TabSuspensionExtension: NavigationResponder {
-    @MainActor
-    func didCommit(_ navigation: Navigation) {
-        hasActiveFormInput = false
-        hasActiveWebRTCConnection = false
-    }
-}
-
-protocol TabSuspensionExtensionProtocol: AnyObject, NavigationResponder {
+protocol TabSuspensionExtensionProtocol: AnyObject {
     var canBeSuspended: Bool { get }
 }
 

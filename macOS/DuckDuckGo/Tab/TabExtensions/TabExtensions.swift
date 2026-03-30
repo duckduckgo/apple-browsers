@@ -341,7 +341,6 @@ extension TabExtensionsBuilder {
 
         add {
             TabSuspensionExtension(
-                scriptsPublisher: userScripts.compactMap { $0 },
                 webViewPublisher: args.webViewFuture,
                 contentPublisher: args.contentPublisher
             )

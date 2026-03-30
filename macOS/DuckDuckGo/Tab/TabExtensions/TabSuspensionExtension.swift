@@ -29,7 +29,10 @@ final class TabSuspensionExtension {
 
     var canBeSuspended: Bool {
         guard case .url = tabContent else { return false }
-        return !(webView?.audioState.isPlayingAudio ?? false)
+        guard let webView else {
+            return false
+        }
+        return !webView.audioState.isPlayingAudio
     }
 
     init(

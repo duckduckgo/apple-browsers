@@ -36,15 +36,22 @@ final class TabSuspensionExtension {
     private var audioState: WKWebView.AudioState = .unmuted(isPlayingAudio: false)
     private var hasActiveFormInput: Bool = false
     private var hasActiveWebRTCConnection: Bool = false
+    private var tabContent: Tab.TabContent = .none
 
     var canBeSuspended: Bool {
-        !audioState.isPlayingAudio && !hasActiveFormInput && !hasActiveWebRTCConnection
+        guard case .url = tabContent else { return false }
+        return !audioState.isPlayingAudio && !hasActiveFormInput && !hasActiveWebRTCConnection
     }
 
     init(
         scriptsPublisher: some Publisher<some TabSuspensionUserScriptProvider, Never>,
-        webViewPublisher: some Publisher<WKWebView, Never>
+        webViewPublisher: some Publisher<WKWebView, Never>,
+        contentPublisher: some Publisher<Tab.TabContent, Never>
     ) {
+        contentPublisher.sink { [weak self] content in
+            self?.tabContent = content
+        }.store(in: &cancellables)
+
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
                 self?.formFocusScript = scripts.formFocusUserScript
@@ -63,8 +70,6 @@ final class TabSuspensionExtension {
                 .store(in: &self.cancellables)
         }.store(in: &cancellables)
     }
-
-
 }
 
 extension TabSuspensionExtension: FormFocusUserScriptDelegate {

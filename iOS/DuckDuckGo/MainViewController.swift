@@ -1988,7 +1988,9 @@ class MainViewController: UIViewController {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
-        if AppWidthObserver.shared.willResize(toWidth: size.width) {
+        let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
+            && (AppWidthObserver.shared.isPad || isInPhoneLandscapeLayout || featureFlagger.isFeatureOn(.minimalChromeInLandscape))
+        if needsWidthUpdate {
             applyWidth(for: size)
         }
 

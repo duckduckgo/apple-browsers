@@ -83,7 +83,9 @@ public final class WebExtensionScriptletCoordinator {
 
                 case .available(let scriptlets):
                     Task { @MainActor [weak self] in
-                        await self?.installScriptlets(scriptlets, for: type)
+                        guard let self,
+                              let version = self.scriptletProvider.scriptletVersion(for: type) else { return }
+                        await self.installScriptlets(scriptlets, version: version, for: type)
                     }
                 }
             }
@@ -98,31 +100,30 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     private func installCurrentScriptlets(for type: DuckDuckGoWebExtensionType) async {
-        guard let scriptlets = scriptletProvider.scriptlets(for: type) else { return }
-        await installScriptlets(scriptlets, for: type)
+        guard let scriptlets = scriptletProvider.scriptlets(for: type),
+              let version = scriptletProvider.scriptletVersion(for: type) else { return }
+        await installScriptlets(scriptlets, version: version, for: type)
     }
 
-    private func installScriptlets(_ scriptlets: [Scriptlet], for type: DuckDuckGoWebExtensionType) async {
+    private func installScriptlets(_ scriptlets: [Scriptlet], version: String, for type: DuckDuckGoWebExtensionType) async {
         if let existingTask = installationTasks[type] {
             await existingTask.value
         }
 
         let task = Task { [weak self] in
             guard let self else { return }
-            await self.performInstallation(scriptlets, for: type)
+            await self.performInstallation(scriptlets, version: version, for: type)
         }
         installationTasks[type] = task
         await task.value
         installationTasks.removeValue(forKey: type)
     }
 
-    private func performInstallation(_ scriptlets: [Scriptlet], for type: DuckDuckGoWebExtensionType) async {
-        guard let currentVersion = scriptletProvider.scriptletVersion(for: type) else {
-            return
-        }
+    private func performInstallation(_ scriptlets: [Scriptlet], version: String, for type: DuckDuckGoWebExtensionType) async {
+        guard enabledTypes.contains(type) else { return }
 
         let installedVersion = installationTracker.installedVersion(for: type)
-        guard currentVersion != installedVersion else { return }
+        guard version != installedVersion else { return }
 
         guard let installationDirectory = resolveInstallationDirectory(for: type) else {
             return
@@ -130,8 +131,11 @@ public final class WebExtensionScriptletCoordinator {
 
         do {
             try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
-            installationTracker.setInstalledVersion(currentVersion, for: type)
-            Logger.webExtensions.info("[Scriptlets] Installed v\(currentVersion) for '\(type.rawValue)'")
+
+            guard !Task.isCancelled, enabledTypes.contains(type) else { return }
+
+            installationTracker.setInstalledVersion(version, for: type)
+            Logger.webExtensions.info("[Scriptlets] Installed v\(version) for '\(type.rawValue)'")
             try await installationPathResolver?.reloadExtension(for: type)
         } catch {
             Logger.webExtensions.error("[Scriptlets] Failed to install scriptlets for '\(type.rawValue)': \(error.localizedDescription)")

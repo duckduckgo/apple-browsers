@@ -159,4 +159,40 @@ final class WebExtensionScriptletCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(mockProvider.startCallCount, 1)
     }
+
+    func testWhenProviderVersionChangesWhileQueuedThenCapturedVersionIsUsed() async throws {
+        let v0Scriptlets = [Scriptlet(path: "v0.js", relativeCachedPath: "ext/0.1/v0.js")]
+        let v1Scriptlets = [Scriptlet(path: "v1.js", relativeCachedPath: "ext/1.0/v1.js")]
+
+        mockProvider.scriptletsMap[testType] = v0Scriptlets
+        mockProvider.versionMap[testType] = "0.1"
+        mockInstaller.blockNextInstall()
+
+        let enableTask = Task { @MainActor in
+            await self.coordinator.onExtensionEnabled(for: self.testType)
+        }
+
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(mockInstaller.installCallCount, 1, "V0 install should have started")
+
+        mockProvider.versionMap[testType] = "1.0"
+        mockProvider.scriptletsMap[testType] = v1Scriptlets
+        mockProvider.availabilitySubjects[testType]?.send(.available(v1Scriptlets))
+
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        mockProvider.versionMap[testType] = "999.0"
+
+        mockInstaller.resumeInstall()
+
+        await enableTask.value
+        try await Task.sleep(nanoseconds: 200_000_000)
+
+        XCTAssertEqual(mockInstaller.installCallCount, 2)
+        XCTAssertEqual(mockInstaller.allInstalledScriptlets[0], v0Scriptlets)
+        XCTAssertEqual(mockInstaller.allInstalledScriptlets[1], v1Scriptlets)
+        XCTAssertEqual(mockStore.installedVersion(for: testType), "1.0",
+                       "V1 should record version 1.0 (captured at publish time), not 999.0 (current provider version)")
+    }
 }

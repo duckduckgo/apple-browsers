@@ -27,14 +27,40 @@ final class MockScriptletInstaller: ScriptletInstalling {
     var lastInstallationDirectory: URL?
     var shouldThrowError = false
 
+    var allInstalledScriptlets: [[Scriptlet]] = []
+
+    private var shouldBlock = false
+    private var blockContinuation: CheckedContinuation<Void, Never>?
+
+    var onInstallStarted: (() -> Void)?
+
     func installScriptlets(_ scriptlets: [Scriptlet], cacheRootDirectory: URL, to installationDirectory: URL) async throws {
         installCallCount += 1
         lastInstalledScriptlets = scriptlets
         lastCacheRootDirectory = cacheRootDirectory
         lastInstallationDirectory = installationDirectory
+        allInstalledScriptlets.append(scriptlets)
+
+        onInstallStarted?()
+
+        if shouldBlock {
+            shouldBlock = false
+            await withCheckedContinuation { continuation in
+                self.blockContinuation = continuation
+            }
+        }
 
         if shouldThrowError {
             throw NSError(domain: "MockScriptletInstaller", code: 1)
         }
+    }
+
+    func blockNextInstall() {
+        shouldBlock = true
+    }
+
+    func resumeInstall() {
+        blockContinuation?.resume()
+        blockContinuation = nil
     }
 }

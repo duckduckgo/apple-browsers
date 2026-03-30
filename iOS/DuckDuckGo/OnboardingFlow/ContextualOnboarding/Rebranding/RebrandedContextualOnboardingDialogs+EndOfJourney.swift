@@ -53,7 +53,7 @@ extension OnboardingRebranding {
                     message: AttributedString(
                         message.attributedString(
                             withPlaceholder: UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken,
-                            replacedByImage: DesignSystemImages.Glyphs.Size16.aiChat,
+                            replacedByImage: DesignSystemImages.Glyphs.Size16.aiChatOnboarding,
                             verticalOffset: -2
                         ) ?? NSAttributedString(string: message)
                     )

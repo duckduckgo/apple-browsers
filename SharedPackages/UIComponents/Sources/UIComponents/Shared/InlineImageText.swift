@@ -208,10 +208,11 @@ func inlineTextItems(from attributedString: NSAttributedString) -> [InlineTextIt
     // Each run becomes either `.image(...)` (for valid attachment image)
     // or `.attributed(...)` (for normal text or invalid/missing image attachment).
     attributedString.enumerateAttribute(.attachment, in: fullRange, options: []) { value, range, _ in
-        guard let attachment = value as? NSTextAttachment, let image = attachment.platformImage else {
+        guard let attachment = value as? NSTextAttachment else {
             items.append(.attributed(attributedString.attributedSubstring(from: range)))
             return
         }
+        guard let image = attachment.platformImage else { return }
 
         // Preserve vertical alignment configured on the attachment itself.
         let attributes = attributedString.attributes(at: range.location, effectiveRange: nil)

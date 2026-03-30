@@ -156,6 +156,7 @@ class SuggestionTrayViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        view.backgroundColor = .clear
         backgroundView = install(CompositeShadowView())
         containerView = install(UIView())
 

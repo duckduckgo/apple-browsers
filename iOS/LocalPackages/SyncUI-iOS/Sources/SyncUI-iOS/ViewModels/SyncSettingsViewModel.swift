@@ -338,7 +338,10 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @MainActor
     private func beginFlow(for continuation: PreservedAccountContinuation) async {
-        guard await commonAuthenticate() else { return }
+        guard await commonAuthenticate() else {
+            isBusy = false
+            return
+        }
 
         guard delegate?.isPreservedAccountPromptNeeded() != true else {
             pendingPreservedAccountContinuation = continuation
@@ -393,6 +396,7 @@ public class SyncSettingsViewModel: ObservableObject {
     public func enableSyncToggleTapped() {
         guard !isBusy else { return }
         guard isAccountCreationAvailable else { return }
+        isBusy = true
         Task { @MainActor in
             await beginFlow(for: .setup(.simplifiedToggle))
         }

@@ -324,6 +324,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let readyView = AutoRestoreReadyView(model: self.viewModel, onCancel: { [weak self] in
                 Pixel.fire(pixel: .syncAutoRestoreSettingsCancelled, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
                 self?.viewModel.clearPendingPreservedAccountContinuation()
+                self?.viewModel.isBusy = false
                 self?.autoRestorePromptSource = nil
                 self?.dismissPresentedViewController()
             })

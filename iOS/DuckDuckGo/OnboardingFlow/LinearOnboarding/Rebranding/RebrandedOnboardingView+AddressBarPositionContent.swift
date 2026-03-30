@@ -29,7 +29,7 @@ extension OnboardingRebranding.OnboardingView {
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-AddressBar",
             size: CGSize(width: 100, height: 111.3),
-            position: .bottom(yOffset: 50.0),
+            position: .bottom(yOffset: 54.0),
             loop: true,
             fadeInTime: 1.5
         )

@@ -29,7 +29,7 @@ extension OnboardingRebranding.OnboardingView {
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-AppIconPicker",
             size: CGSize(width: 116, height: 209),
-            position: .right(),
+            position: .right(bottomPadding: 107.0),
             twoStagesAnimation: 0.5,
             exitDuration: 0.5
         )

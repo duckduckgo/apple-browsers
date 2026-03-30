@@ -74,6 +74,26 @@ public final class LaunchOptionsHandler {
 
     public var onboardingStatus: OnboardingStatus {
         // TODO: Temporary override for dev validation; remove when onboarding should no longer launch on every app start.
+        userDefaults.removeObject(forKey: Self.isOnboardingCompleted)
+
+        userDefaults.set(false, forKey: "com.duckduckgo.tutorials.hasSeenOnboarding")
+        userDefaults.set(false, forKey: "com.duckduckgo.tutorials.hasSkippedOnboarding")
+
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingIsDismissed")
+        userDefaults.set(0, forKey: "com.duckduckgo.ios.daxOnboardingHomeScreenMessagesSeen")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingTryAnonymousSearchShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingTryVisitSiteShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingAfterSearchShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingWithTrackersShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingWithoutTrackersShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingMajorTrackingSiteShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingOwnedByMajorTrackingSiteShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxfireButtonEducationShownOrExpired")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.fireMessageShown")
+        userDefaults.removeObject(forKey: "com.duckduckgo.ios.fireButtonPulseDateShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.privacyButtonPulseShown")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingFinalDialogSeen")
+        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown")
         return .overridden(.developer(completed: false))
 
         // Apple Issue affecting persistence storage on iPad 17.7.7

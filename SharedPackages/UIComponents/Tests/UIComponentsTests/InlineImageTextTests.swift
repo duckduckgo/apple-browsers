@@ -29,7 +29,7 @@ import AppKit
 @Suite("Inline image text parsing")
 struct InlineImageTextTests {
 
-    @Test("When replacement map is empty then parser returns the original text as a single item")
+    @Test("When replacement map is empty then parser returns the original text as a single item", .timeLimit(.minutes(1)))
     func whenReplacementMapIsEmptyThenParserReturnsSingleTextItem() {
         let items = inlineTextItems(from: "Hello world", replacing: [:])
 
@@ -43,7 +43,7 @@ struct InlineImageTextTests {
         #expect(isItalic == false)
     }
 
-    @Test("When input text is empty and replacements exist then parser returns a single empty text item")
+    @Test("When input text is empty and replacements exist then parser returns a single empty text item", .timeLimit(.minutes(1)))
     func whenInputTextIsEmptyAndReplacementsExistThenParserReturnsSingleEmptyTextItem() {
         let items = inlineTextItems(from: "", replacing: ["[[chat]]": makeTestImage().withBaselineOffset(-2)])
 
@@ -57,7 +57,7 @@ struct InlineImageTextTests {
         #expect(isItalic == false)
     }
 
-    @Test("When text contains one placeholder then parser returns text-image-text segments")
+    @Test("When text contains one placeholder then parser returns text-image-text segments", .timeLimit(.minutes(1)))
     func whenTextContainsOnePlaceholderThenParserReturnsTextImageText() {
         let expectedImage = makeTestImage()
         let items = inlineTextItems(from: "Try [[chat]] now", replacing: ["[[chat]]": expectedImage.withBaselineOffset(-2)])
@@ -83,7 +83,7 @@ struct InlineImageTextTests {
         #expect(suffix == " now")
     }
 
-    @Test("When text contains multiple placeholders then each placeholder is replaced in order")
+    @Test("When text contains multiple placeholders then each placeholder is replaced in order", .timeLimit(.minutes(1)))
     func whenTextContainsMultiplePlaceholdersThenEachPlaceholderIsReplacedInOrder() {
         let chatImage = makeTestImage()
         let fireImage = makeTestImage()
@@ -126,7 +126,7 @@ struct InlineImageTextTests {
         #expect(suffix == " C")
     }
 
-    @Test("When placeholders overlap at the same position then longest placeholder wins")
+    @Test("When placeholders overlap at the same position then longest placeholder wins", .timeLimit(.minutes(1)))
     func whenPlaceholdersOverlapThenLongestPlaceholderWins() {
         let longImage = makeTestImage()
         let shortImage = makeTestImage()
@@ -152,7 +152,7 @@ struct InlineImageTextTests {
         #expect(suffix == " is here")
     }
 
-    @Test("When two placeholders match at the same start index then the longer token is selected")
+    @Test("When two placeholders match at the same start index then the longer token is selected", .timeLimit(.minutes(1)))
     func whenPlaceholdersMatchAtSameIndexThenLongerTokenIsSelected() {
         let longImage = makeTestImage()
         let shortImage = makeTestImage()
@@ -172,7 +172,7 @@ struct InlineImageTextTests {
         #expect(image.baselineOffset == -1)
     }
 
-    @Test("When the same placeholder appears twice then both occurrences are replaced")
+    @Test("When the same placeholder appears twice then both occurrences are replaced", .timeLimit(.minutes(1)))
     func whenSamePlaceholderAppearsTwiceThenBothOccurrencesAreReplaced() {
         let expectedImage = makeTestImage()
         let items = inlineTextItems(
@@ -214,7 +214,7 @@ struct InlineImageTextTests {
         #expect(lastText == " C")
     }
 
-    @Test("When attributed string is empty then parser returns one empty text item")
+    @Test("When attributed string is empty then parser returns one empty text item", .timeLimit(.minutes(1)))
     func whenAttributedStringIsEmptyThenParserReturnsSingleEmptyTextItem() {
         let items = inlineTextItems(from: NSAttributedString(string: ""))
 
@@ -228,7 +228,7 @@ struct InlineImageTextTests {
         #expect(isItalic == false)
     }
 
-    @Test("When attributed string has no attachments then parser returns attributed segment")
+    @Test("When attributed string has no attachments then parser returns attributed segment", .timeLimit(.minutes(1)))
     func whenAttributedStringHasNoAttachmentsThenParserReturnsAttributedSegment() {
         let attributedString = NSAttributedString(string: "Hello world")
         let items = inlineTextItems(from: attributedString)
@@ -241,7 +241,7 @@ struct InlineImageTextTests {
         #expect(value.string == "Hello world")
     }
 
-    @Test("When attributed string includes image attachment then parser returns inline image with attachment baseline offset")
+    @Test("When attributed string includes image attachment then parser returns inline image with attachment baseline offset", .timeLimit(.minutes(1)))
     func whenAttributedStringHasImageAttachmentThenParserReturnsInlineImageSegment() {
         let message = NSMutableAttributedString(string: "before ")
         let attachment = NSTextAttachment()
@@ -275,7 +275,7 @@ struct InlineImageTextTests {
     }
 
     @available(iOS 18.0, *)
-    @Test("When attachment run has foreground color then parser carries that color to image segment")
+    @Test("When attachment run has foreground color then parser carries that color to image segment", .timeLimit(.minutes(1)))
     func whenAttachmentRunHasForegroundColorThenParserCarriesColorToImageSegment() {
         let message = NSMutableAttributedString(string: "before ")
         let attachment = NSTextAttachment()
@@ -299,7 +299,7 @@ struct InlineImageTextTests {
         #expect(color != nil)
     }
 
-    @Test("When attributed string has several attachments then each attachment is converted to an image segment")
+    @Test("When attributed string has several attachments then each attachment is converted to an image segment", .timeLimit(.minutes(1)))
     func whenAttributedStringHasSeveralAttachmentsThenEachAttachmentBecomesImageSegment() {
         let message = NSMutableAttributedString(string: "A ")
 
@@ -355,7 +355,7 @@ struct InlineImageTextTests {
         #expect(lastText.string == " C")
     }
 
-    @Test("When attachment has no image then parser falls back to attributed segment")
+    @Test("When attachment has no image then parser falls back to attributed segment", .timeLimit(.minutes(1)))
     func whenAttachmentHasNoImageThenParserFallsBackToAttributedSegment() {
         let attachment = NSTextAttachment()
         let attributedString = NSAttributedString(attachment: attachment)

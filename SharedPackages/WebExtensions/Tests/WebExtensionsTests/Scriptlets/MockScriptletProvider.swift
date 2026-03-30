@@ -20,6 +20,7 @@ import Combine
 import Foundation
 @testable import WebExtensions
 
+@available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class MockScriptletProvider: ScriptletProviding {
 

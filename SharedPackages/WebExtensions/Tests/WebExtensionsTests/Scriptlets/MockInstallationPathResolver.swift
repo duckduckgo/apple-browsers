@@ -19,6 +19,7 @@
 import Foundation
 @testable import WebExtensions
 
+@available(macOS 15.4, iOS 18.4, *)
 final class MockInstallationPathResolver: WebExtensionInstallationPathResolving {
 
     var paths: [DuckDuckGoWebExtensionType: URL] = [:]

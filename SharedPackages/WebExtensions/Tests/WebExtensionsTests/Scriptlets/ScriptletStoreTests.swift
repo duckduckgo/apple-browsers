@@ -19,18 +19,21 @@
 import XCTest
 @testable import WebExtensions
 
+@available(macOS 15.4, iOS 18.4, *)
 final class ScriptletStoreTests: XCTestCase {
 
     var tempDirectory: URL!
     var store: ScriptletStore!
     var defaults: UserDefaults!
+    var defaultsSuiteName: String!
 
     override func setUp() {
         super.setUp()
         tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
 
-        defaults = UserDefaults(suiteName: "test.scriptlets.\(UUID().uuidString)")!
+        defaultsSuiteName = "test.scriptlets.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: defaultsSuiteName)!
 
         store = ScriptletStore(
             baseDirectory: tempDirectory,
@@ -40,9 +43,10 @@ final class ScriptletStoreTests: XCTestCase {
 
     override func tearDown() {
         try? FileManager.default.removeItem(at: tempDirectory)
-        defaults.removePersistentDomain(forName: defaults.suiteName!)
+        defaults.removePersistentDomain(forName: defaultsSuiteName)
         store = nil
         defaults = nil
+        defaultsSuiteName = nil
         tempDirectory = nil
         super.tearDown()
     }

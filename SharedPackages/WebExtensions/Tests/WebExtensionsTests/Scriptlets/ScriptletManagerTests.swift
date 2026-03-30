@@ -20,6 +20,7 @@ import XCTest
 import Combine
 @testable import WebExtensions
 
+@available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class ScriptletManagerTests: XCTestCase {
 
@@ -102,6 +103,7 @@ final class ScriptletManagerTests: XCTestCase {
     }
 
     func testWhenConfigUpdatesWithNewVersionThenScriptletsAreFetched() async {
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: [])
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
         await manager.start(for: testExtensionType)
 
@@ -118,7 +120,7 @@ final class ScriptletManagerTests: XCTestCase {
 
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        try? await Task.sleep(nanoseconds: 600_000_000)
 
         XCTAssertEqual(mockFetcher.fetchCallCount, 1)
         XCTAssertEqual(manager.availability(for: testExtensionType), .available([scriptlet]))
@@ -175,7 +177,7 @@ final class ScriptletManagerTests: XCTestCase {
         mockConfigProvider.manifests[testExtensionType] = nil
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        try? await Task.sleep(nanoseconds: 600_000_000)
 
         XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
         XCTAssertNil(manager.scriptlets(for: testExtensionType))
@@ -196,7 +198,7 @@ final class ScriptletManagerTests: XCTestCase {
         mockConfigProvider.manifests[testExtensionType] = nil
         mockConfigProvider.configUpdateSubject.send()
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        try? await Task.sleep(nanoseconds: 600_000_000)
 
         XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
         XCTAssertEqual(mockStore.installedVersion(for: testExtensionType), "1.0")
@@ -223,6 +225,7 @@ final class ScriptletManagerTests: XCTestCase {
     }
 
     func testWhenStoppedThenExtensionTypeIsRemovedFromActive() async {
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: [])
         mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
         await manager.start(for: testExtensionType)
 

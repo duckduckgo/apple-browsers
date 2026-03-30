@@ -3008,7 +3008,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var isToolbarHidden: Bool {
-        return viewCoordinator.toolbar.alpha < 1
+        return viewCoordinator.toolbar.isHidden || viewCoordinator.toolbar.alpha < 1
     }
 
     var toolbarHeight: CGFloat {

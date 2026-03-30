@@ -23,9 +23,9 @@ final class TabSuspensionService {
 
     private static let minimumInactiveInterval: TimeInterval = 10 * 60
 
-    private let windowControllersManager: WindowControllersManager
+    private let windowControllersManager: WindowControllersManagerProtocol
 
-    init(windowControllersManager: WindowControllersManager) {
+    init(windowControllersManager: WindowControllersManagerProtocol) {
         self.windowControllersManager = windowControllersManager
 
         NotificationCenter.default.addObserver(

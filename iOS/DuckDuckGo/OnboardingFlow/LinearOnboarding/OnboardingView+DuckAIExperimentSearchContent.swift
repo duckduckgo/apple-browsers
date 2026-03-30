@@ -57,7 +57,6 @@ extension OnboardingView {
         static let rebrandedQueryFieldBorderWidth: CGFloat = 1
 
         // MARK: Animation
-        static let initialToggleStartDelay: TimeInterval = 0.8
         static let controlsRevealDelayAfterTitleAnimation: TimeInterval = 0.3
         static let keyboardFocusDelayAfterControlsReveal: TimeInterval = 0.2
         static let legacyInitialInputFocusDelayAfterAppear: TimeInterval = 0.35
@@ -101,7 +100,6 @@ extension OnboardingView {
         // TODO: can this be changed to state machine?
         @State private var isInputFocused = false
         @State private var visibleSuggestionCount = 0
-        @State private var didRunInitialToggleAnimation = false
         @State private var isTransitioningOut = false
         @State private var suggestionSequenceStarted = false
         @State private var showInteractiveControls = false
@@ -217,7 +215,6 @@ extension OnboardingView {
                 query = ""
                 isInputFocused = false
                 visibleSuggestionCount = 0
-                didRunInitialToggleAnimation = false
                 showInteractiveControls = false
                 hasStartedEntranceSequence = false
                 hasPassedInitialFocusDelay = false
@@ -272,7 +269,7 @@ extension OnboardingView {
                     guard hasStartedEntranceSequence, showInteractiveControls, !isTransitioningOut else { return }
                     requestInputFocus()
                 }
-                startInitialSelectionAnimationIfNeeded()
+                startSuggestionSequenceIfNeeded()
             }
         }
 
@@ -284,25 +281,6 @@ extension OnboardingView {
                 guard hasStartedEntranceSequence, !isTransitioningOut else { return }
                 showInteractiveControls = true
                 requestInputFocus()
-                startInitialSelectionAnimationIfNeeded()
-            }
-        }
-
-        private func startInitialSelectionAnimationIfNeeded() {
-            guard !didRunInitialToggleAnimation else { return }
-            didRunInitialToggleAnimation = true
-
-            if selectedMode == .duckAI {
-                selectedMode = .search
-                DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.initialToggleStartDelay) {
-                    guard didRunInitialToggleAnimation, showInteractiveControls else { return }
-                    withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
-                        selectedMode = .duckAI
-                    } completion: {
-                        startSuggestionSequenceIfNeeded()
-                    }
-                }
-            } else {
                 startSuggestionSequenceIfNeeded()
             }
         }

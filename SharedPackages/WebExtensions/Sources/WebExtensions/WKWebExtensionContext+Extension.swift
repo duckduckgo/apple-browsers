@@ -22,6 +22,7 @@ import WebKit
 private let browserSpecificSettingsKey = "browser_specific_settings"
 private let duckduckgoKey = "duckduckgo"
 private let idKey = "id"
+private let requiresExtractionKey = "appleRequiresExtraction"
 
 /// Extension types identified via manifest `browser_specific_settings.duckduckgo.id`.
 @available(macOS 15.4, iOS 18.4, *)
@@ -37,6 +38,7 @@ public struct WebExtensionMetadata {
     public let type: DuckDuckGoWebExtensionType?
     public let version: String?
     public let displayName: String?
+    public let requiresExtraction: Bool
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -54,6 +56,17 @@ public extension WKWebExtension {
         return DuckDuckGoWebExtensionType(rawValue: idString)
     }
 
+    /// Returns whether the extension requires extraction from zip before loading.
+    /// Read from manifest `browser_specific_settings.duckduckgo.appleRequiresExtraction`.
+    var requiresExtraction: Bool {
+        guard let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any],
+              let duckduckgo = browserSpecific[duckduckgoKey] as? [String: Any],
+              let requiresExtraction = duckduckgo[requiresExtractionKey] as? Bool else {
+            return false
+        }
+        return requiresExtraction
+    }
+
     /// Reads metadata from a web extension at the given URL without loading it into a controller.
     /// This can be used to inspect version and type before deciding whether to install/upgrade.
     /// - Parameter url: URL to the extension (folder or zip file)
@@ -64,7 +77,8 @@ public extension WKWebExtension {
         return WebExtensionMetadata(
             type: webExtension.duckDuckGoWebExtensionType,
             version: webExtension.version,
-            displayName: webExtension.displayName
+            displayName: webExtension.displayName,
+            requiresExtraction: webExtension.requiresExtraction
         )
     }
 }

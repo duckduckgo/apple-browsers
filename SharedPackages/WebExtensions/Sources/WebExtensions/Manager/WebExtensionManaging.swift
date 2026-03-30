@@ -38,6 +38,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var eventsListener: WebExtensionEventsListening { get }
 
+    /// The base directory where extensions are stored on disk.
+    @available(macOS 15.4, iOS 18.4, *)
+    var extensionsDirectory: URL { get }
+
     /// An async stream that yields when extensions are updated.
     @available(macOS 15.4, iOS 18.4, *)
     var extensionUpdates: AsyncStream<Void> { get }
@@ -75,10 +79,20 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension?
 
+    /// Returns the installed path for an embedded extension type.
+    @available(macOS 15.4, iOS 18.4, *)
+    func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL?
+
     /// Unloads all currently loaded extensions from memory without uninstalling them.
     /// This is useful when clearing browser data to ensure extensions don't interfere.
     @available(macOS 15.4, iOS 18.4, *)
     func unloadAllExtensions()
+
+    /// Reloads an extension by unloading it from memory and loading it again from disk.
+    /// Useful when extension files have been modified on disk.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func reloadExtension(identifier: String) async throws
 
     /// Returns the extension name for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)

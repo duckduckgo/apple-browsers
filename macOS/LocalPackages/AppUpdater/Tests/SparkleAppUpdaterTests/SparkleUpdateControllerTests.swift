@@ -16,127 +16,45 @@
 //  limitations under the License.
 //
 
-import AppUpdaterShared
-import AppUpdaterTestHelpers
-import FeatureFlags
-import PrivacyConfig
 import SparkleAppUpdater
 import XCTest
 
 final class SparkleUpdateControllerTests: XCTestCase {
 
-    var mockFeatureFlagger: MockFeatureFlagger!
+    // MARK: - Auto-update paused
 
-    override func setUp() {
-        super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger()
-    }
-
-    override func tearDown() {
-        mockFeatureFlagger = nil
-        super.tearDown()
-    }
-
-    // MARK: - Custom Feed Enabled
-
-    func testResolveAutoDownload_customFeedEnabled_flagOff_preferenceOn_returnsFalse() {
-        // Flag OFF = not in enabledUpdateFeatureFlags array
-
+    func testResolveAutoDownload_paused_preferenceOn_returnsFalse() {
         let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
+            isAutoUpdatePaused: true,
             userPreference: true
         )
 
         XCTAssertFalse(result)
     }
 
-    func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOn_returnsTrue() {
-        mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
-
+    func testResolveAutoDownload_paused_preferenceOff_returnsFalse() {
         let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: true
-        )
-
-#if DEBUG
-        XCTAssertTrue(result)
-#else
-        XCTAssertFalse(result)
-#endif
-    }
-
-    func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOff_returnsFalse() {
-        mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
-
-        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
+            isAutoUpdatePaused: true,
             userPreference: false
         )
 
         XCTAssertFalse(result)
     }
 
-    // MARK: - Non-Debug Flag Handling
+    // MARK: - Auto-update not paused
 
-    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOff_preferenceOn_returnsFalse() {
-        // Flag OFF = not in enabledUpdateFeatureFlags array.
-
+    func testResolveAutoDownload_notPaused_preferenceOn_returnsTrue() {
         let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: true
-        )
-
-        XCTAssertFalse(result)
-    }
-
-    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOn_preferenceOn_matchesBuild() {
-        mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
-
-        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: true
-        )
-
-#if DEBUG
-        XCTAssertFalse(result)
-#else
-        XCTAssertTrue(result)
-#endif
-    }
-
-    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOn_preferenceOff_returnsFalse() {
-        mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
-
-        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: false
-        )
-
-        XCTAssertFalse(result)
-    }
-
-    // MARK: - Custom Feed Disabled
-
-    func testResolveAutoDownload_customFeedDisabled_preferenceOn_returnsTrue() {
-        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: false,
-            featureFlagger: mockFeatureFlagger,
+            isAutoUpdatePaused: false,
             userPreference: true
         )
 
         XCTAssertTrue(result)
     }
 
-    func testResolveAutoDownload_customFeedDisabled_preferenceOff_returnsFalse() {
+    func testResolveAutoDownload_notPaused_preferenceOff_returnsFalse() {
         let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: false,
-            featureFlagger: mockFeatureFlagger,
+            isAutoUpdatePaused: false,
             userPreference: false
         )
 

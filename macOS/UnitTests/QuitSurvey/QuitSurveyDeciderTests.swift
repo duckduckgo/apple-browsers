@@ -29,6 +29,7 @@ final class MockQuitSurveyPersistor: QuitSurveyPersistor {
     var alwaysShowQuitSurvey: Bool = false
     var pendingReturnUserReasons: String?
     var hasQuitAppBefore: Bool = false
+    var hasSelectedThumbsUp: Bool?
 }
 
 final class MockReinstallingUserDetecting: ReinstallingUserDetecting {

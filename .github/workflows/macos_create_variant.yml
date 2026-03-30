@@ -262,6 +262,7 @@ jobs:
         echo "variant-name=${name}" >> "$GITHUB_OUTPUT"
 
     - name: Upload variant DMG as artifact
+      if: ${{ env.DRY_RUN == 'true' }}
       uses: actions/upload-artifact@v4
       with:
         name: variant-dmg-${{ steps.set-variant-name.outputs.variant-name }}

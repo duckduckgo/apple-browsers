@@ -85,7 +85,6 @@ protocol TabExtensionDependencies {
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
-    var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
     var aiChatSessionStore: AIChatSessionStoring { get }
     var tabCrashAggregator: TabCrashAggregator { get }
     var tabsPreferences: TabsPreferences { get }
@@ -253,11 +252,6 @@ extension TabExtensionsBuilder {
         }
         add {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
-        }
-        add {
-            NewTabPageTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
-                                   webViewPublisher: args.webViewFuture,
-                                   pixelSender: dependencies.newTabPageShownPixelSender)
         }
 
         add {

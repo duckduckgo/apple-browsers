@@ -39,6 +39,7 @@ enum ModalPromptCoordinationFactory {
         let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
         let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: dependency.winBackOfferPresenter, coordinator: dependency.winBackOfferCoordinator)
+        let subscriptionPromoModalPromptProvider = SubscriptionPromoModalPromptProvider(presenter: dependency.subscriptionPromoPresenter, coordinator: dependency.subscriptionPromoCoordinator)
         let whatsNewModalPromptProvider = WhatsNewCoordinator(
             displayContext: .scheduled,
             repository: dependency.whatsNewRepository,
@@ -59,6 +60,7 @@ enum ModalPromptCoordinationFactory {
                 newAddressBarPicker: newAddressBarPickerModalPromptProvider,
                 defaultBrowser: defaultBrowserModalPromptProvider,
                 winBackOffer: winBackOfferModalPromptProvider,
+                subscriptionPromo: subscriptionPromoModalPromptProvider,
                 whatsNew: whatsNewModalPromptProvider
             )
         )
@@ -115,6 +117,8 @@ extension ModalPromptCoordinationFactory {
         let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
         let winBackOfferPresenter: WinBackOfferPresenting
         let winBackOfferCoordinator: WinBackOfferCoordinating
+        let subscriptionPromoPresenter: SubscriptionPromoPresenting
+        let subscriptionPromoCoordinator: SubscriptionPromoCoordinating
         let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     }
 

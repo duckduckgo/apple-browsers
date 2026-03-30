@@ -295,5 +295,15 @@
         "type": "string",
         "description": "Whether the feature or setting is enabled",
         "enum": ["true", "false"]
+    },
+    "returningUser": {
+        "key": "ru",
+        "type": "boolean",
+        "description": "Whether the user is a returning user (reinstall)"
+    },
+    "freeTrial": {
+        "key": "free_trial",
+        "type": "boolean",
+        "description": "Whether the user is eligible for a free trial"
     }
 }

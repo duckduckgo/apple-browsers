@@ -122,8 +122,6 @@ extension AIChatWebViewController {
         static let autoSendKey = "prompt"
         static let autoSendValue = "1"
         static let toolChoice = "toolChoice"
-        static let modeKey = "mode"
-        static let voiceModeValue = "voice"
     }
 
     func reload() {
@@ -146,14 +144,7 @@ extension AIChatWebViewController {
     }
 
     private func buildVoiceModeURL() -> URL {
-        guard var components = URLComponents(url: chatModel.aiChatURL, resolvingAgainstBaseURL: false) else {
-            return chatModel.aiChatURL
-        }
-        var queryItems = components.queryItems ?? []
-        queryItems.removeAll { $0.name == QueryParameters.modeKey }
-        queryItems.append(URLQueryItem(name: QueryParameters.modeKey, value: QueryParameters.voiceModeValue))
-        components.queryItems = queryItems
-        return components.url ?? chatModel.aiChatURL
+        AIChatURLParameters.voiceModeURL(from: chatModel.aiChatURL)
     }
 
     private func buildQueryURL(query: String, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL {

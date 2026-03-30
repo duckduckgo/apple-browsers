@@ -49,6 +49,14 @@ protocol ShortcutItemHandling {
 }
 
 @MainActor
+protocol UserActivityHandling {
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool
+
+}
+
+@MainActor
 final class MainCoordinator {
 
     let controller: MainViewController
@@ -63,10 +71,13 @@ final class MainCoordinator {
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let wideEvent: WideEventManaging
+    private let voiceSessionStateManager: VoiceSessionStateProviding
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var dataImportUserActivityHandler: DataImportUserActivityHandling?
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellables = Set<AnyCancellable>()
@@ -87,6 +98,7 @@ final class MainCoordinator {
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          aiChatSettings: AIChatSettings,
          fireproofing: Fireproofing,
+         favicons: FaviconManaging,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
@@ -111,6 +123,8 @@ final class MainCoordinator {
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         self.wideEvent = wideEvent
+        self.voiceSessionStateManager = VoiceSessionStateManager()
+        self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
@@ -156,6 +170,7 @@ final class MainCoordinator {
                                 autoconsentManagementProvider: autoconsentManagementProvider,
                                 websiteDataManager: websiteDataManager,
                                 fireproofing: fireproofing,
+                                favicons: favicons,
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
@@ -174,6 +189,7 @@ final class MainCoordinator {
                                         syncService: syncService.sync,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         fireproofing: fireproofing,
+                                        favicons: favicons,
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         autoconsentManagementProvider: autoconsentManagementProvider,
                                         historyManager: historyManager,
@@ -216,6 +232,7 @@ final class MainCoordinator {
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
+                                        favicons: favicons,
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
@@ -429,7 +446,8 @@ final class MainCoordinator {
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager)
+                        dataStoreIDManager: dataStoreIDManager,
+                        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) })
     }
 
     // MARK: - Public API
@@ -612,11 +630,37 @@ extension MainCoordinator: ShortcutItemHandling {
 
 }
 
+extension MainCoordinator: UserActivityHandling {
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
+        switch userActivity.activityType {
+        case DataImportUserActivityHandler.browserKitImportActivityType:
+            if dataImportUserActivityHandler == nil {
+                dataImportUserActivityHandler = makeDataImportUserActivityHandler()
+            }
+            return dataImportUserActivityHandler?.handle(userActivity) ?? false
+        default:
+            Logger.general.debug("Unhandled user activity type: \(userActivity.activityType)")
+            return false
+        }
+    }
+
+    private func makeDataImportUserActivityHandler() -> DataImportUserActivityHandler {
+        DataImportUserActivityHandler()
+    }
+
+}
+
 // MARK: - IdleReturnLaunchDelegate
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn() {
+        if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+            return
+        }
+
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)

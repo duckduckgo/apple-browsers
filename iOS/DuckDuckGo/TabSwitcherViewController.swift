@@ -112,11 +112,12 @@ class TabSwitcherViewController: UIViewController {
     var isProcessingUpdates = false
     private var canUpdateCollection = true
 
-    let favicons: Favicons
+    let favicons: FaviconManaging
 
     var tabsStyle: TabsStyle = .list
     var interfaceMode: InterfaceMode = .regularSize
     var canShowSelectionMenu = false
+    var menuBuilder: TabSwitcherMenuBuilding = DefaultTabSwitcherMenuBuilder()
 
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
@@ -169,7 +170,7 @@ class TabSwitcherViewController: UIViewController {
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
                    featureFlagger: FeatureFlagger,
-                   favicons: Favicons = Favicons.shared,
+                   favicons: FaviconManaging,
                    tabManager: TabManager,
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
@@ -589,7 +590,10 @@ class TabSwitcherViewController: UIViewController {
 
     func refreshTitleViews() {
         let fireModeEnabled = fireModeCapability.isFireModeEnabled
-        let tabsCountTitle = fireModeEnabled ? nil : UserText.numberOfTabs(tabsModel.count)
+        // Suppress the text title in fire mode when NOT editing — the segment picker titleView is
+        // visible then and covers the title area. In editing mode the picker is hidden, so a text
+        // title is always required.
+        let tabsCountTitle = (fireModeEnabled && !isEditing) ? nil : UserText.numberOfTabs(tabsModel.count)
         let title = selectedTabs.isEmpty ? tabsCountTitle : UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
         titleBarView.topItem?.title = title
         tabCountModel.count = tabManager.normalTabsModel.count
@@ -825,6 +829,13 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         } else {
             currentSelection = indexPath.row
             Pixel.fire(pixel: .tabSwitcherSwitchTabs)
+            if let tab = tabsModel.get(tabAt: indexPath.row) {
+                if tab.isAITab {
+                    DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToAITab)
+                } else {
+                    DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToWebTab)
+                }
+            }
             dismissIfPossible()
         }
     }

@@ -53,8 +53,6 @@ extension HomePage.Models {
         private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
         private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
         private let cardActionsHandler: NewTabPageNextStepsCardsActionHandling
-        private let isAppStoreBuild: Bool
-
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
             didSet {
@@ -87,15 +85,14 @@ extension HomePage.Models {
         @Published var visibleFeaturesMatrix: [[FeatureType]] = [[]]
 
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
-             dockCustomizer: DockCustomization = DockCustomizer(),
+             dockCustomizer: DockCustomization,
              dataImportProvider: DataImportStatusProviding,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
              subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
              persistor: HomePageContinueSetUpModelPersisting,
              pixelHandler: NewTabPageNextStepsCardsPixelHandling,
-             cardActionsHandler: NewTabPageNextStepsCardsActionHandling,
-             applicationBuildType: ApplicationBuildType = StandardApplicationBuildType()) {
+             cardActionsHandler: NewTabPageNextStepsCardsActionHandling) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
@@ -106,7 +103,6 @@ extension HomePage.Models {
             self.pixelHandler = pixelHandler
             self.cardActionsHandler = cardActionsHandler
             self.persistor = persistor
-            self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()
 
@@ -239,10 +235,10 @@ extension HomePage.Models {
         }
 
         private var availableFeatures: [FeatureType] {
-            if isAppStoreBuild {
-                return [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
-            } else {
+            if dockCustomizer.supportsAddingToDock {
                 return [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+            } else {
+                return [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
             }
         }
 
@@ -259,7 +255,7 @@ extension HomePage.Models {
         }
 
         private var shouldDockCardBeVisible: Bool {
-            !isAppStoreBuild && persistor.shouldShowAddToDockSetting && !dockCustomizer.isAddedToDock
+            dockCustomizer.supportsAddingToDock && persistor.shouldShowAddToDockSetting && !dockCustomizer.isAddedToDock
         }
 
         private var shouldImportCardBeVisible: Bool {

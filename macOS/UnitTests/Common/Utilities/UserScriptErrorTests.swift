@@ -28,7 +28,7 @@ final class UserScriptErrorTests: XCTestCase {
         let underlyingError = NSError(domain: "TestDomain", code: 1, userInfo: nil)
         let error = UserScriptError.failedToLoadJS(jsFile: jsFile, error: underlyingError)
         let mockPixelKit = PixelKitMock(expecting: [
-            .init(pixel: GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, error: underlyingError), frequency: .dailyAndCount)
+            .init(pixel: GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, error: underlyingError, source: .browser), frequency: .dailyAndCount)
         ])
 
         error.fireLoadJSFailedPixelIfNeeded(pixelFiring: mockPixelKit)

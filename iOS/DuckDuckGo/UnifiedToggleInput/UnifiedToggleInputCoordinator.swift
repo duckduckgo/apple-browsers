@@ -70,9 +70,10 @@ struct SubscriptionState {
 // MARK: - Coordinator
 
 @MainActor
-final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
+final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private static let maxImageAttachments = 3
+    private static let maxImagesPerConversation = 5
 
     // MARK: - AIChatInputBoxHandling
 
@@ -81,12 +82,15 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     let didSubmitPrompt = PassthroughSubject<String, Never>()
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
+    let didPressCustomizeResponsesButton = PassthroughSubject<Void, Never>()
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
+    var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
+    @Published var attachmentUsage: AIChatAttachmentUsage?
 
     // MARK: - Properties
 
@@ -105,6 +109,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var currentText: String { viewController.text }
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
+    var onAnimatedDismissToOmnibar: (() -> Void)?
 
     // MARK: - Model Picker
 
@@ -114,6 +119,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var models: [AIChatModel] = []
     private var modelsFetchTask: Task<Void, Never>?
     private(set) var hasSubmittedPrompt = false
+    var pendingExpandedHeight: CGFloat?
     private(set) var subscriptionState: SubscriptionState = .free
 
     var persistedModelId: String? {
@@ -134,6 +140,22 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var selectedModelSupportsImageUpload: Bool {
         guard !models.isEmpty else { return false }
         return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
+    }
+
+    var remainingImagesInConversation: Int {
+        let conversationUsed = attachmentUsage?.imagesUsed ?? 0
+        return max(0, Self.maxImagesPerConversation - conversationUsed)
+    }
+
+    var remainingImagesForPicker: Int {
+        let pendingCount = viewController.currentAttachments.count
+        let perTurnRemaining = Self.maxImageAttachments - pendingCount
+        let conversationRemaining = remainingImagesInConversation - pendingCount
+        return max(0, min(perTurnRemaining, conversationRemaining))
+    }
+
+    var isConversationImageLimitReached: Bool {
+        remainingImagesInConversation == 0
     }
 
     var isOmnibarSession: Bool {
@@ -202,9 +224,14 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
         contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
+        super.init()
         viewController.delegate = self
         subscribeToGeneratingState()
         subscribeToStopGeneratingTap()
+        subscribeToCustomizeResponsesTap()
+        subscribeToVoiceSearchTap()
+        subscribeToAttachmentUsageChanges()
+        viewController.isCustomizeResponsesButtonHidden = true
 
         if let cachedLabel = preferences.selectedModelShortName {
             viewController.modelName = cachedLabel
@@ -233,10 +260,11 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     private func syncChipVisibility(hasExistingChat: Bool) {
-        let shouldHide = hasExistingChat
+        let shouldHide = hasExistingChat || hasSubmittedPrompt
         guard hasSubmittedPrompt != shouldHide else { return }
         hasSubmittedPrompt = shouldHide
         updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
     }
 
     func unbind() {
@@ -245,6 +273,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         boundUserScriptIdentifier = nil
         hasSubmittedPrompt = false
         updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
         clearAttachments()
         resetSessionState()
     }
@@ -260,6 +289,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
+        viewController.isCustomizeResponsesButtonHidden = false
         intentSubject.send(.showCollapsed)
     }
 
@@ -271,6 +301,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let renderState = computeRenderState()
 
         viewController.apply(renderState.viewConfig, animated: false)
+        viewController.isCustomizeResponsesButtonHidden = false
         fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {
@@ -301,6 +332,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
+        viewController.isCustomizeResponsesButtonHidden = true
         contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
         intentSubject.send(.hide)
     }
@@ -315,9 +347,11 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
         updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
+        viewController.isCustomizeResponsesButtonHidden = true
         fetchModels()
 
         if let text = prefilledText, !text.isEmpty {
@@ -326,8 +360,24 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         }
 
         contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
-        let height = omnibarEditingHeight()
-        intentSubject.send(.showOmnibarEditing(expandedHeight: height))
+        let expandedHeight = omnibarEditingHeight()
+
+        if cardPosition == .top && isToggleEnabled {
+            viewController.setExpanded(false, animated: false)
+            viewController.showsDismissButton = false
+            viewController.setExpandedWithToggleHidden(true)
+            let toggleHiddenHeight = omnibarEditingHeight()
+            pendingExpandedHeight = expandedHeight
+            intentSubject.send(.showOmnibarEditing(expandedHeight: toggleHiddenHeight))
+        } else if cardPosition == .top {
+            viewController.setExpanded(false, animated: false)
+            viewController.showsDismissButton = false
+            viewController.setExpandedWithToggleHidden(true)
+            let omnibarMatchingHeight = omnibarEditingHeight()
+            intentSubject.send(.showOmnibarEditing(expandedHeight: omnibarMatchingHeight))
+        } else {
+            intentSubject.send(.showOmnibarEditing(expandedHeight: expandedHeight))
+        }
 
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
@@ -336,6 +386,10 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
                 viewController.selectAllText()
             }
         }
+    }
+
+    func animateOmnibarExpansion(additionalAnimations: (() -> Void)? = nil) {
+        viewController.animateToggleReveal(additionalAnimations: additionalAnimations)
     }
 
     func omnibarEditingHeight() -> CGFloat {
@@ -409,7 +463,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         }
     }
 
-    func deactivateToOmnibar() {
+    func deactivateToOmnibar(resetView: Bool = true) {
         guard isOmnibarSession else { return }
         displayState = .hidden
         cardPosition = .bottom
@@ -418,11 +472,16 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         textState = .empty
         clearAttachments()
 
-        let renderState = computeRenderState()
-        viewController.apply(renderState.viewConfig, animated: false)
-        viewController.deactivateInput()
-
-        contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
+        if resetView {
+            let renderState = computeRenderState()
+            viewController.apply(renderState.viewConfig, animated: false)
+            viewController.deactivateInput()
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
+        } else {
+            viewController.deactivateInput()
+            let renderState = computeRenderState()
+            contentViewController.setHeaderDisplayMode(renderState.headerDisplayMode)
+        }
         intentSubject.send(.hideOmnibarEditing)
     }
 
@@ -581,7 +640,11 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func startNewChat() {
         hasSubmittedPrompt = false
         updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
         clearAttachments()
+        viewController.text = ""
+        textState = .empty
+        attachmentUsage = nil
     }
 
     func updateSelectedModel(_ modelId: String) {
@@ -697,21 +760,62 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     // MARK: - Image Attachments
 
-    func presentImagePicker() {
-        let remaining = Self.maxImageAttachments - viewController.currentAttachments.count
-        guard remaining > 0 else { return }
+    func presentAttachmentOptions() {
+        let remaining = remainingImagesForPicker
         guard let scene = viewController.view.window?.windowScene,
               let root = scene.keyWindow?.rootViewController else { return }
+
+        let imageActionsDisabled = remaining <= 0
+
+        let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            let action = UIAlertAction(title: UserText.aiChatAttachmentOptionTakePhoto, style: .default) { [weak self] _ in
+                self?.presentCamera(from: root)
+            }
+            action.isEnabled = !imageActionsDisabled
+            sheet.addAction(action)
+        }
+
+        let chooseAction = UIAlertAction(title: UserText.aiChatAttachmentOptionChoosePhoto, style: .default) { [weak self] _ in
+            self?.presentPhotoPicker(from: root, remaining: remaining)
+        }
+        chooseAction.isEnabled = !imageActionsDisabled
+        sheet.addAction(chooseAction)
+
+        sheet.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
+
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = viewController.attachButtonView
+        }
+
+        root.present(sheet, animated: true)
+    }
+
+    private func presentCamera(from presenter: UIViewController) {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = self
+        presenter.present(picker, animated: true)
+    }
+
+    private func presentPhotoPicker(from presenter: UIViewController, remaining: Int) {
         var config = PHPickerConfiguration()
         config.filter = .images
         config.selectionLimit = remaining
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = self
-        root.present(picker, animated: true)
+        presenter.present(picker, animated: true)
+    }
+
+    private func expandIfOnAITab() {
+        if case .aiTab = displayState {
+            showExpanded()
+        }
     }
 
     func addImageAttachment(image: UIImage, fileName: String) {
-        guard !viewController.isAttachmentsFull else { return }
+        guard !viewController.isAttachmentsFull, !isConversationImageLimitReached else { return }
         let attachment = AIChatImageAttachment(image: image, fileName: fileName)
         viewController.addAttachment(attachment)
     }
@@ -755,8 +859,39 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             .store(in: &cancellables)
     }
 
+    private func subscribeToAttachmentUsageChanges() {
+        $attachmentUsage
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateImageButtonVisibility()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToCustomizeResponsesTap() {
+        viewController.handler.customizeResponsesButtonTappedPublisher
+            .sink { [weak self] in
+                guard let self else { return }
+                self.didPressCustomizeResponsesButton.send()
+                self.showCollapsed()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToVoiceSearchTap() {
+        viewController.handler.microphoneButtonTappedPublisher
+            .sink { [weak self] in
+                self?.delegate?.unifiedToggleInputDidRequestVoiceSearch()
+            }
+            .store(in: &cancellables)
+    }
+
     private func updateModelChipVisibility() {
         viewController.isModelChipHidden = hasSubmittedPrompt
+    }
+
+    private func syncHasSubmittedPromptToHandler() {
+        switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
     }
 
     private func resetSessionState() {
@@ -764,6 +899,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         textState = .empty
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
+        attachmentUsage = nil
     }
 
     private func resetInputState() {
@@ -798,6 +934,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             clearAttachments()
             hasSubmittedPrompt = true
             updateModelChipVisibility()
+            syncHasSubmittedPromptToHandler()
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
@@ -820,9 +957,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         updateInputMode(mode, animated: false)
     }
 
-    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
-        delegate?.unifiedToggleInputDidRequestVoiceSearch()
-    }
 
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {
         showExpanded(inputMode: .search)
@@ -831,13 +965,15 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     func unifiedToggleInputVCDidTapDismiss(_ vc: UnifiedToggleInputViewController) {
         if case .aiTab = displayState {
             showCollapsed()
+        } else if let onAnimatedDismissToOmnibar, cardPosition == .top {
+            onAnimatedDismissToOmnibar()
         } else {
             deactivateToOmnibar()
         }
     }
 
     func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController) {
-        presentImagePicker()
+        presentAttachmentOptions()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID) {
@@ -855,6 +991,7 @@ extension UnifiedToggleInputCoordinator: PHPickerViewControllerDelegate {
 
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
+        expandIfOnAITab()
         for result in results {
             let provider = result.itemProvider
             guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
@@ -866,5 +1003,22 @@ extension UnifiedToggleInputCoordinator: PHPickerViewControllerDelegate {
                 }
             }
         }
+    }
+}
+
+// MARK: - UIImagePickerControllerDelegate
+
+extension UnifiedToggleInputCoordinator: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        picker.dismiss(animated: true)
+        expandIfOnAITab()
+        guard let image = info[.originalImage] as? UIImage else { return }
+        addImageAttachment(image: image, fileName: "photo")
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
+        expandIfOnAITab()
     }
 }

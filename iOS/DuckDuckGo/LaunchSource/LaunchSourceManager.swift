@@ -47,6 +47,8 @@ final class LaunchSourceManager: LaunchSourceManaging {
             setSource(.shortcut)
         case .openURL:
             setSource(.URL)
+        case .handleUserActivity:
+            setSource(.standard)
         case .standardLaunch:
             setSource(.standard)
         }

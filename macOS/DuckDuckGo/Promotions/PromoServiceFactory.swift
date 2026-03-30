@@ -61,6 +61,7 @@ struct PromoServiceFactory {
         var promos: [Promo] = [
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
+            freemiumDBP,
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
             nextSteps,
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),

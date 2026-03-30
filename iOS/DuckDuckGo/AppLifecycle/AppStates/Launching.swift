@@ -40,7 +40,10 @@ struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
-    private let fireproofing = UserDefaultsFireproofing.xshared
+    private let fireproofing: Fireproofing = UserDefaultsFireproofing(
+        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) }
+    )
+    private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings: AIChatSettings
@@ -60,6 +63,8 @@ struct Launching: LaunchingHandling {
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
 
+        favicons = Favicons(fireproofing: fireproofing)
+
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
@@ -74,6 +79,9 @@ struct Launching: LaunchingHandling {
         // MARK: - Application Setup
         // Handles one-time application setup during launch
         try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+
+        // Migrate existing fireproofed domains to eTLD+1 store
+        fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
 
         // Set idleReturnNewUser at launch (before statistics load) so new vs existing users get the correct after-inactivity default.
         IdleReturnCohort.setCohortIfNeeded(
@@ -93,7 +101,8 @@ struct Launching: LaunchingHandling {
 
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                      faviconStoring: favicons)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()
         let webExtensionAvailability = WebExtensionAvailability(
@@ -176,6 +185,13 @@ struct Launching: LaunchingHandling {
             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
+        // Subscription promo for reinstallers / skipped-onboarding users
+        let subscriptionPromoCoordinator = SubscriptionPromoCoordinator(
+            featureFlagger: featureFlagger,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+        )
+        let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
+
         // Initialise modal prompts coordination
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
@@ -194,6 +210,8 @@ struct Launching: LaunchingHandling {
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
                 winBackOfferCoordinator: winBackOfferService.coordinator,
+                subscriptionPromoPresenter: subscriptionPromoPresenter,
+                subscriptionPromoCoordinator: subscriptionPromoCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies
             )
         )
@@ -218,6 +236,7 @@ struct Launching: LaunchingHandling {
                                               contentScopeExperimentManager: contentScopeExperimentsManager,
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
+                                              favicons: favicons,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                               didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,

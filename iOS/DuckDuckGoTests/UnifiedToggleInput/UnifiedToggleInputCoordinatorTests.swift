@@ -289,13 +289,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
-    // MARK: - VC Delegate: Voice
-
-    func test_voiceTap_callsDelegateVoiceMethod() {
-        sut.unifiedToggleInputVCDidTapVoice(sut.viewController)
-        XCTAssertTrue(mockDelegate.didRequestVoiceSearch)
-    }
-
     // MARK: - VC Delegate: Dismiss
 
     func test_dismissTap_deactivatesOmnibarEditing() {
@@ -352,7 +345,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertEqual(sut.viewController.cardPosition, .top)
         XCTAssertTrue(sut.viewController.usesOmnibarMargins)
-        XCTAssertTrue(sut.viewController.showsDismissButton)
+        XCTAssertFalse(sut.viewController.showsDismissButton)
         XCTAssertTrue(sut.viewController.isToolbarSubmitHidden)
     }
 
@@ -762,6 +755,51 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - Customize Responses Button
+
+    func test_customizeResponsesTap_forwardsPublisher() {
+        let exp = expectation(description: "didPressCustomizeResponsesButton fires")
+        sut.didPressCustomizeResponsesButton
+            .sink { exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.viewController.handler.customizeResponsesButtonTapped()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_customizeResponsesTap_collapsesInput() {
+        sut.showExpanded()
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+
+        sut.viewController.handler.customizeResponsesButtonTapped()
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
+    }
+
+    func test_customizeResponsesButton_hiddenInitially() {
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_visibleOnAITab() {
+        sut.showCollapsed()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_hiddenWhenHidden() {
+        sut.showCollapsed()
+        XCTAssertFalse(sut.viewController.isCustomizeResponsesButtonHidden)
+
+        sut.hide()
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_hiddenInOmnibar() {
+        sut.activateFromOmnibar()
+        XCTAssertTrue(sut.viewController.isCustomizeResponsesButtonHidden)
+    }
+
     // MARK: - Model Selection: persistedModelId
 
     func test_persistedModelId_returnsPreferencesValue() {
@@ -1020,6 +1058,54 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - Handler hasSubmittedPrompt Sync
+
+    func test_handlerHasSubmittedPrompt_syncedAfterPromptSubmit() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    func test_handlerHasSubmittedPrompt_syncedAfterStartNewChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.startNewChat()
+        XCTAssertFalse(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    func test_handlerHasSubmittedPrompt_syncedAfterBindWithExistingChat() {
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    func test_handlerHasSubmittedPrompt_syncedAfterBindWithNewChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: false)
+        XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    func test_handlerHasSubmittedPrompt_syncedAfterUnbind() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unbind()
+        XCTAssertFalse(sut.viewController.handler.hasSubmittedPrompt)
+    }
+
+    // MARK: - startNewChat Text Clearing
+
+    func test_startNewChat_clearsText() {
+        sut.showExpanded()
+        sut.viewController.text = "draft message"
+        sut.startNewChat()
+        XCTAssertEqual(sut.viewController.text, "")
+    }
+
+    func test_startNewChat_resetsTextState() {
+        sut.showExpanded()
+        sut.viewController.text = "draft message"
+        sut.startNewChat()
+        XCTAssertEqual(sut.textState, .empty)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
@@ -1035,7 +1121,6 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedModelId: String?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedQuery: String?
-    var didRequestVoiceSearch = false
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedPrompt = prompt
@@ -1043,7 +1128,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
-    func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearch = true }
+    func unifiedToggleInputDidRequestVoiceSearch() {}
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

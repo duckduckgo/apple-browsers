@@ -1,0 +1,24 @@
+<svg fill="none" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Shield-Utility-Color-42_svg__a)">
+    <path fill="url(#Shield-Utility-Color-42_svg__b)" d="M2.625 24.938v-15.75l3.938-2.625H13.125l7.875-5.25 7.875 5.25h6.563l3.937 2.625v15.75L31.5 36.75l-10.5 3.938L10.5 36.75l-7.875-11.813Z"/>
+    <path fill="url(#Shield-Utility-Color-42_svg__c)" d="M39.375 24.938 31.5 36.75l-7.875 2.625H21V1.313l7.875 5.25h6.563l3.937 2.625v15.75Z"/>
+    <path fill="url(#Shield-Utility-Color-42_svg__d)" d="M16.065 1.75a7.547 7.547 0 0 1 10.09.35l2.52 2.43c.759.732 1.852 1.005 2.864.714l1.481-.425a6.89 6.89 0 0 1 8.789 6.428l.17 5.985a23.625 23.625 0 0 1-13.498 22.018l-4.1 1.943a7.875 7.875 0 0 1-6.358.17l-.404-.178-4.093-1.953A23.625 23.625 0 0 1 .079 17.35l.144-5.995.021-.423a6.89 6.89 0 0 1 8.822-6.098l1.092.323.186.052c.945.213 1.943-.052 2.662-.717l2.772-2.573.278-.247Zm8.269 2.239a4.922 4.922 0 0 0-6.584-.228l-.184.16-2.769 2.573a5.578 5.578 0 0 1-5.025 1.352l-.357-.095-1.092-.323a4.266 4.266 0 0 0-5.478 3.986l-.138 5.96a20.999 20.999 0 0 0 11.953 19.451l4.092 1.95.268.118a5.25 5.25 0 0 0 4.239-.113l4.1-1.943a21 21 0 0 0 11.997-19.572l-.168-5.985a4.266 4.266 0 0 0-5.441-3.98l-1.478.425a7.078 7.078 0 0 1-5.415-1.347l-2.52-2.43Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Shield-Utility-Color-42_svg__b" x1="21.01" x2="21.231" y1="2.625" y2="40.684" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#96E38A"/>
+      <stop offset="1" stop-color="#399F29"/>
+    </linearGradient>
+    <linearGradient id="Shield-Utility-Color-42_svg__c" x1="30.188" x2="30.188" y1="1.313" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7BD66D"/>
+      <stop offset="1" stop-color="#288419"/>
+    </linearGradient>
+    <linearGradient id="Shield-Utility-Color-42_svg__d" x1="21" x2="21" y1="2.625" y2="39.375" gradientUnits="userSpaceOnUse">
+      <stop offset=".008" stop-color="#288419"/>
+      <stop offset="1" stop-color="#1A690D"/>
+    </linearGradient>
+    <clipPath id="Shield-Utility-Color-42_svg__a">
+      <path fill="#fff" d="M0 0h42v42H0z"/>
+    </clipPath>
+  </defs>
+</svg>

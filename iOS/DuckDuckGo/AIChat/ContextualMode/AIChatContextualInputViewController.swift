@@ -18,6 +18,8 @@
 //
 
 import AIChat
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 
 // MARK: - Delegate Protocol
@@ -42,12 +44,15 @@ final class AIChatContextualInputViewController: UIViewController {
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
         static let iPadBottomPadding: CGFloat = 16
+        static let welcomeLabelBottomSpacing: CGFloat = 16
+        static let welcomeIconHorizontalPadding: CGFloat = 4
     }
 
     // MARK: - Properties
 
     weak var delegate: AIChatContextualInputViewControllerDelegate?
 
+    private let isContextualSheetImprovementsEnabled: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var nativeInputViewController = AIChatNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
 
@@ -66,11 +71,21 @@ final class AIChatContextualInputViewController: UIViewController {
         return view
     }()
 
+    private lazy var welcomeLabel: UILabel = {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private var welcomeCenterYConstraint: NSLayoutConstraint?
     private var bottomConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, isContextualSheetImprovementsEnabled: Bool = false) {
+        self.isContextualSheetImprovementsEnabled = isContextualSheetImprovementsEnabled
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -91,6 +106,11 @@ final class AIChatContextualInputViewController: UIViewController {
         configureNativeInput()
         configureQuickActions()
         setupKeyboardObservers()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateWelcomeLabelCentering()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -155,6 +175,14 @@ private extension AIChatContextualInputViewController {
     func setupUI() {
         view.backgroundColor = .clear
 
+        if isContextualSheetImprovementsEnabled {
+            setupImprovedUI()
+        } else {
+            setupOriginalUI()
+        }
+    }
+
+    func setupOriginalUI() {
         view.addSubview(quickActionsScrollView)
         quickActionsScrollView.addSubview(quickActionsView)
         embedNativeInputViewController()
@@ -175,6 +203,33 @@ private extension AIChatContextualInputViewController {
             quickActionsView.heightAnchor.constraint(greaterThanOrEqualTo: quickActionsScrollView.frameLayoutGuide.heightAnchor),
 
             nativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: quickActionsView.bottomAnchor, constant: Constants.quickActionsBottomSpacing),
+            nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            bottomConstraint!,
+        ])
+    }
+
+    func setupImprovedUI() {
+        view.addSubview(welcomeLabel)
+        view.addSubview(quickActionsView)
+        embedNativeInputViewController()
+
+        configureWelcomeLabel()
+
+        bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+
+        let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        welcomeCenterYConstraint = centerY
+
+        NSLayoutConstraint.activate([
+            centerY,
+            welcomeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            welcomeLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+
+            quickActionsView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
+
             nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
             bottomConstraint!,
@@ -206,7 +261,47 @@ private extension AIChatContextualInputViewController {
         quickActionsView.configure(with: actions)
     }
 
+    func configureWelcomeLabel() {
+        let font = UIFont(name: "DuckSansDisplay-Medium", size: 25) ?? UIFont.daxTitle2()
+        let privatelyColor = UIColor(red: 0x11 / 255.0, green: 0x60 / 255.0, blue: 0x4D / 255.0, alpha: 1.0)
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+
+        let defaultAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor(designSystemColor: .textPrimary),
+            .paragraphStyle: paragraphStyle
+        ]
+
+        let mutableText = NSMutableAttributedString(string: "Ask Anything ", attributes: defaultAttributes)
+
+        let shieldImage = DesignSystemImages.Color.Size42.shieldUtility
+        let iconAttachment = NSTextAttachment()
+        iconAttachment.image = shieldImage
+        let iconVerticalOffset = (font.capHeight - shieldImage.size.height) / 2
+        iconAttachment.bounds = CGRect(x: 0, y: iconVerticalOffset, width: shieldImage.size.width, height: shieldImage.size.height)
+        mutableText.append(NSAttributedString(attachment: iconAttachment))
+
+        let privatelyAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: privatelyColor,
+            .paragraphStyle: paragraphStyle
+        ]
+        mutableText.append(NSAttributedString(string: " privately", attributes: privatelyAttributes))
+
+        welcomeLabel.attributedText = mutableText
+    }
+
+    func updateWelcomeLabelCentering() {
+        guard isContextualSheetImprovementsEnabled else { return }
+        let quickActionsTop = quickActionsView.frame.minY
+        guard quickActionsTop > 0 else { return }
+        welcomeCenterYConstraint?.constant = quickActionsTop / 2
+    }
+
     func scrollQuickActionsToBottom() {
+        guard !isContextualSheetImprovementsEnabled else { return }
         view.layoutIfNeeded()
         let bottomOffset = CGPoint(
             x: 0,

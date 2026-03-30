@@ -1372,6 +1372,7 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sent with your message to Duck.ai";
 
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 

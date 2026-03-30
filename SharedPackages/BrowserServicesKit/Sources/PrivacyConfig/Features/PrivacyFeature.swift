@@ -419,6 +419,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
 
+    /// Enables improved contextual sheet UX (welcome message, ask about page, etc.)
+    case contextualSheetImprovements
+
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
 

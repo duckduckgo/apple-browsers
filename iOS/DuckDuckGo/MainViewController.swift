@@ -2694,14 +2694,19 @@ class MainViewController: UIViewController {
         }
 
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
-        DispatchQueue.main.async {
-            newTabPageViewController.showDuckAIOnboardingExperimentCompletionDialog(message: message)
+        DispatchQueue.main.async { [weak self] in
+            newTabPageViewController.experimentCompletionOnboardingCompleted(message: message) {
+                self?.markSearchContextualOnboardingAsSeenForExperiment()
+            }
         }
     }
 
     private func markSearchContextualOnboardingAsSeenForExperiment() {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
+        if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
+        }
     }
 
     private func restorePostFireAddressBarPickerIfNeeded() {
@@ -5153,15 +5158,11 @@ extension MainViewController: OnboardingDelegate {
             resetSessionForOnboardingLaunchIfNeeded()
             experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
             enforceSingleTabAfterOnboardingIfNeeded()
-            markSearchContextualOnboardingAsSeenForExperiment()
         } else if experimentDuckAIFireOnboardingFlow.state != .completed {
             experimentDuckAIFireOnboardingFlow.state = .idle
         }
 
         setExperimentFireControlsLocked(shouldArmExperimentFireOnboarding)
-        if shouldArmExperimentFireOnboarding, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
-        }
         openAIChat(query, autoSend: autoSend, onboardingFlowType: onboardingFlowType)
     }
     

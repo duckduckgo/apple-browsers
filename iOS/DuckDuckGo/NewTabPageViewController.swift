@@ -48,7 +48,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
-    private let onboardingOverlayContainer = UIView()
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -120,8 +119,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupOnboardingOverlayContainer()
-
         registerForNotifications()
     }
 
@@ -223,19 +220,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         }
     }
 
-    private func setupOnboardingOverlayContainer() {
-        onboardingOverlayContainer.translatesAutoresizingMaskIntoConstraints = false
-        onboardingOverlayContainer.backgroundColor = .clear
-        onboardingOverlayContainer.isUserInteractionEnabled = true
-        view.addSubview(onboardingOverlayContainer)
-        NSLayoutConstraint.activate([
-            onboardingOverlayContainer.topAnchor.constraint(equalTo: view.topAnchor),
-            onboardingOverlayContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            onboardingOverlayContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            onboardingOverlayContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-    }
-
     // MARK: - NewTabPage
 
     var isDragging: Bool { newTabPageViewModel.isDragging }
@@ -266,6 +250,17 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
+    func experimentCompletionOnboardingCompleted(message: String, onComplete: (() -> Void)? = nil) {
+        showDuckAIOnboardingExperimentCompletionDialog(message: message, onComplete: onComplete)
+        // Mirror onboardingCompleted(): show keyboard immediately after embedding the dialog
+        chromeDelegate?.omniBar.beginEditing(animated: true)
+        // Highlight the Duck.ai button after the omnibar has transitioned to editing state
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let chromeDelegate = self.chromeDelegate, let window = self.view.window else { return }
+            ViewHighlighter.showIn(window, focussedOnView: chromeDelegate.omniBar.barView.aiChatButton)
+        }
+    }
+
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
@@ -292,39 +287,20 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 
 extension NewTabPageViewController {
 
-    func showDuckAIOnboardingExperimentCompletionDialog(message: String) {
+    func showDuckAIOnboardingExperimentCompletionDialog(message: String, onComplete: (() -> Void)? = nil) {
         dismissHostingController(didFinishNTPOnboarding: false)
 
         let onDismiss = { [weak self] in
             guard let self else { return }
-            self.dismissHostingController(didFinishNTPOnboarding: true)
+            onComplete?()
             self.daxDialogsManager.dismiss()
+            self.dismissHostingController(didFinishNTPOnboarding: true)
             ViewHighlighter.hideAll()
-            self.chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .search)
+            self.launchNewSearch()
         }
 
         let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
-
-        let hostingController = UIHostingController(rootView: root)
-        self.hostingController = hostingController
-
-        hostingController.view.backgroundColor = .clear
-        addChild(hostingController)
-        onboardingOverlayContainer.addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: onboardingOverlayContainer.topAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: onboardingOverlayContainer.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: onboardingOverlayContainer.trailingAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: onboardingOverlayContainer.bottomAnchor)
-        ])
-
-        hostingController.didMove(toParent: self)
-        newTabPageViewModel.startOnboarding()
-        if let chromeDelegate = chromeDelegate, let window = view.window {
-            ViewHighlighter.showIn(window, focussedOnView: chromeDelegate.omniBar.barView.aiChatButton)
-        }
+        embedDialogHostingController(UIHostingController(rootView: root))
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
@@ -363,28 +339,27 @@ extension NewTabPageViewController {
                 dialogProvider.dismiss()
             }
 
-            // Show keyboard when manually dismiss the Dax tips.
+            // Show keyboard when manually dismissing Dax tips.
             self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }
 
         let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
-        let hostingController = UIHostingController(rootView: daxDialogView)
+        embedDialogHostingController(UIHostingController(rootView: daxDialogView))
+    }
+
+    private func embedDialogHostingController(_ hostingController: UIHostingController<AnyView>) {
         self.hostingController = hostingController
-
         hostingController.view.backgroundColor = .clear
-        addChild(hostingController)
-        onboardingOverlayContainer.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: onboardingOverlayContainer.topAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: onboardingOverlayContainer.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: onboardingOverlayContainer.trailingAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: onboardingOverlayContainer.bottomAnchor)
+            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-
         hostingController.didMove(toParent: self)
-
         newTabPageViewModel.startOnboarding()
     }
 

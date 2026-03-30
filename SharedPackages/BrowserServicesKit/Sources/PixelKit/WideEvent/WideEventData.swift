@@ -204,6 +204,11 @@ public struct WideEventAppData: Codable {
     /// - Note: This value is only set for mobile devices, to a value of either `phone` or `tablet`.
     public var formFactor: String?
 
+    /// Legacy property retained for Codable backwards compatibility.
+    /// Previously used to track internal user status in the `app.*` namespace.
+    /// New events should use feature-specific data fields instead.
+    public var internalUser: Bool?
+
     public init(name: String = Self.defaultAppName(),
                 version: String = AppVersion.shared.versionNumber,
                 formFactor: String? = nil) {

@@ -222,7 +222,7 @@ public final class UpdateWideEventData: WideEventData {
             ("feature.data.ext.update_configuration", updateConfiguration.rawValue),
             ("feature.data.ext.last_known_step", lastKnownStep?.rawValue),
             ("feature.data.ext.os_version", osVersion),
-            ("feature.data.ext.internal_user", internalUser == true ? true : nil),
+            ("feature.data.ext.internal_user", (internalUser ?? appData.internalUser) == true ? true : nil),
             ("feature.data.ext.cancellation_reason", cancellationReason?.rawValue),
             ("feature.data.ext.disk_space_remaining_bytes", diskSpaceRemainingBytes),
             ("feature.data.ext.time_since_last_update", timeSinceLastUpdateBucket?.rawValue),

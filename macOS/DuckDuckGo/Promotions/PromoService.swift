@@ -37,6 +37,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         /// Timer that fires after promoType.timeoutInterval. On fire, records timeoutResult if !isResultRecorded.
         var timeout: TimedFlag?
 
+        /// Logical instant after which the promo should time out (same clock as `dateProvider`). Used when debug simulated date advances past the deadline before the wall-clock timer fires.
+        var timeoutDeadline: Date?
+
         /// Subscription to isEligiblePublisher. On false, calls hide() so the promo resumes with its chosen result; the result flows through recordResultAndCleanup.
         var eligibilityCancellable: AnyCancellable?
     }
@@ -153,6 +156,21 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             for promo in promos {
                 guard let delegate = promo.delegate as? TestPromoDelegate else { continue }
                 delegate.resetEligibility()
+            }
+        }
+    }
+
+    /// Expires any active show sessions whose logical timeout deadline is at or before `dateProvider()` (e.g. after advancing the debug simulated date).
+    func reconcileActivePromoTimeoutsAfterSimulatedDateAdvance() {
+        stateQueue.async { [weak self] in
+            guard let self else { return }
+            let now = currentDate
+            let overdueIds = activeSessions.compactMap { promoId, session -> String? in
+                guard let deadline = session.timeoutDeadline else { return nil }
+                return now >= deadline ? promoId : nil
+            }
+            for promoId in overdueIds {
+                handleTimeout(promoId: promoId)
             }
         }
     }
@@ -521,7 +539,10 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             }
 
         var timeout: TimedFlag?
+        var timeoutDeadline: Date?
         if let interval = promo.promoType.timeoutInterval {
+            let showStart = recordToUse.lastShown ?? currentDate
+            timeoutDeadline = showStart.addingTimeInterval(interval)
             let flag = TimedFlag(queue: stateQueue, clearAfter: interval)
             flag.set { [weak self] in
                 self?.handleTimeout(promoId: promoId)
@@ -544,6 +565,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             isResultRecorded: false,
             showTask: showTask,
             timeout: timeout,
+            timeoutDeadline: timeoutDeadline,
             eligibilityCancellable: eligibilityCancellable
         )
         activeSessions[promoId] = session

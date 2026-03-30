@@ -167,6 +167,9 @@ extension Pixel {
         case browsingMenuEnableProtection
         case browsingMenuReportBrokenSite
         case browsingMenuFireproof
+        case fireproofingETLDPlus1MigrationStart
+        case fireproofingETLDPlus1MigrationSuccess
+        case fireproofingETLDPlus1MigrationFailed
         case browsingMenuAutofill
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
@@ -1821,6 +1824,9 @@ extension Pixel.Event {
         case .browsingMenuEnableProtection: return "mb_wlr"
         case .browsingMenuReportBrokenSite: return "mb_rb"
         case .browsingMenuFireproof: return "mb_f"
+        case .fireproofingETLDPlus1MigrationStart: return "m_fireproofing_etldplus1_migration_start"
+        case .fireproofingETLDPlus1MigrationSuccess: return "m_fireproofing_etldplus1_migration_success"
+        case .fireproofingETLDPlus1MigrationFailed: return "m_fireproofing_etldplus1_migration_failed"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
         case .browsingMenuNewDuckAddress: return "m_menu_new_duck_address"

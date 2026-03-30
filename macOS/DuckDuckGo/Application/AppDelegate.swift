@@ -843,7 +843,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dockPreferences = DockPreferencesModel(
             featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
-            windowControllersManager: windowControllersManager,
             pixelFiring: PixelKit.shared
         )
         accessibilityPreferences = AccessibilityPreferences()
@@ -1175,7 +1174,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let metricsReporter = PerformanceMetricsReporter(
-            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             previousSessionRestored: startupPreferences.restorePreviousSession,
             windowContext: WindowContext(windowControllersManager: windowControllersManager)

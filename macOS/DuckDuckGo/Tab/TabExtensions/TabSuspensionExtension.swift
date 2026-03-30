@@ -33,17 +33,13 @@ final class TabSuspensionExtension {
     private weak var formFocusScript: FormFocusUserScript?
     private weak var webRTCScript: WebRTCUserScript?
 
-    private var audioState: WKWebView.AudioState = .unmuted(isPlayingAudio: false) {
-        didSet { updateCanBeSuspended() }
-    }
-    private var hasActiveFormInput: Bool = false {
-        didSet { updateCanBeSuspended() }
-    }
-    private var hasActiveWebRTCConnection: Bool = false {
-        didSet { updateCanBeSuspended() }
-    }
+    private var audioState: WKWebView.AudioState = .unmuted(isPlayingAudio: false)
+    private var hasActiveFormInput: Bool = false
+    private var hasActiveWebRTCConnection: Bool = false
 
-    private(set) var canBeSuspended: Bool = true
+    var canBeSuspended: Bool {
+        !audioState.isPlayingAudio && !hasActiveFormInput && !hasActiveWebRTCConnection
+    }
 
     init(
         scriptsPublisher: some Publisher<some TabSuspensionUserScriptProvider, Never>,
@@ -68,9 +64,7 @@ final class TabSuspensionExtension {
         }.store(in: &cancellables)
     }
 
-    private func updateCanBeSuspended() {
-        canBeSuspended = !audioState.isPlayingAudio && !hasActiveFormInput && !hasActiveWebRTCConnection
-    }
+
 }
 
 extension TabSuspensionExtension: FormFocusUserScriptDelegate {

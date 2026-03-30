@@ -136,5 +136,39 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_ad_blocking_installed": {
+        "description": "Fires when the ad blocking web extension is successfully installed for the first time.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_ad_blocking_upgraded": {
+        "description": "Fires when the ad blocking web extension is upgraded to a newer version.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the ad blocking extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the ad blocking extension after upgrade"
+            }
+        ]
+    },
+    "m_mac_web_extension_ad_blocking_install_error": {
+        "description": "Fires when installing or upgrading the ad blocking web extension fails.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

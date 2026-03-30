@@ -224,6 +224,20 @@ final class ScriptletStoreTests: XCTestCase {
         XCTAssertEqual(store.installedVersion(for: .embedded), "2.0")
     }
 
+    func testWhenClearCacheCalledThenCachedDataIsRemovedButInstalledVersionIsPreserved() throws {
+        try store.save(
+            [makeFetchedScriptlet(name: "scriptlets/test.js", content: "test")],
+            version: "1.0",
+            for: .adBlockingExtension)
+        store.setInstalledVersion("1.0", for: .adBlockingExtension)
+
+        store.clearCache(for: .adBlockingExtension)
+
+        XCTAssertNil(store.loadCached(for: .adBlockingExtension))
+        XCTAssertNil(store.cachedVersion(for: .adBlockingExtension))
+        XCTAssertEqual(store.installedVersion(for: .adBlockingExtension), "1.0")
+    }
+
     // MARK: - Helpers
 
     private func makeFetchedScriptlet(name: String, content: String) -> FetchedScriptlet {

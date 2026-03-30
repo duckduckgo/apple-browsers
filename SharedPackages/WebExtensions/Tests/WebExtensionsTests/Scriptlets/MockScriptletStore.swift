@@ -49,10 +49,20 @@ final class MockScriptletStore: ScriptletStoring, ScriptletInstallationTracking 
         return scriptletsToReturn
     }
 
+    var clearCacheCallCount = 0
+    var clearCacheExtensionType: DuckDuckGoWebExtensionType?
+
+    func clearCache(for extensionType: DuckDuckGoWebExtensionType) {
+        clearCacheCallCount += 1
+        clearCacheExtensionType = extensionType
+        cachedScriptlets = nil
+    }
+
     func clear(for extensionType: DuckDuckGoWebExtensionType) {
         clearCallCount += 1
         clearedExtensionType = extensionType
-        cachedScriptlets = nil
+        clearCache(for: extensionType)
+        clearInstalledVersion(for: extensionType)
     }
 
     var clearAllCallCount = 0

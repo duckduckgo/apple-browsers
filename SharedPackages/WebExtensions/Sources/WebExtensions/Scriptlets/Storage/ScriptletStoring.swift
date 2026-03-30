@@ -25,6 +25,7 @@ public protocol ScriptletStoring {
     func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets?
     @discardableResult
     func save(_ fetched: [FetchedScriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType) throws -> [Scriptlet]
+    func clearCache(for extensionType: DuckDuckGoWebExtensionType)
     func clear(for extensionType: DuckDuckGoWebExtensionType)
     func clearAll()
     func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?

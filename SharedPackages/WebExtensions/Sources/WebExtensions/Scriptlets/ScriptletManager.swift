@@ -99,7 +99,10 @@ public final class ScriptletManager: ScriptletProviding {
     }
 
     public func refreshIfNeeded(for extensionType: DuckDuckGoWebExtensionType) async {
-        guard let manifest = configProvider.currentManifest(for: extensionType) else { return }
+        guard let manifest = configProvider.currentManifest(for: extensionType) else {
+            clearCachedScriptletsIfNeeded(for: extensionType)
+            return
+        }
 
         let cachedVersion = store.cachedVersion(for: extensionType)
         guard manifest.version != cachedVersion else { return }
@@ -109,6 +112,14 @@ public final class ScriptletManager: ScriptletProviding {
     }
 
     // MARK: - Private
+
+    private func clearCachedScriptletsIfNeeded(for extensionType: DuckDuckGoWebExtensionType) {
+        guard availabilities[extensionType] != nil,
+              availabilities[extensionType] != .notAvailable else { return }
+        store.clearCache(for: extensionType)
+        availabilities[extensionType] = .notAvailable
+        Logger.webExtensions.info("[Scriptlets] Cleared cached scriptlets for '\(extensionType.rawValue)' (manifest removed from config)")
+    }
 
     private func loadCachedScriptlets(for extensionType: DuckDuckGoWebExtensionType) {
         guard let cached = store.loadCached(for: extensionType),

@@ -162,4 +162,53 @@ final class ScriptletManagerTests: XCTestCase {
 
         XCTAssertEqual(manager.availability(for: testExtensionType), .available([existingScriptlet]))
     }
+
+    func testWhenConfigUpdateRemovesScriptletsThenCacheIsClearedAndAvailabilityIsNotAvailable() async {
+        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .available(scriptlets))
+
+        mockConfigProvider.manifests[testExtensionType] = nil
+        mockConfigProvider.configUpdateSubject.send()
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
+        XCTAssertNil(manager.scriptlets(for: testExtensionType))
+        XCTAssertEqual(mockStore.clearCacheCallCount, 1)
+        XCTAssertEqual(mockStore.clearCacheExtensionType, testExtensionType)
+    }
+
+    func testWhenConfigUpdateRemovesScriptletsThenInstalledVersionIsPreserved() async {
+        let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
+        mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)
+        mockStore.setInstalledVersion("1.0", for: testExtensionType)
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [])
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .available(scriptlets))
+
+        mockConfigProvider.manifests[testExtensionType] = nil
+        mockConfigProvider.configUpdateSubject.send()
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
+        XCTAssertEqual(mockStore.installedVersion(for: testExtensionType), "1.0")
+    }
+
+    func testWhenManifestAlreadyAbsentThenNoClearIsPerformed() async {
+        mockStore.cachedScriptlets = nil
+        mockConfigProvider.manifests[testExtensionType] = nil
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertEqual(manager.availability(for: testExtensionType), .notAvailable)
+        XCTAssertEqual(mockStore.clearCacheCallCount, 0)
+    }
 }

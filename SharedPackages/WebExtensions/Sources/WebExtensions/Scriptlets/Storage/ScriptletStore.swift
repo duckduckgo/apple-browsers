@@ -112,13 +112,17 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
         }
     }
 
-    public func clear(for extensionType: DuckDuckGoWebExtensionType) {
+    public func clearCache(for extensionType: DuckDuckGoWebExtensionType) {
         let extensionDirectory = self.extensionDirectory(for: extensionType)
         try? fileManager.removeItem(at: extensionDirectory)
 
         var metadata = loadMetadata() ?? ScriptletCacheMetadata()
         metadata.extensions.removeValue(forKey: extensionType.rawValue)
         saveMetadata(metadata)
+    }
+
+    public func clear(for extensionType: DuckDuckGoWebExtensionType) {
+        clearCache(for: extensionType)
         clearInstalledVersion(for: extensionType)
     }
 

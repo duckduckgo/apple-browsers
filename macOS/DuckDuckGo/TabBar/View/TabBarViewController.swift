@@ -2553,7 +2553,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemSuspendAction(_ tabBarViewItem: TabBarViewItem) {
-        guard featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
+        guard featureFlagger.isFeatureOn(.tabSuspension), featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
 
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView

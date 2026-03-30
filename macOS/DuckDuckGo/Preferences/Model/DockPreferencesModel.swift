@@ -16,15 +16,21 @@
 //  limitations under the License.
 //
 
+import ContentScopeScripts
 import Foundation
 import PixelKit
 import PrivacyConfig
 
-final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
+final class DockPreferencesModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let dockCustomizer: DockCustomization
     private let pixelFiring: PixelFiring?
-    let windowControllersManager: WindowControllersManagerProtocol
+
+    static let demoVideoURL = ContentScopeScripts.Bundle.url(forResource: "add-to-dock", withExtension: "mp4", subdirectory: "pages/onboarding/assets/videos")!
+    static let demoVideoSize = CGSize(width: 1536, height: 752)
+
+    /// Whether the Add to Dock demo video sheet is presented (General or Default Browser pane).
+    @Published var isPresentingAddToDockDemoVideo = false
 
     /// Whether the current build can add the app to the dock (programmatically).
     var canAddToDock: Bool {
@@ -46,11 +52,9 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
 
     init(featureFlagger: FeatureFlagger,
          dockCustomizer: DockCustomization,
-         windowControllersManager: WindowControllersManagerProtocol,
          pixelFiring: PixelFiring?) {
         self.featureFlagger = featureFlagger
         self.dockCustomizer = dockCustomizer
-        self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
     }
 
@@ -73,16 +77,12 @@ final class DockPreferencesModel: ObservableObject, PreferencesTabOpening {
     }
 
     @MainActor
-    func openAddToDockHelpURL() {
-        openNewTab(with: .addToDockHelpURL)
-        pixelFiring?.fire(GeneralPixel.settingsAddToDockLearnMoreClicked, frequency: .dailyAndCount)
+    func showAddToDockDemoVideo() {
+        pixelFiring?.fire(GeneralPixel.settingsAddToDockShowMeHowClicked, frequency: .dailyAndCount)
+        isPresentingAddToDockDemoVideo = true
     }
 
     func refresh() {
         isBeingAddedToDock = false
     }
-}
-
-private extension URL {
-    static let addToDockHelpURL = URL(string: "https://support.apple.com/en-gb/guide/mac-help/mh35859/mac")!
 }

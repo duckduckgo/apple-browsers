@@ -40,7 +40,8 @@ class SuggestionTrayViewController: UIViewController {
     @IBOutlet var variableHeightConstraint: NSLayoutConstraint!
     @IBOutlet var fullHeightSafeAreaConstraint: NSLayoutConstraint!
     @IBOutlet var fullHeightConstraint: NSLayoutConstraint!
-
+    @IBOutlet var fullHeightSafeAreaInequalityConstraint: NSLayoutConstraint!
+    
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
     weak var newTabPageControllerDelegate: NewTabPageControllerDelegate?
 
@@ -232,6 +233,7 @@ class SuggestionTrayViewController: UIViewController {
         fullWidthConstraint.isActive = false
         fullHeightConstraint.isActive = false
         fullHeightSafeAreaConstraint.isActive = false
+        fullHeightSafeAreaInequalityConstraint.isActive = true
     }
     
     func fill(bottomOffset: CGFloat = 0.0) {
@@ -250,6 +252,7 @@ class SuggestionTrayViewController: UIViewController {
         fullWidthConstraint.isActive = true
         fullHeightConstraint.isActive = coversFullScreen
         fullHeightSafeAreaConstraint.isActive = !coversFullScreen
+        fullHeightSafeAreaInequalityConstraint.isActive = !coversFullScreen
     }
     
     private func installDismissHandler() {

@@ -159,7 +159,7 @@ struct WebExtensionsDebugView: View {
             let denied = context.deniedPermissionMatchPatterns.keys.sorted { $0.description < $1.description }
             Section {
                 if denied.isEmpty {
-                    Text("No excluded domains")
+                    Text(verbatim: "No excluded domains")
                         .foregroundColor(.secondary)
                 } else {
                     ForEach(denied.map(\.description), id: \.self) { pattern in
@@ -168,7 +168,7 @@ struct WebExtensionsDebugView: View {
                     }
                 }
             } header: {
-                Text("Dark Reader Excluded Domains (\(denied.count))")
+                Text(verbatim: "Dark Reader Excluded Domains (\(denied.count))")
             }
         }
     }

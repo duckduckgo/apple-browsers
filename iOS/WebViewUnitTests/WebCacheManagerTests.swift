@@ -54,6 +54,10 @@ class WebCacheManagerTests: XCTestCase {
 
     func test_WhenClearingDefaultPersistence_ThenLeaveFireproofedCookies() async {
         fireproofing = MockFireproofing(domains: ["example.com"])
+        fireproofing.isAllowedCookieDomainHandler = { domain in
+            domain == "example.com" || domain == ".example.com"
+        }
+        fireproofing.isAllowedFireproofDomainHandler = { $0 == "example.com" }
         let cookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
             .make(name: "Test1", value: "Value", domain: "example.com"),
             .make(name: "Test2", value: "Value", domain: ".example.com"),
@@ -83,6 +87,10 @@ class WebCacheManagerTests: XCTestCase {
          dataStoreIDManager = DataStoreIDManager(store: keyValueStore)
 
          fireproofing = MockFireproofing(domains: ["example.com"])
+         fireproofing.isAllowedCookieDomainHandler = { domain in
+             domain == "example.com" || domain == ".example.com"
+         }
+         fireproofing.isAllowedFireproofDomainHandler = { $0 == "example.com" }
 
          MigratableCookieStorage.addCookies([
              .make(name: "Test1", value: "Value", domain: "example.com"),
@@ -155,6 +163,27 @@ class WebCacheManagerTests: XCTestCase {
         XCTAssertEqual(3, mockHttpCookieStore.cookiesThatWereDeleted.count)
     }
 
+    func test_WhenRemovingCookiesForETLDPlus1_ThenSubdomainScopedCookiesAreAlsoRemoved() async {
+        let mockHttpCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
+            .make(name: "RootCookie", value: "Value", domain: "reddit.com"),
+            .make(name: "DotRootCookie", value: "Value", domain: ".reddit.com"),
+            .make(name: "SubdomainCookie", value: "Value", domain: "old.reddit.com"),
+            .make(name: "DotSubdomainCookie", value: "Value", domain: ".old.reddit.com"),
+            .make(name: "OtherCookie", value: "Value", domain: "example.com"),
+        ])
+        let dataStore = MockWebsiteDataStore(httpCookieStore: mockHttpCookieStore)
+
+        let webCacheManager = makeWebCacheManager()
+        await webCacheManager.removeCookies(forDomains: ["reddit.com"], fromDataStore: dataStore)
+
+        XCTAssertEqual(4, mockHttpCookieStore.cookiesThatWereDeleted.count)
+        XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "RootCookie" })
+        XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "DotRootCookie" })
+        XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "SubdomainCookie" })
+        XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "DotSubdomainCookie" })
+        XCTAssertFalse(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "OtherCookie" })
+    }
+
     // MARK: - Domain-Specific Clearing Tests
 
     func test_WhenClearingForDomains_ThenOnlySpecifiedDomainsAreCleared() async {
@@ -192,6 +221,8 @@ class WebCacheManagerTests: XCTestCase {
 
     func test_WhenClearingForDomains_ThenFireproofedDomainsAreNotCleared() async {
         fireproofing = MockFireproofing(domains: ["example.com"])
+        fireproofing.isAllowedCookieDomainHandler = { $0 == "example.com" }
+        fireproofing.isAllowedFireproofDomainHandler = { $0 == "example.com" }
         let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
             .make(name: "Cookie1", value: "Value", domain: "example.com"),
             .make(name: "Cookie2", value: "Value", domain: "facebook.com"),
@@ -223,6 +254,10 @@ class WebCacheManagerTests: XCTestCase {
     func test_WhenClearingForSubdomain_AndRootIsFireproofed_ThenDataIsProtected() async {
         // Fireproof amazon.com
         fireproofing = MockFireproofing(domains: ["amazon.com"])
+        fireproofing.isAllowedCookieDomainHandler = { domain in
+            domain == "amazon.com" || domain == ".amazon.com"
+        }
+        fireproofing.isAllowedFireproofDomainHandler = { $0 == "amazon.com" }
         let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
             .make(name: "AmazonCookie", value: "Value", domain: "amazon.com"),
             .make(name: "MailAmazonCookie", value: "Value", domain: ".amazon.com"),

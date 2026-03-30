@@ -82,7 +82,8 @@ extension OnboardingRebranding.OnboardingStyles {
         private let keyboardBehavior: KeyboardBehavior
         #endif
 
-        @State private var imageGlobalFrame: CGRect = .zero
+        @State private var imageHeight: CGFloat = 0
+        @State private var imageBottomY: CGFloat = 0
 
         private let backgroundType: ContextualOnboardingBackgroundType
         private let imageOffsetY: CGFloat
@@ -118,7 +119,7 @@ extension OnboardingRebranding.OnboardingStyles {
                                     GeometryReader { proxy in
                                         Color.clear
                                             .preference(key: BackgroundIllustrationHeightPreferenceKey.self, value: proxy.size.height)
-                                            .preference(key: BackgroundIllustrationFramePreferenceKey.self, value: proxy.frame(in: .global))
+                                            .preference(key: BackgroundIllustrationBottomPreferenceKey.self, value: proxy.frame(in: .global).maxY)
                                     }
                                 )
                                 .offset(y: calculateImageOffset())
@@ -130,8 +131,21 @@ extension OnboardingRebranding.OnboardingStyles {
                     .frame(maxWidth: .infinity, alignment: backgroundType.alignment)
                     .clipped()
                     .ignoresSafeArea(edges: ignoresSafeAreaEdges)
-                    .onPreferenceChange(BackgroundIllustrationFramePreferenceKey.self) { frame in
-                        imageGlobalFrame = frame
+                    .onPreferenceChange(BackgroundIllustrationHeightPreferenceKey.self) { height in
+                        imageHeight = height
+                    }
+                    .onPreferenceChange(BackgroundIllustrationBottomPreferenceKey.self) { bottomY in
+                        #if os(iOS)
+                        // Only capture the image's natural bottom position when keyboard is hidden.
+                        // This breaks the circular dependency that caused infinite render loops:
+                        // - When keyboard is hidden: capture the stable reference position
+                        // - When keyboard is visible: ignore updates (image position changes due to offset, not layout)
+                        // Without this guard, moving the image would update this value, which would
+                        // recalculate the offset, which would move the image again, creating a loop.
+                        if imageBottomY == 0 || keyboardResponder.keyboardFrame.height == 0 {
+                            imageBottomY = bottomY
+                        }
+                        #endif
                     }
 
                     content
@@ -142,49 +156,32 @@ extension OnboardingRebranding.OnboardingStyles {
         // Calculates the vertical offset needed to adjust the background image when the keyboard appears.
         // The offset calculation works as follows:
         // 1. Get the keyboard frame in global coordinates (from KeyboardResponder)
-        // 2. Get the image frame in global coordinates (captured via preference key)
-        // 3. Calculate intersection to detect if keyboard overlaps the image
-        // 4. If overlap exists, calculate offset to move image's bottom edge to keyboard's top edge
-        //
-        // Example scenario:
-        //   - Image bottom at Y=730 (imageGlobalFrame.maxY)
-        //   - Keyboard top at Y=600 (keyboardFrame.minY)
-        //   - Offset = From reference image
-        //   - Target position = 600 + offset
-        //   - Offset needed: 600 + offset - 730
+        // 2. Use the captured natural image bottom position (imageBottomY) as stable reference
+        // 3. Calculate how much to move the image so it extends 90 pixels (scaled) behind the keyboard
         private func calculateImageOffset() -> CGFloat {
             #if os(iOS)
             // If screen does not respond to keyboard notifications, return default imageOffsetY
             guard keyboardBehavior.isEnabled else { return imageOffsetY }
 
+            // Early exit if image height hasn't been captured yet
+            guard imageHeight > 0 else { return imageOffsetY }
+
             // Inset of the image calculated from the reference image + reference offset scaled for actual image size.
-            let keyboardImageOffsetY = ContextualBackgroundStyleMetrics.referenceBackgroundImageOffset * imageGlobalFrame.size.height / ContextualBackgroundStyleMetrics.referenceBackgroundImageHeight
+            let keyboardImageOffsetY = ContextualBackgroundStyleMetrics.referenceBackgroundImageOffset * imageHeight / ContextualBackgroundStyleMetrics.referenceBackgroundImageHeight
 
             // Early exit if no keyboard is visible
             guard keyboardResponder.keyboardFrame.height > 0 else { return keyboardImageOffsetY }
 
-            // Early exit if image frame hasn't been captured yet
-            guard imageGlobalFrame != .zero else { return imageOffsetY }
+            // Early exit if we haven't captured the natural image position yet
+            guard imageBottomY > 0 else { return imageOffsetY }
 
             let keyboardFrame = keyboardResponder.keyboardFrame
 
-            // Check if image and keyboard actually overlap
-            // This is handle the scenario on iPad where floating/split keyboards may not overlap the image
-            let intersection = imageGlobalFrame.intersection(keyboardFrame)
+            // Calculate the "effective" current bottom (accounting for the image extending beyond visible area)
+            // We subtract the offset because the image is taller than needed to extend behind keyboard
+            let currentImageBottom = imageBottomY - keyboardImageOffsetY
 
-            // No overlap = no adjustment needed
-            // This handles floating keyboards, split keyboards, or keyboards that don't reach the image
-            guard !intersection.isNull, intersection.height > 0 else {
-                return keyboardImageOffsetY
-            }
-
-            // Calculate where the image currently is (bottom edge in global coordinates) + image offset Y.
-            // The image illustration is a tall version used to have the image extends behind the rounded corner of the keyboards.
-            // The Y offset is subtracted from the image maxY because otherwise when the keyboard comes up the difference between keyboard minY and image maxY would consider the portion of the image that is pushed beyond the view and it would be lifted too much.
-            let currentImageBottom = imageGlobalFrame.maxY - keyboardImageOffsetY
-
-            // Calculate where we want the image to be (just above keyboard with offset)
-            // The offset allows the image to extend slightly behind the keyboard's rounded corners
+            // Calculate where we want the image bottom to be (keyboard top + extension to go behind rounded corners)
             let targetImageBottom = keyboardFrame.minY + keyboardImageOffsetY
 
             // Calculate how much to move the image
@@ -280,10 +277,10 @@ private struct BackgroundIllustrationHeightPreferenceKey: PreferenceKey {
     }
 }
 
-private struct BackgroundIllustrationFramePreferenceKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
+private struct BackgroundIllustrationBottomPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

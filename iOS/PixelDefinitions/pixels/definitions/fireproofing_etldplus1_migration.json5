@@ -1,0 +1,26 @@
+{
+    "m_fireproofing_etldplus1_migration_start": {
+        "description": "Fires when fireproofed domains migration to eTLD+1 starts during app launch.",
+        "owners": ["dus7"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-05-25"
+    },
+    "m_fireproofing_etldplus1_migration_success": {
+        "description": "Fires when fireproofed domains migration to eTLD+1 finishes with at least one migrated domain.",
+        "owners": ["dus7"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-05-25"
+    },
+    "m_fireproofing_etldplus1_migration_failed": {
+        "description": "Fires when fireproofed domains migration to eTLD+1 completes without any migrated domain.",
+        "owners": ["dus7"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-05-25"
+    }
+}

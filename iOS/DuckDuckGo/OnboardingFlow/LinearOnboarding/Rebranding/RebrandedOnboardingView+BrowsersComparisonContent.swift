@@ -30,7 +30,7 @@ extension OnboardingRebranding.OnboardingView {
         /// Dax "Wing Wave Up" animation
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-BrowserComparison",
-            size: CGSize(width: 390, height: 211),
+            size: CGSize(width: 159.33, height: 180.33),
             position: .bottom(),
             twoStagesAnimation: 0.5,
             exitDuration: 1.0

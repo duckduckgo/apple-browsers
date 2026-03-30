@@ -28,7 +28,7 @@ extension OnboardingRebranding.OnboardingView {
 
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-AddToDockPromo",
-            size: CGSize(width: 211, height: 390),
+            size: CGSize(width: 116, height: 208.33),
             position: .left(),
             twoStagesAnimation: 0.5
         )

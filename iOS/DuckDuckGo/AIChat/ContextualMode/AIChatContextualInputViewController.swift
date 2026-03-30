@@ -44,8 +44,6 @@ final class AIChatContextualInputViewController: UIViewController {
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
         static let iPadBottomPadding: CGFloat = 16
-        static let welcomeLabelBottomSpacing: CGFloat = 16
-        static let welcomeIconHorizontalPadding: CGFloat = 4
     }
 
     // MARK: - Properties
@@ -210,8 +208,9 @@ private extension AIChatContextualInputViewController {
     }
 
     func setupImprovedUI() {
+        view.addSubview(quickActionsScrollView)
+        quickActionsScrollView.addSubview(quickActionsView)
         view.addSubview(welcomeLabel)
-        view.addSubview(quickActionsView)
         embedNativeInputViewController()
 
         configureWelcomeLabel()
@@ -222,13 +221,23 @@ private extension AIChatContextualInputViewController {
         welcomeCenterYConstraint = centerY
 
         NSLayoutConstraint.activate([
-            centerY,
-            welcomeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            welcomeLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            // Scroll view wraps quick actions at natural size, pinned above input
+            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
 
-            quickActionsView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            quickActionsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            quickActionsView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
+
+            // Welcome label centered horizontally, vertical position set dynamically
+            centerY,
+            welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            welcomeLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            welcomeLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
 
             nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
@@ -295,13 +304,12 @@ private extension AIChatContextualInputViewController {
 
     func updateWelcomeLabelCentering() {
         guard isContextualSheetImprovementsEnabled else { return }
-        let quickActionsTop = quickActionsView.frame.minY
-        guard quickActionsTop > 0 else { return }
-        welcomeCenterYConstraint?.constant = quickActionsTop / 2
+        let scrollViewTop = quickActionsScrollView.frame.minY
+        guard scrollViewTop > 0 else { return }
+        welcomeCenterYConstraint?.constant = scrollViewTop / 2
     }
 
     func scrollQuickActionsToBottom() {
-        guard !isContextualSheetImprovementsEnabled else { return }
         view.layoutIfNeeded()
         let bottomOffset = CGPoint(
             x: 0,

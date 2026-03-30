@@ -162,7 +162,12 @@ class SuggestionTrayViewController: UIViewController {
         self.fullHeightSafeAreaConstraint = containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         self.fullHeightConstraint = containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 
-        self.variableHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: max(view.frame.height, view.frame.width))
+        if isPad {
+            self.variableHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: Constant.suggestionTrayInitialHeight)
+        } else {
+            self.variableHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: max(view.frame.height, view.frame.width))
+        }
+
         self.variableHeightConstraint.priority = UILayoutPriority(999)
 
         self.variableWidthConstraint = containerView.widthAnchor.constraint(equalToConstant: 100)
@@ -459,10 +464,7 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
     
     func autocompleteDidChangeContentHeight(height: CGFloat) {
         guard !fullHeightConstraint.isActive else { return }
-
-        if height > Constant.suggestionTrayInitialHeight {
-            variableHeightConstraint.constant = height
-        }
+        variableHeightConstraint.constant = max(height, Constant.suggestionTrayInitialHeight)
     }
     
 }

@@ -251,8 +251,6 @@ class SuggestionTrayViewController: UIViewController {
     }
     
     func float(withWidth width: CGFloat) {
-        loadViewIfNeeded()
-
         containerView.layer.cornerRadius = 24
         containerView.layer.masksToBounds = true
 

@@ -262,8 +262,15 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     }
 
     func sectionHeight(_ suggestions: [Suggestion]) -> Int {
-        let standardCellHeight = 44
-        let subtitledCellHeight = 58
+        let standardCellHeight: Int
+        let subtitledCellHeight: Int
+        if #available(iOS 26, *) {
+            standardCellHeight = 52
+            subtitledCellHeight = 66
+        } else {
+            standardCellHeight = 44
+            subtitledCellHeight = 58
+        }
 
         var height = 0
         for suggestion in suggestions {

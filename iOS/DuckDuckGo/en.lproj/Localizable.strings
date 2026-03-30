@@ -3155,7 +3155,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.default.omnibar.mode.duckai" = "Duck.ai";
 
 /* Footer text explaining the toggle position setting in AI Features settings */
-"settings.default.omnibar.mode.footer" = "Default toggle position on new tabssdfs fs fs fds f.";
+"settings.default.omnibar.mode.footer" = "Default toggle position on new tabs.";
 
 /* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Toggle Position";

@@ -291,9 +291,7 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
                 }
             } label: {
                 HStack {
-                    Text(selectedOption.description)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                    pickerSelectionLabel
 
                     Image(systemName: "chevron.up.chevron.down")
                         .font(Font.system(.footnote).weight(.bold))
@@ -304,6 +302,22 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
             .fixedSize()
         }
         .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    private var pickerSelectionLabel: some View {
+        ZStack(alignment: .trailing) {
+            ForEach(options.compactMap { $0 }, id: \.self) { option in
+                Text(option.description)
+                    .daxSubheadRegular()
+                    .lineLimit(1)
+                    .hidden()
+            }
+
+            Text(selectedOption.description)
+                .daxSubheadRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+        }
     }
 
     private func getButtonWithAction(action: @escaping () -> Void,

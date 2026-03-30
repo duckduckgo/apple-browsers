@@ -48,6 +48,7 @@ class BlankSnapshotViewController: UIViewController {
     let mobileCustomization: MobileCustomization
 
     var viewCoordinator: MainViewCoordinator!
+    var useMinimalChromeLayout: Bool = false
 
     weak var delegate: BlankSnapshotViewRecoveringDelegate?
 
@@ -91,10 +92,12 @@ class BlankSnapshotViewController: UIViewController {
 
         configureOmniBar()
 
-        if AppWidthObserver.shared.isLargeWidth {
+        if useMinimalChromeLayout {
             viewCoordinator.toolbar.isHidden = true
-            viewCoordinator.constraints.navigationBarContainerTop.constant = 40
-            configureTabBar()
+            if AppWidthObserver.shared.isLargeWidth {
+                viewCoordinator.constraints.navigationBarContainerTop.constant = 40
+                configureTabBar()
+            }
         } else {
             viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
         }
@@ -124,7 +127,7 @@ class BlankSnapshotViewController: UIViewController {
     // Need to do this at this phase to support split screen on iPad
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth
+        viewCoordinator.toolbar.isHidden = useMinimalChromeLayout
     }
 
     private func configureTabBar() {
@@ -151,7 +154,7 @@ class BlankSnapshotViewController: UIViewController {
         layout?.scrollDirection = .horizontal
 
         viewCoordinator.navigationBarCollectionView.dataSource = self
-        if AppWidthObserver.shared.isLargeWidth {
+        if useMinimalChromeLayout {
             viewCoordinator.omniBar.enterPadState()
         }
     }

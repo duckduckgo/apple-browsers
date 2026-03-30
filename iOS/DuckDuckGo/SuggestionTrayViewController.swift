@@ -40,6 +40,8 @@ class SuggestionTrayViewController: UIViewController {
     var variableHeightConstraint: NSLayoutConstraint!
     var fullHeightSafeAreaConstraint: NSLayoutConstraint!
     var fullHeightConstraint: NSLayoutConstraint!
+    var fullHeightSafeAreaInequalityConstraint: NSLayoutConstraint!
+
 
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
     weak var newTabPageControllerDelegate: NewTabPageControllerDelegate?
@@ -161,6 +163,7 @@ class SuggestionTrayViewController: UIViewController {
         containerView = install(UIView())
 
         self.fullHeightSafeAreaConstraint = containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        self.fullHeightSafeAreaInequalityConstraint = containerView.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor)
         self.fullHeightConstraint = containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 
         if isPad {
@@ -276,6 +279,7 @@ class SuggestionTrayViewController: UIViewController {
         fullWidthConstraint.isActive = false
         fullHeightConstraint.isActive = false
         fullHeightSafeAreaConstraint.isActive = false
+        fullHeightSafeAreaInequalityConstraint.isActive = true
     }
     
     func fill(bottomOffset: CGFloat = 0.0) {
@@ -294,6 +298,7 @@ class SuggestionTrayViewController: UIViewController {
         fullWidthConstraint.isActive = true
         fullHeightConstraint.isActive = coversFullScreen
         fullHeightSafeAreaConstraint.isActive = !coversFullScreen
+        fullHeightSafeAreaInequalityConstraint.isActive = !coversFullScreen
     }
     
     private func installDismissHandler() {

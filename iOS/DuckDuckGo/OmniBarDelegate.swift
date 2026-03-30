@@ -43,7 +43,9 @@ protocol OmniBarDelegate: AnyObject {
     func onMenuPressed()
 
     func onBookmarksPressed()
-    
+
+    func onPasswordsPressed()
+
     func onSettingsPressed()
 
     func onMenuLongPressed()
@@ -153,9 +155,13 @@ extension OmniBarDelegate {
     }
 
     func onBookmarksPressed() {
-        
+
     }
-    
+
+    func onPasswordsPressed() {
+
+    }
+
     func onSettingsPressed() {
         
     }

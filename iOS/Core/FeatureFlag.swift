@@ -375,7 +375,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .newDeviceSyncPrompt,
              .dbpForegroundRunningOnAppActive,
              .dbpForegroundRunningWhenDashboardOpen,
-             .dbpContinuedProcessing,
              .syncCreditCards,
              .unifiedURLPredictor,
              .migrateKeychainAccessibility,

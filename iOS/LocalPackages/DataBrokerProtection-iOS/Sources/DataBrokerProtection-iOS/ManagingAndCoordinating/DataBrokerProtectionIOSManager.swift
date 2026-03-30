@@ -454,7 +454,7 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
     }
 
     public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, identifier: CompletedJobIdentifier?) {
-        if let identifier, #available(iOS 26.0, *) {
+        if let identifier, featureFlagger.isContinuedProcessingFeatureOn, isContinuedProcessingRunActive {
             switch identifier.stepType {
             case .scan:
                 let event = DBPContinuedProcessingEvent.scanJobCompleted(

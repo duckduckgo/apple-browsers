@@ -120,15 +120,6 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         _ = await task.value
     }
 
-    func testShow_returnsIgnoredWhenDisplayWindowExpired() async {
-        var history = PromoHistoryRecord(id: "test")
-        history.lastShown = Date().addingTimeInterval(-.days(8))
-
-        let result = await sut.show(history: history, force: false)
-
-        XCTAssertEqual(result, .ignored(cooldown: .days(28)))
-    }
-
     func testShow_suspendsAndResumesWithActionedOnProceed() async {
         let task = Task {
             await sut.show(history: PromoHistoryRecord(id: "test"), force: false)

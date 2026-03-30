@@ -159,6 +159,8 @@ extension NewTabPageActionsManager {
             syncService: syncService,
             dockCustomization: dockCustomization
         )
+        let buildType = StandardApplicationBuildType()
+
         if let promoService {
             let coordinator = freemiumDBPPromotionViewCoordinator
 
@@ -167,7 +169,6 @@ extension NewTabPageActionsManager {
             // to fast-path eligibility during an active display window,
             // avoiding the wait for async product availability checks.
             let dateProvider: () -> Date
-            let buildType = StandardApplicationBuildType()
             if buildType.isDebugBuild || buildType.isReviewBuild {
                 let debugDateStore = DebugSimulatedDateStore(keyValueStore: keyValueStore)
                 dateProvider = { debugDateStore.simulatedDate ?? Date() }
@@ -187,7 +188,6 @@ extension NewTabPageActionsManager {
             promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)
         }
 
-        let buildType = StandardApplicationBuildType()
         let environment: NewTabPageConfigurationClient.Environment = (buildType.isDebugBuild || buildType.isReviewBuild) ? .development : .production
 
         self.init(scriptClients: [

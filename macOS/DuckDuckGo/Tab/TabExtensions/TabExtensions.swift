@@ -338,6 +338,13 @@ extension TabExtensionsBuilder {
                 internalUserDecider: dependencies.featureFlagger.internalUserDecider
             )
         }
+
+        add {
+            TabSuspensionExtension(
+                scriptsPublisher: userScripts.compactMap { $0 },
+                webViewPublisher: args.webViewFuture
+            )
+        }
     }
 
 }

@@ -35,7 +35,6 @@ import PrivacyConfig
 import Networking
 import Configuration
 import Network
-import WebExtensions
 
 protocol DependencyProvider {
 
@@ -106,20 +105,6 @@ final class AppDependencyProvider: DependencyProvider {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
-
-    @available(iOS 18.4, *)
-    func makeScriptletConfiguration() -> ScriptletConfiguration {
-        let scriptletsDirectory = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first!
-            .appendingPathComponent("Scriptlets", isDirectory: true)
-
-        return ScriptletManagerFactory.makeConfiguration(
-            privacyConfigManager: configurationManager,
-            apiService: DefaultAPIService(),
-            baseDirectory: scriptletsDirectory
-        )
-    }
 
     private init() {
 

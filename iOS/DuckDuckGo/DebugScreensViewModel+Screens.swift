@@ -43,7 +43,9 @@ extension DebugScreensViewModel {
             }),
             .action(title: "Clear Cached Scriptlets", { d in
                 if #available(iOS 18.4, *) {
-                    d.webExtensionManager?.clearCachedScriptlets()
+                    Task { @MainActor in
+                        d.webExtensionManager?.clearCachedScriptlets()
+                    }
                 }
             }),
             .action(title: "Reset Autoconsent Prompt", { _ in

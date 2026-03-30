@@ -506,7 +506,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
         let vpnFileStoreDirectory = Self.vpnFileStoreDirectory()
         Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
-        Self.configurePixelFileStores(vpnFileStoreDirectory: vpnFileStoreDirectory)
+        Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
 

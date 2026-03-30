@@ -155,7 +155,11 @@
                     "restartingToUpdate"
                 ]
             },
-            "wideEventInternalUser",
+            {
+                "key": "feature.data.ext.internal_user",
+                "type": "boolean",
+                "description": "Whether the event was sent by an internal user. Only included when true."
+            },
             {
                 "key": "feature.data.ext.os_version",
                 "type": "string",

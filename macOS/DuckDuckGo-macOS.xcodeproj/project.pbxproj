@@ -1070,6 +1070,8 @@
 		373B2F8C2C387C010013A94B /* RemoteMessagePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373B2F8B2C387C000013A94B /* RemoteMessagePromoDelegateTests.swift */; };
 		373C82512D8326E8004FBBBE /* FaviconsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373C82502D8326E4004FBBBE /* FaviconsTabExtension.swift */; };
 		373C82522D8326E8004FBBBE /* FaviconsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373C82502D8326E4004FBBBE /* FaviconsTabExtension.swift */; };
+		A370E7706B30748FF9DEAD3F /* TabSuspensionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F16A73746AF35E5F7248523 /* TabSuspensionExtension.swift */; };
+		2934D5F7ED34D21C191CFA23 /* TabSuspensionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F16A73746AF35E5F7248523 /* TabSuspensionExtension.swift */; };
 		373D9B4829EEAC1B00381FDD /* SyncMetadataDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373D9B4729EEAC1B00381FDD /* SyncMetadataDatabase.swift */; };
 		373D9B4929EEAC1B00381FDD /* SyncMetadataDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373D9B4729EEAC1B00381FDD /* SyncMetadataDatabase.swift */; };
 		373E477C2D809EF5006F3FEC /* AddBookmarkPopoverViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373E477B2D809EF3006F3FEC /* AddBookmarkPopoverViewModelTests.swift */; };
@@ -4866,6 +4868,7 @@
 		373B2F802C384DEB0013A94B /* ActiveRemoteMessageModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRemoteMessageModelTests.swift; sourceTree = "<group>"; };
 		373B2F8B2C387C000013A94B /* RemoteMessagePromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagePromoDelegateTests.swift; sourceTree = "<group>"; };
 		373C82502D8326E4004FBBBE /* FaviconsTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconsTabExtension.swift; sourceTree = "<group>"; };
+		8F16A73746AF35E5F7248523 /* TabSuspensionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSuspensionExtension.swift; sourceTree = "<group>"; };
 		373D9B4729EEAC1B00381FDD /* SyncMetadataDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetadataDatabase.swift; sourceTree = "<group>"; };
 		373DE97A2D3916FD000577EE /* UserScriptActionsManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UserScriptActionsManager; sourceTree = "<group>"; };
 		373E477B2D809EF3006F3FEC /* AddBookmarkPopoverViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBookmarkPopoverViewModelTests.swift; sourceTree = "<group>"; };
@@ -11561,6 +11564,7 @@
 				B6685E4129A61C460043D2EE /* DownloadsTabExtension.swift */,
 				B6C416A6294A4AE500C4F2E7 /* DuckPlayerTabExtension.swift */,
 				373C82502D8326E4004FBBBE /* FaviconsTabExtension.swift */,
+				8F16A73746AF35E5F7248523 /* TabSuspensionExtension.swift */,
 				B6D574B329472253008ED1B6 /* FBProtectionTabExtension.swift */,
 				B6C00ECC292F89D9009C73A6 /* FindInPageTabExtension.swift */,
 				B66260DF29AC6EBD00E9E3EE /* HistoryTabExtension.swift */,
@@ -15009,6 +15013,7 @@
 				1D36F4252A3B85C50052B527 /* TabCleanupPreparer.swift in Sources */,
 				BD7090D72C540D5D009EED82 /* EmptyMetadataCollector.swift in Sources */,
 				373C82512D8326E8004FBBBE /* FaviconsTabExtension.swift in Sources */,
+				A370E7706B30748FF9DEAD3F /* TabSuspensionExtension.swift in Sources */,
 				B6AFE6BD29A5D621002FF962 /* HTTPSUpgradeTabExtension.swift in Sources */,
 				846F4CD22E04829D00266DB7 /* TabContent+DisplayedFavicon.swift in Sources */,
 				3706FB9A293F65D500E42796 /* FireproofDomainsStore.swift in Sources */,
@@ -17542,6 +17547,7 @@
 				987799F32999993C005D8EB6 /* LegacyBookmarksStoreMigration.swift in Sources */,
 				B6E3E5582BBFD51400A41922 /* PreviewViewController.swift in Sources */,
 				373C82522D8326E8004FBBBE /* FaviconsTabExtension.swift in Sources */,
+				2934D5F7ED34D21C191CFA23 /* TabSuspensionExtension.swift in Sources */,
 				4B379C1527BD91E3008A968E /* QuartzIdleStateProvider.swift in Sources */,
 				7B7821BD2E84440A00E0359A /* ErrorPagePixel.swift in Sources */,
 				37F19A6728E1B43200740DC6 /* DuckPlayerPreferences.swift in Sources */,

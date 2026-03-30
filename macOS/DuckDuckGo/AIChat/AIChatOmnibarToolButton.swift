@@ -86,6 +86,17 @@ final class AIChatOmnibarToolButton: NSView {
         }
     }
 
+    /// Persistent background color when set (e.g., for active mode indication). Takes priority over hover.
+    var activeBackgroundColor: NSColor? {
+        didSet {
+            updateAppearance()
+            needsLayout = true
+        }
+    }
+
+    /// Background color when pressed while `activeBackgroundColor` is set.
+    var activePressedBackgroundColor: NSColor?
+
     var hoverBackgroundColor: NSColor = .clear
     var pressedBackgroundColor: NSColor = .clear
 
@@ -122,7 +133,7 @@ final class AIChatOmnibarToolButton: NSView {
     override var intrinsicContentSize: NSSize {
         if let label, !label.isEmpty {
             let labelWidth = textLabel.intrinsicContentSize.width
-            return NSSize(width: Constants.iconSize + labelWidth + 12, height: Constants.buttonSize)
+            return NSSize(width: Constants.iconSize + labelWidth + 18, height: Constants.buttonSize)
         }
         return NSSize(width: Constants.buttonSize, height: Constants.buttonSize)
     }
@@ -220,13 +231,21 @@ final class AIChatOmnibarToolButton: NSView {
 
             let effectiveTint: NSColor?
             if showPressedEffect {
-                backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
+                if let activeBackgroundColor, let activePressedBackgroundColor {
+                    backgroundLayer.backgroundColor = activePressedBackgroundColor.cgColor
+                } else {
+                    backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
+                }
                 backgroundLayer.opacity = 1
                 effectiveTint = isToggled ? toggledTintColor : tintColor
             } else if isToggled {
                 backgroundLayer.backgroundColor = toggledBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
                 effectiveTint = toggledTintColor
+            } else if let activeBackgroundColor {
+                backgroundLayer.backgroundColor = activeBackgroundColor.cgColor
+                backgroundLayer.opacity = 1
+                effectiveTint = tintColor
             } else if isHovered {
                 backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
                 backgroundLayer.opacity = 1

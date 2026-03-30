@@ -2900,26 +2900,14 @@
         }
       }
     },
-    "aichat.image-gen-button.tooltip" : {
-      "comment" : "Tooltip for the image generation toggle button in AI chat omnibar",
+    "aichat.image-gen-button.label" : {
+      "comment" : "Label for the image generation toggle button in AI chat omnibar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Generate image"
-          }
-        }
-      }
-    },
-    "aichat.image-upload-button.image-gen-label" : {
-      "comment" : "Label for the image upload button when image generation mode is active",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Start with an image"
+            "value" : "Create Image"
           }
         }
       }

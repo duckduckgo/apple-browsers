@@ -97,8 +97,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
     private var imageGenModeCancellable: AnyCancellable?
-    private var imageUploadLeadingToGenButton: NSLayoutConstraint?
-    private var imageUploadLeadingToContainer: NSLayoutConstraint?
+    private var imageGenLeadingToUploadButton: NSLayoutConstraint?
+    private var imageGenLeadingToContainer: NSLayoutConstraint?
 
     /// Current suggestions height - cached to avoid recalculation
     private(set) var suggestionsHeight: CGFloat = 0
@@ -260,10 +260,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let isImageGenMode = omnibarController.isImageGenerationMode
 
         imageGenButton.isHidden = !isEnabled || !omnibarController.isImageGenerationEnabled
-        updateImageUploadLeadingConstraint()
         imageUploadButton.isHidden = !isEnabled
         if isEnabled {
-            imageUploadButton.isHidden = !omnibarController.selectedModelSupportsImageUpload
+            imageUploadButton.isHidden = !isImageGenMode && !omnibarController.selectedModelSupportsImageUpload
             imageUploadButton.isEnabled = !attachmentsContainerView.isFull
             let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
             modelPickerButton.isHidden = isImageGenMode || !hasContent
@@ -275,26 +274,35 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             attachmentsHeightConstraint?.constant = 0
         }
 
+        updateImageGenLeadingConstraint()
+
         updateImageGenModeUI(isImageGenMode)
 
         // Notify that passthrough height needs recalculation since tools area changed
         onPassthroughHeightNeedsUpdate?()
     }
 
-    private func updateImageUploadLeadingConstraint() {
-        let showGenButton = !imageGenButton.isHidden
-        imageUploadLeadingToGenButton?.isActive = showGenButton
-        imageUploadLeadingToContainer?.isActive = !showGenButton
+    /// Switches the image gen button's leading constraint between chaining after the upload button
+    /// and pinning to the container edge. Deactivates first to avoid conflicts.
+    private func updateImageGenLeadingConstraint() {
+        let uploadVisible = !imageUploadButton.isHidden
+        if uploadVisible {
+            imageGenLeadingToContainer?.isActive = false
+            imageGenLeadingToUploadButton?.isActive = true
+        } else {
+            imageGenLeadingToUploadButton?.isActive = false
+            imageGenLeadingToContainer?.isActive = true
+        }
     }
 
     private func updateImageGenModeUI(_ isImageGenMode: Bool) {
-        // Toggle button icon: image icon (default) → add/plus icon (active)
-        imageGenButton.image = isImageGenMode
-            ? DesignSystemImages.Glyphs.Size16.add
-            : DesignSystemImages.Glyphs.Size16.image
-
-        // Show "Start with an image" label on attach button in image gen mode
-        imageUploadButton.label = isImageGenMode ? UserText.aiChatImageUploadButtonImageGenLabel : nil
+        // Toggle background color on image gen button
+        imageGenButton.activeBackgroundColor = isImageGenMode
+            ? NSColor(designSystemColor: .accentAltPrimary)
+            : nil
+        imageGenButton.activePressedBackgroundColor = isImageGenMode
+            ? NSColor(designSystemColor: .accentAltSecondary)
+            : nil
 
         // Hide suggestions in image gen mode and collapse their height
         suggestionsView.isHidden = isImageGenMode
@@ -348,14 +356,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.toolTip = UserText.aiChatSendButtonTooltip
         containerView.addSubview(submitButton)
 
-        imageGenButton.translatesAutoresizingMaskIntoConstraints = false
-        imageGenButton.target = self
-        imageGenButton.action = #selector(imageGenButtonClicked)
-        imageGenButton.image = DesignSystemImages.Glyphs.Size16.image
-        imageGenButton.toolTip = UserText.aiChatImageGenButtonTooltip
-        imageGenButton.setAccessibilityLabel(UserText.aiChatImageGenButtonTooltip)
-        containerView.addSubview(imageGenButton)
-
         imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
         imageUploadButton.target = self
         imageUploadButton.action = #selector(imageUploadButtonClicked)
@@ -364,6 +364,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.setAccessibilityLabel(UserText.aiChatImageUploadButtonTooltip)
         imageUploadButton.onTabPressed = { [weak self] in self?.onImageUploadButtonTabPressed?() }
         containerView.addSubview(imageUploadButton)
+
+        imageGenButton.translatesAutoresizingMaskIntoConstraints = false
+        imageGenButton.target = self
+        imageGenButton.action = #selector(imageGenButtonClicked)
+        imageGenButton.image = DesignSystemImages.Glyphs.Size16.image
+        imageGenButton.label = UserText.aiChatImageGenButtonLabel
+        imageGenButton.toolTip = UserText.aiChatImageGenButtonLabel
+        imageGenButton.setAccessibilityLabel(UserText.aiChatImageGenButtonLabel)
+        containerView.addSubview(imageGenButton)
 
         modelPickerButton.translatesAutoresizingMaskIntoConstraints = false
         modelPickerButton.target = self
@@ -409,12 +418,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
             modelPickerButton.heightAnchor.constraint(equalToConstant: Constants.modelPickerHeight),
 
-            imageGenButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
-            imageGenButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
-            imageGenButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
-
+            imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
             imageUploadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
             imageUploadButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+
+            imageGenButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
+            imageGenButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
 
             attachmentsContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
             attachmentsContainerView.bottomAnchor.constraint(equalTo: imageUploadButton.topAnchor),
@@ -456,10 +465,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             modelPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
 
-        // Image upload button position depends on whether image gen button is visible
-        imageUploadLeadingToGenButton = imageUploadButton.leadingAnchor.constraint(equalTo: imageGenButton.trailingAnchor, constant: Constants.toolButtonSpacing)
-        imageUploadLeadingToContainer = imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset)
-        updateImageUploadLeadingConstraint()
+        // Image gen button chains after image upload button, or aligns to container when upload is hidden
+        imageGenLeadingToUploadButton = imageGenButton.leadingAnchor.constraint(equalTo: imageUploadButton.trailingAnchor, constant: Constants.toolButtonSpacing)
+        imageGenLeadingToContainer = imageGenButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset)
+        imageGenLeadingToUploadButton?.isActive = true
+        imageGenLeadingToContainer?.isActive = false
 
         // Handle suggestion clicks
         suggestionsView.onSuggestionClicked = { [weak self] suggestion in
@@ -792,10 +802,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
         guard omnibarController.isOmnibarToolsEnabled else { return }
 
-        if !supportsImageUpload {
+        if !supportsImageUpload && !omnibarController.isImageGenerationMode {
             clearAttachments()
         }
-        imageUploadButton.isHidden = !supportsImageUpload
+        imageUploadButton.isHidden = !supportsImageUpload && !omnibarController.isImageGenerationMode
+
+        updateImageGenLeadingConstraint()
     }
 
     private func applyTheme(theme: ThemeStyleProviding) {

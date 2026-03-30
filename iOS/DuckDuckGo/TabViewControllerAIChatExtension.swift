@@ -55,6 +55,10 @@ extension TabViewController: AITabController {
               images: [AIChatNativePrompt.NativePromptImage]? = nil) {
 
         aiChatContentHandler.setPayload(payload: payload)
+        if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: autoSend, images: images, modelId: modelId)
+            AIChatPromptHandler.shared.setData(prompt)
+        }
 
         let queryURL = aiChatContentHandler.buildQueryURL(
             query: query,

@@ -33,11 +33,17 @@ final class TabSuspensionExtension {
     private weak var formFocusScript: FormFocusUserScript?
     private weak var webRTCScript: WebRTCUserScript?
 
-    @Published private var audioState: WKWebView.AudioState = .unmuted(isPlayingAudio: false)
-    @Published private var hasActiveFormInput: Bool = false
-    @Published private var hasActiveWebRTCConnection: Bool = false
+    private var audioState: WKWebView.AudioState = .unmuted(isPlayingAudio: false) {
+        didSet { updateCanBeSuspended() }
+    }
+    private var hasActiveFormInput: Bool = false {
+        didSet { updateCanBeSuspended() }
+    }
+    private var hasActiveWebRTCConnection: Bool = false {
+        didSet { updateCanBeSuspended() }
+    }
 
-    @Published private(set) var canBeSuspended: Bool = true
+    private(set) var canBeSuspended: Bool = true
 
     init(
         scriptsPublisher: some Publisher<some TabSuspensionUserScriptProvider, Never>,
@@ -60,13 +66,10 @@ final class TabSuspensionExtension {
                 }
                 .store(in: &self.cancellables)
         }.store(in: &cancellables)
+    }
 
-        $audioState.map(\.isPlayingAudio)
-            .combineLatest($hasActiveFormInput, $hasActiveWebRTCConnection)
-            .map { isPlayingAudio, hasFormInput, hasWebRTC in
-                !isPlayingAudio && !hasFormInput && !hasWebRTC
-            }
-            .assign(to: &$canBeSuspended)
+    private func updateCanBeSuspended() {
+        canBeSuspended = !audioState.isPlayingAudio && !hasActiveFormInput && !hasActiveWebRTCConnection
     }
 }
 
@@ -94,15 +97,10 @@ extension TabSuspensionExtension: NavigationResponder {
 
 protocol TabSuspensionExtensionProtocol: AnyObject, NavigationResponder {
     var canBeSuspended: Bool { get }
-    var canBeSuspendedPublisher: AnyPublisher<Bool, Never> { get }
 }
 
 extension TabSuspensionExtension: TabSuspensionExtensionProtocol, TabExtension {
     func getPublicProtocol() -> TabSuspensionExtensionProtocol { self }
-
-    var canBeSuspendedPublisher: AnyPublisher<Bool, Never> {
-        $canBeSuspended.eraseToAnyPublisher()
-    }
 }
 
 extension TabExtensions {

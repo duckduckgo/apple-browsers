@@ -40,7 +40,7 @@ class SuggestionTrayViewController: UIViewController {
     @IBOutlet var variableHeightConstraint: NSLayoutConstraint!
     @IBOutlet var fullHeightSafeAreaConstraint: NSLayoutConstraint!
     @IBOutlet var fullHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var fullHeightSafeAreaInequalityConstraint: NSLayoutConstraint!
+    @IBOutlet var fullHeightSafeAreaInequalityConstraint: NSLayoutConstraint!
     
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
     weak var newTabPageControllerDelegate: NewTabPageControllerDelegate?

@@ -355,7 +355,6 @@ extension OnboardingView {
                         : DesignSystemImages.Glyphs.Size24.findSearchSmall
                     )
                     .renderingMode(.template)
-                    .font(Font(UIFont.daxBodyBold()))
                     .foregroundColor(visualStyle == .rebranded ? accentColor : Color(designSystemColor: .icons))
                     .opacity(isPrimaryActionEnabled ? 1 : Metrics.disabledPrimaryActionOpacity)
                     .frame(width: Metrics.queryFieldActionButtonSize, height: Metrics.queryFieldActionButtonSize)

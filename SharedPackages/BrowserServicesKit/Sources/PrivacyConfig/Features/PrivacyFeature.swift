@@ -177,10 +177,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     case webViewLookUpAction
 
-    /// Startup Metrics Reporting
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
-    case startupMetrics
-
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -192,6 +188,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case lazyMenuRebuild
 
     case addToDockAppStore
+
+    case screenTimeCleaning
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -250,12 +248,15 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
-    case suppressTrackerAnimationOnColdStart
-
     case customXSafariRedirectHandling
 
     case crashReportOptInStatusResetting
+
+    case fireproofingETLDPlus1
+
+    case screenTimeCleaning
+
+    case minimalChromeInLandscape
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

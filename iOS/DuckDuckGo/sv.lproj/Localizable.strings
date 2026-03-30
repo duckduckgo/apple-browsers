@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai-röst";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Redigera bokmärke";
 
@@ -1087,6 +1090,12 @@
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Radera chatt";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Radera den här chatten?";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Hoppa över";
 
@@ -1217,7 +1226,6 @@
 "Custom URL: %@" = "Anpassad URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Exkluderade domäner från Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importera bokmärkesfil ...";
@@ -1647,12 +1655,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Du tittar i Duck Player!\nHär finns inga riktade annonser.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effektiv tröskel: %@ s (åsidosättning)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effektiv tröskel: konfigurationsstandard (ingen åsidosättning)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-postskydd";
@@ -2143,6 +2145,9 @@
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Fråga privat";
 
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Ställ en följdfråga...";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Installera tillägg";
 
@@ -2600,7 +2605,6 @@
 "No active subscriptions" = "Inga aktiva abonnemang";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Inga uteslutna domäner";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Inget befintligt abonnemang hittades";
@@ -2613,6 +2617,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "Inga loggar";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Inga träffar för \"%@\"";
 
 /* No comment provided by engineer. */
 "No messages" = "Inga meddelanden";
@@ -2640,6 +2647,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "I App Store-versioner visas den här skärmen bara om du är inloggad som intern användare via **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Jag fattar";
@@ -2731,6 +2741,9 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Innan jag glömmer ...";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Visste du det?";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Privat. Snabbt. Färre annonser.";
 
@@ -2742,9 +2755,6 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hej!";
-
-/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
-"onboarding.privacypro.promo.title.delayed" = "Visste du det?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vill du återställa dina bokmärken, lösenord med mera från din tidigare DuckDuckGo-synkronisering?";

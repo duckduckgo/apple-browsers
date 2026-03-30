@@ -116,10 +116,14 @@ class TabsBarCell: UICollectionViewCell {
             removeButton.accessibilityLabel = closeButtonAccessibilityLabel(for: model)
         } else if model.isAITab {
             let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
-            faviconImage.image = DesignSystemImages.Color.Size24.aiChatGradient
-            label.text = aiChatTitle
-            label.accessibilityLabel = UserText.openTab(withTitle: aiChatTitle, atAddress: "")
-            removeButton.accessibilityLabel = UserText.closeTab(withTitle: aiChatTitle, atAddress: "")
+            faviconImage.image = UIImage(resource: .duckAIDefault)
+            if let conversationTitle = model.aiChatConversationTitle {
+                label.text = "\(aiChatTitle) - \(conversationTitle)"
+            } else {
+                label.text = aiChatTitle
+            }
+            label.accessibilityLabel = UserText.openTab(withTitle: label.text ?? aiChatTitle, atAddress: "")
+            removeButton.accessibilityLabel = UserText.closeTab(withTitle: label.text ?? aiChatTitle, atAddress: "")
         } else {
             faviconImage.loadFavicon(forDomain: model.link?.url.host, usingCache: .tabs)
             label.text = model.link?.displayTitle ?? model.link?.url.host?.droppingWwwPrefix()

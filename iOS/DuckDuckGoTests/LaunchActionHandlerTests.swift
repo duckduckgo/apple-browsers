@@ -51,6 +51,21 @@ final class MockShortcutItemHandler: ShortcutItemHandling {
 
 }
 
+final class MockUserActivityHandler: UserActivityHandling {
+
+    var handleUserActivityCalled = false
+    var lastHandledUserActivity: NSUserActivity?
+    var handleUserActivityResult = true
+
+    @discardableResult
+    func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
+        handleUserActivityCalled = true
+        lastHandledUserActivity = userActivity
+        return handleUserActivityResult
+    }
+
+}
+
 final class MockKeyboardPresenter: KeyboardPresenting {
 
     var showKeyboardOnLaunchCalled = false
@@ -87,6 +102,7 @@ final class LaunchActionHandlerTests {
 
     let urlHandler = MockURLHandler()
     let shortcutItemHandler = MockShortcutItemHandler()
+    let userActivityHandler = MockUserActivityHandler()
     let keyboardPresenter = MockKeyboardPresenter()
     let launchSourceManager = MockLaunchSourceManager()
     let idleReturnEvaluator = MockIdleReturnEvaluator()
@@ -95,6 +111,7 @@ final class LaunchActionHandlerTests {
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
         shortcutItemHandler: shortcutItemHandler,
+        userActivityHandler: userActivityHandler,
         keyboardPresenter: keyboardPresenter,
         launchSourceService: launchSourceManager,
         idleReturnEvaluator: idleReturnEvaluator,
@@ -138,6 +155,18 @@ final class LaunchActionHandlerTests {
 
         #expect(shortcutItemHandler.handleShortcutItemCalled)
         #expect(shortcutItemHandler.lastHandledShortcutItem == shortcutItem)
+    }
+
+    @available(iOS 16, *)
+    @Test("Handle user activity when LaunchAction is .handleUserActivity", .timeLimit(.minutes(1)))
+    func handleUserActivity() {
+        let userActivity = NSUserActivity(activityType: "BEBrowserDataExchangeImportActivity")
+        let action = LaunchAction.handleUserActivity(userActivity)
+
+        launchActionHandler.handleLaunchAction(action)
+
+        #expect(userActivityHandler.handleUserActivityCalled)
+        #expect(userActivityHandler.lastHandledUserActivity?.activityType == userActivity.activityType)
     }
 
     @Test("Show keyboard when LaunchAction is .standardLaunch")

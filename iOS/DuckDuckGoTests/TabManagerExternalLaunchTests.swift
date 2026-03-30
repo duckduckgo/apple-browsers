@@ -38,8 +38,6 @@ final class TabManagerExternalLaunchTests {
         mockFeatureFlagger = MockFeatureFlagger()
         mockLaunchSourceManager = MockLaunchSourceManager()
 
-        mockFeatureFlagger.enabledFeatureFlags = [.suppressTrackerAnimationOnColdStart]
-
         tabManager = try Self.makeManager(
             tabsModel,
             featureFlagger: mockFeatureFlagger,
@@ -47,26 +45,7 @@ final class TabManagerExternalLaunchTests {
         )
     }
 
-    @Test("Validate feature flag disabled prevents tracker animation suppression")
-    func whenFeatureFlagDisabledThenTrackerAnimationSuppressionNotApplied() throws {
-        // GIVEN
-        mockFeatureFlagger.enabledFeatureFlags = []
-        mockLaunchSourceManager.source = .standard
-
-        let tab1 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
-        let tab2 = Tab(link: Link(title: nil, url: URL(string: "https://www.example.com")!))
-        tabsModel.insert(tab: tab1, placement: .atEnd, selectNewTab: false)
-        tabsModel.insert(tab: tab2, placement: .atEnd, selectNewTab: false)
-
-        // WHEN
-        tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
-
-        // THEN
-        #expect(!tab1.shouldSuppressTrackerAnimationOnFirstLoad)
-        #expect(!tab2.shouldSuppressTrackerAnimationOnFirstLoad)
-    }
-
-    @Test("Standard launch with feature flag enabled should suppress tracker animation on all tabs")
+    @Test("Standard launch should suppress tracker animation on all tabs")
     func whenStandardLaunchWithFeatureFlagOnThenAllTabsHaveTrackerAnimationSuppressed() throws {
         // GIVEN
         mockLaunchSourceManager.source = .standard

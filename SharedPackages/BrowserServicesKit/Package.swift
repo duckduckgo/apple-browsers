@@ -692,7 +692,8 @@ let package = Package(
                 "UserScript",
             ],
             resources: [
-                .process("testUserScript.js")
+                .process("testUserScript.js"),
+                .process("testLoadJSReplacements.js")
             ]
         ),
         .testTarget(

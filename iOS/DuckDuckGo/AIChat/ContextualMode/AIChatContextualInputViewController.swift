@@ -283,7 +283,7 @@ private extension AIChatContextualInputViewController {
             .paragraphStyle: paragraphStyle
         ]
 
-        let mutableText = NSMutableAttributedString(string: "Ask Anything ", attributes: defaultAttributes)
+        let mutableText = NSMutableAttributedString(string: UserText.aiChatWelcomeAskAnything, attributes: defaultAttributes)
 
         let shieldImage = DesignSystemImages.Color.Size42.shieldUtility
         let iconAttachment = NSTextAttachment()
@@ -297,7 +297,7 @@ private extension AIChatContextualInputViewController {
             .foregroundColor: privatelyColor,
             .paragraphStyle: paragraphStyle
         ]
-        mutableText.append(NSAttributedString(string: " privately", attributes: privatelyAttributes))
+        mutableText.append(NSAttributedString(string: UserText.aiChatWelcomePrivately, attributes: privatelyAttributes))
 
         welcomeLabel.attributedText = mutableText
     }

@@ -31,7 +31,6 @@ extension OnboardingRebranding {
             DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
                 OnboardingTrySiteDialogContent(viewModel: viewModel)
             }
-            .padding()
         }
     }
 

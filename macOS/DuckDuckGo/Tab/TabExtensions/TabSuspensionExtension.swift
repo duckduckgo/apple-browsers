@@ -24,14 +24,12 @@ final class TabSuspensionExtension {
 
     private var cancellables = Set<AnyCancellable>()
 
-    private var audioState: WKWebView.AudioState = .unmuted(isPlayingAudio: false)
-    private var hasActiveFormInput: Bool = false // TODO: to be implemented
-    private var hasActiveWebRTCConnection: Bool = false // TODO: to be implemented
+    private weak var webView: WKWebView?
     private var tabContent: Tab.TabContent = .none
 
     var canBeSuspended: Bool {
         guard case .url = tabContent else { return false }
-        return !audioState.isPlayingAudio && !hasActiveFormInput && !hasActiveWebRTCConnection
+        return !(webView?.audioState.isPlayingAudio ?? false)
     }
 
     init(
@@ -43,12 +41,7 @@ final class TabSuspensionExtension {
         }.store(in: &cancellables)
 
         webViewPublisher.sink { [weak self] webView in
-            guard let self else { return }
-            webView.audioStatePublisher
-                .sink { [weak self] state in
-                    self?.audioState = state
-                }
-                .store(in: &self.cancellables)
+            self?.webView = webView
         }.store(in: &cancellables)
     }
 }

@@ -189,7 +189,7 @@ private extension Watchdog {
     }
 }
 
-// MARK: - Monitoring
+// MARK: - Timer Management
 
 private extension Watchdog {
 
@@ -198,8 +198,8 @@ private extension Watchdog {
             return
         }
 
-        performHangDetection()
         enqueueHeartbeatSignal()
+        performHangDetection()
     }
 
     func enqueueHeartbeatSignal() {

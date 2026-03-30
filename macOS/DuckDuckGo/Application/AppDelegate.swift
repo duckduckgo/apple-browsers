@@ -124,6 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
+    private(set) var tabSuspensionService: TabSuspensionService?
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
     let appearancePreferences: AppearancePreferences
@@ -773,6 +774,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
+        self.tabSuspensionService = TabSuspensionService(windowControllersManager: windowControllersManager)
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager

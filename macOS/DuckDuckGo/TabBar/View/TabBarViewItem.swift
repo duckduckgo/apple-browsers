@@ -1508,15 +1508,14 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addSuspendResumeMenuItem(to menu: NSMenu) {
         guard featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
-        guard !isPinned else { return }
         guard case .url = tabViewModel?.tabContent else { return }
         let isSuspended = tabViewModel?.isSuspended ?? false
         // This item is only ever visible to internal users so we don't need translations.
         let title = isSuspended ? "Resume Tab" : "Suspend Tab"
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
         menuItem.target = self
-        let canBeSuspended = isSuspended || (tabViewModel?.canBeSuspended ?? false)
-        menuItem.isEnabled = !isSelected && canBeSuspended
+        let canToggleSuspension = isSuspended || (tabViewModel?.canBeSuspended == true)
+        menuItem.isEnabled = !isSelected && canToggleSuspension
         menu.addItem(.separator())
         menu.addItem(menuItem)
     }

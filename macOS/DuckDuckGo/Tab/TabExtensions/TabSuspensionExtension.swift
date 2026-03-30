@@ -26,9 +26,11 @@ final class TabSuspensionExtension {
 
     private weak var webView: WKWebView?
     private var tabContent: Tab.TabContent = .none
+    private let isTabPinned: () -> Bool
 
     var canBeSuspended: Bool {
-        guard case .url = tabContent else { return false }
+        guard case let .url(url, _, _) = tabContent, !url.isDuckPlayer else { return false }
+        guard !isTabPinned() else { return false }
         guard let webView else {
             return false
         }
@@ -37,8 +39,11 @@ final class TabSuspensionExtension {
 
     init(
         webViewPublisher: some Publisher<WKWebView, Never>,
-        contentPublisher: some Publisher<Tab.TabContent, Never>
+        contentPublisher: some Publisher<Tab.TabContent, Never>,
+        isTabPinned: @escaping () -> Bool
     ) {
+        self.isTabPinned = isTabPinned
+
         contentPublisher.sink { [weak self] content in
             self?.tabContent = content
         }.store(in: &cancellables)

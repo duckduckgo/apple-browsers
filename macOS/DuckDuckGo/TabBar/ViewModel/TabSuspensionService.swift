@@ -39,10 +39,8 @@ final class TabSuspensionService {
     @objc private func handleMemoryPressure() {
         let cutoffDate = Date().addingTimeInterval(-Self.minimumInactiveInterval)
 
-        for viewModel in windowControllersManager.allTabCollectionViewModels {
-            let tabs = viewModel.tabCollection.tabs
-            for (index, tab) in tabs.enumerated() {
-                guard !tab.isSuspended else { continue }
+        for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {
+            for (index, tab) in viewModel.tabCollection.tabs.enumerated() where !tab.isSuspended {
                 guard let lastSelectedAt = tab.lastSelectedAt, lastSelectedAt < cutoffDate else { continue }
 
                 viewModel.suspendTab(at: .unpinned(index))

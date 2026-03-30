@@ -136,6 +136,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      shouldLoadInBackground: Bool = false,
                      burnerMode: BurnerMode = .regular,
                      isLoadedInSidebar: Bool = false,
+                     isSuspended: Bool = false,
                      canBeClosedWithBack: Bool = false,
                      lastSelectedAt: Date? = nil,
                      webViewSize: CGSize = CGSize(width: 1024, height: 768),
@@ -201,6 +202,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   shouldLoadInBackground: shouldLoadInBackground,
                   burnerMode: burnerMode,
                   isLoadedInSidebar: isLoadedInSidebar,
+                  isSuspended: isSuspended,
                   canBeClosedWithBack: canBeClosedWithBack,
                   lastSelectedAt: lastSelectedAt,
                   webViewSize: webViewSize,
@@ -251,6 +253,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          shouldLoadInBackground: Bool,
          burnerMode: BurnerMode,
          isLoadedInSidebar: Bool,
+         isSuspended: Bool,
          canBeClosedWithBack: Bool,
          lastSelectedAt: Date?,
          webViewSize: CGSize,
@@ -285,6 +288,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.burnerMode = burnerMode
         self._canBeClosedWithBack = canBeClosedWithBack
         self.interactionState = interactionStateData.map(InteractionState.loadCachedFromTabContent) ?? .none
+        self.isSuspended = isSuspended
         self.lastSelectedAt = lastSelectedAt
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
@@ -565,7 +569,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     // MARK: - Tab Suspension
 
-    @Published private(set) var isSuspended: Bool = false
+    @Published private(set) var isSuspended: Bool
 
     var audioStatePublisher: AnyPublisher<WebView.AudioState, Never> {
         webView.audioStatePublisher
@@ -1580,9 +1584,25 @@ extension Tab: TabDataClearing {
 
 extension Tab {
 
-    /// Restores the `isSuspended` flag when decoding from persistent state (NSCoder).
-    func restoreIsSuspended(_ value: Bool) {
-        isSuspended = value
+    // Creates a fresh, unloaded Tab to hold the slot. Because it never navigates,
+    // no web content process is spawned. The old Tab (and its WKWebView) is released
+    // when replaceTab assigns the new one, letting the OS reclaim the process memory.
+    @MainActor
+    func makeSuspendedTab() -> Tab? {
+        guard case .url(let url, _, _) = content else {
+            return nil
+        }
+
+        let suspendedTab = Tab(
+            content: .url(url, source: .pendingStateRestoration),
+            title: title,
+            favicon: favicon,
+            interactionStateData: getActualInteractionStateData(),
+            shouldLoadInBackground: false,
+            isSuspended: true,
+            lastSelectedAt: lastSelectedAt
+        )
+        return suspendedTab
     }
 
     /// Marks the tab as suspended. The actual memory is freed by `TabCollectionViewModel`

@@ -342,7 +342,8 @@ extension TabExtensionsBuilder {
         add {
             TabSuspensionExtension(
                 webViewPublisher: args.webViewFuture,
-                contentPublisher: args.contentPublisher
+                contentPublisher: args.contentPublisher,
+                isTabPinned: args.isTabPinned
             )
         }
     }

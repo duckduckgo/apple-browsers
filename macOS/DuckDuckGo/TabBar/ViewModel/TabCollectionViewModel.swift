@@ -768,28 +768,15 @@ final class TabCollectionViewModel: NSObject {
 
     func suspendTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
-        guard case .unpinned = tabIndex else { return }
         guard let oldTab = tab(at: tabIndex) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
             return
         }
         guard tabIndex != selectionIndex else { return }
-        let tabContent: Tab.TabContent = oldTab.content
-        guard case .url(let url, _, _) = tabContent else { return }
-        guard oldTab.tabSuspension?.canBeSuspended ?? false else { return }
-
-        // Create a fresh, unloaded Tab to hold the slot. Because it never navigates,
-        // no web content process is spawned. The old Tab (and its WKWebView) is released
-        // when replaceTab assigns the new one, letting the OS reclaim the process memory.
-        let suspendedTab = Tab(
-            content: .url(url, source: .pendingStateRestoration),
-            title: oldTab.title,
-            favicon: oldTab.favicon,
-            interactionStateData: oldTab.getActualInteractionStateData(),
-            shouldLoadInBackground: false,
-            lastSelectedAt: oldTab.lastSelectedAt
-        )
-        suspendedTab.restoreIsSuspended(true)
+        guard oldTab.tabSuspension?.canBeSuspended == true else { return }
+        guard let suspendedTab = oldTab.makeSuspendedTab() else {
+            return
+        }
 
         // Use remove + insert rather than replaceTab: replaceTab has no delegate notification,
         // so TabBarViewController never updates, the old TabBarViewItem keeps holding the old

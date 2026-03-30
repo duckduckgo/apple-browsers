@@ -823,6 +823,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @Published private(set) var canGoBack: Bool = false
     @Published private(set) var canReload: Bool = false
 
+    /// Whether the current tab content is a real web page that can be reported as broken.
+    /// `.url` and `.aiChat` tabs are eligible — internal pages such as History and Settings are not.
+    var canReportBrokenSite: Bool {
+        switch content {
+        case .url, .aiChat: return true
+        default: return false
+        }
+    }
+
     @MainActor
     var backHistoryItems: [BackForwardListItem] {
         [BackForwardListItem](webView.backForwardList.backList)
@@ -1566,8 +1575,8 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     func renderingProgressDidChange(progressEvents: UInt) {
         // Emit only after first paint event, when the white background content is not visible anymore
-        // https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
-        if progressEvents >= 4 {
+        let events = _WKRenderingProgressEvents(rawValue: progressEvents)
+        if events.contains(.firstVisuallyNonEmptyLayout) {
             webViewRenderingProgressDidChangePublisher.send()
         }
     }

@@ -508,6 +508,21 @@ struct _WKCaptureDevices: OptionSet {
     static let display = Self(rawValue: 1 << 2)
 }
 
+// https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
+struct _WKRenderingProgressEvents: OptionSet {
+    let rawValue: UInt
+
+    static let firstLayout = Self(rawValue: 1 << 0)
+    static let firstVisuallyNonEmptyLayout = Self(rawValue: 1 << 1)
+    static let firstPaintWithSignificantArea = Self(rawValue: 1 << 2)
+    static let reachedSessionRestorationRenderTreeSizeThreshold = Self(rawValue: 1 << 3)
+    static let firstLayoutAfterSuppressedIncrementalRendering = Self(rawValue: 1 << 4)
+    static let firstPaintAfterSuppressedIncrementalRendering = Self(rawValue: 1 << 5)
+    static let firstPaint = Self(rawValue: 1 << 6)
+    static let didRenderSignificantAmountOfText = Self(rawValue: 1 << 7)
+    static let firstMeaningfulPaint = Self(rawValue: 1 << 8)
+}
+
 struct _WKFindOptions: OptionSet {
     let rawValue: UInt
 

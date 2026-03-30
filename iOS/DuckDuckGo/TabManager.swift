@@ -777,10 +777,6 @@ extension TabManager {
     /// to ensure existing tabs are not treated as external launches.
     @MainActor
     func clearExternalLaunchFlags() {
-        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
-            return
-        }
-
         Logger.general.debug("Clearing external launch flags for all tabs")
         for tab in allTabsModel.tabs {
             tab.isExternalLaunch = false
@@ -789,10 +785,6 @@ extension TabManager {
 
     @MainActor
     func markTabAsExternalLaunch(_ tab: Tab) {
-        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
-            return
-        }
-
         guard !tab.isExternalLaunch else {
             return
         }
@@ -802,10 +794,6 @@ extension TabManager {
 
     @MainActor
     func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool) {
-        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
-            return
-        }
-
         guard tab.shouldSuppressTrackerAnimationOnFirstLoad != shouldSuppress else {
             return
         }
@@ -813,15 +801,8 @@ extension TabManager {
         tab.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppress
     }
 
-    /// Applies tracker animation suppression logic to all tabs based on current launch source.
-    /// - On cold start with standard launch: suppress tracker animations for all tabs
-    /// - On external launch: tracker animation suppression handled per-tab via markTabAsExternalLaunch
     @MainActor
     func applyTrackerAnimationSuppressionBasedOnLaunchSource() {
-        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
-            return
-        }
-
         let source = launchSourceManager.source
         Logger.general.debug("Applying tracker animation suppression for launch source: \(source.rawValue)")
 

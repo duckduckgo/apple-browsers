@@ -68,6 +68,8 @@ extension UserScript {
     /// fresh on each call against the cached template.
     public static func loadJS(_ jsFile: String, from bundle: Bundle, withReplacements replacements: [String: String] = [:]) throws -> String {
         let js = try JSFileCache.content(forFile: jsFile, in: bundle)
+
+
         return js.applyingReplacements(replacements)
     }
 

@@ -22,13 +22,13 @@ import PixelKit
 
 /// Handles firing the quit survey return user pixel when the app becomes active.
 ///
-/// When a user completes the quit survey (thumbs down with reasons), the reasons are stored
-/// in the persistor. This handler checks for pending reasons and fires the return user pixel
-/// only if the user returns within the 8-14 day window after first launch.
+/// When a user completes the quit survey, either their thumbs-down reasons or thumbs-up flag
+/// are stored in the persistor. This handler checks for pending state and fires the appropriate
+/// return user pixel only if the user returns within the 8-14 day window after first launch.
 ///
-/// - If user returns before day 8: Keep reasons stored, don't fire pixel yet
-/// - If user returns between day 8-14: Fire pixel and clear reasons
-/// - If user returns after day 14: Clear reasons without firing pixel (window expired)
+/// - If user returns before day 8: Keep state stored, don't fire pixel yet
+/// - If user returns between day 8-14: Fire pixel and clear state
+/// - If user returns after day 14: Clear state without firing pixel (window expired)
 final class QuitSurveyReturnUserHandler {
 
     // MARK: - Constants
@@ -43,23 +43,26 @@ final class QuitSurveyReturnUserHandler {
     private var persistor: QuitSurveyPersistor
     private let installDate: Date
     private let dateProvider: () -> Date
+    private let pixelFiring: PixelFiring?
 
     // MARK: - Initialization
 
     init(
         persistor: QuitSurveyPersistor,
         installDate: Date,
-        dateProvider: @escaping () -> Date = { Date() }
+        dateProvider: @escaping () -> Date = { Date() },
+        pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         self.persistor = persistor
         self.installDate = installDate
         self.dateProvider = dateProvider
+        self.pixelFiring = pixelFiring
     }
 
-    /// Fires the return user pixel if there are pending reasons and the user is within the 8-14 day window.
+    /// Fires the return user pixel if there are pending reasons (thumbs down) or a thumbs-up flag set, and the user is within the 8-14 day window.
     /// This should be called when the app becomes active.
     func fireReturnUserPixelIfNeeded() {
-        guard persistor.pendingReturnUserReasons != nil else {
+        guard persistor.pendingReturnUserReasons != nil || persistor.hasSelectedThumbsUp == true else {
             return
         }
 
@@ -75,18 +78,31 @@ final class QuitSurveyReturnUserHandler {
         if daysSinceInstall > Self.returnWindowEndDays {
             Logger.general.debug("Quit survey return user: Day \(daysSinceInstall, privacy: .public), window expired (after day 14)")
             persistor.pendingReturnUserReasons = nil
+            persistor.hasSelectedThumbsUp = nil
             return
         }
 
         // Within day 8-14 window: Fire pixel and clear reasons
-        guard let reasons = persistor.pendingReturnUserReasons else { return }
-
         Logger.general.debug("Quit survey return user: Day \(daysSinceInstall, privacy: .public), firing pixel")
-        PixelKit.fire(QuitSurveyPixels.quitSurveyReturnUser(reasons: reasons))
-        persistor.pendingReturnUserReasons = nil
+
+        if let reasons = persistor.pendingReturnUserReasons {
+            fireReturnUserPixel(reasons: reasons)
+        } else if persistor.hasSelectedThumbsUp == true {
+            fireReturnUserThumbsUpPixel()
+        }
     }
 
     // MARK: - Helpers
+
+    private func fireReturnUserPixel(reasons: String) {
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyReturnUser(reasons: reasons))
+        persistor.pendingReturnUserReasons = nil
+    }
+
+    private func fireReturnUserThumbsUpPixel() {
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsUpReturnUser)
+        persistor.hasSelectedThumbsUp = nil
+    }
 
     private func daysSince(_ date: Date) -> TimeInterval {
         let secondsPerDay: TimeInterval = 24 * 60 * 60

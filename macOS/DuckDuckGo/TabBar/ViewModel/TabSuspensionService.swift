@@ -26,10 +26,12 @@ final class TabSuspensionService {
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let dateProvider: () -> Date
 
-    init(windowControllersManager: WindowControllersManagerProtocol, featureFlagger: FeatureFlagger) {
+    init(windowControllersManager: WindowControllersManagerProtocol, featureFlagger: FeatureFlagger, dateProvider: @escaping () -> Date = { Date() }) {
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
+        self.dateProvider = dateProvider
 
         NotificationCenter.default.addObserver(
             self,
@@ -42,7 +44,7 @@ final class TabSuspensionService {
     @objc private func handleMemoryPressure() {
         guard featureFlagger.isFeatureOn(.tabSuspension) else { return }
 
-        let cutoffDate = Date().addingTimeInterval(-Self.minimumInactiveInterval)
+        let cutoffDate = dateProvider().addingTimeInterval(-Self.minimumInactiveInterval)
 
         for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {
             for (index, tab) in viewModel.tabCollection.tabs.enumerated() where !tab.isSuspended {

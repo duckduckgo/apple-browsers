@@ -130,7 +130,11 @@
 		1D8057C92A83CB3C00F4FED6 /* SupportedOsChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8057C72A83CAEE00F4FED6 /* SupportedOsChecker.swift */; };
 		1D85BCCA2BA982FC0065BA04 /* NetPAppExInfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1D85BCC92BA982FC0065BA04 /* NetPAppExInfoPlist.xcstrings */; };
 		1D8C2FE52B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FE42B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift */; };
+		E090E1D0B3C24239AC8CE35A /* TabSuspensionExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4620F01533744547AD4AE7FF /* TabSuspensionExtensionTests.swift */; };
+		F49FB7BBACBB4F0195D5E554 /* TabSuspensionExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4620F01533744547AD4AE7FF /* TabSuspensionExtensionTests.swift */; };
 		1D8C2FE62B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FE42B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift */; };
+		93BD7FEAF65A45E5AF6465EE /* TabSuspensionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590E11956C6E4C788AF09F9A /* TabSuspensionServiceTests.swift */; };
+		7945A2EC294548D1B77F6A23 /* TabSuspensionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590E11956C6E4C788AF09F9A /* TabSuspensionServiceTests.swift */; };
 		1D8C2FEA2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FE92B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift */; };
 		1D8C2FEB2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FE92B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift */; };
 		1D8C2FED2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FEC2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift */; };
@@ -4652,6 +4656,8 @@
 		1D8057C72A83CAEE00F4FED6 /* SupportedOsChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedOsChecker.swift; sourceTree = "<group>"; };
 		1D85BCC92BA982FC0065BA04 /* NetPAppExInfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = NetPAppExInfoPlist.xcstrings; sourceTree = "<group>"; };
 		1D8C2FE42B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabSnapshotExtensionTests.swift; sourceTree = "<group>"; };
+		4620F01533744547AD4AE7FF /* TabSuspensionExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSuspensionExtensionTests.swift; sourceTree = "<group>"; };
+		590E11956C6E4C788AF09F9A /* TabSuspensionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSuspensionServiceTests.swift; sourceTree = "<group>"; };
 		1D8C2FE92B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockWebViewSnapshotRenderer.swift; sourceTree = "<group>"; };
 		1D8C2FEC2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockViewSnapshotRenderer.swift; sourceTree = "<group>"; };
 		1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockTabSnapshotStore.swift; sourceTree = "<group>"; };
@@ -11198,6 +11204,7 @@
 			isa = PBXGroup;
 			children = (
 				BBC114642D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift */,
+				590E11956C6E4C788AF09F9A /* TabSuspensionServiceTests.swift */,
 				BB9BA21F2D10BC6B009229F3 /* TabBarRemoteMessageViewModelTests.swift */,
 				3790E2F42F6D5F70003EACD2 /* TabCollectionViewModelTests.swift */,
 				37D23788288009CF00BCE03B /* TabCollectionViewModelTests+PinnedTabs.swift */,
@@ -11871,6 +11878,7 @@
 				567A23CC2C80CE060010F66C /* SpecialErrorPageUserScriptTests.swift */,
 				37657FC32DB8D55F003D749E /* TabCrashRecoveryExtensionTests.swift */,
 				1D8C2FE42B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift */,
+				4620F01533744547AD4AE7FF /* TabSuspensionExtensionTests.swift */,
 			);
 			path = TabExtensionsTests;
 			sourceTree = "<group>";
@@ -15903,6 +15911,8 @@
 				37AA01802E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */,
 				B6619F042B17123200CD9186 /* DataImportViewModelTests.swift in Sources */,
 				1D8C2FE62B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift in Sources */,
+				F49FB7BBACBB4F0195D5E554 /* TabSuspensionExtensionTests.swift in Sources */,
+				7945A2EC294548D1B77F6A23 /* TabSuspensionServiceTests.swift in Sources */,
 				840B66892F3A02C5001E20C6 /* SparkleUpdateMenuItemFactoryTests.swift in Sources */,
 				B5E7B6C52ED4A79500094EDF /* TitleDisplayPolicyTests.swift in Sources */,
 				377D7BC12D0AC7E000ADFD06 /* NewTabPageNextStepsCardsProviderTests.swift in Sources */,
@@ -18049,6 +18059,8 @@
 				5601FECD29B7973D00068905 /* TabBarViewItemTests.swift in Sources */,
 				BB349A4E2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift in Sources */,
 				1D8C2FE52B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift in Sources */,
+				E090E1D0B3C24239AC8CE35A /* TabSuspensionExtensionTests.swift in Sources */,
+				93BD7FEAF65A45E5AF6465EE /* TabSuspensionServiceTests.swift in Sources */,
 				142879DC24CE1185005419BB /* SuggestionContainerViewModelTests.swift in Sources */,
 				566B195D29CDB692007E38F4 /* MoreOptionsMenuTests.swift in Sources */,
 				AA0877B826D5160D00B05660 /* SafariVersionReaderTests.swift in Sources */,

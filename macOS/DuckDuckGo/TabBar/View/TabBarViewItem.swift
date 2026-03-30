@@ -1382,7 +1382,6 @@ extension TabBarViewItem: NSMenuDelegate {
             addPinMenuItem(to: menu)
         }
         addMuteUnmuteMenuItem(to: menu)
-        addSuspendResumeMenuItem(to: menu)
         menu.addItem(.separator())
 
         // Bookmark/Fireproof Section
@@ -1408,6 +1407,8 @@ extension TabBarViewItem: NSMenuDelegate {
                 addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
             }
         }
+
+        addSuspendResumeMenuItem(to: menu)
 
         if tabViewModel?.canKillWebContentProcess == true {
             menu.addItem(.separator())
@@ -1516,6 +1517,7 @@ extension TabBarViewItem: NSMenuDelegate {
         menuItem.target = self
         let canBeSuspended = isSuspended || (tabViewModel?.canBeSuspended ?? false)
         menuItem.isEnabled = !isSelected && canBeSuspended
+        menu.addItem(.separator())
         menu.addItem(menuItem)
     }
 

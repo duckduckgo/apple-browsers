@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 
 @MainActor
 final class TabSuspensionService {
@@ -24,9 +25,11 @@ final class TabSuspensionService {
     private static let minimumInactiveInterval: TimeInterval = 10 * 60
 
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let featureFlagger: FeatureFlagger
 
-    init(windowControllersManager: WindowControllersManagerProtocol) {
+    init(windowControllersManager: WindowControllersManagerProtocol, featureFlagger: FeatureFlagger) {
         self.windowControllersManager = windowControllersManager
+        self.featureFlagger = featureFlagger
 
         NotificationCenter.default.addObserver(
             self,
@@ -37,6 +40,8 @@ final class TabSuspensionService {
     }
 
     @objc private func handleMemoryPressure() {
+        guard featureFlagger.isFeatureOn(.tabSuspension) else { return }
+
         let cutoffDate = Date().addingTimeInterval(-Self.minimumInactiveInterval)
 
         for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {

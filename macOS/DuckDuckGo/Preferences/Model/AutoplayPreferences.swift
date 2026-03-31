@@ -61,6 +61,10 @@ final class AutoplayPreferences: ObservableObject {
 
     @Published var autoplayBlockingMode: AutoplayBlockingMode {
         didSet {
+            guard oldValue != autoplayBlockingMode else {
+                return
+            }
+
             persistor.autoplayBlockingModeRawValue = autoplayBlockingMode.rawValue
             switch autoplayBlockingMode {
             case .allowAll:

@@ -387,10 +387,8 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionItems[index].decision = updatedDecision
         }
 
-        if previousDecision != updatedDecision {
-            PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: .autoplayPolicy, from: previousDecision, to: updatedDecision))
-            markReloadNeeded()
-        }
+        PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: .autoplayPolicy, from: previousDecision, to: updatedDecision))
+        markReloadNeeded()
     }
 
     /// Returns the current autoplay decision based on whether a per-site override is persisted

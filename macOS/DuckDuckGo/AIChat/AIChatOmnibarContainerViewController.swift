@@ -304,11 +304,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             ? NSColor(designSystemColor: .accentAltSecondary)
             : nil
 
-        // Hide suggestions in image gen mode and collapse their height
-        suggestionsView.isHidden = isImageGenMode
-        // Force height recalculation — collapses to 0 when entering, restores when leaving
+        // Hide suggestions in image gen mode or when attachments are present
+        let suppress = shouldSuppressSuggestions
+        suggestionsView.isHidden = suppress
+        // Force height recalculation — collapses to 0 when suppressed, restores when leaving
         suggestionsHeight = -1 // invalidate cache to allow update
-        updateSuggestionsHeight(isImageGenMode ? 0 : lastKnownSuggestionsHeight)
+        updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
     }
 
     private func applyTopClipMask() {
@@ -491,14 +492,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
 
+    private var shouldSuppressSuggestions: Bool {
+        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty
+    }
+
     private func updateSuggestionsHeight(_ newHeight: CGFloat) {
         // Track the real height even when suppressed
-        if !omnibarController.isImageGenerationMode {
+        if !shouldSuppressSuggestions {
             lastKnownSuggestionsHeight = newHeight
         }
 
-        // Suppress suggestions height when image generation mode is active
-        let effectiveHeight = omnibarController.isImageGenerationMode ? 0 : newHeight
+        // Suppress suggestions height when image generation mode is active or attachments present
+        let effectiveHeight = shouldSuppressSuggestions ? 0 : newHeight
 
         // Skip if height hasn't changed
         guard effectiveHeight != suggestionsHeight else { return }
@@ -685,6 +690,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             imageUploadButton.isEnabled = !attachmentsContainerView.isFull
         }
 
+        // Suppress or restore suggestions based on attachments presence
+        let suppress = shouldSuppressSuggestions
+        suggestionsView.isHidden = suppress
+        suggestionsHeight = -1
+        updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
+
         onPassthroughHeightNeedsUpdate?()
     }
 
@@ -810,12 +821,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
         guard omnibarController.isOmnibarToolsEnabled else { return }
 
-        if !supportsImageUpload && !omnibarController.isImageGenerationMode {
-            clearAttachments()
+        let showUpload = supportsImageUpload || omnibarController.isImageGenerationMode
+        imageUploadButton.isHidden = !showUpload
+        attachmentsContainerView.isHidden = !showUpload
+        if !showUpload {
+            attachmentsHeightConstraint?.constant = 0
+        } else {
+            updateAttachmentsLayout()
         }
-        imageUploadButton.isHidden = !supportsImageUpload && !omnibarController.isImageGenerationMode
 
         updateImageGenLeadingConstraint()
+        onPassthroughHeightNeedsUpdate?()
     }
 
     private func applyTheme(theme: ThemeStyleProviding) {

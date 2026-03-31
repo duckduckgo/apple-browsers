@@ -25,6 +25,7 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12205-39034&m=dev
     struct OnboardingTrackersBlockedDialog: View {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -38,16 +39,32 @@ extension OnboardingRebranding {
         let blockedTrackersCTAAction: () -> Void
         let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-TrackersBlocked",
+            size: CGSize(width: 390/3, height: 211/3),
+            position: .bottom(leftCenterOffset: 150),
+            twoStagesAnimation: 0.5
+        )
+
         var body: some View {
-            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }) {
-                if showNextScreen {
-                    OnboardingRebranding.OnboardingFireDialogContent()
-                } else {
-                    trackersBlockedContent
+            ZStack(alignment: .top) {
+                // Dax is only shown on the trackers screen; hidden when transitioning to the Fire follow-up.
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice && !showNextScreen {
+                    DaxAnimationOverlay(animation: Self.daxAnimation, playForward: true, isExiting: false)
                 }
+
+                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }
+                ) {
+                    if showNextScreen {
+                        OnboardingRebranding.OnboardingFireDialogContent()
+                    } else {
+                        trackersBlockedContent
+                    }
+                }
+                .padding(theme.contextualOnboardingMetrics.containerPadding)
+                .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             }
-            .padding(theme.contextualOnboardingMetrics.containerPadding)
-            .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
 
         private var trackersBlockedContent: some View {

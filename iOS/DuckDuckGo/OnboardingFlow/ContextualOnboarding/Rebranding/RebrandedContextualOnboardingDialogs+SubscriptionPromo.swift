@@ -25,6 +25,7 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12206-52621&m=dev
     struct OnboardingSubscriptionPromoDialog: View {
         @Environment(\.onboardingTheme) private var theme
 
@@ -36,10 +37,21 @@ extension OnboardingRebranding {
         let dismissAction: () -> Void
         let onManualDismiss: () -> Void
 
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-Subscription",
+            size: CGSize(width: 86.33, height: 154),
+            position: .left(bottomPadding: 18)
+        )
+
         var body: some View {
+            ZStack(alignment: .top) {
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    DaxAnimationOverlay(animation: Self.daxAnimation, playForward: true, isExiting: false)
+                }
+
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingBubbleView.withDismissButton(
-                    tailPosition: nil,
+                    tailPosition: OnboardingBubbleAnimationMetrics.isCompactDevice ? nil : .bottom(offset: 0.2, direction: .leading),
                     onDismiss: onManualDismiss
                 ) {
                     VStack {
@@ -71,6 +83,8 @@ extension OnboardingRebranding {
             }
             .scrollIfNeeded()
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+            } // ZStack
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

@@ -37,16 +37,32 @@ extension OnboardingRebranding {
         let gotItAction: () -> Void
         let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-EndOfJourney-TryWebsite",
+            size: CGSize(width: 86.33, height: 154),
+            position: .left(bottomPadding: -50, xOffset: -5)
+        )
+
         var body: some View {
-            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }) {
-                if showNextScreen {
-                    searchDoneFollowUpContent
-                } else {
-                    searchDoneContent
+            ZStack(alignment: .top) {
+                if showNextScreen && !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    DaxAnimationOverlay(animation: Self.daxAnimation, playForward: true, isExiting: false)
                 }
+
+                OnboardingBubbleView.withDismissButton(
+                    tailPosition: (showNextScreen && !OnboardingBubbleAnimationMetrics.isCompactDevice) ? .bottom(offset: 0.2, direction: .leading) : nil,
+                    onDismiss: { onManualDismiss(showNextScreen) }
+                ) {
+                    if showNextScreen {
+                        searchDoneFollowUpContent
+                    } else {
+                        searchDoneContent
+                    }
+                }
+                .padding(theme.contextualOnboardingMetrics.containerPadding)
+                .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             }
-            .padding(theme.contextualOnboardingMetrics.containerPadding)
-            .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
 
 

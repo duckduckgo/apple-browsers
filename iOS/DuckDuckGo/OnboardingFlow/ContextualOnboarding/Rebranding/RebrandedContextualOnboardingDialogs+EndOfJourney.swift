@@ -25,6 +25,7 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12206-51627&m=dev
     struct OnboardingEndOfJourneyDialog: View {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -36,22 +37,41 @@ extension OnboardingRebranding {
         let dismissAction: () -> Void
         let onManualDismiss: () -> Void
 
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-EndOfJourney-TryWebsite",
+            size: CGSize(width: 153, height: 169.67),
+            position: .left(bottomPadding: -60, xOffset: -40)
+        )
+
         var body: some View {
-            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                OnboardingRebranding.ContextualDaxDialogContent(
-                    orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                    title: title,
-                    message: message
-                ) {
-                    Button(action: dismissAction) {
-                        Text(cta)
-                    }
-                    .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
-                    .buttonStyle(theme.primaryButtonStyle.style)
+            // ZStack(alignment: .top) + maxHeight fills the presenter's available space so that
+            // DaxAnimationOverlay's GeometryReader reports the true screen height and can anchor
+            // Dax to the real bottom of the screen rather than the bottom of the bubble.
+            ZStack(alignment: .top) {
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    DaxAnimationOverlay(animation: Self.daxAnimation, playForward: true, isExiting: false)
                 }
+
+                OnboardingBubbleView.withDismissButton(
+                    tailPosition: OnboardingBubbleAnimationMetrics.isCompactDevice ? nil : .bottom(offset: 0.2, direction: .leading),
+                    onDismiss: onManualDismiss
+                ) {
+                    OnboardingRebranding.ContextualDaxDialogContent(
+                        orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
+                        title: title,
+                        message: message
+                    ) {
+                        Button(action: dismissAction) {
+                            Text(cta)
+                        }
+                        .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
+                        .buttonStyle(theme.primaryButtonStyle.style)
+                    }
+                }
+                .padding(theme.contextualOnboardingMetrics.containerPadding)
+                .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             }
-            .padding(theme.contextualOnboardingMetrics.containerPadding)
-            .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

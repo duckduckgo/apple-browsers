@@ -1105,6 +1105,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidChangeHeight() {}
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

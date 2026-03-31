@@ -61,6 +61,7 @@ final class AIChatHistoryManager {
     private let isIPadExperience: Bool
 
     var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
+    private(set) var hasCompletedInitialFetch = false
     private var cancellables = Set<AnyCancellable>()
     private var currentFetchTask: Task<Void, Never>?
 
@@ -114,7 +115,10 @@ final class AIChatHistoryManager {
         viewController.didMove(toParent: parentViewController)
         self.historyViewController = viewController
 
-        // Initial fetch with empty query (shows recent chats from last week)
+        if let pendingSectionTitle {
+            viewController.setScrollableTitle(pendingSectionTitle)
+        }
+
         fetchSuggestionsIfNeeded(query: "")
     }
 
@@ -123,8 +127,11 @@ final class AIChatHistoryManager {
     }
 
     func setSectionTitle(_ title: String?) {
+        pendingSectionTitle = title
         historyViewController?.setScrollableTitle(title)
     }
+
+    private var pendingSectionTitle: String?
 
     /// Subscribes to text changes from a publisher with debounce and fetches filtered suggestions
     /// - Parameter textPublisher: A publisher that emits text changes
@@ -152,6 +159,7 @@ final class AIChatHistoryManager {
             let suggestions = await reader.fetchSuggestions(query: effectiveQuery, maxChats: maxChats)
             guard !Task.isCancelled else { return }
             viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+            hasCompletedInitialFetch = true
         }
     }
 

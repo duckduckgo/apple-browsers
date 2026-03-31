@@ -345,7 +345,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertEqual(sut.viewController.cardPosition, .top)
         XCTAssertTrue(sut.viewController.usesOmnibarMargins)
-        XCTAssertTrue(sut.viewController.showsDismissButton)
+        XCTAssertFalse(sut.viewController.showsDismissButton)
         XCTAssertTrue(sut.viewController.isToolbarSubmitHidden)
     }
 
@@ -1128,6 +1128,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
+    func unifiedToggleInputDidRequestVoiceSearch() {}
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

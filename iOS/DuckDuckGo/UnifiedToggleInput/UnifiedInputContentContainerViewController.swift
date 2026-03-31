@@ -392,12 +392,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        switchBarHandler.microphoneButtonTappedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.handleMicrophoneButtonTapped()
-            }
-            .store(in: &cancellables)
     }
 
     private func updateLayoutForCurrentOrientation() {
@@ -471,7 +465,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     // MARK: - Action Handlers
 
     private func handleMicrophoneButtonTapped() {
-        guard view.window != nil, view.superview?.isHidden != true else { return }
+        guard isViewLoaded, view.window != nil, !view.isHidden, !(view.superview?.isHidden ?? true) else { return }
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self,
                   self.view.window != nil,

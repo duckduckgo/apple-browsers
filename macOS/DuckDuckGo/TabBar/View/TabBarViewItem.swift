@@ -46,6 +46,9 @@ protocol TabBarViewModel {
     var crashIndicatorModel: TabCrashIndicatorModel { get }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
+    var isSuspended: Bool { get }
+    var isSuspendedPublisher: AnyPublisher<Bool, Never> { get }
+    var canBeSuspended: Bool { get }
 }
 
 extension TabViewModel: TabBarViewModel {
@@ -63,6 +66,7 @@ extension TabViewModel: TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
+    var canBeSuspended: Bool { tab.tabSuspension?.canBeSuspended ?? false }
     var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
     var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
@@ -71,6 +75,7 @@ extension TabViewModel: TabBarViewModel {
             .eraseToAnyPublisher()
     }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
+    var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -101,6 +106,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemMoveToNewBurnerWindowAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemFireproofSite(_: TabBarViewItem)
     @MainActor func tabBarViewItemMuteUnmuteSite(_: TabBarViewItem)
+    @MainActor func tabBarViewItemSuspendAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemRemoveFireproofing(_: TabBarViewItem)
     @MainActor func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue: String)
 
@@ -162,7 +168,7 @@ final class TabBarItemCellView: NSView {
     private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
-    fileprivate lazy var backgroundView = TabBackgroundView()
+    private lazy var backgroundView = TabBackgroundView()
     fileprivate lazy var faviconView = TabFaviconView()
     fileprivate lazy var titleView = TabTitleView()
 
@@ -575,6 +581,14 @@ final class TabBarItemCellView: NSView {
     func startSpinnerIfNeeded(isLoading: Bool, error: WKError?, url: URL?) {
         faviconView.startSpinnerIfNeeded(isLoading: isLoading, url: url, error: error)
     }
+
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool, animated: Bool = true) {
+        guard displaysTabsAnimations else {
+            return
+        }
+
+        backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: animated)
+    }
 }
 
 extension TabBarItemCellView: ThemeUpdateListening {
@@ -845,7 +859,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
             updateSubviews()
 
-            cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+            cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
             updateUsedPermissions()
         }
     }
@@ -1020,6 +1034,18 @@ final class TabBarViewItem: NSCollectionViewItem {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshProgressColors(rendered: true)
+            }
+            .store(in: &cancellables)
+
+        tabViewModel.isSuspendedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isSuspended in
+                guard let self else {
+                    return
+                }
+                let alpha: CGFloat = isSuspended && featureFlagger.isFeatureOn(.tabSuspensionDebugging) ? 0.5 : 1.0
+                cell.faviconView.alphaValue = alpha
+                cell.titleView.alphaValue = alpha
             }
             .store(in: &cancellables)
     }
@@ -1382,6 +1408,8 @@ extension TabBarViewItem: NSMenuDelegate {
             }
         }
 
+        addSuspendResumeMenuItem(to: menu)
+
         if tabViewModel?.canKillWebContentProcess == true {
             menu.addItem(.separator())
             addCrashMenuItem(to: menu)
@@ -1478,6 +1506,32 @@ extension TabBarViewItem: NSMenuDelegate {
         menu.addItem(muteUnmuteMenuItem)
     }
 
+    private func addSuspendResumeMenuItem(to menu: NSMenu) {
+        guard
+            featureFlagger.isFeatureOn(.tabSuspension),
+            featureFlagger.isFeatureOn(.tabSuspensionDebugging),
+            case .url = tabViewModel?.tabContent
+        else {
+            return
+        }
+
+        let isSuspended = tabViewModel?.isSuspended ?? false
+        // This item is only ever visible to internal users so we don't need translations.
+        let title = isSuspended ? "Resume Tab" : "Suspend Tab"
+        let canToggleSuspension = isSuspended || (tabViewModel?.canBeSuspended == true)
+        let isEnabled = !isSelected && canToggleSuspension
+
+        let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
+        menuItem.target = self
+        menuItem.isEnabled = isEnabled
+        menu.addItem(.separator())
+        menu.addItem(menuItem)
+    }
+
+    @objc private func suspendTabAction(_ sender: NSMenuItem) {
+        delegate?.tabBarViewItemSuspendAction(self)
+    }
+
     private func addCloseMenuItem(to menu: NSMenu) {
         let closeMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(closeButtonAction(_:)), keyEquivalent: "")
         closeMenuItem.target = self
@@ -1537,7 +1591,7 @@ extension TabBarViewItem: MouseClickViewDelegate {
         delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
         self.isMouseOver = isMouseOver
 
-        cell.backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
+        cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
 
         view.needsLayout = true
         eventMonitor = isMouseOver ? NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
@@ -1705,6 +1759,7 @@ extension TabBarViewItem {
     static let mediumWidth = (TabBarViewItem.Width.maximum + TabBarViewItem.Width.minimum) / 2
     @MainActor
     final class PreviewViewController: NSViewController, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout, TabBarViewItemDelegate {
+        func tabBarViewItemSuspendAction(_: TabBarViewItem) {}
 
         final class TabBarViewModelMock: TabBarViewModel {
             var url: URL?
@@ -1743,6 +1798,10 @@ extension TabBarViewItem {
             }
 
             var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
+
+            @Published var isSuspended: Bool = false
+            var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
+            var canBeSuspended: Bool = true
 
             init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {
                 self.width = width

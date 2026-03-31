@@ -119,7 +119,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  windowControllersManager: windowControllersManager,
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
@@ -152,7 +151,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  windowControllersManager: windowControllersManager,
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
@@ -195,7 +193,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
                                                   dockCustomizer: DockCustomizerMock(),
-                                                  windowControllersManager: windowControllersManager,
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(

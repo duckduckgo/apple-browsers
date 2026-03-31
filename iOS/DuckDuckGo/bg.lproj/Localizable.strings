@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai Voice";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Редактиране на отметка";
 
@@ -1087,6 +1090,12 @@
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Изтриване на чата";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Да бъде ли изтрит този чат?";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Пропускане";
 
@@ -1217,7 +1226,6 @@
 "Custom URL: %@" = "Персонализиран URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Изключени домейни от Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортиране на файл с отметки...";
@@ -1647,12 +1655,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Гледате в Duck Player!\nТук няма насочени реклами.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Ефективен праг: %@ s (заместване)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Ефективен праг: конфигурация по подразбиране (без заместване)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
@@ -2143,6 +2145,9 @@
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Задавайте въпроси поверително";
 
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Задайте последващ въпрос...";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Инсталирай разширение";
 
@@ -2600,7 +2605,6 @@
 "No active subscriptions" = "Няма активни абонаменти";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Няма изключени домейни";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Не е намерен съществуващ абонамент";
@@ -2613,6 +2617,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "Без регистри";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Не са намерени резултати за \"%@\"";
 
 /* No comment provided by engineer. */
 "No messages" = "Няма съобщения";
@@ -2640,6 +2647,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "При версиите с App Store този екран ще се покаже само ако сте влезли като вътрешен потребител чрез **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Разбрах";
@@ -2731,6 +2741,9 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "О, преди да забравя…";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Знаете ли, че?";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Поверителен. Бърз. По-малко реклами.";
 
@@ -2742,9 +2755,6 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Здравейте.";
-
-/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
-"onboarding.privacypro.promo.title.delayed" = "Знаете ли, че?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Искате да възстановите отметки, пароли и други данни от предишната синхронизация с DuckDuckGo?";

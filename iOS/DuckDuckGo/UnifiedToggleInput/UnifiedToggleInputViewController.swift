@@ -118,6 +118,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitHidden = newValue }
     }
 
+    var isToolbarAIVoiceChatActive: Bool {
+        get { inputBarView.isToolbarAIVoiceChatActive }
+        set { inputBarView.isToolbarAIVoiceChatActive = newValue }
+    }
+
     var isGenerating: Bool = false {
         didSet {
             handler.isGenerating = isGenerating
@@ -183,6 +188,26 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func setExpanded(_ expanded: Bool, animated: Bool) {
         inputBarView.setExpanded(expanded, animated: animated)
+    }
+
+    func setExpandedWithToggleHidden(_ expanded: Bool) {
+        inputBarView.setExpandedWithToggleHidden(expanded)
+    }
+
+    func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        inputBarView.animateToggleReveal(additionalAnimations: additionalAnimations, completion: completion)
+    }
+
+    func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        inputBarView.animateToggleHide(additionalAnimations: additionalAnimations, completion: completion)
+    }
+
+    func animateDismissReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        inputBarView.animateDismissReveal(additionalAnimations: additionalAnimations, completion: completion)
+    }
+
+    func animateDismissHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        inputBarView.animateDismissHide(additionalAnimations: additionalAnimations, completion: completion)
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {

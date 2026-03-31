@@ -48,7 +48,7 @@ class PinnedTabsManagerTests: XCTestCase {
         let manager = PinnedTabsManager(tabCollection: .init(tabs: [tabA, tabB]))
 
         manager.pin(tabC, at: 1)
-        XCTAssertEqual(manager.tabCollection.tabs, [tabA, tabC, tabB])
+        XCTAssertEqual(manager.tabCollection.tabs.compactMap(\.tab), [tabA, tabC, tabB])
     }
 
     @MainActor
@@ -114,7 +114,7 @@ class PinnedTabsManagerTests: XCTestCase {
 
         manager.pin(tab)
 
-        XCTAssertNotNil(manager.tabViewModels[tab])
+        XCTAssertNotNil(manager.tabViewModels[tab.uuid])
         XCTAssertNotNil(manager.tabViewModel(at: 0))
     }
 
@@ -128,7 +128,7 @@ class PinnedTabsManagerTests: XCTestCase {
 
         manager.setUp(movingTabsFrom: collection)
 
-        XCTAssertEqual([tabA, tabB, tabC], manager.tabCollection.tabs)
+        XCTAssertEqual([tabA, tabB, tabC], manager.tabCollection.tabs.compactMap(\.tab))
     }
 }
 

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+import FeatureFlags
 import Foundation
 
 extension TabCollection: NSSecureCoding {
@@ -23,8 +25,10 @@ extension TabCollection: NSSecureCoding {
     static var supportsSecureCoding: Bool { true }
 
     convenience init?(coder decoder: NSCoder) {
-        // Decode all tabs as lightweight TabRestorationData instead of full Tab objects.
-        // This avoids creating WKWebViews for every restored tab.
+        let useSuspendedTabs = NSApp.delegateTyped.featureFlagger.isFeatureOn(.deferredTabWebViewCreation)
+
+        // Always decode as TabRestorationData — the archive's actual class is TabRestorationData
+        // (even though className is mapped to "Tab"), and NSSecureCoding validates the real class.
         if let unarchiver = decoder as? NSKeyedUnarchiver {
             unarchiver.setClass(TabRestorationData.self, forClassName: "Tab")
         }
@@ -33,21 +37,26 @@ extension TabCollection: NSSecureCoding {
             of: [NSArray.self, TabRestorationData.self],
             forKey: NSKeyedArchiveRootObjectKey
         ) as? [TabRestorationData] else {
-            // Restore class mapping on failure
             if let unarchiver = decoder as? NSKeyedUnarchiver {
                 unarchiver.setClass(Tab.self, forClassName: "Tab")
             }
             return nil
         }
 
-        // Restore class mapping for any subsequent decodes
         if let unarchiver = decoder as? NSKeyedUnarchiver {
             unarchiver.setClass(Tab.self, forClassName: "Tab")
         }
 
-        // All tabs start suspended; the selected one is materialized by TabCollectionViewModel
-        let tabs: [AnyTab] = restorationDataArray.map { .suspended(SuspendedTab(from: $0)) }
-        self.init(tabs: tabs)
+        if useSuspendedTabs {
+            let tabs: [AnyTab] = restorationDataArray.map { .suspended(SuspendedTab(from: $0)) }
+            self.init(tabs: tabs)
+        } else {
+            // Eager restoration: materialize all tabs immediately (pre-feature behavior)
+            let tabs: [Tab] = MainActor.assumeIsolated {
+                restorationDataArray.map { SuspendedTab(from: $0).materialize() }
+            }
+            self.init(tabs: tabs)
+        }
     }
 
     func encode(with coder: NSCoder) {

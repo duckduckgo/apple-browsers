@@ -41,11 +41,11 @@ final class TabCollectionTests: XCTestCase {
 
             let tab1 = Tab()
             tabCollection.append(tab: tab1)
-            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1], tab1)
+            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1].tab, tab1)
 
             let tab2 = Tab()
             tabCollection.append(tab: tab2)
-            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1], tab2)
+            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1].tab, tab2)
         }
     }
 
@@ -59,7 +59,7 @@ final class TabCollectionTests: XCTestCase {
 
             tabCollection.insert(tab, at: -1)
             XCTAssertEqual(tabCollection.tabs.count, 0)
-            XCTAssertFalse(tabCollection.tabs.contains(tab))
+            XCTAssertFalse(tabCollection.tabs.contains(where: { $0.tab === tab }))
         }
     }
 
@@ -70,12 +70,12 @@ final class TabCollectionTests: XCTestCase {
 
             let tab1 = Tab()
             tabCollection.insert(tab1, at: 0)
-            XCTAssertEqual(tabCollection.tabs[0], tab1)
+            XCTAssertEqual(tabCollection.tabs[0].tab, tab1)
 
             let tab2 = Tab()
             tabCollection.insert(tab2, at: 0)
-            XCTAssertEqual(tabCollection.tabs[0], tab2)
-            XCTAssertEqual(tabCollection.tabs[1], tab1)
+            XCTAssertEqual(tabCollection.tabs[0].tab, tab2)
+            XCTAssertEqual(tabCollection.tabs[1].tab, tab1)
         }
 
     }
@@ -90,11 +90,11 @@ final class TabCollectionTests: XCTestCase {
             let tab = Tab()
             tabCollection.append(tab: tab)
             XCTAssertEqual(tabCollection.tabs.count, 1)
-            XCTAssert(tabCollection.tabs.contains(tab))
+            XCTAssert(tabCollection.tabs.contains(where: { $0.tab === tab }))
 
             XCTAssertFalse(tabCollection.removeTab(at: 1))
             XCTAssertEqual(tabCollection.tabs.count, 1)
-            XCTAssert(tabCollection.tabs.contains(tab))
+            XCTAssert(tabCollection.tabs.contains(where: { $0.tab === tab }))
         }
     }
 
@@ -112,8 +112,8 @@ final class TabCollectionTests: XCTestCase {
 
             XCTAssert(tabCollection.removeTab(at: 0))
 
-            XCTAssertEqual(tabCollection.tabs[0], tab2)
-            XCTAssertEqual(tabCollection.tabs[1], tab3)
+            XCTAssertEqual(tabCollection.tabs[0].tab, tab2)
+            XCTAssertEqual(tabCollection.tabs[1].tab, tab3)
         }
     }
 
@@ -157,8 +157,8 @@ final class TabCollectionTests: XCTestCase {
             tabCollection.moveTab(at: 0, to: -1)
             tabCollection.moveTab(at: 3, to: 0)
             tabCollection.moveTab(at: -1, to: 0)
-            XCTAssertEqual(tabCollection.tabs[0], tab1)
-            XCTAssertEqual(tabCollection.tabs[1], tab2)
+            XCTAssertEqual(tabCollection.tabs[0].tab, tab1)
+            XCTAssertEqual(tabCollection.tabs[1].tab, tab2)
         }
     }
 
@@ -174,8 +174,8 @@ final class TabCollectionTests: XCTestCase {
 
             tabCollection.moveTab(at: 0, to: 0)
             tabCollection.moveTab(at: 1, to: 1)
-            XCTAssertEqual(tabCollection.tabs[0], tab1)
-            XCTAssertEqual(tabCollection.tabs[1], tab2)
+            XCTAssertEqual(tabCollection.tabs[0].tab, tab1)
+            XCTAssertEqual(tabCollection.tabs[1].tab, tab2)
         }
     }
 
@@ -192,14 +192,14 @@ final class TabCollectionTests: XCTestCase {
             tabCollection.append(tab: tab3)
 
             tabCollection.moveTab(at: 0, to: 1)
-            XCTAssertEqual(tabCollection.tabs[0], tab2)
-            XCTAssertEqual(tabCollection.tabs[1], tab1)
-            XCTAssertEqual(tabCollection.tabs[2], tab3)
+            XCTAssertEqual(tabCollection.tabs[0].tab, tab2)
+            XCTAssertEqual(tabCollection.tabs[1].tab, tab1)
+            XCTAssertEqual(tabCollection.tabs[2].tab, tab3)
 
             tabCollection.moveTab(at: 0, to: 2)
-            XCTAssertEqual(tabCollection.tabs[0], tab1)
-            XCTAssertEqual(tabCollection.tabs[1], tab3)
-            XCTAssertEqual(tabCollection.tabs[2], tab2)
+            XCTAssertEqual(tabCollection.tabs[0].tab, tab1)
+            XCTAssertEqual(tabCollection.tabs[1].tab, tab3)
+            XCTAssertEqual(tabCollection.tabs[2].tab, tab2)
         }
     }
 

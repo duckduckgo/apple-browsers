@@ -749,7 +749,8 @@ final class TabCollectionViewModel: NSObject {
         if let tab = anyTab.tab {
             loadedTab = tab
         } else {
-            loadedTab = materialize(at: tabIndex)
+            guard let tab = materialize(at: tabIndex) else { return }
+            loadedTab = tab
         }
 
         if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
@@ -776,7 +777,7 @@ final class TabCollectionViewModel: NSObject {
         }
 
         // Materialize if suspended — pinned tabs must always be loaded
-        let tab = materialize(at: .unpinned(index))
+        guard let tab = materialize(at: .unpinned(index)) else { return }
 
         pinnedTabsManager?.pin(tab)
         removeUnpinnedTab(at: index, published: false)
@@ -977,9 +978,9 @@ extension TabCollectionViewModel {
     /// Materializes a suspended tab into a full Tab.
     /// If already loaded, returns the existing Tab.
     @discardableResult
-    func materialize(at index: TabIndex) -> Tab {
+    func materialize(at index: TabIndex) -> Tab? {
         guard let anyTab = tab(at: index) else {
-            fatalError("TabCollectionViewModel: materialize called with invalid index")
+            return nil
         }
         switch anyTab {
         case .loaded(let tab):

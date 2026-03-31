@@ -21,7 +21,7 @@ import Combine
 import Common
 import os.log
 
-final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> where DataSource.Tab == Tab {
+final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
 
     enum Const {
         static var maxNumberOfLazyLoadedTabs: Int { 20 }
@@ -174,69 +174,61 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> where DataSource.
             return
         }
 
-        if let anyTab = findTabToLoad() {
-            switch anyTab {
-            case .loaded(let tab):
-                lazyLoadTab(tab)
-            case .suspended:
-                if let tab = dataSource.materialize(anyTab) {
-                    lazyLoadTab(tab)
-                }
-            }
+        if let tab = findTabToLoad() {
+            lazyLoadTab(tab)
+        } else if let index = findNextSuspendedTabIndex(),
+                  let tab = dataSource.materialize(at: .unpinned(index)) {
+            lazyLoadTab(tab)
         } else if numberOfTabsInProgress.value == 0 {
             lazyLoadingDidFinishSubject.send(true)
         }
     }
 
     private func hasAnyTabsToLoad() -> Bool {
-        findTabToLoad(dryRun: true) != nil
+        if findRecentlySelectedTabToLoad(from: dataSource.pinnedTabs) != nil { return true }
+
+        if shouldLoadAdjacentTabs, numberOfAdjacentTabsRemaining > 0 {
+            if findAdjacentTabToLoad() != nil {
+                adjacentItemEnumerator?.reset()
+                return true
+            }
+        }
+
+        if findRecentlySelectedTabToLoad(from: dataSource.tabs) != nil { return true }
+
+        return findNextSuspendedTabIndex() != nil
     }
 
-    /**
-     * `dryRun` parameter, when set to `true`, reverts any changes made to lazy loader's state.
-     *
-     * This is to allow this function to be called to check whether there is any tab,
-     * either adjacent to current or recently selected, that can be loaded.
-     */
-    private func findTabToLoad(dryRun: Bool = false) -> AnyTab? {
+    private func findTabToLoad() -> DataSource.Tab? {
         if let tab = findRecentlySelectedTabToLoad(from: dataSource.pinnedTabs) {
-            if !dryRun {
-                Logger.tabLazyLoading.debug("Will reload recently selected pinned tab")
-            }
-            return .loaded(tab)
+            Logger.tabLazyLoading.debug("Will reload recently selected pinned tab")
+            return tab
         }
 
         if shouldLoadAdjacentTabs, numberOfAdjacentTabsRemaining > 0 {
             if let tab = findAdjacentTabToLoad() {
-                if dryRun {
-                    adjacentItemEnumerator?.reset()
-                } else {
-                    numberOfAdjacentTabsRemaining -= 1
-                    Logger.tabLazyLoading.debug("Will reload adjacent tab #\(Const.maxNumberOfLazyLoadedAdjacentTabs - self.numberOfAdjacentTabsRemaining) of \(Const.maxNumberOfLazyLoadedAdjacentTabs)")
-                }
-                return .loaded(tab)
+                numberOfAdjacentTabsRemaining -= 1
+                Logger.tabLazyLoading.debug("Will reload adjacent tab #\(Const.maxNumberOfLazyLoadedAdjacentTabs - self.numberOfAdjacentTabsRemaining) of \(Const.maxNumberOfLazyLoadedAdjacentTabs)")
+                return tab
             }
         }
 
         if let tab = findRecentlySelectedTabToLoad(from: dataSource.tabs) {
-            if !dryRun {
-                Logger.tabLazyLoading.debug("Will reload recently selected tab")
-            }
-            return .loaded(tab)
+            Logger.tabLazyLoading.debug("Will reload recently selected tab")
+            return tab
         }
 
-        return findNextSuspendedTab()
+        return nil
     }
 
-    private func findNextSuspendedTab() -> AnyTab? {
+    private func findNextSuspendedTabIndex() -> Int? {
         let center = dataSource.selectedTabIndex?.item ?? 0
-        let allTabs = dataSource.allTabs
-        for offset in 0..<allTabs.count {
+        let count = dataSource.totalTabCount
+        for offset in 0..<count {
             for candidate in [center + offset, center - offset] {
-                guard candidate >= 0, candidate < allTabs.count else { continue }
-                let anyTab = allTabs[candidate]
-                if case .suspended = anyTab {
-                    return anyTab
+                guard candidate >= 0, candidate < count else { continue }
+                if dataSource.isSuspended(at: candidate) {
+                    return candidate
                 }
             }
         }

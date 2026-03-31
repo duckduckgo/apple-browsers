@@ -27,6 +27,7 @@ final class TabSuspensionServiceTests: XCTestCase {
     private var featureFlagger: MockFeatureFlagger!
     private var windowControllersManager: WindowControllersManagerMock!
     private var now: Date!
+    private var tabExtensionsBuilder: TestTabExtensionsBuilder!
 
     private var sut: TabSuspensionService!
 
@@ -34,6 +35,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         super.setUp()
         featureFlagger = MockFeatureFlagger()
         now = Date()
+        tabExtensionsBuilder = TestTabExtensionsBuilder(load: [TabSuspensionExtension.self])
     }
 
     override func tearDown() {
@@ -41,6 +43,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         featureFlagger = nil
         windowControllersManager = nil
         now = nil
+        tabExtensionsBuilder = nil
         super.tearDown()
     }
 
@@ -66,7 +69,7 @@ final class TabSuspensionServiceTests: XCTestCase {
 
     func testWhenFeatureFlagDisabled_ThenMemoryPressureDoesNotSuspendTabs() {
         featureFlagger.enabledFeatureFlags = []
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), lastSelectedAt: now.addingTimeInterval(-20 * 60))
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-20 * 60))
         let vm = makeTabCollectionViewModel(tabs: [tab])
         sut = makeSUT(tabCollectionViewModels: [vm])
 
@@ -83,8 +86,8 @@ final class TabSuspensionServiceTests: XCTestCase {
 
     func testWhenFeatureFlagEnabled_ThenMemoryPressureSuspendsTabs() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), lastSelectedAt: now.addingTimeInterval(-20 * 60))
-        let selectedTab = Tab(content: .newtab, lastSelectedAt: now)
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-20 * 60))
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
         let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
         sut = makeSUT(tabCollectionViewModels: [vm])
         vm.select(at: .unpinned(1))
@@ -103,8 +106,8 @@ final class TabSuspensionServiceTests: XCTestCase {
     func testWhenTabRecentlySelected_ThenItIsNotSuspended() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
         // Tab selected 5 minutes ago (less than 10 min threshold)
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), lastSelectedAt: now.addingTimeInterval(-5 * 60))
-        let selectedTab = Tab(content: .newtab, lastSelectedAt: now)
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-5 * 60))
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
         let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
         sut = makeSUT(tabCollectionViewModels: [vm])
         vm.select(at: .unpinned(1))
@@ -116,16 +119,17 @@ final class TabSuspensionServiceTests: XCTestCase {
 
     func testWhenTabHasNoLastSelectedAt_ThenItIsSuspended() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), lastSelectedAt: nil)
-        let selectedTab = Tab(content: .newtab, lastSelectedAt: now)
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
         let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
         sut = makeSUT(tabCollectionViewModels: [vm])
         vm.select(at: .unpinned(1))
+        tab.lastSelectedAt = nil
 
         postMemoryPressure()
 
         // Tabs with no lastSelectedAt were never selected — they should be suspended
-        XCTAssertTrue(tab.isSuspended)
+        XCTAssert(vm.tabs.first?.isSuspended == true)
     }
 
     // MARK: - Burner Tabs
@@ -133,8 +137,8 @@ final class TabSuspensionServiceTests: XCTestCase {
     func testWhenViewModelIsBurner_ThenTabsAreNotSuspended() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
         let burnerMode = BurnerMode(isBurner: true)
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), burnerMode: burnerMode, lastSelectedAt: now.addingTimeInterval(-20 * 60))
-        let selectedTab = Tab(content: .newtab, burnerMode: burnerMode, lastSelectedAt: now)
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, burnerMode: burnerMode, lastSelectedAt: now.addingTimeInterval(-20 * 60))
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, burnerMode: burnerMode, lastSelectedAt: now)
         let tabCollection = TabCollection(tabs: [tab, selectedTab])
         let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(), burnerMode: burnerMode)
         sut = makeSUT(tabCollectionViewModels: [vm])
@@ -149,8 +153,8 @@ final class TabSuspensionServiceTests: XCTestCase {
 
     func testWhenTabAlreadySuspended_ThenItIsSkipped() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), isSuspended: true, lastSelectedAt: now.addingTimeInterval(-20 * 60))
-        let selectedTab = Tab(content: .newtab, lastSelectedAt: now)
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, isSuspended: true, lastSelectedAt: now.addingTimeInterval(-20 * 60))
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
         let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
         sut = makeSUT(tabCollectionViewModels: [vm])
         vm.select(at: .unpinned(1))
@@ -167,8 +171,8 @@ final class TabSuspensionServiceTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
         // Tab selected 15 minutes ago
         let tabSelectedAt = now.addingTimeInterval(-15 * 60)
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), lastSelectedAt: tabSelectedAt)
-        let selectedTab = Tab(content: .newtab, lastSelectedAt: now)
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: tabSelectedAt)
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
         let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
         sut = makeSUT(tabCollectionViewModels: [vm])
         vm.select(at: .unpinned(1))

@@ -37,7 +37,7 @@ final class MockOmniBar: OmniBar {
     
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {}
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {}
     func endEditing() { }
     func showSeparator() { }
     func hideSeparator() { }
@@ -68,6 +68,7 @@ final class MockOmniBar: OmniBar {
     func setDaxEasterEggLogoURL(_ logoURL: String?, searchQuery: String?) { }
     func refreshCustomizableButton() {}
     func enterAIChatMode() { }
+    func setSelectedTextEntryMode(_ mode: TextEntryMode) { }
     func setDaxEasterEggLogoURL(_ logoURL: String?) { }
     func refreshFireMode(fireMode: Bool) { }
 

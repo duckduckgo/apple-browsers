@@ -175,7 +175,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         handleIPadModeToggleTransition(to: mode)
     }
 
-    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
+    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
         animateNextEditingTransition = animated
 
         super.beginEditing(animated: animated, forTextEntryMode: textEntryMode)
@@ -285,7 +285,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
 
-        let capturedTextEntryMode = textEntryMode
+        // Use explicit mode if set (programmatic beginEditing), otherwise fall back
+        // to the tab's per-tab mode already stored in selectedTextEntryMode.
+        let capturedTextEntryMode: TextEntryMode = textEntryMode ?? selectedTextEntryMode
 
         if let omniDelegate {
             omniDelegate.dismissContextualSheetIfNeeded { [weak self] in
@@ -300,8 +302,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
         guard editingStateViewController == nil else { return }
 
-        let switchBarHandler = createSwitchBarHandler(for: textField)
-        switchBarHandler.setToggleState(textEntryMode)
+        let switchBarHandler = createSwitchBarHandler(for: textField, initialToggleState: textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let escapeHatch = omniDelegate?.escapeHatchForEditingState()
@@ -330,10 +331,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         present(editingStateViewController, animated: animated)
     }
 
-    private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
+    private func createSwitchBarHandler(for textField: UITextField, initialToggleState: TextEntryMode? = nil) -> SwitchBarHandler {
         let isFireTab = omniDelegate?.isCurrentTabFireTab() ?? false
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
-                                                storage: UserDefaults.standard, aiChatSettings: dependencies.aiChatSettings,
+                                                aiChatSettings: dependencies.aiChatSettings,
+                                                initialToggleState: initialToggleState,
                                                 sessionStateMetrics: sessionStateMetrics,
                                                 isFireTab: isFireTab)
 
@@ -525,15 +527,21 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onDismissRequested() {
-        // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
+        // Restore the tab's committed mode — the user toggled but didn't submit.
         omniDelegate?.onExperimentalAddressBarCancelPressed()
+        if let tabMode = omniDelegate?.preferredTextEntryModeForCurrentTab() {
+            selectedTextEntryMode = tabMode
+        }
     }
 
     func onSwitchToTab(_ tab: Tab) {
         omniDelegate?.onSwitchToTab(tab)
     }
 
-    func onToggleModeSwitched() {
+    func onToggleModeSwitched(to mode: TextEntryMode) {
+        // Sync the editing state's toggle back to selectedTextEntryMode so that
+        // commitToggleStateToCurrentTab reads the correct value on submission.
+        selectedTextEntryMode = mode
         omniDelegate?.onToggleModeSwitched()
     }
 

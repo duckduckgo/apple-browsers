@@ -28,6 +28,10 @@ final class TabCollection: NSObject {
 
     @Published private(set) var tabs: [AnyTab]
 
+    var loadedTabs: [Tab] {
+        tabs.compactMap(\.tab)
+    }
+
     let didRemoveTabPublisher = PassthroughSubject<(AnyTab, Int), Never>()
 
     init(tabs: [AnyTab] = [], isPopup: Bool = false) {

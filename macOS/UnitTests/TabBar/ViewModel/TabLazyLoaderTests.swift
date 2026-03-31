@@ -74,8 +74,8 @@ private final class TabLazyLoaderDataSourceMock: TabLazyLoaderDataSource {
 
     typealias Tab = TabMock
 
-    var pinnedTabs: [Tab] = []
-    var tabs: [Tab] = []
+    var loadedPinnedTabs: [Tab] = []
+    var loadedTabs: [Tab] = []
     var selectedTab: Tab?
     var selectedTabIndex: TabIndex?
     var selectedTabPublisher: AnyPublisher<Tab, Never> {
@@ -91,7 +91,7 @@ private final class TabLazyLoaderDataSourceMock: TabLazyLoaderDataSource {
 
     var isSelectedTabLoadingSubject = PassthroughSubject<Bool, Never>()
 
-    var totalTabCount: Int { tabs.count }
+    var totalTabCount: Int { loadedTabs.count }
     var suspendedTabCount: Int { 0 }
     func isSuspended(at index: Int) -> Bool { false }
     func materialize(at index: TabIndex) -> TabMock? { nil }
@@ -113,31 +113,31 @@ class TabLazyLoaderTests: XCTestCase {
     }
 
     func testWhenThereAreNoTabsThenLazyLoaderIsNotInstantiated() throws {
-        dataSource.tabs = []
+        dataSource.loadedTabs = []
         XCTAssertNil(TabLazyLoader(dataSource: dataSource))
     }
 
     func testWhenThereAreNoUrlTabsThenLazyLoaderIsNotInstantiated() throws {
-        dataSource.tabs = [.mockNotUrl, .mockNotUrl]
+        dataSource.loadedTabs = [.mockNotUrl, .mockNotUrl]
         XCTAssertNil(TabLazyLoader(dataSource: dataSource))
     }
 
     func testWhenThereIsOneUrlTabAndItIsCurrentlySelectedThenLazyLoaderIsNotInstantiated() throws {
         let urlTab = TabMock.mockUrl
-        dataSource.tabs = [.mockNotUrl, .mockNotUrl, urlTab]
+        dataSource.loadedTabs = [.mockNotUrl, .mockNotUrl, urlTab]
         dataSource.selectedTab = urlTab
         XCTAssertNil(TabLazyLoader(dataSource: dataSource))
     }
 
     func testWhenThereIsOneUrlTabAndItIsNotCurrentlySelectedThenLazyLoaderIsInstantiated() throws {
         let notUrlTab = TabMock.mockUrl
-        dataSource.tabs = [.mockNotUrl, notUrlTab, .mockUrl]
+        dataSource.loadedTabs = [.mockNotUrl, notUrlTab, .mockUrl]
         dataSource.selectedTab = notUrlTab
         XCTAssertNotNil(TabLazyLoader(dataSource: dataSource))
     }
 
     func testWhenThereIsNoSelectedTabThenLazyLoadingIsSkipped() throws {
-        dataSource.tabs = [.mockUrl]
+        dataSource.loadedTabs = [.mockUrl]
         dataSource.selectedTab = nil
 
         let lazyLoader = TabLazyLoader(dataSource: dataSource)
@@ -159,12 +159,12 @@ class TabLazyLoaderTests: XCTestCase {
         let reloadExpectation = expectation(description: "TabMock.reload() called")
         reloadExpectation.expectedFulfillmentCount = 2
 
-        dataSource.tabs = [
+        dataSource.loadedTabs = [
             .mockNotUrl,
             TabMock(isUrl: true, reloadExpectation: reloadExpectation),
             TabMock(isUrl: true, reloadExpectation: reloadExpectation)
         ]
-        dataSource.selectedTab = dataSource.tabs.first
+        dataSource.selectedTab = dataSource.loadedTabs.first
 
         let lazyLoader = try XCTUnwrap(TabLazyLoader(dataSource: dataSource))
 
@@ -179,12 +179,12 @@ class TabLazyLoaderTests: XCTestCase {
 
         let selectedUrlTab = TabMock.mockUrl
 
-        dataSource.tabs = [
+        dataSource.loadedTabs = [
             selectedUrlTab,
             TabMock(isUrl: true, reloadExpectation: reloadExpectation),
             TabMock(isUrl: true, reloadExpectation: reloadExpectation)
         ]
-        dataSource.selectedTab = dataSource.tabs.first
+        dataSource.selectedTab = dataSource.loadedTabs.first
 
         let lazyLoader = try XCTUnwrap(TabLazyLoader(dataSource: dataSource))
 
@@ -198,12 +198,12 @@ class TabLazyLoaderTests: XCTestCase {
         let reloadExpectation = expectation(description: "TabMock.reload() called")
         reloadExpectation.isInverted = true
 
-        dataSource.tabs = [
+        dataSource.loadedTabs = [
             .mockUrl,
             TabMock(isUrl: true, reloadExpectation: reloadExpectation),
             TabMock(isUrl: true, reloadExpectation: reloadExpectation)
         ]
-        dataSource.selectedTab = dataSource.tabs.first
+        dataSource.selectedTab = dataSource.loadedTabs.first
 
         let lazyLoader = TabLazyLoader(dataSource: dataSource)
 
@@ -223,11 +223,11 @@ class TabLazyLoaderTests: XCTestCase {
         let reloadExpectation = expectation(description: "TabMock.reload() called")
         reloadExpectation.expectedFulfillmentCount = maxNumberOfLazyLoadedTabs
 
-        dataSource.tabs = [.mockNotUrl]
+        dataSource.loadedTabs = [.mockNotUrl]
         for _ in 0..<(2 * maxNumberOfLazyLoadedTabs) {
-            dataSource.tabs.append(TabMock(isUrl: true, reloadExpectation: reloadExpectation))
+            dataSource.loadedTabs.append(TabMock(isUrl: true, reloadExpectation: reloadExpectation))
         }
-        dataSource.selectedTab = dataSource.tabs.first
+        dataSource.selectedTab = dataSource.loadedTabs.first
 
         let lazyLoader = try XCTUnwrap(TabLazyLoader(dataSource: dataSource))
 
@@ -242,7 +242,7 @@ class TabLazyLoaderTests: XCTestCase {
 
         let selectedUrlTab = TabMock.mockUrl
 
-        dataSource.tabs = [
+        dataSource.loadedTabs = [
             selectedUrlTab,
             TabMock(isUrl: true, reloadExpectation: reloadExpectation),
             TabMock(isUrl: true, reloadExpectation: reloadExpectation), // we expect this to be lazy loaded
@@ -257,9 +257,9 @@ class TabLazyLoaderTests: XCTestCase {
         await waitForLoadingDidFinishEvent(lazyLoader, and: [reloadExpectation]) {
             lazyLoader.scheduleLazyLoading()
 
-            dataSource.selectedTabSubject.send(dataSource.tabs[1])
-            dataSource.selectedTabSubject.send(dataSource.tabs[4])
-            dataSource.selectedTabSubject.send(dataSource.tabs[5])
+            dataSource.selectedTabSubject.send(dataSource.loadedTabs[1])
+            dataSource.selectedTabSubject.send(dataSource.loadedTabs[4])
+            dataSource.selectedTabSubject.send(dataSource.loadedTabs[5])
 
             selectedUrlTab.reload()
         }
@@ -282,11 +282,11 @@ class TabLazyLoaderTests: XCTestCase {
                     reloadExpectation.fulfill()
                 }
             }
-            dataSource.tabs.append(tab)
+            dataSource.loadedTabs.append(tab)
         }
 
         // select tab #3, this will cause loading tabs adjacent to #3, and then from the end of the array (based on timestamp)
-        dataSource.selectedTab = dataSource.tabs[3]
+        dataSource.selectedTab = dataSource.loadedTabs[3]
         dataSource.selectedTabIndex = .unpinned(3)
 
         let lazyLoader = try XCTUnwrap(TabLazyLoader(dataSource: dataSource))
@@ -324,8 +324,8 @@ class TabLazyLoaderTests: XCTestCase {
             tabReloadClosure(tab)
         }
 
-        dataSource.tabs = [.mockNotUrl, newTab, oldTab]
-        dataSource.selectedTab = dataSource.tabs.first
+        dataSource.loadedTabs = [.mockNotUrl, newTab, oldTab]
+        dataSource.selectedTab = dataSource.loadedTabs.first
 
         let lazyLoader = try XCTUnwrap(TabLazyLoader(dataSource: dataSource))
 

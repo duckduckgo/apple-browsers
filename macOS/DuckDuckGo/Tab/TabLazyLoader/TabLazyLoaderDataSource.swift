@@ -24,9 +24,9 @@ import os.log
 protocol TabLazyLoaderDataSource: AnyObject {
     associatedtype Tab: LazyLoadable
 
-    var pinnedTabs: [Tab] { get }
+    var loadedPinnedTabs: [Tab] { get }
 
-    var tabs: [Tab] { get }
+    var loadedTabs: [Tab] { get }
     var selectedTab: Tab? { get }
     var selectedTabIndex: TabIndex? { get }
 
@@ -47,12 +47,12 @@ extension TabLazyLoaderDataSource {
             return true
         }
 
-        if pinnedTabs.count > 0 {
+        if loadedPinnedTabs.count > 0 {
             return true
         }
 
         let notSelectedURLTabsCount: Int = {
-            let count = tabs.filter({ $0.isUrl }).count
+            let count = loadedTabs.filter({ $0.isUrl }).count
             let isURLTabSelected = selectedTab?.isUrl ?? false
             return isURLTabSelected ? count-1 : count
         }()
@@ -63,12 +63,12 @@ extension TabLazyLoaderDataSource {
 
 extension TabCollectionViewModel: TabLazyLoaderDataSource {
 
-    var pinnedTabs: [Tab] {
-        (pinnedTabsCollection?.tabs ?? []).compactMap(\.tab)
+    var loadedPinnedTabs: [Tab] {
+        pinnedTabsCollection?.loadedTabs ?? []
     }
 
-    var tabs: [Tab] {
-        tabCollection.tabs.compactMap(\.tab)
+    var loadedTabs: [Tab] {
+        tabCollection.loadedTabs
     }
 
     var selectedTab: Tab? {

@@ -54,8 +54,8 @@ final class WindowManagerStateRestorationTests: XCTestCase {
 
     @MainActor
     func areTabCollectionViewModelsEqual(_ a: TabCollectionViewModel, _ b: TabCollectionViewModel) -> Bool {
-        let aTabs = a.tabCollection.tabs.compactMap(\.tab)
-        let bTabs = b.tabCollection.tabs.compactMap(\.tab)
+        let aTabs = a.tabCollection.loadedTabs
+        let bTabs = b.tabCollection.loadedTabs
         return a.selectionIndex == b.selectionIndex && areTabsEqual(aTabs, bTabs)
     }
 

@@ -51,9 +51,9 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
         self.dataSource = dataSource
 
         if let selectedTabIndex = dataSource.selectedTabIndex,
-           dataSource.tabs.filter({ $0.isUrl }).count > Const.maxNumberOfLazyLoadedTabs {
+           dataSource.loadedTabs.filter({ $0.isUrl }).count > Const.maxNumberOfLazyLoadedTabs {
 
-            Logger.tabLazyLoading.debug("\(dataSource.tabs.count) open URL tabs, will load adjacent tabs first")
+            Logger.tabLazyLoading.debug("\(dataSource.loadedTabs.count) open URL tabs, will load adjacent tabs first")
             shouldLoadAdjacentTabs = true
 
             // Adjacent tab loading only applies to non-pinned tabs. If a pinned tab is selected,
@@ -185,7 +185,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
     }
 
     private func hasAnyTabsToLoad() -> Bool {
-        if findRecentlySelectedTabToLoad(from: dataSource.pinnedTabs) != nil { return true }
+        if findRecentlySelectedTabToLoad(from: dataSource.loadedPinnedTabs) != nil { return true }
 
         if shouldLoadAdjacentTabs, numberOfAdjacentTabsRemaining > 0 {
             if findAdjacentTabToLoad() != nil {
@@ -194,13 +194,13 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
             }
         }
 
-        if findRecentlySelectedTabToLoad(from: dataSource.tabs) != nil { return true }
+        if findRecentlySelectedTabToLoad(from: dataSource.loadedTabs) != nil { return true }
 
         return findNextSuspendedTabIndex() != nil
     }
 
     private func findTabToLoad() -> DataSource.Tab? {
-        if let tab = findRecentlySelectedTabToLoad(from: dataSource.pinnedTabs) {
+        if let tab = findRecentlySelectedTabToLoad(from: dataSource.loadedPinnedTabs) {
             Logger.tabLazyLoading.debug("Will reload recently selected pinned tab")
             return tab
         }
@@ -213,7 +213,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
             }
         }
 
-        if let tab = findRecentlySelectedTabToLoad(from: dataSource.tabs) {
+        if let tab = findRecentlySelectedTabToLoad(from: dataSource.loadedTabs) {
             Logger.tabLazyLoading.debug("Will reload recently selected tab")
             return tab
         }
@@ -237,10 +237,10 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
 
     private func findAdjacentTabToLoad() -> DataSource.Tab? {
         while true {
-            guard let nextIndex = adjacentItemEnumerator?.nextIndex(arraySize: dataSource.tabs.count) else {
+            guard let nextIndex = adjacentItemEnumerator?.nextIndex(arraySize: dataSource.loadedTabs.count) else {
                 return nil
             }
-            let tab = dataSource.tabs[nextIndex]
+            let tab = dataSource.loadedTabs[nextIndex]
             if tab.isUrl {
                 return tab
             }

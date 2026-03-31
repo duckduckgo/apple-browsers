@@ -99,6 +99,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var onConfirmSyncDisable: (() -> Void)?
     var onConfirmAndDeleteAllData: (() -> Void)?
 
+    let useSimplifiedLayout: Bool
+
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
     init(
         syncService: DDGSyncing,
@@ -134,7 +136,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         )
         self.viewModel = viewModel
 
-        let useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
+        self.useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
         let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayout: useSimplifiedLayout)
 
         super.init(rootView: rootView)

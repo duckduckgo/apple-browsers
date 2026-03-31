@@ -449,8 +449,25 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(_ completion: (() -> Void)?) {
-        let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
-        navigationController?.present(controller, animated: true, completion: completion)
+        if useSimplifiedLayout {
+            let controller = UIHostingController(rootView: SimplifiedConnectingSheetView())
+            controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
+            if #available(iOS 16.4, *) {
+                controller.sizingOptions = .intrinsicContentSize
+            }
+            if #available(iOS 16.0, *) {
+                let fittingSize = controller.view.systemLayoutSizeFitting(
+                    CGSize(width: UIScreen.main.bounds.width, height: UIView.layoutFittingCompressedSize.height)
+                )
+                controller.sheetPresentationController?.detents = [
+                    .custom { _ in fittingSize.height }
+                ]
+            }
+            navigationController?.present(controller, animated: true, completion: completion)
+        } else {
+            let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
+            navigationController?.present(controller, animated: true, completion: completion)
+        }
     }
 
     @MainActor
@@ -606,7 +623,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         
         var controller: UIHostingController<AnyView>
         if showQRCode {
-            controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
+            if useSimplifiedLayout {
+                controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+            } else {
+                controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
+            }
         } else {
             controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
         }
@@ -766,6 +787,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func codeEntryScreenShown() {
         Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
+    }
+
+    func codeCopied() {
+        ActionMessageView.present(message: UserText.simplifiedCodeCopiedToast)
     }
 
     @MainActor

@@ -1061,8 +1061,8 @@ class MainViewController: UIViewController {
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         }
-        if isInPhoneLandscapeLayout {
-            applyPhoneLandscapeWidth()
+        if isInMinimalChromeLayout {
+            applyMinimalChromeWidth()
         }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
@@ -1994,7 +1994,7 @@ class MainViewController: UIViewController {
         }
 
         let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
-            && (AppWidthObserver.shared.isPad || isInPhoneLandscapeLayout || featureFlagger.isFeatureOn(.minimalChromeInLandscape))
+            && (AppWidthObserver.shared.isPad || isInMinimalChromeLayout || featureFlagger.isFeatureOn(.minimalChromeInLandscape))
         if needsWidthUpdate {
             applyWidth(for: size)
         }
@@ -2031,7 +2031,7 @@ class MainViewController: UIViewController {
         orientationPixelWorker = worker
     }
 
-    private func isPhoneLandscapeMode(for size: CGSize? = nil) -> Bool {
+    private func isMinimalChromeMode(for size: CGSize? = nil) -> Bool {
         guard featureFlagger.isFeatureOn(.minimalChromeInLandscape) else { return false }
         let size = size ?? view.bounds.size
         return !AppWidthObserver.shared.isPad
@@ -2040,15 +2040,15 @@ class MainViewController: UIViewController {
 
     private func applyWidth(for size: CGSize? = nil) {
 
-        if isInPhoneLandscapeLayout {
-            setPhoneLandscapeMode(false)
+        if isInMinimalChromeLayout {
+            setMinimalChromeMode(false)
             viewCoordinator.setNavBarContainerExpandableHeight(false)
         }
 
         if AppWidthObserver.shared.isLargeWidth {
             applyLargeWidth()
-        } else if isPhoneLandscapeMode(for: size) {
-            applyPhoneLandscapeWidth()
+        } else if isMinimalChromeMode(for: size) {
+            applyMinimalChromeWidth()
         } else {
             applySmallWidth()
         }
@@ -2084,21 +2084,21 @@ class MainViewController: UIViewController {
         if AppWidthObserver.shared.isLargeWidth {
             self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
         } else {
-            self.suggestionTrayController?.coversFullScreen = isInPhoneLandscapeLayout
+            self.suggestionTrayController?.coversFullScreen = isInMinimalChromeLayout
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
     }
     
-    private var isInPhoneLandscapeLayout: Bool = false
+    private var isInMinimalChromeLayout: Bool = false
 
     var isUsingSingleBar: Bool {
-        AppWidthObserver.shared.isLargeWidth || isInPhoneLandscapeLayout
+        AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
     }
 
-    private func setPhoneLandscapeMode(_ enabled: Bool) {
-        isInPhoneLandscapeLayout = enabled
-        viewCoordinator.omniBar.isPhoneLandscape = enabled
+    private func setMinimalChromeMode(_ enabled: Bool) {
+        isInMinimalChromeLayout = enabled
+        viewCoordinator.omniBar.isMinimalChrome = enabled
     }
 
     private func applyLargeWidth() {
@@ -2119,8 +2119,8 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.isEnabled = true
     }
 
-    private func applyPhoneLandscapeWidth() {
-        setPhoneLandscapeMode(true)
+    private func applyMinimalChromeWidth() {
+        setMinimalChromeMode(true)
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = true
         // Push the hidden toolbar off-screen so content container extends to the bottom

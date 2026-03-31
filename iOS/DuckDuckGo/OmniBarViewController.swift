@@ -60,7 +60,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
-    var isPhoneLandscape: Bool = false
+    var isMinimalChrome: Bool = false
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode?
@@ -698,17 +698,17 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
-        barView.isBackButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showBackButton
-        barView.isForwardButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showForwardButton
-        let bookmarksHidden = isPhoneLandscape ? state.isBrowsing : !state.showBookmarksButton
-        barView.setBookmarksPosition(leading: isPhoneLandscape, hidden: bookmarksHidden)
-        barView.isPasswordsButtonHidden = isPhoneLandscape ? state.isBrowsing : true
+        barView.isBackButtonHidden = isMinimalChrome ? !state.isBrowsing : !state.showBackButton
+        barView.isForwardButtonHidden = isMinimalChrome ? !state.isBrowsing : !state.showForwardButton
+        let bookmarksHidden = isMinimalChrome ? state.isBrowsing : !state.showBookmarksButton
+        barView.setBookmarksPosition(leading: isMinimalChrome, hidden: bookmarksHidden)
+        barView.isPasswordsButtonHidden = isMinimalChrome ? state.isBrowsing : true
         barView.isAIChatButtonHidden = !state.showAIChatButton
-        barView.isFireButtonHidden = !isPhoneLandscape
-        barView.isTabSwitcherButtonHidden = !isPhoneLandscape
+        barView.isFireButtonHidden = !isMinimalChrome
+        barView.isTabSwitcherButtonHidden = !isMinimalChrome
 
         if let expandable = expandableBarView {
-            expandable.isExternalRefreshButtonHidden = isPhoneLandscape || !state.showRefreshOutsideAddressBar
+            expandable.isExternalRefreshButtonHidden = isMinimalChrome || !state.showRefreshOutsideAddressBar
             expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
             expandable.selectedModeToggleState = selectedTextEntryMode
 

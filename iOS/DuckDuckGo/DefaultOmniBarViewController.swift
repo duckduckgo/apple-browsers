@@ -236,17 +236,17 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     override func updateInterface(from oldState: any OmniBarState, to state: any OmniBarState) {
         super.updateInterface(from: oldState, to: state)
 
-        let isLandscapeEditing = isPhoneLandscape && barView.textField.isEditing
+        let isLandscapeEditing = isMinimalChrome && barView.textField.isEditing
         let newMode: OmniBarLayoutMode
         if !state.hasLargeWidth || isLandscapeEditing {
             newMode = .compact
-        } else if isPhoneLandscape {
-            newMode = .phoneLandscape
+        } else if isMinimalChrome {
+            newMode = .minimalChrome
         } else {
             newMode = .expanded
         }
 
-        omniBarView.setLayoutMode(newMode, animated: isPhoneLandscape)
+        omniBarView.setLayoutMode(newMode, animated: isMinimalChrome)
 
         let hasTrailingAccessory = state.showAIChatButton || state.showAIChatModeToggle
         let hasAdjacentButton = state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton

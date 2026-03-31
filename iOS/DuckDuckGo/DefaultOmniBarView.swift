@@ -243,12 +243,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         readableSearchAreaWidthConstraint?.isActive = showButtons
         largeSizeSpacingConstraint?.isActive = showButtons
 
-        let isLandscape = newMode == .phoneLandscape
-        leadingButtonsContainer.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : 0
-        trailingButtonsContainer.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : 0
-        stackView.spacing = isLandscape ? Metrics.phoneLandscapeButtonSpacing : Metrics.expandedSizeSpacing
-        stackViewLeadingConstraint?.constant = isLandscape ? Metrics.phoneLandscapeEdgePadding : Metrics.textAreaHorizontalPadding
-        stackViewTrailingConstraint?.constant = isLandscape ? -Metrics.phoneLandscapeEdgePadding : -Metrics.textAreaHorizontalPadding
+        let isMinimal = newMode == .minimalChrome
+        leadingButtonsContainer.spacing = isMinimal ? Metrics.minimalChromeButtonSpacing : 0
+        trailingButtonsContainer.spacing = isMinimal ? Metrics.minimalChromeButtonSpacing : 0
+        stackView.spacing = isMinimal ? Metrics.minimalChromeButtonSpacing : Metrics.expandedSizeSpacing
+        stackViewLeadingConstraint?.constant = isMinimal ? Metrics.minimalChromeEdgePadding : Metrics.textAreaHorizontalPadding
+        stackViewTrailingConstraint?.constant = isMinimal ? -Metrics.minimalChromeEdgePadding : -Metrics.textAreaHorizontalPadding
     }
 
     var isUsingSmallTopSpacing: Bool = false {
@@ -965,8 +965,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             trailing: expandedSizeSpacing
         )
 
-        static let phoneLandscapeButtonSpacing: CGFloat = 10.0
-        static let phoneLandscapeEdgePadding: CGFloat = 4.0
+        static let minimalChromeButtonSpacing: CGFloat = 10.0
+        static let minimalChromeEdgePadding: CGFloat = 4.0
     }
 
     private struct Constant {

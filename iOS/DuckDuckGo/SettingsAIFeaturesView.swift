@@ -25,6 +25,7 @@ import BrowserServicesKit
 import Common
 import Networking
 import PixelKit
+import AIChat
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -75,6 +76,17 @@ struct SettingsAIFeaturesView: View {
                                 .padding(.vertical, 8)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
+
+                        if viewModel.aiChatSearchInputEnabledBinding.wrappedValue {
+                            if viewModel.isDefaultOmnibarModeEnabled {
+                                SettingsPickerCellView(
+                                    label: UserText.settingsDefaultOmnibarModeHeader,
+                                    options: DefaultOmnibarMode.allCases.map { Optional($0) },
+                                    selectedOption: viewModel.defaultOmnibarModeBinding
+                                )
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+                        }
                     } footer: {
                         Text(footerAttributedString)
                             .environment(\.openURL, OpenURLAction { url in
@@ -183,6 +195,16 @@ private enum FooterAction {
         switch url.host {
         case "share-feedback": return .shareFeedback
         default: return nil
+        }
+    }
+}
+
+extension DefaultOmnibarMode: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .search: return UserText.settingsDefaultOmnibarModeSearch
+        case .duckAI: return UserText.settingsDefaultOmnibarModeDuckAI
+        case .lastUsed: return UserText.settingsDefaultOmnibarModeLastUsed
         }
     }
 }

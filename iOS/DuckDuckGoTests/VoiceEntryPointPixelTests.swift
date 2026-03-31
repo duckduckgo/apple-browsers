@@ -44,8 +44,9 @@ struct VoiceEntryPointPixelTests {
         #expect(VoiceEntryPointSource.ntp.rawValue == "ntp")
         #expect(VoiceEntryPointSource.toolbar.rawValue == "toolbar")
         #expect(VoiceEntryPointSource.addressBar.rawValue == "address_bar")
-        #expect(VoiceEntryPointSource.controlCenter.rawValue == "control_center")
-        #expect(VoiceEntryPointSource.widget.rawValue == "widget")
+        #expect(VoiceEntryPointSource.controlCenter.rawValue == "widget.controlcenter")
+        #expect(VoiceEntryPointSource.lockscreenComplication.rawValue == "widget.lockscreen.complication")
+        #expect(VoiceEntryPointSource.quickActions.rawValue == "widget.quickactions")
         #expect(VoiceEntryPointSource.siri.rawValue == "siri")
     }
 }

@@ -47,6 +47,12 @@ extension WKWebView {
             return false
         }
 
+        var isPlayingAudio: Bool {
+            switch self {
+            case .muted(let playing), .unmuted(let playing): return playing
+            }
+        }
+
         mutating func toggle() {
             self = switch self {
             case let .muted(isPlayingAudio): .unmuted(isPlayingAudio: isPlayingAudio)

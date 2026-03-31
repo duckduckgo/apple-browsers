@@ -82,6 +82,10 @@ extension SharedColorPaletteDefinition {
         case .alertYellow:
             return alertYellow
 
+        /// Shield
+        case .shieldPrivacy:
+            return shieldPrivacy
+
         /// Buttons/Primary
         case .buttonsPrimaryDefault:
             return buttonsPrimaryDefault

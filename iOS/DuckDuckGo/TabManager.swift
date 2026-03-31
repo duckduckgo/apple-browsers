@@ -142,6 +142,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private var webExtensionManager: WebExtensionManaging?
     private let launchSourceManager: LaunchSourceManaging
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
+    private let toggleModeStorage: ToggleModeStoring
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -183,7 +184,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          privacyStats: PrivacyStatsProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          launchSourceManager: LaunchSourceManaging,
-         darkReaderFeatureSettings: DarkReaderFeatureSettings
+         darkReaderFeatureSettings: DarkReaderFeatureSettings,
+         toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     ) {
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
@@ -217,8 +219,16 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.privacyStats = privacyStats
         self.voiceSearchHelper = voiceSearchHelper
         self.launchSourceManager = launchSourceManager
+        self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         registerForNotifications()
+    }
+
+    /// Resolves the preferred text entry mode for a newly created tab based on the user's default omnibar mode setting.
+    private func resolvedTextEntryMode() -> TextEntryMode {
+        aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
+            toggleModeStorage.restore()
+        }
     }
 
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
@@ -360,11 +370,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             configCopy.webExtensionController = webExtensionManager.controller
         }
 
+        let preferredMode = resolvedTextEntryMode()
         let tab: Tab
         if let request {
-            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab)
+            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab, preferredTextEntryMode: preferredMode)
         } else {
-            tab = Tab(fireTab: shouldCreateFireTab)
+            tab = Tab(fireTab: shouldCreateFireTab, preferredTextEntryMode: preferredMode)
         }
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
 
@@ -421,7 +432,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        let tab = Tab(fireTab: model.shouldCreateFireTabs)
+        let tab = Tab(fireTab: model.shouldCreateFireTabs, preferredTextEntryMode: resolvedTextEntryMode())
         model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         _ = save()
     }
@@ -482,7 +493,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         let link = url == nil ? nil : Link(title: nil, url: url!)
-        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs)
+        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs, preferredTextEntryMode: resolvedTextEntryMode())
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 

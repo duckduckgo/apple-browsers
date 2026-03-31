@@ -36,6 +36,7 @@ protocol TabCollectionViewModelDelegate: AnyObject {
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
                                 didRemoveTabAt removalIndex: Int,
                                 andSelectTabAt selectionIndex: Int?)
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?)
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel)
@@ -784,18 +785,7 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        // Use remove + insert rather than replaceTab: replaceTab has no delegate notification,
-        // so TabBarViewController never updates, the old TabBarViewItem keeps holding the old
-        // TabViewModel → old Tab is never released → web process stays alive.
-        // Save selection first: didRemoveTab adjusts selectionIndex when a tab before the
-        // selected one is removed, and insert doesn't restore it, causing the suspended tab
-        // to end up selected.
-        let savedSelection = selectionIndex
-        remove(at: tabIndex)
-        insert(suspendedTab, at: tabIndex, selected: false)
-        if let savedSelection {
-            selectWithoutResettingState(at: savedSelection, forceChange: false)
-        }
+        _ = replaceTab(at: tabIndex, with: suspendedTab)
     }
 
     func resumeTab(at tabIndex: TabIndex) {
@@ -844,6 +834,8 @@ final class TabCollectionViewModel: NSObject {
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
         select(at: selectionIndex, forceChange: forceChange)
+
+        delegate?.tabCollectionViewModel(self, didReplaceTabAt: index)
         return .success(())
     }
 

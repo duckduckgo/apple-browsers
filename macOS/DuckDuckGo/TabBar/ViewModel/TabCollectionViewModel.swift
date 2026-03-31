@@ -275,11 +275,14 @@ final class TabCollectionViewModel: NSObject {
         guard let index = tabCollection.tabs.firstIndex(where: { $0 == tab }) else {
             return false
         }
-        if tab.isSuspended {
+
+        let result = selectUnpinnedTab(at: index, forceChange: forceChange)
+
+        if result, tab.isSuspended {
             tab.resume()
         }
 
-        return selectUnpinnedTab(at: index, forceChange: forceChange)
+        return result
     }
 
     @discardableResult func selectDisplayableTabIfPresent(_ content: Tab.TabContent) -> Bool {

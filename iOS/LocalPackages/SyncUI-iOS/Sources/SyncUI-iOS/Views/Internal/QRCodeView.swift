@@ -33,7 +33,7 @@ struct QRCodeView: View {
     }
 
     var body: some View {
-        Image(uiImage: generateQRCode(from: string, renderSize: 2 * desiredSize))
+        Image(uiImage: generateQRCode(from: string, renderSize: 2 * desiredSize, backgroundColor: backgroundColor))
             .resizable()
             .interpolation(.none)
             .padding(4)
@@ -41,7 +41,7 @@ struct QRCodeView: View {
             .frame(width: CGFloat(desiredSize), height: CGFloat(desiredSize))
     }
 
-    func generateQRCode(from text: String, renderSize: Int) -> UIImage {
+    func generateQRCode(from text: String, renderSize: Int, backgroundColor: Color) -> UIImage {
         let context = CIContext()
         let data = Data(text.utf8)
 
@@ -68,7 +68,7 @@ struct QRCodeView: View {
         let transformed = outputImage.transformed(by: .init(scaleX: scaleFactor, y: scaleFactor))
         let colored = transformed.applyingFilter("CIFalseColor", parameters: [
             "inputColor0": CIColor(color: .black),
-            "inputColor1": CIColor(color: .white)
+            "inputColor1": CIColor(color: UIColor(backgroundColor))
         ])
 
         if let cgImage = context.createCGImage(colored, from: colored.extent) {

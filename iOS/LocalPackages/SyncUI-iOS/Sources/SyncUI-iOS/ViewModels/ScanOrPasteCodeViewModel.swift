@@ -85,16 +85,16 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
         return await delegate?.syncCodeEntered(code: code, source: .qrCode) == true
     }
 
+    func cameraUnavailable() {
+        showCamera = false
+    }
+
     @MainActor
     func copyCode() {
-        guard !showQRCodeModel.codeForDisplayOrPasting.isEmpty else { return }
+        guard showQRCodeModel.codeForDisplayOrPasting.isEmpty == false else { return }
         showQRCodeModel.copy()
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         delegate?.codeCopied()
-    }
-
-    func cameraUnavailable() {
-        showCamera = false
     }
 
     @MainActor

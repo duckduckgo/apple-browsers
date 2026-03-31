@@ -57,7 +57,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
 
     // MARK: - Stored Properties
 
-    let uuid: String?
+    let uuid: TabIdentifier?
     let content: Tab.TabContent
     let title: String?
     let favicon: NSImage?
@@ -76,7 +76,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
     static var supportsSecureCoding: Bool { true }
 
     required init?(coder decoder: NSCoder) {
-        let uuid: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.uuid)
+        let uuid: TabIdentifier? = decoder.decodeIfPresent(at: NSSecureCodingKeys.uuid)
         let url: URL? = decoder.decodeIfPresent(at: NSSecureCodingKeys.url)
         let videoID: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoID)
         let videoTimestamp: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoTimestamp)
@@ -110,7 +110,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
     }
 
     /// Memberwise initializer for creating from a loaded Tab's current state (used in encoding path).
-    init(uuid: String?,
+    init(uuid: TabIdentifier?,
          content: Tab.TabContent,
          title: String?,
          favicon: NSImage?,

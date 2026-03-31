@@ -26,7 +26,7 @@ import PixelKit
 final class PinnedTabsManager {
 
     private(set) var tabCollection: TabCollection
-    private(set) var tabViewModels = [String: TabViewModel]()
+    private(set) var tabViewModels = [TabIdentifier: TabViewModel]()
 
     let didUnpinTabPublisher: AnyPublisher<Int, Never>
 

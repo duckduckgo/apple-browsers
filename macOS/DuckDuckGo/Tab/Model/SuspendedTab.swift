@@ -27,8 +27,8 @@ import Foundation
 /// into a full `Tab` via ``materialize()``.
 final class SuspendedTab: Identifiable {
 
-    let uuid: String
-    var id: String { uuid }
+    let uuid: TabIdentifier
+    var id: TabIdentifier { uuid }
     var content: Tab.TabContent
     var title: String?
     var favicon: NSImage?
@@ -41,7 +41,7 @@ final class SuspendedTab: Identifiable {
     /// Pass-through from TabSnapshotExtension.
     let tabSnapshotIdentifier: String?
 
-    init(uuid: String = UUID().uuidString,
+    init(uuid: TabIdentifier = UUID().uuidString,
          content: Tab.TabContent,
          title: String? = nil,
          favicon: NSImage? = nil,

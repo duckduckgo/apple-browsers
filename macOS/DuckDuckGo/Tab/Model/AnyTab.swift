@@ -32,14 +32,14 @@ enum AnyTab: Identifiable {
 
     // MARK: - Common Properties
 
-    var uuid: String {
+    var uuid: TabIdentifier {
         switch self {
         case .suspended(let s): s.uuid
         case .loaded(let t): t.uuid
         }
     }
 
-    var id: String { uuid }
+    var id: TabIdentifier { uuid }
 
     var content: Tab.TabContent {
         switch self {

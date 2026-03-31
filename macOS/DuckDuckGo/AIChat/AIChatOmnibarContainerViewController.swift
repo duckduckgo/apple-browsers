@@ -597,6 +597,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         return types.isEmpty ? [.jpeg, .png, .webP] : types
     }
 
+    /// Attempts to add an image attachment from a drag-and-drop operation.
+    /// - Returns: `true` if the image was accepted, `false` if attachments are full.
+    func addImageAttachmentFromDrop(_ url: URL) -> Bool {
+        guard !attachmentsContainerView.isFull else { return false }
+        addImageAttachment(from: url)
+        return true
+    }
+
     private func addImageAttachment(from url: URL) {
         guard let originalImage = NSImage(contentsOf: url) else { return }
 

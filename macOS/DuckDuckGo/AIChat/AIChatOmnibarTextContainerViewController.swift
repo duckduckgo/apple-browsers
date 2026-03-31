@@ -88,6 +88,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         scrollView.documentView = textView
         textView.navigationDelegate = self
+        textView.registerForImageDrop()
     }
 
     override func viewWillAppear() {
@@ -424,6 +425,13 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         omnibarController.delegate?.aiChatOmnibarController(omnibarController, didSelectSuggestion: suggestion)
         return true
     }
+
+    func textViewDidReceiveImageDrop(_ fileURL: URL) -> Bool {
+        guard let containerVC = containerViewController else { return false }
+        let canAttach = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
+        guard canAttach else { return false }
+        return containerVC.addImageAttachmentFromDrop(fileURL)
+    }
 }
 
 /// Delegate protocol for handling navigation events from FocusableTextView
@@ -437,12 +445,53 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when user presses Enter while a suggestion is selected
     /// - Returns: `true` if a suggestion was selected, `false` otherwise
     func textViewDidRequestSelectCurrentSuggestion() -> Bool
+    /// Called when the user drops an image file onto the text view
+    /// - Returns: `true` if the image was accepted, `false` otherwise
+    func textViewDidReceiveImageDrop(_ fileURL: URL) -> Bool
 }
 
 /// Custom NSTextView that ensures it can always accept focus when clicked
 private final class FocusableTextView: NSTextView {
 
     weak var navigationDelegate: FocusableTextViewNavigationDelegate?
+
+    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"]
+
+    func registerForImageDrop() {
+        registerForDraggedTypes([.fileURL])
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if Self.imageFileURL(from: sender) != nil {
+            return .copy
+        }
+        return super.draggingEntered(sender)
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if Self.imageFileURL(from: sender) != nil {
+            return .copy
+        }
+        return super.draggingUpdated(sender)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        if let imageURL = Self.imageFileURL(from: sender),
+           navigationDelegate?.textViewDidReceiveImageDrop(imageURL) == true {
+            return true
+        }
+        return super.performDragOperation(sender)
+    }
+
+    private static func imageFileURL(from draggingInfo: NSDraggingInfo) -> URL? {
+        guard let urls = draggingInfo.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [
+            .urlReadingFileURLsOnly: true
+        ]) as? [URL], let url = urls.first else {
+            return nil
+        }
+        let ext = url.pathExtension.lowercased()
+        return imageExtensions.contains(ext) ? url : nil
+    }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true

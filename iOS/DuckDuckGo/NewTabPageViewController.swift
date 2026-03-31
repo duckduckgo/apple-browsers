@@ -48,6 +48,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
+    private var pendingExperimentCompletionOnComplete: (() -> Void)?
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -234,6 +235,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func dismiss() {
+        consumeExperimentCompletionOnCompleteIfNeeded()
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -289,10 +291,11 @@ extension NewTabPageViewController {
 
     func showDuckAIOnboardingExperimentCompletionDialog(message: String, onComplete: (() -> Void)? = nil) {
         dismissHostingController(didFinishNTPOnboarding: false)
+        pendingExperimentCompletionOnComplete = onComplete
 
         let onDismiss = { [weak self] in
             guard let self else { return }
-            onComplete?()
+            consumeExperimentCompletionOnCompleteIfNeeded()
             self.daxDialogsManager.dismiss()
             self.dismissHostingController(didFinishNTPOnboarding: true)
             ViewHighlighter.hideAll()
@@ -364,11 +367,20 @@ extension NewTabPageViewController {
     }
 
     private func dismissHostingController(didFinishNTPOnboarding: Bool) {
+        // Ensure experiment completion callback runs even if the dialog is dismissed
+        // through non-primary paths (e.g. opening Duck.ai, navigation changes, tab close).
+        consumeExperimentCompletionOnCompleteIfNeeded()
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
         if didFinishNTPOnboarding {
             self.newTabPageViewModel.finishOnboarding()
         }
+    }
+
+    private func consumeExperimentCompletionOnCompleteIfNeeded() {
+        guard let completion = pendingExperimentCompletionOnComplete else { return }
+        pendingExperimentCompletionOnComplete = nil
+        completion()
     }
 }

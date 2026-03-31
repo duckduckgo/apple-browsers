@@ -2871,12 +2871,13 @@ extension TabViewModel {
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
         let isAnyPermissionPresent = !usedPermissions.values.isEmpty
         let pageInitiatedPopupOpened = tab.popupHandling?.pageInitiatedPopupOpened ?? false
+        let isHypertextURL = tab.content.urlForWebView?.isHypertextURL ?? false
 
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
         return (shouldShowWhileFocused
             || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
-            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && isAutoplayFeatureOn))
+            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && isAutoplayFeatureOn && isHypertextURL))
         && !isShowingErrorPage
     }
 

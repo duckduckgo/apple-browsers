@@ -127,6 +127,7 @@ class MainViewController: UIViewController {
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
+    let toggleModeStorage: ToggleModeStoring
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     var isNewTabPageVisible: Bool {
@@ -204,6 +205,7 @@ class MainViewController: UIViewController {
 
     weak var tabSwitcherController: TabSwitcherViewController?
     var tabSwitcherButton: TabSwitcherButton?
+    var omniBarTabSwitcherButton: TabSwitcherButton?
 
     let gestureBookmarksButton = GestureToolbarButton()
 
@@ -379,7 +381,8 @@ class MainViewController: UIViewController {
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         whatsNewRepository: WhatsNewMessageRepository,
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
-        voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature()
+        voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
+        toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -441,6 +444,7 @@ class MainViewController: UIViewController {
         self.whatsNewRepository = whatsNewRepository
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.voiceShortcutFeature = voiceShortcutFeature
+        self.toggleModeStorage = toggleModeStorage
 
         super.init(nibName: nil, bundle: nil)
         
@@ -580,7 +584,7 @@ class MainViewController: UIViewController {
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
         applyWidth()
-        
+
         registerForApplicationEvents()
         registerForCookiesManagedNotification()
         registerForSettingsChangeNotifications()
@@ -1064,6 +1068,9 @@ class MainViewController: UIViewController {
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         }
+        if isInPhoneLandscapeLayout {
+            applyPhoneLandscapeWidth()
+        }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
     }
@@ -1221,6 +1228,25 @@ class MainViewController: UIViewController {
 
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
+
+        // Omnibar tab switcher button (for iPhone landscape combined bar)
+        let omniBarTabSwitcher = TabSwitcherStaticButton()
+        omniBarTabSwitcher.delegate = self
+        omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
+        let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
+        container.addSubview(omniBarTabSwitcher)
+        NSLayoutConstraint.activate([
+            omniBarTabSwitcher.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            omniBarTabSwitcher.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            omniBarTabSwitcher.widthAnchor.constraint(equalToConstant: 34),
+            omniBarTabSwitcher.heightAnchor.constraint(equalToConstant: 44),
+        ])
+        omniBarTabSwitcherButton = omniBarTabSwitcher
+
+        // Omnibar fire button (for iPhone landscape combined bar)
+        viewCoordinator.omniBar.barView.onFirePressed = { [weak self] in
+            self?.onFirePressed()
+        }
     }
     
     private func initBookmarksButton() {
@@ -1852,9 +1878,15 @@ class MainViewController: UIViewController {
     private func refreshTabIcon() {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.currentTabsModel.count)
         assert(tabSwitcherButton != nil)
-        tabSwitcherButton?.tabCount = tabManager.currentTabsModel.count
-        tabSwitcherButton?.hasUnread = tabManager.currentTabsModel.hasUnread
-        tabSwitcherButton?.isFireMode = tabManager.currentBrowsingMode == .fire
+        let count = tabManager.currentTabsModel.count
+        let hasUnread = tabManager.currentTabsModel.hasUnread
+        let isFireMode = tabManager.currentBrowsingMode == .fire
+        tabSwitcherButton?.tabCount = count
+        tabSwitcherButton?.hasUnread = hasUnread
+        tabSwitcherButton?.isFireMode = isFireMode
+        omniBarTabSwitcherButton?.tabCount = count
+        omniBarTabSwitcherButton?.hasUnread = hasUnread
+        omniBarTabSwitcherButton?.isFireMode = isFireMode
     }
 
     private func refreshOmniBar() {
@@ -1865,6 +1897,9 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
+            if let tabModel = tabManager.currentTabsModel.currentTab {
+                viewCoordinator.omniBar.setSelectedTextEntryMode(tabModel.preferredTextEntryMode)
+            }
             updateBrowsingMenuHeaderDataSource()
             if let tab = currentTab {
                 refreshUnifiedToggleInput(for: tab)
@@ -1891,11 +1926,13 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
+            // AI tabs use branding UI — skip setSelectedTextEntryMode to avoid
+            // flashing the "ask privately" placeholder before branding covers the text field.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
+            viewCoordinator.omniBar.setSelectedTextEntryMode(tab.tabModel.preferredTextEntryMode)
         }
-
         refreshUnifiedToggleInput(for: tab)
         updateBrowsingMenuHeaderDataSource()
     }
@@ -1931,14 +1968,15 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
-
-        if aiChatAddressBarExperience.shouldShowModeToggle,
-           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController,
-           omniBarVC.selectedTextEntryMode == .aiChat {
-            omniBarVC.setSelectedTextEntryMode(.search)
-        }
-
         refreshOmniBar()
+    }
+
+    private var isModeToggleInAIChatMode: Bool {
+        guard aiChatAddressBarExperience.shouldShowModeToggle,
+              let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else {
+            return false
+        }
+        return omniBarVC.selectedTextEntryMode == .aiChat
     }
 
     private func hideNotificationBarIfBrokenSitePromptShown(afterRefresh: Bool = false) {
@@ -1956,21 +1994,28 @@ class MainViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        
-        if AppWidthObserver.shared.willResize(toWidth: size.width) {
-            applyWidth()
+
+        let isKeyboardShowing = omniBar.isTextFieldEditing
+        if isKeyboardShowing {
+            omniBar.barView.textField.suppressResignFirstResponder = true
+        }
+
+        let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
+            && (AppWidthObserver.shared.isPad || isInPhoneLandscapeLayout || featureFlagger.isFeatureOn(.minimalChromeInLandscape))
+        if needsWidthUpdate {
+            applyWidth(for: size)
         }
 
         self.showMenuHighlighterIfNeeded()
         updateChromeForDuckPlayer()
 
-        let isKeyboardShowing = omniBar.isTextFieldEditing
         coordinator.animate { _ in
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
         } completion: { _ in
+            self.omniBar.barView.textField.suppressResignFirstResponder = false
             if isKeyboardShowing {
-                self.omniBar.beginEditing(animated: true)
+                self.omniBar.beginEditing(animated: false)
             }
 
             ViewHighlighter.updatePositions()
@@ -1993,10 +2038,24 @@ class MainViewController: UIViewController {
         orientationPixelWorker = worker
     }
 
-    private func applyWidth() {
+    private func isPhoneLandscapeMode(for size: CGSize? = nil) -> Bool {
+        guard featureFlagger.isFeatureOn(.minimalChromeInLandscape) else { return false }
+        let size = size ?? view.bounds.size
+        return !AppWidthObserver.shared.isPad
+            && (size.width > size.height)
+    }
+
+    private func applyWidth(for size: CGSize? = nil) {
+
+        if isInPhoneLandscapeLayout {
+            setPhoneLandscapeMode(false)
+            viewCoordinator.setNavBarContainerExpandableHeight(false)
+        }
 
         if AppWidthObserver.shared.isLargeWidth {
             applyLargeWidth()
+        } else if isPhoneLandscapeMode(for: size) {
+            applyPhoneLandscapeWidth()
         } else {
             applySmallWidth()
         }
@@ -2032,11 +2091,23 @@ class MainViewController: UIViewController {
         if AppWidthObserver.shared.isLargeWidth {
             self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
         } else {
+            self.suggestionTrayController?.coversFullScreen = isInPhoneLandscapeLayout
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
     }
     
+    private var isInPhoneLandscapeLayout: Bool = false
+
+    var isUsingSingleBar: Bool {
+        AppWidthObserver.shared.isLargeWidth || isInPhoneLandscapeLayout
+    }
+
+    private func setPhoneLandscapeMode(_ enabled: Bool) {
+        isInPhoneLandscapeLayout = enabled
+        viewCoordinator.omniBar.isPhoneLandscape = enabled
+    }
+
     private func applyLargeWidth() {
         viewCoordinator.tabBarContainer.isHidden = false
         viewCoordinator.toolbar.isHidden = true
@@ -2055,6 +2126,26 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.isEnabled = true
     }
 
+    private func applyPhoneLandscapeWidth() {
+        setPhoneLandscapeMode(true)
+        viewCoordinator.tabBarContainer.isHidden = true
+        viewCoordinator.toolbar.isHidden = true
+        // Push the hidden toolbar off-screen so content container extends to the bottom
+        let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
+        viewCoordinator.constraints.toolbarBottom.constant = bottomHeight
+        viewCoordinator.omniBar.enterPadState()
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+
+        if appSettings.currentAddressBarPosition.isBottom {
+            viewCoordinator.setNavBarContainerBottomToKeyboard()
+            viewCoordinator.setNavBarContainerExpandableHeight(true)
+        } else {
+            viewCoordinator.setNavBarContainerExpandableHeight(false)
+        }
+
+        swipeTabsCoordinator?.isEnabled = true
+    }
+
     @discardableResult
     func tryToShowSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) -> Bool {
         let canShow = suggestionTrayController?.canShow(for: type) ?? false
@@ -2067,7 +2158,7 @@ class MainViewController: UIViewController {
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
-        if !AppWidthObserver.shared.isLargeWidth {
+        if !isUsingSingleBar {
             if !daxDialogsManager.shouldShowFireButtonPulse {
                 ViewHighlighter.hideAll()
             }
@@ -2286,7 +2377,8 @@ class MainViewController: UIViewController {
             ViewHighlighter.hideAll()
         }
         daxDialogsManager.fireButtonPulseCancelled()
-        hideSuggestionTray()
+        // Reset omnibar editing state before creating a new tab.
+        dismissOmniBar()
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         currentTab?.dismiss()
@@ -2949,7 +3041,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var isToolbarHidden: Bool {
-        return viewCoordinator.toolbar.alpha < 1
+        return viewCoordinator.toolbar.isHidden || viewCoordinator.toolbar.alpha < 1
     }
 
     var toolbarHeight: CGFloat {
@@ -3072,6 +3164,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+        commitToggleStateToCurrentTab()
         openAIChat(query, autoSend: true, tools: tools)
     }
 
@@ -3105,6 +3198,13 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQueryUpdated(_ updatedQuery: String) {
+        // During iPad mode toggle transitions, text can be copied to the textField
+        // which triggers this method even in duck.ai mode — suppress suggestions.
+        if isModeToggleInAIChatMode {
+            hideSuggestionTray()
+            return
+        }
+
         if updatedQuery.isEmpty {
             if newTabPageViewController != nil || !omniBar.isTextFieldEditing {
                 hideSuggestionTray()
@@ -3121,6 +3221,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
+        commitToggleStateToCurrentTab()
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -3232,6 +3333,7 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
+        browsingMenu.isUsingSingleBar = isUsingSingleBar
         browsingMenu.onDismiss = { wasActionSelected in
             self.showMenuHighlighterIfNeeded()
             self.viewCoordinator.menuToolbarButton.isEnabled = true
@@ -3470,7 +3572,8 @@ extension MainViewController: OmniBarDelegate {
         }
 
         guard newTabPageViewController == nil else { return }
-        
+        guard !isModeToggleInAIChatMode else { return }
+
         if !skipSERPFlow, isSERPPresented, let query = omniBar.text {
             tryToShowSuggestionTray(.autocomplete(query: query))
         } else {
@@ -3594,7 +3697,14 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onDidBeginEditing() { }
-    func onDidEndEditing() { }
+    func onDidEndEditing() {
+        // Restore the tab's committed mode — the user may have toggled without submitting.
+        // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
+        // firing (text field never becomes first responder during that flow).
+        if let tabMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode {
+            viewCoordinator.omniBar.setSelectedTextEntryMode(tabMode)
+        }
+    }
 
     // MARK: - iPad Expanded Omnibar
 
@@ -3701,6 +3811,27 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+    }
+
+    func onTextEntryModeDidChange(_ mode: TextEntryMode) {
+        onToggleModeSwitched()
+    }
+
+    func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
+        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode
+    }
+
+    /// Saves the current omnibar toggle state to the tab on submission,
+    /// and persists it globally so "Last Used" mode picks it up for new tabs.
+    private func commitToggleStateToCurrentTab() {
+        guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else { return }
+        commitToggleMode(omniBarVC.selectedTextEntryMode)
+    }
+
+    /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
+    func commitToggleMode(_ mode: TextEntryMode) {
+        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+        toggleModeStorage.save(mode)
     }
     
     func isCurrentTabFireTab() -> Bool {
@@ -3927,6 +4058,9 @@ extension MainViewController: TabDelegate {
             }
             tabSwitcherButton?.animateUpdate {
                 self.tabSwitcherButton?.tabCount += 1
+            }
+            omniBarTabSwitcherButton?.animateUpdate {
+                self.omniBarTabSwitcherButton?.tabCount += 1
             }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)

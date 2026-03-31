@@ -120,8 +120,7 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
 
     public override init() {
         self.messageOriginPolicy = .only(rules: [
-            .exact(hostname: "duck.ai"),
-            .exact(hostname: "duckduckgo.com")
+            .exact(hostname: "duck.ai")
         ])
         super.init()
     }

@@ -28,6 +28,7 @@ final class TabSuspensionServiceTests: XCTestCase {
     private var windowControllersManager: WindowControllersManagerMock!
     private var now: Date!
     private var tabExtensionsBuilder: TestTabExtensionsBuilder!
+    private var notificationCenter: NotificationCenter!
 
     private var sut: TabSuspensionService!
 
@@ -36,6 +37,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         featureFlagger = MockFeatureFlagger()
         now = Date()
         tabExtensionsBuilder = TestTabExtensionsBuilder(load: [TabSuspensionExtension.self])
+        notificationCenter = NotificationCenter()
     }
 
     override func tearDown() {
@@ -44,6 +46,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         windowControllersManager = nil
         now = nil
         tabExtensionsBuilder = nil
+        notificationCenter = nil
         super.tearDown()
     }
 
@@ -52,6 +55,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         return TabSuspensionService(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
+            notificationCenter: notificationCenter,
             dateProvider: { [unowned self] in self.now }
         )
     }
@@ -62,7 +66,7 @@ final class TabSuspensionServiceTests: XCTestCase {
     }
 
     private func postMemoryPressure() {
-        NotificationCenter.default.post(name: .memoryPressureCritical, object: nil)
+        notificationCenter.post(name: .memoryPressureCritical, object: nil)
     }
 
     // MARK: - Feature Flag
@@ -86,19 +90,16 @@ final class TabSuspensionServiceTests: XCTestCase {
 
     func testWhenFeatureFlagEnabled_ThenMemoryPressureSuspendsTabs() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-20 * 60))
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
         let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
         let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
         sut = makeSUT(tabCollectionViewModels: [vm])
         vm.select(at: .unpinned(1))
+        tab.lastSelectedAt = now.addingTimeInterval(-20 * 60)
 
         postMemoryPressure()
 
-        // Tab won't be suspended because the default Tab doesn't have tabSuspension extension set up,
-        // but the service logic runs. We verify the feature flag gates the method.
-        // The actual suspension depends on canBeSuspended which requires TabExtensions.
-        // This test verifies the guard doesn't return early.
-        XCTAssertNotNil(sut)
+        XCTAssert(vm.tabs.first?.isSuspended == true)
     }
 
     // MARK: - Inactive Interval

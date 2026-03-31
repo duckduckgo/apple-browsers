@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import PrivacyConfig
 
@@ -26,22 +27,29 @@ final class TabSuspensionService {
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let notificationCenter: NotificationCenter
     private let dateProvider: () -> Date
+    private var cancellables: Set<AnyCancellable> = []
 
-    init(windowControllersManager: WindowControllersManagerProtocol, featureFlagger: FeatureFlagger, dateProvider: @escaping () -> Date = { Date() }) {
+    init(
+        windowControllersManager: WindowControllersManagerProtocol,
+        featureFlagger: FeatureFlagger,
+        notificationCenter: NotificationCenter = .default,
+        dateProvider: @escaping () -> Date = { Date() }
+    ) {
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
+        self.notificationCenter = notificationCenter
         self.dateProvider = dateProvider
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleMemoryPressure),
-            name: .memoryPressureCritical,
-            object: nil
-        )
+        notificationCenter.publisher(for: .memoryPressureCritical)
+            .sink { [weak self] notification in
+                self?.handleMemoryPressure(notification)
+            }
+            .store(in: &cancellables)
     }
 
-    @objc private func handleMemoryPressure() {
+    private func handleMemoryPressure(_ notification: Notification) {
         guard featureFlagger.isFeatureOn(.tabSuspension) else { return }
 
         let cutoffDate = dateProvider().addingTimeInterval(-Self.minimumInactiveInterval)

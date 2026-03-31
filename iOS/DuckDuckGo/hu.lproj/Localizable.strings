@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Hang és videó engedélyezése";
+"autoplay.mode.blockAll" = "Hang és videó blokkolása";
+"autoplay.mode.blockAudio" = "Hang blokkolása";
+"settings.autoplay" = "Automatikus lejátszás";
+"settings.autoplay.duck.player.link" = "Duck Player beállításaira";
+"settings.autoplay.footer" = "Az automatikus lejátszás beállításai csak az újonnan megnyitott lapokra vonatkoznak. A módosítások a már megnyitott lapokra csak az alkalmazás újraindítása után alkalmazhatók. A Duck Player automatikus lejátszási funkciójának kezeléséhez lépj a ";
+"settings.media.section" = "Média";

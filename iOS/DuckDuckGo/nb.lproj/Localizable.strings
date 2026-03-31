@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Tillat lyd og video";
+"autoplay.mode.blockAll" = "Blokker lyd og video";
+"autoplay.mode.blockAudio" = "Blokker lyd";
+"settings.autoplay" = "Autoplay";
+"settings.autoplay.duck.player.link" = "Duck Player-innstillinger";
+"settings.autoplay.footer" = "Innstillingene for automatisk avspilling gjelder kun for nylig åpnede faner. Endringer kan ikke gjøres på eksisterende faner med mindre programmet startes på nytt. For å administrere automatisk avspilling i Duck Player kan du gå til ";
+"settings.media.section" = "Media";

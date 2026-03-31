@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "O que queres importar?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Permitir áudio e vídeo";
+"autoplay.mode.blockAll" = "Bloquear áudio e vídeo";
+"autoplay.mode.blockAudio" = "Bloquear Áudio";
+"settings.autoplay" = "Reprodução automática";
+"settings.autoplay.duck.player.link" = "Definições do Duck Player";
+"settings.autoplay.footer" = "As definições de reprodução automática só se aplicam a separadores recém-abertos. As alterações não podem ser aplicadas aos separadores existentes, a menos que a aplicação seja reiniciada. Para gerir a reprodução automática no Duck Player, acede a ";
+"settings.media.section" = "Mídia";

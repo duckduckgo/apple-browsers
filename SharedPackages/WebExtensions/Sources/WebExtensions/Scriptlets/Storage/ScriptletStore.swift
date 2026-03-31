@@ -106,9 +106,9 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
             updateMetadata(for: extensionType, version: version, scriptlets: scriptlets)
             return scriptlets
         } catch {
-            Logger.webExtensions.error("[Scriptlets] Failed to save scriptlets for '\(extensionType.rawValue)', restoring backup: \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to save scriptlets for '\(extensionType.rawValue)', restoring backup: \(error)")
             try? fileManager.moveItem(at: backupDirectory, to: extensionDirectory)
-            throw ScriptletError.storageFailed(underlying: error.localizedDescription)
+            throw ScriptletError.storageFailed(underlying: "\(error)")
         }
     }
 
@@ -181,7 +181,7 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
             let metadata = try JSONDecoder().decode(ScriptletCacheMetadata.self, from: data)
             return metadata
         } catch {
-            Logger.webExtensions.error("[Scriptlets] Failed to decode metadata: \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to decode metadata: \(error)")
             return nil
         }
     }
@@ -191,7 +191,7 @@ public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracki
             let data = try JSONEncoder().encode(metadata)
             defaults.set(data, forKey: metadataKey)
         } catch {
-            Logger.webExtensions.error("[Scriptlets] Failed to encode metadata: \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to encode metadata: \(error)")
         }
     }
 

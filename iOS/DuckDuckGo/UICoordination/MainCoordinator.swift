@@ -381,7 +381,8 @@ final class MainCoordinator {
         return ScriptletManagerFactory.makeConfiguration(
             privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
             apiService: DefaultAPIService(),
-            baseDirectory: scriptletsDirectory
+            baseDirectory: scriptletsDirectory,
+            isProduction: !isDebugBuild
         )
     }
 

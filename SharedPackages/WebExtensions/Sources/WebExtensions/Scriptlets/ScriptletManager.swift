@@ -28,6 +28,7 @@ public final class ScriptletManager: ScriptletProviding {
     private let fetcher: ScriptletFetching
     private let validator: ScriptletValidating
     private let store: ScriptletStoring
+    private let isProduction: Bool
 
     @Published private var availabilities: [DuckDuckGoWebExtensionType: ScriptletAvailability] = [:]
 
@@ -39,12 +40,14 @@ public final class ScriptletManager: ScriptletProviding {
         configProvider: ScriptletConfigProviding,
         fetcher: ScriptletFetching,
         validator: ScriptletValidating,
-        store: ScriptletStoring
+        store: ScriptletStoring,
+        isProduction: Bool = true
     ) {
         self.configProvider = configProvider
         self.fetcher = fetcher
         self.validator = validator
         self.store = store
+        self.isProduction = isProduction
     }
 
     // MARK: - ScriptletProviding
@@ -163,13 +166,23 @@ public final class ScriptletManager: ScriptletProviding {
 
         do {
             let fetched = try await fetcher.fetch(manifest.scriptlets)
-            try validator.validate(fetched)
+
+            do {
+                try validator.validate(fetched)
+                Logger.webExtensions.info("[Scriptlets] Signature validation passed for '\(extensionType.rawValue)' (\(fetched.count) scriptlet(s))")
+            } catch {
+                if isProduction {
+                    throw error
+                }
+                Logger.webExtensions.warning("[Scriptlets] Validation failed for '\(extensionType.rawValue)' (non-production, continuing): \(error)")
+            }
+
             let scriptlets = try store.save(fetched, version: manifest.version, for: extensionType)
 
             availabilities[extensionType] = .available(scriptlets)
             Logger.webExtensions.info("[Scriptlets] Updated to v\(manifest.version) with \(scriptlets.count) scriptlet(s) for '\(extensionType.rawValue)'")
         } catch {
-            Logger.webExtensions.error("[Scriptlets] Failed to fetch/update scriptlets for '\(extensionType.rawValue)': \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to fetch/update scriptlets for '\(extensionType.rawValue)': \(error)")
             if let existing = existingScriptlets {
                 availabilities[extensionType] = .available(existing)
             } else {

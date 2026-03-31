@@ -27,6 +27,7 @@ public enum ScriptletManagerFactory {
         privacyConfigManager: PrivacyConfigurationManaging,
         apiService: APIService,
         baseDirectory: URL,
+        isProduction: Bool = true,
         defaults: UserDefaults = .standard,
         installer: ScriptletInstalling = ScriptletInstaller()
     ) -> ScriptletConfiguration {
@@ -37,7 +38,9 @@ public enum ScriptletManagerFactory {
 
         let fetcher = ScriptletFetcher(apiService: apiService)
 
-        let validator = StubScriptletValidator()
+        let validator = ScriptletSignatureValidator(
+            publicKey: ScriptletSigningKeys.publicKey
+        )
 
         let store = ScriptletStore(
             baseDirectory: baseDirectory,
@@ -48,7 +51,8 @@ public enum ScriptletManagerFactory {
             configProvider: configProvider,
             fetcher: fetcher,
             validator: validator,
-            store: store
+            store: store,
+            isProduction: isProduction
         )
 
         return ScriptletConfiguration(

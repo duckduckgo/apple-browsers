@@ -1882,7 +1882,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return ScriptletManagerFactory.makeConfiguration(
             privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             apiService: DefaultAPIService(),
-            baseDirectory: scriptletsDirectory
+            baseDirectory: scriptletsDirectory,
+            isProduction: !StandardApplicationBuildType().isDebugBuild
         )
     }
 

@@ -138,7 +138,7 @@ public final class WebExtensionScriptletCoordinator {
             Logger.webExtensions.info("[Scriptlets] Installed v\(version) for '\(type.rawValue)'")
             try await installationPathResolver?.reloadExtension(for: type)
         } catch {
-            Logger.webExtensions.error("[Scriptlets] Failed to install scriptlets for '\(type.rawValue)': \(error.localizedDescription)")
+            Logger.webExtensions.error("[Scriptlets] Failed to install scriptlets for '\(type.rawValue)': \(error)")
         }
     }
 }

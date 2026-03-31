@@ -2148,6 +2148,7 @@
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Stelle eine Folgefrage ...";
 
+
 /* No comment provided by engineer. */
 "Install Extension" = "Erweiterung installieren";
 

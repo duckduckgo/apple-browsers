@@ -240,21 +240,22 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
-    case suppressTrackerAnimationOnColdStart
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213557229772465?focus=true
     case autoplayBlocking
 
-
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211535698286882?focus=true
     case customXSafariRedirectHandling
 
+    /// https://app.asana.com/1/137249556945/project/1200194497630846/task/1213467145159830?focus=true
     case crashReportOptInStatusResetting
 
+    /// https://app.asana.com/1/137249556945/task/1213690830833565
     case fireproofingETLDPlus1
 
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1211721072408370?focus=true
     case screenTimeCleaning
 
+    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1213819243479975?focus=true
     case minimalChromeInLandscape
 }
 

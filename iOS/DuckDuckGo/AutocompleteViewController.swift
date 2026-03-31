@@ -157,6 +157,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         model.query = query
     }
 
+    func setSectionTitle(_ title: String?) {
+        model.sectionTitle = title
+    }
+
     private func fireUsagePixels() {
         var bookmark = false
         var favorite = false

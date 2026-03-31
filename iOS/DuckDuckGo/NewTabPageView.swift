@@ -92,6 +92,15 @@ private extension NewTabPageView {
                         .padding(.top, Metrics.nonGridSectionTopPadding)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
 
+                    if let title = viewModel.sectionTitle, !title.isEmpty {
+                        Text(title)
+                            .daxTitle3()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, -7)
+                            .padding(.trailing, 60)
+                    }
+
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
                 }

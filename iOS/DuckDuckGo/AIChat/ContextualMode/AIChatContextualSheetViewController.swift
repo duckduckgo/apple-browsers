@@ -110,7 +110,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
 
-    private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
+    private lazy var contextualInputViewController = AIChatContextualInputViewController(
+        voiceSearchHelper: voiceSearchHelper,
+        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements)
+    )
     private var cancellables = Set<AnyCancellable>()
 
     /// The single web view controller for this sheet, created once and reused

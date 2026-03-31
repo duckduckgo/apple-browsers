@@ -1,8 +1,8 @@
 //
-//  DebugSaveProfileViewController.swift
+//  DBPContinuedProcessingError.swift
 //  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,18 +18,17 @@
 //
 
 import Foundation
-import SwiftUI
-import DataBrokerProtectionCore
 
-public final class DebugSaveProfileViewController: UIHostingController<DebugSaveProfileView> {
+enum DBPContinuedProcessingError: LocalizedError {
+    case taskHandlerRegistrationFailed
+    case taskRequestSubmissionFailed(underlyingError: Error)
 
-    public init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?) {
-        let viewModel = DebugSaveProfileViewModel(databaseDelegate: databaseDelegate)
-        let contentView = DebugSaveProfileView(viewModel: viewModel)
-        super.init(rootView: contentView)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    var errorDescription: String? {
+        switch self {
+        case .taskHandlerRegistrationFailed:
+            "Failed to register continued processing task handler."
+        case .taskRequestSubmissionFailed(let underlyingError):
+            "Failed to submit continued processing task request: \(underlyingError.localizedDescription)"
+        }
     }
 }

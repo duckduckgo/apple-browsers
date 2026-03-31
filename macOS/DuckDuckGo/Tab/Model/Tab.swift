@@ -308,15 +308,22 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.userContentController = userContentController
         self.onboardingPixelReporter = onboardingPixelReporter
         self.pageRefreshMonitor = pageRefreshMonitor
-        self.initialWebViewSize = webViewSize
-        self.initialShouldLoadInBackground = shouldLoadInBackground
+
+        webView = WebView(frame: CGRect(origin: .zero, size: webViewSize),
+                          configuration: configuration,
+                          featureFlagger: featureFlagger,
+                          privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
+        // The feature flag enables private API based control over quick actions to allow all actions (e.g. lookup)
+        // other than link preview. To be on a safe side, disable quick actions here entirely if the feature flag is disabled.
+        webView.allowsLinkPreview = featureFlagger.isFeatureOn(.webViewLookUpAction)
+        webView.addsVisitedLinks = true
+        webView.setAccessibilityIdentifier("WebView")
 
         permissions = PermissionModel(permissionManager: permissionManager,
                                       geolocationService: geolocationService,
                                       featureFlagger: featureFlagger)
 
         let userContentControllerPromise = Future<UserContentController, Never>.promise()
-        self.userContentControllerPromiseFulfill = userContentControllerPromise.fulfill
         let userScriptsPublisher = userContentControllerPromise.future
             .compactMap { $0.$contentBlockingAssets }
             .switchToLatest()
@@ -324,7 +331,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             .eraseToAnyPublisher()
 
         let webViewPromise = Future<WKWebView, Never>.promise()
-        self.webViewPromiseFulfill = webViewPromise.fulfill
         let interactionEventsPublisher = webViewPromise.future
             .compactMap { $0 as? WebView }
             .flatMap { $0.interactionEventsPublisher }
@@ -372,17 +378,18 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                                             createChildTab: { tabGetter()?.createChildTab(with: $0, securityOrigin: $1, of: $2) },
                                                                             presentTab: { childTab, kind in tabGetter().map { $0.delegate?.tab($0, createdChild: childTab, of: kind) } },
                                                                             newWindowPolicyDecisionMakers: { tabGetter()?.newWindowPolicyDecisionMakers })
-        self.storedTabExtensionsBuilderArguments = tabExtensionsBuilderArguments
         self.extensions = extensionsBuilder
             .build(with: tabExtensionsBuilderArguments, dependencies: extensionDependencies)
         super.init()
         tabGetter = { [weak self] in self }
+        userContentController.map(userContentControllerPromise.fulfill)
 
+        setupNavigationDelegate(navigationDelegate: navigationDelegate,
+                                newWindowPolicyDecisionMakers: &newWindowPolicyDecisionMakers,
+                                args: tabExtensionsBuilderArguments)
         userContentController?.delegate = self
-
-        // WebView is always created eagerly — deferred creation is handled by SuspendedTab
-        self.webView = createWebView()
-        finalizeWebViewSetup()
+        setupWebView(shouldLoadInBackground: shouldLoadInBackground)
+        webViewPromise.fulfill(webView)
 
         faviconCancellable = extensions.favicons?.faviconPublisher.assign(to: \.favicon, onWeaklyHeld: self)
         if favicon == nil {
@@ -395,70 +402,27 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 self?.onDuckDuckGoEmailSignOut(notification)
             }
 
+        addDeallocationChecks(for: webView)
+
+        if let crashRecoveryExtension = extensions.tabCrashRecovery {
+            tabCrashRecoveryCancellable = crashRecoveryExtension.tabCrashErrorPayloadPublisher
+                .sink { [weak self] errorPayload in
+                    guard let self else {
+                        return
+                    }
+                    error = errorPayload.error
+                    loadErrorHTML(errorPayload.error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: errorPayload.url, alternate: true)
+                }
+
+            crashIndicatorModel.setUp(with: crashRecoveryExtension.tabDidCrashPublisher)
+        }
+
         themeCancellable = themeManager.themePublisher
             .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] theme in
                 self?.refreshErrorHTMLIfNeeded(themeName: theme.name)
             }
-    }
-
-    // MARK: - Deferred WebView Creation
-
-    private var initialWebViewSize: CGSize = CGSize(width: 1024, height: 768)
-    private var initialShouldLoadInBackground: Bool = false
-    private var webViewPromiseFulfill: ((WKWebView) -> Void)!
-    private var userContentControllerPromiseFulfill: ((UserContentController) -> Void)!
-    private var storedTabExtensionsBuilderArguments: TabExtensionsBuilderArguments!
-
-    /// Creates the WKWebView. Called on first access of `webView`.
-    private func createWebView() -> WebView {
-        let wv = WebView(frame: CGRect(origin: .zero, size: initialWebViewSize),
-                         configuration: webViewConfiguration,
-                         featureFlagger: featureFlagger,
-                         privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
-        wv.allowsLinkPreview = featureFlagger.isFeatureOn(.webViewLookUpAction)
-        wv.addsVisitedLinks = true
-        wv.setAccessibilityIdentifier("WebView")
-        return wv
-    }
-
-    /// Wires up the WebView after it has been stored in `_webView`.
-    /// Called immediately after `createWebView()` from the `webView` getter.
-    private func finalizeWebViewSetup() {
-        MainActor.assumeMainThread {
-            userContentController.map { userContentControllerPromiseFulfill($0) }
-
-            setupNavigationDelegate(navigationDelegate: navigationDelegate,
-                                    newWindowPolicyDecisionMakers: &newWindowPolicyDecisionMakers,
-                                    args: storedTabExtensionsBuilderArguments)
-            setupWebView(shouldLoadInBackground: initialShouldLoadInBackground)
-            webViewPromiseFulfill(webView)
-
-            addDeallocationChecks(for: webView)
-
-            if let crashRecoveryExtension = extensions.tabCrashRecovery {
-                tabCrashRecoveryCancellable = crashRecoveryExtension.tabCrashErrorPayloadPublisher
-                    .sink { [weak self] errorPayload in
-                        guard let self else {
-                            return
-                        }
-                        error = errorPayload.error
-                        loadErrorHTML(errorPayload.error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: errorPayload.url, alternate: true)
-                    }
-
-                crashIndicatorModel.setUp(with: crashRecoveryExtension.tabDidCrashPublisher)
-            }
-
-            webView.audioStatePublisher.sink { [weak self] state in
-                self?.audioStateSubject.send(state)
-            }.store(in: &webViewCancellables)
-
-            // Release references no longer needed after setup
-            storedTabExtensionsBuilderArguments = nil
-            webViewPromiseFulfill = nil
-            userContentControllerPromiseFulfill = nil
-        }
     }
 
 #if DEBUG
@@ -517,12 +481,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     deinit {
         DispatchQueue.main.asyncOrNow { [webView, userContentController] in
             // WebKit objects must be deallocated on the main thread
-            webView?.stopAllMedia(shouldStopLoading: true)
+            webView.stopAllMedia(shouldStopLoading: true)
 
             userContentController?.cleanUpBeforeClosing()
 #if DEBUG
             if case .normal = AppVersion.runType {
-                webView?.assertObjectDeallocated(after: 4.0)
+                webView.assertObjectDeallocated(after: 4.0)
             }
 #endif
         }
@@ -595,12 +559,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     // MARK: - Properties
 
-    private(set) var webView: WebView!
-
-    private let audioStateSubject = CurrentValueSubject<WebView.AudioState, Never>(.unmuted(isPlayingAudio: false))
+    let webView: WebView
 
     var audioState: WebView.AudioState {
-        audioStateSubject.value
+        webView.audioState
     }
 
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
@@ -610,7 +572,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @Published private(set) var isSuspended: Bool
 
     var audioStatePublisher: AnyPublisher<WebView.AudioState, Never> {
-        audioStateSubject.eraseToAnyPublisher()
+        webView.audioStatePublisher
     }
 
     var contentChangeEnabled = true
@@ -1069,7 +1031,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @MainActor(unsafe)
     @discardableResult
     private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource) -> ExpectedNavigation? {
-        let willReload = content.urlForWebView.map { shouldReload($0, source: reloadIfNeededSource) } ?? false
         guard let url = content.urlForWebView,
               shouldReload(url, source: reloadIfNeededSource) else { return nil }
 
@@ -1082,8 +1043,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         if webView.url == url, webView.backForwardList.currentItem?.url == url, !webView.isLoading, !content.isUserRequestedPageDownload {
             return reload()
         }
-        let didRestore = restoreInteractionStateIfNeeded()
-        if didRestore { return nil /* session restored */ }
+        if restoreInteractionStateIfNeeded() { return nil /* session restored */ }
         invalidateInteractionStateData()
 
         let source = content.source

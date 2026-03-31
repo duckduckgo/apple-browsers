@@ -306,6 +306,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case foregroundRunningOnAppActive
     case foregroundRunningWhenDashboardOpen
     case clickActionDelayReductionOptimization
+    case continuedProcessing
     case pirRollout
     case goToMarket
     case webViewUserAgent
@@ -376,6 +377,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
 
+    /// Enables the default omnibar toggle position setting for AI Chat
+    case omnibarDefaultPosition
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
@@ -411,6 +415,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
+
+    /// Enables improved contextual sheet UX (welcome message, ask about page, etc.)
+    case contextualSheetImprovements
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion

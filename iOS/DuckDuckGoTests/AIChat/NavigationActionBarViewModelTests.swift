@@ -144,6 +144,7 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool = false
     var hasSubmittedPrompt: Bool = false
+    let isAIVoiceChatEnabled: Bool = false
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var modeParameters: [String: String] = [:]
 

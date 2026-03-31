@@ -16,15 +16,14 @@
 //  limitations under the License.
 //
 
+import CryptoKit
 import Foundation
-import Security
-import os.log
 
 public final class ScriptletSignatureValidator: ScriptletValidating {
 
-    private let publicKey: SecKey
+    private let publicKey: P256.Signing.PublicKey
 
-    public init(publicKey: SecKey) {
+    public init(publicKey: P256.Signing.PublicKey) {
         self.publicKey = publicKey
     }
 
@@ -38,15 +37,8 @@ public final class ScriptletSignatureValidator: ScriptletValidating {
                 throw ScriptletError.invalidSignatureFormat(name: item.descriptor.name)
             }
 
-            var error: Unmanaged<CFError>?
-            let isValid = SecKeyVerifySignature(
-                publicKey,
-                .rsaSignatureMessagePKCS1v15SHA256,
-                item.data as CFData,
-                signatureData as CFData,
-                &error)
-
-            if !isValid {
+            guard let signature = try? P256.Signing.ECDSASignature(derRepresentation: signatureData),
+                  publicKey.isValidSignature(signature, for: item.data) else {
                 throw ScriptletError.signatureVerificationFailed(name: item.descriptor.name)
             }
         }

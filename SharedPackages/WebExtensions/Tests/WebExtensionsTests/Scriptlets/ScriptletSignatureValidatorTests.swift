@@ -16,20 +16,19 @@
 //  limitations under the License.
 //
 
-import Security
+import CryptoKit
 import XCTest
 @testable import WebExtensions
 
 final class ScriptletSignatureValidatorTests: XCTestCase {
 
-    private var privateKey: SecKey!
-    private var publicKey: SecKey!
+    private var privateKey: P256.Signing.PrivateKey!
+    private var publicKey: P256.Signing.PublicKey!
 
     override func setUp() {
         super.setUp()
-        let (priv, pub) = Self.generateRSAKeyPair()
-        privateKey = priv
-        publicKey = pub
+        privateKey = P256.Signing.PrivateKey()
+        publicKey = privateKey.publicKey
     }
 
     override func tearDown() {
@@ -74,11 +73,11 @@ final class ScriptletSignatureValidatorTests: XCTestCase {
     }
 
     func testWhenSignatureIsFromDifferentKeyThenThrowsSignatureVerificationFailed() throws {
-        let (otherPrivate, _) = Self.generateRSAKeyPair()
+        let otherPrivateKey = P256.Signing.PrivateKey()
         let validator = ScriptletSignatureValidator(publicKey: publicKey)
 
         let data = Data("console.log('hello')".utf8)
-        let wrongSignature = try Self.rsaSign(data, with: otherPrivate)
+        let wrongSignature = try otherPrivateKey.signature(for: data).derRepresentation.base64EncodedString()
         let fetched = [try makeFetchedScriptlet(name: "script.js", data: data, signature: wrongSignature)]
 
         XCTAssertThrowsError(try validator.validate(fetched)) { error in
@@ -129,19 +128,7 @@ final class ScriptletSignatureValidatorTests: XCTestCase {
     // MARK: - Helpers
 
     private func sign(_ data: Data) throws -> String {
-        try Self.rsaSign(data, with: privateKey)
-    }
-
-    private static func rsaSign(_ data: Data, with key: SecKey) throws -> String {
-        var error: Unmanaged<CFError>?
-        guard let signatureData = SecKeyCreateSignature(
-            key,
-            .rsaSignatureMessagePKCS1v15SHA256,
-            data as CFData,
-            &error) as Data? else {
-            throw error?.takeRetainedValue() ?? NSError(domain: "TestError", code: -1)
-        }
-        return signatureData.base64EncodedString()
+        try privateKey.signature(for: data).derRepresentation.base64EncodedString()
     }
 
     private func makeFetchedScriptlet(name: String, data: Data, signature: String? = nil) throws -> FetchedScriptlet {
@@ -151,19 +138,5 @@ final class ScriptletSignatureValidatorTests: XCTestCase {
             url: URL(string: "https://example.com/\(name)")!,
             signature: sig)
         return FetchedScriptlet(descriptor: descriptor, data: data)
-    }
-
-    private static func generateRSAKeyPair() -> (privateKey: SecKey, publicKey: SecKey) {
-        let attributes: [CFString: Any] = [
-            kSecAttrKeyType: kSecAttrKeyTypeRSA,
-            kSecAttrKeySizeInBits: 2048
-        ]
-
-        var error: Unmanaged<CFError>?
-        guard let privateKey = SecKeyCreateRandomKey(attributes as CFDictionary, &error),
-              let publicKey = SecKeyCopyPublicKey(privateKey) else {
-            fatalError("Failed to generate RSA test key pair: \(error?.takeRetainedValue() as Any)")
-        }
-        return (privateKey, publicKey)
     }
 }

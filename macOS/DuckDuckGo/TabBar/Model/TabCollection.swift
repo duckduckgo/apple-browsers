@@ -32,6 +32,10 @@ final class TabCollection: NSObject {
         tabs.compactMap(\.tab)
     }
 
+    var loadedTabsPublisher: AnyPublisher<[Tab], Never> {
+        $tabs.map { $0.compactMap(\.tab) }.eraseToAnyPublisher()
+    }
+
     let didRemoveTabPublisher = PassthroughSubject<(AnyTab, Int), Never>()
 
     init(tabs: [AnyTab] = [], isPopup: Bool = false) {

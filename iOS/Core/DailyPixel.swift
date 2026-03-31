@@ -119,6 +119,8 @@ public final class DailyPixel {
         )
     }
 
+    /// Write failures are intentionally ignored here. If the write fails, `hasBeenFiredToday` will
+    /// defensively return `true` on read failure, suppressing the pixel rather than firing repeatedly.
     private static func updatePixelLastFireDate(forKey key: String, dailyPixelStore: ThrowingKeyValueStoring) {
         try? dailyPixelStore.set(Date(), forKey: key)
     }

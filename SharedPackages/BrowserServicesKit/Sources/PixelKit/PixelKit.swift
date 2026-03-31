@@ -665,6 +665,8 @@ public final class PixelKit {
         pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix))
     }
 
+    /// Write failures are intentionally ignored here. If the write fails, `pixelHasBeenFiredToday`
+    /// defensively returns `true` on read failure, suppressing the pixel rather than firing repeatedly.
     private func updatePixelLastFireDate(pixelName: String) {
         try? defaults.set(dateGenerator(), forKey: userDefaultsKeyName(forPixelName: pixelName))
     }

@@ -1515,10 +1515,9 @@ extension TabBarViewItem: NSMenuDelegate {
             return
         }
 
+        let isSuspended = tabViewModel?.isSuspended ?? false
         // This item is only ever visible to internal users so we don't need translations.
         let title = isSuspended ? "Resume Tab" : "Suspend Tab"
-
-        let isSuspended = tabViewModel?.isSuspended ?? false
         let canToggleSuspension = isSuspended || (tabViewModel?.canBeSuspended == true)
         let isEnabled = !isSelected && canToggleSuspension
 

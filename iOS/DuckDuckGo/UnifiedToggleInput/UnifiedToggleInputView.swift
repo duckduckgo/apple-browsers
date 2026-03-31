@@ -103,6 +103,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
     }
 
+    var isToolbarAIVoiceChatActive: Bool = false {
+        didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }
@@ -715,6 +719,9 @@ private extension UnifiedToggleInputView {
         }
         toolsToolbar.onAttachTapped = { [weak self] in
             self?.onAttachTapped?()
+        }
+        toolsToolbar.onVoiceTapped = { [weak self] in
+            self?.handler.microphoneButtonTapped()
         }
         addSubview(toolsToolbar)
 

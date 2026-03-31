@@ -39,6 +39,7 @@ protocol SwitchBarHandling: AnyObject {
     var currentText: String { get }
     var currentToggleState: TextEntryMode { get }
     var isVoiceSearchEnabled: Bool { get }
+    var isAIVoiceChatEnabled: Bool { get }
     var hasUserInteractedWithText: Bool { get }
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
@@ -131,7 +132,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
     }
-    
+
+    var isAIVoiceChatEnabled: Bool {
+        voiceShortcutFeature.isAvailable
+    }
+
     var modeParameters: [String: String] {
         ["mode": currentToggleState.rawValue]
     }

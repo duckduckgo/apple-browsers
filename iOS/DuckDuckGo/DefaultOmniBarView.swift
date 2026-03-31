@@ -345,7 +345,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }()
 
     var onAIChatSendPressed: (() -> Void)?
-    var isVoiceModeEnabled: Bool = false
+    var isAIVoiceChatEnabled: Bool = false
 
     let aiChatTextView: UITextView = {
         let textView = UITextView()
@@ -1215,7 +1215,7 @@ extension DefaultOmniBarView {
             aiChatSendButton.backgroundColor = UIColor(designSystemColor: .accent)
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
-        } else if isVoiceModeEnabled {
+        } else if isAIVoiceChatEnabled {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
             aiChatSendButton.backgroundColor = UIColor(designSystemColor: .accent)
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)

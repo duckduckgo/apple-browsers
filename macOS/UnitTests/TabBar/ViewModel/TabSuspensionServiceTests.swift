@@ -114,7 +114,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         XCTAssertFalse(tab.isSuspended)
     }
 
-    func testWhenTabHasNoLastSelectedAt_ThenItIsNotSuspended() {
+    func testWhenTabHasNoLastSelectedAt_ThenItIsSuspended() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), lastSelectedAt: nil)
         let selectedTab = Tab(content: .newtab, lastSelectedAt: now)
@@ -124,7 +124,8 @@ final class TabSuspensionServiceTests: XCTestCase {
 
         postMemoryPressure()
 
-        XCTAssertFalse(tab.isSuspended)
+        // Tabs with no lastSelectedAt were never selected — they should be suspended
+        XCTAssertTrue(tab.isSuspended)
     }
 
     // MARK: - Burner Tabs

@@ -47,9 +47,16 @@ final class TabSuspensionService {
         let cutoffDate = dateProvider().addingTimeInterval(-Self.minimumInactiveInterval)
 
         for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {
-            for (index, tab) in viewModel.tabCollection.tabs.enumerated() where !tab.isSuspended {
-                guard let lastSelectedAt = tab.lastSelectedAt, lastSelectedAt < cutoffDate else { continue }
+            let indicesToSuspend = viewModel.tabCollection.tabs.enumerated().compactMap { index, tab -> Int? in
+                guard !tab.isSuspended,
+                      tab.lastSelectedAt == nil || tab.lastSelectedAt! < cutoffDate
+                else {
+                    return nil
+                }
+                return index
+            }
 
+            for index in indicesToSuspend.reversed() {
                 viewModel.suspendTab(at: .unpinned(index))
             }
         }

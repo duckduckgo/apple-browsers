@@ -1599,17 +1599,11 @@ extension Tab {
             favicon: favicon,
             interactionStateData: getActualInteractionStateData(),
             shouldLoadInBackground: false,
+            burnerMode: burnerMode,
             isSuspended: true,
             lastSelectedAt: lastSelectedAt
         )
         return suspendedTab
-    }
-
-    /// Marks the tab as suspended. The actual memory is freed by `TabCollectionViewModel`
-    /// which replaces this Tab instance with a fresh, unloaded one.
-    @MainActor
-    func suspend() {
-        isSuspended = true
     }
 
     /// Resumes a suspended tab by loading its content URL.

@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai-hang";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Könyvjelző szerkesztése";
 
@@ -1086,6 +1089,12 @@
 
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Csevegés törlése";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Csevegés törlése?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Kihagyás";
@@ -2136,6 +2145,9 @@
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Kérdezz privátban";
 
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Tegyél fel egy kapcsolódó kérdést...";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Bővítmény telepítése";
 
@@ -2607,6 +2619,9 @@
 "No Logs" = "Nincsenek naplók";
 
 /* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nincs találat a következőre: „%@”";
+
+/* No comment provided by engineer. */
 "No messages" = "Nincsenek üzenetek";
 
 /* No comment provided by engineer. */
@@ -2632,6 +2647,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "Az App Store-on elérhető verzióknál ez a képernyő csak akkor jelenik meg, ha a **use-login.duckduckgo.com** címen keresztül belső felhasználóként jelentkeztél be.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Megvan";
@@ -2723,6 +2741,9 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ó, mielőtt elfelejtem…";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Tudtad?";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Privát. Gyors. Kevesebb hirdetés.";
 
@@ -2734,9 +2755,6 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Szia!";
-
-/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
-"onboarding.privacypro.promo.title.delayed" = "Tudtad?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Szeretnéd visszaállítani a könyvjelzőidet, a jelszavaidat és az egyéb dolgokat az előző DuckDuckGo-szinkronizálásból?";

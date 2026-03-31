@@ -41,7 +41,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onChatHistorySelected(url: URL)
     func onDismissRequested()
     func onSwitchToTab(_ tab: Tab)
-    func onToggleModeSwitched()
+    func onToggleModeSwitched(to mode: TextEntryMode)
     func onVoiceModeRequested()
 }
 
@@ -405,7 +405,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             .sink { [weak self] newState in
                 guard let self, newState != self.lastKnownToggleState else { return }
                 self.lastKnownToggleState = newState
-                self.delegate?.onToggleModeSwitched()
+                self.delegate?.onToggleModeSwitched(to: newState)
             }
             .store(in: &cancellables)
 

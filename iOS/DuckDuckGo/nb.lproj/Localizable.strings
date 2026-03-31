@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai Tale";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Rediger bokmerke";
 
@@ -1086,6 +1089,12 @@
 
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Slett chat";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Vil du slette denne chatten?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Hopp over";
@@ -2136,6 +2145,9 @@
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Spør privat";
 
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Still et oppfølgingsspørsmål ...";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Installer utvidelse";
 
@@ -2607,6 +2619,9 @@
 "No Logs" = "Ingen logger";
 
 /* No comment provided by engineer. */
+"No matches for \"%@\"" = "Ingen treff for «%@»";
+
+/* No comment provided by engineer. */
 "No messages" = "Ingen meldinger";
 
 /* No comment provided by engineer. */
@@ -2632,6 +2647,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "På App Store-versjoner vises dette skjermbildet bare hvis du er logget på som en intern bruker via **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Den er grei";
@@ -2723,6 +2741,9 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Å, før jeg glemmer det …";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Visste du?";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Privat. Raskt. Færre annonser.";
 
@@ -2734,9 +2755,6 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Heisann.";
-
-/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
-"onboarding.privacypro.promo.title.delayed" = "Visste du?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vil du gjenopprette bokmerkene, passordene og lignende fra den forrige DuckDuckGo-synkroniseringen?";

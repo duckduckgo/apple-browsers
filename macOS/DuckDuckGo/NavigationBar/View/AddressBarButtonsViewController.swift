@@ -847,8 +847,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.isShown = isPermissionCenterPopoverShown || tabViewModel.shouldShowPermissionCenterButton(
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
             hasAnyPersistedPermissions: hasAnyPersistedPermissions,
-            isMouseOverNavigationBar: isMouseOverNavigationBar,
-            isAutoplayFeatureOn: featureFlagger.isFeatureOn(.autoplayPolicy)
+            isMouseOverNavigationBar: isMouseOverNavigationBar
         )
 
         showOrHidePermissionCenterPopoverIfNeeded()
@@ -2863,8 +2862,7 @@ extension TabViewModel {
     func shouldShowPermissionCenterButton(
         isTextFieldEditorFirstResponder: Bool,
         hasAnyPersistedPermissions: Bool,
-        isMouseOverNavigationBar: Bool = false,
-        isAutoplayFeatureOn: Bool = false
+        isMouseOverNavigationBar: Bool = false
     ) -> Bool {
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default

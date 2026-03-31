@@ -91,6 +91,13 @@ enum AnyTab: Identifiable {
         if case .loaded(let t) = self { t } else { nil }
     }
 
+    func reload() {
+        // Suspended tabs have no web view — intentionally a no-op.
+        if case .loaded(let tab) = self {
+            tab.reload()
+        }
+    }
+
     var localHistory: [Visit] {
         switch self {
         case .suspended: []

@@ -187,7 +187,6 @@ extension AppDelegate {
         let historyTabs = self.windowControllersManager.mainWindowControllers
             .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
             .filter { $0.content.isHistory }
-            .compactMap(\.tab)
         historyTabs.forEach { $0.reload() }
     }
 

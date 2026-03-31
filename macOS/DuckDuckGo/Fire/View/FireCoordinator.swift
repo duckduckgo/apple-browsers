@@ -377,7 +377,7 @@ extension FireCoordinator {
             let historyTabs = self.windowControllersManager.mainWindowControllers
                 .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
                 .filter { $0.content.isHistory }
-            historyTabs.forEach { $0.tab?.reload() }
+            historyTabs.forEach { $0.reload() }
         }
 
         // Complete wide event tracking

@@ -2040,11 +2040,6 @@ class MainViewController: UIViewController {
 
     private func applyWidth(for size: CGSize? = nil) {
 
-        if isInMinimalChromeLayout {
-            setMinimalChromeMode(false)
-            viewCoordinator.setNavBarContainerExpandableHeight(false)
-        }
-
         if AppWidthObserver.shared.isLargeWidth {
             applyLargeWidth()
         } else if isMinimalChromeMode(for: size) {
@@ -2102,6 +2097,7 @@ class MainViewController: UIViewController {
     }
 
     private func applyLargeWidth() {
+        if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = false
         viewCoordinator.toolbar.isHidden = true
         viewCoordinator.omniBar.enterPadState()
@@ -2111,21 +2107,28 @@ class MainViewController: UIViewController {
     }
 
     private func applySmallWidth() {
+        if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = false
+        viewCoordinator.constraints.toolbarBottom.constant = 0
         viewCoordinator.omniBar.enterPhoneState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         swipeTabsCoordinator?.isEnabled = true
     }
 
+    private func tearDownMinimalChrome() {
+        setMinimalChromeMode(false)
+        viewCoordinator.omniBar.barView.setLayoutMode(.compact, animated: false)
+        viewCoordinator.setNavBarContainerExpandableHeight(false)
+    }
+
     private func applyMinimalChromeWidth() {
-        setMinimalChromeMode(true)
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = true
-        // Push the hidden toolbar off-screen so content container extends to the bottom
         let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight
+        setMinimalChromeMode(true)
         viewCoordinator.omniBar.enterPadState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -4287,7 +4290,10 @@ extension MainViewController: TabDelegate {
 extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
-        defer { showMenuHighlighterIfNeeded() }
+        defer {
+            showMenuHighlighterIfNeeded()
+            applyWidth()
+        }
         let previousTab = currentTab
         
         guard tab !== previousTab?.tabModel else {

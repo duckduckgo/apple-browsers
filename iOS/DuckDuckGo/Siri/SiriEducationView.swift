@@ -41,14 +41,20 @@ struct SiriEducationView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    let thirdParagraphText: String
-    let thirdParagraphDetail: Detail
+    let title: String
+    let description: String
+    let examples: [String]
 
-    init(thirdParagraphText: String = UserText.addWidgetSettingsThirdParagraph,
-         thirdParagraphDetail: Detail = .image(Image.widgetExample, maxWidth: Size.exampleImageWidth)) {
-
-        self.thirdParagraphText = thirdParagraphText
-        self.thirdParagraphDetail = thirdParagraphDetail
+    init(title: String = UserText.vpnControlWidgetEducationScreenTitle,
+         description: String = UserText.vpnControlWidgetEducationScreenDescription,
+         examples: [String] = [
+             UserText.vpnControlWidgetEducationScreenExample1,
+             UserText.vpnControlWidgetEducationScreenExample2,
+             UserText.vpnControlWidgetEducationScreenExample3
+         ]) {
+        self.title = title
+        self.description = description
+        self.examples = examples
     }
 
     var body: some View {
@@ -58,12 +64,12 @@ struct SiriEducationView: View {
                     .resizable()
                     .frame(maxWidth: 128)
 
-                Text(UserText.vpnControlWidgetEducationScreenTitle)
+                Text(title)
                     .font(.system(size: 22, weight: .bold, design: .default))
                     .kerning(0.35)
                     .multilineTextAlignment(.center)
 
-                Text(UserText.vpnControlWidgetEducationScreenDescription)
+                Text(description)
                     .font(.system(size: 16, weight: .regular))
                     .multilineTextAlignment(.center)
             }
@@ -71,11 +77,9 @@ struct SiriEducationView: View {
             .padding(.horizontal, Spacing.sidesToContent)
 
             VStack(alignment: .leading, spacing: 16) {
-                SiriBubbleView(UserText.vpnControlWidgetEducationScreenExample1)
-
-                SiriBubbleView(UserText.vpnControlWidgetEducationScreenExample2)
-
-                SiriBubbleView(UserText.vpnControlWidgetEducationScreenExample3)
+                ForEach(examples, id: \.self) { example in
+                    SiriBubbleView(example)
+                }
             }
             .padding(.top, Spacing.headerToList)
             .padding(.horizontal, Spacing.sidesToContent)

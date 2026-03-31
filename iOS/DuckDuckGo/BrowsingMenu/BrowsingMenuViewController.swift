@@ -75,6 +75,8 @@ final class BrowsingMenuViewController: UIViewController {
 
     var onDismiss: ((_ wasActionSelected: Bool) -> Void)?
 
+    var isUsingSingleBar: Bool = false
+
     class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, productSurfaceTelemetry: ProductSurfaceTelemetry) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
             BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, daxDialogsManager: daxDialogsManager, appSettings: appSettings, productSurfaceTelemetry: productSurfaceTelemetry, coder: coder)
@@ -137,7 +139,7 @@ final class BrowsingMenuViewController: UIViewController {
     }
 
     private func configureArrow(with color: UIColor) {
-        guard AppWidthObserver.shared.isLargeWidth else {
+        guard isUsingSingleBar else {
             arrowView.isHidden = true
             return
         }
@@ -245,20 +247,19 @@ final class BrowsingMenuViewController: UIViewController {
               let windowBounds = guideView.window?.bounds
         else { return }
 
-        let isIPad = AppWidthObserver.shared.isLargeWidth
         let isIPhoneLandscape = traitCollection.containsTraits(in: UITraitCollection(verticalSizeClass: .compact))
 
-        topConstraint.isActive = !isIPad
-        topConstraintIPad.isActive = isIPad
-        bottomConstraint.isActive = !isIPad
-        bottomConstraintIPad.isActive = isIPad
+        topConstraint.isActive = !isUsingSingleBar
+        topConstraintIPad.isActive = isUsingSingleBar
+        bottomConstraint.isActive = !isUsingSingleBar
+        bottomConstraintIPad.isActive = isUsingSingleBar
 
         // Make it go above WebView in Landscape
         topConstraint.constant = (isIPhoneLandscape ? 10 : 0)
         // Move menu up in Landscape, as bottom toolbar shrinks
 
         bottomConstraint.constant = windowBounds.maxY - frame.maxY - (isIPhoneLandscape ? 2 : 10)
-        rightConstraint.constant = isIPad ? 67 : 10
+        rightConstraint.constant = isUsingSingleBar ? 67 : 10
 
         recalculatePreferredWidthConstraint()
     }

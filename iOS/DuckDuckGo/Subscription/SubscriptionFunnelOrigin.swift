@@ -40,6 +40,9 @@ enum SubscriptionFunnelOrigin: String {
     
     /// User entered via win-back offer in App Settings
     case winBackSettings = "funnel_appsettings_ios_winback"
+
+    /// User triggered a plan change by cancelling a pending downgrade
+    case cancelDowngrade = "funnel_canceldowngrade_ios"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the iOS app.

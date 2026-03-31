@@ -1752,7 +1752,7 @@ extension MainViewController {
 extension MainViewController: NSMenuItemValidation {
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        guard fireCoordinator.fireViewModel.fire.burningData == nil else {
+        guard fireViewController.fireViewModel.fire.burningData == nil else {
             return true
         }
         switch menuItem.action {

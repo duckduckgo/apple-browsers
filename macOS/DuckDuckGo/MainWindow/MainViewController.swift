@@ -561,7 +561,7 @@ final class MainViewController: NSViewController {
         let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
             ? .currentTab
             : .newTab(selected: true)
-        aiChatTabOpener.openNewAIChat(in: behavior)
+        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
     }
 
     func toggleDuckAISidebar() {

@@ -91,6 +91,10 @@ public struct OptOutJobData: BrokerJobData, Sendable {
     public let twentyOneDaysConfirmationPixelFired: Bool
     public let fortyTwoDaysConfirmationPixelFired: Bool
 
+    public var historyEventsSortedEarliestFirst: [HistoryEvent] {
+        historyEvents.sorted { $0.date < $1.date }
+    }
+
     init(brokerId: Int64,
          profileQueryId: Int64,
          createdDate: Date,

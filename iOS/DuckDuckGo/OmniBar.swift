@@ -38,7 +38,7 @@ protocol OmniBar: AnyObject {
     func refreshText(forUrl url: URL?, forceFullURL: Bool)
     func refreshFireMode(fireMode: Bool)
 
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode)
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?)
     func endEditing()
 
     func showSeparator()
@@ -85,12 +85,16 @@ protocol OmniBar: AnyObject {
 
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
     func enterAIChatMode()
+
+    /// Sets the selected text entry mode for the toggle (search or aiChat).
+    func setSelectedTextEntryMode(_ mode: TextEntryMode)
 }
 
 extension OmniBar {
-    /// Convenience method that begins editing with the default `.search` text entry mode.
+    /// Begins editing without overriding the toggle mode. The SwitchBarHandler
+    /// will use its self-resolved default from settings.
     func beginEditing(animated: Bool) {
-        beginEditing(animated: animated, forTextEntryMode: .search)
+        beginEditing(animated: animated, forTextEntryMode: nil)
     }
 
     func adjust(for position: AddressBarPosition) {

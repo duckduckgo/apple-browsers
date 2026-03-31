@@ -84,21 +84,21 @@ struct AppShortcuts: AppShortcutsProvider {
         )
         AppShortcut(intent: AIChatIntent(),
                     phrases: [
-                        "Access Duck AI on \(.applicationName)",
+                        "Access Duck AI in \(.applicationName)",
                         "Access \(.applicationName) AI chat",
                         "Access \(.applicationName) Chat",
-                        "Ask Duck AI on \(.applicationName)",
+                        "Ask Duck AI in \(.applicationName)",
                         "Ask \(.applicationName) AI chat",
                         "Ask \(.applicationName) Chat",
-                        "Go to Duck AI on \(.applicationName)",
+                        "Go to Duck AI in \(.applicationName)",
                         "Go to \(.applicationName) AI Chat",
                         "Go to \(.applicationName) Chat",
-                        "Launch Duck AI on \(.applicationName)",
+                        "Launch Duck AI in \(.applicationName)",
                         "Launch \(.applicationName) AI Chat",
                         "Launch \(.applicationName) Chat",
                         "New \(.applicationName) AI Chat",
                         "New \(.applicationName) Chat",
-                        "Open Duck AI on \(.applicationName)",
+                        "Open Duck AI in \(.applicationName)",
                         "Open \(.applicationName) AI Chat",
                         "Open \(.applicationName) Chat",
                         "Start \(.applicationName) AI chat",
@@ -106,6 +106,23 @@ struct AppShortcuts: AppShortcutsProvider {
                     ],
                     shortTitle: "Duck.ai Chat",
                     systemImageName: "circle.fill"
+        )
+        AppShortcut(intent: AIVoiceChatIntent(),
+                    phrases: [
+                        "Start \(.applicationName) Voice Chat",
+                        "Start a voice chat in \(.applicationName)",
+                        "Start Duck AI voice in \(.applicationName)",
+                        "Open \(.applicationName) Voice Chat",
+                        "Open Duck AI voice in \(.applicationName)",
+                        "Launch \(.applicationName) Voice Chat",
+                        "Voice chat with \(.applicationName)",
+                        "Voice chat with Duck AI in \(.applicationName)",
+                        "Talk to Duck AI in \(.applicationName)",
+                        "Talk to \(.applicationName)",
+                        "Talk to \(.applicationName) AI"
+                    ],
+                    shortTitle: "Duck.ai Voice",
+                    systemImageName: "waveform"
         )
     }
 }

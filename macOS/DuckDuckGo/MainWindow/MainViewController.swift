@@ -41,19 +41,8 @@ final class MainViewController: NSViewController {
     let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     let aiChatCoordinator: AIChatCoordinating
 
-    private(set) lazy var aiChatSummarizer = AIChatSummarizer(
-        aiChatMenuConfig: aiChatMenuConfig,
-        aiChatCoordinator: aiChatCoordinator,
-        aiChatTabOpener: aiChatTabOpener,
-        pixelFiring: pixelFiring
-    )
-
-    private(set) lazy var aiChatTranslator = AIChatTranslator(
-        aiChatMenuConfig: aiChatMenuConfig,
-        aiChatCoordinator: aiChatCoordinator,
-        aiChatTabOpener: aiChatTabOpener,
-        pixelFiring: pixelFiring
-    )
+    let aiChatSummarizer: AIChatSummarizer
+    let aiChatTranslator: AIChatTranslator
 
     private(set) lazy var findInPageViewController: FindInPageViewController = {
         let vc = FindInPageViewController.create()
@@ -74,9 +63,6 @@ final class MainViewController: NSViewController {
     private let winBackOfferPromptPresenting: WinBackOfferPromptPresenting
     let tabsPreferences: TabsPreferences
     private let duckPlayer: DuckPlayer
-
-    private let pixelFiring: PixelFiring?
-    private let aiChatTabOpener: AIChatTabOpening
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -182,7 +168,6 @@ final class MainViewController: NSViewController {
         self.duckPlayer = duckPlayer
         self.pinningManager = pinningManager
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
-        self.aiChatTabOpener = aiChatTabOpener
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -265,6 +250,19 @@ final class MainViewController: NSViewController {
             featureFlagger: featureFlagger
         )
         tabBarViewController.aiChatCoordinator = aiChatCoordinator
+        aiChatSummarizer = AIChatSummarizer(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatCoordinator: aiChatCoordinator,
+            aiChatTabOpener: aiChatTabOpener,
+            pixelFiring: pixelFiring
+        )
+
+        aiChatTranslator = AIChatTranslator(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatCoordinator: aiChatCoordinator,
+            aiChatTabOpener: aiChatTabOpener,
+            pixelFiring: pixelFiring
+        )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          downloadListCoordinator: downloadListCoordinator,
@@ -321,7 +319,6 @@ final class MainViewController: NSViewController {
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.startupProfiler = startupProfiler
-        self.pixelFiring = pixelFiring
 
         super.init(nibName: nil, bundle: nil)
 

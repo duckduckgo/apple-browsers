@@ -221,9 +221,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         Logger.webExtensions.debug("🔄 Uninstalling all extensions (count: \(installedExtensions.count))")
 
         let results: [Result<Void, Error>] = installedExtensions.map { ext in
-            if let type = ext.embeddedType {
-                scriptletCoordinator?.onExtensionDisabled(for: type)
-            }
             do {
                 try uninstallExtension(identifier: ext.uniqueIdentifier)
                 return .success(())

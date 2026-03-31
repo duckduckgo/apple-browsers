@@ -53,8 +53,6 @@ extension WebExtensionManager {
             return
         }
 
-        scriptletCoordinator?.onExtensionDisabled(for: type)
-
         Logger.webExtensions.info("🗑️ Uninstalling embedded extension: \(type.rawValue)")
         do {
             try uninstallExtension(identifier: installed.uniqueIdentifier)
@@ -82,9 +80,6 @@ extension WebExtensionManager {
                 if shouldUpgrade(installed: installed, bundledVersion: bundledMetadata.version) {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
-
-                    scriptletCoordinator?.onExtensionDisabled(for: descriptor.type)
-
                     try uninstallExtension(identifier: installed.uniqueIdentifier)
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))

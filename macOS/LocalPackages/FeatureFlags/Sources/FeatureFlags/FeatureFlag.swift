@@ -311,7 +311,7 @@ public enum FeatureFlag: String, CaseIterable {
     case tabSuspension
 
     /// Gates the Suspend Tab / Resume Tab context menu actions for debugging purposes
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213528425856806
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213883766662888?focus=true
     case tabSuspensionDebugging
 }
 

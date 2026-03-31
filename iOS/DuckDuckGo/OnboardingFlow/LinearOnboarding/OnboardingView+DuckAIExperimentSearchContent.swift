@@ -394,6 +394,23 @@ extension OnboardingView {
             !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
 
+        private func promptWithOnboardingGuardrails(_ prompt: String?, autoSend: Bool) -> String? {
+            guard
+                selectedMode == .duckAI,
+                autoSend,
+                let prompt,
+                !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else {
+                return prompt
+            }
+
+            return """
+            \(prompt)
+
+            \(UserText.Onboarding.DuckAIQueryExperiment.onboardingPromptGuardrails)
+            """
+        }
+
         private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryExperimentPromptSource) {
             if autoSend {
                 measureQuerySubmissionAction(selectedMode, promptSource)
@@ -417,7 +434,7 @@ extension OnboardingView {
                 isTransitioningOut = true
             } completion: {
                 if selectedMode == .duckAI {
-                    openAIChatAction(prompt, autoSend)
+                    openAIChatAction(promptWithOnboardingGuardrails(prompt, autoSend: autoSend), autoSend)
                     action(.duckAI)
                 } else if preloadedSearchQuery != nil {
                     action(.search)
@@ -695,10 +712,12 @@ struct OnboardingDuckAIExperimentSuggestionsViewModel {
 private enum OnboardingSuggestionsChipsMetrics {
     static let suggestionTransitionScale: CGFloat = 0.96
     static let suggestionChipIconSize: CGSize = CGSize(width: 16, height: 16)
-    static let interChipSpacing: CGFloat = 8
+    static let interChipSpacingLegacy: CGFloat = 8
 }
 
 private struct OnboardingSuggestionChips: View {
+    @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var contextualOnboardingMetrics
+
     let viewModel: OnboardingDuckAIExperimentSuggestionsViewModel
     let isDuckAIMode: Bool
     let visibleCount: Int
@@ -717,6 +736,20 @@ private struct OnboardingSuggestionChips: View {
         )
     }
 
+    private var chipIconSize: CGSize {
+        if visualStyle == .rebranded {
+            return contextualOnboardingMetrics.optionsListMetrics.iconSize
+        }
+        return OnboardingSuggestionsChipsMetrics.suggestionChipIconSize
+    }
+
+    private var chipSpacing: CGFloat {
+        if visualStyle == .rebranded {
+            return contextualOnboardingMetrics.optionsListMetrics.interItemSpacing ?? OnboardingSuggestionsChipsMetrics.interChipSpacingLegacy
+        }
+        return OnboardingSuggestionsChipsMetrics.interChipSpacingLegacy
+    }
+
     private func promptSource(for index: Int) -> DuckAIQueryExperimentPromptSource {
         switch index {
         case 0: return .option1
@@ -728,7 +761,7 @@ private struct OnboardingSuggestionChips: View {
 
     // MARK: Body
     var body: some View {
-        VStack(spacing: OnboardingSuggestionsChipsMetrics.interChipSpacing) {
+        VStack(spacing: chipSpacing) {
             ForEach(Array(visibleItems.enumerated()), id: \.offset) { index, item in
                 if visualStyle == .legacy {
                     legacyButton(for: item, at: index)
@@ -746,10 +779,9 @@ private struct OnboardingSuggestionChips: View {
             content: {
                 HStack {
                     Image(uiImage: item.image)
-                        .frame(width: OnboardingSuggestionsChipsMetrics.suggestionChipIconSize.width, height: OnboardingSuggestionsChipsMetrics.suggestionChipIconSize.height)
+                        .frame(width: chipIconSize.width, height: chipIconSize.height)
                     Text(item.visibleTitle)
                         .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer(minLength: 0)
                 }
             },
@@ -762,7 +794,7 @@ private struct OnboardingSuggestionChips: View {
     private func rebrandedButton(for item: ContextualOnboardingListItem, at index: Int) -> some View {
         OnboardingRebranding.ContextualOnboardingListViewItem(
             item: item,
-            iconSize: OnboardingSuggestionsChipsMetrics.suggestionChipIconSize,
+            iconSize: chipIconSize,
             action: { handleItemTap(item, at: index) }
         )
         .transition(suggestionTransition)

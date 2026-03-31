@@ -245,6 +245,9 @@ private extension RebrandedContextualDaxDialogFactory {
         pixelName: Pixel.Event,
         allowsManualDismiss: Bool
     ) -> some View {
+        let isDuckAIExperimentFireDialog = pixelName == .onboardingDuckAIExperimentFireDialogShownUnique
+        let backgroundType: ContextualOnboardingBackgroundType = isDuckAIExperimentFireDialog ? .tryASearchDuckAIExperimentFire : .fireDialog
+
         let onManualDismiss: (() -> Void)? = allowsManualDismiss ? { [weak delegate, weak self] in
             self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
@@ -254,10 +257,11 @@ private extension RebrandedContextualDaxDialogFactory {
             OnboardingRebranding.OnboardingFireDialog(
                 title: title,
                 message: message,
+                isDuckAIExperiment: isDuckAIExperimentFireDialog,
                 onManualDismiss: onManualDismiss
             )
         }
-        .applyAnimatedContextualOnboardingBackground(backgroundType: .fireDialog)
+        .applyAnimatedContextualOnboardingBackground(backgroundType: backgroundType)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
         }

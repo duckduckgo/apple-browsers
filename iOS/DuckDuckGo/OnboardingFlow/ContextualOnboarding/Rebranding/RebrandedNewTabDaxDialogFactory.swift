@@ -100,7 +100,7 @@ extension RebrandedNewTabDaxDialogFactory {
                 }
                 .scrollIfNeeded()
             }
-            .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
+            .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTPChat)
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
                 self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()

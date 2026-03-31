@@ -35,6 +35,7 @@ extension OnboardingRebranding {
 
         private let titleTextAlignment: TextAlignment?
         private let messageTextAlignment: TextAlignment?
+        private let titleBodyVerticalSpacingOverride: CGFloat?
         private let content: Content
 
         @State private var shouldShowContent = false
@@ -46,6 +47,7 @@ extension OnboardingRebranding {
             titleTextAlignment: TextAlignment? = nil,
             message: AttributedString,
             messageTextAlignment: TextAlignment? = nil,
+            titleBodyVerticalSpacingOverride: CGFloat? = nil,
             @ViewBuilder content: () -> Content
         ) {
             self.orientation = orientation
@@ -53,6 +55,7 @@ extension OnboardingRebranding {
             self.titleTextAlignment = titleTextAlignment
             self.message = NSAttributedString(message)
             self.messageTextAlignment = messageTextAlignment
+            self.titleBodyVerticalSpacingOverride = titleBodyVerticalSpacingOverride
             self.content = content()
         }
 
@@ -62,6 +65,7 @@ extension OnboardingRebranding {
             titleTextAlignment: TextAlignment? = nil,
             message: String,
             messageTextAlignment: TextAlignment? = nil,
+            titleBodyVerticalSpacingOverride: CGFloat? = nil,
             @ViewBuilder content: () -> Content
         ) {
             self.init(
@@ -70,6 +74,7 @@ extension OnboardingRebranding {
                 titleTextAlignment: titleTextAlignment,
                 message: AttributedString(message),
                 messageTextAlignment: messageTextAlignment,
+                titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride,
                 content: content
             )
         }
@@ -81,6 +86,7 @@ extension OnboardingRebranding {
             titleTextAlignment: TextAlignment? = nil,
             message: NSAttributedString,
             messageTextAlignment: TextAlignment? = nil,
+            titleBodyVerticalSpacingOverride: CGFloat? = nil,
             @ViewBuilder content: () -> Content
         ) {
             self.orientation = orientation
@@ -88,6 +94,7 @@ extension OnboardingRebranding {
             self.titleTextAlignment = titleTextAlignment
             self.message = message
             self.messageTextAlignment = messageTextAlignment
+            self.titleBodyVerticalSpacingOverride = titleBodyVerticalSpacingOverride
             self.content = content()
         }
         #endif
@@ -97,12 +104,24 @@ extension OnboardingRebranding {
                 switch orientation {
                 case .verticalStack:
                     VStack(alignment: .leading, spacing: theme.contentSpacing) {
-                        TitleMessageStack(title: title, message: message, titleBodyVerticalSpacing: theme.titleBodyVerticalSpacingVerticalLayout, titleTextAlignment: titleTextAlignment, messageTextAlignment: messageTextAlignment)
+                        TitleMessageStack(
+                            title: title,
+                            message: message,
+                            titleBodyVerticalSpacing: titleBodyVerticalSpacingOverride ?? theme.titleBodyVerticalSpacingVerticalLayout,
+                            titleTextAlignment: titleTextAlignment,
+                            messageTextAlignment: messageTextAlignment
+                        )
                         content
                     }
                 case let .horizontalStack(alignment):
                     HStack(alignment: alignment) {
-                        TitleMessageStack(title: title, message: message, titleBodyVerticalSpacing: theme.titleBodyVerticalSpacingHorizontalLayout, titleTextAlignment: titleTextAlignment, messageTextAlignment: messageTextAlignment)
+                        TitleMessageStack(
+                            title: title,
+                            message: message,
+                            titleBodyVerticalSpacing: titleBodyVerticalSpacingOverride ?? theme.titleBodyVerticalSpacingHorizontalLayout,
+                            titleTextAlignment: titleTextAlignment,
+                            messageTextAlignment: messageTextAlignment
+                        )
                         Spacer(minLength: theme.contentSpacing)
                         content
                     }
@@ -128,9 +147,10 @@ extension OnboardingRebranding.ContextualDaxDialogContent where Content == Empty
     public init(
         orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
         title: AttributedString? = nil,
+        titleBodyVerticalSpacingOverride: CGFloat? = nil,
         message: AttributedString
     ) {
-        self.init(orientation: orientation, title: title, message: message) {
+        self.init(orientation: orientation, title: title, message: message, titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride) {
             EmptyView()
         }
     }
@@ -139,12 +159,14 @@ extension OnboardingRebranding.ContextualDaxDialogContent where Content == Empty
     public init(
         orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
         title: String? = nil,
+        titleBodyVerticalSpacingOverride: CGFloat? = nil,
         message: String
     ) {
         self.init(
             orientation: orientation,
             title: title.flatMap(AttributedString.init),
-            message: AttributedString(message)
+            message: AttributedString(message),
+            titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride
         ) {
             EmptyView()
         }
@@ -159,9 +181,10 @@ extension OnboardingRebranding.ContextualDaxDialogContent where Content == Empty
     public init(
         orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
         title: NSAttributedString? = nil,
+        titleBodyVerticalSpacingOverride: CGFloat? = nil,
         message: NSAttributedString
     ) {
-        self.init(orientation: orientation, title: title, message: message) {
+        self.init(orientation: orientation, title: title, message: message, titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride) {
             EmptyView()
         }
     }

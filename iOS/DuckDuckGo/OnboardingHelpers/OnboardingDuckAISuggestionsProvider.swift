@@ -27,8 +27,8 @@ struct OnboardingDuckAISuggestionsProvider: OnboardingSuggestionsItemsProviding 
             .aiChat(title: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption1),
             .aiChat(title: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption2),
             .surprise(
-                title: UserText.Onboarding.DuckAIQueryExperiment.suggestionSurpriseMe,
-                visibleTitle: UserText.Onboarding.DuckAIQueryExperiment.suggestionSurpriseMe
+                title: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption3Prompt,
+                visibleTitle: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption3VisibleTitle
             )
         ]
     }

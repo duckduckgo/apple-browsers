@@ -380,6 +380,10 @@ final class PermissionCenterViewModel: ObservableObject {
     func setAutoplayDecision(_ autoplayDecision: AutoplayDecision) {
         let updatedDecision = autoplayDecision.permissionDecision
         let previousDecision = permissionManager.permission(forDomain: domain, permissionType: .autoplayPolicy)
+        let wasAlreadyPersisted = permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy)
+
+        guard previousDecision != updatedDecision || !wasAlreadyPersisted else { return }
+
         permissionManager.setPermission(updatedDecision, forDomain: domain, permissionType: .autoplayPolicy)
 
         // Update the item's decision in the list

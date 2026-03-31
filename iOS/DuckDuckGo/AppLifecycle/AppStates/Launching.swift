@@ -69,7 +69,10 @@ struct Launching: LaunchingHandling {
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
         // Initialize configuration with the key-value store
-        configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        configuration = AppConfiguration(
+            appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            featureFlagger: featureFlagger
+        )
 
         var isBookmarksDBFilePresent: Bool?
         if BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.isPresent ?? false {

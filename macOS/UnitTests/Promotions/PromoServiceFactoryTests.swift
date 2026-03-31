@@ -69,6 +69,19 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNil(promo.delegate)
     }
 
+    func testFactoryCreatesFreemiumDBPPromoWithCorrectConfiguration() {
+        let promo = PromoServiceFactory.freemiumDBP
+
+        XCTAssertEqual(promo.id, "freemium-dbp-ntp-banner")
+        XCTAssertEqual(promo.triggers, [.newTabPageAppeared])
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertEqual(promo.context, .newTabPage)
+        XCTAssertTrue(promo.respectsGlobalCooldown)
+        XCTAssertTrue(promo.setsGlobalCooldown)
+        XCTAssertNil(promo.delegate)
+    }
+
     func testFactoryCreatesDefaultBrowserAndDockPromosWithCorrectConfiguration() async {
         let popoverPromo = await PromoServiceFactory.defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService)
         let bannerPromo = await PromoServiceFactory.defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService)

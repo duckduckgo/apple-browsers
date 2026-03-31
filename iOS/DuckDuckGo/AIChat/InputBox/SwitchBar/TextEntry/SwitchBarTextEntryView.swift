@@ -291,7 +291,7 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = .default
+            textView.keyboardType = .webSearch
             textView.returnKeyType = .default
             if handler.isUsingFadeOutAnimation && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
@@ -309,6 +309,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateButtonState() {
         let newButtonState = handler.buttonState
+        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
@@ -526,7 +527,7 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = .default
+            textView.keyboardType = .webSearch
             textView.returnKeyType = .default
             enableAutoCorrectionAndSpellChecking()
         }

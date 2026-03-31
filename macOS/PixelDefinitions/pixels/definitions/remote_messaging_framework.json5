@@ -101,6 +101,6 @@
         "owners": ["alessandroboron"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "pixelSource"]
     }
 }

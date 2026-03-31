@@ -51,6 +51,7 @@ public class Tab: NSObject, NSCoding {
         static let fireTab = "fireTab"
         static let isExternalLaunch = "isExternalLaunch"
         static let shouldSuppressTrackerAnimationOnFirstLoad = "shouldSuppressTrackerAnimationOnFirstLoad"
+        static let preferredTextEntryMode = "preferredTextEntryMode"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -129,6 +130,9 @@ public class Tab: NSObject, NSCoding {
     /// Set based on launch source: suppressed for all tabs on cold start with standard launch.
     var shouldSuppressTrackerAnimationOnFirstLoad: Bool = false
 
+    /// The preferred text entry mode (search or aiChat) for this tab, inherited from settings on creation.
+    var preferredTextEntryMode: TextEntryMode
+
     /// Type of tab: web or AI Chat, derived from the current URL
     private var type: TabType {
         if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
@@ -150,6 +154,7 @@ public class Tab: NSObject, NSCoding {
                 fireTab: Bool,
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
+                preferredTextEntryMode: TextEntryMode = .search,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -162,6 +167,7 @@ public class Tab: NSObject, NSCoding {
         self.fireTab = fireTab
         self.isExternalLaunch = isExternalLaunch
         self.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppressTrackerAnimationOnFirstLoad
+        self.preferredTextEntryMode = preferredTextEntryMode
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -179,10 +185,19 @@ public class Tab: NSObject, NSCoding {
         // External launch flags are transient and always reset to false on decode
         let isExternalLaunch = false
         let shouldSuppressTrackerAnimationOnFirstLoad = false
+        let preferredTextEntryModeRaw = decoder.decodeObject(forKey: NSCodingKeys.preferredTextEntryMode) as? String
+        let preferredTextEntryMode: TextEntryMode
+        if let raw = preferredTextEntryModeRaw, let mode = TextEntryMode(rawValue: raw) {
+            preferredTextEntryMode = mode
+        } else {
+            // Legacy tab without stored mode — infer from URL
+            let isDuckAI = link?.url.isDuckAIURL(debugSettings: AIChatDebugSettings()) ?? false
+            preferredTextEntryMode = isDuckAI ? .aiChat : .search
+        }
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad)
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, preferredTextEntryMode: preferredTextEntryMode)
     }
 
     public func encode(with coder: NSCoder) {
@@ -197,6 +212,7 @@ public class Tab: NSObject, NSCoding {
         coder.encode(contextualChatURL, forKey: NSCodingKeys.contextualChatURL)
         coder.encode(supportsTabHistory, forKey: NSCodingKeys.supportsTabHistory)
         coder.encode(fireTab, forKey: NSCodingKeys.fireTab)
+        coder.encode(preferredTextEntryMode.rawValue, forKey: NSCodingKeys.preferredTextEntryMode)
         // Note: isExternalLaunch and shouldSuppressTrackerAnimationOnFirstLoad are not encoded as they are transient flags
         // Note: type is not encoded as it's now a computed property based on the link URL
     }

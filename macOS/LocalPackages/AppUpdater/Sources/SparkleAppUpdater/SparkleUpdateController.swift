@@ -179,13 +179,9 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
     }
 
-    public var needsNotificationDot: Bool {
-        get {
-            (try? settings.pendingUpdateShown) ?? false
-        }
-        set {
-            try? settings.set(newValue, for: \.pendingUpdateShown)
-            notificationDotSubject.send(newValue)
+    public var needsNotificationDot: Bool = false {
+        didSet {
+            notificationDotSubject.send(needsNotificationDot)
         }
     }
 

@@ -174,6 +174,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
+    var isDefaultOmnibarModeEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
+    }
+
     var isTabSwitcherTrackerCountEnabled: Bool {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
@@ -1502,8 +1506,10 @@ extension SettingsViewModel {
                     }
                 } else {
                     guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
-                    self.objectWillChange.send()
-                    self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                    withAnimation {
+                        self.objectWillChange.send()
+                        self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                    }
                 }
             }
         )
@@ -1535,6 +1541,17 @@ extension SettingsViewModel {
                     self.objectWillChange.send()
                     self.aiChatSettings.enableAutomaticContextAttachment(enable: newValue)
                 }
+            }
+        )
+    }
+
+    var defaultOmnibarModeBinding: Binding<DefaultOmnibarMode> {
+        Binding<DefaultOmnibarMode>(
+            get: { self.aiChatSettings.defaultOmnibarMode },
+            set: { newValue in
+                guard newValue != self.aiChatSettings.defaultOmnibarMode else { return }
+                self.objectWillChange.send()
+                self.aiChatSettings.setDefaultOmnibarMode(newValue)
             }
         )
     }

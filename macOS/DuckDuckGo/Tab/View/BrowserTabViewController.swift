@@ -813,6 +813,11 @@ final class BrowserTabViewController: NSViewController {
                     return Just(()).eraseToAnyPublisher()
                 }
 
+                // Pre-set the webview frame so WebKit renders at the correct size while offscreen
+                if let bounds = self?.view.bounds {
+                    tabViewModel.tab.webView.frame = bounds
+                }
+
                 // If the current content is the native internal site, delay the webview presentation
                 // until a website renders (or edge cases) to avoid white flash
                 if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.lastURL) &&

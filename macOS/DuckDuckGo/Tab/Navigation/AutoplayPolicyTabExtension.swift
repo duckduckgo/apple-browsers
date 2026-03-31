@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 import FeatureFlags
 import Navigation
 import PrivacyConfig
@@ -40,10 +41,11 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
         let isAutoplayPolicyEnabled = featureFlagger.isFeatureOn(.autoplayPolicy)
         preferences.mustApplyAutoplayPolicy = isAutoplayPolicyEnabled
 
-        if isAutoplayPolicyEnabled {
-            let domain = navigationAction.url.host ?? ""
-            preferences.autoplayPolicy = loadAutoplayPolicy(forDomain: domain)
+        guard isAutoplayPolicyEnabled else {
+            return .next
         }
+
+        preferences.autoplayPolicy = loadAutoplayPolicy(url: navigationAction.url)
 
         return .next
     }
@@ -51,9 +53,21 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
 
 private extension AutoplayPolicyTabExtension {
 
-    func loadAutoplayPolicy(forDomain domain: String) -> _WKWebsiteAutoplayPolicy {
+    func isHypertextURL(url: URL) -> Bool {
+        url.isHttps || url.isHttp
+    }
+
+    func loadAutoplayPolicy(url: URL) -> _WKWebsiteAutoplayPolicy {
+        if isHypertextURL(url: url), let domain = url.host, let policy = loadAutoplayPolicy(forDomain: domain) {
+            return policy
+        }
+
+        return loadDefaultAutoplayPolicy()
+    }
+
+    func loadAutoplayPolicy(forDomain domain: String) -> _WKWebsiteAutoplayPolicy? {
         guard permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy) else {
-            return .init(autoplayPreferences.autoplayBlockingMode.mediaTypesRequiringUserAction)
+            return nil
         }
 
         let decision = permissionManager.permission(forDomain: domain, permissionType: .autoplayPolicy)
@@ -65,6 +79,10 @@ private extension AutoplayPolicyTabExtension {
         case .deny:
             return .deny
         }
+    }
+
+    func loadDefaultAutoplayPolicy() -> _WKWebsiteAutoplayPolicy {
+        .init(autoplayPreferences.autoplayBlockingMode.mediaTypesRequiringUserAction)
     }
 }
 

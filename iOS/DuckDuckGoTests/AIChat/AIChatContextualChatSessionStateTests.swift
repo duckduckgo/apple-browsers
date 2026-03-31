@@ -690,13 +690,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.beginManualAttach()
         sessionState.updateContext(makeTestContext(title: "New context"))
 
-        // Give time for effect to be emitted
-        let expectation = expectation(description: "Wait for effect")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            expectation.fulfill()
-        }
-        waitForExpectations(timeout: 1.0)
-
         XCTAssertTrue(pushedToFrontend)
     }
 
@@ -852,6 +845,8 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var expandButtonTappedFired = false
     var newChatButtonTappedFired = false
     var quickActionSummarizeSelectedFired = false
+    var fireButtonTappedFired = false
+    var fireButtonConfirmedFired = false
     var pageContextPlaceholderShownFired = false
     var pageContextPlaceholderTappedFired = false
     var pageContextAutoAttachedFired = false
@@ -872,6 +867,8 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireExpandButtonTapped() { expandButtonTappedFired = true }
     func fireNewChatButtonTapped() { newChatButtonTappedFired = true }
     func fireQuickActionSummarizeSelected() { quickActionSummarizeSelectedFired = true }
+    func fireFireButtonTapped() { fireButtonTappedFired = true }
+    func fireFireButtonConfirmed() { fireButtonConfirmedFired = true }
     func firePageContextPlaceholderShown() { pageContextPlaceholderShownFired = true }
     func firePageContextPlaceholderTapped() { pageContextPlaceholderTappedFired = true }
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }
@@ -894,6 +891,8 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
         expandButtonTappedFired = false
         newChatButtonTappedFired = false
         quickActionSummarizeSelectedFired = false
+        fireButtonTappedFired = false
+        fireButtonConfirmedFired = false
         pageContextPlaceholderShownFired = false
         pageContextPlaceholderTappedFired = false
         pageContextAutoAttachedFired = false

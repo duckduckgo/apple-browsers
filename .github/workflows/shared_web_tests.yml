@@ -1,0 +1,226 @@
+name: Apple - Shared Web Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform(s) to run"
+        default: both
+        type: choice
+        options:
+          - both
+          - ios
+          - macos
+  schedule:
+    - cron: '0 2 * * *' # Run at 2 AM UTC
+  workflow_call:
+    inputs:
+      platform:
+        description: "Platform(s) to run"
+        required: false
+        type: string
+        default: both
+    secrets:
+      APPLE_API_KEY_BASE64:
+        required: true
+      APPLE_API_KEY_ID:
+        required: true
+      APPLE_API_KEY_ISSUER:
+        required: true
+      ASANA_ACCESS_TOKEN:
+        required: true
+      MATCH_PASSWORD:
+        required: true
+      SSH_PRIVATE_KEY_DUCKSANS_FONT:
+        required: true
+      SSH_PRIVATE_KEY_FASTLANE_MATCH:
+        required: true
+
+jobs:
+  ios-shared-web-tests:
+    name: iOS shared web tests
+    if: ${{ github.event_name == 'schedule' || inputs.platform != 'macos' }}
+
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Checkout shared web tests
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        repository: duckduckgo/shared-web-tests
+        path: tmp/shared-web-tests
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and run tests
+      run: |
+        PROJECT_ROOT="$(pwd)"
+        . iOS/scripts/shared_web_tests.sh
+
+    - name: Upload logs when workflow failed
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: iOS-BuildLogs
+        path: |
+            tmp/test_out_*.log
+        retention-days: 7
+
+  macos-shared-web-tests:
+    name: macOS shared web tests
+    if: ${{ github.event_name == 'schedule' || inputs.platform != 'ios' }}
+
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
+
+    - name: Sync code signing assets
+      id: sync-signing-first-attempt
+      continue-on-error: true
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      working-directory: macOS
+      run: bundle exec fastlane sync_signing_ci
+
+    - name: Retry sync code signing assets
+      if: steps.sync-signing-first-attempt.outcome == 'failure'
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      working-directory: macOS
+      run: |
+        echo "First attempt to sync code signing assets failed. Retrying..."
+        bundle exec fastlane sync_signing_ci
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Checkout shared web tests
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        repository: duckduckgo/shared-web-tests
+        path: tmp/shared-web-tests
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install prerequisites
+      run: |
+        if ! command -v cargo > /dev/null 2>&1; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        fi
+
+    - name: Build macOS app
+      run: |
+        xcodebuild build \
+          -workspace DuckDuckGo.xcworkspace \
+          -scheme "macOS Browser" \
+          -configuration CI \
+          -destination "platform=macOS" \
+          -derivedDataPath DerivedData \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+          ONLY_ACTIVE_ARCH=YES \
+          DEBUG_INFORMATION_FORMAT=dwarf \
+          COMPILER_INDEX_STORE_ENABLE=NO \
+          DEPLOYMENT_LOCATION=NO
+
+    - name: Build and run tests
+      run: |
+        cd tmp/shared-web-tests
+        log_path="../../tmp/test_out_macos_$(date +"%Y%m%d_%H%M%S").log"
+        mkdir -p "$(dirname "$log_path")"
+
+        if ! npm run build; then
+          echo "npm build failed."
+          exit 1
+        fi
+
+        if ! grep -q "Start web-platform-tests hosts" /etc/hosts; then
+          sudo -- sh -c 'npm run install-hosts'
+        fi
+
+        pushd webdriver
+        cargo build
+        popd
+
+        MACOS_APP_PATH="$(pwd)/../../DerivedData/Build/Products/CI/DuckDuckGo.app"
+        export MACOS_APP_PATH
+        export TARGET_PLATFORM=macos
+
+        source build/_venv3/bin/activate 2>/dev/null || true
+        TARGET_PLATFORM=macos ./build/wpt run \
+          --product duckduckgo \
+          --binary webdriver/target/debug/ddgdriver \
+          --log-mach - --log-mach-level info \
+          duckduckgo \
+          2>&1 | tee "$log_path"
+
+    - name: Upload logs when workflow failed
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: macOS-BuildLogs
+        path: |
+            tmp/test_out_*.log
+        retention-days: 7
+
+  create-asana-task:
+    name: Create Asana Task
+    needs: [ios-shared-web-tests, macos-shared-web-tests]
+
+    if: ${{ always() && github.event_name == 'schedule' && (needs.ios-shared-web-tests.result == 'failure' || needs.ios-shared-web-tests.result == 'cancelled' || needs.macos-shared-web-tests.result == 'failure' || needs.macos-shared-web-tests.result == 'cancelled') }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Create Asana task when workflow failed
+        uses: duckduckgo/native-github-asana-sync@v1.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: ${{ vars.APPLE_CI_FAILING_TESTS_PROJECT_ID }}
+          asana-section: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_SHARED_WEB_TESTS_SECTION_ID }}
+          asana-task-name: GH Workflow Failure - Apple Shared Web Tests (iOS or macOS)
+          asana-task-description: The Apple Shared Web Tests workflow has failed (iOS and/or macOS). See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

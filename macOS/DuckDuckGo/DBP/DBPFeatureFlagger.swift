@@ -48,6 +48,11 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
+    var isContinuedProcessingFeatureOn: Bool {
+        // Continued processing is iOS-only.
+        false
+    }
+
     var isWebViewUserAgentOn: Bool {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }

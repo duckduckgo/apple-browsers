@@ -155,8 +155,7 @@ get_latest_github_release() {
     local repo_url="$1"
     local repo_path
 
-    repo_path=$(echo "$repo_url" | sed -nE 's|.*github\.com[:/]([^/]+/[^/.]+).*|\1|p')
-    repo_path="${repo_path%.git}"
+    repo_path=$(get_repo_id "$repo_url")
 
     if [[ -z "$repo_path" ]]; then
         verbose_error "Could not extract repo path from URL: $repo_url"
@@ -321,14 +320,6 @@ get_projects_for_package() {
     grep "^${repo_id}|" "$DIRECT_DEPS_FILE" 2>/dev/null | cut -d'|' -f2 | sort -u | tr '\n' ',' | sed 's/,$//'
 }
 
-# Check if a URL is a direct dependency
-is_direct_dependency() {
-    local url="$1"
-    local repo_id
-    repo_id=$(get_repo_id "$url")
-    grep -q "^${repo_id}|" "$DIRECT_DEPS_FILE" 2>/dev/null
-}
-
 # Get search roots limited to expected directories
 get_search_roots() {
     local path="$1"
@@ -374,12 +365,10 @@ find_resolved_files() {
     local results
     results=$(find "${roots[@]}" \( -name ".build" -o -name "DerivedData" \) -prune -o \
         \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) -print 2>/dev/null)
-    if [[ -n "$results" ]]; then
-        while IFS= read -r f; do
-            verbose "Found resolved file: $f"
-        done <<< "$results"
-    else
+    if [[ -z "$results" ]]; then
         verbose_warn "No Package.resolved files found"
+    elif [[ "$VERBOSE" == true ]]; then
+        while IFS= read -r f; do verbose "Found resolved file: $f"; done <<< "$results"
     fi
     echo "$results"
 }
@@ -454,24 +443,30 @@ parse_resolved_files() {
     echo "$files" | while IFS= read -r file; do
         [[ -z "$file" ]] && continue
 
-        local version="2"
-        if tail -3 "$file" 2>/dev/null | grep -q '"version"[[:space:]]*:[[:space:]]*1'; then
-            version="1"
-        fi
-        verbose "Parsing $file (format version: $version)"
-
-        if [[ "$version" == "1" ]]; then
-            awk '
-                /"repositoryURL"/ { gsub(/.*"repositoryURL"[[:space:]]*:[[:space:]]*"|".*/, ""); url=$0 }
-                /"version"/ { gsub(/.*"version"[[:space:]]*:[[:space:]]*"|".*/, ""); ver=$0; if(url) print url "|" ver; url="" }
-            ' "$file"
-        else
-            awk '
-                /"location"/ { gsub(/.*"location"[[:space:]]*:[[:space:]]*"|".*/, ""); url=$0 }
-                /"version"/ { gsub(/.*"version"[[:space:]]*:[[:space:]]*"|".*/, ""); ver=$0; if(url && ver ~ /^[0-9]/) print url "|" ver; url="" }
-            ' "$file"
-        fi
-    done | sort -t'|' -k1,1 -u > "$output_file"
+        verbose "Parsing $file"
+        # Single pass handles both v1 (repositoryURL) and v2/v3 (location) formats.
+        # The ver ~/^[0-9]/ guard skips the file-level "version": N field (unquoted integer
+        # → gsub leaves the raw line, which starts with whitespace, not a digit).
+        awk '
+            /"repositoryURL"/ { gsub(/.*"repositoryURL"[[:space:]]*:[[:space:]]*"|".*/, ""); url=$0 }
+            /"location"/ { gsub(/.*"location"[[:space:]]*:[[:space:]]*"|".*/, ""); url=$0 }
+            /"version"/ { gsub(/.*"version"[[:space:]]*:[[:space:]]*"|".*/, ""); ver=$0; if(url && ver ~ /^[0-9]/) print url "|" ver; url="" }
+        ' "$file"
+    done | awk -F'|' '
+        function semver_gt(a, b,    aa, bb) {
+            split(a, aa, "."); split(b, bb, ".")
+            for (i = 1; i <= 3; i++) {
+                if (aa[i]+0 > bb[i]+0) return 1
+                if (aa[i]+0 < bb[i]+0) return 0
+            }
+            return 0
+        }
+        {
+            url=$1; ver=$2
+            if (!(url in max_ver) || semver_gt(ver, max_ver[url])) max_ver[url] = ver
+        }
+        END { for (url in max_ver) print url "|" max_ver[url] }
+    ' | sort > "$output_file"
 }
 
 # Main logic
@@ -506,34 +501,23 @@ main() {
     # Get all packages from resolved files
     parse_resolved_files "$resolved_files" "$RESOLVED_PKGS_FILE"
 
-    # Filter to direct dependencies only
+    # Filter to direct dependencies only (exclusions always apply)
     rm -rf "$FILTERED_PKGS_FILE"
-    if [[ "$SHOW_ALL" == true ]]; then
-        verbose "Showing all dependencies (filtering exclusions only)"
-        while IFS='|' read -r url version; do
-            [[ -z "$url" ]] && continue
-            local repo_id
-            repo_id=$(get_repo_id "$url")
-            is_excluded "$repo_id" && continue
+    verbose "Filtering resolved packages"
+    while IFS='|' read -r url version; do
+        [[ -z "$url" ]] && continue
+        local repo_id
+        repo_id=$(get_repo_id "$url")
+        is_excluded "$repo_id" && continue
+        if [[ "$SHOW_ALL" == true ]]; then
             echo "${url}|${version}" >> "$FILTERED_PKGS_FILE"
-        done < "$RESOLVED_PKGS_FILE"
-    else
-        verbose "Filtering resolved packages to direct dependencies only"
-        while IFS='|' read -r url version; do
-            [[ -z "$url" ]] && continue
-            local repo_id
-            repo_id=$(get_repo_id "$url")
-            if is_excluded "$repo_id"; then
-                continue
-            fi
-            if is_direct_dependency "$url"; then
-                verbose "  Direct dependency: $(get_package_name "$url") ($version)"
-                echo "${url}|${version}" >> "$FILTERED_PKGS_FILE"
-            else
-                verbose "  Transitive (skipped): $(get_package_name "$url") ($version)"
-            fi
-        done < "$RESOLVED_PKGS_FILE"
-    fi
+        elif grep -q "^${repo_id}|" "$DIRECT_DEPS_FILE" 2>/dev/null; then
+            verbose "  Direct dependency: $(get_package_name "$url") ($version)"
+            echo "${url}|${version}" >> "$FILTERED_PKGS_FILE"
+        else
+            verbose "  Transitive (skipped): $(get_package_name "$url") ($version)"
+        fi
+    done < "$RESOLVED_PKGS_FILE"
 
     local pkg_count
     pkg_count=$(grep -c '|' "$FILTERED_PKGS_FILE" 2>/dev/null || echo "0")

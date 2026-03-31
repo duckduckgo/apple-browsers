@@ -237,6 +237,12 @@ jobs:
         pixel-params: |
           runner: ${{ matrix.runner }}
 
+    - name: Send Status Pixel
+      if: always() && github.ref_name == 'main'
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_status_mac_e2e_sync_${{ matrix.os-version }}_${{ steps.run-ui-tests.outcome }}
+
     - name: Prepare test report
       if: always()
       working-directory: macOS

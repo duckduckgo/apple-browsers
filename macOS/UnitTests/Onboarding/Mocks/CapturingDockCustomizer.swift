@@ -46,6 +46,10 @@ class CapturingDockCustomizer: DockCustomization {
         // No-op
     }
 
+    func synchronizeNotificationVisibilityWithFirstLaunchDate() {
+        // No-op
+    }
+
     func resetData() {
         // No-op
     }

@@ -359,14 +359,18 @@ extension MainViewFactory {
             coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
-        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight, relatedBy: .equal)
+        let barHeight = coordinator.omniBar.barView.expectedHeight
+        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: barHeight, relatedBy: .equal)
+        coordinator.constraints.navigationBarContainerMinHeight = container.constrainAttribute(.height, to: barHeight, relatedBy: .greaterThanOrEqual)
+        coordinator.constraints.navigationBarCollectionViewSafeAreaBottom =
+            navigationBarCollectionView.bottomAnchor.constraint(lessThanOrEqualTo: superview.safeAreaLayoutGuide.bottomAnchor)
 
         NSLayoutConstraint.activate([
             coordinator.constraints.navigationBarContainerTop,
             container.constrainView(superview, by: .leading),
             container.constrainView(superview, by: .trailing),
             coordinator.constraints.navigationBarContainerHeight,
-            navigationBarCollectionView.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight),
+            navigationBarCollectionView.constrainAttribute(.height, to: barHeight),
             navigationBarCollectionView.constrainView(container, by: .top),
             navigationBarCollectionView.constrainView(container, by: .leading),
             navigationBarCollectionView.constrainView(container, by: .trailing),

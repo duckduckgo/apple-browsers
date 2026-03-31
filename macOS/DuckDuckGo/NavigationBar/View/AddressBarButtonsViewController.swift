@@ -1974,6 +1974,7 @@ final class AddressBarButtonsViewController: NSViewController {
             },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
+            displaysAutoplayPolicy: tabViewModel.tab.mustDisplayAutoplayPolicy,
             permissionsNeedReload: tabViewModel.permissionsNeedReload
         )
 
@@ -2871,13 +2872,13 @@ extension TabViewModel {
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
         let isAnyPermissionPresent = !usedPermissions.values.isEmpty
         let pageInitiatedPopupOpened = tab.popupHandling?.pageInitiatedPopupOpened ?? false
-        let isHypertextURL = tab.content.urlForWebView?.isHypertextURL ?? false
+        let mustDisplayAutoplayPolicy = tab.mustDisplayAutoplayPolicy
 
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
         return (shouldShowWhileFocused
             || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
-            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && isAutoplayFeatureOn && isHypertextURL))
+            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && mustDisplayAutoplayPolicy))
         && !isShowingErrorPage
     }
 

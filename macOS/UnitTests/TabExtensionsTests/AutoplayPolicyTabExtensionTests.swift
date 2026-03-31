@@ -93,6 +93,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
 
         XCTAssertNil(policy, "Policy should be .next (nil) to pass to the next responder")
         XCTAssertEqual(prefs.autoplayPolicy, .default, "Preferences should not be modified when feature flag is off")
+        XCTAssertFalse(prefs.mustApplyAutoplayPolicy, "mustApplyAutoplayPolicy should be false when feature flag is off")
     }
 
     // MARK: - No per-site override (falls back to global preferences)
@@ -146,10 +147,16 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         XCTAssertEqual(prefs.autoplayPolicy, .allow)
     }
 
-    // Note: Testing the .ask per-site override (maps to .allowWithoutSound) is not possible with the
-    // current PermissionManagerMock because setPermission(.ask, ...) removes the entry, causing
-    // hasPermissionPersisted to return false. In production, .ask is persisted differently. This case
-    // is covered by the PermissionCenterViewModel tests below which test the decision round-trip logic.
+    func testWhenPerSiteAskStoredThenPolicyIsAllowWithoutSound() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        mockPermissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .allowWithoutSound)
+    }
 
     func testWhenPerSiteDenyStoredThenPolicyIsDeny() async {
         mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
@@ -160,6 +167,33 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
 
         XCTAssertEqual(prefs.autoplayPolicy, .deny)
+    }
+
+    // MARK: - Per-site override takes precedence over global
+
+    func testWhenPerSiteDenyStoredAndGlobalAllowAllThenPolicyIsDeny() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.allowAll.rawValue
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        mockPermissionManager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .deny, "Per-site override should take precedence over global default")
+    }
+
+    // MARK: - mustApplyAutoplayPolicy
+
+    func testWhenFeatureFlagOnThenMustApplyAutoplayPolicyIsTrue() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertTrue(prefs.mustApplyAutoplayPolicy)
     }
 
     // MARK: - Return value

@@ -1286,6 +1286,18 @@ extension Tab {
     }
 }
 
+// MARK: - Autoplay
+
+extension Tab {
+
+    var mustDisplayAutoplayPolicy: Bool {
+        let isFeatureEnabled = featureFlagger.isFeatureOn(.autoplayPolicy)
+        let isHypertextURL = content.urlForWebView?.isHypertextURL ?? false
+
+        return isFeatureEnabled && isHypertextURL
+    }
+}
+
 // MARK: -
 
 extension Tab: UserContentControllerDelegate {

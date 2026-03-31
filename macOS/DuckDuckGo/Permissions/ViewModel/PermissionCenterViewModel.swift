@@ -204,6 +204,9 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Whether a page-initiated popup was opened (auto-allowed due to "Always Allow" setting)
     private let pageInitiatedPopupOpened: Bool
 
+    /// Whether the Autoplay Policy permission must be inserted(or not)
+    private let displaysAutoplayPolicy: Bool
+
     init(
         domain: String,
         usedPermissions: Permissions,
@@ -223,6 +226,7 @@ final class PermissionCenterViewModel: ObservableObject {
         setPermissionsNeedReload: (() -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
+        displaysAutoplayPolicy: Bool = false,
         permissionsNeedReload: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
@@ -244,6 +248,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.setPermissionsNeedReload = setPermissionsNeedReload
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
+        self.displaysAutoplayPolicy = displaysAutoplayPolicy
         self.systemPermissionManager = systemPermissionManager
         self.showReloadBanner = permissionsNeedReload
 
@@ -484,7 +489,7 @@ final class PermissionCenterViewModel: ObservableObject {
         }
 
         // Always include autoplay policy when feature flag is on
-        if featureFlagger.isFeatureOn(.autoplayPolicy),
+        if displaysAutoplayPolicy,
            !otherPermissions.contains(.autoplayPolicy),
            !removedPermissions.contains(.autoplayPolicy) {
             otherPermissions.append(.autoplayPolicy)

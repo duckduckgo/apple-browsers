@@ -147,9 +147,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
     }
     // MARK: - Autoplay Row Visibility Tests
 
-    func testWhenAutoplayFeatureFlagOnThenAutoplayRowAppearsInPermissionItems() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
-
+    func testWhenDisplayAutoplayPolicyIsEnabledThenAutoplayRowAppearsInPermissionItems() {
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),
@@ -157,6 +155,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
+            displaysAutoplayPolicy: true,
             systemPermissionManager: mockSystemPermissionManager
         )
 
@@ -164,9 +163,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertTrue(types.contains(.autoplayPolicy), "Autoplay row should appear when feature flag is on")
     }
 
-    func testWhenAutoplayFeatureFlagOffThenAutoplayRowDoesNotAppear() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = false
-
+    func testWhenDisplaysAutoplayPolicyIsDisabledThenAutoplayRowDoesNotAppear() {
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),
@@ -174,6 +171,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
+            displaysAutoplayPolicy: false,
             systemPermissionManager: mockSystemPermissionManager
         )
 
@@ -184,7 +182,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
     // MARK: - currentAutoplayDecision Tests
 
     func testWhenNoOverrideAndGlobalBlockAudioThenCurrentDecisionIsAudioMuted() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let persistor = AutoplayPreferencesPersistorMock(autoplayBlockingModeRawValue: AutoplayBlockingMode.blockAudio.rawValue)
         let autoplayPreferences = AutoplayPreferences(persistor: persistor)
 
@@ -203,8 +200,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
     }
 
     func testWhenNoOverrideThenCurrentDecisionMatchesGlobalPreference() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
-
         let cases: [(AutoplayBlockingMode, AutoplayDecision)] = [
             (.allowAll, .allowAll),
             (.blockAll, .blockAll),
@@ -230,7 +225,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
     }
 
     func testWhenAutoplayAllowPersistedThenCurrentDecisionIsAllowAll() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
 
         let viewModel = PermissionCenterViewModel(
@@ -247,7 +241,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
     }
 
     func testWhenAutoplayDenyPersistedThenCurrentDecisionIsBlockAll() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPermissionManager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
 
         let viewModel = PermissionCenterViewModel(
@@ -263,16 +256,25 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.currentAutoplayDecision(), .blockAll)
     }
 
-    // Note: Testing a per-site .audioMuted override (which maps to .ask persisted) is not possible
-    // with the current PermissionManagerMock because setPermission(.ask, ...) removes the entry from
-    // storage, causing hasPermissionPersisted to return false. In production, .ask is stored as a
-    // distinct persisted value.
+    func testWhenAutoplayAskPersistedThenCurrentDecisionIsAudioMuted() {
+        mockPermissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertEqual(viewModel.currentAutoplayDecision(), .audioMuted)
+    }
 
     // MARK: - setAutoplayDecision Tests
 
     func testWhenSetAutoplayDecisionAllowAllThenAllowPermissionIsStored() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
-
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),
@@ -289,8 +291,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
     }
 
     func testWhenSetAutoplayDecisionAudioMutedThenAskPermissionIsStored() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
-
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),
@@ -303,16 +303,10 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
         viewModel.setAutoplayDecision(.audioMuted)
 
-        // Verify setPermission was called with .ask
-        let askCalls = mockPermissionManager.setPermissionCalls.filter {
-            $0.permissionType == .autoplayPolicy && $0.decision == .ask
-        }
-        XCTAssertEqual(askCalls.count, 1, "setPermission(.ask) should be called for audioMuted")
+        XCTAssertEqual(mockPermissionManager.permission(forDomain: "example.com", permissionType: .autoplayPolicy), .ask)
     }
 
     func testWhenSetAutoplayDecisionBlockAllThenDenyPermissionIsStored() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
-
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),
@@ -329,8 +323,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
     }
 
     func testWhenSetAutoplayDecisionThenReloadBannerIsShown() {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
-
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),

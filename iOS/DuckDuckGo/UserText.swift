@@ -2297,12 +2297,12 @@ public struct UserText {
 
             public static let fireOnboardingTitle = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.fire.title",
-                value: "And that’s Duck.ai!",
+                value: "That’s duck.ai!",
                 comment: "Experiment-only fire onboarding title shown after the first Duck.ai response."
             )
             public static let fireOnboardingMessage = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.fire.message",
-                value: "Private AI chats you can delete anytime with the Fire Button.\n\nGive it a try! 🔥",
+                value: "Private AI chats you can delete anytime with the Fire Button. Give it a try! 🔥",
                 comment: "Experiment-only fire onboarding message shown after the first Duck.ai response."
             )
             public static let completionOnboardingMessage = NotLocalizedString(

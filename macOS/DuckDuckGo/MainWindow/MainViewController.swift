@@ -40,7 +40,6 @@ final class MainViewController: NSViewController {
     let browserTabViewController: BrowserTabViewController
     let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     let aiChatCoordinator: AIChatCoordinating
-
     let aiChatSummarizer: AIChatSummarizer
     let aiChatTranslator: AIChatTranslator
 

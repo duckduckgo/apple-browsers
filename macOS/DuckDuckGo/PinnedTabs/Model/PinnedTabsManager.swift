@@ -94,10 +94,16 @@ final class PinnedTabsManager {
         Set(tabCollection.tabs.compactMap { $0.url?.host })
     }
 
+    @MainActor
     func setUp(movingTabsFrom collection: TabCollection) {
         tabCollection.removeAll()
         for anyTab in collection.tabs {
-            tabCollection.append(anyTab: anyTab)
+            switch anyTab {
+            case .loaded(let tab):
+                tabCollection.append(tab: tab)
+            case .suspended(let suspended):
+                tabCollection.append(tab: suspended.materialize())
+            }
         }
         collection.clearAfterMerge()
     }

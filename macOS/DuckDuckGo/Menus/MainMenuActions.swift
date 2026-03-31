@@ -1564,12 +1564,13 @@ extension MainViewController {
 
         let otherMainViewControllers = otherWindowControllers.compactMap { $0.mainViewController }
         let otherTabCollectionViewModels = otherMainViewControllers.map { $0.tabCollectionViewModel }
-        let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }.compactMap(\.tab)
+        let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
         let otherLocalHistoryOfRemovedTabs = Set(otherTabCollectionViewModels.flatMap { $0.tabCollection.localHistoryOfRemovedTabs })
 
         WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
 
-        tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
+        otherTabs.forEach { tabCollectionViewModel.tabCollection.append(anyTab: $0) }
+        tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
 
         // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`

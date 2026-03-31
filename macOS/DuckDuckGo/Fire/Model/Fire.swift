@@ -967,10 +967,6 @@ final class Fire: FireProtocol {
     private func burnTabs(burningEntity: BurningEntity) -> Result<Void, Error> {
         var firstError: Error?
 
-        func replacementPinnedTab(from pinnedTab: Tab) -> Tab {
-            return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
-        }
-
         func selectPinnedTabIfNeeded(in tabCollectionViewModel: TabCollectionViewModel) {
             if !tabCollectionViewModel.pinnedTabs.isEmpty {
                 tabCollectionViewModel.select(at: .pinned(0), forceChange: true)
@@ -984,8 +980,7 @@ final class Fire: FireProtocol {
             }
 
             for (index, anyTab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
-                guard let pinnedTab = anyTab.tab else { continue }
-                let newTab = replacementPinnedTab(from: pinnedTab)
+                let newTab = Tab(content: anyTab.content.loadedFromCache(), shouldLoadInBackground: true)
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
             }
             return .success(())
@@ -1191,8 +1186,14 @@ extension TabCollection {
     var localHistoryDomains: Set<String> {
         var domains = Set<String>()
         for anyTab in tabs {
-            guard let tab = anyTab.tab else { continue }
-            domains = domains.union(tab.localHistoryDomains)
+            switch anyTab {
+            case .loaded(let tab):
+                domains.formUnion(tab.localHistoryDomains)
+            case .suspended(let suspended):
+                if let urls = suspended.visitedDomainURLs {
+                    domains.formUnion(urls.compactMap(\.host))
+                }
+            }
         }
         return domains
     }

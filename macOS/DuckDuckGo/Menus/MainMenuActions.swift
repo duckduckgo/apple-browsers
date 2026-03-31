@@ -186,8 +186,8 @@ extension AppDelegate {
         // so we need to instruct all open history tabs to reload themselves.
         let historyTabs = self.windowControllersManager.mainWindowControllers
             .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
-            .compactMap(\.tab)
             .filter { $0.content.isHistory }
+            .compactMap(\.tab)
         historyTabs.forEach { $0.reload() }
     }
 

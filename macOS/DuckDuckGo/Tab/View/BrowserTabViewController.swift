@@ -478,7 +478,7 @@ final class BrowserTabViewController: NSViewController {
             .sink {  [weak self] tabs in
                 guard let self else { return }
                 setDelegate(for: tabs.compactMap(\.tab))
-                removeDataBrokerViewIfNecessary(for: tabs.compactMap(\.tab))
+                removeDataBrokerViewIfNecessary(for: tabs)
             }
             .store(in: &cancellables)
 
@@ -547,7 +547,7 @@ final class BrowserTabViewController: NSViewController {
                                                object: nil)
     }
 
-    private func removeDataBrokerViewIfNecessary(for tabs: [Tab]) {
+    private func removeDataBrokerViewIfNecessary(for tabs: [AnyTab]) {
         if let dataBrokerProtectionHomeViewController,
            !tabs.contains(where: { $0.content == .dataBrokerProtection }) {
             dataBrokerProtectionHomeViewController.removeCompletely()

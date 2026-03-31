@@ -496,7 +496,6 @@ private extension AIChatContextualSheetViewController {
                 })
                 contextualInputViewController.showContextChip(chipView)
             }
-            contextualInputViewController.updateQuickActions()
         }
     }
 
@@ -763,6 +762,7 @@ private extension AIChatContextualSheetViewController {
     func apply(_ viewState: SheetViewState) {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
         newChatButton.isHidden = !viewState.shouldShowNewChatButton
+        contextualInputViewController.updateQuickActions(with: viewState.quickActions)
 
         switch viewState.content {
         case .nativeInput:

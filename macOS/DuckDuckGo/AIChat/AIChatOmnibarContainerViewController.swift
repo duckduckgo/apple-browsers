@@ -61,6 +61,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let attachmentsLeadingInset: CGFloat = 13
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
+        static let attachmentsErrorHeight: CGFloat = 18
         static let maxAttachments: Int = 3
         static let suggestionsBottomPadding: CGFloat = 4
     }
@@ -74,6 +75,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let imageUploadButton = AIChatOmnibarToolButton()
     private let modelPickerButton = AIChatModelPickerButton()
     private let attachmentsContainerView = AIChatImageAttachmentsContainerView()
+
+    private let attachmentsErrorLabel: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 11)
+        label.textColor = .systemRed
+        label.isHidden = true
+        return label
+    }()
 
     /// Suggestions view - always in hierarchy, height is 0 when no suggestions
     private let suggestionsView = AIChatSuggestionsView()
@@ -137,7 +147,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// This must be added to the container height calculation by the parent.
     var additionalContentHeight: CGFloat {
         if omnibarController.isOmnibarToolsEnabled && !attachmentsContainerView.attachments.isEmpty {
-            return Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
+            var height = Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
+            if attachmentsContainerView.hasExcessAttachments {
+                height += Constants.attachmentsErrorHeight
+            }
+            return height
         }
         return 0
     }
@@ -157,6 +171,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Add attachments area when there are attachments
             if !attachmentsContainerView.attachments.isEmpty {
                 height += Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
+                if attachmentsContainerView.hasExcessAttachments {
+                    height += Constants.attachmentsErrorHeight
+                }
             }
         }
         return height
@@ -237,7 +254,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateSubmitButtonState(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        applySubmitButtonAppearance(enabled: hasText)
+        let hasExcess = attachmentsContainerView.hasExcessAttachments
+        applySubmitButtonAppearance(enabled: hasText && !hasExcess)
     }
 
     private func applySubmitButtonAppearance(enabled: Bool) {
@@ -395,6 +413,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.resizeTasks.removeValue(forKey: id)
         }
         containerView.addSubview(attachmentsContainerView)
+        containerView.addSubview(attachmentsErrorLabel)
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -428,6 +447,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
             attachmentsContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
             attachmentsContainerView.bottomAnchor.constraint(equalTo: imageUploadButton.topAnchor),
+
+            attachmentsErrorLabel.leadingAnchor.constraint(equalTo: attachmentsContainerView.leadingAnchor),
+            attachmentsErrorLabel.bottomAnchor.constraint(equalTo: attachmentsContainerView.topAnchor, constant: -2),
         ])
 
         // Attachments container height: 0 when empty, expands when attachments are added
@@ -584,14 +606,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = true
         panel.allowedContentTypes = allowedContentTypes(for: omnibarController.selectedModelImageFormats)
 
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }
-            let remaining = Constants.maxAttachments - self.attachmentsContainerView.attachments.count
-            for url in panel.urls.prefix(remaining) {
+            let displayCap = Constants.maxAttachments + 1
+            let remaining = displayCap - self.attachmentsContainerView.attachments.count
+            for url in panel.urls.prefix(max(remaining, 0)) {
                 self.addImageAttachment(from: url)
             }
         }
@@ -605,7 +628,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Attempts to add an image attachment from a drag-and-drop operation.
     /// - Returns: `true` if the image was accepted, `false` if attachments are full.
     func addImageAttachmentFromDrop(_ url: URL) -> Bool {
-        guard !attachmentsContainerView.isFull else { return false }
+        let displayCap = Constants.maxAttachments + 1
+        guard attachmentsContainerView.attachments.count < displayCap else { return false }
         addImageAttachment(from: url)
         return true
     }
@@ -681,14 +705,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateAttachmentsLayout() {
         let hasAttachments = !attachmentsContainerView.attachments.isEmpty
+        let hasExcess = attachmentsContainerView.hasExcessAttachments
+        let isFull = attachmentsContainerView.isFull
+
         attachmentsHeightConstraint?.constant = hasAttachments
             ? Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
             : 0
 
-        // Disable the upload button when at max attachments
+        // Show error when too many images are attached
+        attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentsLimitError
+        attachmentsErrorLabel.isHidden = !hasExcess
+
+        // Disable the upload button when at max attachments and update tooltip
         if omnibarController.isOmnibarToolsEnabled {
-            imageUploadButton.isEnabled = !attachmentsContainerView.isFull
+            imageUploadButton.isEnabled = !isFull
+            imageUploadButton.toolTip = isFull
+                ? UserText.aiChatAttachmentsLimitError
+                : UserText.aiChatImageUploadButtonTooltip
         }
+
+        // Disable submit when too many images
+        updateSubmitButtonState(for: omnibarController.currentText)
 
         // Suppress or restore suggestions based on attachments presence
         let suppress = shouldSuppressSuggestions

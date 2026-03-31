@@ -2360,6 +2360,18 @@
         }
       }
     },
+    "aichat.attachments.limit-error" : {
+      "comment" : "Error message shown when the user tries to attach more than 3 images in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can only attach 3 images at a time"
+          }
+        }
+      }
+    },
     "aichat.chrome.hide-duckai-button" : {
       "comment" : "Context menu item to hide the Duck.ai title button in the tab bar",
       "extractionState" : "extracted_with_value",

@@ -71,9 +71,14 @@ final class AIChatImageAttachmentsContainerView: NSView {
         ])
     }
 
-    func addAttachment(_ attachment: AIChatImageAttachment) {
-        guard !isFull else { return }
+    var hasExcessAttachments: Bool {
+        attachments.count > Constants.maxAttachments
+    }
 
+    private static let displayCap = Constants.maxAttachments + 1
+
+    func addAttachment(_ attachment: AIChatImageAttachment) {
+        guard attachments.count < Self.displayCap else { return }
         attachments.append(attachment)
 
         let thumbnailView = AIChatImageAttachmentThumbnailView(attachment: attachment)

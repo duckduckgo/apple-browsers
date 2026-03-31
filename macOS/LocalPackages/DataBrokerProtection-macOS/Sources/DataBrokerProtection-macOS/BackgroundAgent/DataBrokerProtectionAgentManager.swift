@@ -405,7 +405,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
         }
     }
 
-    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging) {
+    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, identifier: CompletedJobIdentifier?) {
         // Figure out if we've just finished initial scans, and send the appropriate pixel if necessary
 
         let database = jobDependencies.database
@@ -532,10 +532,10 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
     }
 
     public func runAllOptOuts(showWebView: Bool) {
-        queueManager.execute(.startOptOutOperations(showWebView: showWebView,
-                                                    jobDependencies: jobDependencies,
-                                                    errorHandler: nil,
-                                                    completion: nil))
+        queueManager.startImmediateOptOutOperationsIfPermitted(showWebView: showWebView,
+                                                               jobDependencies: jobDependencies,
+                                                               errorHandler: nil,
+                                                               completion: nil)
     }
 
     public func runEmailConfirmationOperations(showWebView: Bool) async {

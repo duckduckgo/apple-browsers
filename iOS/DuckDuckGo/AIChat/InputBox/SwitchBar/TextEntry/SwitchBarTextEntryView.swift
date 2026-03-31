@@ -373,7 +373,7 @@ class SwitchBarTextEntryView: UIView {
 
         if isUnexpandedURL() ||
             // https://app.asana.com/1/137249556945/project/392891325557410/task/1210916875279070?focus=true
-            textView.text.isBlank {
+            (isExpandable ? textView.text.isEmpty : textView.text.isBlank) {
 
             /// When empty (or showing an unexpanded URL), size to one line  to avoid clipping at larger accessibility sizes.
             let requiredEmptyStateHeight = requiredHeightForSingleLineContent()

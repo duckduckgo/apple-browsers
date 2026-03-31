@@ -36,6 +36,7 @@ extension MainViewController {
         let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
+        coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.onAnimatedDismissToOmnibar = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
@@ -527,7 +528,11 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestVoiceSearch() {
         let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
-        handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
+        if mode == .aiChat && voiceShortcutFeature.isAvailable {
+            onDuckAIVoiceModeRequested()
+        } else {
+            handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
+        }
     }
 }
 
@@ -624,6 +629,6 @@ extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
     }
 
     func floatingSubmitDidTapVoice() {
-        // Voice search wiring deferred
+        onDuckAIVoiceModeRequested()
     }
 }

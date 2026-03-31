@@ -136,6 +136,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      shouldLoadInBackground: Bool = false,
                      burnerMode: BurnerMode = .regular,
                      isLoadedInSidebar: Bool = false,
+                     isSuspended: Bool = false,
                      canBeClosedWithBack: Bool = false,
                      lastSelectedAt: Date? = nil,
                      webViewSize: CGSize = CGSize(width: 1024, height: 768),
@@ -201,6 +202,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   shouldLoadInBackground: shouldLoadInBackground,
                   burnerMode: burnerMode,
                   isLoadedInSidebar: isLoadedInSidebar,
+                  isSuspended: isSuspended,
                   canBeClosedWithBack: canBeClosedWithBack,
                   lastSelectedAt: lastSelectedAt,
                   webViewSize: webViewSize,
@@ -251,6 +253,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          shouldLoadInBackground: Bool,
          burnerMode: BurnerMode,
          isLoadedInSidebar: Bool,
+         isSuspended: Bool,
          canBeClosedWithBack: Bool,
          lastSelectedAt: Date?,
          webViewSize: CGSize,
@@ -285,6 +288,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.burnerMode = burnerMode
         self._canBeClosedWithBack = canBeClosedWithBack
         self.interactionState = interactionStateData.map(InteractionState.loadCachedFromTabContent) ?? .none
+        self.isSuspended = isSuspended
         self.lastSelectedAt = lastSelectedAt
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
@@ -562,6 +566,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
+
+    // MARK: - Tab Suspension
+
+    @Published private(set) var isSuspended: Bool
 
     var audioStatePublisher: AnyPublisher<WebView.AudioState, Never> {
         webView.audioStatePublisher
@@ -1363,7 +1371,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             navigation.navigationAction.sourceFrame.securityOrigin
         }
         if !securityOrigin.isEmpty || self.hasCommittedContent {
-            // don‘t reset the initially passed parent tab SecurityOrigin to an empty one for "about:blank" page
+            // don't reset the initially passed parent tab SecurityOrigin to an empty one for "about:blank" page
             self.securityOrigin = securityOrigin
         }
 
@@ -1535,8 +1543,8 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     func renderingProgressDidChange(progressEvents: UInt) {
         // Emit only after first paint event, when the white background content is not visible anymore
-        // https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
-        if progressEvents >= 4 {
+        let events = _WKRenderingProgressEvents(rawValue: progressEvents)
+        if events.contains(.firstVisuallyNonEmptyLayout) {
             webViewRenderingProgressDidChangePublisher.send()
         }
     }
@@ -1570,6 +1578,43 @@ extension Tab: TabDataClearing {
         webView.navigationDelegate = caller
         webView.load(URLRequest(url: .blankPage))
     }
+}
+
+// MARK: - Tab Suspension
+
+extension Tab {
+
+    // Creates a fresh, unloaded Tab to hold the slot. Because it never navigates,
+    // no web content process is spawned. The old Tab (and its WKWebView) is released
+    // when replaceTab assigns the new one, letting the OS reclaim the process memory.
+    @MainActor
+    func makeSuspendedTab() -> Tab? {
+        guard case .url(let url, _, _) = content else {
+            return nil
+        }
+
+        let suspendedTab = Tab(
+            content: .url(url, source: .pendingStateRestoration),
+            title: title,
+            favicon: favicon,
+            interactionStateData: getActualInteractionStateData(),
+            shouldLoadInBackground: false,
+            burnerMode: burnerMode,
+            isSuspended: true,
+            lastSelectedAt: lastSelectedAt
+        )
+        return suspendedTab
+    }
+
+    /// Resumes a suspended tab by loading its content URL.
+    @MainActor
+    func resume() {
+        guard isSuspended else { return }
+        isSuspended = false
+        // Use `webViewDisplayed` since `contentUpdated` creates a new local history entry.
+        reloadIfNeeded(source: .webViewDisplayed)
+    }
+
 }
 
 // "protected" properties meant to access otherwise private properties from Tab extensions

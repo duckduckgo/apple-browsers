@@ -402,6 +402,14 @@ private class TabBarViewModelMock: TabBarViewModel {
         $progress
     }
 
+    @Published
+    var isSuspended: Bool = false
+    var isSuspendedPublisher: AnyPublisher<Bool, Never> {
+        $isSuspended.eraseToAnyPublisher()
+    }
+
+    var canBeSuspended: Bool = false
+
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
 
     init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false, loading: Bool = false, error: WKError? = nil) {

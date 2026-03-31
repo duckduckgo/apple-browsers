@@ -690,13 +690,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.beginManualAttach()
         sessionState.updateContext(makeTestContext(title: "New context"))
 
-        // Give time for effect to be emitted
-        let expectation = expectation(description: "Wait for effect")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            expectation.fulfill()
-        }
-        waitForExpectations(timeout: 1.0)
-
         XCTAssertTrue(pushedToFrontend)
     }
 

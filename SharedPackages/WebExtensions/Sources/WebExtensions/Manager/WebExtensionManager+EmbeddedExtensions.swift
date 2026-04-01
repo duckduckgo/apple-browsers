@@ -47,6 +47,7 @@ extension WebExtensionManager {
 
     /// Uninstalls an embedded extension of the given type if it's currently installed.
     /// - Parameter type: The type of embedded extension to uninstall.
+    @MainActor
     public func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
         guard let installed = installedEmbeddedExtension(for: type) else {
             return
@@ -84,6 +85,7 @@ extension WebExtensionManager {
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
                     Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
+                    await scriptletCoordinator?.onExtensionEnabled(for: descriptor.type)
                 }
             } else {
                 Logger.webExtensions.info("📦 Installing embedded extension \(descriptor.type.rawValue) v\(bundledMetadata.version ?? "?")")
@@ -109,6 +111,15 @@ extension WebExtensionManager {
         return storageProvider.resolveInstalledExtension(identifier: installed.uniqueIdentifier)
     }
 
+    @MainActor
+    public func reloadExtension(for type: DuckDuckGoWebExtensionType) async throws {
+        guard let installed = installedEmbeddedExtension(for: type) else {
+            Logger.webExtensions.warning("⚠️ Cannot reload extension for type '\(type.rawValue)': not installed")
+            return
+        }
+        try await reloadExtension(identifier: installed.uniqueIdentifier)
+    }
+
     /// Installs an embedded extension from the given URL.
     @MainActor
     private func installEmbeddedExtension(from sourceURL: URL, type: DuckDuckGoWebExtensionType) async throws {
@@ -131,6 +142,8 @@ extension WebExtensionManager {
             installationStore.add(installedExtension)
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()
+
+            await scriptletCoordinator?.onExtensionEnabled(for: type)
         } catch {
             Logger.webExtensions.error("❌ Failed to load embedded extension '\(identifier)': \(error.localizedDescription)")
             unregisterHandlers(for: identifier)

@@ -57,10 +57,81 @@ else
     cp "$IOS_HASH_FILE" "$IOS_HASH_FILE.old"
 fi
 
-# Ensure the simulator is in a clean state
-echo "Cleaning simulator"
-killall Simulator || true
-xcrun simctl erase all || true
+# Prepare the simulator — terminate any running DuckDuckGo instance but keep
+# the booted simulator and its cached content-blocker rules intact.  The
+# previous `simctl erase all` destroyed all warm state, forcing ddgdriver to
+# re-create the simulator, re-install the app, and re-compile content blocker
+# rules from scratch on every WPT attempt — which regularly exceeded the 30s
+# WPT init timeout on CI runners.
+echo "Preparing simulator"
+APP_BUNDLE_ID="com.duckduckgo.mobile.ios"
+TARGET_DEVICE="${TARGET_DEVICE:-iPhone-16}"
+TARGET_OS="${TARGET_OS:-iOS-18-2}"
+SIM_NAME="${TARGET_DEVICE} ${TARGET_OS} (webdriver)"
+
+# Find or create the webdriver simulator
+UDID=$(xcrun simctl list devices -j 2>/dev/null \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for runtime, devs in data.get('devices', {}).items():
+    if '${TARGET_OS}' in runtime:
+        for d in devs:
+            if d.get('name') == '${SIM_NAME}' and d.get('isAvailable'):
+                print(d['udid']); exit()
+" 2>/dev/null)
+
+if [ -z "$UDID" ]; then
+    echo "Creating simulator: $SIM_NAME"
+    UDID=$(xcrun simctl create "$SIM_NAME" \
+        "com.apple.CoreSimulator.SimDeviceType.${TARGET_DEVICE}" \
+        "com.apple.CoreSimulator.SimRuntime.${TARGET_OS}")
+fi
+echo "Using simulator: $UDID"
+
+# Boot if not already booted
+xcrun simctl boot "$UDID" 2>/dev/null || true
+open -a Simulator 2>/dev/null || true
+
+# Terminate any leftover app instance but don't uninstall
+xcrun simctl terminate "$UDID" "$APP_BUNDLE_ID" 2>/dev/null || true
+
+# Pre-install the app so ddgdriver doesn't have to
+DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$(pwd)/DerivedData/}"
+APP_PATH="${DERIVED_DATA_PATH}Build/Products/Debug-iphonesimulator/DuckDuckGo.app"
+if [ -d "$APP_PATH" ]; then
+    echo "Pre-installing app from $APP_PATH"
+    xcrun simctl install "$UDID" "$APP_PATH" || true
+
+    # Set automation defaults before launch
+    xcrun simctl spawn "$UDID" defaults write "$APP_BUNDLE_ID" isUITesting -bool true || true
+    xcrun simctl spawn "$UDID" defaults write "$APP_BUNDLE_ID" isOnboardingCompleted -string true || true
+    xcrun simctl spawn "$UDID" defaults write "$APP_BUNDLE_ID" automationPort -int 8557 || true
+
+    # Launch once to let content blocker rules compile, then terminate
+    echo "Pre-warming app (content blocker compilation)..."
+    xcrun simctl launch "$UDID" "$APP_BUNDLE_ID" isUITesting true || true
+    WARMUP_ATTEMPTS=0
+    while [ $WARMUP_ATTEMPTS -lt 60 ]; do
+        READY=$(curl -s --max-time 1 "http://[::1]:8557/contentBlockerReady" 2>/dev/null \
+          | python3 -c "import sys,json; print(json.load(sys.stdin).get('message',''))" 2>/dev/null || echo "")
+        if [ "$READY" = "true" ]; then
+            echo "Content blocker ready after $WARMUP_ATTEMPTS attempts"
+            break
+        fi
+        WARMUP_ATTEMPTS=$((WARMUP_ATTEMPTS + 1))
+        sleep 0.5
+    done
+    if [ $WARMUP_ATTEMPTS -ge 60 ]; then
+        echo "Warning: content blocker warmup timed out, proceeding anyway"
+    fi
+    xcrun simctl terminate "$UDID" "$APP_BUNDLE_ID" 2>/dev/null || true
+    sleep 1
+else
+    echo "Warning: app not found at $APP_PATH, skipping pre-warm"
+fi
+
+export DERIVED_DATA_PATH
 
 # Clone the shared-web-tests repo
 cd tmp || exit

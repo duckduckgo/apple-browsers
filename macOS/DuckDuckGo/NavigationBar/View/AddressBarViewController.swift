@@ -343,8 +343,6 @@ final class AddressBarViewController: NSViewController {
         if let searchModeToggleControl = addressBarButtonsViewController?.searchModeToggleControl {
             addressBarTextField.customToggleControl = searchModeToggleControl
         }
-
-
     }
 
     override func viewWillDisappear() {

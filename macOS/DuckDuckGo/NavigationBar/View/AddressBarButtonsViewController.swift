@@ -308,7 +308,6 @@ final class AddressBarButtonsViewController: NSViewController {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
-
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager,

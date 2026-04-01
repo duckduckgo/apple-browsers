@@ -79,6 +79,12 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     }()
 
     let showAskAIChat: Bool
+    var suggestionFilter: AutocompleteSuggestionFilter = .all
+
+    var isEmpty: Bool {
+        guard let results = lastResults else { return true }
+        return results.topHits.isEmpty && results.duckduckgoSuggestions.isEmpty && results.localSuggestions.isEmpty
+    }
 
     init(historyManager: HistoryManaging,
          bookmarksDatabase: CoreDataDatabase,
@@ -151,10 +157,25 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     
     func updateQuery(_ query: String) {
         model.selection = nil
-        guard self.query != query else { return }
+        guard self.query != query else {
+            reapplyFilterIfNeeded()
+            return
+        }
         cancelInFlightRequests()
         self.query = query
         model.query = query
+    }
+
+    /// Re-applies the current filter to existing results without a new network request.
+    /// Needed when the filter changes but the query stays the same (e.g., mode switch).
+    func reapplyFilterIfNeeded() {
+        guard model.suggestionFilter != suggestionFilter, var results = lastResults else { return }
+        if suggestionFilter == .urlsOnly {
+            results = results.filteringToURLsOnly()
+        }
+        model.suggestionFilter = suggestionFilter
+        model.updateSuggestions(results)
+        updateHeight()
     }
 
     private func fireUsagePixels() {
@@ -231,10 +252,15 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self, error == nil else { return }
-            let updatedResults = result ?? .empty
+            var updatedResults = result ?? .empty
+            if self.suggestionFilter == .urlsOnly {
+                updatedResults = updatedResults.filteringToURLsOnly()
+            }
             self.lastResults = updatedResults
+            self.model.suggestionFilter = self.suggestionFilter
             model.updateSuggestions(updatedResults)
             updateHeight()
+            self.presentationDelegate?.autocompleteDidReloadResults(self)
         }
 
     }
@@ -262,8 +288,15 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     }
 
     func sectionHeight(_ suggestions: [Suggestion]) -> Int {
-        let standardCellHeight = 44
-        let subtitledCellHeight = 58
+        let standardCellHeight: Int
+        let subtitledCellHeight: Int
+        if #available(iOS 26, *) {
+            standardCellHeight = 52
+            subtitledCellHeight = 66
+        } else {
+            standardCellHeight = 44
+            subtitledCellHeight = 58
+        }
 
         var height = 0
         for suggestion in suggestions {
@@ -354,6 +387,27 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
 
 private extension SuggestionResult {
     static let empty = SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
+
+    /// Returns a copy containing only URL-based suggestions (websites, bookmarks, history).
+    /// Excludes search phrases, open tabs, and AI chat suggestions.
+    func filteringToURLsOnly() -> SuggestionResult {
+        SuggestionResult(
+            topHits: topHits.filter(\.isURLSuggestion),
+            duckduckgoSuggestions: duckduckgoSuggestions.filter(\.isURLSuggestion),
+            localSuggestions: localSuggestions.filter(\.isURLSuggestion)
+        )
+    }
+}
+
+private extension Suggestion {
+    var isURLSuggestion: Bool {
+        switch self {
+        case .website, .bookmark, .historyEntry, .openTab:
+            return true
+        case .phrase, .internalPage, .unknown, .askAIChat:
+            return false
+        }
+    }
 }
 
 extension HistoryEntry: HistorySuggestion {

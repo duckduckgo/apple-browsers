@@ -102,7 +102,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private func PreferencesSidebarModel(loadSections: [PreferencesSection]? = nil, tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
-            loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, subscriptionState: PreferencesSidebarSubscriptionState()) },
+            loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, includingYouTubeAdBlocking: false, subscriptionState: PreferencesSidebarSubscriptionState()) },
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
@@ -121,11 +121,22 @@ final class PreferencesSidebarModelTests: XCTestCase {
                                                   dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
-            duckPlayerPreferences: DuckPlayerPreferences(
-                persistor: DuckPlayerPreferencesPersistorMock(),
-                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-                internalUserDecider: mockFeatureFlagger.internalUserDecider
-            ),
+            duckPlayerPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return prefs
+            }(),
+            youTubeAdBlockingPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return YouTubeAdBlockingPreferences(duckPlayerPreferences: prefs)
+            }(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -153,11 +164,22 @@ final class PreferencesSidebarModelTests: XCTestCase {
                                                   dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
-            duckPlayerPreferences: DuckPlayerPreferences(
-                persistor: DuckPlayerPreferencesPersistorMock(),
-                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-                internalUserDecider: mockFeatureFlagger.internalUserDecider
-            ),
+            duckPlayerPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return prefs
+            }(),
+            youTubeAdBlockingPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return YouTubeAdBlockingPreferences(duckPlayerPreferences: prefs)
+            }(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -169,6 +191,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: false,
                 includingAIChat: includeAIChat,
+                includingYouTubeAdBlocking: false,
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -195,11 +218,22 @@ final class PreferencesSidebarModelTests: XCTestCase {
                                                   dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
-            duckPlayerPreferences: DuckPlayerPreferences(
-                persistor: DuckPlayerPreferencesPersistorMock(),
-                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-                internalUserDecider: mockFeatureFlagger.internalUserDecider
-            ),
+            duckPlayerPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return prefs
+            }(),
+            youTubeAdBlockingPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return YouTubeAdBlockingPreferences(duckPlayerPreferences: prefs)
+            }(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }

@@ -452,6 +452,7 @@ public struct UserText {
     public static let emailSettingsFooterText = NSLocalizedString("email.settings.footer", value: "Removing Email Protection from this device removes the option to fill in your Personal Duck Address or a newly generated Private Duck Address into email fields as you browse the web.\n\nTo delete your Duck Addresses entirely, or for any other questions or feedback, reach out to us at support@duck.com.", comment: "Footer text for the email feature")
 
     public static let fireButtonAnimationFireRisingName = NSLocalizedString("fireButtonAnimation.fireRising.name", value: "Inferno", comment: "")
+    public static let fireButtonAnimationFireRisingLegacyName = NSLocalizedString("fireButtonAnimation.fireRising.legacy.name", value: "Inferno Classic", comment: "The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation")
     public static let fireButtonAnimationWaterSwirlName = NSLocalizedString("fireButtonAnimation.waterSwirl.name", value: "Whirlpool", comment: "")
     public static let fireButtonAnimationAirstreamName = NSLocalizedString("fireButtonAnimation.airstream.name", value: "Airstream", comment: "")
     public static let fireButtonAnimationNoneName = NSLocalizedString("fireButtonAnimation.none.name", value: "None", comment: "")
@@ -1942,6 +1943,10 @@ public struct UserText {
 
     public static let duckPlayerAskLabel = NSLocalizedString("duckPlayer.ask.label", value: "Ask every time", comment: "Text displayed when DuckPlayer is in 'Ask' mode.")
     public static let duckPlayerDisabledLabel = NSLocalizedString("duckPlayer.never.label", value: "Never", comment: "Text displayed when DuckPlayer is in off.")
+    public static let duckPlayerEnableToggle = NSLocalizedString("duckplayer.settings.enable-toggle", value: "Enable Duck Player", comment: "Toggle to enable Duck Player")
+    public static let duckPlayerEnableFooter = NSLocalizedString("duckplayer.settings.enable-footer", value: "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.", comment: "Footer text for Enable Duck Player toggle")
+    public static let duckPlayerAlwaysOpenToggle = NSLocalizedString("duckplayer.settings.always-open-toggle", value: "Always open YouTube videos in Duck Player", comment: "Toggle to always open videos in Duck Player")
+    public static let duckPlayerExplanation = NSLocalizedString("duckplayer.settings.explanation", value: "Duck Player lets you watch YouTube without targeted ads and prevents viewing activity from influencing your recommendations.", comment: "Explanation footer for Duck Player settings")
     public static let settingsOpenVideosInDuckPlayerLabel = NSLocalizedString("duckplayer.settings.open-videos-in", value: "Open YouTube Videos in Duck Player", comment: "Settings screen cell text for DuckPlayer settings")
     public static let duckPlayerFeatureName = NSLocalizedString("duckplayer.settings.title", value: "Duck Player", comment: "Settings screen cell text for DuckPlayer settings")
 
@@ -1985,6 +1990,11 @@ public struct UserText {
     // Toast
     public static let duckPlayerToastTurnOffAnytime = NSLocalizedString("duckplayer.toast.turn.off.anytime", value: "You can turn off Duck Player anytime", comment: "Toast message informing user they can disable Duck Player in settings")
     public static let duckPlayerToastOpenSettings = NSLocalizedString("duckplayer.toast.open.settings", value: "Open Settings", comment: "Button text to open Duck Player settings")
+
+    // YouTube Ad Blocking
+    public static let youTubeAdBlockingTitle = NSLocalizedString("youtube.ad.blocking.title", value: "YouTube Ad Blocking", comment: "Settings screen title for YouTube Ad Blocking")
+    public static let youTubeAdBlockingExplanation = NSLocalizedString("youtube.ad.blocking.explanation", value: "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation text for YouTube Ad Blocking feature")
+    public static let youTubeAdBlockingToggle = NSLocalizedString("youtube.ad.blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling/disabling YouTube ad blocking")
 
     // Duck Player View
     public static let duckPlayerWatchOnYoutube = NSLocalizedString("duckplayer.watch.on.youtube", value: "Watch on YouTube", comment: "Button text to watch video on YouTube")
@@ -2126,7 +2136,9 @@ public struct UserText {
     public static let aiChatWelcomePrivately = NotLocalizedString("duckai.welcome.privately", value: " privately", comment: "Second part of the welcome message in Duck.ai contextual sheet, after the shield icon, shown in green")
 
     // MARK: - AI Chat Quick Actions
+    public static let aiChatQuickActionAskAboutPage = NotLocalizedString("duckai.quick.action.ask.about.page", value: "Ask about page", comment: "Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content.")
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize This Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
+    public static let aiChatQuickActionSummarizePage = NotLocalizedString("duckai.quick.action.summarize.page", value: "Summarize Page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
     public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
 
     // MARK: - AI Chat Context Chip
@@ -2154,7 +2166,8 @@ public struct UserText {
     public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
 
     // MARK: - Default Omnibar Mode Setting
-    public static let settingsDefaultOmnibarModeHeader = NSLocalizedString("settings.default.omnibar.mode.header", value: "New Tab Toggle Position", comment: "Label for the default omnibar toggle position picker in AI Features settings")
+    public static let settingsDefaultOmnibarModeHeader = NSLocalizedString("settings.default.omnibar.mode.header", value: "Toggle Position", comment: "Label for the default omnibar toggle position picker in AI Features settings")
+    public static let settingsDefaultOmnibarModeFooter = NSLocalizedString("settings.default.omnibar.mode.footer", value: "Default toggle position on new tabs.", comment: "Footer text explaining the toggle position setting in AI Features settings")
     public static let settingsDefaultOmnibarModeSearch = NSLocalizedString("settings.default.omnibar.mode.search", value: "Search", comment: "Option to always default the omnibar toggle to Search")
     public static let settingsDefaultOmnibarModeDuckAI = NSLocalizedString("settings.default.omnibar.mode.duckai", value: "Duck.ai", comment: "Option to always default the omnibar toggle to Duck.ai")
     public static let settingsDefaultOmnibarModeLastUsed = NSLocalizedString("settings.default.omnibar.mode.last.used", value: "Last Used", comment: "Option to remember the last used omnibar toggle position")
@@ -2530,7 +2543,8 @@ public struct UserText {
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 
             public enum Rebranding {
-                static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.rebranding.skip", value: "No Thanks", comment: "Button to decline and dismiss the subscription promotion and continue the onboarding process.")
+                static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.rebranding.skip", value: "No thanks", comment: "Button to decline and dismiss the subscription promotion and continue the onboarding process.")
+                static let tryItFree = NSLocalizedString("onboarding.subscription.promo.buttons.rebranding.tryItFree", value: "Try it free!", comment: "Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall.")
             }
         }
     }

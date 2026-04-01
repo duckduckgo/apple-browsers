@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Pokračovat v Duck Playeru";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Vždycky otevírat videa na YouTube v přehrávači Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videa otevřená v Duck Playeru se automaticky začnou přehrávat. Pokud chceš přehrávání videí otevřených v Duck Playeru spouštět ručně, vypni tuto volbu.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatické přehrávání videí";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Otevírat videa v soukromém režimu kina, který brání tomu, aby sledovaná videa ovlivňovala tvůj feed na YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Aktivovat Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimentální";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player ti umožní sledovat YouTube bez cílených reklam a brání tomu, aby zhlédnutá videa ovlivňovala tvoje doporučení.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo má všechno, co ti zaručí ochranu soukromí při procházení webu.";
@@ -1595,7 +1607,6 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Více informací";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Otevřít Duck Player na nové kartě";
 
@@ -1607,7 +1618,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Výsledky vyhledávání na DuckDuckGo";
-
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Nastavení se projeví po zavření všech panelů.";
 
@@ -2084,6 +2094,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Vzdušný proud";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Pekelná klasika";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -2781,6 +2794,9 @@
 "onboarding.skip.title" = "Rozumím. Ostatní tipy přeskočím.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Vyzkoušej to zdarma!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Vyzkoušej to vše zdarma!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3074,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Tento web chce být otevřen v Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "REBRANDED";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedávné protokoly zpracování";
@@ -3401,6 +3414,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Výchozí prohlížeč";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Výchozí poloha přepínače na nových kartách.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Poloha přepínače";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Mazání chatů Duck.ai";
 
@@ -4552,6 +4569,15 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pořiď si DuckDuckGo pro Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo odstraňuje při sledování videí na YouTube reklamy, takže se můžeš dívat bez přerušení.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blokování reklam na YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokovat reklamy na YouTube";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Záložky";

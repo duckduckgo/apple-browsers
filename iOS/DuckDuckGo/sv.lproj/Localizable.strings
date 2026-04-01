@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Återuppta i Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Öppna alltid YouTube-videor i Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videor som öppnas i Duck Player spelas upp automatiskt. Inaktivera det här om du vill starta uppspelningen av videor i Duck Player manuellt.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Spela upp videor automatiskt";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Öppnar videor i ett privat teaterläge som förhindrar att det du tittar på påverkar ditt YouTube-flöde.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Aktivera Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimentell";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Med Duck Player kan du titta på YouTube utan riktade annonser och förhindra att tittaraktivitet påverkar dina rekommendationer.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo tillhandahåller allt du behöver för att skydda dig själv när du surfar på webben.";
@@ -1595,7 +1607,6 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Läs mer";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Öppna Duck Player på en ny flik";
 
@@ -1607,7 +1618,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Resultat från DuckDuckGo Search";
-
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Stäng alla flikar för att inställningen ska börja gälla.";
 
@@ -2084,6 +2094,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftström";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno Klassisk";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -2781,6 +2794,9 @@
 "onboarding.skip.title" = "Jag förstår! Jag hoppar över de andra tipsen.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Prova gratis!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Prova gratis!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3074,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Webbplatsen vill öppnas i Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "MED ETT NYTT NAMN";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Senaste bearbetningsloggar";
@@ -3401,6 +3414,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardwebbläsare";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Reglagets standardläge på nya flikar.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Reglagets läge";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Ta bort Duck.ai-chattar";
 
@@ -4552,6 +4569,15 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Skaffa DuckDuckGo för Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo tar bort videoannonser på YouTube, så du kan titta på videor utan avbrott.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blockera YouTube-annonser";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Annonsblockering på YouTube";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bokmärken";

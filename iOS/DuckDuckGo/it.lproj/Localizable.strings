@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Riprendi in Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Apri sempre i video di YouTube in Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "La riproduzione dei video aperti in Duck Player inizierà automaticamente. Disattiva questa opzione se vuoi avviare manualmente la riproduzione dei video aperti in Duck Player.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Riproduzione automatica dei video";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Apre i video in una modalità cinema privata che impedisce che ciò che guardi influenzi il feed di YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Abilita Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Sperimentale";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player ti permette di guardare YouTube senza annunci mirati e impedisce che l'attività di visualizzazione influenzi le tue raccomandazioni.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo fornisce tutti gli elementi essenziali per la privacy di cui hai bisogno per proteggerti mentre navighi sul Web.";
@@ -2084,6 +2096,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Aria";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno Classico";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -2781,6 +2796,9 @@
 "onboarding.skip.title" = "Ho capito! Salterò gli altri suggerimenti.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Provalo gratis!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Prova gratuitamente!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3076,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Questo sito vuole essere aperto in Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "REBRANDED";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Registri di elaborazione recenti";
@@ -3401,6 +3416,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Browser predefinito";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Posizione predefinita dello strumento di attivazione/disattivazione sulle nuove schede.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Posizione dell’interruttore";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Elimina le chat di Duck.ai";
 
@@ -4552,6 +4571,15 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Scarica DuckDuckGo per Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo rimuove gli annunci video su YouTube, così puoi guardare i video senza interruzioni.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blocco degli annunci su YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blocca gli annunci su YouTube";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Segnalibri";

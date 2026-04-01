@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Turpināt atskaņošanu ar Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Vienmēr atvērt YouTube video ar Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Video, kas atvērti Duck Player, automātiski sāks atskaņošanu. Ja vēlies manuāli sākt Duck Player atvērto videoklipu atskaņošanu, izslēdz šo iestatījumu.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automātiski atskaņot video";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Atver videoklipus privātā kinoteātra režīmā, kas neļauj skatītajam ietekmēt tavu YouTube plūsmu.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Iespējot Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentāls";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player ļauj skatīties YouTube bez mērķētām reklāmām un neļauj skatīšanās aktivitātēm ietekmēt tavus ieteikumus.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo nodrošina visus privātuma aizsardzības līdzekļus, kas nepieciešami, lai aizsargātu sevi, pārlūkojot tīmekli.";
@@ -2084,6 +2096,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Gaisa plūsma";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Liesmas klasika";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Liesmas";
@@ -2781,6 +2796,9 @@
 "onboarding.skip.title" = "Sapratu! Es izlaidīšu pārējos padomus.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Izmēģini to bez maksas!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Izmēģini bez maksas!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3076,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Šī vietne vēlas atvērties Safari pārlūkprogrammā.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "PĀRDĒVĒTS";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Jaunākie apstrādes žurnāli";
@@ -3401,6 +3416,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Noklusējuma pārlūks";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Noklusējuma pārslēgšanas pozīcija jaunā cilnē.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Pārslēgšanas pozīcija";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Dzēst Duck.ai tērzēšanas sarunas";
 
@@ -4552,6 +4571,15 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Iegūsti DuckDuckGo operētājsistēmai Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo noņem videoreklāmas pakalpojumā YouTube, lai tu varētu skatīties videoklipus bez pārtraukumiem.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube reklāmu bloķēšana";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Bloķēt reklāmas pakalpojumā YouTube";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Grāmatzīmes";

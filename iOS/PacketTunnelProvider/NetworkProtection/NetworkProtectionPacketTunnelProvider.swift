@@ -504,9 +504,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     @MainActor
     @objc init() {
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
-        let vpnFileStoreDirectory = Self.vpnFileStoreDirectory()
-        Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
-        Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+        Self.configurePixelStorage()
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
 
@@ -712,14 +710,67 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         }
     }
 
-    private static func vpnFileStoreDirectory() -> URL? {
+    private static func configurePixelStorage() {
+        let vpnFileStoreDirectory: URL?
+        do {
+            vpnFileStoreDirectory = try Self.vpnFileStoreDirectory()
+        } catch {
+            vpnFileStoreDirectory = nil
+            // Set up fallback PixelKit first so we can fire a pixel reporting the failure
+            Self.setupPixelKit(vpnFileStoreDirectory: nil)
+            Pixel.fire(pixel: .networkProtectionPixelStorageSetupFailure, error: error)
+        }
+
+        if vpnFileStoreDirectory != nil {
+            Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
+        }
+        Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+    }
+
+    enum VPNFileStoreError: DDGError {
+        case containerURLNotFound
+        case directoryCreationFailed(underlying: Error?)
+
+        static var errorDomain: String { "com.duckduckgo.vpnFileStore" }
+
+        var errorCode: Int {
+            switch self {
+            case .containerURLNotFound: return 1
+            case .directoryCreationFailed: return 2
+            }
+        }
+
+        var underlyingError: Error? {
+            switch self {
+            case .containerURLNotFound: return nil
+            case .directoryCreationFailed(let underlying): return underlying
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .containerURLNotFound: return "App group container URL not found"
+            case .directoryCreationFailed: return "Failed to create VPN file store directory"
+            }
+        }
+
+        static func == (lhs: VPNFileStoreError, rhs: VPNFileStoreError) -> Bool {
+            lhs.errorCode == rhs.errorCode
+        }
+    }
+
+    private static func vpnFileStoreDirectory() throws -> URL {
         let vpnGroupName = "\(Global.groupIdPrefix).netp"
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: vpnGroupName) else {
-            return nil
+            throw VPNFileStoreError.containerURLNotFound
         }
 
         let directory = containerURL.appendingPathComponent("vpn", isDirectory: true)
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            throw VPNFileStoreError.directoryCreationFailed(underlying: error)
+        }
         return directory
     }
 

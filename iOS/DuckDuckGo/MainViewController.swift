@@ -1061,6 +1061,15 @@ class MainViewController: UIViewController {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+
+        /// Resign the web view's first responder when backgrounding with the tab switcher
+        /// visible. The tab switcher uses .overCurrentContext so the WKWebView stays in the
+        /// hierarchy; without this, the web process restores focus on foreground and the
+        /// keyboard appears on top of the tab switcher.
+        /// https://app.asana.com/1/137249556945/project/414709148257752/task/1213823670012997?focus=true
+        if tabSwitcherController != nil {
+            currentTab?.webView.resignFirstResponder()
+        }
     }
 
     @objc func onAddressBarPositionChanged() {
@@ -1144,6 +1153,7 @@ class MainViewController: UIViewController {
             let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
             return
         }
+
         latestKeyboardFrame = keyboardFrame
         let duration: TimeInterval = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
         let animationCurveRawNSN = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
@@ -1597,7 +1607,16 @@ class MainViewController: UIViewController {
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
         skipSERPFlow = true
-        
+
+        /// Dismiss any keyboard restored by WKWebView when returning to foreground
+        /// with the tab switcher visible. The tab switcher uses .overCurrentContext so
+        /// the WKWebView remains in the hierarchy and its web process can restore focus
+        /// on a text input, causing the keyboard to appear on top of the tab switcher.
+        /// https://app.asana.com/1/137249556945/project/414709148257752/task/1213823670012997?focus=true
+        if tabSwitcherController != nil {
+            currentTab?.webView.resignFirstResponder()
+        }
+
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
         if daxDialogsManager.shouldShowFireButtonPulse && !daxDialogsManager.shouldShowPrivacyButtonPulse {
             showFireButtonPulse()

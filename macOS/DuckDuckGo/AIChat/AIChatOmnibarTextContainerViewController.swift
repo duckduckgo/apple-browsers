@@ -437,13 +437,9 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         guard let containerVC = containerViewController else { return false }
         let canAttach = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         guard canAttach else { return false }
-        var accepted = false
-        for url in fileURLs {
-            if containerVC.addImageAttachmentFromDrop(url) {
-                accepted = true
-            }
+        return fileURLs.reduce(false) { result, url in
+            containerVC.addImageAttachmentFromDrop(url) || result
         }
-        return accepted
     }
 }
 

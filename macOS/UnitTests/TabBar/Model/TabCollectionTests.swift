@@ -251,6 +251,31 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertTrue(domains.contains("test.org"))
     }
 
+    @MainActor
+    func testRemoveSuspendedTab() {
+        let loadedTab = Tab()
+        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .suspended(suspended)])
+
+        XCTAssertTrue(tabCollection.removeTab(at: 1))
+        XCTAssertEqual(tabCollection.tabs.count, 1)
+        XCTAssertTrue(tabCollection.tabs[0].tab === loadedTab)
+    }
+
+    @MainActor
+    func testContainsAndFirstIndexWithMixedTabs() {
+        let tab1 = Tab()
+        let tab2 = Tab()
+        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(tab1), .suspended(suspended), .loaded(tab2)])
+
+        XCTAssertTrue(tabCollection.contains(tab: tab1))
+        XCTAssertTrue(tabCollection.contains(tab: tab2))
+        XCTAssertEqual(tabCollection.firstIndex(of: tab1), 0)
+        XCTAssertEqual(tabCollection.firstIndex(of: tab2), 2)
+        XCTAssertTrue(tabCollection.contains(uuid: suspended.uuid))
+    }
+
 }
 
 private extension Tab {

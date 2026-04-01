@@ -243,12 +243,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         readableSearchAreaWidthConstraint?.isActive = showButtons
         largeSizeSpacingConstraint?.isActive = showButtons
 
-        let isMinimal = newMode == .minimalChrome
-        leadingButtonsContainer.spacing = isMinimal ? Metrics.minimalChromeButtonSpacing : 0
-        trailingButtonsContainer.spacing = isMinimal ? Metrics.minimalChromeButtonSpacing : 0
-        stackView.spacing = isMinimal ? Metrics.minimalChromeButtonSpacing : Metrics.expandedSizeSpacing
-        stackViewLeadingConstraint?.constant = isMinimal ? Metrics.minimalChromeEdgePadding : Metrics.textAreaHorizontalPadding
-        stackViewTrailingConstraint?.constant = isMinimal ? -Metrics.minimalChromeEdgePadding : -Metrics.textAreaHorizontalPadding
+        let isExpandedPhone = newMode == .expandedPhone
+        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        stackView.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeSpacing : Metrics.expandedPadSizeSpacing
+        stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
+        stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
     }
 
     var isUsingSmallTopSpacing: Bool = false {
@@ -600,9 +600,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackView.axis = .horizontal
         stackView.alignment = .fill
         stackView.distribution = .fill
-        stackView.spacing = Metrics.expandedSizeSpacing
+        stackView.spacing = Metrics.expandedPadSizeSpacing
 
-        searchAreaStackView.spacing = Metrics.expandedSizeSpacing
+        searchAreaStackView.spacing = Metrics.expandedPadSizeSpacing
 
         trailingButtonsContainer.isHidden = true
 
@@ -957,16 +957,22 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let sendButtonSize: CGFloat = 40.0
         static let expansionAnimationDuration: TimeInterval = 0.25
 
-        static let expandedSizeSpacing: CGFloat = 24.0
-        static let expandedSizeMargins = NSDirectionalEdgeInsets(
+        static let expandedPadSizeSpacing: CGFloat = 24.0
+        static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
             top: 0,
-            leading: expandedSizeSpacing,
+            leading: expandedPadSizeSpacing,
             bottom: 0,
-            trailing: expandedSizeSpacing
+            trailing: expandedPadSizeSpacing
         )
 
-        static let minimalChromeButtonSpacing: CGFloat = 10.0
-        static let minimalChromeEdgePadding: CGFloat = 4.0
+        static let expandedPhoneSizeSpacing: CGFloat = 16.0
+        static let expandedPhoneSizeButtonSpacing: CGFloat = 10.0
+        static let expandedPhoneSizeMargins = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: 4,
+            bottom: 0,
+            trailing: 4
+        )
     }
 
     private struct Constant {

@@ -368,8 +368,8 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar?.showSeparator()
             cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
-            if coordinator.omniBar.isMinimalChrome {
-                cell.omniBar?.isMinimalChrome = true
+            if coordinator.omniBar.isExpandedPhone {
+                cell.omniBar?.isExpandedPhone = true
 
                 let tsButton = TabSwitcherStaticButton()
                 tsButton.translatesAutoresizingMaskIntoConstraints = false

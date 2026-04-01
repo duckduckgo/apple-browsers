@@ -2093,7 +2093,7 @@ class MainViewController: UIViewController {
 
     private func setMinimalChromeMode(_ enabled: Bool) {
         isInMinimalChromeLayout = enabled
-        viewCoordinator.omniBar.isMinimalChrome = enabled
+        viewCoordinator.omniBar.isExpandedPhone = enabled
     }
 
     private func applyLargeWidth() {

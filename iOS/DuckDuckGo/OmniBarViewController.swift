@@ -60,7 +60,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
-    var isMinimalChrome: Bool = false
+    var isExpandedPhone: Bool = false
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode?
@@ -694,21 +694,21 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isMenuButtonHidden = !state.showMenu
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
-        barView.isRefreshButtonHidden = !state.showRefresh || (state.showRefreshOutsideAddressBar && !isMinimalChrome)
+        barView.isRefreshButtonHidden = !state.showRefresh || (state.showRefreshOutsideAddressBar && !isExpandedPhone)
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
-        barView.isBackButtonHidden = isMinimalChrome ? !state.isBrowsing : !state.showBackButton
-        barView.isForwardButtonHidden = isMinimalChrome ? !state.isBrowsing : !state.showForwardButton
-        let bookmarksHidden = isMinimalChrome ? state.isBrowsing : !state.showBookmarksButton
-        barView.setBookmarksPosition(leading: isMinimalChrome, hidden: bookmarksHidden)
-        barView.isPasswordsButtonHidden = isMinimalChrome ? state.isBrowsing : true
+        barView.isBackButtonHidden = isExpandedPhone ? !state.isBrowsing : !state.showBackButton
+        barView.isForwardButtonHidden = isExpandedPhone ? !state.isBrowsing : !state.showForwardButton
+        let bookmarksHidden = isExpandedPhone ? state.isBrowsing : !state.showBookmarksButton
+        barView.setBookmarksPosition(leading: isExpandedPhone, hidden: bookmarksHidden)
+        barView.isPasswordsButtonHidden = isExpandedPhone ? state.isBrowsing : true
         barView.isAIChatButtonHidden = !state.showAIChatButton
-        barView.isFireButtonHidden = !isMinimalChrome
-        barView.isTabSwitcherButtonHidden = !isMinimalChrome
+        barView.isFireButtonHidden = !isExpandedPhone
+        barView.isTabSwitcherButtonHidden = !isExpandedPhone
 
         if let expandable = expandableBarView {
-            expandable.isExternalRefreshButtonHidden = isMinimalChrome || !state.showRefreshOutsideAddressBar
+            expandable.isExternalRefreshButtonHidden = isExpandedPhone || !state.showRefreshOutsideAddressBar
             expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
             expandable.selectedModeToggleState = selectedTextEntryMode
 

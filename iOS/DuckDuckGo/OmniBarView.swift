@@ -23,9 +23,9 @@ enum OmniBarLayoutMode {
     /// No external buttons visible, full-width search bar (iPhone portrait, iPad compact, editing)
     case compact
     /// External buttons with wide spacing (iPad full width)
-    case expanded
-    /// External buttons with tight spacing (minimal chrome)
-    case minimalChrome
+    case expandedPad
+    /// External buttons with tight spacing (iPhone landscape)
+    case expandedPhone
 }
 
 protocol OmniBarView: UIView, OmniBarStatusUpdateable {

@@ -28,7 +28,7 @@ protocol OmniBar: AnyObject {
 
     var omniDelegate: OmniBarDelegate? { get set }
 
-    var isMinimalChrome: Bool { get set }
+    var isExpandedPhone: Bool { get set }
 
     var isTextFieldEditing: Bool { get }
     var text: String? { get set }

@@ -276,7 +276,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
     // MARK: - setAutoplayDecision Tests
 
     func testWhenSetAutoplayDecisionThenCorrectPermissionIsStored() {
-        let cases: [(AutoplayDecision, PermissionAuthorizationState)] = [
+        let cases: [(AutoplayDecision, PersistedPermissionDecision)] = [
             (.allowAll, .allow),
             (.audioMuted, .ask),
             (.blockAll, .deny),

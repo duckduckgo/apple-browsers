@@ -1238,7 +1238,7 @@ class MainViewController: UIViewController {
 
         // Omnibar fire button (for iPhone landscape combined bar)
         viewCoordinator.omniBar.barView.onFirePressed = { [weak self] in
-            self?.onFirePressed()
+            self?.performCustomizationActionForToolbar()
         }
     }
     
@@ -4616,10 +4616,16 @@ extension MainViewController {
         let state = mobileCustomization.state
 
         if state.currentToolbarButton == .fire {
+            if isInMinimalChromeLayout {
+                return viewCoordinator.omniBar.barView.fireButton
+            }
             return viewCoordinator.toolbarFireBarButtonItem.customView
         } else if state.currentAddressBarButton == .fire {
             return viewCoordinator.omniBar.barView.customizableButton
         } else {
+            if isInMinimalChromeLayout {
+                return viewCoordinator.omniBar.barView.menuButton
+            }
             return viewCoordinator.menuToolbarButton.customView
         }
 
@@ -5330,6 +5336,21 @@ extension MainViewController {
         } else {
             browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
             browserChrome.menu = nil
+        }
+
+        // Update the OmniBar fire button for expanded phone (minimal chrome) layout
+        if let omniBarFireButton = viewCoordinator.omniBar.barView.fireButton as? BrowserChromeButton {
+            if !isNewTabPageVisible && state.isEnabled {
+                omniBarFireButton.setImage(state.currentToolbarButton.largeIcon)
+                omniBarFireButton.menu = UIMenu(children: [
+                    UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
+                        self?.segueToCustomizeToolbarSettings()
+                    }
+                ])
+            } else {
+                omniBarFireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+                omniBarFireButton.menu = nil
+            }
         }
     }
 

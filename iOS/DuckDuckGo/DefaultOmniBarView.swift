@@ -57,6 +57,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var bookmarksButton: UIButton! { bookmarksButtonView }
     var aiChatButton: UIButton! { searchAreaView.aiChatButton }
     var menuButton: UIButton! { menuButtonView }
+    var fireButton: UIButton! { fireButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var customizableButton: UIButton! { searchAreaView.customizableButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }

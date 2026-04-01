@@ -49,6 +49,7 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var bookmarksButton: UIButton! { get }
     var aiChatButton: UIButton! { get }
     var menuButton: UIButton! { get }
+    var fireButton: UIButton! { get }
     var tabSwitcherContainerView: UIView { get }
 
     var refreshButton: UIButton! { get }

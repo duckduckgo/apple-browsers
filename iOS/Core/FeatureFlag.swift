@@ -379,6 +379,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213809475913723?focus=true
     case minimalChromeInLandscape
+
+    /// Failsafe feature flag. Filters intermediate redirect URLs from the address bar.
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1212810377867736
+    case filterAddressBarUpdates
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -411,7 +415,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fireproofingETLDPlus1,
              .subscriptionPromoForReinstallers,
              .aiChatOmnibarDefaultPosition,
-             .screenTimeCleaning:
+             .screenTimeCleaning,
+             .filterAddressBarUpdates:
             .enabled
         case .crashReportOptInStatusResetting,
              .minimalChromeInLandscape:
@@ -537,7 +542,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .aiChatContextualSheetImprovements,
              .screenTimeCleaning,
              .aiChatContextualFireButton,
-             .minimalChromeInLandscape:
+             .minimalChromeInLandscape,
+             .filterAddressBarUpdates:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -817,6 +823,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton))
         case .minimalChromeInLandscape:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape))
+        case .filterAddressBarUpdates:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.filterAddressBarUpdates))
         }
     }
 }

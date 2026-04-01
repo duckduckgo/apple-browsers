@@ -255,6 +255,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
+
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1212810377867736
+    case filterAddressBarUpdates
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

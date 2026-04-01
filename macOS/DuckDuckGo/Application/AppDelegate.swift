@@ -1877,6 +1877,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @available(macOS 15.4, *)
+    @MainActor
     private func makeScriptletConfiguration() -> ScriptletConfiguration {
         let scriptletsDirectory = URL.sandboxApplicationSupportURL
             .appendingPathComponent("Scriptlets", isDirectory: true)

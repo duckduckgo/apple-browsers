@@ -23,7 +23,7 @@ import PrivacyConfig
 @available(macOS 15.4, iOS 18.4, *)
 public enum ScriptletManagerFactory {
 
-    public static func makeConfiguration(
+    @MainActor public static func makeConfiguration(
         privacyConfigManager: PrivacyConfigurationManaging,
         apiService: APIService,
         baseDirectory: URL,

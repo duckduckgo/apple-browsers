@@ -59,7 +59,7 @@ public final class ScriptletManager: ScriptletProviding {
     private var activeExtensionTypes: Set<DuckDuckGoWebExtensionType> = []
     private var configCancellable: AnyCancellable?
 
-    nonisolated public init(
+    public init(
         configProvider: ScriptletConfigProviding,
         fetcher: ScriptletFetching,
         validator: ScriptletValidating,

@@ -1939,6 +1939,7 @@ final class AddressBarButtonsViewController: NSViewController {
             usedPermissionsPublisher: tabViewModel.$usedPermissions.eraseToAnyPublisher(),
             popupQueries: popupQueries,
             permissionManager: permissionManager,
+            autoplayPreferences: NSApp.delegateTyped.autoplayPreferences,
             featureFlagger: featureFlagger,
             removePermission: { [weak tabViewModel] permissionType in
                 tabViewModel?.tab.permissions.remove(permissionType)

@@ -29,18 +29,21 @@ final class PermissionCenterViewModelTests: XCTestCase {
     var mockPermissionManager: PermissionManagerMock!
     var mockSystemPermissionManager: MockSystemPermissionManager!
     var mockFeatureFlagger: MockFeatureFlagger!
+    var autoplayPreferences: AutoplayPreferences!
 
     override func setUp() {
         super.setUp()
         mockPermissionManager = PermissionManagerMock()
         mockSystemPermissionManager = MockSystemPermissionManager()
         mockFeatureFlagger = MockFeatureFlagger()
+        autoplayPreferences = AutoplayPreferences()
     }
 
     override func tearDown() {
         mockPermissionManager = nil
         mockSystemPermissionManager = nil
         mockFeatureFlagger = nil
+        autoplayPreferences = nil
         super.tearDown()
     }
 
@@ -56,6 +59,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             domain: "example.com",
             usedPermissions: usedPermissions,
             permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
@@ -80,6 +84,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             domain: "example.com",
             usedPermissions: usedPermissions,
             permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
@@ -104,6 +109,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             domain: "example.com",
             usedPermissions: usedPermissions,
             permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
@@ -127,6 +133,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             domain: "example.com",
             usedPermissions: usedPermissions,
             permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },

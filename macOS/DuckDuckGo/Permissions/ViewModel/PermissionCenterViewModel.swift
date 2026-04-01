@@ -213,7 +213,7 @@ final class PermissionCenterViewModel: ObservableObject {
         usedPermissionsPublisher: AnyPublisher<Permissions, Never>? = nil,
         popupQueries: [PermissionAuthorizationQuery] = [],
         permissionManager: PermissionManagerProtocol,
-        autoplayPreferences: AutoplayPreferences = AutoplayPreferences(),
+        autoplayPreferences: AutoplayPreferences,
         featureFlagger: FeatureFlagger,
         removePermission: @escaping (PermissionType) -> Void,
         dismissPopover: @escaping () -> Void,

@@ -54,6 +54,7 @@
       }
     },
     " " : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -67301,8 +67302,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systembenachrichtigungen sind deaktiviert. Schalte sie ein unter"
+            "state" : "translated",
+            "value" : "Um Benachrichtigungen zuzulassen, musst du diese zuerst aktivieren in"
           }
         },
         "en" : {
@@ -67313,44 +67314,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notificaciones del sistema desactivadas. Actívalas en"
+            "state" : "translated",
+            "value" : "Para permitir las notificaciones, primero actívalas en"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notifications système désactivées. Activez-les dans"
+            "state" : "translated",
+            "value" : "Pour autoriser les notifications, activez-les d'abord dans"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le notifiche di sistema sono disabilitate. Attivale in"
+            "state" : "translated",
+            "value" : "Per consentire le notifiche, prima abilitale in"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systeemmeldingen zijn uitgeschakeld. Zet ze aan in"
+            "state" : "translated",
+            "value" : "Om meldingen toe te staan, moet je ze eerst inschakelen in"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Powiadomienia systemowe są wyłączone. Włącz je w"
+            "state" : "translated",
+            "value" : "Aby umożliwić powiadomienia, najpierw je włącz w"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notificações do sistema desativadas. Ativa-as em"
+            "state" : "translated",
+            "value" : "Para permitir notificações, ativa-as em"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Системные уведомления отключены. Включите их в разделе"
+            "state" : "translated",
+            "value" : "Чтобы разрешить уведомления, сначала включите их в"
           }
         }
       }
@@ -67421,8 +67422,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systemeinstellungen → Benachrichtigungen"
+            "state" : "translated",
+            "value" : "Systemeinstellungen → Benachrichtigungen → DuckDuckGo"
           }
         },
         "en" : {
@@ -67433,44 +67434,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Configuración del sistema → Notificaciones"
+            "state" : "translated",
+            "value" : "Configuración del sistema → Notificaciones → DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Paramètres système → Notifications"
+            "state" : "translated",
+            "value" : "Paramètres système → Notifications → DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impostazioni di sistema → Notifiche"
+            "state" : "translated",
+            "value" : "Impostazioni di sistema → Notifiche → DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systeeminstellingen → Meldingen"
+            "state" : "translated",
+            "value" : "Systeeminstellingen → Meldingen → DuckDuckGo"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ustawienia systemowe → Powiadomienia"
+            "state" : "translated",
+            "value" : "Ustawienia systemowe → Powiadomienia → DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Definições → Notificações do Sistema"
+            "state" : "translated",
+            "value" : "Definições do sistema → Notificações → DuckDuckGo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Системные настройки → Уведомления"
+            "state" : "translated",
+            "value" : "Системные настройки → Уведомления → DuckDuckGo"
           }
         }
       }
@@ -68261,8 +68262,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systembenachrichtigungen sind deaktiviert. Aktiviere sie zuerst in"
+            "state" : "translated",
+            "value" : "Zuerst musst du die Browserbenachrichtigungen aktivieren in"
           }
         },
         "en" : {
@@ -68273,44 +68274,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Las notificaciones del sistema están desactivadas. Primero, actívalas en"
+            "state" : "translated",
+            "value" : "Primero, debes activar las notificaciones del navegador en"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les notifications système sont désactivées. D'abord, activez-les dans"
+            "state" : "translated",
+            "value" : "Tout d'abord, il faut activer les notifications du navigateur dans"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le notifiche di sistema sono disattivate. Innanzitutto, attivale in"
+            "state" : "translated",
+            "value" : "Innanzitutto, devi attivare le notifiche del browser in"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systeemmeldingen zijn uitgeschakeld. Zet ze eerst aan in"
+            "state" : "translated",
+            "value" : "Eerst moet je browsermeldingen inschakelen in"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Powiadomienia systemowe są wyłączone. Najpierw włącz je w sekcji"
+            "state" : "translated",
+            "value" : "Najpierw musisz włączyć powiadomienia przeglądarki w"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "As notificações do sistema estão desativadas. Primeiro, ativa-as em"
+            "state" : "translated",
+            "value" : "Primeiro, tens de ativar as notificações do navegador em"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Системные уведомления отключены. Сначала включите их в разделе"
+            "state" : "translated",
+            "value" : "Сначала нужно включить уведомления в браузере"
           }
         }
       }
@@ -68321,8 +68322,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systembenachrichtigungen sind deaktiviert.\nSchalte sie ein unter"
+            "state" : "translated",
+            "value" : "Systembenachrichtigungen sind deaktiviert. Schalte sie ein unter"
           }
         },
         "en" : {
@@ -68333,44 +68334,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notificaciones del sistema desactivadas.\nActívalas en"
+            "state" : "translated",
+            "value" : "Notificaciones del sistema desactivadas. Actívalas en"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notifications système désactivées.\nActivez-les dans"
+            "state" : "translated",
+            "value" : "Notifications système désactivées. Activez-les dans"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le notifiche di sistema sono disabilitate.\nAttivale in"
+            "state" : "translated",
+            "value" : "Le notifiche di sistema sono disabilitate. Attivale in"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systeemmeldingen zijn uitgeschakeld.\nZet ze aan in"
+            "state" : "translated",
+            "value" : "Systeemmeldingen zijn uitgeschakeld. Zet ze aan in"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Powiadomienia systemowe są wyłączone.\nWłącz je w"
+            "state" : "translated",
+            "value" : "Powiadomienia systemowe są wyłączone. Włącz je w"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notificações do sistema desativadas.\nAtiva-as em"
+            "state" : "translated",
+            "value" : "Notificações do sistema desativadas. Ativa-as em"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Системные уведомления отключены.\nВключите их в разделе"
+            "state" : "translated",
+            "value" : "Системные уведомления отключены. Включите их в разделе"
           }
         }
       }

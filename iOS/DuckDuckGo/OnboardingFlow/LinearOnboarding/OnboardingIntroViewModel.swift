@@ -300,6 +300,9 @@ final class OnboardingIntroViewModel: ObservableObject {
 
 #if DEBUG || ALPHA
     public func overrideOnboardingCompleted() {
+        onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
+        tutorialSettings.hasSkippedOnboarding = true
+        contextualDaxDialogs.disableContextualDaxDialogs()
         LaunchOptionsHandler().overrideOnboardingCompleted()
         onCompletingOnboardingIntro?()
     }

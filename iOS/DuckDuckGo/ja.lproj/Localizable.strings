@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "オーディオとビデオを許可する";
+"autoplay.mode.blockAll" = "オーディオとビデオをブロックする";
+"autoplay.mode.blockAudio" = "オーディオをブロックする";
+"settings.autoplay" = "自動再生";
+"settings.autoplay.duck.player.link" = "Duck Player 設定";
+"settings.autoplay.footer" = "自動再生設定は新しく開いたタブにのみ適用されます。アプリケーションを再起動しない限り、既存のタブに変更を適用することはできません。Duck Playerで自動再生を管理するには、 ";
+"settings.media.section" = "メディア";

@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Dovoli zvok in video";
+"autoplay.mode.blockAll" = "Blokiraj zvok in video";
+"autoplay.mode.blockAudio" = "Blokiraj zvok";
+"settings.autoplay" = "Samodejno predvajanje";
+"settings.autoplay.duck.player.link" = "Nastavitve predvajalnika Duck Player";
+"settings.autoplay.footer" = "Nastavitve samodejnega predvajanja bodo veljale samo za novo odprte zavihke. Sprememb ni mogoče uporabiti za obstoječe zavihke, razen če se aplikacija znova zažene. Če želite upravljati samodejno predvajanje v predvajalniku Duck Player, obiščite ";
+"settings.media.section" = "Mediji";

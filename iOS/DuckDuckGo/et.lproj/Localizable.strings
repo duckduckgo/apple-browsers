@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Luba heli ja video";
+"autoplay.mode.blockAll" = "Blokeeri heli ja video";
+"autoplay.mode.blockAudio" = "Blokeeri heli";
+"settings.autoplay" = "Automaatne esitamine";
+"settings.autoplay.duck.player.link" = "Duck Playeri seaded";
+"settings.autoplay.footer" = "Automaatse esitamise seaded kehtivad ainult äsjaavatud vahelehtedele. Muudatusi ei saa olemasolevatele vahekaartidele rakendada enne rakenduse taaskäivitamist. Duck Playeris automaatse esitamise haldamiseks valige suvand ";
+"settings.media.section" = "Meedia";

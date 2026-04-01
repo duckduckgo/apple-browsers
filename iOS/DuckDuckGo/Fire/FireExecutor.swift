@@ -469,6 +469,7 @@ class FireExecutor: FireExecuting {
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
 
+    @MainActor
     private func burnAllAIHistory(trigger: FireRequest.Trigger, options: FireRequest.Options) async -> Result<Void, Error> {
         async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger)
         let shouldBurnFireModeChats = !options.contains(.data) // Invalidating the fire mode datastore makes deleting chats redundant.
@@ -479,6 +480,7 @@ class FireExecutor: FireExecuting {
         return .success(())
     }
 
+    @MainActor
     private func burnNormalModeAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
         let cleaner = historyCleanerProvider(nil)
         let result = await cleaner.cleanAIChatHistory()

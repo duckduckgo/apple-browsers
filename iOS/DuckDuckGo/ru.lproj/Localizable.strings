@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Разрешить аудио и видео";
+"autoplay.mode.blockAll" = "Блокировать аудио и видео";
+"autoplay.mode.blockAudio" = "Блокировать аудио";
+"settings.autoplay" = "Автовоспроизведение";
+"settings.autoplay.duck.player.link" = "Настройки Duck Player";
+"settings.autoplay.footer" = "Настройки автовоспроизведения применятся только к новым вкладкам (к текущим — после перезапуска приложения). Управление автовоспроизведением в Duck Player: ";
+"settings.media.section" = "Медиа";

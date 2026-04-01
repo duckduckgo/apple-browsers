@@ -209,6 +209,12 @@
                 "description": "Whether force dark mode is enabled. Only sent when value is known."
             },
             {
+                "key": "autoplayBlockingMode",
+                "type": "string",
+                "description": "The user's autoplay blocking setting. Only sent when the feature is enabled.",
+                "enum": ["allowAll", "blockAudio", "blockAll"]
+            },
+            {
                 "key": "isAfterSuppressedXSafariRedirect",
                 "type": "boolean",
                 "description": "Whether the page was loaded after a suppressed x-safari-https redirect. Only sent when true."
@@ -515,6 +521,12 @@
                 "key": "isForceDarkModeEnabled",
                 "type": "boolean",
                 "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "autoplayBlockingMode",
+                "type": "string",
+                "description": "The user's autoplay blocking setting. Only sent when the feature is enabled.",
+                "enum": ["allowAll", "blockAudio", "blockAll"]
             },
             {
                 "key": "isAfterSuppressedXSafariRedirect",

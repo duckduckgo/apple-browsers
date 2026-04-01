@@ -356,6 +356,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
+    /// https://app.asana.com/1/137249556945/project/1202500774821704/task/1212559012504218
+    case autoplayBlocking
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213554455515126?focus=true
     case customXSafariRedirectHandling
 
@@ -406,6 +409,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tabSwitcherTrackerCount,
              .iPadDuckaiOnTab,
              .onboardingDuckAIQueryExperiment,
+             .autoplayBlocking,
              .customXSafariRedirectHandling,
              .syncAutoRestore,
              .fireproofingETLDPlus1,
@@ -540,6 +544,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
              .fireMode,
+             .autoplayBlocking,
              .customXSafariRedirectHandling,
              .simplifiedSyncSetupExperiment,
              .aiChatOmnibarDefaultPosition,
@@ -812,6 +817,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .fireMode:
             return .disabled
+        case .autoplayBlocking:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking))
         case .customXSafariRedirectHandling:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customXSafariRedirectHandling))
         case .simplifiedSyncSetupExperiment:

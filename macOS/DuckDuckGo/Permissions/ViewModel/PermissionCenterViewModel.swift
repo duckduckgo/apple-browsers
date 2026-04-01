@@ -396,7 +396,6 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionItems[index].decision = updatedDecision
         }
 
-        PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: .autoplayPolicy, from: previousDecision, to: updatedDecision))
         markReloadNeeded()
     }
 

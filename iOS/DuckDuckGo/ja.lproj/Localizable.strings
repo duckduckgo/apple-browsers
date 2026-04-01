@@ -1608,9 +1608,6 @@
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "詳細情報";
 
-/* Toggle to automatically open videos in Duck Player */
-"duckplayer.settings.open-automatically-toggle" = "自動的に開く";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "新しいタブでDuck Playerを開く";
 
@@ -1622,9 +1619,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "DuckDuckGo Searchの結果";
-
-/* Toggle to show Duck Player on YouTube */
-"duckplayer.settings.show-on-youtube-toggle" = "YouTubeでDuck Playerを表示";
 
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "この設定を有効にするには、すべてのタブを閉じてください。";

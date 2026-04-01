@@ -1608,9 +1608,6 @@
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Uzzināt vairāk";
 
-/* Toggle to automatically open videos in Duck Player */
-"duckplayer.settings.open-automatically-toggle" = "Atvērt automātiski";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Atveriet Duck Player jaunā cilnē";
 
@@ -1622,9 +1619,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "DuckDuckGo Search rezultāti";
-
-/* Toggle to show Duck Player on YouTube */
-"duckplayer.settings.show-on-youtube-toggle" = "Rādīt Duck Player vietnē YouTube";
 
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Lūdzu, aizver visas cilnes, lai šis iestatījums stātos spēkā.";

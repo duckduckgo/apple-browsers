@@ -1607,10 +1607,6 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Más información";
-
-/* Toggle to automatically open videos in Duck Player */
-"duckplayer.settings.open-automatically-toggle" = "Abrir automáticamente";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Abrir Duck Player en una nueva pestaña";
 
@@ -1622,10 +1618,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Resultados de búsqueda de DuckDuckGo";
-
-/* Toggle to show Duck Player on YouTube */
-"duckplayer.settings.show-on-youtube-toggle" = "Mostrar Duck Player en YouTube";
-
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Cierra todas las pestañas para que esta configuración tenga efecto.";
 

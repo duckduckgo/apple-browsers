@@ -1607,10 +1607,6 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Научете повече";
-
-/* Toggle to automatically open videos in Duck Player */
-"duckplayer.settings.open-automatically-toggle" = "Автоматично отваряне";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Отворете Duck Player в нов раздел";
 
@@ -1622,10 +1618,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Резултати от DuckDuckGo Search";
-
-/* Toggle to show Duck Player on YouTube */
-"duckplayer.settings.show-on-youtube-toggle" = "Покажи Duck Player в YouTube";
-
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Моля, затворете всички раздели, за да влезе в сила тази настройка.";
 

@@ -43,12 +43,12 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
             throw DuckAiNativeDataStoreError.databaseError(error)
         }
 
-        try runMigrations()
+        try Self.runMigrations(on: dbQueue)
     }
 
     // MARK: - Migrations
 
-    private func runMigrations() throws {
+    private static func runMigrations(on dbQueue: DatabaseQueue) throws {
         var migrator = DatabaseMigrator()
 
         migrator.registerMigration("v1") { db in
@@ -82,7 +82,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
     // MARK: - File Records
 
-    struct FileRecord: Codable, FetchableRecord, PersistableRecord {
+    private struct FileRecord: Codable, FetchableRecord, PersistableRecord {
         static let databaseTableName = "duck_ai_files"
         let uuid: String
         let chatId: String
@@ -140,7 +140,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         let fileURL = filesDirectoryURL.appendingPathComponent(uuid)
 
         do {
-            try data.write(to: fileURL, options: [.atomic, .completeFileProtection])
+            try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         } catch {
             throw DuckAiNativeDataStoreError.fileWriteError(error)
         }
@@ -157,8 +157,13 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func getFile(uuid: String) throws -> DuckAiFileContent? {
-        let record: FileRecord? = try dbQueue.read { db in
-            try FileRecord.fetchOne(db, key: uuid)
+        let record: FileRecord?
+        do {
+            record = try dbQueue.read { db in
+                try FileRecord.fetchOne(db, key: uuid)
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
         }
 
         guard let record else { return nil }

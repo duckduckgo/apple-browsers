@@ -146,10 +146,10 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return AllChatsResponse(chats: [])
         }
         let chats: [[String: AnyCodableValue]] = chatRecords.compactMap { record in
-            guard let dict = try? JSONSerialization.jsonObject(with: record.data) as? [String: Any] else {
-                return nil
-            }
-            return dict.mapValues { AnyCodableValue($0) }
+            guard let obj = try? JSONSerialization.jsonObject(with: record.data) as? [String: Any] else { return nil }
+            var dict = obj.mapValues { AnyCodableValue($0) }
+            dict["chatId"] = AnyCodableValue(record.chatId)
+            return dict
         }
         return AllChatsResponse(chats: chats)
     }
@@ -271,7 +271,7 @@ private struct MigrationDoneResponse: Encodable {
 
 // MARK: - AnyCodableValue
 
-struct AnyCodableValue: Encodable {
+private struct AnyCodableValue: Encodable {
     private let value: Any
 
     init(_ value: Any) {

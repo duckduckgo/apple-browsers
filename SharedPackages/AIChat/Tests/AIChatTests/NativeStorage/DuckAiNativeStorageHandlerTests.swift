@@ -124,6 +124,28 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         XCTAssertEqual(mockDataStore.deleteChatCallCount, 1)
         XCTAssertEqual(mockDataStore.lastDeleteChatId, "chat-1")
     }
+
+    func testWhenGetAllChatsThenDelegatesToDataStore() throws {
+        mockDataStore.stubbedChats = [DuckAiChatRecord(chatId: "c1", data: Data())]
+        let result = try handler.getAllChats()
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].chatId, "c1")
+    }
+
+    func testWhenDeleteAllChatsThenDelegatesToDataStore() throws {
+        try handler.deleteAllChats()
+        XCTAssertEqual(mockDataStore.deleteAllChatsCallCount, 1)
+    }
+
+    func testWhenPutFileThenDelegatesToDataStore() throws {
+        try handler.putFile(uuid: "f1", chatId: "c1", data: Data())
+        XCTAssertEqual(mockDataStore.putFileCallCount, 1)
+    }
+
+    func testWhenDeleteAllFilesThenDelegatesToDataStore() throws {
+        try handler.deleteAllFiles()
+        XCTAssertEqual(mockDataStore.deleteAllFilesCallCount, 1)
+    }
 }
 
 // MARK: - Mock

@@ -98,7 +98,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
     /// Verifies requestSystemPermission calls the system permission manager with correct permission type.
     func testWhenRequestSystemPermissionCalledThenSystemManagerRequestsAuthorization() {
         var usedPermissions = Permissions()
-        usedPermissions[.notification] = .active(query: nil)
+        usedPermissions[.notification] = .active
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",

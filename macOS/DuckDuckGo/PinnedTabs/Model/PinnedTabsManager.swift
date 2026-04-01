@@ -98,12 +98,7 @@ final class PinnedTabsManager {
     func setUp(movingTabsFrom collection: TabCollection) {
         tabCollection.removeAll()
         for anyTab in collection.tabs {
-            switch anyTab {
-            case .loaded(let tab):
-                tabCollection.append(tab: tab)
-            case .suspended(let suspended):
-                tabCollection.append(tab: suspended.materialize())
-            }
+            tabCollection.append(anyTab: anyTab)
         }
         collection.clearAfterMerge()
     }

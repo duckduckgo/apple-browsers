@@ -84,8 +84,10 @@ enum AnyTab: Identifiable {
     }
 
     var isSuspended: Bool {
-        if case .suspended = self { return true }
-        return false
+        switch self {
+        case .suspended: return true
+        case .loaded(let t): return t.isSuspended
+        }
     }
 
     var isUrl: Bool { content.isExternalUrl }

@@ -75,7 +75,6 @@ public enum PrivacyFeature: String {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
-    case deferredTabWebViewCreation
     case disableFireAnimation
     case htmlNewTabPage
     case daxEasterEggLogos
@@ -187,6 +186,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case addToDockAppStore
 
     case screenTimeCleaning
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1213809249616779
+    case deferredTabWebViewCreation
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

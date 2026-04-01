@@ -1084,9 +1084,7 @@ extension TabCollectionViewModel {
 extension TabCollectionViewModel {
 
     func canBookmarkAllOpenTabs() -> Bool {
-        let unpinned = tabCollection.tabs.filter { $0.content.canBeBookmarked }.count
-        let pinned = pinnedTabsCollection?.tabs.filter { $0.content.canBeBookmarked }.count ?? 0
-        return (unpinned + pinned) >= 2
+        tabCollection.tabs.filter { $0.content.canBeBookmarked }.count >= 2
     }
 
 }

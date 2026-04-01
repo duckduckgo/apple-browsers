@@ -31,12 +31,13 @@ final class MockOmniBar: OmniBar {
     var isBackButtonEnabled: Bool = false
     var isForwardButtonEnabled: Bool = false
     var omniDelegate: (any DuckDuckGo.OmniBarDelegate)?
+    var isPhoneLandscape: Bool = false
     var isTextFieldEditing: Bool = false
     var text: String?
     
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {}
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {}
     func endEditing() { }
     func showSeparator() { }
     func hideSeparator() { }
@@ -67,6 +68,7 @@ final class MockOmniBar: OmniBar {
     func setDaxEasterEggLogoURL(_ logoURL: String?, searchQuery: String?) { }
     func refreshCustomizableButton() {}
     func enterAIChatMode() { }
+    func setSelectedTextEntryMode(_ mode: TextEntryMode) { }
     func setDaxEasterEggLogoURL(_ logoURL: String?) { }
     func refreshFireMode(fireMode: Bool) { }
 
@@ -96,6 +98,7 @@ final class MockOmniBar: OmniBar {
         var bookmarksButton: UIButton! = UIButton()
         var aiChatButton: UIButton! = UIButton()
         var menuButton: UIButton! = UIButton()
+        var tabSwitcherContainerView: UIView = UIView()
         var refreshButton: UIButton! = UIButton()
         var leftIconContainerView: UIView! = UIView()
         var customIconView: UIImageView = UIImageView()
@@ -108,6 +111,7 @@ final class MockOmniBar: OmniBar {
         func moveSeparatorToBottom() { }
         func hideButtons() { }
         func revealButtons() { }
+        func setBookmarksPosition(leading: Bool, hidden: Bool) { }
         func refreshFireMode(fireMode: Bool) { }
 
         var progressView: DuckDuckGo.ProgressView?
@@ -128,6 +132,8 @@ final class MockOmniBar: OmniBar {
         var onBookmarksPressed: (() -> Void)?
         var onAIChatPressed: (() -> Void)?
         var onDismissPressed: (() -> Void)?
+        var onFirePressed: (() -> Void)?
+        var onPasswordsPressed: (() -> Void)?
         var onSettingsLongPress: (() -> Void)?
         var onCustomizableButtonPressed: (() -> Void)?
         var onAIChatLeftButtonPressed: (() -> Void)?
@@ -153,6 +159,11 @@ final class MockOmniBar: OmniBar {
         var isDismissButtonHidden: Bool = true
         var isCustomizableButtonHidden: Bool = true
         var isFullAIChatHidden: Bool = true
+        var isFireButtonHidden: Bool = true
+        var isTabSwitcherButtonHidden: Bool = true
+        var isPasswordsButtonHidden: Bool = true
+        private(set) var layoutMode: OmniBarLayoutMode = .compact
+        func setLayoutMode(_ mode: OmniBarLayoutMode, animated: Bool) { layoutMode = mode }
 
     }
 }

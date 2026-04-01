@@ -264,7 +264,9 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.text = UserText.searchDuckDuckGo
             textView.autocapitalizationType = .none
         case .aiChat:
-            placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
+            placeholderLabel.text = handler.hasSubmittedPrompt
+                ? UserText.aiChatFollowUpPlaceholder
+                : UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
 
             /// Auto-focus the text field when switching to duck.ai mode (OmniBar toggle only)
@@ -289,7 +291,7 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = .default
+            textView.keyboardType = .webSearch
             textView.returnKeyType = .default
             if handler.isUsingFadeOutAnimation && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
@@ -307,6 +309,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateButtonState() {
         let newButtonState = handler.buttonState
+        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
@@ -499,6 +502,17 @@ class SwitchBarTextEntryView: UIView {
                 self?.updateButtonState()
             }
             .store(in: &cancellables)
+
+        handler.hasSubmittedPromptPublisher
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                guard let self, self.currentMode == .aiChat else { return }
+                self.placeholderLabel.text = self.handler.hasSubmittedPrompt
+                    ? UserText.aiChatFollowUpPlaceholder
+                    : UserText.searchInputFieldPlaceholderDuckAI
+            }
+            .store(in: &cancellables)
     }
 
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
@@ -513,7 +527,7 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = .default
+            textView.keyboardType = .webSearch
             textView.returnKeyType = .default
             enableAutoCorrectionAndSpellChecking()
         }

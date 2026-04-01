@@ -25,6 +25,7 @@ from localization_utils import (
     get_base_branch,
     get_changed_files,
     get_files_content_at_base,
+    get_required_locales,
     get_search_paths,
     parse_strings_file,
     parse_stringsdict_file,
@@ -36,57 +37,6 @@ ISSUE_TYPE_MISSING = "missing"
 ISSUE_TYPE_NEEDS_REVIEW = "needs_review"
 
 TranslationIssue = Tuple[str, str, Set[str], str]
-
-# =============================================================================
-# Platform-specific Required Locales
-# =============================================================================
-
-MACOS_LOCALES = frozenset([
-    "de",  # German
-    "es",  # Spanish
-    "fr",  # French
-    "it",  # Italian
-    "nl",  # Dutch
-    "pl",  # Polish
-    "pt",  # Portuguese
-    "ru",  # Russian
-])
-
-IOS_LOCALES = frozenset([
-    "bg",  # Bulgarian
-    "cs",  # Czech
-    "da",  # Danish
-    "de",  # German
-    "el",  # Greek
-    "es",  # Spanish
-    "et",  # Estonian
-    "fi",  # Finnish
-    "fr",  # French
-    "hr",  # Croatian
-    "hu",  # Hungarian
-    "it",  # Italian
-    "lt",  # Lithuanian
-    "lv",  # Latvian
-    "nb",  # Norwegian Bokmål
-    "nl",  # Dutch
-    "pl",  # Polish
-    "pt",  # Portuguese
-    "ro",  # Romanian
-    "ru",  # Russian
-    "sk",  # Slovak
-    "sl",  # Slovenian
-    "sv",  # Swedish
-    "tr",  # Turkish
-])
-
-def get_required_locales(platform: str) -> Set[str]:
-    """Get the required locales for a platform."""
-    if platform == "iOS":
-        return set(IOS_LOCALES)
-    elif platform == "macOS":
-        return set(MACOS_LOCALES)
-    else:
-        return set()
 
 # =============================================================================
 # .xcstrings (String Catalog) Handling

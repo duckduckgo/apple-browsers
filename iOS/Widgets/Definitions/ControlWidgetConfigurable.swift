@@ -183,3 +183,23 @@ struct EmailProtectionControlWidget: ControlWidgetConfigurable {
         }
     }
 }
+
+@available(iOS 18, *)
+struct DuckAIVoiceChatControlWidget: ControlWidgetConfigurable {
+    let kind: ControlWidgetKind = .voiceChat
+    let displayName: LocalizedStringResource = "Duck.ai Voice"
+    let labelText: String = "Duck.ai Voice"
+    let imageName: String = "AIVoiceChat-Symbol"
+    let intent = OpenVoiceChatIntent()
+
+    struct OpenVoiceChatIntent: AppIntent {
+        static var title: LocalizedStringResource = "Duck.ai Voice"
+        static var description: LocalizedStringResource = "Start a voice chat in Duck.ai from the Control Center."
+        static var openAppWhenRun: Bool = true
+
+        func perform() async throws -> some IntentResult & OpensIntent {
+            await EnvironmentValues().openURL(DeepLinks.openAIVoiceChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.controlCenter.rawValue))
+            return .result()
+        }
+    }
+}

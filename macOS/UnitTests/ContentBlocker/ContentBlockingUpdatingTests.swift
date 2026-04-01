@@ -93,7 +93,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        autoconsentManagement: AutoconsentManagement(),
                                        contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
                                        syncErrorHandler: SyncErrorHandler(),
-                                       webExtensionAvailability: nil)
+                                       webExtensionAvailability: nil,
+                                       dockCustomization: DockCustomizerMock())
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil
     }

@@ -21,7 +21,7 @@ on:
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: 'ios-release' # prevent running this and regular release workflows at the same time
   cancel-in-progress: false
 
 jobs:
@@ -111,8 +111,6 @@ jobs:
           bundle exec fastlane run update_asana_for_release \
             platform:ios \
             release_type:internal \
-            github_handle:"${{ github.actor }}" \
-            is_scheduled_release:"${{ github.event_name == 'schedule' }}" \
             release_task_id:"${{ needs.assert_release_branch.outputs.asana_task_id }}" \
             target_section_id:"${{ vars.IOS_APP_BOARD_VALIDATION_SECTION_ID }}"
 

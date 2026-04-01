@@ -85,6 +85,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String) {
         }
+
+        var deletedChatIDs: [String] = []
+
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String) {
+            deletedChatIDs.append(chatID)
+        }
     }
 
     private final class MockPresentingViewController: UIViewController {

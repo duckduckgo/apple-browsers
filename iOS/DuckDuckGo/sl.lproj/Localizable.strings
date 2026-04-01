@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai Voice";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Uredi zaznamek";
 
@@ -201,6 +204,12 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Lastnosti UI";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Izberite fotografijo";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Posnemite fotografijo";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Obstoječi zaznamki ne bodo podvojeni.";
@@ -1081,6 +1090,12 @@
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Izbriši klepet";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Želite izbrisati ta klepet?";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Preskoči";
 
@@ -1211,7 +1226,6 @@
 "Custom URL: %@" = "URL po meri: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Izključene domene temnega bralnika (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Uvozi datoteko zaznamkov ...";
@@ -1641,12 +1655,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Gledate v predvajalniku Duck Player!\nTukaj ni ciljanih oglasov.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Dejanski prag: %@ s (preglasitev)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Dejanski prag: privzeta konfiguracija (brez preglasitve)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Zaščita e-pošte";
@@ -2137,6 +2145,9 @@
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Vprašaj zasebno";
 
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Postavite nadaljnje vprašanje ...";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Namesti razširitev";
 
@@ -2594,7 +2605,6 @@
 "No active subscriptions" = "Ni aktivnih naročnin";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Ni izključenih domen";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Ni najdena obstoječa naročnina";
@@ -2607,6 +2617,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "Ni dnevnikov";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Ni zadetkov za »% @«";
 
 /* No comment provided by engineer. */
 "No messages" = "Ni sporočil";
@@ -2634,6 +2647,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "V različicah App Store se bo ta zaslon prikazal le, če ste prijavljeni kot interni uporabnik prek **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Razumem";
@@ -2724,6 +2740,9 @@
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oh, preden pozabim ...";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Ste vedeli?";
 
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Zasebno. Hitro. Z manj oglasi.";
@@ -4549,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Dovoli zvok in video";
+"autoplay.mode.blockAll" = "Blokiraj zvok in video";
+"autoplay.mode.blockAudio" = "Blokiraj zvok";
+"settings.autoplay" = "Samodejno predvajanje";
+"settings.autoplay.duck.player.link" = "Nastavitve predvajalnika Duck Player";
+"settings.autoplay.footer" = "Nastavitve samodejnega predvajanja bodo veljale samo za novo odprte zavihke. Sprememb ni mogoče uporabiti za obstoječe zavihke, razen če se aplikacija znova zažene. Če želite upravljati samodejno predvajanje v predvajalniku Duck Player, obiščite ";
+"settings.media.section" = "Mediji";

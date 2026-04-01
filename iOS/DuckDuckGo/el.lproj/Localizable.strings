@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Φωνή Duck.ai";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Επεξεργασία σελιδοδείκτη";
 
@@ -201,6 +204,12 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Λειτουργίες τεχνητής νοημοσύνης";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Επιλέξτε φωτογραφία";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Τραβήξτε μια φωτογραφία";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Οι υπάρχοντες σελιδοδείκτες δεν θα αναπαραχθούν.";
@@ -1081,6 +1090,12 @@
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Διαγραφή συνομιλίας";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Διαγραφή αυτής της συνομιλίας;";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Παράλειψη";
 
@@ -1211,7 +1226,6 @@
 "Custom URL: %@" = "Προσαρμοσμένη διεύθυνση URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Εξαιρούμενοι τομείς από το Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Εισαγωγή αρχείου σελιδοδεικτών...";
@@ -1641,12 +1655,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Παρακολουθείτε στο Duck Player!\nΚαμία στοχευμένη διαφήμιση εδώ.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Ισχύον όριο: %@ s (παράκαμψη)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Ισχύον όριο: προεπιλογή διαμόρφωσης (χωρίς παράκαμψη)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Προστασία email";
@@ -2137,6 +2145,9 @@
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Ρωτήστε ιδιωτικά";
 
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Κάντε μια συμπληρωματική ερώτηση...";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Εγκατάσταση επέκτασης";
 
@@ -2594,7 +2605,6 @@
 "No active subscriptions" = "Δεν υπάρχουν ενεργές συνδρομές";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Δεν υπάρχουν εξαιρούμενοι τομείς";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Δεν βρέθηκε υπάρχουσα συνδρομή";
@@ -2607,6 +2617,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "Δεν υπάρχουν αρχεία καταγραφής";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Δεν υπάρχουν αντιστοιχίες για το «%@»";
 
 /* No comment provided by engineer. */
 "No messages" = "Δεν υπάρχουν μηνύματα";
@@ -2634,6 +2647,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "Στις δομές του App Store, αυτή η οθόνη θα εμφανίζεται μόνο εάν είστε συνδεδεμένοι ως εσωτερικός χρήστης μέσω του **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Το κατάλαβα";
@@ -2724,6 +2740,9 @@
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Πριν το ξεχάσω...";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Το γνωρίζατε;";
 
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Ιδιωτικά. Γρήγορα. Λιγότερες διαφημίσεις.";
@@ -4549,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Να επιτρέπεται ο ήχος και το βίντεο";
+"autoplay.mode.blockAll" = "Αποκλεισμός ήχου και βίντεο";
+"autoplay.mode.blockAudio" = "Αποκλεισμός ήχου";
+"settings.autoplay" = "Αυτόματη αναπαραγωγή";
+"settings.autoplay.duck.player.link" = "Ρυθμίσεις Duck Player";
+"settings.autoplay.footer" = "Οι ρυθμίσεις αυτόματης αναπαραγωγής θα ισχύουν μόνο για καρτέλες που ανοίχτηκαν πρόσφατα. Οι αλλαγές δεν μπορούν να εφαρμοστούν σε υπάρχουσες καρτέλες, εκτός εάν γίνει επανεκκίνηση της εφαρμογής. Για να διαχειριστείτε την αυτόματη αναπαραγωγή στο Duck Player, μεταβείτε στις ";
+"settings.media.section" = "Μέσα";

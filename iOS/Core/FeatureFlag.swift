@@ -112,6 +112,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
     case dbpClickActionDelayReductionOptimization
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213433655862033?focus=true
+    case dbpContinuedProcessing
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -130,6 +133,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
     case privacyProOnboardingPromotion
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
+    case subscriptionPromoForReinstallers
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
@@ -283,6 +289,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213651262338059
+    case aiChatContextualSheetImprovements
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
 
@@ -320,9 +329,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
-    case crashCollectionDisableKeysSorting
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
@@ -347,8 +353,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
-    case suppressTrackerAnimationOnColdStart
+    /// https://app.asana.com/1/137249556945/project/1202500774821704/task/1212559012504218
+    case autoplayBlocking
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213554455515126?focus=true
     case customXSafariRedirectHandling
@@ -356,8 +362,23 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213617478454569?focus=true
     case simplifiedSyncSetupExperiment
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
+    case aiChatOmnibarDefaultPosition
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case duckAIVoiceShortcut
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213687255181524
+    case fireproofingETLDPlus1
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
+    case screenTimeCleaning
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213763338305579?focus=true
+    case aiChatContextualFireButton
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213809475913723?focus=true
+    case minimalChromeInLandscape
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -380,16 +401,20 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
-             .crashCollectionDisableKeysSorting,
              .freeTrialConversionWideEvent,
              .crashCollectionLimitCallStackTreeDepth,
              .tabSwitcherTrackerCount,
              .iPadDuckaiOnTab,
-             .suppressTrackerAnimationOnColdStart,
+             .autoplayBlocking,
              .customXSafariRedirectHandling,
-             .syncAutoRestore:
+             .syncAutoRestore,
+             .fireproofingETLDPlus1,
+             .subscriptionPromoForReinstallers,
+             .aiChatOmnibarDefaultPosition,
+             .screenTimeCleaning:
             .enabled
-        case .crashReportOptInStatusResetting:
+        case .crashReportOptInStatusResetting,
+             .minimalChromeInLandscape:
             .internalOnly
         default:
             .disabled
@@ -435,6 +460,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .maliciousSiteProtection,
              .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
+             .subscriptionPromoForReinstallers,
              .duckPlayerNativeUI,
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
@@ -454,6 +480,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpForegroundRunningOnAppActive,
              .dbpForegroundRunningWhenDashboardOpen,
              .dbpClickActionDelayReductionOptimization,
+             .dbpContinuedProcessing,
              .showAIChatAddressBarChoiceScreen,
              .winBackOffer,
              .syncCreditCards,
@@ -486,7 +513,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
-
              .enhancedDataClearingSettings,
              .genericBackgroundTask,
              .tabSwitcherTrackerCount,
@@ -502,10 +528,16 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
              .fireMode,
-             .suppressTrackerAnimationOnColdStart,
+             .autoplayBlocking,
              .customXSafariRedirectHandling,
              .simplifiedSyncSetupExperiment,
-             .duckAIVoiceShortcut:
+             .aiChatOmnibarDefaultPosition,
+             .duckAIVoiceShortcut,
+             .fireproofingETLDPlus1,
+             .aiChatContextualSheetImprovements,
+             .screenTimeCleaning,
+             .aiChatContextualFireButton,
+             .minimalChromeInLandscape:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -545,8 +577,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                .newDeviceSyncPrompt,
                .migrateKeychainAccessibility,
                .productTelemeterySurfaceUsage,
-               .crashCollectionLimitCallStackTreeDepth,
-               .crashCollectionDisableKeysSorting:
+               .crashCollectionLimitCallStackTreeDepth:
             return false
         }
     }
@@ -615,6 +646,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen))
         case .dbpClickActionDelayReductionOptimization:
             return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
+        case .dbpContinuedProcessing:
+            return .remoteReleasable(.subfeature(DBPSubfeature.continuedProcessing))
         case .crashReportOptInStatusResetting:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting))
         case .syncSeamlessAccountSwitching:
@@ -629,6 +662,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.experimentalAddressBar))
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .subscriptionPromoForReinstallers:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoForReinstallers))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -727,6 +762,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
+        case .aiChatContextualSheetImprovements:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.contextualSheetImprovements))
         case .showWhatsNewPromptOnDemand:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
 
@@ -746,8 +783,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.burnSingleTab))
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
-        case .crashCollectionDisableKeysSorting:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
         case .crashCollectionLimitCallStackTreeDepth:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
         case .onboardingRebranding:
@@ -764,14 +799,24 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .fireMode:
             return .disabled
-        case .suppressTrackerAnimationOnColdStart:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.suppressTrackerAnimationOnColdStart))
+        case .autoplayBlocking:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking))
         case .customXSafariRedirectHandling:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customXSafariRedirectHandling))
         case .simplifiedSyncSetupExperiment:
             return .remoteReleasable(.subfeature(SyncSubfeature.simplifiedSyncSetupExperiment))
+        case .aiChatOmnibarDefaultPosition:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:
             return .remoteReleasable(.subfeature(AIChatSubfeature.voiceShortcut))
+        case .fireproofingETLDPlus1:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireproofingETLDPlus1))
+        case .screenTimeCleaning:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.screenTimeCleaning))
+        case .aiChatContextualFireButton:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton))
+        case .minimalChromeInLandscape:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape))
         }
     }
 }

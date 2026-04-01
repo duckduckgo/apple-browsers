@@ -46,6 +46,10 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
         tabBarViewItemWillOpenContextMenuCalled = true
     }
 
+    func tabBarViewItemNewToTheRightAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
     func tabBarViewItemCloseAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
     }
@@ -151,6 +155,10 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool) {
+
+    }
+
+    func tabBarViewItemSuspendAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
     }
 

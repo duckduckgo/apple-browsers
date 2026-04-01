@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automatické obnovenie údajov na tomto zariadení, keď si preinštaluješ aplikáciu.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Ak preinštaluješ aplikáciu DuckDuckGo, opýtame sa ťa, či chceš obnoviť svoje údaje na tomto zariadení.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Obnov reláciu Sync & Backup, aby si obnovil/-a záložky, heslá a ďalšie údaje, alebo pokračuj s novým nastavením.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Zapnuté";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Automatické obnovenie údajov na tomto zariadení, keď si preinštaluješ aplikáciu. Údaje zo služby Sync & Backup nie je možné obnoviť po 18 mesiacoch nečinnosti.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Obnoviť pri preinštalovaní aplikácie";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Uložiť obnovovací PDF súbor";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Ak stratíte zariadenie, budete potrebovať tento kód na obnovenie synchronizovaných údajov.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Použi tento kód na obnovenie údajov, ak stratíš prístup k tomuto zariadeniu. Údaje zo služby Sync & Backup nie je možné obnoviť po 18 mesiacoch nečinnosti. [Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Manuálne zadanie textového kódu";

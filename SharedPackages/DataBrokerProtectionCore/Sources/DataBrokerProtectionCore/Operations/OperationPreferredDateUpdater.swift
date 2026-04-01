@@ -106,8 +106,8 @@ public struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
                                         brokerProfileQuery: BrokerProfileQueryData) throws {
 
         let currentScanPreferredRunDate = brokerProfileQuery.scanJobData.preferredRunDate
-        let scanHistoryEvents = brokerProfileQuery.scanJobData.historyEvents
-        let optOutHistoryEvents = brokerProfileQuery.optOutJobData.compactMap(\.historyEvents)
+        let scanHistoryEvents = brokerProfileQuery.scanJobDataHistoryEventsSortedEarliestFirst
+        let optOutHistoryEvents = brokerProfileQuery.optOutJobDataHistoryEventsSortedWithinOptOutEarliestFirst
 
         var newScanPreferredRunDate = try calculator.dateForScanOperation(currentPreferredRunDate: currentScanPreferredRunDate,
                                                                           scanHistoryEvents: scanHistoryEvents,
@@ -138,7 +138,7 @@ public struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         let currentOptOutPreferredRunDate = optOutJob?.preferredRunDate
 
         var newOptOutPreferredDate = try calculator.dateForOptOutOperation(currentPreferredRunDate: currentOptOutPreferredRunDate,
-                                                                           optOutHistoryEvents: optOutJob?.historyEvents ?? [],
+                                                                           optOutHistoryEvents: optOutJob?.historyEventsSortedEarliestFirst ?? [],
                                                                            extractedProfileID: extractedProfileId,
                                                                            schedulingConfig: schedulingConfig,
                                                                            attemptCount: optOutJob?.attemptCount)

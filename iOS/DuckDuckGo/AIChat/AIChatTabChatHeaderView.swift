@@ -36,6 +36,7 @@ final class AIChatTabChatHeaderView: UIView {
         static let upgradeArrowSize: CGFloat = 12
         static let titleSpacing: CGFloat = 4
         static let titleKerning: CGFloat = -0.23
+        static let iconSize: CGFloat = 16
     }
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
@@ -63,12 +64,19 @@ final class AIChatTabChatHeaderView: UIView {
         return container
     }()
 
+    private lazy var freeIconView: UIImageView = {
+        let imageView = UIImageView(image: DesignSystemImages.Color.Size16.aiChat)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
     private lazy var freePlanLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.attributedText = makeTitleAttributedString(
             text: UserText.aiChatHeaderFreePlan,
-            font: .daxSubheadSemibold(),
+            font: .daxHeadline(),
             color: UIColor(designSystemColor: .textPrimary)
         )
         label.adjustsFontForContentSizeCategory = true
@@ -80,7 +88,7 @@ final class AIChatTabChatHeaderView: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.attributedText = makeTitleAttributedString(
             text: "\u{2022}",
-            font: .daxSubheadSemibold(),
+            font: .daxHeadline(),
             color: UIColor(designSystemColor: .textTertiary)
         )
         label.adjustsFontForContentSizeCategory = true
@@ -92,7 +100,7 @@ final class AIChatTabChatHeaderView: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.attributedText = makeTitleAttributedString(
             text: UserText.aiChatHeaderUpgrade,
-            font: .daxSubheadRegular(),
+            font: .daxHeadline(),
             color: UIColor(designSystemColor: .accent)
         )
         label.adjustsFontForContentSizeCategory = true
@@ -108,12 +116,19 @@ final class AIChatTabChatHeaderView: UIView {
         return imageView
     }()
 
+    private lazy var paidIconView: UIImageView = {
+        let imageView = UIImageView(image: DesignSystemImages.Color.Size16.aiChat)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
     private lazy var paidTitleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.attributedText = makeTitleAttributedString(
             text: UserText.aiChatHeaderPaidTitle,
-            font: .daxSubheadSemibold(),
+            font: .daxHeadline(),
             color: UIColor(designSystemColor: .textPrimary)
         )
         label.textAlignment = .center
@@ -122,7 +137,16 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     private lazy var freeTitleStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [freePlanLabel, separatorDot, upgradeLabel, upgradeArrow])
+        let stack = UIStackView(arrangedSubviews: [freeIconView, freePlanLabel, separatorDot, upgradeLabel, upgradeArrow])
+        stack.axis = .horizontal
+        stack.spacing = Constants.titleSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var paidTitleStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [paidIconView, paidTitleLabel])
         stack.axis = .horizontal
         stack.spacing = Constants.titleSpacing
         stack.alignment = .center
@@ -149,7 +173,7 @@ final class AIChatTabChatHeaderView: UIView {
     func configure(isSubscriptionActive: Bool) {
         self.isSubscriptionActive = isSubscriptionActive
         freeTitleStack.isHidden = isSubscriptionActive
-        paidTitleLabel.isHidden = !isSubscriptionActive
+        paidTitleStack.isHidden = !isSubscriptionActive
     }
 
     private func setupUI() {
@@ -159,7 +183,7 @@ final class AIChatTabChatHeaderView: UIView {
         addSubview(titleContainer)
 
         titleContainer.addSubview(freeTitleStack)
-        titleContainer.addSubview(paidTitleLabel)
+        titleContainer.addSubview(paidTitleStack)
 
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.headerHeight),
@@ -184,13 +208,19 @@ final class AIChatTabChatHeaderView: UIView {
             freeTitleStack.trailingAnchor.constraint(equalTo: titleContainer.trailingAnchor),
             freeTitleStack.bottomAnchor.constraint(equalTo: titleContainer.bottomAnchor),
 
-            paidTitleLabel.topAnchor.constraint(equalTo: titleContainer.topAnchor),
-            paidTitleLabel.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
-            paidTitleLabel.trailingAnchor.constraint(equalTo: titleContainer.trailingAnchor),
-            paidTitleLabel.bottomAnchor.constraint(equalTo: titleContainer.bottomAnchor),
+            paidTitleStack.topAnchor.constraint(equalTo: titleContainer.topAnchor),
+            paidTitleStack.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
+            paidTitleStack.trailingAnchor.constraint(equalTo: titleContainer.trailingAnchor),
+            paidTitleStack.bottomAnchor.constraint(equalTo: titleContainer.bottomAnchor),
 
             upgradeArrow.widthAnchor.constraint(equalToConstant: Constants.upgradeArrowSize),
             upgradeArrow.heightAnchor.constraint(equalToConstant: Constants.upgradeArrowSize),
+
+            freeIconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            freeIconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
+            paidIconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            paidIconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
         ])
 
         upgradeLabel.accessibilityCustomActions = [

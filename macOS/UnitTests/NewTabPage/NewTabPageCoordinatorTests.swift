@@ -78,6 +78,9 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
     var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
+    var freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
+    var freemiumDBPFeature: MockFreemiumDBPFeature!
+    var freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator!
 
     @MainActor
     override func setUp() async throws {
@@ -110,6 +113,17 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
 
         featureFlagger = MockFeatureFlagger()
+        freemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
+        freemiumDBPFeature = MockFreemiumDBPFeature()
+        freemiumDBPFeature.featureAvailable = true
+        freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            freemiumDBPFeature: freemiumDBPFeature,
+            freemiumDBPPresenter: MockFreemiumDBPPresenter(),
+            notificationCenter: notificationCenter,
+            dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
+            contextualOnboardingPublisher: Just(false).eraseToAnyPublisher()
+        )
 
         let fireCoordinator = FireCoordinator(tld: TLD(),
                                               featureFlagger: Application.appDelegate.featureFlagger,
@@ -156,14 +170,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             privacyStats: MockPrivacyStats(),
             autoconsentStats: MockAutoconsentStats(),
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-            freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator(
-                freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(),
-                freemiumDBPFeature: MockFreemiumDBPFeature(),
-                freemiumDBPPresenter: MockFreemiumDBPPresenter(),
-                notificationCenter: notificationCenter,
-                dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
-                contextualOnboardingPublisher: Just(false).eraseToAnyPublisher()
-            ),
+            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: Application.appDelegate.tld,
             fireCoordinator: fireCoordinator,
             keyValueStore: keyValueStore,
@@ -182,7 +189,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             pinningManager: MockPinningManager(),
-            fireDailyPixel: { self.firePixelCalls.append($0) }
+            fireDailyPixel: { self.firePixelCalls.append($0) },
+            dockCustomization: DockCustomizerMock()
         )
     }
 
@@ -197,10 +205,14 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         tabsPreferences = nil
         windowControllersManager = nil
         subscriptionCardVisibilityManager = nil
+        freemiumDBPUserStateManager = nil
+        freemiumDBPFeature = nil
+        freemiumDBPPromotionViewCoordinator = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {
         notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
         XCTAssertEqual(firePixelCalls.count, 1)
     }
+
 }

@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai ボイス";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "ブックマークを編集";
 
@@ -201,6 +204,12 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI機能";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "写真を選択";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "写真を撮影";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "既存のブックマークは複製されません。";
@@ -1081,6 +1090,12 @@
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "チャットを削除";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "このチャットを削除しますか？";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "スキップ";
 
@@ -1211,7 +1226,6 @@
 "Custom URL: %@" = "カスタムURL：%@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader 除外ドメイン (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "ブックマークファイルをインポート...";
@@ -1641,12 +1655,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Duck Playerで視聴中です！\nここにはターゲティング広告はありません。";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "有効閾値：%@秒（オーバーライド）";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "有効閾値：構成デフォルト（オーバーライドなし）";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "メール保護";
@@ -2137,6 +2145,9 @@
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "非公開で質問";
 
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "フォローアップの質問をする...";
+
 /* No comment provided by engineer. */
 "Install Extension" = "拡張機能をインストール";
 
@@ -2594,7 +2605,6 @@
 "No active subscriptions" = "アクティブなサブスクリプションはありません";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "除外ドメインなし";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "既存のサブスクリプションが見つかりません";
@@ -2607,6 +2617,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "ログなし";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "「%@」に一致するものはありません";
 
 /* No comment provided by engineer. */
 "No messages" = "メッセージはありません";
@@ -2634,6 +2647,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Storeのビルドでは、この画面は**use-login.duckduckgo.com**で内部ユーザーとしてサインインしている場合にのみ表示されます。";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "了解";
@@ -2724,6 +2740,9 @@
 
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "忘れる前に...";
+
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "知ってた？";
 
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "プライバシー重視。スピーディで広告も少ない。";
@@ -4549,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "オーディオとビデオを許可する";
+"autoplay.mode.blockAll" = "オーディオとビデオをブロックする";
+"autoplay.mode.blockAudio" = "オーディオをブロックする";
+"settings.autoplay" = "自動再生";
+"settings.autoplay.duck.player.link" = "Duck Player 設定";
+"settings.autoplay.footer" = "自動再生設定は新しく開いたタブにのみ適用されます。アプリケーションを再起動しない限り、既存のタブに変更を適用することはできません。Duck Playerで自動再生を管理するには、 ";
+"settings.media.section" = "メディア";

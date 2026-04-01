@@ -71,11 +71,15 @@ final class UnifiedToggleInputToggleView: UIView {
         tag: 0
     )
 
-    private lazy var duckAIButton: UIButton = makeSegmentButton(
-        icon: DesignSystemImages.Glyphs.Size16.aiChat,
-        title: UserText.searchInputToggleAIChatButtonTitle,
-        tag: 1
-    )
+    private lazy var duckAIButton: UIButton = {
+        let button = makeSegmentButton(
+            icon: DesignSystemImages.Glyphs.Size16.aiChat,
+            title: UserText.searchInputToggleAIChatButtonTitle,
+            tag: 1
+        )
+        button.accessibilityIdentifier = "AddressBar.Button.DuckAI"
+        return button
+    }()
 
     private lazy var stackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [searchButton, duckAIButton])

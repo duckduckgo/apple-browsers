@@ -8,11 +8,6 @@ on:
   schedule:
     - cron: '0 4 * * *' # run at 4 AM UTC
   workflow_dispatch:
-    inputs:
-      test-flow:
-        description: 'Single Maestro flow to run, relative to .maestro/ (e.g. release_tests/tabs.yaml). Leave empty to run the full suite.'
-        required: false
-        default: ''
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -114,7 +109,6 @@ jobs:
   end-to-end-tests:
     name: End to end Tests
     needs: build-end-to-end-tests
-    if: inputs.test-flow == ''
     runs-on: macos-26
     timeout-minutes: 300
 
@@ -129,31 +123,39 @@ jobs:
             exclude-tags: ipad
             device-model: iPhone-16
             device-name: iPhone
-          - test-tag: privacy 
+            device: iphone
+          - test-tag: privacy
             exclude-tags: ipad
             device-model: iPhone-16
             device-name: iPhone
+            device: iphone
           - test-tag: securityTest
             exclude-tags: ipad
             device-model: iPhone-16
             device-name: iPhone
+            device: iphone
           - test-tag: adClick
             exclude-tags: ipad
             device-model: iPhone-16
             device-name: iPhone
+            device: iphone
           - test-tag: duckplayer_native
             exclude-tags: ipad
             device-model: iPhone-16
+            device: iphone
           - test-tag: device_info
             exclude-tags: ipad
             device-model: iPhone-16
+            device: iphone
           # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
           - test-tag: device_info
             exclude-tags: iphone
-            device-model: iPad-10th-generation 
+            device-model: iPad-10th-generation
+            device: ipad
           - test-tag: duckplayer_classic
             exclude-tags: iphone
-            device-model: iPad-10th-generation 
+            device-model: iPad-10th-generation
+            device: ipad
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 
@@ -201,37 +203,11 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
-  end-to-end-single-flow:
-    name: End to end Tests (single flow)
-    needs: build-end-to-end-tests
-    if: inputs.test-flow != ''
-    runs-on: macos-26
-    timeout-minutes: 60
-
-    steps:
-
-    - name: Check out the code
-      uses: actions/checkout@v4
-
-    - name: Retrieve Binary
-      uses: actions/download-artifact@v4
+    - name: Send Status Pixel
+      if: always() && github.ref_name == 'main'
+      uses: ./.github/actions/send-pixel
       with:
-        name: duckduckgo-ios-app
-        path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
-
-    - name: Run single flow (${{ inputs.test-flow }})
-      uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
-      with:
-        api-key: ${{ secrets.ROBIN_API_KEY }}
-        project-id: ${{ vars.ROBIN_PROJECT_KEY }}
-        name: single_flow_${{ github.sha }}
-        timeout: 60
-        app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
-        workspace: .maestro/${{ inputs.test-flow }}
-        env: ONBOARDING_COMPLETED=true
-        device-os: iOS-18-2
-        device-model: iPhone-16
-        device-name: iPhone
+        pixel-name: m_ci_apple_status_ios_e2e_${{ matrix.test-tag }}_${{ matrix.device }}_${{ steps.upload.outcome }}
 
   notify-failure:
     name: Notify on failure

@@ -100,6 +100,7 @@ struct CoolGrayColorPalette: SharedColorPaletteDefinition {
 
     static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
     static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
+    static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 
     static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
 

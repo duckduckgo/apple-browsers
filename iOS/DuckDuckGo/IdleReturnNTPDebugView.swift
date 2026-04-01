@@ -35,31 +35,37 @@ struct IdleReturnNTPDebugView: View {
 
     var body: some View {
         List {
-            Section(header: Text("Status")) {
+            Section(header: Text(verbatim: "Status")) {
                 if let seconds = currentOverride {
-                    Text("Effective threshold: \(seconds) s (override)")
+                    Text(verbatim: "Effective threshold: \(seconds) s (override)")
                 } else {
-                    Text("Effective threshold: config default (no override)")
+                    Text(verbatim: "Effective threshold: config default (no override)")
                 }
             }
 
-            Section(header: Text("Override")) {
-                TextField("Seconds (e.g. 60)", text: $overrideSecondsText)
+            Section(header: Text(verbatim: "Override")) {
+                TextField(text: $overrideSecondsText) {
+                    Text(verbatim: "Seconds (e.g. 60)")
+                }
                     .keyboardType(.numberPad)
                     .focused($isTextFieldFocused)
-                Button("Set") {
+                Button(action: {
                     setOverrideFromText()
                     isTextFieldFocused = false
+                }) {
+                    Text(verbatim: "Set")
                 }
                 .disabled(overrideSecondsText.isEmpty)
                 if currentOverride != nil {
-                    Button("Clear override") {
+                    Button(action: {
                         clearOverride()
+                    }) {
+                        Text(verbatim: "Clear override")
                     }
                 }
             }
         }
-        .navigationTitle("Idle Return NTP")
+        .navigationTitle(Text(verbatim: "Idle Return NTP"))
         .onAppear {
             if let s = currentOverride {
                 overrideSecondsText = "\(s)"

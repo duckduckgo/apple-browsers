@@ -93,15 +93,9 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureDuckAIQueryExperimentSelectionImpression()
     func measureDuckAIQueryExperimentChooseSearchOnly()
     func measureDuckAIQueryExperimentChooseAIChat()
-    func measureDuckAIQueryExperimentQuerySubmission(selection: OnboardingIntroViewModel.DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource)
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource)
 }
 
-extension OnboardingIntroPixelReporting {
-    func measureDuckAIQueryExperimentSelectionImpression() {}
-    func measureDuckAIQueryExperimentChooseSearchOnly() {}
-    func measureDuckAIQueryExperimentChooseAIChat() {}
-    func measureDuckAIQueryExperimentQuerySubmission(selection: OnboardingIntroViewModel.DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {}
-}
 
 protocol OnboardingCustomInteractionPixelReporting {
     func measureCustomSearch()
@@ -126,10 +120,6 @@ protocol OnboardingDaxDialogsReporting {
     func measureEndOfJourneyDialogCTAAction()
 }
 
-extension OnboardingDaxDialogsReporting {
-    func measureDuckAIExperimentFireButtonCTAAction() {}
-    func measureDuckAIExperimentFinalDialogImpression() {}
-}
 
 protocol OnboardingAddToDockReporting {
     func measureAddToDockPromoImpression()
@@ -305,7 +295,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedAI, unique: false)
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(selection: OnboardingIntroViewModel.DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
         let metricName: DuckAIQueryExperimentMetric.Name
         switch selection {
         case .duckAI:

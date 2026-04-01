@@ -199,8 +199,8 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
 
     @MainActor
     private func migrateAllPerWindowPinnedTabsToShared() {
-        let allTabs: [Tab] = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }.map { anyTab in
-            switch anyTab {
+        let allTabs: [Tab] = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }.map { tab in
+            switch tab {
             case .loaded(let tab): tab
             case .suspended(let suspended): suspended.materialize()
             }

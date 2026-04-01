@@ -73,8 +73,8 @@ extension TabCollection: NSSecureCoding {
             archiver.setClassName(NSStringFromClass(Tab.self), for: TabRestorationData.self)
         }
 
-        let restorationData: [TabRestorationData] = tabs.map { anyTab in
-            switch anyTab {
+        let restorationData: [TabRestorationData] = tabs.map { tab in
+            switch tab {
             case .loaded(let tab):
                 return TabRestorationData(
                     uuid: tab.uuid,

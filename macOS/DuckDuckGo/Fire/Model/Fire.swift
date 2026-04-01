@@ -979,8 +979,8 @@ final class Fire: FireProtocol {
                 return .failure(DataClearingWideEventError(description: "No pinned tabs manager"))
             }
 
-            for (index, anyTab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
-                let newTab = Tab(content: anyTab.content.loadedFromCache(), shouldLoadInBackground: true)
+            for (index, tab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
+                let newTab = Tab(content: tab.content.loadedFromCache(), shouldLoadInBackground: true)
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
             }
             return .success(())

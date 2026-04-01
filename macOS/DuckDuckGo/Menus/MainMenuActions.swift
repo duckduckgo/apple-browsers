@@ -1568,7 +1568,7 @@ extension MainViewController {
 
         WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
 
-        otherTabs.forEach { tabCollectionViewModel.tabCollection.append(anyTab: $0) }
+        otherTabs.forEach { tabCollectionViewModel.tabCollection.append(tab: $0) }
         tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
 
@@ -1609,7 +1609,7 @@ extension MainViewController {
             let url = urls[i % urls.count]
             let suspended = SuspendedTab(content: .url(url, credential: nil, source: .ui),
                                          title: url.host ?? url.absoluteString)
-            tabCollectionViewModel.tabCollection.append(anyTab: .suspended(suspended))
+            tabCollectionViewModel.tabCollection.append(tab: .suspended(suspended))
         }
         // Notify the delegate so the collection view reloads before we select
         tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)

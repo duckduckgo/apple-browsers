@@ -86,8 +86,8 @@ final class DeallocationTests: XCTestCase {
                 expectDeallocation(of: Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.fireViewController)
 
                 expectDeallocation(of: Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel)
-                for anyTab in Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabs {
-                    if case .loaded(let tab) = anyTab {
+                for tab in Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabs {
+                    if case .loaded(let tab) = tab {
                         expectDeallocation(of: tab)
                         expectDeallocation(of: tab.webView)
                     }
@@ -129,8 +129,8 @@ final class DeallocationTests: XCTestCase {
                 expectDeallocation(of: Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.fireViewController)
 
                 expectDeallocation(of: Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel)
-                for anyTab in Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabs {
-                    if case .loaded(let tab) = anyTab {
+                for tab in Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabs {
+                    if case .loaded(let tab) = tab {
                         expectDeallocation(of: tab)
                         expectDeallocation(of: tab.webView)
                     }

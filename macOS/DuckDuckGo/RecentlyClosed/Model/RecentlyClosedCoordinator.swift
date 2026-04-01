@@ -128,14 +128,14 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
     private(set) var cache = [RecentlyClosedCacheItem]()
 
-    private func cacheTabContent(_ anyTab: AnyTab, of tabCollection: TabCollection, at tabIndex: TabIndex) {
-        guard !anyTab.content.isEmpty, !anyTab.burnerMode.isBurner else {
+    private func cacheTabContent(_ tab: AnyTab, of tabCollection: TabCollection, at tabIndex: TabIndex) {
+        guard !tab.content.isEmpty, !tab.burnerMode.isBurner else {
             // Don't cache empty tabs and burner tabs
             return
         }
 
         let cacheItem: RecentlyClosedTab
-        switch anyTab {
+        switch tab {
         case .loaded(let tab):
             cacheItem = RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: tabIndex)
         case .suspended(let suspended):
@@ -158,8 +158,8 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
             return
         }
 
-        let tabCacheItems = tabCollection.tabs.enumerated().compactMap { (offset, anyTab) -> RecentlyClosedTab? in
-            switch anyTab {
+        let tabCacheItems = tabCollection.tabs.enumerated().compactMap { (offset, tab) -> RecentlyClosedTab? in
+            switch tab {
             case .loaded(let tab):
                 return RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: .unpinned(offset))
             case .suspended(let suspended):

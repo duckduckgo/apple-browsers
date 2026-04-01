@@ -231,8 +231,8 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 
         // Check that all tabs and tab view models deallocate
-        for anyTab in tabCollection.tabs {
-            if case .loaded(let tab) = anyTab {
+        for tab in tabCollection.tabs {
+            if case .loaded(let tab) = tab {
                 tab.ensureObjectDeallocated(after: 1.0, do: .interrupt)
             }
         }
@@ -561,8 +561,8 @@ final class TabCollectionViewModel: NSObject {
 
     func removeAll(with content: Tab.TabContent) {
         let matchingTabs = tabCollection.tabs.filter { $0.content == content }
-        for anyTab in matchingTabs {
-            if let index = indexInAllTabs(ofAnyTab: anyTab) {
+        for tab in matchingTabs {
+            if let index = indexInAllTabs(of: tab) {
                 remove(at: index)
             }
         }
@@ -570,8 +570,8 @@ final class TabCollectionViewModel: NSObject {
 
     func removeAll(matching condition: (Tab.TabContent) -> Bool) {
         let matchingTabs = tabCollection.tabs.filter { condition($0.content) }
-        for anyTab in matchingTabs {
-            if let index = indexInAllTabs(ofAnyTab: anyTab) {
+        for tab in matchingTabs {
+            if let index = indexInAllTabs(of: tab) {
                 remove(at: index)
             }
         }
@@ -610,7 +610,7 @@ final class TabCollectionViewModel: NSObject {
         didRemoveTab(.loaded(removedTab), at: .pinned(index), withParent: nil)
     }
 
-    private func didRemoveTab(_ anyTab: AnyTab, at index: TabIndex, withParent parentTab: Tab?, forced: Bool = false) {
+    private func didRemoveTab(_ tab: AnyTab, at index: TabIndex, withParent parentTab: Tab?, forced: Bool = false) {
 
         func notifyDelegate() {
             if index.isUnpinnedTab {
@@ -633,7 +633,7 @@ final class TabCollectionViewModel: NSObject {
 
         let newSelectionIndex: TabIndex
 
-        if index == selectionIndex, let calculatedIndex = selectionIndex.calculateSelectedTabIndexAfterClosing(for: self, removedTab: anyTab) {
+        if index == selectionIndex, let calculatedIndex = selectionIndex.calculateSelectedTabIndexAfterClosing(for: self, removedTab: tab) {
             newSelectionIndex = calculatedIndex
         } else if selectionIndex > index, selectionIndex.isInSameSection(as: index) {
             newSelectionIndex = selectionIndex.previous(in: self)
@@ -655,14 +655,14 @@ final class TabCollectionViewModel: NSObject {
 
         if let pinnedTab = recentlyOpenedPinnedTab, let normalTab = recentlyOpenedNormalTab {
             if pinnedTab.lastSelectedAt ?? Date.distantPast > normalTab.lastSelectedAt ?? Date.distantPast {
-                return indexInAllTabs(ofAnyTab: pinnedTab)
+                return indexInAllTabs(of: pinnedTab)
             } else {
-                return indexInAllTabs(ofAnyTab: normalTab)
+                return indexInAllTabs(of: normalTab)
             }
         } else if let pinnedTab = recentlyOpenedPinnedTab {
-            return indexInAllTabs(ofAnyTab: pinnedTab)
+            return indexInAllTabs(of: pinnedTab)
         } else if let normalTab = recentlyOpenedNormalTab {
-            return indexInAllTabs(ofAnyTab: normalTab)
+            return indexInAllTabs(of: normalTab)
         } else {
             return nil
         }
@@ -753,14 +753,14 @@ final class TabCollectionViewModel: NSObject {
     func duplicateTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
 
-        guard let anyTab = tab(at: tabIndex) else {
+        guard let tab = tab(at: tabIndex) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
             return
         }
 
         // Materialize if suspended before duplicating
         let loadedTab: Tab
-        if let tab = anyTab.tab {
+        if let tab = tab.tab {
             loadedTab = tab
         } else {
             guard let tab = materialize(at: tabIndex) else { return }
@@ -834,15 +834,15 @@ final class TabCollectionViewModel: NSObject {
     }
 
     func title(forTabWithURL url: URL) -> String? {
-        let matchingTab = tabCollection.tabs.first { anyTab in
-            anyTab.url == url
+        let matchingTab = tabCollection.tabs.first { tab in
+            tab.url == url
         }
         return matchingTab?.title
     }
 
     private func handleTabUnpinnedInAnotherTabCollectionViewModel(at index: Int) {
-        if selectionIndex == .pinned(index), let anyTab = tab(at: .pinned(index)) {
-            didRemoveTab(anyTab, at: .pinned(index), withParent: nil)
+        if selectionIndex == .pinned(index), let tab = tab(at: .pinned(index)) {
+            didRemoveTab(tab, at: .pinned(index), withParent: nil)
         }
     }
 
@@ -903,8 +903,8 @@ final class TabCollectionViewModel: NSObject {
             }
 
             let addedUUIDs = newUUIDs.subtracting(oldUUIDs)
-            for anyTab in newTabs where addedUUIDs.contains(anyTab.uuid) {
-                switch anyTab {
+            for tab in newTabs where addedUUIDs.contains(tab.uuid) {
+                switch tab {
                 case .loaded(let tab):
                     self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
                 case .suspended(let suspended):
@@ -913,8 +913,8 @@ final class TabCollectionViewModel: NSObject {
             }
 
             // Detect materialization: existing UUID but inner object changed from suspended to loaded
-            for (index, anyTab) in newTabs.enumerated() where !addedUUIDs.contains(anyTab.uuid) {
-                if case .loaded(let tab) = anyTab, self.tabViewModels[tab.uuid] is SuspendedTabViewModel {
+            for (index, tab) in newTabs.enumerated() where !addedUUIDs.contains(tab.uuid) {
+                if case .loaded(let tab) = tab, self.tabViewModels[tab.uuid] is SuspendedTabViewModel {
                     self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
                     self.updateSelectedTabViewModel()
                     self.delegate?.tabCollectionViewModel(self, didMaterializeTabAt: index)
@@ -982,11 +982,11 @@ extension TabCollectionViewModel {
         return nil
     }
 
-    func indexInAllTabs(ofAnyTab anyTab: AnyTab) -> TabIndex? {
-        if let index = pinnedTabsCollection?.tabs.firstIndex(where: { $0.uuid == anyTab.uuid }) {
+    func indexInAllTabs(of tab: AnyTab) -> TabIndex? {
+        if let index = pinnedTabsCollection?.tabs.firstIndex(where: { $0.uuid == tab.uuid }) {
             return .pinned(index)
         }
-        if let index = tabCollection.tabs.firstIndex(where: { $0.uuid == anyTab.uuid }) {
+        if let index = tabCollection.tabs.firstIndex(where: { $0.uuid == tab.uuid }) {
             return .unpinned(index)
         }
         return nil
@@ -1015,10 +1015,10 @@ extension TabCollectionViewModel {
     /// If already loaded, returns the existing Tab.
     @discardableResult
     func materialize(at index: TabIndex) -> Tab? {
-        guard let anyTab = tab(at: index) else {
+        guard let tab = tab(at: index) else {
             return nil
         }
-        switch anyTab {
+        switch tab {
         case .loaded(let tab):
             return tab
         case .suspended(let suspended):

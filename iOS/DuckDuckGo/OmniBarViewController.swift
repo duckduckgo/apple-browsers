@@ -694,7 +694,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isMenuButtonHidden = !state.showMenu
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
-        barView.isRefreshButtonHidden = !state.showRefresh || state.showRefreshOutsideAddressBar
+        barView.isRefreshButtonHidden = !state.showRefresh || (state.showRefreshOutsideAddressBar && !isMinimalChrome)
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort

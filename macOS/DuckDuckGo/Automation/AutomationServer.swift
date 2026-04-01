@@ -82,7 +82,7 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
                 body(tab)
             }
 
-            for tab in tabCollectionViewModel.tabCollection.loadedTabs {
+            for tab in tabCollectionViewModel.loadedTabs {
                 body(tab)
             }
         }
@@ -97,7 +97,7 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
                 return (windowController, .pinned(index))
             }
 
-            if let index = tabCollectionViewModel.tabCollection.loadedTabs.firstIndex(where: predicate) {
+            if let index = tabCollectionViewModel.loadedTabs.firstIndex(where: predicate) {
                 return (windowController, .unpinned(index))
             }
         }

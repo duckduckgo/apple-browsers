@@ -2031,7 +2031,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedBookmarkAllOpenTabs(_ sender: NSMenuItem) {
-        let websitesInfo = tabCollectionViewModel.tabCollection.loadedTabs.compactMap(WebsiteInfo.init)
+        let websitesInfo = tabCollectionViewModel.loadedTabs.compactMap(WebsiteInfo.init)
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo, bookmarkManager: bookmarkManager).show()
     }
 

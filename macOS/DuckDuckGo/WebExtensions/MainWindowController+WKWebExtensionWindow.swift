@@ -27,7 +27,7 @@ extension MainWindowController: WKWebExtensionWindow {
     }
 
     func tabs(for context: WKWebExtensionContext) -> [any WKWebExtensionTab] {
-        return mainViewController.tabCollectionViewModel.tabCollection.loadedTabs
+        return mainViewController.tabCollectionViewModel.loadedTabs
     }
 
     func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {

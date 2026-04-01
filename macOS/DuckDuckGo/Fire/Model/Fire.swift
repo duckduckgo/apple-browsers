@@ -967,6 +967,10 @@ final class Fire: FireProtocol {
     private func burnTabs(burningEntity: BurningEntity) -> Result<Void, Error> {
         var firstError: Error?
 
+        func replacementPinnedTab(from pinnedTab: AnyTab) -> Tab {
+            return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
+        }
+
         func selectPinnedTabIfNeeded(in tabCollectionViewModel: TabCollectionViewModel) {
             if !tabCollectionViewModel.pinnedTabs.isEmpty {
                 tabCollectionViewModel.select(at: .pinned(0), forceChange: true)
@@ -979,15 +983,11 @@ final class Fire: FireProtocol {
                 return .failure(DataClearingWideEventError(description: "No pinned tabs manager"))
             }
 
-            for (index, tab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
-                let newTab = Tab(content: tab.content.loadedFromCache(), shouldLoadInBackground: true)
+            for (index, pinnedTab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
+                let newTab = replacementPinnedTab(from: pinnedTab)
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
             }
             return .success(())
-        }
-
-        func replacementPinnedTab(from tab: Tab) -> Tab {
-            Tab(content: tab.content.loadedFromCache(), shouldLoadInBackground: true)
         }
 
         func closeFloatingAIChatWindows(for tabIDs: [TabIdentifier]) {
@@ -1030,7 +1030,7 @@ final class Fire: FireProtocol {
             if shouldClose {
                 closeFloatingAIChatWindows(for: [tabViewModel.tab.uuid])
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
-                    let tab = replacementPinnedTab(from: tabViewModel.tab)
+                    let tab = replacementPinnedTab(from: .loaded(tabViewModel.tab))
                     if let index = tabCollectionViewModel.selectionIndex {
                         let result = tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
                         measureError(result)
@@ -1189,8 +1189,9 @@ extension TabCollection {
 
     var localHistoryDomains: Set<String> {
         var domains = Set<String>()
+
         for tab in tabs {
-            domains.formUnion(tab.localHistoryDomains)
+            domains = domains.union(tab.localHistoryDomains)
         }
         return domains
     }

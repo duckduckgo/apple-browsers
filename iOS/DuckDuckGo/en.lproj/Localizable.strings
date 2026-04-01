@@ -2872,9 +2872,6 @@ https://duckduckgo.com/mac";
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "This will cancel downloads in progress.";
 
-/* Title for Duck.ai experiment scoped fire confirmation dialog */
-"scoped.fire.confirmation.duckai.experiment.title" = "Delete chats?";
-
 /* Informational message explaining that new tabs can also be deleted individually */
 "scoped.fire.confirmation.new.tabs.info" = "New tabs you created can also be deleted individually.";
 

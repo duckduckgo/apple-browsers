@@ -50,6 +50,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     private(set) var didCallSetDaxDialogDismiss = false
     private(set) var didCallClearedBrowserData = false
     private(set) var didCallDisableDaxDialogs = false
+    private(set) var didCallSetLastShownDialog = false
+    private(set) var lastShownDialogType: DaxDialogs.BrowsingSpec.SpecType?
 
     var canStartFavoriteFlow = false
 
@@ -61,7 +63,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     var shouldShowFireButtonPulse: Bool = false
     var isAddFavoriteFlow: Bool = false
-    var isShowingFinalDialog: Bool = false
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
     func setTryAnonymousSearchMessageSeen() {
@@ -91,6 +92,11 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     func enableAddFavoriteFlow() {
         didCallEnableAddFavoriteFlow = true
+    }
+
+    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType) {
+        didCallSetLastShownDialog = true
+        lastShownDialogType = type
     }
 
     func setDaxDialogDismiss() {
@@ -138,8 +144,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
 // Use to fill parameter list in injection.
 class DummyDaxDialogsManager: DaxDialogsManaging {
-    var isShowingFinalDialog: Bool = false
-
     var hasSeenOnboarding: Bool = false
 
     var isShowingFireDialog: Bool = false
@@ -174,6 +178,8 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     func setFinalOnboardingDialogSeen() {}
 
     func setPrivacyButtonPulseSeen() { }
+
+    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType) {}
 
     func setDaxDialogDismiss() {}
 

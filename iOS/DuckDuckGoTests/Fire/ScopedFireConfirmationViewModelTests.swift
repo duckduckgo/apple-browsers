@@ -183,7 +183,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
 
         // Then
-        XCTAssertEqual(sut.headerTitle, UserText.scopedFireConfirmationDuckAIExperimentTitle)
+        XCTAssertEqual(sut.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
     }
 
     func testWhenDuckAIExperimentFlowThenShowsDeleteAllButtonIsFalse() {

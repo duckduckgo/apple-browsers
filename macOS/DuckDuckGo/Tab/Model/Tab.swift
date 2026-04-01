@@ -1291,10 +1291,11 @@ extension Tab {
 extension Tab {
 
     var mustDisplayAutoplayPolicy: Bool {
-        let isFeatureEnabled = featureFlagger.isFeatureOn(.autoplayPolicy)
-        let isHypertextURL = content.urlForWebView?.isHypertextURL ?? false
+        guard featureFlagger.isFeatureOn(.autoplayPolicy), let targetURL = content.urlForWebView else {
+            return false
+        }
 
-        return isFeatureEnabled && isHypertextURL
+        return targetURL.isHttp || targetURL.isHttps
     }
 }
 

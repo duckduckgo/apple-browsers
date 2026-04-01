@@ -1722,6 +1722,10 @@ extension Pixel {
         case webExtensionDarkReaderInstallError
         case webExtensionDarkReaderEnabled
         case webExtensionDarkReaderDisabled
+
+        case webExtensionAdBlockingInstalled
+        case webExtensionAdBlockingUpgraded
+        case webExtensionAdBlockingInstallError
     }
 
 }
@@ -3356,6 +3360,10 @@ extension Pixel.Event {
         case .webExtensionDarkReaderInstallError: return "m_web_extension_dark_reader_install_error"
         case .webExtensionDarkReaderEnabled: return "m_web_extension_dark_reader_enabled"
         case .webExtensionDarkReaderDisabled: return "m_web_extension_dark_reader_disabled"
+
+        case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
+        case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
+        case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
         }
     }
 }

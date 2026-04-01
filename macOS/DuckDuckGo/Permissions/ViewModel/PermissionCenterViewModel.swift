@@ -213,7 +213,7 @@ final class PermissionCenterViewModel: ObservableObject {
         usedPermissionsPublisher: AnyPublisher<Permissions, Never>? = nil,
         popupQueries: [PermissionAuthorizationQuery] = [],
         permissionManager: PermissionManagerProtocol,
-        autoplayPreferences: AutoplayPreferences = AutoplayPreferences(),
+        autoplayPreferences: AutoplayPreferences,
         featureFlagger: FeatureFlagger,
         removePermission: @escaping (PermissionType) -> Void,
         dismissPopover: @escaping () -> Void,
@@ -396,7 +396,6 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionItems[index].decision = updatedDecision
         }
 
-        PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: .autoplayPolicy, from: previousDecision, to: updatedDecision))
         markReloadNeeded()
     }
 

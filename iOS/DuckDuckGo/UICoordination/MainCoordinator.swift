@@ -31,6 +31,7 @@ import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import PrivacyStats
+import Networking
 import WebExtensions
 
 @MainActor
@@ -348,7 +349,8 @@ final class MainCoordinator {
             mainViewController: controller,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
 
@@ -370,6 +372,21 @@ final class MainCoordinator {
             guard !Task.isCancelled else { return }
             self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
+    }
+
+    @available(iOS 18.4, *)
+    private func makeScriptletConfiguration() -> ScriptletConfiguration {
+        let scriptletsDirectory = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent("Scriptlets", isDirectory: true)
+
+        return ScriptletManagerFactory.makeConfiguration(
+            privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+            apiService: DefaultAPIService(),
+            baseDirectory: scriptletsDirectory,
+            isProduction: !isDebugBuild
+        )
     }
 
     @available(iOS 18.4, *)

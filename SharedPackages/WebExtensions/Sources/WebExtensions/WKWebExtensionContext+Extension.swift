@@ -26,10 +26,11 @@ private let requiresExtractionKey = "appleRequiresExtraction"
 
 /// Extension types identified via manifest `browser_specific_settings.duckduckgo.id`.
 @available(macOS 15.4, iOS 18.4, *)
-public enum DuckDuckGoWebExtensionType: String, Codable {
+public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable {
     /// Embedded web extension (e.g. autoconsent/CPM).
     case embedded = "com.duckduckgo.web-extension.embedded"
     case darkReader = "org.duckduckgo.web-extension.darkreader"
+    case adBlockingExtension = "com.duckduckgo.content-blocker-extension"
 }
 
 /// Metadata extracted from a web extension without loading it into a controller.

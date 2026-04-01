@@ -2011,8 +2011,6 @@ public struct UserText {
     public static let duckPlayerTabAlertTitle = NSLocalizedString("duckplayer.settings.tab.alert.title", value: "Important!", comment: "Title for the alert when changing Duck Player variant")
     public static let duckPlayerTabAlertMessage = NSLocalizedString("duckplayer.settings.tab.alert.message", value: "Please close all tabs for this setting to take effect.", comment: "Message for the alert when changing Duck Player variant")
     public static let duckPlayerTabAlertOK = NSLocalizedString("duckplayer.settings.tab.alert.ok", value: "OK", comment: "OK button text for the alert when changing Duck Player variant")
-    public static let duckPlayerShowOnYoutubeToggle = NSLocalizedString("duckplayer.settings.show-on-youtube-toggle", value: "Show Duck Player on YouTube", comment: "Toggle to show Duck Player on YouTube")
-    public static let duckPlayerOpenAutomaticallyToggle = NSLocalizedString("duckplayer.settings.open-automatically-toggle", value: "Open automatically", comment: "Toggle to automatically open videos in Duck Player")
     public static let duckPlayerNativeYoutubeModeAuto = NSLocalizedString("duckplayer.settings.youtube.mode.auto", value: "Open Automatically", comment: "Text for the auto mode in Duck Player settings")
     public static let duckPlayerNativeYoutubeModeAsk = NSLocalizedString("duckplayer.settings.youtube.mode.ask", value: "Let me choose", comment: "Text for the ask mode in Duck Player settings")
     public static let duckPlayerNativeYoutubeModeNever = NSLocalizedString("duckplayer.settings.youtube.mode.never", value: "Don't Show", comment: "Text for the never mode in Duck Player settings")

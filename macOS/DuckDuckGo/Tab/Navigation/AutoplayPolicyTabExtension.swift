@@ -38,10 +38,10 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
 
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
-        let isAutoplayPolicyEnabled = featureFlagger.isFeatureOn(.autoplayPolicy)
-        preferences.mustApplyAutoplayPolicy = isAutoplayPolicyEnabled
+        let mustApplyAutoplayPolicy = mustApplyAutoplayPolicy(url: navigationAction.url)
+        preferences.mustApplyAutoplayPolicy = mustApplyAutoplayPolicy
 
-        guard isAutoplayPolicyEnabled else {
+        guard mustApplyAutoplayPolicy else {
             return .next
         }
 
@@ -53,12 +53,12 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
 
 private extension AutoplayPolicyTabExtension {
 
-    func isHypertextURL(url: URL) -> Bool {
-        url.isHttps || url.isHttp
+    func mustApplyAutoplayPolicy(url: URL) -> Bool {
+        featureFlagger.isFeatureOn(.autoplayPolicy) && url.isHttpOrHttps
     }
 
     func loadAutoplayPolicy(url: URL) -> _WKWebsiteAutoplayPolicy {
-        if isHypertextURL(url: url), let domain = url.host, let policy = loadAutoplayPolicy(forDomain: domain) {
+        if let domain = url.host, let policy = loadAutoplayPolicy(forDomain: domain) {
             return policy
         }
 

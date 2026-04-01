@@ -821,6 +821,80 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertFalse(pushedToFrontend)
     }
 
+    // MARK: - Quick Actions Tests
+
+    func testQuickActionsDefaultsToSummarizeWhenFFOff() {
+        // Feature flag is off by default in MockFeatureFlagger
+        XCTAssertEqual(sessionState.viewState.quickActions, [.summarize])
+    }
+
+    func testQuickActionsIsAskAboutPageWhenFFOnAndPlaceholder() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger
+        )
+
+        // Then
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testQuickActionsIsSummarizePageWhenFFOnAndAttached() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger
+        )
+
+        // When
+        sessionState.updateContext(makeTestContext())
+
+        // Then
+        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+    }
+
+    func testQuickActionsTransitionsOnAttach() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger
+        )
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+
+        // When
+        sessionState.updateContext(makeTestContext())
+
+        // Then
+        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+    }
+
+    func testQuickActionsTransitionsOnChipRemoval() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger
+        )
+        sessionState.updateContext(makeTestContext())
+        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+
+        // When
+        sessionState.downgradeToPlaceholder()
+
+        // Then
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
     // MARK: - Helpers
 
     private func makeTestContext(title: String = "Test Page") -> AIChatPageContext {

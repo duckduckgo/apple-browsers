@@ -37,6 +37,10 @@ final class TabRestorationData: NSObject, NSSecureCoding {
     private enum NSSecureCodingKeys {
         static let uuid = "uuid"
         static let url = "url"
+        // Decode-only: old builds stored Duck Player as a separate content type (.duckPlayer = 5)
+        // with explicit videoID/videoTimestamp fields. Newer builds encode Duck Player as a regular
+        // .url with a duck://player/VIDEO_ID URL, so these fields are never written — but the
+        // decode path still reads them to restore archives from older versions.
         static let videoID = "videoID"
         static let videoTimestamp = "videoTimestamp"
         static let title = "title"

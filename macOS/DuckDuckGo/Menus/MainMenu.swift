@@ -846,12 +846,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
-            NSMenuItem(title: "Performance") {
-                NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
-                    .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
-                NSMenuItem(title: "Test Site Performance (DDG vs Safari)", action: #selector(MainViewController.testCurrentSitePerformance))
-                    .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
-                NSMenuItem.separator()
+            NSMenuItem(title: "Performance Debugging") {
                 NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])
                 NSMenuItem(title: "Export Startup Stats", action: #selector(AppDelegate.exportStartupStats), keyEquivalent: [.control, .command, .shift, .option, "s"])
             }
@@ -872,6 +867,12 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
+            NSMenuItem(title: "Performance Tests") {
+                NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
+                    .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
+                NSMenuItem(title: "Test Site Performance (DDG vs Safari)", action: #selector(MainViewController.testCurrentSitePerformance))
+                    .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
+            }
             NSMenuItem(title: "Content Scope Experiments")
                 .submenu(ContentScopeExperimentsMenu())
             NSMenuItem(title: "Reset Data") {
@@ -913,6 +914,7 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "100 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 100)
                     NSMenuItem(title: "150 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 150)
                     NSMenuItem(title: "500 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 500)
+                    NSMenuItem(title: "1000 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 1000)
                 }
                 NSMenuItem(title: "Show Save Credentials Popover", action: #selector(MainViewController.showSaveCredentialsPopover))
                 NSMenuItem(title: "Show Credentials Saved Popover", action: #selector(MainViewController.showCredentialsSavedPopover))

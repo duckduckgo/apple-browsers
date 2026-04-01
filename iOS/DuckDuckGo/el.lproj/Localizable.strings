@@ -2085,6 +2085,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ρεύμα αέρα";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Κλασική πύρινη κόλαση";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Πύρινη κόλαση";
 

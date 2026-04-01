@@ -116,10 +116,13 @@ struct SettingsState {
     var duckPlayerOpenInNewTab: Bool
     var duckPlayerOpenInNewTabEnabled: Bool
     
-    // Duck Player Native UI    
+    // Duck Player Native UI
     var duckPlayerAutoplay: Bool
     var duckPlayerNativeUISERPEnabled: Bool
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode
+
+    // Autoplay
+    var autoplayBlockingMode: AutoplayBlockingMode
 
     static var defaults: SettingsState {
         return SettingsState(
@@ -173,7 +176,8 @@ struct SettingsState {
             duckPlayerOpenInNewTabEnabled: false,
             duckPlayerAutoplay: true,
             duckPlayerNativeUISERPEnabled: true,
-            duckPlayerNativeYoutubeMode: .ask
+            duckPlayerNativeYoutubeMode: .ask,
+            autoplayBlockingMode: .blockAudio
         )
     }
 }

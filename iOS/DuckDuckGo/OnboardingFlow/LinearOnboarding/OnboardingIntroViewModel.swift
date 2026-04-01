@@ -168,6 +168,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         introSteps = onboardingManager.onboardingSteps
         currentIntroStep = currentOnboardingStep
         copy = .default
+        restorePendingOnboardingStepIfNeeded()
 
         // TODO: Temporary override for dev validation; remove when onboarding should no longer launch on every app start.
         // let forcedExperimentStep: OnboardingIntroStep = .searchExperienceSelection
@@ -195,6 +196,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         pixelReporter.measureConfirmSkipOnboardingCTAAction()
         onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
         tutorialSettings.hasSkippedOnboarding = true
+        tutorialSettings.pendingOnboardingResumeStep = nil
         contextualDaxDialogs.disableContextualDaxDialogs()
         onCompletingOnboardingIntro?()
     }
@@ -343,6 +345,7 @@ private extension OnboardingIntroViewModel {
     func makeNextViewState() {
         guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) else {
             assertionFailure("Onboarding Step index not found.")
+            tutorialSettings.pendingOnboardingResumeStep = nil
             onCompletingOnboardingIntro?()
             return
         }
@@ -352,6 +355,9 @@ private extension OnboardingIntroViewModel {
 
         // If the flow does not have any step remaining dismiss it
         guard let nextIntroStep = introSteps[safe: nextStepIndex] else {
+            if currentIntroStep != .duckAIQueryExperimentSelection {
+                tutorialSettings.pendingOnboardingResumeStep = nil
+            }
             onCompletingOnboardingIntro?()
             return
         }
@@ -359,7 +365,36 @@ private extension OnboardingIntroViewModel {
         // Otherwise advance to the next onboarding step
         isSkipped = false
         currentIntroStep = nextIntroStep
+        persistPendingOnboardingStep(for: currentIntroStep)
         setViewState(introStep: currentIntroStep)
+    }
+
+    func restorePendingOnboardingStepIfNeeded() {
+        guard tutorialSettings.pendingOnboardingResumeStep == .duckAIQueryExperimentSelection else {
+            return
+        }
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+            tutorialSettings.pendingOnboardingResumeStep = nil
+            return
+        }
+
+        if !introSteps.contains(.duckAIQueryExperimentSelection) {
+            if let searchExperienceIndex = introSteps.firstIndex(of: .searchExperienceSelection) {
+                introSteps.insert(.duckAIQueryExperimentSelection, at: searchExperienceIndex + 1)
+            } else {
+                introSteps.append(.duckAIQueryExperimentSelection)
+            }
+        }
+        currentIntroStep = .duckAIQueryExperimentSelection
+    }
+
+    func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
+        switch step {
+        case .duckAIQueryExperimentSelection:
+            tutorialSettings.pendingOnboardingResumeStep = .duckAIQueryExperimentSelection
+        default:
+            break
+        }
     }
 
     func measureScreenImpression() {

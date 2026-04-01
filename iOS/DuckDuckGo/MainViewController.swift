@@ -55,6 +55,16 @@ struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
 
     init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus, tutorialSettings: TutorialSettings) {
+        if tutorialSettings.pendingOnboardingResumeStep == .duckAIQueryExperimentSelection {
+            shouldShowOnboarding = true
+            return
+        }
+
+        if tutorialSettings.pendingOnboardingResumeStep == .duckAIAnswerStep {
+            shouldShowOnboarding = false
+            return
+        }
+
         switch onboardingStatus {
         case .notOverridden:
             shouldShowOnboarding = !tutorialSettings.hasSeenOnboarding
@@ -686,6 +696,7 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         startOnboardingFlowIfNotSeenBefore()
+        restorePendingDuckAIAnswerStepIfNeeded()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
@@ -2742,6 +2753,7 @@ class MainViewController: UIViewController {
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
         experimentDuckAIFireOnboardingFlow.state = .active
+        tutorialSettings.pendingOnboardingResumeStep = .duckAIAnswerStep
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
         showFireButtonPulse()
@@ -2800,9 +2812,56 @@ class MainViewController: UIViewController {
     private func markSearchContextualOnboardingAsSeenForExperiment() {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
+        tutorialSettings.pendingOnboardingResumeStep = nil
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }
+    }
+
+    private func restorePendingDuckAIAnswerStepIfNeeded() {
+        guard tutorialSettings.pendingOnboardingResumeStep == .duckAIAnswerStep else {
+            return
+        }
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+            tutorialSettings.pendingOnboardingResumeStep = nil
+            return
+        }
+        guard currentTab?.isAITab == true else {
+            return
+        }
+
+        experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
+        experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+        experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
+        setExperimentFireControlsLocked(true)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await clearDuckAIWebsiteDataForResumeIfNeeded()
+            recreateAIChatTabForResumeIfNeeded()
+            if let currentTab {
+                scheduleExperimentDuckAIFireOnboardingAfterLoadIfNeeded(for: currentTab)
+            }
+        }
+    }
+
+    private func recreateAIChatTabForResumeIfNeeded() {
+        guard let currentURL = currentTab?.url,
+              let components = URLComponents(url: currentURL, resolvingAgainstBaseURL: false) else {
+            return
+        }
+        let queryItems = components.queryItems ?? []
+        let query = queryItems.first(where: { $0.name == AIChatURLParameters.promptQueryName })?.value
+        let autoSend = queryItems.first(where: { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })?.value == AIChatURLParameters.autoSubmitPromptQueryValue
+
+        if let tabToClose = currentTab?.tabModel {
+            closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
+        }
+        openAIChat(query, autoSend: autoSend, onboardingFlowType: .mobileAppOnboarding)
+    }
+
+    private func clearDuckAIWebsiteDataForResumeIfNeeded() async {
+        let dataStore = DDGWebsiteDataStoreProvider.current(fireMode: tabManager.currentBrowsingMode == .fire)
+        _ = await websiteDataManager.clear(dataStore: dataStore)
     }
 
     private func restorePostFireAddressBarPickerIfNeeded() {
@@ -5315,6 +5374,7 @@ extension MainViewController: OnboardingDelegate {
         if shouldArmExperimentFireOnboarding {
             resetSessionForOnboardingLaunchIfNeeded()
             experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
+            tutorialSettings.pendingOnboardingResumeStep = .duckAIAnswerStep
             enforceSingleTabAfterOnboardingIfNeeded()
         } else if experimentDuckAIFireOnboardingFlow.state != .completed {
             experimentDuckAIFireOnboardingFlow.state = .idle
@@ -5327,6 +5387,10 @@ extension MainViewController: OnboardingDelegate {
     func markOnboardingSeen() {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
+        if experimentDuckAIFireOnboardingFlow.state != .awaitingFirstResponse,
+           experimentDuckAIFireOnboardingFlow.state != .active {
+            tutorialSettings.pendingOnboardingResumeStep = nil
+        }
     }
 
     func needsToShowOnboardingIntro() -> Bool {

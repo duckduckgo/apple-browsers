@@ -73,37 +73,7 @@ public final class LaunchOptionsHandler {
         self.systemVersion = systemVersion
     }
 
-    // TODO: Temporary override for dev validation; remove when onboarding should no longer launch on every app start.
-    // This is a lazy var (not a computed property) so the side-effect resets run exactly once per app
-    // launch, not on every access. DaxDialogs.isEnabled calls onboardingStatus repeatedly, so a computed
-    // property with resets would wipe mid-session state (e.g. the AI chat switch bar setting) on every check.
-    public lazy var onboardingStatus: OnboardingStatus = {
-        userDefaults.removeObject(forKey: Self.isOnboardingCompleted)
-
-        userDefaults.set(false, forKey: "com.duckduckgo.tutorials.hasSeenOnboarding")
-        userDefaults.set(false, forKey: "com.duckduckgo.tutorials.hasSkippedOnboarding")
-
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingIsDismissed")
-        userDefaults.set(0, forKey: "com.duckduckgo.ios.daxOnboardingHomeScreenMessagesSeen")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingTryAnonymousSearchShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingTryVisitSiteShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingAfterSearchShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingWithTrackersShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingWithoutTrackersShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingMajorTrackingSiteShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingBrowsingOwnedByMajorTrackingSiteShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxfireButtonEducationShownOrExpired")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.fireMessageShown")
-        userDefaults.removeObject(forKey: "com.duckduckgo.ios.fireButtonPulseDateShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.privacyButtonPulseShown")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingFinalDialogSeen")
-        userDefaults.set(false, forKey: "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown")
-        // Remove from standard UserDefaults (migration source) and app config group so that the
-        // AI chat switch bar resets cleanly on each dev launch, without risking a secondary-migration error.
-        userDefaults.removeObject(forKey: "aichat.settings.showAIChatExperimentalSearchInput")
-        UserDefaults(suiteName: Global.appConfigurationGroupName)?.removeObject(forKey: "aichat.settings.showAIChatExperimentalSearchInput")
-        return .overridden(.developer(completed: false))
-
+    public var onboardingStatus: OnboardingStatus {
         // Apple Issue affecting persistence storage on iPad 17.7.7
         // See: https://app.asana.com/1/137249556945/project/414709148257752/task/1210267814606214
         if isIpad && systemVersion == "17.7.7" {
@@ -122,7 +92,7 @@ public final class LaunchOptionsHandler {
         }
 
         return .notOverridden
-    }()
+    }
 
     /// Returns the automation port if set, nil otherwise.
     /// Port must be in the valid UInt16 range (1-65535).

@@ -52,8 +52,8 @@ public final class ScriptletFetcher: ScriptletFetching {
 
         let response = try await apiService.fetch(request: request)
 
-        guard let data = response.data, !data.isEmpty else {
-            Logger.webExtensions.error("[Scriptlets] Empty response for '\(descriptor.name)'")
+        guard let data = response.data else {
+            Logger.webExtensions.error("[Scriptlets] No response body for '\(descriptor.name)'")
             throw ScriptletError.emptyResponse(name: descriptor.name)
         }
 

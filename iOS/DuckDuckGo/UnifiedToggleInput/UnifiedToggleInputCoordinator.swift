@@ -229,7 +229,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         resetSessionState()
     }
 
+    private var isNewChatPending = false
+
     private func syncChipVisibility(hasExistingChat: Bool) {
+        if isNewChatPending && hasExistingChat {
+            return
+        }
+        isNewChatPending = false
         let shouldHide = hasExistingChat || hasSubmittedPrompt
         guard hasSubmittedPrompt != shouldHide else { return }
         hasSubmittedPrompt = shouldHide
@@ -618,6 +624,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func startNewChat() {
+        isNewChatPending = true
         hasSubmittedPrompt = false
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -834,6 +841,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func resetSessionState() {
+        isNewChatPending = false
         setText("")
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown

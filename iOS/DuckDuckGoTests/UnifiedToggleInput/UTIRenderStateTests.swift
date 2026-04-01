@@ -45,6 +45,7 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertFalse(state.isFloatingSubmitVisible)
 
         XCTAssertFalse(state.inactiveAppearance)
+        XCTAssertTrue(state.isCustomizeResponsesButtonHidden)
     }
 
     // MARK: - AI Tab Collapsed
@@ -207,5 +208,104 @@ final class UTIRenderStateTests: XCTestCase {
         sut.activateFromOmnibar(inputMode: .aiChat)
         let state = sut.computeRenderState()
         XCTAssertEqual(state.contentInputMode, .aiChat)
+    }
+
+    // MARK: - Customize Responses Button Hidden
+
+    func test_customizeResponsesButton_hiddenWhenHidden() {
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_visibleOnAITabCollapsed() {
+        sut.showCollapsed()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_visibleOnAITabExpanded() {
+        sut.showExpanded()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isCustomizeResponsesButtonHidden)
+    }
+
+    func test_customizeResponsesButton_hiddenInOmnibar() {
+        sut.activateFromOmnibar()
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isCustomizeResponsesButtonHidden)
+    }
+
+    // MARK: - Model Chip Hidden
+
+    func test_modelChipHidden_falseByDefault() {
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isModelChipHidden)
+    }
+
+    func test_modelChipHidden_trueAfterPromptSubmit() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isModelChipHidden)
+    }
+
+    func test_modelChipHidden_falseAfterNewChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.startNewChat()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isModelChipHidden)
+    }
+
+    // MARK: - Voice Search Available
+
+    func test_voiceSearchAvailable_falseByDefault() {
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isVoiceSearchAvailable)
+    }
+
+    func test_voiceSearchAvailable_trueWhenEnabled() {
+        sut.updateVoiceSearchAvailability(true)
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isVoiceSearchAvailable)
+    }
+
+    // MARK: - Toolbar AI Voice Chat Active
+
+    func test_toolbarAIVoiceChatActive_falseByDefault() {
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isToolbarAIVoiceChatActive)
+    }
+
+    func test_toolbarAIVoiceChatActive_trueWhenEnabledAndAIChatMode() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .aiChat)
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isToolbarAIVoiceChatActive)
+    }
+
+    func test_toolbarAIVoiceChatActive_falseWhenEnabledButSearchMode() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .search)
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isToolbarAIVoiceChatActive)
+    }
+
+    func test_toolbarAIVoiceChatActive_falseWhenDisabledAndAIChatMode() {
+        sut.showExpanded(inputMode: .aiChat)
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isToolbarAIVoiceChatActive)
+    }
+
+    // MARK: - Image Button Hidden
+
+    func test_imageButtonHidden_trueWhenNoModels() {
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isImageButtonHidden)
+    }
+
+    // MARK: - Model Name
+
+    func test_modelName_nilWhenNoModelsAndNoCache() {
+        let state = sut.computeRenderState()
+        XCTAssertNil(state.modelName)
     }
 }

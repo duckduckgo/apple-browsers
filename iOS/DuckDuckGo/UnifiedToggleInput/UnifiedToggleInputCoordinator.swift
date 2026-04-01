@@ -116,6 +116,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var isInputVisibleForKeyboard: Bool = true
 
     private(set) var currentText: String = ""
+    private(set) var isVoiceSearchEnabled: Bool = false
+    private(set) var isAIVoiceChatEnabled: Bool = false
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
     var onAnimatedDismissToOmnibar: (() -> Void)?
@@ -194,11 +196,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToCustomizeResponsesTap()
         subscribeToVoiceSearchTap()
         subscribeToAttachmentUsageChanges()
-        viewController.isCustomizeResponsesButtonHidden = true
-
-        if let cachedLabel = modelStore.preferences.selectedModelShortName {
-            viewController.modelName = cachedLabel
-        }
+        applyCurrentRenderState()
     }
 
     // MARK: - Tab Binding
@@ -239,7 +237,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let shouldHide = hasExistingChat || hasSubmittedPrompt
         guard hasSubmittedPrompt != shouldHide else { return }
         hasSubmittedPrompt = shouldHide
-        updateModelChipVisibility()
+        applyCurrentRenderState()
         syncHasSubmittedPromptToHandler()
     }
 
@@ -250,11 +248,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         inputMode = .aiChat
         isInputVisibleForKeyboard = true
 
-        let renderState = computeRenderState()
-
-        viewController.apply(renderState.viewConfig, animated: false)
+        applyCurrentRenderState()
         viewController.deactivateInput()
-        viewController.isCustomizeResponsesButtonHidden = false
         intentSubject.send(.showCollapsed)
     }
 
@@ -263,10 +258,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.inputMode = inputMode
         isInputVisibleForKeyboard = true
 
-        let renderState = computeRenderState()
-
-        viewController.apply(renderState.viewConfig, animated: false)
-        viewController.isCustomizeResponsesButtonHidden = false
+        applyCurrentRenderState()
         fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {
@@ -297,7 +289,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.deactivateInput()
-        viewController.isCustomizeResponsesButtonHidden = true
         contentViewController.setDismissButtonVisible(renderState.isContentVisible)
         intentSubject.send(.hide)
     }
@@ -312,13 +303,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
-        updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
 
         viewController.setExpanded(false, animated: false)
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
-        viewController.isCustomizeResponsesButtonHidden = true
         fetchModels()
 
         if let text = prefilledText, !text.isEmpty {
@@ -413,19 +402,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         inputMode = effectiveMode
         viewController.setInputMode(effectiveMode, animated: animated)
         modeChangeSubject.send(effectiveMode)
-        updateToolbarAIVoiceChat()
+        viewController.isToolbarAIVoiceChatActive = isAIVoiceChatEnabled && inputMode == .aiChat
         if effectiveMode == .search {
             clearAttachments()
         }
     }
 
     func updateAIVoiceChatAvailability(_ enabled: Bool) {
+        isAIVoiceChatEnabled = enabled
         viewController.handler.isAIVoiceChatEnabled = enabled
-        updateToolbarAIVoiceChat()
-    }
-
-    private func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = viewController.handler.isAIVoiceChatEnabled && inputMode == .aiChat
+        applyCurrentRenderState()
     }
 
 
@@ -438,7 +424,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         if didModeChange {
             modeChangeSubject.send(effectiveMode)
-            updateToolbarAIVoiceChat()
+            viewController.isToolbarAIVoiceChatActive = isAIVoiceChatEnabled && inputMode == .aiChat
         }
     }
 
@@ -486,7 +472,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
-        viewController.isVoiceSearchAvailable = enabled
+        isVoiceSearchEnabled = enabled
+        applyCurrentRenderState()
     }
 
     func clearText() {
@@ -507,7 +494,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard let userScript = boundUserScript else { return }
         let modelId = hasSubmittedPrompt ? nil : persistedModelId
         hasSubmittedPrompt = true
-        updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         showCollapsed()
         userScript.submitPrompt(text, images: nil, modelId: modelId)
@@ -594,6 +580,22 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             && cardPosition == .top
             && inputMode == .aiChat
 
+        let isCustomizeResponsesButtonHidden: Bool
+        switch displayState {
+        case .aiTab:
+            isCustomizeResponsesButtonHidden = false
+        case .hidden, .omnibar:
+            isCustomizeResponsesButtonHidden = true
+        }
+
+        let resolvedModelName: String? = {
+            if let id = modelStore.persistedModelId,
+               let name = modelStore.models.first(where: { $0.id == id })?.shortName {
+                return name
+            }
+            return modelStore.preferences.selectedModelShortName
+        }()
+
         return UTIRenderState(
             isInputVisible: isInputVisible,
             isContentVisible: isContentVisible,
@@ -604,8 +606,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             inactiveAppearance: inactiveAppearance,
             isFloatingSubmitVisible: isFloatingSubmitVisible,
             contentInputMode: inputMode,
-            inputMode: inputMode
+            inputMode: inputMode,
+            isCustomizeResponsesButtonHidden: isCustomizeResponsesButtonHidden,
+            isModelChipHidden: hasSubmittedPrompt,
+            modelName: resolvedModelName,
+            isVoiceSearchAvailable: isVoiceSearchEnabled,
+            isToolbarAIVoiceChatActive: isAIVoiceChatEnabled && inputMode == .aiChat,
+            isImageButtonHidden: !modelStore.selectedModelSupportsImageUpload
         )
+    }
+
+    func applyCurrentRenderState(animated: Bool = false) {
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: animated)
     }
 
     // MARK: - Models
@@ -626,7 +639,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func startNewChat() {
         isNewChatPending = true
         hasSubmittedPrompt = false
-        updateModelChipVisibility()
+        applyCurrentRenderState()
         syncHasSubmittedPromptToHandler()
         clearAttachments()
         setText("")
@@ -684,10 +697,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let selectedId = modelStore.persistedModelId
         let shortName = modelStore.models.first(where: { $0.id == selectedId })?.shortName
         if let shortName {
-            viewController.modelName = shortName
             modelStore.cacheSelectedModelShortName(shortName)
         }
         viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : buildModelPickerMenu()
+        applyCurrentRenderState()
     }
 
     // MARK: - Attachments
@@ -773,9 +786,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateImageButtonVisibility() {
-        let supportsImages = selectedModelSupportsImageUpload
-        viewController.isImageButtonHidden = !supportsImages
-        if !supportsImages {
+        if !selectedModelSupportsImageUpload {
             clearAttachments()
         }
     }
@@ -808,6 +819,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             .removeDuplicates()
             .sink { [weak self] _ in
                 self?.updateImageButtonVisibility()
+                self?.applyCurrentRenderState()
             }
             .store(in: &cancellables)
     }
@@ -832,10 +844,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - State Reset
 
-    private func updateModelChipVisibility() {
-        viewController.isModelChipHidden = hasSubmittedPrompt
-    }
-
     private func syncHasSubmittedPromptToHandler() {
         switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
     }
@@ -847,7 +855,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         aiChatInputBoxVisibility = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
-        updateModelChipVisibility()
+        applyCurrentRenderState()
         syncHasSubmittedPromptToHandler()
         clearAttachments()
     }
@@ -878,7 +886,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let modelId = hasSubmittedPrompt ? nil : persistedModelId
             clearAttachments()
             hasSubmittedPrompt = true
-            updateModelChipVisibility()
             syncHasSubmittedPromptToHandler()
             if isOmnibarSession {
                 deactivateToOmnibar()

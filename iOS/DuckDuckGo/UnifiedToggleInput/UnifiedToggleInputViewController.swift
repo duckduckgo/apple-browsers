@@ -178,6 +178,18 @@ final class UnifiedToggleInputViewController: UIViewController {
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         setExpanded(config.isExpanded, animated: animated)
+        applyToolbarProperties(config)
+    }
+
+    func applyToolbarProperties(_ config: UTIViewConfig) {
+        isCustomizeResponsesButtonHidden = config.isCustomizeResponsesButtonHidden
+        isModelChipHidden = config.isModelChipHidden
+        if let name = config.modelName {
+            modelName = name
+        }
+        isVoiceSearchAvailable = config.isVoiceSearchAvailable
+        isToolbarAIVoiceChatActive = config.isToolbarAIVoiceChatActive
+        isImageButtonHidden = config.isImageButtonHidden
     }
 
     func setExpanded(_ expanded: Bool, animated: Bool) {

@@ -27,4 +27,10 @@ struct UTIViewConfig: Equatable {
     var inactiveAppearance: Bool
     var inputMode: TextEntryMode
     var isTopBarPosition: Bool
+    var isCustomizeResponsesButtonHidden: Bool
+    var isModelChipHidden: Bool
+    var modelName: String?
+    var isVoiceSearchAvailable: Bool
+    var isToolbarAIVoiceChatActive: Bool
+    var isImageButtonHidden: Bool
 }

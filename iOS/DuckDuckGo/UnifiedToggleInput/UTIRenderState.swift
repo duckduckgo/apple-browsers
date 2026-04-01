@@ -30,6 +30,12 @@ struct UTIRenderState: Equatable {
     var isFloatingSubmitVisible: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
+    var isCustomizeResponsesButtonHidden: Bool
+    var isModelChipHidden: Bool
+    var modelName: String?
+    var isVoiceSearchAvailable: Bool
+    var isToolbarAIVoiceChatActive: Bool
+    var isImageButtonHidden: Bool
 
     var viewConfig: UTIViewConfig {
         UTIViewConfig(
@@ -39,7 +45,13 @@ struct UTIRenderState: Equatable {
             isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
-            isTopBarPosition: usesOmnibarMargins
+            isTopBarPosition: usesOmnibarMargins,
+            isCustomizeResponsesButtonHidden: isCustomizeResponsesButtonHidden,
+            isModelChipHidden: isModelChipHidden,
+            modelName: modelName,
+            isVoiceSearchAvailable: isVoiceSearchAvailable,
+            isToolbarAIVoiceChatActive: isToolbarAIVoiceChatActive,
+            isImageButtonHidden: isImageButtonHidden
         )
     }
 

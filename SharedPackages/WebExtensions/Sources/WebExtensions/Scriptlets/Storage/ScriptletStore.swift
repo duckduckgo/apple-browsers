@@ -52,7 +52,7 @@ import os.log
 /// - ``clear(for:)`` removes both cached files and the installed version tracking.
 /// - ``clearAll()`` removes the entire base directory and all metadata.
 @available(macOS 15.4, iOS 18.4, *)
-public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracking {
+public final class ScriptletStore: ScriptletStoring {
 
     private let baseDirectory: URL
     private let defaults: UserDefaults

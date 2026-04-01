@@ -20,7 +20,7 @@ import Foundation
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
-final class MockScriptletStore: ScriptletStoring, ScriptletInstallationTracking {
+final class MockScriptletStore: ScriptletStoring {
 
     var cachedScriptlets: CachedScriptlets?
     var savedFetched: [FetchedScriptlet]?

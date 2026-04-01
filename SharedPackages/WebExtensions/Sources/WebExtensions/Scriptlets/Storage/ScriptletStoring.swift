@@ -23,13 +23,11 @@ import Foundation
 /// This protocol combines two concerns:
 /// - **Cache management**: saving/loading fetched scriptlet files to disk and tracking
 ///   which version is cached (used by ``ScriptletManager``).
-/// - **Installed version tracking**: recording which version has been installed into a
-///   live extension directory (used by ``WebExtensionScriptletCoordinator``).
-///
-/// The ``ScriptletStore`` implementation also conforms to ``ScriptletInstallationTracking``
-/// which exposes only the installed-version subset of this interface.
+/// - **Installed version tracking** (inherited from ``ScriptletInstallationTracking``):
+///   recording which version has been installed into a live extension directory
+///   (used by ``WebExtensionScriptletCoordinator``).
 @available(macOS 15.4, iOS 18.4, *)
-public protocol ScriptletStoring {
+public protocol ScriptletStoring: ScriptletInstallationTracking {
 
     /// The root directory where cached scriptlet files are stored.
     var cacheRootDirectory: URL { get }
@@ -55,13 +53,4 @@ public protocol ScriptletStoring {
 
     /// Removes the entire cache directory, all metadata, and all installed version records.
     func clearAll()
-
-    /// Returns the version currently installed in the extension directory, or `nil`.
-    func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
-
-    /// Records that the given version has been installed into the extension directory.
-    func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType)
-
-    /// Clears the installed version record for the given extension type.
-    func clearInstalledVersion(for extensionType: DuckDuckGoWebExtensionType)
 }

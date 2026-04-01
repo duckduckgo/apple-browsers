@@ -99,10 +99,12 @@ public final class WebExtensionFeatureFlagHandler {
         webExtensionsCancellable = publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
-                if enabled {
-                    self?.handleWebExtensionsFlagEnabled()
-                } else {
-                    self?.handleWebExtensionsFlagDisabled()
+                Task { @MainActor in
+                    if enabled {
+                        self?.handleWebExtensionsFlagEnabled()
+                    } else {
+                        self?.handleWebExtensionsFlagDisabled()
+                    }
                 }
             }
     }
@@ -113,14 +115,17 @@ public final class WebExtensionFeatureFlagHandler {
         embeddedExtensionCancellable = publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
-                if enabled {
-                    self?.handleEmbeddedExtensionFlagEnabled()
-                } else {
-                    self?.handleEmbeddedExtensionFlagDisabled()
+                Task { @MainActor in
+                    if enabled {
+                        self?.handleEmbeddedExtensionFlagEnabled()
+                    } else {
+                        self?.handleEmbeddedExtensionFlagDisabled()
+                    }
                 }
             }
     }
 
+    @MainActor
     private func handleWebExtensionsFlagEnabled() {
         guard let onFeatureFlagEnabled else { return }
         isWebExtensionsFlagEnabled = true
@@ -131,16 +136,16 @@ public final class WebExtensionFeatureFlagHandler {
         }
     }
 
+    @MainActor
     private func handleWebExtensionsFlagDisabled() {
         isWebExtensionsFlagEnabled = false
         webExtensionsEnableTask?.cancel()
         webExtensionsEnableTask = nil
-        MainActor.assumeMainThread {
-            webExtensionManagerProvider()?.uninstallAllExtensions()
-            onFeatureFlagDisabled()
-        }
+        webExtensionManagerProvider()?.uninstallAllExtensions()
+        onFeatureFlagDisabled()
     }
 
+    @MainActor
     private func handleEmbeddedExtensionFlagEnabled() {
         guard let onEmbeddedExtensionFlagEnabled else { return }
         isEmbeddedExtensionFlagEnabled = true
@@ -151,12 +156,11 @@ public final class WebExtensionFeatureFlagHandler {
         }
     }
 
+    @MainActor
     private func handleEmbeddedExtensionFlagDisabled() {
         isEmbeddedExtensionFlagEnabled = false
         embeddedExtensionEnableTask?.cancel()
         embeddedExtensionEnableTask = nil
-        MainActor.assumeMainThread {
-            webExtensionManagerProvider()?.uninstallEmbeddedExtension(type: .embedded)
-        }
+        webExtensionManagerProvider()?.uninstallEmbeddedExtension(type: .embedded)
     }
 }

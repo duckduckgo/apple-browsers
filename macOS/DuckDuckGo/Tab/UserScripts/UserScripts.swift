@@ -18,8 +18,8 @@
 
 import AIChat
 import AppUpdaterShared
-import DuckAiDataStore
 import BrowserServicesKit
+import os.log
 import Foundation
 import HistoryView
 import Persistence
@@ -64,6 +64,25 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     private let contentScopePreferences: ContentScopePreferences
 
     // swiftlint:disable:next cyclomatic_complexity
+    private static var nativeStorageProvider: DuckAiNativeStorageProvider?
+
+    private static func sharedNativeStorageHandler() -> DuckAiNativeStorageHandling? {
+        if let existing = nativeStorageProvider {
+            return existing.handler
+        }
+        do {
+            let containerURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("DuckAiNativeStorage")
+            let provider = try DuckAiNativeStorageProvider(containerURL: containerURL)
+            nativeStorageProvider = provider
+            return provider.handler
+        } catch {
+            Logger.aiChat.error("UserScripts: Failed to create DuckAiNativeStorageProvider: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    // swiftlint:disable:next cyclomatic_complexity
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
@@ -93,21 +112,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
-        do {
-            let containerURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-                .appendingPathComponent("DuckAiNativeStorage")
-            let nativeStorageFileStore = try KeyValueFileStore(
-                location: containerURL,
-                name: "settings.plist"
-            )
-            let nativeDataStore = try DuckAiNativeDataStore(
-                databaseURL: containerURL.appendingPathComponent("chats.db"),
-                filesDirectoryURL: containerURL.appendingPathComponent("files")
-            )
-            let nativeStorageHandler = DuckAiNativeStorageHandler(
-                settingsStore: nativeStorageFileStore.throwingKeyedStoring(),
-                dataStore: nativeDataStore
-            )
+        if let nativeStorageHandler = Self.sharedNativeStorageHandler() {
             var originRules: [HostnameMatchingRule] = [
                 .exact(hostname: "duck.ai"),
                 .exact(hostname: "duckduckgo.com")
@@ -119,9 +124,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                 handler: nativeStorageHandler,
                 originRules: originRules
             )
-        } catch {
+        } else {
             duckAiNativeStorageUserScript = nil
-            assertionFailure("Failed to initialize DuckAiNativeStorage: \(error)")
         }
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled

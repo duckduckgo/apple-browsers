@@ -19,6 +19,7 @@
 import Foundation
 
 public enum ScriptletError: Error, Equatable {
+    case requestCreationFailed(name: String)
     case emptyResponse(name: String)
     case invalidSignatureFormat(name: String)
     case signatureVerificationFailed(name: String)

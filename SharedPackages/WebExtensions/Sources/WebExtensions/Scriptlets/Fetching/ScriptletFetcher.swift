@@ -47,7 +47,7 @@ public final class ScriptletFetcher: ScriptletFetching {
     private func fetchSingle(_ descriptor: ScriptletDescriptor) async throws -> FetchedScriptlet {
         guard let request = APIRequestV2(url: descriptor.url, method: .get) else {
             Logger.webExtensions.error("[Scriptlets] Failed to create request for '\(descriptor.name)'")
-            throw ScriptletError.emptyResponse(name: descriptor.name)
+            throw ScriptletError.requestCreationFailed(name: descriptor.name)
         }
 
         let response = try await apiService.fetch(request: request)

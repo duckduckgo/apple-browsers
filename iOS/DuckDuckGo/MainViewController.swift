@@ -279,7 +279,7 @@ class MainViewController: UIViewController {
     }
 
     private enum ExperimentDuckAIFireOnboardingMetrics {
-        static let onboardingFireFailsafeTriggerDelayAfterLoad: TimeInterval = 2
+        static let failsafeTriggerDelay: TimeInterval = 2
     }
 
     // Skip SERP flow (focusing on autocomplete logic) and prepare for new navigation when selecting search bar
@@ -2772,7 +2772,7 @@ class MainViewController: UIViewController {
             self?.showExperimentFireDialogAfterAIChatResponseIfReady()
         }
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + ExperimentDuckAIFireOnboardingMetrics.onboardingFireFailsafeTriggerDelayAfterLoad, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + ExperimentDuckAIFireOnboardingMetrics.failsafeTriggerDelay, execute: workItem)
     }
 
     private func applyExperimentDuckAIFireChromeState() {

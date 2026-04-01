@@ -33,6 +33,13 @@ private enum DaxDialogMetrics {
         static let size: CGFloat = 54.0
         static let horizontalPadding: CGFloat = 10
     }
+
+    static var defaultContentInsets: EdgeInsets {
+        EdgeInsets(top: DaxDialogMetrics.contentPadding,
+                   leading: DaxDialogMetrics.contentPadding,
+                   bottom: DaxDialogMetrics.contentPadding,
+                   trailing: DaxDialogMetrics.contentPadding)
+    }
 }
 
 // MARK: - DaxDialog
@@ -67,7 +74,7 @@ public struct DaxDialogView<Content: View>: View {
         showBubbleArrow: Bool = true,
         cornerRadius: CGFloat = 16.0,
         arrowSize: CGSize = .init(width: 16.0, height: 8.0),
-        contentInsets: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24),
+        contentInsets: EdgeInsets? = nil, // use DaxDialogMetrics.contentPadding
         onTapGesture: (() -> Void)? = nil,
         onManualDismiss: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
@@ -79,7 +86,7 @@ public struct DaxDialogView<Content: View>: View {
         self.showBubbleArrow = showBubbleArrow
         self.cornerRadius = cornerRadius
         self.arrowSize = arrowSize
-        self.contentInsets = contentInsets
+        self.contentInsets = contentInsets ?? DaxDialogMetrics.defaultContentInsets
         self.onTapGesture = onTapGesture
         self.onManualDismiss = onManualDismiss
         self.content = content()

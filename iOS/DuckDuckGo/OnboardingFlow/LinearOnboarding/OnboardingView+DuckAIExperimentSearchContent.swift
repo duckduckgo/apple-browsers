@@ -28,7 +28,6 @@ import UIKit
 
 extension OnboardingView {
     private enum Metrics {
-        // TODO: Validate there's no unused values
         // MARK: Spacing
         static let contentVerticalSpacing: CGFloat = 16
         static let legacyTitleToPickerTopPadding: CGFloat = 8
@@ -83,11 +82,10 @@ extension OnboardingView {
 
         // MARK: Dependencies
         @Environment(\.onboardingTheme) private var onboardingTheme
-        // TODO: Why `action`?
-        private let action: (OnboardingIntroViewModel.DuckAIQueryExperimentMode) -> Void
+        private let onModeConfirmed: (DuckAIQueryExperimentMode) -> Void
         private let openAIChatAction: (String?, Bool) -> Void
         private let openSearchAction: (String) -> Void
-        private let measureQuerySubmissionAction: (OnboardingIntroViewModel.DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void
+        private let measureQuerySubmissionAction: (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void
         private let startExitTransitionAction: () -> Void
         private let visualStyle: VisualStyle
         private var animateTitle: Binding<Bool>
@@ -96,7 +94,7 @@ extension OnboardingView {
 
         // MARK: State
         @State private var query = ""
-        @State private var selectedMode: OnboardingIntroViewModel.DuckAIQueryExperimentMode
+        @State private var selectedMode: DuckAIQueryExperimentMode
         // TODO: can this be changed to state machine?
         @State private var isInputFocused = false
         @State private var visibleSuggestionCount = 0
@@ -122,16 +120,16 @@ extension OnboardingView {
         ]
 
         init(
-            defaultMode: OnboardingIntroViewModel.DuckAIQueryExperimentMode,
+            defaultMode: DuckAIQueryExperimentMode,
             visualStyle: VisualStyle = .legacy,
             animateTitle: Binding<Bool> = .constant(false),
-            action: @escaping (OnboardingIntroViewModel.DuckAIQueryExperimentMode) -> Void,
+            onModeConfirmed: @escaping (DuckAIQueryExperimentMode) -> Void,
             openAIChatAction: @escaping (String?, Bool) -> Void,
             openSearchAction: @escaping (String) -> Void,
-            measureQuerySubmissionAction: @escaping (OnboardingIntroViewModel.DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void,
+            measureQuerySubmissionAction: @escaping (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void,
             startExitTransitionAction: @escaping () -> Void
         ) {
-            self.action = action
+            self.onModeConfirmed = onModeConfirmed
             self.openAIChatAction = openAIChatAction
             self.openSearchAction = openSearchAction
             self.measureQuerySubmissionAction = measureQuerySubmissionAction
@@ -435,9 +433,9 @@ extension OnboardingView {
             } completion: {
                 if selectedMode == .duckAI {
                     openAIChatAction(promptWithOnboardingGuardrails(prompt, autoSend: autoSend), autoSend)
-                    action(.duckAI)
+                    onModeConfirmed(.duckAI)
                 } else if preloadedSearchQuery != nil {
-                    action(.search)
+                    onModeConfirmed(.search)
                 } else {
                     isTransitioningOut = false
                 }

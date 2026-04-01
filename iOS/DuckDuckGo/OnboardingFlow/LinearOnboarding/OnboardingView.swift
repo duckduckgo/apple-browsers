@@ -39,9 +39,7 @@ struct OnboardingView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var model: OnboardingIntroViewModel
-    @State private var showExperimentExitOverlay = false
-    @State private var experimentExitOverlayOpacity: CGFloat = 0
-    @State private var isExperimentDialogFadingOut = false
+    @State private var isExperimentExitTransitionActive = false
 
     init(model: OnboardingIntroViewModel) {
         self.model = model
@@ -68,17 +66,12 @@ struct OnboardingView: View {
 #endif
             }
 
-            if showExperimentExitOverlay {
-                experimentExitOverlay
-                    .transition(.opacity)
-            }
+            experimentExitOverlay
         }
     }
 
     private func onboardingDialogView(state: ViewState.Intro) -> some View {
         GeometryReader { geometry in
-            let (verticalOffset, contentInsets) = calculateOffsets(state: state, geometry: geometry)
-
             VStack(alignment: .center) {
                 DaxDialogView(
                     logoPosition: .top,
@@ -86,7 +79,6 @@ struct OnboardingView: View {
                     showDialogBox: $model.introState.showDaxDialogBox,
                     showLogo: !state.type.isExperimentSearchScreen,
                     showBubbleArrow: !state.type.isExperimentSearchScreen,
-                    contentInsets: contentInsets,
                     onTapGesture: {
                         withAnimation {
                             model.tapped()
@@ -119,13 +111,10 @@ struct OnboardingView: View {
                     isVisible: !state.type.isExperimentSearchScreen
                 )
             }
-            .opacity(isExperimentDialogFadingOut && state.type.isExperimentSearchScreen ? 0 : 1)
+            .opacity(isExperimentExitTransitionActive && state.type.isExperimentSearchScreen ? 0 : 1)
             .frame(width: geometry.size.width, alignment: .center)
-            .offset(y: verticalOffset)
+            .offset(y: geometry.size.height * Metrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass))
             .onAppear {
-                if state.type.isExperimentSearchScreen {
-                    resetExperimentExitTransition()
-                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.daxDialogVisibilityDelay) {
                     model.introState.showDaxDialogBox = true
                     if case .startOnboardingDialog(type: .restoreData) = state.type {
@@ -152,11 +141,6 @@ struct OnboardingView: View {
                     }
                 }
             }
-    }
-
-    private func calculateOffsets(state: ViewState.Intro, geometry: GeometryProxy) -> (verticalOffset: CGFloat, contentInsets: EdgeInsets) {
-            return (geometry.size.height * Metrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass),
-                    EdgeInsets(top: 24, leading: 24, bottom: 24, trailing: 24))
     }
 
     @ViewBuilder
@@ -273,7 +257,7 @@ struct OnboardingView: View {
         DuckAIExperimentSearchContent(
             defaultMode: model.duckAIQueryExperimentDefaultMode,
             animateTitle: $model.introState.animateIntroText,
-            action: model.selectDuckAIQueryExperimentAction(selection:),
+            onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
             openAIChatAction: model.openAIChatFromOnboarding,
             openSearchAction: model.searchFromOnboarding,
             measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
@@ -286,23 +270,15 @@ struct OnboardingView: View {
 
     private var experimentExitOverlay: some View {
         OnboardingBackground()
-            .opacity(experimentExitOverlayOpacity)
+            .opacity(isExperimentExitTransitionActive ? 1 : 0)
             .ignoresSafeArea()
-        .allowsHitTesting(false)
+            .allowsHitTesting(false)
     }
 
     private func beginExperimentExitTransition() {
-        showExperimentExitOverlay = true
         withAnimation(.easeInOut(duration: 0.18)) {
-            isExperimentDialogFadingOut = true
-            experimentExitOverlayOpacity = 1
+            isExperimentExitTransitionActive = true
         }
-    }
-
-    private func resetExperimentExitTransition() {
-        showExperimentExitOverlay = false
-        experimentExitOverlayOpacity = 0
-        isExperimentDialogFadingOut = false
     }
 
     private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {

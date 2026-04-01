@@ -4054,19 +4054,10 @@ extension TabViewController: ContextualOnboardingEventDelegate {
     }
 
     func didTapDismissContextualOnboardingAction() {
-        let shouldReturnToNewTabAndFocus = contextualOnboardingLogic.isShowingFinalDialog && tabModel.isAITab
         // Reset last visited onboarding site and last dax dialog shown.
         contextualOnboardingLogic.setDaxDialogDismiss()
 
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
-
-        if shouldReturnToNewTabAndFocus {
-            delegate?.tabDidRequestClose(tabModel, behavior: .createOrReuseEmptyTab, clearTabHistory: false)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                self?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
-                self?.chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .search)
-            }
-        }
     }
 
 }

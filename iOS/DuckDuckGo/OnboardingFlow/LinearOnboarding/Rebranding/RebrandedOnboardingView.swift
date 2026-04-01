@@ -164,9 +164,7 @@ extension OnboardingRebranding {
         @ObservedObject private var model: OnboardingIntroViewModel
         @State private var dialogContentHeight: CGFloat = 0
         @State private var showBubbleContent: Bool = false
-        @State private var showExperimentExitOverlay: Bool = false
-        @State private var experimentExitOverlayOpacity: CGFloat = 0
-        @State private var isExperimentDialogFadingOut = false
+        @State private var isExperimentExitTransitionActive = false
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
@@ -231,16 +229,13 @@ extension OnboardingRebranding {
 #endif
                 }
 
-                if showExperimentExitOverlay {
-                    experimentExitOverlay
-                        .transition(.opacity)
-                }
+                experimentExitOverlay
             }
             .overlay(alignment: .topLeading) {
                 RebrandingBadge()
                     .padding(.leading, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
                     .padding(.top, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeTopPadding)
-                    .opacity(showExperimentExitOverlay || isExperimentDialogFadingOut ? 0 : 1)
+                    .opacity(isExperimentExitTransitionActive ? 0 : 1)
             }
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
         }
@@ -280,12 +275,7 @@ extension OnboardingRebranding {
                 }
             }
             .padding()
-            .opacity(isExperimentDialogFadingOut && isExperimentSearchStep ? 0 : 1)
-            .onAppear {
-                if isExperimentSearchStep {
-                    resetExperimentExitTransition()
-                }
-            }
+            .opacity(isExperimentExitTransitionActive && isExperimentSearchStep ? 0 : 1)
         }
 
         private var landingView: some View {
@@ -529,7 +519,7 @@ extension OnboardingRebranding {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
                 defaultMode: model.duckAIQueryExperimentDefaultMode,
                 visualStyle: .rebranded,
-                action: model.selectDuckAIQueryExperimentAction(selection:),
+                onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
                 openAIChatAction: model.openAIChatFromOnboarding,
                 openSearchAction: model.searchFromOnboarding,
                 measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
@@ -579,23 +569,15 @@ extension OnboardingRebranding {
 
         private var experimentExitOverlay: some View {
             onboardingTheme.colorPalette.background
-                .opacity(experimentExitOverlayOpacity)
+                .opacity(isExperimentExitTransitionActive ? 1 : 0)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
         }
 
         private func beginExperimentExitTransition() {
-            showExperimentExitOverlay = true
             withAnimation(.easeInOut(duration: 0.18)) {
-                isExperimentDialogFadingOut = true
-                experimentExitOverlayOpacity = 1
+                isExperimentExitTransitionActive = true
             }
-        }
-
-        private func resetExperimentExitTransition() {
-            showExperimentExitOverlay = false
-            experimentExitOverlayOpacity = 0
-            isExperimentDialogFadingOut = false
         }
 
     }

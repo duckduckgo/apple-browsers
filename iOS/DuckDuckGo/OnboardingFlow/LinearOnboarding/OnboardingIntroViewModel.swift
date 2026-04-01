@@ -28,10 +28,6 @@ import PrivacyConfig
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
-    enum DuckAIQueryExperimentMode {
-        case search
-        case duckAI
-    }
 
     struct IntroState {
         var showDaxDialogBox = false

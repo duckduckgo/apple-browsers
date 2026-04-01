@@ -1989,7 +1989,7 @@ class MainViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
-        if isKeyboardShowing {
+        if isKeyboardShowing && !AppWidthObserver.shared.isPad && featureFlagger.isFeatureOn(.minimalChromeInLandscape) {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 

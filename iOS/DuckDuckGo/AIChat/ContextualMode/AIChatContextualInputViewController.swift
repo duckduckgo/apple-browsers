@@ -149,12 +149,10 @@ final class AIChatContextualInputViewController: UIViewController {
 
     func showContextChip(_ chipView: UIView) {
         nativeInputViewController.showContextChip(chipView)
-        updateQuickActions()
     }
 
     func hideContextChip() {
         nativeInputViewController.hideContextChip()
-        updateQuickActions()
     }
 
     func updateContextChipState(_ state: AIChatContextChipView.State) {
@@ -262,11 +260,9 @@ private extension AIChatContextualInputViewController {
             guard let self else { return }
             delegate?.contextualInputViewController(self, didSelectQuickAction: action)
         }
-        updateQuickActions()
     }
 
-    internal func updateQuickActions() {
-        let actions: [AIChatContextualQuickAction] = [.summarize]
+    internal func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
         quickActionsView.configure(with: actions)
     }
 

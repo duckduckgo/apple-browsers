@@ -32,16 +32,17 @@ import Subscription
 
 class SuggestionTrayViewController: UIViewController {
     
-    @IBOutlet weak var backgroundView: CompositeShadowView!
-    @IBOutlet weak var containerView: UIView!
-    @IBOutlet var variableWidthConstraint: NSLayoutConstraint!
-    @IBOutlet var fullWidthConstraint: NSLayoutConstraint!
-    @IBOutlet var topConstraint: NSLayoutConstraint!
-    @IBOutlet var variableHeightConstraint: NSLayoutConstraint!
-    @IBOutlet var fullHeightSafeAreaConstraint: NSLayoutConstraint!
-    @IBOutlet var fullHeightConstraint: NSLayoutConstraint!
-    @IBOutlet var fullHeightSafeAreaInequalityConstraint: NSLayoutConstraint!
-    
+    weak var backgroundView: CompositeShadowView!
+    weak var containerView: UIView!
+    var variableWidthConstraint: NSLayoutConstraint!
+    var fullWidthConstraint: NSLayoutConstraint!
+    var topConstraint: NSLayoutConstraint!
+    var variableHeightConstraint: NSLayoutConstraint!
+    var fullHeightSafeAreaConstraint: NSLayoutConstraint!
+    var fullHeightConstraint: NSLayoutConstraint!
+    var fullHeightSafeAreaInequalityConstraint: NSLayoutConstraint!
+
+
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
     weak var newTabPageControllerDelegate: NewTabPageControllerDelegate?
 
@@ -123,7 +124,7 @@ class SuggestionTrayViewController: UIViewController {
 
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
-    required init?(coder: NSCoder,
+    required init(
                    favoritesViewModel: FavoritesListInteracting,
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
@@ -146,16 +147,62 @@ class SuggestionTrayViewController: UIViewController {
         self.featureDiscovery = featureDiscovery
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.hideBorder = hideBorder
-        super.init(coder: coder)
+
+       super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("Not implemented")
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        view.backgroundColor = .clear
+        backgroundView = install(CompositeShadowView())
+        containerView = install(UIView())
+
+        self.fullHeightSafeAreaConstraint = containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        self.fullHeightSafeAreaInequalityConstraint = containerView.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor)
+        self.fullHeightConstraint = containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+
+        if isPad {
+            self.variableHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: Constant.suggestionTrayInitialHeight)
+        } else {
+            self.variableHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: max(view.frame.height, view.frame.width))
+        }
+
+        self.variableHeightConstraint.priority = UILayoutPriority(999)
+
+        self.variableWidthConstraint = containerView.widthAnchor.constraint(equalToConstant: 100)
+        self.variableWidthConstraint.priority = UILayoutPriority(999)
+
+        self.fullWidthConstraint = containerView.widthAnchor.constraint(equalTo: view.widthAnchor)
+
+        self.topConstraint = containerView.topAnchor.constraint(equalTo: view.topAnchor)
+
+        // Full height constraints are activated later depending on how the suggestions are shown.
+        NSLayoutConstraint.activate([
+            backgroundView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            backgroundView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+
+            containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+
+            self.variableWidthConstraint,
+            self.variableHeightConstraint,
+            self.topConstraint,
+            self.fullWidthConstraint,
+        ])
+
         installDismissHandler()
+    }
+
+    private func install<T: UIView>(_ view: T) -> T {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(view)
+        return view
     }
 
     @IBAction func onDismiss() {
@@ -213,7 +260,6 @@ class SuggestionTrayViewController: UIViewController {
     }
     
     func float(withWidth width: CGFloat) {
-
         containerView.layer.cornerRadius = 24
         containerView.layer.masksToBounds = true
 
@@ -424,10 +470,7 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
     
     func autocompleteDidChangeContentHeight(height: CGFloat) {
         guard !fullHeightConstraint.isActive else { return }
-
-        if height > Constant.suggestionTrayInitialHeight {
-            variableHeightConstraint.constant = height
-        }
+        variableHeightConstraint.constant = max(height, Constant.suggestionTrayInitialHeight)
     }
     
 }

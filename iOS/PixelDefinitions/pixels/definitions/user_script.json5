@@ -23,6 +23,8 @@
                     "contentblockerrules",
                     "contentScope",
                     "contentScopeIsolated",
+                    "duckAiChatHistory",
+                    "duckAiDataClearing",
                     "findinpage",
                     "fullscreenvideo",
                     "internal-feedback-autofiller",

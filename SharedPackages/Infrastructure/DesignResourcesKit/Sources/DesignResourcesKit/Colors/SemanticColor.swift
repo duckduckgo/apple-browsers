@@ -72,6 +72,9 @@ public enum DesignSystemColor {
     case alertGreen
     case alertYellow
 
+    // Shield
+    case shieldPrivacy
+
     // Icons
     case icons
     case iconsSecondary

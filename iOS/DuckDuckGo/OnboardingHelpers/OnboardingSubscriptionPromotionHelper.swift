@@ -89,7 +89,7 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     ///
     /// This property checks if the user is eligible for a free trial and returns a suitable string to match their free trial eligibility.
     var proceedButtonText: String {
-        subscriptionManager.isUserEligibleForFreeTrial() ? UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree : UserText.SubscriptionPromotionOnboarding.Buttons.learnMore
+        subscriptionManager.isUserEligibleForFreeTrial() ? UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.tryItFree : UserText.SubscriptionPromotionOnboarding.Buttons.learnMore
     }
 
     /// Indicates whether the Subscription promotion should be displayed to the user during onboarding.

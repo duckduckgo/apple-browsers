@@ -29,5 +29,21 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+
+    "m_settings_fire_button_selector_pressed": {
+        "description": "Fires when the user selects a fire animation type in settings",
+        "owners": ["brindy", "alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "fireAnimationType",
+                "description": "The fire animation type selected by the user",
+                "type": "string",
+                "enum": ["fireRising", "fireRisingLegacy", "waterSwirl", "airstream", "none"]
+            }
+        ]
     }
 }

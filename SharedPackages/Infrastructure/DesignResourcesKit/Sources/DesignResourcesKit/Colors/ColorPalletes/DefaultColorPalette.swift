@@ -120,6 +120,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Alert
     private static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
     private static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
+    private static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 
     // Destructive
     private static let destructivePrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed20)
@@ -202,6 +203,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accentGlowSecondary: return accentGlowSecondary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
+        case .shieldPrivacy: return shieldPrivacy
         case .border: return border
         case .textLink: return textLink
         case .textPlaceholder: return textPlaceholder

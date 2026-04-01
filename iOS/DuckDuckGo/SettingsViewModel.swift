@@ -55,6 +55,7 @@ final class SettingsViewModel: ObservableObject {
     let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     private let tabSwitcherSettings: TabSwitcherSettings
+    private let autoplaySettings: AutoplaySettings
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
@@ -304,6 +305,20 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
+            }
+        )
+    }
+
+    var autoplayBlockingModeBinding: Binding<AutoplayBlockingMode> {
+        Binding<AutoplayBlockingMode>(
+            get: {
+                self.state.autoplayBlockingMode
+            },
+            set: {
+                self.autoplaySettings.currentAutoplayBlockingMode = $0
+                self.state.autoplayBlockingMode = $0
+                Pixel.fire(pixel: .settingsAutoplayChanged,
+                          withAdditionalParameters: [PixelParameters.autoplayBlockingMode: $0.rawValue])
             }
         )
     }
@@ -713,12 +728,14 @@ final class SettingsViewModel: ObservableObject {
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
+        self.autoplaySettings = autoplaySettings
         self.legacyViewProvider = legacyViewProvider
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -811,7 +828,8 @@ extension SettingsViewModel {
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
             duckPlayerAutoplay: duckPlayerSettings.autoplay,
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
-            duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode
+            duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
+            autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode
         )
 
         // Subscribe to DuckPlayerSettings updates

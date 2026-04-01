@@ -446,7 +446,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             tabCollectionViewModel.select(at: selectionIndex)
         }
         if tabCollectionViewModel.selectionIndex == nil {
-            if tabCollectionViewModel.tabs.count > 0 {
+            if tabCollectionViewModel.tabCollection.tabs.count > 0 {
                 tabCollectionViewModel.select(at: .unpinned(0))
             } else {
                 tabCollectionViewModel.select(at: .pinned(0))
@@ -2370,7 +2370,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemBookmarkAllOpenTabsAction(_ tabBarViewItem: TabBarViewItem) {
-        let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
+        let websitesInfo = tabCollectionViewModel.tabCollection.loadedTabs.compactMap(WebsiteInfo.init)
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(
             websitesInfo: websitesInfo,
             bookmarkManager: bookmarkManager

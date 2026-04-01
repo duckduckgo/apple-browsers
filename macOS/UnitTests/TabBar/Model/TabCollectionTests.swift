@@ -59,7 +59,7 @@ final class TabCollectionTests: XCTestCase {
 
             tabCollection.insert(tab, at: -1)
             XCTAssertEqual(tabCollection.tabs.count, 0)
-            XCTAssertFalse(tabCollection.tabs.contains(where: { $0.tab === tab }))
+            XCTAssertFalse(tabCollection.contains(tab: tab))
         }
     }
 
@@ -90,11 +90,11 @@ final class TabCollectionTests: XCTestCase {
             let tab = Tab()
             tabCollection.append(tab: tab)
             XCTAssertEqual(tabCollection.tabs.count, 1)
-            XCTAssert(tabCollection.tabs.contains(where: { $0.tab === tab }))
+            XCTAssert(tabCollection.contains(tab: tab))
 
             XCTAssertFalse(tabCollection.removeTab(at: 1))
             XCTAssertEqual(tabCollection.tabs.count, 1)
-            XCTAssert(tabCollection.tabs.contains(where: { $0.tab === tab }))
+            XCTAssert(tabCollection.contains(tab: tab))
         }
     }
 

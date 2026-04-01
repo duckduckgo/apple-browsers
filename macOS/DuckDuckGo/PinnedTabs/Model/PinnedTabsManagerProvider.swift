@@ -137,7 +137,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
         switch pinnedTabsMode {
         case .separate:
             assert(windowControllersManager != nil, "windowControllersManager must be set")
-            return windowControllersManager?.allTabCollectionViewModels.first(where: { $0.tabs.contains(tab) || $0.pinnedTabs.contains(tab) })?.pinnedTabsManager
+            return windowControllersManager?.allTabCollectionViewModels.first(where: { $0.tabCollection.contains(tab: tab) || $0.pinnedTabsCollection?.contains(tab: tab) == true })?.pinnedTabsManager
         case .shared:
             return sharedPinnedTabsManager
         }

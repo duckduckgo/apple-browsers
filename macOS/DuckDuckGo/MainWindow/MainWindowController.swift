@@ -546,7 +546,7 @@ extension MainWindowController: NSWindowDelegate {
                 }
                 self.animateBurningIfNeededAndClose(window)
                 return
-            } else if self.mainViewController.tabCollectionViewModel.tabs.isEmpty {
+            } else if self.mainViewController.tabCollectionViewModel.tabCollection.tabs.isEmpty {
                 // reopen last closed tab if the window stays open
                 DispatchQueue.main.async {
                     self.mainViewController.browserTabViewController.openNewTab(with: .newtab)

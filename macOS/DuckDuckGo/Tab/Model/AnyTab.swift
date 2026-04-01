@@ -83,6 +83,11 @@ enum AnyTab: Identifiable {
         }
     }
 
+    var isSuspended: Bool {
+        if case .suspended = self { return true }
+        return false
+    }
+
     var isUrl: Bool { content.isExternalUrl }
     var url: URL? { content.urlForWebView }
 

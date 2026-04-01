@@ -287,14 +287,14 @@ final class TabCollectionViewModel: NSObject {
     @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
         shouldReturnToPreviousActiveTab = false
         let result = selectWithoutResettingState(at: index, forceChange: forceChange)
-        if result, let tab = tab(at: index), tab.isSuspended {
-            tab.resume()
+        if result, case .suspended = tab(at: index) {
+            materialize(at: index)
         }
         return result
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {
-        guard let index = tabCollection.tabs.firstIndex(where: { $0.tab === tab }) else {
+        guard let index = tabCollection.firstIndex(of: tab) else {
             return false
         }
 
@@ -647,19 +647,19 @@ final class TabCollectionViewModel: NSObject {
             return nil
         }
 
-        let recentlyOpenedPinnedTab = pinnedTabs.max(by: { $0.lastSelectedAt ?? Date.distantPast < $1.lastSelectedAt ?? Date.distantPast })
-        let recentlyOpenedNormalTab = tabs.max(by: { $0.lastSelectedAt ?? Date.distantPast < $1.lastSelectedAt ?? Date.distantPast })
+        let recentlyOpenedPinnedTab = (pinnedTabsCollection?.tabs ?? []).max(by: { $0.lastSelectedAt ?? Date.distantPast < $1.lastSelectedAt ?? Date.distantPast })
+        let recentlyOpenedNormalTab = tabCollection.tabs.max(by: { $0.lastSelectedAt ?? Date.distantPast < $1.lastSelectedAt ?? Date.distantPast })
 
         if let pinnedTab = recentlyOpenedPinnedTab, let normalTab = recentlyOpenedNormalTab {
             if pinnedTab.lastSelectedAt ?? Date.distantPast > normalTab.lastSelectedAt ?? Date.distantPast {
-                return indexInAllTabs(of: pinnedTab)
+                return indexInAllTabs(ofAnyTab: pinnedTab)
             } else {
-                return indexInAllTabs(of: normalTab)
+                return indexInAllTabs(ofAnyTab: normalTab)
             }
         } else if let pinnedTab = recentlyOpenedPinnedTab {
-            return indexInAllTabs(of: pinnedTab)
+            return indexInAllTabs(ofAnyTab: pinnedTab)
         } else if let normalTab = recentlyOpenedNormalTab {
-            return indexInAllTabs(of: normalTab)
+            return indexInAllTabs(ofAnyTab: normalTab)
         } else {
             return nil
         }
@@ -817,8 +817,8 @@ final class TabCollectionViewModel: NSObject {
             return
         }
         guard tabIndex != selectionIndex else { return }
-        guard oldTab.tabSuspension?.canBeSuspended == true else { return }
-        guard let suspendedTab = oldTab.makeSuspendedTab() else {
+        guard let loadedTab = oldTab.tab, loadedTab.tabSuspension?.canBeSuspended == true else { return }
+        guard let suspendedTab = loadedTab.makeSuspendedTab() else {
             return
         }
 
@@ -827,11 +827,7 @@ final class TabCollectionViewModel: NSObject {
 
     func resumeTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
-        guard let tab = tab(at: tabIndex) else {
-            Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
-            return
-        }
-        tab.resume()
+        materialize(at: tabIndex)
     }
 
     func title(forTabWithURL url: URL) -> String? {
@@ -974,10 +970,10 @@ extension TabCollectionViewModel {
     }
 
     func indexInAllTabs(of tab: Tab) -> TabIndex? {
-        if let index = pinnedTabsCollection?.tabs.firstIndex(where: { $0.tab === tab }) {
+        if let index = pinnedTabsCollection?.firstIndex(of: tab) {
             return .pinned(index)
         }
-        if let index = tabCollection.tabs.firstIndex(where: { $0.tab === tab }) {
+        if let index = tabCollection.firstIndex(of: tab) {
             return .unpinned(index)
         }
         return nil

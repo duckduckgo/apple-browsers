@@ -63,6 +63,14 @@ final class TabCollection: NSObject {
         tabs.contains { $0.uuid == uuid }
     }
 
+    func contains(tab: Tab) -> Bool {
+        tabs.contains(where: { $0.tab === tab })
+    }
+
+    func firstIndex(of tab: Tab) -> Int? {
+        tabs.firstIndex(where: { $0.tab === tab })
+    }
+
     // MARK: - Append / Insert (Tab convenience wrappers)
 
     func append(tab: Tab) {

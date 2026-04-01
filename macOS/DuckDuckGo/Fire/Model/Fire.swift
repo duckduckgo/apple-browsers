@@ -734,7 +734,7 @@ final class Fire: FireProtocol {
         // If closing all Tabs/Windows: Insert a new (Regular) tab to prevent window closing:
         guard !visualizeFireAnimationDecider.isOpenFireWindowByDefaultEnabled,
               !windowController.mainViewController.isBurner,
-              windowController.mainViewController.tabCollectionViewModel.pinnedTabs.isEmpty,
+              windowController.mainViewController.tabCollectionViewModel.pinnedTabsCollection?.tabs.isEmpty != false,
               windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner }) === windowController,
               // don‘t keep an open window for inactive app
               self.isAppActiveProvider() else { return nil }
@@ -968,7 +968,7 @@ final class Fire: FireProtocol {
         var firstError: Error?
 
         func selectPinnedTabIfNeeded(in tabCollectionViewModel: TabCollectionViewModel) {
-            if !tabCollectionViewModel.pinnedTabs.isEmpty {
+            if tabCollectionViewModel.pinnedTabsCollection?.tabs.isEmpty == false {
                 tabCollectionViewModel.select(at: .pinned(0), forceChange: true)
             }
         }
@@ -984,6 +984,10 @@ final class Fire: FireProtocol {
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
             }
             return .success(())
+        }
+
+        func replacementPinnedTab(from tab: Tab) -> Tab {
+            Tab(content: tab.content.loadedFromCache(), shouldLoadInBackground: true)
         }
 
         func closeFloatingAIChatWindows(for tabIDs: [TabIdentifier]) {

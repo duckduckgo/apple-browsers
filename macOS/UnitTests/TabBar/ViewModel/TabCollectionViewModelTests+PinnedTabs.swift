@@ -332,7 +332,7 @@ extension TabCollectionViewModelTests {
 
         _ = tabCollectionViewModel.removeSelected()
 
-        XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.tabs.contains(where: { $0.tab === selectedTab }))
+        XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.contains(tab: selectedTab))
     }
 
     // MARK: - Duplicate

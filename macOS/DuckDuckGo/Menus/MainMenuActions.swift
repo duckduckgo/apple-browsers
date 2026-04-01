@@ -1405,7 +1405,7 @@ extension MainViewController {
     }
 
     @objc func bookmarkAllOpenTabs(_ sender: Any) {
-        let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
+        let websitesInfo = tabCollectionViewModel.tabCollection.loadedTabs.compactMap(WebsiteInfo.init)
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo, bookmarkManager: bookmarkManager).show()
     }
 

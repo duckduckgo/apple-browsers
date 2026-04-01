@@ -78,6 +78,10 @@ final class SuspendedTabViewModel: TabBarViewModel, TabDataClearing {
     }
     private let _renderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
 
+    var isSuspended: Bool { true }
+    var isSuspendedPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
+    var canBeSuspended: Bool { false }
+
     // MARK: - TabDataClearing
 
     /// Suspended tabs have no webView — signal completion immediately to prevent

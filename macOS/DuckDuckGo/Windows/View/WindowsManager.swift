@@ -50,7 +50,7 @@ final class WindowsManager {
     private class func findPositioningSourceWindow(for tab: Tab?) -> NSWindow? {
         if let parentTab = tab?.parentTab,
            let sourceWindowController = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
-               $0.mainViewController.tabCollectionViewModel.tabs.contains(parentTab)
+               $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: parentTab)
            }) {
             // window that initiated the new window opening
             return sourceWindowController.window
@@ -103,7 +103,7 @@ final class WindowsManager {
 
         if let droppingPoint {
             mainWindowController.window?.setFrameOrigin(droppingPoint: droppingPoint)
-        } else if let sourceWindow = self.findPositioningSourceWindow(for: tabCollectionViewModel?.tabs.first) {
+        } else if let sourceWindow = self.findPositioningSourceWindow(for: tabCollectionViewModel?.tabCollection.tabs.first?.tab) {
             mainWindowController.window?.setFrameOrigin(cascadedFrom: sourceWindow)
         }
 

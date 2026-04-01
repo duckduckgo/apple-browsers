@@ -66,7 +66,7 @@ final class PinnedTabsManager {
     }
 
     func isTabPinned(_ tab: Tab) -> Bool {
-        tabCollection.tabs.contains { $0.tab === tab }
+        tabCollection.contains(tab: tab)
     }
 
     func tabViewModel(at index: Int) -> TabViewModel? {

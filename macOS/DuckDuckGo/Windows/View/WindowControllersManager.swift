@@ -175,8 +175,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
             isInInitialState = mainWindowControllers.isEmpty ||
             (
                 mainWindowControllers.count == 1 &&
-                mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabs.count == 1 &&
-                mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabs.first?.content == .newtab &&
+                mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabCollection.tabs.count == 1 &&
+                mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabCollection.tabs.first?.content == .newtab &&
                 pinnedTabsManagerProvider.arePinnedTabsEmpty
             )
         }
@@ -331,7 +331,7 @@ extension WindowControllersManager {
                     tabCollectionViewModel.remove(at: selectionIndex)
 
                     // close the window if no more non-pinned tabs are open
-                    if tabCollectionViewModel.tabs.isEmpty, let window = windowController.window, window.isVisible,
+                    if tabCollectionViewModel.tabCollection.tabs.isEmpty, let window = windowController.window, window.isVisible,
                        mainWindowController?.mainViewController.tabCollectionViewModel.selectedTabIndex?.isPinnedTab != true {
                         window.close()
                     }
@@ -444,7 +444,7 @@ extension WindowControllersManager {
 
     /// Returns the window controller containing the given tab.
     private func windowController(containing tab: Tab) -> MainWindowController? {
-        return mainWindowControllers.first(where: { $0.mainViewController.tabCollectionViewModel.tabs.contains(tab) })
+        return mainWindowControllers.first(where: { $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab) })
     }
 
     /// Returns the window controller for opening a tab from the given originating window controller and opener tab.
@@ -605,7 +605,7 @@ extension WindowControllersManagerProtocol {
 
     func windowController(for tab: Tab) -> MainWindowController? {
         return mainWindowControllers.first(where: {
-            $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.contains(where: { $0.tab === tab })
+            $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab)
         })
     }
 

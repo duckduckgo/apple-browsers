@@ -233,6 +233,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
+            Logger.aiChat.debug("UserScripts: Registered duckAiNativeStorage subfeature with contentScopeUserScriptIsolated")
+        } else {
+            Logger.aiChat.error("UserScripts: duckAiNativeStorageUserScript is nil — not registered")
         }
 
         if let specialPages = specialPages {

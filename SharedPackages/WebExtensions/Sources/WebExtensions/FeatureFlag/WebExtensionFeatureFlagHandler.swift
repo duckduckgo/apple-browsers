@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 
 /// Handles feature flag changes for web extensions.
@@ -134,11 +135,9 @@ public final class WebExtensionFeatureFlagHandler {
         isWebExtensionsFlagEnabled = false
         webExtensionsEnableTask?.cancel()
         webExtensionsEnableTask = nil
-        let provider = webExtensionManagerProvider
-        let onDisabled = onFeatureFlagDisabled
-        Task { @MainActor in
-            provider()?.uninstallAllExtensions()
-            onDisabled()
+        MainActor.assumeMainThread {
+            webExtensionManagerProvider()?.uninstallAllExtensions()
+            onFeatureFlagDisabled()
         }
     }
 
@@ -156,9 +155,8 @@ public final class WebExtensionFeatureFlagHandler {
         isEmbeddedExtensionFlagEnabled = false
         embeddedExtensionEnableTask?.cancel()
         embeddedExtensionEnableTask = nil
-        let provider = webExtensionManagerProvider
-        Task { @MainActor in
-            provider()?.uninstallEmbeddedExtension(type: .embedded)
+        MainActor.assumeMainThread {
+            webExtensionManagerProvider()?.uninstallEmbeddedExtension(type: .embedded)
         }
     }
 }

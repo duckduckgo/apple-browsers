@@ -48,5 +48,23 @@
                 "enum": ["select", "insert", "move", "remove", "removeTabs"]
             }
         ]
+    },
+    "m_pixel_fire_suppressed_storage_error": {
+        "description": "Fired when a daily or unique pixel is suppressed because the storage write for its last-fire date failed. Indicates a broken pixel store that would otherwise cause repeated firing.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": [["platform", "form_factor"]],
+        "parameters": [
+            "appVersion",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "suppressedPixel",
+                "type": "string",
+                "description": "The name of the pixel that was suppressed due to the storage write failure"
+            }
+        ]
     }
 }

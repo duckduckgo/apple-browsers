@@ -71,12 +71,19 @@ public final class DailyPixel {
         }
 
         if !hasBeenFiredToday(forKey: key, dailyPixelStore: dailyPixelStore) {
-            pixelFiring.fire(pixel: pixel,
-                             error: error,
-                             includedParameters: includedParameters,
-                             withAdditionalParameters: params,
-                             onComplete: onComplete)
-            updatePixelLastFireDate(forKey: key, dailyPixelStore: dailyPixelStore)
+            do {
+                try updatePixelLastFireDate(forKey: key, dailyPixelStore: dailyPixelStore)
+                pixelFiring.fire(pixel: pixel,
+                                 error: error,
+                                 includedParameters: includedParameters,
+                                 withAdditionalParameters: params,
+                                 onComplete: onComplete)
+            } catch let storageError {
+                Pixel.fire(pixel: .pixelFireSuppressedStorageError,
+                           error: storageError,
+                           withAdditionalParameters: ["suppressedPixel": pixel.name])
+                onComplete(Error.alreadyFired)
+            }
         } else {
             onComplete(Error.alreadyFired)
         }
@@ -97,16 +104,23 @@ public final class DailyPixel {
         let key: String = pixel.name
 
         if !hasBeenFiredToday(forKey: key, dailyPixelStore: dailyPixelStore) {
-            pixelFiring.fire(
-                pixelNamed: pixel.name + pixelNameSuffixes.dailySuffix,
-                withAdditionalParameters: params,
-                includedParameters: includedParameters,
-                onComplete: onDailyComplete
-            )
+            do {
+                try updatePixelLastFireDate(forKey: key, dailyPixelStore: dailyPixelStore)
+                pixelFiring.fire(
+                    pixelNamed: pixel.name + pixelNameSuffixes.dailySuffix,
+                    withAdditionalParameters: params,
+                    includedParameters: includedParameters,
+                    onComplete: onDailyComplete
+                )
+            } catch let storageError {
+                Pixel.fire(pixel: .pixelFireSuppressedStorageError,
+                           error: storageError,
+                           withAdditionalParameters: ["suppressedPixel": pixel.name])
+                onDailyComplete(Error.alreadyFired)
+            }
         } else {
             onDailyComplete(Error.alreadyFired)
         }
-        updatePixelLastFireDate(forKey: key, dailyPixelStore: dailyPixelStore)
         var newParams = params
         if let error {
             newParams.appendErrorPixelParams(error: error)
@@ -119,10 +133,8 @@ public final class DailyPixel {
         )
     }
 
-    /// Write failures are intentionally ignored here. If the write fails, `hasBeenFiredToday` will
-    /// defensively return `true` on read failure, suppressing the pixel rather than firing repeatedly.
-    private static func updatePixelLastFireDate(forKey key: String, dailyPixelStore: ThrowingKeyValueStoring) {
-        try? dailyPixelStore.set(Date(), forKey: key)
+    private static func updatePixelLastFireDate(forKey key: String, dailyPixelStore: ThrowingKeyValueStoring) throws {
+        try dailyPixelStore.set(Date(), forKey: key)
     }
 
     private static func hasBeenFiredToday(forKey key: String, dailyPixelStore: ThrowingKeyValueStoring) -> Bool {

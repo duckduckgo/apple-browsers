@@ -354,8 +354,13 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d")
         if !pixelHasBeenFiredEver(pixelName) {
-            fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyInitial, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyInitial, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName, frequency: .legacyInitial, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .legacyInitial, parameters: newParams, skipped: true)
         }
@@ -373,8 +378,13 @@ public final class PixelKit {
             return
         }
         if !pixelHasBeenFiredEver(pixelName) {
-            fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByName, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByName, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName, frequency: .uniqueByName, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .uniqueByName, parameters: newParams, skipped: true)
         }
@@ -387,8 +397,13 @@ public final class PixelKit {
                                                  _ onComplete: @escaping CompletionBlock) {
         let pixelNameAndParams = pixelName + newParams.toString()
         if !pixelHasBeenFiredEver(pixelNameAndParams) {
-            fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByNameAndParameters, onComplete)
-            updatePixelLastFireDate(pixelName: pixelNameAndParams)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelNameAndParams)
+                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByNameAndParameters, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName, frequency: .uniqueByNameAndParameters, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .uniqueByNameAndParameters, parameters: newParams, skipped: true)
         }
@@ -402,8 +417,13 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_daily") // Because is added automatically
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .daily, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .daily, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName + "_daily", frequency: .daily, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .daily, parameters: newParams, skipped: true)
         }
@@ -417,8 +437,13 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d")
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyNoSuffix, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyNoSuffix, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName, frequency: .legacyDailyNoSuffix, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .legacyDailyNoSuffix, parameters: newParams, skipped: true)
         }
@@ -462,8 +487,13 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d") // Because is added automatically
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
         }
@@ -478,8 +508,13 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_d") // Because is added automatically
         reportErrorIf(pixel: pixelName, endsWith: "_c") // Because is added automatically
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDailyAndCount, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDailyAndCount, parameters: newParams, skipped: true)
         }
@@ -496,8 +531,13 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_daily") // Because is added automatically
         reportErrorIf(pixel: pixelName, endsWith: "_count") // Because is added automatically
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
         }
@@ -513,8 +553,13 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_daily") // Because is added automatically
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+            }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
         }
@@ -665,10 +710,33 @@ public final class PixelKit {
         pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix))
     }
 
-    /// Write failures are intentionally ignored here. If the write fails, `pixelHasBeenFiredToday`
-    /// defensively returns `true` on read failure, suppressing the pixel rather than firing repeatedly.
-    private func updatePixelLastFireDate(pixelName: String) {
-        try? defaults.set(dateGenerator(), forKey: userDefaultsKeyName(forPixelName: pixelName))
+    private func updatePixelLastFireDate(pixelName: String) throws {
+        try defaults.set(dateGenerator(), forKey: userDefaultsKeyName(forPixelName: pixelName))
+    }
+
+    private func fireStorageWriteErrorPixel(suppressedPixelName: String, error: Error) {
+        let platformSuffix: String
+        switch source {
+        case Source.iOS.rawValue:
+            platformSuffix = "_ios_phone"
+        case Source.iPadOS.rawValue:
+            platformSuffix = "_ios_tablet"
+        default:
+            platformSuffix = "_macos"
+        }
+
+        var params: [String: String] = ["suppressedPixel": suppressedPixelName]
+        params.appendErrorPixelParams(error: error as NSError)
+
+        fireRequestWrapper(
+            "m_pixel_fire_suppressed_storage_error" + platformSuffix,
+            defaultHeaders,
+            params,
+            nil,
+            true,
+            .standard,
+            { _, _ in }
+        )
     }
 
     private func pixelHasBeenFiredToday(_ name: String) -> Bool {

@@ -61,8 +61,15 @@ public final class UniquePixel {
         }
 
         if !pixel.hasBeenFiredEver(uniquePixelStorage: storage) {
-            Pixel.fire(pixel: pixel, withAdditionalParameters: params, includedParameters: includedParameters, onComplete: onComplete)
-            try? storage.set(Date(), forKey: pixel.name)
+            do {
+                try storage.set(Date(), forKey: pixel.name)
+                Pixel.fire(pixel: pixel, withAdditionalParameters: params, includedParameters: includedParameters, onComplete: onComplete)
+            } catch let storageError {
+                Pixel.fire(pixel: .pixelFireSuppressedStorageError,
+                           error: storageError,
+                           withAdditionalParameters: ["suppressedPixel": pixel.name])
+                onComplete(Error.alreadyFired)
+            }
         } else {
             onComplete(Error.alreadyFired)
         }

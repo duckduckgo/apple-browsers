@@ -178,6 +178,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case semaphoreAlwaysVisible
 
+    /// Autoplay policy control via WKWebpagePreferences
+    case autoplayPolicy
+
     case tabAnimations
 
     /// Enables lazy reload for the more options menu

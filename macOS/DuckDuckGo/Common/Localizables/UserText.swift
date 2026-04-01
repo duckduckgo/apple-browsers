@@ -1121,6 +1121,8 @@ struct UserText {
     static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload for changes to take effect", comment: "Message shown in permission center when permissions have been changed and reload is needed")
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")
 
+    static let permissionAutoplay = NSLocalizedString("permission.autoplay", value: "Autoplay", comment: "Display name for the autoplay permission type in Permission Center")
+
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
     static let settings = NSLocalizedString("settings", value: "Settings", comment: "Menu item for opening settings")

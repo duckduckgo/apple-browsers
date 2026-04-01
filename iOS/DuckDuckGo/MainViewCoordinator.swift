@@ -156,7 +156,6 @@ class MainViewCoordinator {
         }
 
         navigationBarContainer.isHidden = false
-        constraints.navigationBarContainerBottom.constant = 0
 
         if isNavigationChromeHidden {
             setContentContainerBottomAnchorMode(.unifiedToggleInput)

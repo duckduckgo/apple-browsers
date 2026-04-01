@@ -344,7 +344,7 @@ final class AddressBarViewController: NSViewController {
             addressBarTextField.customToggleControl = searchModeToggleControl
         }
 
-        addressBarTextField.aiChatTogglePopoverCoordinator = addressBarButtonsViewController?.aiChatTogglePopoverCoordinator
+
     }
 
     override func viewWillDisappear() {

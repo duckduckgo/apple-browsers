@@ -92,7 +92,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         let policy = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
 
         XCTAssertNil(policy, "Policy should be .next (nil) to pass to the next responder")
-        XCTAssertEqual(prefs.autoplayPolicy, .default, "Preferences should not be modified when feature flag is off")
+        XCTAssertNil(prefs.autoplayPolicy, "Preferences should not be modified when feature flag is off")
         XCTAssertFalse(prefs.mustApplyAutoplayPolicy, "mustApplyAutoplayPolicy should be false when feature flag is off")
     }
 
@@ -194,6 +194,46 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
 
         XCTAssertTrue(prefs.mustApplyAutoplayPolicy)
+    }
+
+    // MARK: - Non-HTTP URLs fall back to global default
+
+    func testWhenURLIsFileThenAutoplayPolicyIsNotApplied() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        mockPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "file:///tmp/page.html")!), preferences: &prefs)
+
+        XCTAssertNil(prefs.autoplayPolicy, "file:// URLs should not have an autoplay policy set")
+        XCTAssertFalse(prefs.mustApplyAutoplayPolicy, "file:// URLs should not apply autoplay policy")
+    }
+
+    func testWhenURLIsAboutBlankThenAutoplayPolicyIsNotApplied() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "about:blank")!), preferences: &prefs)
+
+        XCTAssertNil(prefs.autoplayPolicy, "about:blank should not have an autoplay policy set")
+        XCTAssertFalse(prefs.mustApplyAutoplayPolicy, "about:blank should not apply autoplay policy")
+    }
+
+    // MARK: - Per-site isolation (override for domain A does not leak to domain B)
+
+    func testWhenPerSiteOverrideExistsForDifferentDomainThenFallsBackToGlobalDefault() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.blockAudio.rawValue
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        mockPermissionManager.setPermission(.allow, forDomain: "other.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .allowWithoutSound, "Per-site override for other.com should not affect example.com")
     }
 
     // MARK: - Return value

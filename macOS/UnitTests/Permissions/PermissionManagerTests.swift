@@ -296,6 +296,15 @@ extension PermissionManagerTests {
         let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
         XCTAssertEqual(result, .deny)
     }
+
+    func testAutoplayPolicyPermissionCanBeSetToAsk() {
+        store.permissions = []
+
+        manager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .ask)
+    }
 }
 
 fileprivate extension PermissionEntity {

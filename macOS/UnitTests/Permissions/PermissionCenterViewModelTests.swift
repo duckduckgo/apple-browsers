@@ -314,6 +314,49 @@ final class PermissionCenterViewModelTests: XCTestCase {
         }
     }
 
+    func testWhenSetAutoplayDecisionWithSameValueAlreadyPersistedThenNoOp() {
+        mockPermissionManager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
+        mockPermissionManager.setPermissionCalls.removeAll()
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.setAutoplayDecision(.blockAll)
+
+        XCTAssertTrue(mockPermissionManager.setPermissionCalls.isEmpty, "Should not re-persist when value and persisted state are unchanged")
+        XCTAssertFalse(viewModel.showReloadBanner, "Reload banner should not show when nothing changed")
+    }
+
+    func testWhenSetAutoplayDecisionWithSameValueButNotPersistedThenPersists() {
+        // mockPermissionManager has no persisted autoplay permission.
+        // Its default return from permission(forDomain:permissionType:) is .ask,
+        // which matches .audioMuted's permissionDecision.
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.setAutoplayDecision(.audioMuted)
+
+        XCTAssertEqual(mockPermissionManager.permission(forDomain: "example.com", permissionType: .autoplayPolicy), .ask,
+                       "Should persist the decision even when it matches the default value")
+        XCTAssertTrue(viewModel.showReloadBanner, "Reload banner should show for a newly persisted override")
+    }
+
     func testWhenSetAutoplayDecisionThenReloadBannerIsShown() {
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",

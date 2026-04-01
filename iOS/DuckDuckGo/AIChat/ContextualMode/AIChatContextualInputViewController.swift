@@ -268,7 +268,7 @@ private extension AIChatContextualInputViewController {
 
     func configureWelcomeLabel() {
         let font = UIFont(name: "DuckSansDisplay-Medium", size: 25) ?? UIFont.daxTitle2()
-        let privatelyColor = UIColor(red: 0x11 / 255.0, green: 0x60 / 255.0, blue: 0x4D / 255.0, alpha: 1.0)
+        let privatelyColor = UIColor(designSystemColor: .shieldPrivacy)
 
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center

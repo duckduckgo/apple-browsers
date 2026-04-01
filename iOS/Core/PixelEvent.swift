@@ -1289,6 +1289,8 @@ extension Pixel {
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
         case settingsWhatsNewOpen
+        case settingsAutoplayOpen
+        case settingsAutoplayChanged
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1462,6 +1464,7 @@ extension Pixel {
         case aiChatSettingsDisabled
         case aiChatSettingsAutoContextEnabled
         case aiChatSettingsAutoContextDisabled
+        case aiChatSettingsDefaultTogglePositionChanged
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -1803,6 +1806,8 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
+        case .settingsAutoplayOpen: return "m_settings_autoplay_open"
+        case .settingsAutoplayChanged: return "m_settings_autoplay_changed"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -3035,6 +3040,7 @@ extension Pixel.Event {
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
         case .aiChatSettingsAutoContextEnabled: return "m_aichat_settings_auto_context_enabled"
         case .aiChatSettingsAutoContextDisabled: return "m_aichat_settings_auto_context_disabled"
+        case .aiChatSettingsDefaultTogglePositionChanged: return "m_aichat_settings_default_toggle_position_changed"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 

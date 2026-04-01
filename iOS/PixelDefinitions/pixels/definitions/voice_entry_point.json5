@@ -11,7 +11,15 @@
                 "key": "source",
                 "type": "string",
                 "description": "The entry point source where the user tapped the voice button",
-                "enum": ["ntp", "toolbar", "address_bar", "control_center", "widget", "siri"]
+                "enum": [
+                    "ntp",
+                    "toolbar",
+                    "address_bar",
+                    "widget.controlcenter",
+                    "widget.lockscreen.complication",
+                    "widget.quickactions",
+                    "siri"
+                ]
             }
         ]
     },

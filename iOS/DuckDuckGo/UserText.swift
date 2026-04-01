@@ -456,6 +456,14 @@ public struct UserText {
     public static let fireButtonAnimationAirstreamName = NSLocalizedString("fireButtonAnimation.airstream.name", value: "Airstream", comment: "")
     public static let fireButtonAnimationNoneName = NSLocalizedString("fireButtonAnimation.none.name", value: "None", comment: "")
 
+    public static let autoplayModeAllowAll = NSLocalizedString("autoplay.mode.allowAll", value: "Allow Audio and Video", comment: "Settings option for allowing all media to autoplay")
+    public static let autoplayModeBlockAudio = NSLocalizedString("autoplay.mode.blockAudio", value: "Block Audio", comment: "Settings option for blocking audio autoplay while allowing muted video")
+    public static let autoplayModeBlockAll = NSLocalizedString("autoplay.mode.blockAll", value: "Block Audio and Video", comment: "Settings option for blocking all media autoplay")
+    public static let settingsAutoplayLabel = NSLocalizedString("settings.autoplay", value: "Autoplay", comment: "Settings label for the autoplay settings screen")
+    public static let settingsAutoplayFooter = NSLocalizedString("settings.autoplay.footer", value: "Autoplay settings will only apply to newly opened tabs. Changes cannot be applied to existing tabs unless the application is restarted. To manage autoplay in Duck Player, go to ", comment: "Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings")
+    public static let settingsAutoplayDuckPlayerLink = NSLocalizedString("settings.autoplay.duck.player.link", value: "Duck Player Settings", comment: "Link text in the autoplay settings footer that navigates to Duck Player settings")
+    public static let settingsMediaSection = NSLocalizedString("settings.media.section", value: "Media", comment: "Header for the media section in general settings")
+
     public static let webJSAlertOKButton = NSLocalizedString("webJSAlert.OK.button", value: "OK", comment: "OK button for JavaScript alerts")
     public static let webJSAlertCancelButton = NSLocalizedString("webJSAlert.cancel.button", value: "Cancel", comment: "Cancel button for JavaScript alerts")
     public static let webJSAlertWebsiteMessageFormat = NSLocalizedString("webJSAlert.website-message.format", value: "A message from %@:", comment: "Alert title explaining the message is shown by a website")
@@ -1988,7 +1996,7 @@ public struct UserText {
     public static let duckPlayerYoutubeFooter = NSLocalizedString("duckplayer.settings.youtube.footer", value: "Clicking on YouTube videos when browsing YouTube.com will open in Duck Player.", comment: "Footer text explaining the YouTube.com option in Duck Player settings")
     public static let duckPlayerYoutubeLabel = NSLocalizedString("duckplayer.settings.youtube.label", value: "YouTube.com", comment: "Label for the YouTube.com option in Duck Player settings")
     public static let duckPlayerAutoplayFooter = NSLocalizedString("duckplayer.settings.autoplay.footer", value: "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.", comment: "Footer text explaining the auto-play toggle in Duck Player settings")
-    public static let duckPlayerAutoplayLabel = NSLocalizedString("duckplayer.settings.autoplay.label", value: "Auto-play videos", comment: "Label for the auto-play toggle in Duck Player settings")
+    public static let duckPlayerAutoplayLabel = NSLocalizedString("duckplayer.settings.autoplay.label", value: "Autoplay Videos", comment: "Label for the autoplay toggle in Duck Player settings")
     public static let duckPlayerExperimentalLabel = NSLocalizedString("duckplayer.settings.experimental.label", value: "Experimental", comment: "Label for the experimental section in Duck Player settings")
     public static let duckPlayerVariantLabel = NSLocalizedString("duckplayer.settings.variant.label", value: "Duck Player Variant", comment: "Label for the Duck Player variant picker in Duck Player settings")
     public static let duckPlayerTabAlertTitle = NSLocalizedString("duckplayer.settings.tab.alert.title", value: "Important!", comment: "Title for the alert when changing Duck Player variant")
@@ -2072,7 +2080,37 @@ public struct UserText {
     public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
     
     public static let aiChatSettingsBrowserShortcutsSectionTitle = NSLocalizedString("duckai.settings.browserShortcuts.section.title", value: "Browser shortcuts", comment: "Title for section that groups shortcuts related to browser")
-    
+
+    // MARK: - Duck.ai Shortcut Promo Screens
+
+    public static let duckAIShortcutsSectionHeader = NotLocalizedString("duckai.shortcuts.section.header", value: "Shortcuts", comment: "Section header for Duck.ai shortcuts in AI Chat settings")
+
+    public static let duckAISettingsAddWidget = NotLocalizedString("duckai.settings.add.widget", value: "Add Duck.ai Widget to Home Screen", comment: "AI Chat settings row for adding the Duck.ai widget to home screen")
+
+    public static let duckAISettingsAddControlCenterWidget = NotLocalizedString("duckai.settings.add.control-center.widget", value: "Add Duck.ai to Control Center", comment: "AI Chat settings row for adding Duck.ai to Control Center")
+
+    public static let duckAISettingsControlWithSiri = NotLocalizedString("duckai.settings.control.with.siri", value: "Talk with Duck.ai via Siri", comment: "AI Chat settings row for learning how to talk with Duck.ai via Siri")
+
+    public static let settingsAddDuckAIWidget = NotLocalizedString("settings.add.widget.duckai", value: "Add Duck.ai Shortcuts to Your Home Screen", comment: "Title for the Duck.ai widget education screen")
+
+    public static let addDuckAIWidgetSettingsThirdParagraph = NotLocalizedString("duckai.addWidget.settings.thirdParagraph", value: "Find and select **DuckDuckGo**, then swipe to **Custom Shortcuts** and select **Add Widget**", comment: "Third paragraph of the Duck.ai widget education screen")
+
+    public static let addDuckAIWidgetSettingsFourthParagraph = NotLocalizedString("duckai.addWidget.settings.fourthParagraph", value: "Tap the widget to edit it, then set **Duck.ai** and **Duck.ai Voice** as your shortcuts", comment: "Fourth paragraph of the Duck.ai widget education screen")
+
+    public static let controlCenterDuckAIWidgetEducationNavBarTitle = NotLocalizedString("duckai.control.center.education.navBar.title", value: "Add Duck.ai Voice Shortcut to Your Control Center", comment: "Navigation bar title for Duck.ai Control Center education screen")
+
+    public static let controlCenterDuckAIWidgetEducationParagraph = NotLocalizedString("control.center.duckai.widget.education.paragraph", value: "Find **DuckDuckGo** in the list, then tap **Duck.ai Voice** to add it", comment: "Fourth paragraph of the Control Center Duck.ai Widget Education screen")
+
+    public static let duckAISiriEducationScreenTitle = NotLocalizedString("duckai.siri.education.screen.title", value: "Talk with Duck.ai using Siri!", comment: "Title for the Duck.ai Siri education screen")
+
+    public static let duckAISiriEducationScreenDescription = NotLocalizedString("duckai.siri.education.screen.description", value: "Siri Shortcuts let you start a Duck.ai voice chat with a quick voice command, like \"Siri, start DuckDuckGo Voice Chat\". It's a fast, hands-free way to chat with Duck.ai.", comment: "Description for the Duck.ai Siri education screen")
+
+    public static let duckAISiriEducationScreenExample1 = NotLocalizedString("duckai.siri.education.screen.example1", value: "Siri, start DuckDuckGo Voice Chat.", comment: "Duck.ai Siri education screen example command 1")
+
+    public static let duckAISiriEducationScreenExample2 = NotLocalizedString("duckai.siri.education.screen.example2", value: "Siri, talk to DuckDuckGo.", comment: "Duck.ai Siri education screen example command 2")
+
+    public static let duckAISiriEducationScreenExample3 = NotLocalizedString("duckai.siri.education.screen.example3", value: "Siri, voice chat with DuckDuckGo.", comment: "Duck.ai Siri education screen example command 3")
+
     public static let aiChatSettingsAllowFollowUpQuestionsSectionTitle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.title", value: "Search shortcuts", comment: "Title for section that groups settings related to search results")
     
     public static let aiChatSettingsAllowFollowUpQuestionsToggle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.toggle", value: "Ask Follow-Up Questions", comment: "Toggle text to enable/disable Duck.ai to ask follow-up questions")
@@ -2116,6 +2154,12 @@ public struct UserText {
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
     public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
+
+    // MARK: - Default Omnibar Mode Setting
+    public static let settingsDefaultOmnibarModeHeader = NSLocalizedString("settings.default.omnibar.mode.header", value: "New Tab Toggle Position", comment: "Label for the default omnibar toggle position picker in AI Features settings")
+    public static let settingsDefaultOmnibarModeSearch = NSLocalizedString("settings.default.omnibar.mode.search", value: "Search", comment: "Option to always default the omnibar toggle to Search")
+    public static let settingsDefaultOmnibarModeDuckAI = NSLocalizedString("settings.default.omnibar.mode.duckai", value: "Duck.ai", comment: "Option to always default the omnibar toggle to Duck.ai")
+    public static let settingsDefaultOmnibarModeLastUsed = NSLocalizedString("settings.default.omnibar.mode.last.used", value: "Last Used", comment: "Option to remember the last used omnibar toggle position")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

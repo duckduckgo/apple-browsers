@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Que voulez-vous importer ?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Autoriser l'audio et la vidéo";
+"autoplay.mode.blockAll" = "Bloquer le son et la vidéo";
+"autoplay.mode.blockAudio" = "Bloquer le son";
+"settings.autoplay" = "Lecture automatique";
+"settings.autoplay.duck.player.link" = "Paramètres de Duck Player";
+"settings.autoplay.footer" = "Les paramètres de lecture automatique ne s'appliqueront qu'aux nouveaux onglets ouverts. Les modifications ne peuvent pas être appliquées aux onglets existants, à moins que l'application ne soit redémarrée. Pour gérer la lecture automatique dans Duck Player, allez dans ";
+"settings.media.section" = "Médias";

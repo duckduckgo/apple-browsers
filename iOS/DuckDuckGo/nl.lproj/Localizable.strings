@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Audio en video toestaan";
+"autoplay.mode.blockAll" = "Audio en video blokkeren";
+"autoplay.mode.blockAudio" = "Audio blokkeren";
+"settings.autoplay" = "Automatisch afspelen";
+"settings.autoplay.duck.player.link" = "Duck Player-instellingen";
+"settings.autoplay.footer" = "Autoplay-instellingen gelden alleen voor nieuw geopende tabbladen. Wijzigingen kunnen niet worden toegepast op bestaande tabbladen, tenzij de applicatie opnieuw wordt opgestart. Ga om de automatische afspeelfunctie in Duck Player te beheren naar ";
+"settings.media.section" = "Media";

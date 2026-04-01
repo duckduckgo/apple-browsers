@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Ses ve Videoya İzin Ver";
+"autoplay.mode.blockAll" = "Ses ve Videoyu Engelle";
+"autoplay.mode.blockAudio" = "Sesi Engelle";
+"settings.autoplay" = "Otomatik Oynatma";
+"settings.autoplay.duck.player.link" = "Duck Player Ayarları";
+"settings.autoplay.footer" = "Otomatik oynatma ayarları yalnızca yeni açılan sekmeler için geçerli olur. Uygulama yeniden başlatılmadığı sürece değişiklikler mevcut sekmelere uygulanamaz. Duck Player'da otomatik oynatma özelliğini yönetmek için şu adrese gidin: ";
+"settings.media.section" = "Medya";

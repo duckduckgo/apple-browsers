@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Cosa vuoi importare?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Consenti l'audio e il video";
+"autoplay.mode.blockAll" = "Blocca audio e video";
+"autoplay.mode.blockAudio" = "Blocca audio";
+"settings.autoplay" = "Riproduzione automatica";
+"settings.autoplay.duck.player.link" = "Impostazioni Duck Player";
+"settings.autoplay.footer" = "Le impostazioni di riproduzione automatica si applicheranno solo alle schede appena aperte. Le modifiche non possono essere applicate alle schede esistenti a meno che l'applicazione non venga riavviata. Per gestire la riproduzione automatica in Duck Player, vai su ";
+"settings.media.section" = "Media";

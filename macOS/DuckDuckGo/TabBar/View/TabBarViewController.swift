@@ -1653,6 +1653,16 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         appendToCollectionView(selected: selected)
     }
 
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {
+        let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
+        guard let collectionView else {
+            Logger.general.error("collection view is nil")
+            return
+        }
+        let indexPathSet = Set(arrayLiteral: IndexPath(item: index.item))
+        collectionView.reloadItems(at: indexPathSet)
+    }
+
     func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool) {
         let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
         guard let collectionView else {
@@ -2550,6 +2560,25 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         removeFireproofing(from: tab)
+    }
+
+    func tabBarViewItemSuspendAction(_ tabBarViewItem: TabBarViewItem) {
+        guard featureFlagger.isFeatureOn(.tabSuspension), featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
+
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        if tabBarViewItem.tabViewModel?.isSuspended == true {
+            tabCollectionViewModel.resumeTab(at: tabIndex)
+        } else {
+            tabCollectionViewModel.suspendTab(at: tabIndex)
+        }
     }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {

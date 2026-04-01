@@ -35,6 +35,7 @@ enum ControlWidgetKind: String, Codable {
     case voiceSearch = "VoiceSearchControlWidget"
     case email = "EmailControlWidget"
     case fireButton = "FireButtonControlWidget"
+    case voiceChat = "VoiceChatControlWidget"
 }
 
 extension WidgetCenter {

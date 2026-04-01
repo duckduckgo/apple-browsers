@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Zezwalaj na dźwięk i wideo";
+"autoplay.mode.blockAll" = "Blokuj dźwięk i wideo";
+"autoplay.mode.blockAudio" = "Blokuj dźwięk";
+"settings.autoplay" = "Automatyczne odtwarzanie";
+"settings.autoplay.duck.player.link" = "Ustawienia odtwarzacza Duck Player";
+"settings.autoplay.footer" = "Ustawienia automatycznego odtwarzania będą miały zastosowanie tylko do nowo otwartych kart. Zmiany nie mogą zostać zastosowane do istniejących kart, chyba że aplikacja zostanie ponownie uruchomiona. Aby zarządzać autoodtwarzaniem w Duck Player, przejdź do ";
+"settings.media.section" = "Multimedia";

@@ -215,7 +215,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             layoutIfNeeded()
             let entering = newMode == .compact
             if entering {
-                UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
+                UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0, options: []) {
                     self.leadingButtonsContainer.alpha = 0
                     self.trailingButtonsContainer.alpha = 0
                     self.applyLayoutMode(newMode)
@@ -224,7 +224,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             } else {
                 leadingButtonsContainer.alpha = 0
                 trailingButtonsContainer.alpha = 0
-                UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
+                UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0, options: []) {
                     self.leadingButtonsContainer.alpha = 1
                     self.trailingButtonsContainer.alpha = 1
                     self.applyLayoutMode(newMode)

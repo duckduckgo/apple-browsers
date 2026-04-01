@@ -143,7 +143,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", "duckAiNativeStorage"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
@@ -232,8 +232,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         if let duckAiNativeStorageUserScript {
-            contentScopeUserScript.registerSubfeature(delegate: duckAiNativeStorageUserScript)
-            Logger.aiChat.debug("UserScripts: Registered duckAiNativeStorage subfeature with contentScopeUserScript (page world)")
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
+            Logger.aiChat.debug("UserScripts: Registered duckAiNativeStorage subfeature with contentScopeUserScriptIsolated")
         } else {
             Logger.aiChat.error("UserScripts: duckAiNativeStorageUserScript is nil — not registered")
         }

@@ -225,6 +225,32 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertEqual(popup.tabs.count, 1)
     }
 
+    // MARK: - Suspended Tabs
+
+    @MainActor
+    func testLoadedTabsFiltersSuspendedTabs() {
+        let loadedTab = Tab()
+        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .suspended(suspended)])
+
+        XCTAssertEqual(tabCollection.tabs.count, 2)
+        XCTAssertEqual(tabCollection.loadedTabs.count, 1)
+        XCTAssertTrue(tabCollection.loadedTabs[0] === loadedTab)
+    }
+
+    @MainActor
+    func testLocalHistoryDomainsIncludesSuspendedTabVisitedDomains() {
+        let suspended = SuspendedTab(
+            content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+            visitedDomainURLs: [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+        )
+        let tabCollection = TabCollection(tabs: [.suspended(suspended)])
+
+        let domains = tabCollection.localHistoryDomains
+        XCTAssertTrue(domains.contains("example.com"))
+        XCTAssertTrue(domains.contains("test.org"))
+    }
+
 }
 
 private extension Tab {

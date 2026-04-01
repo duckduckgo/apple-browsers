@@ -1309,6 +1309,24 @@ final class TabCollectionViewModelTests: XCTestCase {
         ])
         XCTAssertEqual(windowControllersManager.openWindowCalls, [])
     }
+
+    // MARK: - Suspended Tab Materialization
+
+    @MainActor
+    func testSelectingSuspendedTabMaterializesIt() {
+        let loadedTab = Tab(content: .newtab)
+        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .suspended(suspended)])
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        let delegate = TabCollectionViewModelDelegateMock()
+        vm.delegate = delegate
+
+        vm.select(at: .unpinned(1))
+
+        XCTAssertNotNil(vm.tabs[1].tab, "Suspended tab should be materialized after selection")
+        XCTAssertNotNil(vm.tabViewModel(at: 1), "TabViewModel should exist for materialized tab")
+        XCTAssertTrue(delegate.didMaterializeCalled)
+    }
 }
 
 fileprivate extension TabCollectionViewModel {

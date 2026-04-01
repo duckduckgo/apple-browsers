@@ -276,6 +276,41 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertTrue(tabCollection.contains(uuid: suspended.uuid))
     }
 
+    // MARK: - AnyTab Identity vs UUID Equality
+
+    @MainActor
+    func testAnyTabIdentityEquality() {
+        let tab = Tab()
+        let wrapped1 = AnyTab.loaded(tab)
+        let wrapped2 = AnyTab.loaded(tab)
+
+        // Same instance → equal
+        XCTAssertEqual(wrapped1, wrapped2)
+
+        // Different instance, same content → not equal (identity-based)
+        let otherTab = Tab()
+        XCTAssertNotEqual(AnyTab.loaded(tab), AnyTab.loaded(otherTab))
+
+        // Suspended vs loaded with same UUID → not equal
+        let suspended = SuspendedTab(uuid: tab.uuid, content: tab.content)
+        XCTAssertNotEqual(AnyTab.loaded(tab), AnyTab.suspended(suspended))
+    }
+
+    @MainActor
+    func testContainsUUIDMatchesSuspendedAndLoadedTabs() {
+        let tab = Tab()
+        let suspended = SuspendedTab(uuid: "specific-uuid", content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(tab), .suspended(suspended)])
+
+        // UUID lookup finds both types
+        XCTAssertTrue(tabCollection.contains(uuid: tab.uuid))
+        XCTAssertTrue(tabCollection.contains(uuid: "specific-uuid"))
+
+        // Identity lookup only finds loaded tabs
+        XCTAssertTrue(tabCollection.contains(tab: tab))
+        XCTAssertNil(tabCollection.firstIndex(of: Tab())) // different instance, not found
+    }
+
 }
 
 private extension Tab {

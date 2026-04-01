@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Egyéni URL: %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Könyvjelzőfájl importálása…";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "A Duck Playerben megnyitott videók automatikusan elindulnak. Kapcsold ki, ha a Duck Playerben megnyitott videók lejátszását manuálisan szeretnéd elindítani.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Videók automatikus lejátszása";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Privát mozi módban nyitja meg a videókat, így a nézett tartalom nem befolyásolja a YouTube-hírfolyamodat.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "Nincsenek aktív előfizetéseid";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Nem található meglévő előfizetés";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "Az App Store-on elérhető verzióknál ez a képernyő csak akkor jelenik meg, ha a **use-login.duckduckgo.com** címen keresztül belső felhasználóként jelentkeztél be.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Megvan";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Leiratkozás…";
+
+/* No comment provided by engineer. */
+"Override" = "Felülbírálás";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nem tudok hozzáférni a csak előfizetőknek szóló Duck.ai modellekhez";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Új lap kapcsolójának pozíciója";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Utoljára használt";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Keresés";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.ai csevegések törlése";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Hang és videó engedélyezése";
+"autoplay.mode.blockAll" = "Hang és videó blokkolása";
+"autoplay.mode.blockAudio" = "Hang blokkolása";
+"settings.autoplay" = "Automatikus lejátszás";
+"settings.autoplay.duck.player.link" = "Duck Player beállításaira";
+"settings.autoplay.footer" = "Az automatikus lejátszás beállításai csak az újonnan megnyitott lapokra vonatkoznak. A módosítások a már megnyitott lapokra csak az alkalmazás újraindítása után alkalmazhatók. A Duck Player automatikus lejátszási funkciójának kezeléséhez lépj a ";
+"settings.media.section" = "Média";

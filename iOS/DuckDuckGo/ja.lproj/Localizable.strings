@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "カスタムURL：%@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "ブックマークファイルをインポート...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playerで開いたビデオは自動的に再生を開始します。Duck Playerで開いたビデオの再生を手動で開始したい場合は、これをオフにしてください。";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "自動再生動画";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "動画をプライベートシアターモードで開くことで、視聴内容がYouTubeのフィードに影響するのを防ぎます。";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "アクティブなサブスクリプションはありません";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "既存のサブスクリプションが見つかりません";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Storeのビルドでは、この画面は**use-login.duckduckgo.com**で内部ユーザーとしてサインインしている場合にのみ表示されます。";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "了解";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "オプトアウトしています...";
+
+/* No comment provided by engineer. */
+"Override" = "オーバーライド";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "登録者限定のDuck.aiモデルにアクセスできない";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "デフォルトのブラウザ";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "新しいタブのトグル位置";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "最後に使用";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "検索";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.aiのチャットを削除";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "オーディオとビデオを許可する";
+"autoplay.mode.blockAll" = "オーディオとビデオをブロックする";
+"autoplay.mode.blockAudio" = "オーディオをブロックする";
+"settings.autoplay" = "自動再生";
+"settings.autoplay.duck.player.link" = "Duck Player 設定";
+"settings.autoplay.footer" = "自動再生設定は新しく開いたタブにのみ適用されます。アプリケーションを再起動しない限り、既存のタブに変更を適用することはできません。Duck Playerで自動再生を管理するには、 ";
+"settings.media.section" = "メディア";

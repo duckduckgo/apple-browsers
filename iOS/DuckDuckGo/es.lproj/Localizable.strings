@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "URL personalizada: %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importar archivo de marcadores...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Los vídeos que se abran en Duck Player comenzarán a reproducirse automáticamente. Desactiva esta opción si quieres iniciar manualmente la reproducción de los vídeos abiertos en Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Vídeos con reproducción automática";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Abre vídeos en modo teatro privado que impide que lo que ves influya en tu feed de YouTube.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "No hay suscripciones activas";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "No se ha encontrado ninguna suscripción existente";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "En las versiones de la App Store, esta pantalla solo se mostrará si has iniciado sesión como usuario interno a través de **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Entendido";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Dando de baja...";
+
+/* No comment provided by engineer. */
+"Override" = "Anular";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "No se puede acceder a los modelos exclusivos para suscriptores de Duck.ai";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navegador predeterminado";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Nueva pestaña Alternar posición";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Último uso";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Buscar";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Elimina los chats de Duck.ai";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Permitir audio y vídeo";
+"autoplay.mode.blockAll" = "Bloquear audio y vídeo";
+"autoplay.mode.blockAudio" = "Bloquear audio";
+"settings.autoplay" = "Reproducción automática";
+"settings.autoplay.duck.player.link" = "Configuración de Duck Player";
+"settings.autoplay.footer" = "La configuración de reproducción automática solo se aplicará a las pestañas recién abiertas. No se pueden aplicar cambios a las pestañas existentes a menos que se reinicie la aplicación. Para gestionar la reproducción automática en Duck Player, ve a ";
+"settings.media.section" = "Medios de comunicación";

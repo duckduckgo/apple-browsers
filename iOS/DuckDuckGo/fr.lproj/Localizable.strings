@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "URL personnalisée : %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer un fichier de signets...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Les vidéos ouvertes dans Duck Player démarreront automatiquement la lecture. Désactivez cette option si vous souhaitez démarrer manuellement la lecture des vidéos ouvertes dans Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Lecture automatique des vidéos";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Ouvre les vidéos en mode « Salle de projection privée », ce qui empêche ce que vous regardez d'influencer votre fil d'actualité YouTube.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "Aucun abonnement actif";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Pas d'abonnement trouvé";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "Sur les versions de l'App Store, cet écran ne s'affiche que si vous êtes connecté(e) en tant qu'utilisateur interne via **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "J'ai compris";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Désinscription en cours...";
+
+/* No comment provided by engineer. */
+"Override" = "Remplacement";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Impossible d'accéder aux modèles Duck.ai réservés aux abonnés";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navigateur par défaut";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Position de bascule du nouvel onglet";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Dernière utilisation";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Rechercher";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Supprimer les chats Duck.ai";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Que voulez-vous importer ?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Autoriser l'audio et la vidéo";
+"autoplay.mode.blockAll" = "Bloquer le son et la vidéo";
+"autoplay.mode.blockAudio" = "Bloquer le son";
+"settings.autoplay" = "Lecture automatique";
+"settings.autoplay.duck.player.link" = "Paramètres de Duck Player";
+"settings.autoplay.footer" = "Les paramètres de lecture automatique ne s'appliqueront qu'aux nouveaux onglets ouverts. Les modifications ne peuvent pas être appliquées aux onglets existants, à moins que l'application ne soit redémarrée. Pour gérer la lecture automatique dans Duck Player, allez dans ";
+"settings.media.section" = "Médias";

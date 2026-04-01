@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Tilpasset URL: %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer bogmærkefil...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoer, der åbnes i Duck Player, vil automatisk begynde at afspille. Slå dette fra, hvis du manuelt vil starte afspilning af videoer, der åbnes i Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automatisk afspilning af videoer";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Åbner videoer i en privat biograftilstand, så det, du ser, ikke påvirker dit YouTube-feed.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "Ingen aktive abonnementer";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Intet eksisterende abonnement blev fundet";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "I App Store-versioner vises denne skærm kun, hvis du er logget ind som intern bruger via **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Forstået";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Fravælgelse...";
+
+/* No comment provided by engineer. */
+"Override" = "Tilsidesætte";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Kan ikke tilgå Duck.ai-modellerne kun for abonnenter.";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardbrowser";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Ny position for faneskift";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Sidst brugt";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Søgning";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Slet Duck.ai-chats";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Tillad lyd og video";
+"autoplay.mode.blockAll" = "Bloker lyd og video";
+"autoplay.mode.blockAudio" = "Bloker lyd";
+"settings.autoplay" = "Automatisk afspilning";
+"settings.autoplay.duck.player.link" = "Indstillinger for Duck Player";
+"settings.autoplay.footer" = "Indstillinger for automatisk afspilning gælder kun for nyligt åbnede faner. Ændringer kan ikke anvendes på eksisterende faner, medmindre programmet genstartes. For at administrere automatisk afspilning i Duck Player skal du gå til ";
+"settings.media.section" = "Medier";

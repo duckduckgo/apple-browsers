@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "URL personalizat: %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importă fișierul cu marcaje...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoclipurile deschise în Duck Player vor începe redarea automat. Dezactivează această opțiune dacă vrei să pornești manual redarea videoclipurilor deschise în Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Redă automat videoclipurile";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Deschide videoclipuri într-un mod cinematografic privat, care împiedică ceea ce vizionezi să îți influențeze fluxul YouTube.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "Nu există abonamente active";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Nu s-a găsit niciun abonament";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "În versiunile din App Store, acest ecran se va afișa doar dacă ești conectat ca utilizator intern folosind **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Am înțeles";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Renunțare...";
+
+/* No comment provided by engineer. */
+"Override" = "Ignoră";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nu se pot accesa modelele Duck.ai disponibile doar pentru abonați";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Browser implicit";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Poziția de comutare a filei noi";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Ultima utilizare";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Caută";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Șterge chaturile Duck.ai";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Permite redarea audio și video automată";
+"autoplay.mode.blockAll" = "Blochează redarea audio și video automată";
+"autoplay.mode.blockAudio" = "Blochează redarea audio automată";
+"settings.autoplay" = "Redare automată";
+"settings.autoplay.duck.player.link" = "Setări Duck Player";
+"settings.autoplay.footer" = "Setările de redare automată se vor aplica doar filelor nou deschise. Modificările nu pot fi aplicate filelor existente decât dacă aplicația este repornită. Pentru a gestiona redarea automată în Duck Player, accesează ";
+"settings.media.section" = "Media";

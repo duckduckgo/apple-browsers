@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Aangepaste URL: %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Bladwijzerbestand importeren...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Video's die je in Duck Player opent, worden automatisch afgespeeld. Schakel deze functie uit als je het afspelen van video's in Duck Player handmatig wilt starten.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Video's automatisch afspelen";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Opent video's in een privébioscoopmodus die voorkomt dat wat je bekijkt je YouTube-feed beïnvloedt.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "Geen actieve abonnementen";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Geen bestaand abonnement gevonden";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "Op App Store builds wordt dit scherm alleen getoond als je ingelogd bent als interne gebruiker via **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Ik snap het";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Afmelden...";
+
+/* No comment provided by engineer. */
+"Override" = "Overschrijven";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Geen toegang tot de alleen voor abonnees beschikbare Duck.ai-modellen";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standaardbrowser";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Positie nieuw tabblad wisselen";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Laatst gebruikt";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Zoeken";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.ai-chats verwijderen";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Audio en video toestaan";
+"autoplay.mode.blockAll" = "Audio en video blokkeren";
+"autoplay.mode.blockAudio" = "Audio blokkeren";
+"settings.autoplay" = "Automatisch afspelen";
+"settings.autoplay.duck.player.link" = "Duck Player-instellingen";
+"settings.autoplay.footer" = "Autoplay-instellingen gelden alleen voor nieuw geopende tabbladen. Wijzigingen kunnen niet worden toegepast op bestaande tabbladen, tenzij de applicatie opnieuw wordt opgestart. Ga om de automatische afspeelfunctie in Duck Player te beheren naar ";
+"settings.media.section" = "Media";

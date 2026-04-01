@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Pielāgots URL: %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importēt grāmatzīmes failu...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Video, kas atvērti Duck Player, automātiski sāks atskaņošanu. Ja vēlies manuāli sākt Duck Player atvērto videoklipu atskaņošanu, izslēdz šo iestatījumu.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automātiski atskaņot video";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Atver videoklipus privātā kinoteātra režīmā, kas neļauj skatītajam ietekmēt tavu YouTube plūsmu.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "Nav aktīvu abonementu";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Nav atrasts neviens esošs abonements";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Store versijās šis ekrāns tiks parādīts tikai tad, ja esi pierakstījies kā iekšējais lietotājs, izmantojot **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sapratu";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Izvēlas atteikties...";
+
+/* No comment provided by engineer. */
+"Override" = "Ignorēt";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nevaru piekļūt tikai abonentiem paredzētajiem Duck.ai modeļiem.";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Noklusējuma pārlūks";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Jauna cilnes slēdža pozīcija";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Pēdējo reizi lietots";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Meklēt";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Dzēst Duck.ai tērzēšanas sarunas";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Atļaut audio un video";
+"autoplay.mode.blockAll" = "Bloķēt audio un video";
+"autoplay.mode.blockAudio" = "Bloķēt audio";
+"settings.autoplay" = "Automātiski atskaņot";
+"settings.autoplay.duck.player.link" = "Duck Player iestatījumi";
+"settings.autoplay.footer" = "Automātiskās atskaņošanas iestatījumi attieksies tikai uz jaunatvērtām cilnēm. Izmaiņas nevar tikt piemērotas esošajām cilnēm, ja vien lietojumprogramma netiek restartēta. Lai pārvaldītu automātisko atskaņošanu Duck Player atskaņotājā, dodieties uz ";
+"settings.media.section" = "Multivide";

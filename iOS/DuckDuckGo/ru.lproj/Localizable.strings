@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Пользовательский URL: %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортировать файл с закладками...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Видеоролики, открываемые в Duck Player, будут проигрываться автоматически. Отключите эту настройку, если вы предпочитаете запускать воспроизведение вручную.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Автовоспроизведение видео";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Открывает видео в режиме «личного кинотеатра»: ваши просмотры не влияют на ленту рекомендаций YouTube.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "Нет активных подписок";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Подписка не найдена";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "В сборках для App Store экран отображается исключительно при входе через **use-login.duckduckgo.com** в режиме внутреннего пользователя.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Понятно";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Выполняется отказ...";
+
+/* No comment provided by engineer. */
+"Override" = "Переопределить";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Нет доступа к моделям Duck.ai, предоставляемым только по подписке";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузер по умолчанию";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Положение переключателя «Новая вкладка»";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Последнее использование";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Поиск";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Удалить чаты Duck.ai";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Разрешить аудио и видео";
+"autoplay.mode.blockAll" = "Блокировать аудио и видео";
+"autoplay.mode.blockAudio" = "Блокировать аудио";
+"settings.autoplay" = "Автовоспроизведение";
+"settings.autoplay.duck.player.link" = "Настройки Duck Player";
+"settings.autoplay.footer" = "Настройки автовоспроизведения применятся только к новым вкладкам (к текущим — после перезапуска приложения). Управление автовоспроизведением в Duck Player: ";
+"settings.media.section" = "Медиа";

@@ -1225,6 +1225,8 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Özel URL: %@";
 
+/* No comment provided by engineer. */
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Yer İşaretleri Dosyasını İçe Aktar...";
 
@@ -1581,6 +1583,9 @@
 
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Player'da açılan videolar otomatik olarak oynatılmaya başlar. Duck Player'da açılan videoların oynatılmasını manuel olarak başlatmak istiyorsanız bunu kapatın.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Videoları otomatik olarak oynat";
 
 /* Footer text for Enable Duck Player toggle */
 "duckplayer.settings.enable-footer" = "Videoları özel bir sinema modunda açarak, izlediğiniz içeriklerin YouTube akışını etkilemesini engeller.";
@@ -2621,6 +2626,8 @@
 "No active subscriptions" = "Aktif abonelik yok";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Abonelik bulunamadı";
 
 /* No comment provided by engineer. */
@@ -2661,6 +2668,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Store sürümlerinde bu ekran yalnızca **use-login.duckduckgo.com** üzerinden dahili kullanıcı olarak oturum açtıysanız görünür.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Anladım";
@@ -2841,6 +2851,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Kapsam Dışı Kalınıyor...";
+
+/* No comment provided by engineer. */
+"Override" = "Geçersiz kılma";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Abonelere özel Duck.ai modellerine erişilemiyor.";
@@ -3408,18 +3421,6 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Varsayılan Tarayıcı";
-
-/* Option to always default the omnibar toggle to Duck.ai */
-"settings.default.omnibar.mode.duckai" = "Duck.ai";
-
-/* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "Yeni Sekme Buton Konumu";
-
-/* Option to remember the last used omnibar toggle position */
-"settings.default.omnibar.mode.last.used" = "Son Kullanılan";
-
-/* Option to always default the omnibar toggle to Search */
-"settings.default.omnibar.mode.search" = "Arama";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.ai Sohbetlerini Sil";
@@ -4597,3 +4598,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Ses ve Videoya İzin Ver";
+"autoplay.mode.blockAll" = "Ses ve Videoyu Engelle";
+"autoplay.mode.blockAudio" = "Sesi Engelle";
+"settings.autoplay" = "Otomatik Oynatma";
+"settings.autoplay.duck.player.link" = "Duck Player Ayarları";
+"settings.autoplay.footer" = "Otomatik oynatma ayarları yalnızca yeni açılan sekmeler için geçerli olur. Uygulama yeniden başlatılmadığı sürece değişiklikler mevcut sekmelere uygulanamaz. Duck Player'da otomatik oynatma özelliğini yönetmek için şu adrese gidin: ";
+"settings.media.section" = "Medya";

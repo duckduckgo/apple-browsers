@@ -64,6 +64,12 @@ final class TabCleanupPreparer: NSObject, WKNavigationDelegate, TabCleanupPrepar
         }
     }
 
+    /// Signal that a tab has no WebView to clear (e.g. suspended tabs).
+    func reportNoWebViewToClear() {
+        processedTabs += 1
+        notifyIfDone()
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         processedTabs += 1
 

@@ -26,7 +26,7 @@ import WebKit
 /// Conforms to `TabBarViewModel` so the tab bar can render suspended tabs
 /// identically to loaded ones. All publishers emit static values since
 /// a suspended tab has no live webView producing state changes.
-final class SuspendedTabViewModel: TabBarViewModel, TabDataClearing {
+final class SuspendedTabViewModel: TabBarViewModel {
 
     let suspendedTab: SuspendedTab
 
@@ -88,8 +88,6 @@ final class SuspendedTabViewModel: TabBarViewModel, TabDataClearing {
     /// `TabCleanupPreparer` from hanging while waiting for a navigation callback.
     @MainActor
     func prepareForDataClearing(caller: TabCleanupPreparer) {
-        // Directly invoke the navigation delegate callback with a throwaway webView.
-        // TabCleanupPreparer counts this as a processed tab.
-        caller.webView(WKWebView(), didFinish: nil)
+        caller.reportNoWebViewToClear()
     }
 }

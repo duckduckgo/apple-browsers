@@ -1327,6 +1327,39 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertNotNil(vm.tabViewModel(at: 1), "TabViewModel should exist for materialized tab")
         XCTAssertTrue(delegate.didMaterializeCalled)
     }
+
+    @MainActor
+    func testInitMaterializesSelectedSuspendedTabPreservingIdentity() {
+        let suspended = SuspendedTab(
+            uuid: "test-uuid",
+            content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+            title: "DuckDuckGo"
+        )
+        let tabCollection = TabCollection(tabs: [.suspended(suspended)])
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+
+        let materializedTab = vm.tabs[0].tab
+        XCTAssertNotNil(materializedTab, "Init should materialize the selected suspended tab")
+        XCTAssertEqual(materializedTab?.uuid, "test-uuid")
+        XCTAssertEqual(materializedTab?.url, .duckDuckGo)
+    }
+
+    @MainActor
+    func testInitMaterializesNonZeroSelectedSuspendedTab() {
+        let loadedTab = Tab(content: .newtab)
+        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .suspended(suspended)])
+
+        let vm = TabCollectionViewModel(
+            tabCollection: tabCollection,
+            selectionIndex: .unpinned(1),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
+        )
+
+        XCTAssertNotNil(vm.tabs[1].tab, "Init should materialize the selected suspended tab at index 1")
+        XCTAssertNotNil(vm.tabViewModel(at: 1))
+        XCTAssertEqual(vm.selectionIndex, .unpinned(1))
+    }
 }
 
 fileprivate extension TabCollectionViewModel {

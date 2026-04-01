@@ -426,7 +426,8 @@ class TabViewController: UIViewController {
                                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                                    privacyStats: PrivacyStatsProviding,
                                    voiceSearchHelper: VoiceSearchHelperProtocol,
-                                   darkReaderFeatureSettings: DarkReaderFeatureSettings) -> TabViewController {
+                                   darkReaderFeatureSettings: DarkReaderFeatureSettings,
+                                   autoplaySettings: AutoplaySettings) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -460,7 +461,8 @@ class TabViewController: UIViewController {
                               sharedSecureVault: sharedSecureVault,
                               privacyStats: privacyStats,
                               voiceSearchHelper: voiceSearchHelper,
-                              darkReaderFeatureSettings: darkReaderFeatureSettings
+                              darkReaderFeatureSettings: darkReaderFeatureSettings,
+                              autoplaySettings: autoplaySettings
             )
         })
         return controller
@@ -515,6 +517,7 @@ class TabViewController: UIViewController {
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     let darkReaderFeatureSettings: DarkReaderFeatureSettings
+    let autoplaySettings: AutoplaySettings
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -570,7 +573,8 @@ class TabViewController: UIViewController {
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                    privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol,
-                   darkReaderFeatureSettings: DarkReaderFeatureSettings) {
+                   darkReaderFeatureSettings: DarkReaderFeatureSettings,
+                   autoplaySettings: AutoplaySettings) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -613,6 +617,7 @@ class TabViewController: UIViewController {
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
+        self.autoplaySettings = autoplaySettings
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
@@ -1499,6 +1504,7 @@ class TabViewController: UIViewController {
                                                                      userRefreshCount: refreshCountSinceLoad,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
+                                                                     autoplayBlockingMode: featureFlagger.isFeatureOn(.autoplayBlocking) ? autoplaySettings.currentAutoplayBlockingMode.rawValue : nil,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL))
     }
 

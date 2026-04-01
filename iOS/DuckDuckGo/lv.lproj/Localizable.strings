@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Atļaut audio un video";
+"autoplay.mode.blockAll" = "Bloķēt audio un video";
+"autoplay.mode.blockAudio" = "Bloķēt audio";
+"settings.autoplay" = "Automātiski atskaņot";
+"settings.autoplay.duck.player.link" = "Duck Player iestatījumi";
+"settings.autoplay.footer" = "Automātiskās atskaņošanas iestatījumi attieksies tikai uz jaunatvērtām cilnēm. Izmaiņas nevar tikt piemērotas esošajām cilnēm, ja vien lietojumprogramma netiek restartēta. Lai pārvaldītu automātisko atskaņošanu Duck Player atskaņotājā, dodieties uz ";
+"settings.media.section" = "Multivide";

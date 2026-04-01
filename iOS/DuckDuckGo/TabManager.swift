@@ -129,6 +129,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let favicons: FaviconManaging
     private let websiteDataManager: WebsiteDataManaging
     private let appSettings: AppSettings
+    private let autoplaySettings: AutoplaySettings
     private let maliciousSiteProtectionManager: MaliciousSiteProtectionManaging
     private let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     private let featureDiscovery: FeatureDiscovery
@@ -168,6 +169,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          featureFlagger: FeatureFlagger,
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          appSettings: AppSettings,
+         autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
          autoconsentManagementProvider: AutoconsentManagementProviding,
          websiteDataManager: WebsiteDataManaging,
@@ -203,6 +205,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
+        self.autoplaySettings = autoplaySettings
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.autoconsentManagementProvider = autoconsentManagementProvider
         self.websiteDataManager = websiteDataManager
@@ -264,6 +267,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                  inheritedAttribution: AdClickAttributionLogic.State?,
                                  interactionState: Data?) -> TabViewController {
         let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
+        if featureFlagger.isFeatureOn(.autoplayBlocking) {
+            configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
+        }
 
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
             configuration.webExtensionController = webExtensionManager.controller
@@ -305,7 +311,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper,
-                                                              darkReaderFeatureSettings: darkReaderFeatureSettings)
+                                                              darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                                              autoplaySettings: autoplaySettings)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -415,7 +422,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper,
-                                                              darkReaderFeatureSettings: darkReaderFeatureSettings)
+                                                              darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                                              autoplaySettings: autoplaySettings)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -840,6 +848,22 @@ extension TabManager {
         }
     }
 
+}
+
+// MARK: - AutoplayBlockingMode + WebKit
+
+private extension AutoplayBlockingMode {
+
+    var mediaTypesRequiringUserAction: WKAudiovisualMediaTypes {
+        switch self {
+        case .allowAll:
+            return []
+        case .blockAudio:
+            return .audio
+        case .blockAll:
+            return .all
+        }
+    }
 }
 
 extension Tab {

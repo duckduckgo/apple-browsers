@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Povolit zvuk a video";
+"autoplay.mode.blockAll" = "Blokovat zvuk a video";
+"autoplay.mode.blockAudio" = "Blokovat zvuk";
+"settings.autoplay" = "Automatické přehrávání";
+"settings.autoplay.duck.player.link" = "Nastavení Duck Player";
+"settings.autoplay.footer" = "Nastavení automatického přehrávání se použije pouze na nově otevřené karty. Změny nelze použít na existující karty, leda po restartu aplikace. Chceš-li spravovat automatické přehrávání v Duck Player, přejdi na ";
+"settings.media.section" = "Média";

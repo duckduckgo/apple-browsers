@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Να επιτρέπεται ο ήχος και το βίντεο";
+"autoplay.mode.blockAll" = "Αποκλεισμός ήχου και βίντεο";
+"autoplay.mode.blockAudio" = "Αποκλεισμός ήχου";
+"settings.autoplay" = "Αυτόματη αναπαραγωγή";
+"settings.autoplay.duck.player.link" = "Ρυθμίσεις Duck Player";
+"settings.autoplay.footer" = "Οι ρυθμίσεις αυτόματης αναπαραγωγής θα ισχύουν μόνο για καρτέλες που ανοίχτηκαν πρόσφατα. Οι αλλαγές δεν μπορούν να εφαρμοστούν σε υπάρχουσες καρτέλες, εκτός εάν γίνει επανεκκίνηση της εφαρμογής. Για να διαχειριστείτε την αυτόματη αναπαραγωγή στο Duck Player, μεταβείτε στις ";
+"settings.media.section" = "Μέσα";

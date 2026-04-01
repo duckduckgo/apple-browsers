@@ -201,6 +201,9 @@ public struct PixelParameters {
 
     // New Address Bar Picker
     public static let selection = "selection"
+
+    // Autoplay
+    public static let autoplayBlockingMode = "autoplay_blocking_mode"
 }
 
 public struct PixelValues {

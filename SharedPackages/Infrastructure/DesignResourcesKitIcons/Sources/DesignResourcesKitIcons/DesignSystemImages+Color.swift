@@ -205,6 +205,7 @@ public extension DesignSystemImages {
             public static var subscription: DesignSystemImage { .init(resource: .privacyProColor24) }
             public static var sync: DesignSystemImage { .init(resource: .syncColor24) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor24) }
+            public static var videoPlayerBlocked: DesignSystemImage { .init(resource: .videoPlayerBlockedColor24) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor24) }
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }
         }

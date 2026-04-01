@@ -200,6 +200,33 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(suspended.tabSnapshotIdentifier, snapshotID)
     }
 
+    // MARK: - Test 7: Materialized tab from decoded data preserves fields (flag-OFF path)
+
+    @MainActor
+    func testMaterializedTabFromDecodedDataPreservesFields() throws {
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        let interactionState = Data([0xAA, 0xBB])
+
+        let original = TabRestorationData(
+            uuid: "materialized-uuid",
+            content: .url(URL(string: "https://example.com")!, credential: nil, source: .pendingStateRestoration),
+            title: "Materialized Example",
+            favicon: nil,
+            interactionStateData: interactionState,
+            lastSelectedAt: date,
+            visitedDomainURLs: nil,
+            tabSnapshotIdentifier: nil
+        )
+
+        let decoded = try encodeThenDecode(original)
+        let tab = SuspendedTab(from: decoded).materialize()
+
+        XCTAssertEqual(tab.uuid, "materialized-uuid")
+        XCTAssertEqual(tab.content.urlForWebView, URL(string: "https://example.com")!)
+        XCTAssertEqual(tab.title, "Materialized Example")
+        XCTAssertEqual(tab.lastSelectedAt, date)
+    }
+
     // MARK: - Helpers
 
     private func encodeThenDecode(_ data: TabRestorationData) throws -> TabRestorationData {

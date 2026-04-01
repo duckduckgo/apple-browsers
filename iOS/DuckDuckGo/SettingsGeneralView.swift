@@ -112,6 +112,17 @@ struct SettingsGeneralView: View {
                                  accessory: .toggle(isOn: viewModel.universalLinksBinding))
             }
 
+            // Media
+            if viewModel.featureFlagger.isFeatureOn(.autoplayBlocking) {
+                Section(header: Text(UserText.settingsMediaSection)) {
+                    NavigationLink(destination: SettingsAutoplayView().environmentObject(viewModel)) {
+                        SettingsCellView(label: UserText.settingsAutoplayLabel,
+                                         accessory: .rightDetail(viewModel.state.autoplayBlockingMode.description))
+                    }
+                    .listRowBackground(Color(designSystemColor: .surface)) // This is needed because of the combination of ConditionalContent + NavigationLink wrappers. This line should be removed when cleaning up the feature flag.
+                }
+            }
+
         }
         .applySettingsListModifiers(title: UserText.general,
                                     displayMode: .inline,

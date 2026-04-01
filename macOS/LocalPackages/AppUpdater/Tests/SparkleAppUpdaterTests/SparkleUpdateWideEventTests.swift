@@ -408,7 +408,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
 
         // Then
         let startedData = mockWideEventManager.started.first as? UpdateWideEventData
-        XCTAssertEqual(startedData?.appData.internalUser, true)
+        XCTAssertEqual(startedData?.internalUser, true)
     }
 
     func test_startFlow_externalUser_doesNotSetInternalUserFlag() {
@@ -420,7 +420,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
 
         // Then
         let startedData = mockWideEventManager.started.first as? UpdateWideEventData
-        XCTAssertEqual(startedData?.appData.internalUser, false)
+        XCTAssertEqual(startedData?.internalUser, false)
     }
 
     func test_updateFlow_tracksLastKnownStep() {

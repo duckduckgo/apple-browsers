@@ -2085,6 +2085,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno klassisk";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
 
@@ -2781,6 +2784,9 @@
 "onboarding.skip.title" = "Forstået! Jeg springer de andre tips over.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Prøv det gratis!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Prøv det gratis!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3064,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Dette websted vil åbne Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "OMDØBT";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Seneste behandlingslogfiler";
@@ -4568,3 +4571,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Tillad lyd og video";
+"autoplay.mode.blockAll" = "Bloker lyd og video";
+"autoplay.mode.blockAudio" = "Bloker lyd";
+"settings.autoplay" = "Automatisk afspilning";
+"settings.autoplay.duck.player.link" = "Indstillinger for Duck Player";
+"settings.autoplay.footer" = "Indstillinger for automatisk afspilning gælder kun for nyligt åbnede faner. Ændringer kan ikke anvendes på eksisterende faner, medmindre programmet genstartes. For at administrere automatisk afspilning i Duck Player skal du gå til ";
+"settings.media.section" = "Medier";

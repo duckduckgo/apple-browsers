@@ -2085,6 +2085,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Flăcări clasice";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Infern";
 
@@ -2781,6 +2784,9 @@
 "onboarding.skip.title" = "Am înțeles! O să omit celelalte sfaturi.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Încearcă gratuit!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Încearcă gratuit!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3064,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Acest site vrea să se deschidă în Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "NE-AM REDEFINIT BRANDUL";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Jurnale de procesare recente";
@@ -4568,3 +4571,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Permite redarea audio și video automată";
+"autoplay.mode.blockAll" = "Blochează redarea audio și video automată";
+"autoplay.mode.blockAudio" = "Blochează redarea audio automată";
+"settings.autoplay" = "Redare automată";
+"settings.autoplay.duck.player.link" = "Setări Duck Player";
+"settings.autoplay.footer" = "Setările de redare automată se vor aplica doar filelor nou deschise. Modificările nu pot fi aplicate filelor existente decât dacă aplicația este repornită. Pentru a gestiona redarea automată în Duck Player, accesează ";
+"settings.media.section" = "Media";

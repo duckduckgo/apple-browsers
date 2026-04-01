@@ -1,7 +1,7 @@
 //
-//  DataBrokerProtectionBlankTests.swift
+//  WebExtensionInstallationPathResolving.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Configuration
-import Persistence
-@testable import DataBrokerProtection_iOS
-import DataBrokerProtectionCore
-import DataBrokerProtectionCoreTestsUtils
+import Foundation
 
-final class DataBrokerProtectionBlankTests: XCTestCase {
+@available(macOS 15.4, iOS 18.4, *)
+public protocol WebExtensionInstallationPathResolving: AnyObject {
+    func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL?
 
+    @MainActor
+    func reloadExtension(for type: DuckDuckGoWebExtensionType) async throws
 }

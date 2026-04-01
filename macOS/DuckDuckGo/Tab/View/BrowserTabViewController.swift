@@ -157,7 +157,7 @@ final class BrowserTabViewController: NSViewController {
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
-         onboardingDialogFactory: ContextualDaxDialogsFactory = DefaultContextualDaxDialogViewFactory(fireCoordinator: NSApp.delegateTyped.fireCoordinator),
+         onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: NSApp.delegateTyped.featureFlagger, fireCoordinator: NSApp.delegateTyped.fireCoordinator),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          windowControllersManager: WindowControllersManagerProtocol = NSApp.delegateTyped.windowControllersManager,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
@@ -811,6 +811,11 @@ final class BrowserTabViewController: NSViewController {
                 // For non-URL tabs, just emit an event displaying the tab content
                 guard let tabViewModel, tabContent.displaysContentInWebView else {
                     return Just(()).eraseToAnyPublisher()
+                }
+
+                // Pre-set the webview frame so WebKit renders at the correct size while offscreen
+                if let bounds = self?.view.bounds {
+                    tabViewModel.tab.webView.frame = bounds
                 }
 
                 // If the current content is the native internal site, delay the webview presentation

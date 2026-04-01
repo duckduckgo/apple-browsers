@@ -2085,6 +2085,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Gaisa plūsma";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Liesmas klasika";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Liesmas";
 
@@ -2781,6 +2784,9 @@
 "onboarding.skip.title" = "Sapratu! Es izlaidīšu pārējos padomus.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Izmēģini to bez maksas!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Izmēģini bez maksas!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3064,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Šī vietne vēlas atvērties Safari pārlūkprogrammā.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "PĀRDĒVĒTS";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Jaunākie apstrādes žurnāli";
@@ -4572,3 +4575,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Atļaut audio un video";
+"autoplay.mode.blockAll" = "Bloķēt audio un video";
+"autoplay.mode.blockAudio" = "Bloķēt audio";
+"settings.autoplay" = "Automātiski atskaņot";
+"settings.autoplay.duck.player.link" = "Duck Player iestatījumi";
+"settings.autoplay.footer" = "Automātiskās atskaņošanas iestatījumi attieksies tikai uz jaunatvērtām cilnēm. Izmaiņas nevar tikt piemērotas esošajām cilnēm, ja vien lietojumprogramma netiek restartēta. Lai pārvaldītu automātisko atskaņošanu Duck Player atskaņotājā, dodieties uz ";
+"settings.media.section" = "Multivide";

@@ -118,6 +118,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitHidden = newValue }
     }
 
+    var isToolbarAIVoiceChatActive: Bool {
+        get { inputBarView.isToolbarAIVoiceChatActive }
+        set { inputBarView.isToolbarAIVoiceChatActive = newValue }
+    }
+
     var isGenerating: Bool = false {
         didSet {
             handler.isGenerating = isGenerating

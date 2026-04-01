@@ -344,6 +344,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .omnibar(.active)
         self.inputMode = effectiveInputMode
         self.cardPosition = cardPosition
+        viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
         updateModelChipVisibility()
@@ -407,6 +408,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         inputMode = effectiveMode
         viewController.setInputMode(effectiveMode, animated: animated)
         modeChangeSubject.send(effectiveMode)
+        updateToolbarAIVoiceChat()
         if effectiveMode == .search {
             clearAttachments()
         }
@@ -414,6 +416,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
         viewController.isVoiceSearchAvailable = enabled
+    }
+
+    func updateAIVoiceChatAvailability(_ enabled: Bool) {
+        viewController.handler.isAIVoiceChatEnabled = enabled
+        updateToolbarAIVoiceChat()
+    }
+
+    private func updateToolbarAIVoiceChat() {
+        viewController.isToolbarAIVoiceChatActive = viewController.handler.isAIVoiceChatEnabled && inputMode == .aiChat
     }
 
     func activateInput() {
@@ -433,6 +444,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         if didModeChange {
             modeChangeSubject.send(effectiveMode)
+            updateToolbarAIVoiceChat()
         }
     }
 
@@ -467,6 +479,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard isOmnibarSession else { return }
         displayState = .hidden
         cardPosition = .bottom
+        viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
         viewController.text = ""
         textState = .empty

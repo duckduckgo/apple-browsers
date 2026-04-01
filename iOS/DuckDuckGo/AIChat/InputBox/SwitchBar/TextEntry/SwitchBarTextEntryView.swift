@@ -309,6 +309,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateButtonState() {
         let newButtonState = handler.buttonState
+        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState

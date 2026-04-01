@@ -298,6 +298,7 @@ class MainViewController: UIViewController {
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+    let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
@@ -383,6 +384,7 @@ class MainViewController: UIViewController {
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         whatsNewRepository: WhatsNewMessageRepository,
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
+        voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -444,6 +446,7 @@ class MainViewController: UIViewController {
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.whatsNewRepository = whatsNewRepository
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
+        self.voiceShortcutFeature = voiceShortcutFeature
         self.toggleModeStorage = toggleModeStorage
 
         super.init(nibName: nil, bundle: nil)
@@ -769,25 +772,18 @@ class MainViewController: UIViewController {
     }
 
     func loadSuggestionTray() {
-        let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
 
-        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
-            SuggestionTrayViewController(coder: coder,
-                                         favoritesViewModel: self.favoritesViewModel,
-                                         bookmarksDatabase: self.bookmarksDatabase,
-                                         historyManager: self.historyManager,
-                                         tabsModelProvider: { self.tabManager.currentTabsModel },
-                                         featureFlagger: self.featureFlagger,
-                                         appSettings: self.appSettings,
-                                         aiChatSettings: self.aiChatSettings,
-                                         featureDiscovery: self.featureDiscovery,
-                                         newTabPageDependencies: self.newTabPageDependencies,
-                                         productSurfaceTelemetry: self.productSurfaceTelemetry,
-                                         hideBorder: false)
-        }) else {
-            assertionFailure()
-            return
-        }
+        let controller = SuggestionTrayViewController(favoritesViewModel: self.favoritesViewModel,
+                                     bookmarksDatabase: self.bookmarksDatabase,
+                                     historyManager: self.historyManager,
+                                     tabsModelProvider: { self.tabManager.currentTabsModel },
+                                     featureFlagger: self.featureFlagger,
+                                     appSettings: self.appSettings,
+                                     aiChatSettings: self.aiChatSettings,
+                                     featureDiscovery: self.featureDiscovery,
+                                     newTabPageDependencies: self.newTabPageDependencies,
+                                     productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                     hideBorder: false)
 
         controller.view.frame = viewCoordinator.suggestionTrayContainer.bounds
         controller.newTabPageControllerDelegate = self
@@ -1996,7 +1992,7 @@ class MainViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
-        if isKeyboardShowing {
+        if isKeyboardShowing && !AppWidthObserver.shared.isPad && featureFlagger.isFeatureOn(.minimalChromeInLandscape) {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
@@ -2868,9 +2864,9 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters, includedParameters: [.atb])
     }
 
-    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
+    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil, fromDeepLink: Bool = false) {
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
-            openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools, modelId: modelId, images: images)
+            openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools, modelId: modelId, images: images, fromDeepLink: fromDeepLink)
         } else {
             aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
         }
@@ -2881,21 +2877,32 @@ class MainViewController: UIViewController {
         openAIChatInVoiceMode()
     }
 
-    private func openAIChatInVoiceMode() {
+    func openAIVoiceChatFromDeepLink() {
+        openAIChatInVoiceMode(fromDeepLink: true)
+    }
+
+    private func openAIChatInVoiceMode(fromDeepLink: Bool = false) {
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
-            openAIChatVoiceModeInTab()
+            openAIChatVoiceModeInTab(fromDeepLink: fromDeepLink)
         } else {
             aiChatViewControllerManager.openAIChatVoiceMode(on: self)
         }
     }
 
-    private func openAIChatVoiceModeInTab() {
+    private func openAIChatVoiceModeInTab(fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatVoiceModeInTab: no current tab available")
             return
         }
 
         guard let currentTab else { return }
+
+        if fromDeepLink, currentTab.tabModel.link != nil {
+            let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
+            loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
+            return
+        }
+
         prepareTabForRequest {
             currentTab.loadVoiceMode()
         }
@@ -2908,9 +2915,16 @@ class MainViewController: UIViewController {
     ///   - autoSend: Whether to automatically send the query
     ///   - payload: Optional payload data for AI Chat
     ///   - tools: Optional RAG tools available in AI Chat
-    private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
+    ///   - fromDeepLink: When true and current tab has content, opens in a new tab instead
+    private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil, fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
+            return
+        }
+
+        if fromDeepLink, let currentTab, currentTab.tabModel.link != nil {
+            let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, tools: tools)
+            loadUrlInNewTab(chatURL, inheritedAttribution: nil)
             return
         }
 

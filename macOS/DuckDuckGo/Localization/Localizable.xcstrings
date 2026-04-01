@@ -66635,6 +66635,18 @@
         }
       }
     },
+    "permission.autoplay" : {
+      "comment" : "Display name for the autoplay permission type in Permission Center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Autoplay"
+          }
+        }
+      }
+    },
     "permission.camera" : {
       "comment" : "Camera input media device name",
       "extractionState" : "extracted_with_value",
@@ -83048,6 +83060,54 @@
         }
       }
     },
+    "preferences.autoplay.label" : {
+      "comment" : "Label for the autoplay blocking preference picker in General preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow websites to autoplay"
+          }
+        }
+      }
+    },
+    "preferences.autoplay.mode.allow-all" : {
+      "comment" : "Autoplay mode: allow all media to autoplay",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video and audio"
+          }
+        }
+      }
+    },
+    "preferences.autoplay.mode.block-all" : {
+      "comment" : "Autoplay mode: block all media autoplay",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never"
+          }
+        }
+      }
+    },
+    "preferences.autoplay.mode.block-audio" : {
+      "comment" : "Autoplay mode: allow video but block audio autoplay (default)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video with audio muted"
+          }
+        }
+      }
+    },
     "preferences.cookie-pop-up-protection" : {
       "comment" : "Title of the option to show the Cookie Pop-Up Protection preferences",
       "extractionState" : "extracted_with_value",
@@ -84304,6 +84364,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "preferences.permissions.section" : {
+      "comment" : "Section header for the Permissions section in General preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Permissions"
           }
         }
       }

@@ -698,7 +698,11 @@ final class TabCollectionViewModel: NSObject {
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
-        tabCollection.removeAll(andAppend: exceptionIndex.flatMap { tabCollection.tabs[$0] })
+        if let exceptionTab = exceptionIndex.flatMap({ tabCollection.tabs[$0] }) {
+            tabCollection.removeAll(andAppend: exceptionTab)
+        } else {
+            tabCollection.removeAll()
+        }
 
         if exceptionIndex != nil {
             selectUnpinnedTab(at: 0, forceChange: forceChange)

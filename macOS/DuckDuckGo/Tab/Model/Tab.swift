@@ -464,12 +464,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         return self
     }
 
-    func encodeExtensions(with coder: NSCoder) {
-        for tabExtension in self.extensions {
-            (tabExtension as? (any NSCodingExtension))?.encode(using: coder)
-        }
-    }
-
     @MainActor
     @objc func onDuckDuckGoEmailSignOut(_ notification: Notification) {
         guard let url = webView.url else { return }

@@ -19,22 +19,6 @@
 import Foundation
 
 extension Tab: NSSecureCoding {
-    // MARK: - Coding
-
-    private enum NSSecureCodingKeys {
-        static let uuid = "uuid"
-        static let url = "url"
-        static let videoID = "videoID"
-        static let videoTimestamp = "videoTimestamp"
-        static let title = "title"
-        static let sessionStateData = "ssdata" // Used for session restoration on macOS 10.15 – 11
-        static let interactionStateData = "interactionStateData" // Used for session restoration on macOS 12+
-        static let favicon = "icon"
-        static let tabType = "tabType"
-        static let preferencePane = "preferencePane"
-        static let historyPane = "historyPane"
-        static let lastSelectedAt = "lastSelectedAt"
-    }
 
     static var supportsSecureCoding: Bool { true }
 
@@ -55,24 +39,20 @@ extension Tab: NSSecureCoding {
 
     func encode(with coder: NSCoder) {
         guard webView.configuration.websiteDataStore.isPersistent == true else { return }
+        makeRestorationData().encode(with: coder)
+    }
 
-        coder.encode(uuid, forKey: NSSecureCodingKeys.uuid)
-        content.urlForWebView.map(coder.encode(forKey: NSSecureCodingKeys.url))
-        title.map(coder.encode(forKey: NSSecureCodingKeys.title))
-        favicon.map(coder.encode(forKey: NSSecureCodingKeys.favicon))
-
-        getActualInteractionStateData().map(coder.encode(forKey: NSSecureCodingKeys.interactionStateData))
-
-        coder.encode(content.type.rawValue, forKey: NSSecureCodingKeys.tabType)
-        lastSelectedAt.map(coder.encode(forKey: NSSecureCodingKeys.lastSelectedAt))
-
-        if let pane = content.preferencePane {
-            coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.preferencePane)
-        } else if let pane = content.historyPane {
-            coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.historyPane)
-        }
-
-        self.encodeExtensions(with: coder)
+    func makeRestorationData() -> TabRestorationData {
+        TabRestorationData(
+            uuid: uuid,
+            content: content,
+            title: title,
+            favicon: favicon,
+            interactionStateData: getActualInteractionStateData(),
+            lastSelectedAt: lastSelectedAt,
+            visitedDomainURLs: localHistory.compactMap(\.identifier),
+            tabSnapshotIdentifier: tabSnapshotIdentifier?.uuidString
+        )
     }
 
 }

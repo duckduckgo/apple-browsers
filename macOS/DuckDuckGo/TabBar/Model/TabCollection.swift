@@ -166,14 +166,19 @@ final class TabCollection: NSObject {
 
     // MARK: - Bulk operations
 
-    func removeAll(andAppend tab: Tab? = nil) {
+    func removeAll() {
         tabsWillClose(range: 0..<tabs.count)
-        tabs = tab.map { [.loaded($0)] } ?? []
+        tabs = []
     }
 
-    func removeAll(andAppend tab: AnyTab? = nil) {
+    func removeAll(andAppend tab: Tab) {
         tabsWillClose(range: 0..<tabs.count)
-        tabs = tab.map { [$0] } ?? []
+        tabs = [.loaded(tab)]
+    }
+
+    func removeAll(andAppend tab: AnyTab) {
+        tabsWillClose(range: 0..<tabs.count)
+        tabs = [tab]
     }
 
     /// Clears tabViewModels and tabCollection after the tabs were moved to another collection

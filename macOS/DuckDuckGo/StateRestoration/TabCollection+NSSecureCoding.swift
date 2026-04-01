@@ -76,16 +76,7 @@ extension TabCollection: NSSecureCoding {
         let restorationData: [TabRestorationData] = tabs.map { tab in
             switch tab {
             case .loaded(let tab):
-                return TabRestorationData(
-                    uuid: tab.uuid,
-                    content: tab.content,
-                    title: tab.title,
-                    favicon: tab.favicon,
-                    interactionStateData: tab.getActualInteractionStateData(),
-                    lastSelectedAt: tab.lastSelectedAt,
-                    visitedDomainURLs: tab.localHistory.compactMap(\.identifier),
-                    tabSnapshotIdentifier: tab.tabSnapshotIdentifier?.uuidString
-                )
+                return tab.makeRestorationData()
             case .suspended(let suspended):
                 return TabRestorationData(
                     uuid: suspended.uuid,

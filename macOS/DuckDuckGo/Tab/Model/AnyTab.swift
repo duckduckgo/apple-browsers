@@ -110,6 +110,13 @@ enum AnyTab: Identifiable {
         }
     }
 
+    var tabSnapshotIdentifier: UUID? {
+        switch self {
+        case .loaded(let tab): tab.tabSnapshotIdentifier
+        case .suspended(let s): s.tabSnapshotIdentifier.flatMap(UUID.init)
+        }
+    }
+
     var localHistoryDomains: Set<String> {
         switch self {
         case .loaded(let tab):

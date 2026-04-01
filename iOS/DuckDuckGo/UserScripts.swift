@@ -19,6 +19,7 @@
 
 import AIChat
 import BrowserServicesKit
+import DuckAiDataStore
 import Core
 import Foundation
 import Persistence
@@ -43,6 +44,7 @@ final class UserScripts: UserScriptsProvider {
     let subscriptionUserScript: SubscriptionUserScript
     let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
     let serpSettingsUserScript: SERPSettingsUserScript
+    let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let pageContextUserScript: PageContextUserScript
 
     var specialPages: SpecialPagesUserScript?
@@ -107,6 +109,35 @@ final class UserScripts: UserScriptsProvider {
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
+        do {
+            let containerURL = FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName
+            )!.appendingPathComponent("DuckAiNativeStorage")
+            let nativeStorageFileStore = try KeyValueFileStore(
+                location: containerURL,
+                name: "settings.plist"
+            )
+            let nativeDataStore = try DuckAiNativeDataStore(
+                databaseURL: containerURL.appendingPathComponent("chats.db"),
+                filesDirectoryURL: containerURL.appendingPathComponent("files")
+            )
+            let nativeStorageHandler = DuckAiNativeStorageHandler(
+                settingsStore: nativeStorageFileStore.throwingKeyedStoring(),
+                dataStore: nativeDataStore
+            )
+            let originRules: [HostnameMatchingRule] = [
+                .exact(hostname: "duck.ai"),
+                .exact(hostname: "duckduckgo.com")
+            ]
+            duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
+                handler: nativeStorageHandler,
+                originRules: originRules
+            )
+        } catch {
+            duckAiNativeStorageUserScript = nil
+            assertionFailure("Failed to initialize DuckAiNativeStorage: \(error)")
+        }
+
         pageContextUserScript = PageContextUserScript()
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
@@ -121,6 +152,9 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        if let duckAiNativeStorageUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
+        }
         contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
         contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
 

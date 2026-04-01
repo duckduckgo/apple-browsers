@@ -20,6 +20,29 @@ import Combine
 import Foundation
 import os.log
 
+/// Manages the lifecycle of scriptlets for each web extension type.
+///
+/// `ScriptletManager` is responsible for fetching, validating, caching, and
+/// publishing scriptlet availability. It maintains a per-extension-type state machine
+/// with three states:
+/// - `.notAvailable` — no scriptlets are cached or the config manifest was removed.
+/// - `.available` — scriptlets are cached and ready for installation.
+/// - `.updating` — a fetch is in progress; the previous scriptlets remain usable.
+///
+/// ## Lifecycle
+///
+/// Call ``start(for:)`` to activate an extension type. This loads any cached scriptlets
+/// from disk for immediate availability, then fetches updates if the config manifest
+/// version differs from the cached version. A shared subscription to privacy config
+/// changes triggers re-fetches for all active types (debounced at 500ms).
+///
+/// Call ``stop(for:)`` to deactivate an extension type and cancel any in-flight fetch.
+///
+/// ## Validation
+///
+/// Fetched scriptlets are validated via ``ScriptletValidating`` (ECDSA signature check).
+/// In production, validation failure blocks the update and preserves the previous state.
+/// In non-production builds, validation failures are logged as warnings and the update proceeds.
 @MainActor
 @available(macOS 15.4, iOS 18.4, *)
 public final class ScriptletManager: ScriptletProviding {

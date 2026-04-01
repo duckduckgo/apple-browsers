@@ -18,17 +18,50 @@
 
 import Foundation
 
+/// Persistent storage for fetched scriptlet files and their metadata.
+///
+/// This protocol combines two concerns:
+/// - **Cache management**: saving/loading fetched scriptlet files to disk and tracking
+///   which version is cached (used by ``ScriptletManager``).
+/// - **Installed version tracking**: recording which version has been installed into a
+///   live extension directory (used by ``WebExtensionScriptletCoordinator``).
+///
+/// The ``ScriptletStore`` implementation also conforms to ``ScriptletInstallationTracking``
+/// which exposes only the installed-version subset of this interface.
 @available(macOS 15.4, iOS 18.4, *)
 public protocol ScriptletStoring {
+
+    /// The root directory where cached scriptlet files are stored.
     var cacheRootDirectory: URL { get }
+
+    /// Returns the version string of the cached scriptlets, or `nil` if nothing is cached.
     func cachedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
+
+    /// Loads cached scriptlets from disk, verifying that all referenced files still exist.
+    /// Returns `nil` if no cache exists or all files are missing.
     func loadCached(for extensionType: DuckDuckGoWebExtensionType) -> CachedScriptlets?
+
+    /// Atomically saves fetched scriptlets to disk and updates metadata.
+    /// The previous cache is backed up during the write and restored on failure.
     @discardableResult
     func save(_ fetched: [FetchedScriptlet], version: String, for extensionType: DuckDuckGoWebExtensionType) throws -> [Scriptlet]
+
+    /// Removes cached files and metadata for the given extension type.
+    /// Does not affect the installed version tracking.
     func clearCache(for extensionType: DuckDuckGoWebExtensionType)
+
+    /// Removes both cached files and installed version tracking for the given extension type.
     func clear(for extensionType: DuckDuckGoWebExtensionType)
+
+    /// Removes the entire cache directory, all metadata, and all installed version records.
     func clearAll()
+
+    /// Returns the version currently installed in the extension directory, or `nil`.
     func installedVersion(for extensionType: DuckDuckGoWebExtensionType) -> String?
+
+    /// Records that the given version has been installed into the extension directory.
     func setInstalledVersion(_ version: String, for extensionType: DuckDuckGoWebExtensionType)
+
+    /// Clears the installed version record for the given extension type.
     func clearInstalledVersion(for extensionType: DuckDuckGoWebExtensionType)
 }

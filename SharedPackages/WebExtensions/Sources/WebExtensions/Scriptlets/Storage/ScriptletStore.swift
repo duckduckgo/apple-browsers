@@ -19,6 +19,38 @@
 import Foundation
 import os.log
 
+/// Persistent storage for fetched scriptlet files and their metadata.
+///
+/// `ScriptletStore` manages two distinct concepts:
+///
+/// - **Cached version** (`cachedVersion` / `loadCached` / `save`): the version of scriptlet
+///   files downloaded from the server and written to the cache directory on disk.
+///   Tracked via JSON metadata in `UserDefaults`.
+///
+/// - **Installed version** (`installedVersion` / `setInstalledVersion`): the version that has
+///   been copied from the cache into a live web extension's directory by ``ScriptletInstaller``.
+///   Tracked separately in `UserDefaults` so the coordinator can skip redundant installs.
+///
+/// ## Disk layout
+///
+/// ```
+/// baseDirectory/
+///   <extensionType>/         (e.g. "adBlockingExtension")
+///     <version>/             (sanitized version string)
+///       <scriptlet files>    (e.g. "scriptlets/scriptlet.js")
+/// ```
+///
+/// ## Atomic saves
+///
+/// ``save(_:version:for:)`` writes new files to a temporary directory first, then atomically
+/// swaps them into place. The previous version is kept as a `.backup` directory during the swap
+/// and restored if the move fails, preventing partial writes from corrupting the cache.
+///
+/// ## Clearing
+///
+/// - ``clearCache(for:)`` removes cached files and metadata but preserves the installed version.
+/// - ``clear(for:)`` removes both cached files and the installed version tracking.
+/// - ``clearAll()`` removes the entire base directory and all metadata.
 @available(macOS 15.4, iOS 18.4, *)
 public final class ScriptletStore: ScriptletStoring, ScriptletInstallationTracking {
 

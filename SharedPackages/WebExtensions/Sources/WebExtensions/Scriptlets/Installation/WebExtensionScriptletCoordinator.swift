@@ -20,6 +20,28 @@ import Combine
 import Foundation
 import os.log
 
+/// Coordinates scriptlet installation into web extension directories.
+///
+/// This is the bridge between the scriptlet provider layer (``ScriptletManager``)
+/// and the on-disk extension directories managed by ``WebExtensionManager``.
+/// When a web extension type is enabled, the coordinator:
+///
+/// 1. Starts the ``ScriptletProviding`` provider to fetch/cache scriptlets.
+/// 2. Installs any already-cached scriptlets into the extension directory immediately.
+/// 3. Subscribes to the provider's availability publisher so future updates
+///    are installed automatically and the extension is reloaded.
+///
+/// ## Installation serialization
+///
+/// Installations are serialized per extension type: if an install is already in progress
+/// for a given type, a new install waits for it to complete before starting. This prevents
+/// partial overwrites of the extension's scriptlet directory.
+///
+/// ## Path resolution
+///
+/// The ``installationPathResolver`` is held weakly to avoid a retain cycle with
+/// ``WebExtensionManager``, which owns both this coordinator and provides the
+/// installed extension paths. It must be set before calling ``onExtensionEnabled(for:)``.
 @MainActor
 @available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionScriptletCoordinator {

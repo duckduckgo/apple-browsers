@@ -138,6 +138,7 @@ final class IPadTabChatHistoryCoordinator {
     /// Tears down the chat history list and removes the floating panel.
     func tearDown() {
         cancellables.removeAll()
+        currentQuery = ""
 
         historyManager?.tearDown()
         historyManager = nil

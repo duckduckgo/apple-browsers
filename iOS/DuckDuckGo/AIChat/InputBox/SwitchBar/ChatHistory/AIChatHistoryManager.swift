@@ -42,7 +42,7 @@ final class AIChatHistoryManager {
     // MARK: - Properties
 
     weak var delegate: AIChatHistoryManagerDelegate?
-    var onFetchCompleted: ((String, Bool) -> Void)?
+    var onFetchCompleted: (@MainActor (String, Bool) -> Void)?
 
     var hasSuggestions: Bool {
         viewModel.hasSuggestions

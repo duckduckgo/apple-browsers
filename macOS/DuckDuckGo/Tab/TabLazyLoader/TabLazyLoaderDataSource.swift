@@ -18,8 +18,6 @@
 
 import Foundation
 import Combine
-import Common
-import os.log
 
 protocol TabLazyLoaderDataSource: AnyObject {
     associatedtype Tab: LazyLoadable

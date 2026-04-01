@@ -171,6 +171,11 @@ final class TabCollection: NSObject {
         tabs = tab.map { [.loaded($0)] } ?? []
     }
 
+    func removeAll(andAppend tab: AnyTab? = nil) {
+        tabsWillClose(range: 0..<tabs.count)
+        tabs = tab.map { [$0] } ?? []
+    }
+
     /// Clears tabViewModels and tabCollection after the tabs were moved to another collection
     func clearAfterMerge() {
         tabs.removeAll()

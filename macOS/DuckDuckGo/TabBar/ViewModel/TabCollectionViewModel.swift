@@ -698,7 +698,7 @@ final class TabCollectionViewModel: NSObject {
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
-        tabCollection.removeAll(andAppend: exceptionIndex.flatMap { tabCollection.tabs[$0].tab })
+        tabCollection.removeAll(andAppend: exceptionIndex.flatMap { tabCollection.tabs[$0] })
 
         if exceptionIndex != nil {
             selectUnpinnedTab(at: 0, forceChange: forceChange)
@@ -1080,7 +1080,9 @@ extension TabCollectionViewModel {
 extension TabCollectionViewModel {
 
     func canBookmarkAllOpenTabs() -> Bool {
-        tabViewModels.values.compactMap { $0 as? TabViewModel }.filter(\.canBeBookmarked).count >= 2
+        let unpinned = tabCollection.tabs.filter { $0.content.canBeBookmarked }.count
+        let pinned = pinnedTabsCollection?.tabs.filter { $0.content.canBeBookmarked }.count ?? 0
+        return (unpinned + pinned) >= 2
     }
 
 }

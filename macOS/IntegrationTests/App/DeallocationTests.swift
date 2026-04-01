@@ -86,7 +86,7 @@ final class DeallocationTests: XCTestCase {
                 expectDeallocation(of: Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.fireViewController)
 
                 expectDeallocation(of: Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel)
-                for anyTab in Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabCollection.tabs {
+                for anyTab in Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabs {
                     if case .loaded(let tab) = anyTab {
                         expectDeallocation(of: tab)
                         expectDeallocation(of: tab.webView)
@@ -129,7 +129,7 @@ final class DeallocationTests: XCTestCase {
                 expectDeallocation(of: Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.fireViewController)
 
                 expectDeallocation(of: Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel)
-                for anyTab in Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabCollection.tabs {
+                for anyTab in Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabs {
                     if case .loaded(let tab) = anyTab {
                         expectDeallocation(of: tab)
                         expectDeallocation(of: tab.webView)
@@ -138,7 +138,7 @@ final class DeallocationTests: XCTestCase {
             }
 
             for i in (0..<Application.appDelegate.windowControllersManager.mainWindowControllers.count).reversed() {
-                for _ in 0..<Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabCollection.tabs.count {
+                for _ in 0..<Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel.tabs.count {
                     Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.closeTab(self)
                 }
             }

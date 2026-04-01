@@ -116,7 +116,7 @@ final class MacWatchdogDiagnosticProviderTests: XCTestCase {
         )
 
         // Remove any automatically added tabs
-        while !tabCollectionViewModel.tabCollection.tabs.isEmpty {
+        while !tabCollectionViewModel.tabs.isEmpty {
             tabCollectionViewModel.remove(at: .unpinned(0))
         }
 

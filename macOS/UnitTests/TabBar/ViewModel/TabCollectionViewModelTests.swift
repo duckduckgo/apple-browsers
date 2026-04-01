@@ -39,7 +39,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
         XCTAssertEqual(tabCollectionViewModel.tabViewModel(at: 0)?.tab,
-                       tabCollectionViewModel.tabCollection.tabs[0].tab)
+                       tabCollectionViewModel.tabs[0].tab)
     }
 
     @MainActor
@@ -56,8 +56,8 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection())
 
-        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
-        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs[0].content, .newtab)
+        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.tabs[0].content, .newtab)
     }
 
     // MARK: - Select
@@ -220,7 +220,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenAppendNewTabIsCalledThenNewTabIsAlsoSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
-        let index = tabCollectionViewModel.tabCollection.tabs.count
+        let index = tabCollectionViewModel.tabs.count
         tabCollectionViewModel.appendNewTab()
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: index))
     }
@@ -240,7 +240,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
         tabCollectionViewModel.append(tab: Tab(), selected: true)
-        let lastTabViewModel = tabCollectionViewModel.tabViewModel(at: tabCollectionViewModel.tabCollection.tabs.count - 1)
+        let lastTabViewModel = tabCollectionViewModel.tabViewModel(at: tabCollectionViewModel.tabs.count - 1)
 
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === lastTabViewModel)
     }
@@ -289,7 +289,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.insert(tab, selected: false)
 
         XCTAssert(tab !== tabCollectionViewModel.tabViewModel(at: 0)?.tab)
-        XCTAssert(tabCollectionViewModel.tabCollection.tabs.count == 1)
+        XCTAssert(tabCollectionViewModel.tabs.count == 1)
     }
 
     @MainActor
@@ -345,7 +345,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                                                             tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
 
-        let index = tabCollectionViewModel.tabCollection.tabs.count
+        let index = tabCollectionViewModel.tabs.count
         tabCollectionViewModel.insertOrAppendNewTab()
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: index))
 
@@ -368,7 +368,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.remove(at: .unpinned(1))
 
-        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1)
     }
 
     @MainActor
@@ -386,7 +386,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenSelectedTabIsRemovedThenNextItemWithLowerIndexIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabCollection.tabs[0].tab
+        let firstTab = tabCollectionViewModel.tabs[0].tab
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.remove(at: .unpinned(1))
@@ -397,7 +397,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenAllOtherTabsAreRemovedThenRemainedIsAlsoSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabCollection.tabs[0].tab
+        let firstTab = tabCollectionViewModel.tabs[0].tab
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.appendNewTab()
@@ -484,7 +484,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.remove(at: .unpinned(0))
 
         XCTAssertNil(tabCollectionViewModel.selectionIndex)
-        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0)
+        XCTAssertEqual(tabCollectionViewModel.tabs.count, 0)
     }
 
     @MainActor
@@ -504,7 +504,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenChildTabIsInsertedAndRemovedAndThereIsAChildTabClose_ThenChildTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let parentTab = tabCollectionViewModel.tabCollection.tabs[0].tab!
+        let parentTab = tabCollectionViewModel.tabs[0].tab!
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
@@ -518,7 +518,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenChildTabOnLeftHasTheSameParentAndTabOnRightDont_ThenTabOnLeftIsSelectedAfterRemoval() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let parentTab = tabCollectionViewModel.tabCollection.tabs[0].tab!
+        let parentTab = tabCollectionViewModel.tabs[0].tab!
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
@@ -587,7 +587,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         _ = tabCollectionViewModel.removeSelected()
 
-        XCTAssertFalse(tabCollectionViewModel.tabCollection.contains(tab: selectedTab))
+        XCTAssertFalse(tabCollectionViewModel.tabCollection.contains(tab: selectedTab!))
     }
 
     // MARK: - Duplicate

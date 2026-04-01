@@ -375,7 +375,7 @@ extension FireCoordinator {
             // History View doesn't currently support having new data pushed to it
             // so we need to instruct all open history tabs to reload themselves.
             let historyTabs = self.windowControllersManager.mainWindowControllers
-                .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                .flatMap(\.mainViewController.tabCollectionViewModel.tabs)
                 .filter { $0.content.isHistory }
             historyTabs.forEach { $0.reload() }
         }

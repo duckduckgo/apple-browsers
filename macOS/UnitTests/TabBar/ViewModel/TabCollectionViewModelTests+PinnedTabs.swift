@@ -155,7 +155,7 @@ extension TabCollectionViewModelTests {
         let tab = Tab(parentTab: parentPinnedTab)
         tabCollectionViewModel.insert(tab, selected: false)
 
-        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 2)
+        XCTAssertEqual(tabCollectionViewModel.tabs.count, 2)
         XCTAssertIdentical(tab, tabCollectionViewModel.tabViewModel(at: 0)?.tab)
     }
 
@@ -185,7 +185,7 @@ extension TabCollectionViewModelTests {
                                                             tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
         tabCollectionViewModel.appendPinnedTab()
 
-        let index = tabCollectionViewModel.tabCollection.tabs.count
+        let index = tabCollectionViewModel.tabs.count
         tabCollectionViewModel.insertOrAppendNewTab()
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: index))
 
@@ -250,7 +250,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenSelectedLastPinnedTabIsRemovedThenFirstUnpinnedTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let firstUnpinnedTab = tabCollectionViewModel.tabCollection.tabs[0].tab
+        let firstUnpinnedTab = tabCollectionViewModel.tabs[0].tab
 
         tabCollectionViewModel.select(at: .pinned(1))
         tabCollectionViewModel.remove(at: .pinned(1))
@@ -332,7 +332,7 @@ extension TabCollectionViewModelTests {
 
         _ = tabCollectionViewModel.removeSelected()
 
-        XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.contains(tab: selectedTab))
+        XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.contains(tab: selectedTab!))
     }
 
     // MARK: - Duplicate

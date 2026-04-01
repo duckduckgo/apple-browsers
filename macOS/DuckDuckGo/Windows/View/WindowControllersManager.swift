@@ -175,8 +175,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
             isInInitialState = mainWindowControllers.isEmpty ||
             (
                 mainWindowControllers.count == 1 &&
-                mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabCollection.tabs.count == 1 &&
-                mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabCollection.tabs.first?.content == .newtab &&
+                mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabs.count == 1 &&
+                mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabs.first?.content == .newtab &&
                 pinnedTabsManagerProvider.arePinnedTabsEmpty
             )
         }
@@ -331,7 +331,7 @@ extension WindowControllersManager {
                     tabCollectionViewModel.remove(at: selectionIndex)
 
                     // close the window if no more non-pinned tabs are open
-                    if tabCollectionViewModel.tabCollection.tabs.isEmpty, let window = windowController.window, window.isVisible,
+                    if tabCollectionViewModel.tabs.isEmpty, let window = windowController.window, window.isVisible,
                        mainWindowController?.mainViewController.tabCollectionViewModel.selectedTabIndex?.isPinnedTab != true {
                         window.close()
                     }

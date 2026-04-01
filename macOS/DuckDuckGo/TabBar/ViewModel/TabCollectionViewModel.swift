@@ -53,6 +53,9 @@ final class TabCollectionViewModel: NSObject {
     /// Local tabs collection
     let tabCollection: TabCollection
 
+    var tabs: [AnyTab] { tabCollection.tabs }
+    var pinnedTabs: [Tab] { pinnedTabsCollection?.loadedTabs ?? [] }
+
     var isPopup: Bool {
         tabCollection.isPopup
     }

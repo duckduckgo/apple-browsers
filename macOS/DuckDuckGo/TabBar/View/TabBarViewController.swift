@@ -446,7 +446,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             tabCollectionViewModel.select(at: selectionIndex)
         }
         if tabCollectionViewModel.selectionIndex == nil {
-            if tabCollectionViewModel.tabCollection.tabs.count > 0 {
+            if tabCollectionViewModel.tabs.count > 0 {
                 tabCollectionViewModel.select(at: .unpinned(0))
             } else {
                 tabCollectionViewModel.select(at: .pinned(0))
@@ -1788,7 +1788,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
     }
 
     private func appendToCollectionView(selected: Bool) {
-        let lastIndex = max(0, tabCollectionViewModel.tabCollection.tabs.count - 1)
+        let lastIndex = max(0, tabCollectionViewModel.tabs.count - 1)
         let lastIndexPathSet = Set(arrayLiteral: IndexPath(item: lastIndex))
 
         if frozenLayout {
@@ -1914,7 +1914,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
         if collectionView == pinnedTabsCollectionView {
             return tabCollectionViewModel.pinnedTabsCollection?.tabs.count ?? 0
         }
-        return tabCollectionViewModel.tabCollection.tabs.count
+        return tabCollectionViewModel.tabs.count
     }
 
     func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {

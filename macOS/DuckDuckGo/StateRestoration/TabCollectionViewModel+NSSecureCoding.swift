@@ -36,13 +36,6 @@ extension TabCollectionViewModel: NSSecureCoding {
         self.init(tabCollection: tabCollection,
                   selectionIndex: .unpinned(index),
                   burnerMode: burnerMode)
-
-        // The selected tab was decoded as .suspended — materialize it now so it has a webView.
-        // selectUnpinnedTab (called via selectionIndex didSet) handles materialization,
-        // but during init the didSet doesn't fire (Swift behavior), so we do it explicitly.
-        if case .suspended = tabCollection.tabs[safe: index] {
-            materialize(at: .unpinned(index))
-        }
     }
 
     func encode(with coder: NSCoder) {

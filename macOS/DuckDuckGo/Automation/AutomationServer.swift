@@ -97,7 +97,8 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
                 return (windowController, .pinned(index))
             }
 
-            if let index = tabCollectionViewModel.loadedTabs.firstIndex(where: predicate) {
+            if let tab = tabCollectionViewModel.loadedTabs.first(where: predicate),
+               let index = tabCollectionViewModel.tabCollection.firstIndex(of: tab) {
                 return (windowController, .unpinned(index))
             }
         }

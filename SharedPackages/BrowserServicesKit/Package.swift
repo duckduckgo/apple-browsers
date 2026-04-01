@@ -17,6 +17,7 @@ let package = Package(
         .library(name: "DDGSync", targets: ["DDGSync"]),
         .library(name: "BrowserServicesKitTestsUtils", targets: ["BrowserServicesKitTestsUtils"]),
         .library(name: "Persistence", targets: ["Persistence"]),
+        .library(name: "DuckAiDataStore", targets: ["DuckAiDataStore"]),
         .library(name: "PersistenceTestingUtils", targets: ["PersistenceTestingUtils"]),
         .library(name: "SecureStorageTestsUtils", targets: ["SecureStorageTestsUtils"]),
         .library(name: "Bookmarks", targets: ["Bookmarks"]),
@@ -120,6 +121,17 @@ let package = Package(
             name: "Persistence",
             dependencies: [
                 "Common",
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "DuckAiDataStore",
+            dependencies: [
+                "Common",
+                "Persistence",
+                "GRDB",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -702,6 +714,13 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PersistenceTestingUtils",
                 "TrackerRadarKit",
+            ]
+        ),
+        .testTarget(
+            name: "DuckAiDataStoreTests",
+            dependencies: [
+                "DuckAiDataStore",
+                "PersistenceTestingUtils",
             ]
         ),
         .testTarget(

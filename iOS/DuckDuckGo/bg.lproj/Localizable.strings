@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Разрешаване на аудио и видео";
+"autoplay.mode.blockAll" = "Блокиране аудио и видео";
+"autoplay.mode.blockAudio" = "Блокиране на аудио";
+"settings.autoplay" = "Автоматично възпроизвеждане";
+"settings.autoplay.duck.player.link" = "Настройки на Duck Player";
+"settings.autoplay.footer" = "Настройките за автоматично възпроизвеждане ще се прилагат само за новоотворени раздели. Промените не могат да бъдат приложени към съществуващи раздели, освен ако приложението не бъде рестартирано. За да управлявате автоматичното възпроизвеждане в Duck Player, отидете на ";
+"settings.media.section" = "Медии";

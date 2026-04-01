@@ -907,6 +907,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Update username?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Allow Audio and Video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Block Audio and Video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Block Audio";
+
 /* View plans button text during Black Friday campaign */
 "black-friday.campaign.view.plans.cta" = "Save %d%% on First Year";
 
@@ -1483,8 +1492,8 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Auto-play videos";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Autoplay Videos";
 
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimental";
@@ -3103,6 +3112,15 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatically Delete Data";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Autoplay";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Player Settings";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Autoplay settings will only apply to newly opened tabs. Changes cannot be applied to existing tabs unless the application is restarted. To manage autoplay in Duck Player, go to ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browser Feedback";
 
@@ -3252,6 +3270,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Manage Account";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Media";
 
 /* Settings title for the 'More' section */
 "settings.more" = "More from DuckDuckGo";

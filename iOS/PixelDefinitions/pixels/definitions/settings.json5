@@ -19,5 +19,27 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_settings_autoplay_open": {
+        "description": "Fires when the user opens the Autoplay settings screen",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_settings_autoplay_changed": {
+        "description": "Fires when the user changes the autoplay blocking mode setting",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "autoplay_blocking_mode",
+                "description": "The autoplay blocking mode selected by the user",
+                "type": "string",
+                "enum": ["allowAll", "blockAudio", "blockAll"]
+            }
+        ]
     }
 }

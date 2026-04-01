@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Salli ääni ja video";
+"autoplay.mode.blockAll" = "Estä ääni ja video";
+"autoplay.mode.blockAudio" = "Estä ääni";
+"settings.autoplay" = "Automaattinen toisto";
+"settings.autoplay.duck.player.link" = "Duck Player -asetukset";
+"settings.autoplay.footer" = "Automaattisen toiston asetukset koskevat vain uusia avattuja välilehtiä. Muutoksia ei voida ottaa käyttöön aiemmilla välilehdillä, ellei sovellusta käynnistetä uudelleen. Voit hallita automaattista toistoa Duck Playerissa kohdassa ";
+"settings.media.section" = "Media";

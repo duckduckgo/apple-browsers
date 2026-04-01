@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Leisti garsą ir vaizdą";
+"autoplay.mode.blockAll" = "Blokuoti garsą ir vaizdą";
+"autoplay.mode.blockAudio" = "Blokuoti garsą";
+"settings.autoplay" = "Automatinis paleidimas";
+"settings.autoplay.duck.player.link" = "„Duck Player“ nuostatos";
+"settings.autoplay.footer" = "Automatinio paleidimo nuostatos galios tik naujai atvertoms kortelėms. Pakeitimų negalima pritaikyti esamoms kortelėms iš naujo nepaleidus programos. Jei nori valdyti automatinį paleidimą „Duck Player“ programoje, eik į ";
+"settings.media.section" = "Medija";

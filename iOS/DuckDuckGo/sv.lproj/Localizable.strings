@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Tillåt ljud och video";
+"autoplay.mode.blockAll" = "Blockera ljud och video";
+"autoplay.mode.blockAudio" = "Blockera ljud";
+"settings.autoplay" = "Autouppspelning";
+"settings.autoplay.duck.player.link" = "Inställningar för Duck Player";
+"settings.autoplay.footer" = "Inställningarna för automatisk uppspelning gäller bara för nyöppnade flikar. Ändringar kan inte tillämpas på befintliga flikar om inte programmet startas om. Hantera automatisk uppspelning i Duck Player genom att gå till ";
+"settings.media.section" = "Media";

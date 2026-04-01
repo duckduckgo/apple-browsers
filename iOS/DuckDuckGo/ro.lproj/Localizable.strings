@@ -4568,3 +4568,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Permite redarea audio și video automată";
+"autoplay.mode.blockAll" = "Blochează redarea audio și video automată";
+"autoplay.mode.blockAudio" = "Blochează redarea audio automată";
+"settings.autoplay" = "Redare automată";
+"settings.autoplay.duck.player.link" = "Setări Duck Player";
+"settings.autoplay.footer" = "Setările de redare automată se vor aplica doar filelor nou deschise. Modificările nu pot fi aplicate filelor existente decât dacă aplicația este repornită. Pentru a gestiona redarea automată în Duck Player, accesează ";
+"settings.media.section" = "Media";

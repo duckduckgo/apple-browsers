@@ -320,13 +320,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func updateImageGenModeUI(_ isImageGenMode: Bool) {
-        // Toggle background color on image gen button
+        // Toggle background color and tooltip on image gen button
         imageGenButton.activeBackgroundColor = isImageGenMode
             ? NSColor(designSystemColor: .accentAltPrimary)
             : nil
         imageGenButton.activePressedBackgroundColor = isImageGenMode
             ? NSColor(designSystemColor: .accentAltSecondary)
             : nil
+        imageGenButton.toolTip = isImageGenMode
+            ? UserText.aiChatImageGenDeactivateTooltip
+            : UserText.aiChatImageGenButtonLabel
 
         // Hide suggestions in image gen mode or when attachments are present
         let suppress = shouldSuppressSuggestions
@@ -745,6 +748,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let hasAttachments = !attachmentsContainerView.attachments.isEmpty
         let hasExcess = attachmentsContainerView.hasExcessAttachments
         let isFull = attachmentsContainerView.isFull
+
+        omnibarController.hasImageAttachments = hasAttachments
 
         attachmentsHeightConstraint?.constant = hasAttachments
             ? Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing

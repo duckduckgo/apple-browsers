@@ -2912,6 +2912,18 @@
         }
       }
     },
+    "aichat.image-gen-button.deactivate-tooltip" : {
+      "comment" : "Tooltip for the image generation button when image generation mode is active",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deactivate image generation"
+          }
+        }
+      }
+    },
     "aichat.image-gen-button.label" : {
       "comment" : "Label for the image generation toggle button in AI chat omnibar",
       "extractionState" : "extracted_with_value",
@@ -3232,6 +3244,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Describe the image you want to create"
+          }
+        }
+      }
+    },
+    "aichat.omnibar.image-gen-with-attachment-placeholder" : {
+      "comment" : "Placeholder text in AI chat input when image generation mode is active and an image is attached",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Describe changes based on the image"
           }
         }
       }

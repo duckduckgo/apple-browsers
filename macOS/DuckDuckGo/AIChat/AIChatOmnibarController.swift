@@ -39,6 +39,7 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
 final class AIChatOmnibarController {
     @Published private(set) var currentText: String = ""
     @Published private(set) var isImageGenerationMode: Bool = false
+    @Published var hasImageAttachments: Bool = false
     weak var delegate: AIChatOmnibarControllerDelegate?
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler

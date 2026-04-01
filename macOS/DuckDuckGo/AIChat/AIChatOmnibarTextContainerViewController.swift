@@ -232,14 +232,21 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             }
             .store(in: &cancellables)
 
-        omnibarController.$isImageGenerationMode
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isImageGen in
-                self?.placeholderLabel.stringValue = isImageGen
-                    ? UserText.aiChatImageGenPlaceholder
-                    : UserText.aiChatOmnibarPlaceholder
+        Publishers.CombineLatest(
+            omnibarController.$isImageGenerationMode,
+            omnibarController.$hasImageAttachments
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] isImageGen, hasAttachments in
+            if isImageGen && hasAttachments {
+                self?.placeholderLabel.stringValue = UserText.aiChatImageGenWithAttachmentPlaceholder
+            } else if isImageGen {
+                self?.placeholderLabel.stringValue = UserText.aiChatImageGenPlaceholder
+            } else {
+                self?.placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder
             }
-            .store(in: &cancellables)
+        }
+        .store(in: &cancellables)
     }
 
     @objc func textDidChange(_ notification: Notification) {

@@ -343,6 +343,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
                 .aiChatChromeSidebar,
+                .aiChatImageGeneration,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .promoQueue,
@@ -623,7 +624,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatMultiplePageContexts:
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
         case .aiChatImageGeneration:
-            return .internalOnly
+            return .remoteReleasable(.subfeature(AIChatSubfeature.imageGeneration))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:

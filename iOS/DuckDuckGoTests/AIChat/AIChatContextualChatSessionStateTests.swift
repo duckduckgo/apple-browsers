@@ -889,7 +889,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
 
         // When
-        sessionState.handleChipRemoved()
+        sessionState.downgradeToPlaceholder()
 
         // Then
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])

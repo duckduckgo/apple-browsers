@@ -110,6 +110,15 @@ enum AnyTab: Identifiable {
         }
     }
 
+    var localHistoryDomains: Set<String> {
+        switch self {
+        case .loaded(let tab):
+            tab.localHistoryDomains
+        case .suspended(let suspended):
+            Set(suspended.visitedDomainURLs?.compactMap(\.host) ?? [])
+        }
+    }
+
     // MARK: - Publishers for AppStateChangedPublisher
 
     /// Emits when content, favicon, or title change.

@@ -252,6 +252,14 @@ final class TabCollectionTests: XCTestCase {
     }
 
     @MainActor
+    func testLocalHistoryDomainsEmptyForSuspendedTabWithoutVisitedDomains() {
+        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.suspended(suspended)])
+
+        XCTAssertTrue(tabCollection.localHistoryDomains.isEmpty)
+    }
+
+    @MainActor
     func testRemoveSuspendedTab() {
         let loadedTab = Tab()
         let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))

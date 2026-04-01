@@ -1189,15 +1189,8 @@ extension TabCollection {
 
     var localHistoryDomains: Set<String> {
         var domains = Set<String>()
-        for anyTab in tabs {
-            switch anyTab {
-            case .loaded(let tab):
-                domains.formUnion(tab.localHistoryDomains)
-            case .suspended(let suspended):
-                if let urls = suspended.visitedDomainURLs {
-                    domains.formUnion(urls.compactMap(\.host))
-                }
-            }
+        for tab in tabs {
+            domains.formUnion(tab.localHistoryDomains)
         }
         return domains
     }

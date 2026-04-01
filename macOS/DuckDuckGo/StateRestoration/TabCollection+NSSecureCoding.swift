@@ -27,10 +27,13 @@ extension TabCollection: NSSecureCoding {
     convenience init?(coder decoder: NSCoder) {
         let useSuspendedTabs = NSApp.delegateTyped.featureFlagger.isFeatureOn(.deferredTabWebViewCreation)
 
-        // Always decode as TabRestorationData — the archive's actual class is TabRestorationData
-        // (even though className is mapped to "Tab"), and NSSecureCoding validates the real class.
+        // Remap both class names to TabRestorationData so we can decode archives from any version:
+        // - "DuckDuckGo_Privacy_Browser.Tab": written by both old versions (actual Tab objects)
+        //   and current version (TabRestorationData encoded under Tab's module-qualified name)
+        // - "Tab": kept as a fallback for any intermediate builds that used the short name
         if let unarchiver = decoder as? NSKeyedUnarchiver {
             unarchiver.setClass(TabRestorationData.self, forClassName: "Tab")
+            unarchiver.setClass(TabRestorationData.self, forClassName: NSStringFromClass(Tab.self))
         }
 
         guard let restorationDataArray = decoder.decodeObject(
@@ -39,12 +42,14 @@ extension TabCollection: NSSecureCoding {
         ) as? [TabRestorationData] else {
             if let unarchiver = decoder as? NSKeyedUnarchiver {
                 unarchiver.setClass(Tab.self, forClassName: "Tab")
+                unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
             }
             return nil
         }
 
         if let unarchiver = decoder as? NSKeyedUnarchiver {
             unarchiver.setClass(Tab.self, forClassName: "Tab")
+            unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
         }
 
         if useSuspendedTabs {
@@ -60,10 +65,12 @@ extension TabCollection: NSSecureCoding {
     }
 
     func encode(with coder: NSCoder) {
-        // Convert all AnyTab to TabRestorationData for encoding.
-        // Register under "Tab" class name so old binaries can still decode the archive.
+        // Encode TabRestorationData under Tab's module-qualified class name so that:
+        // - Old binaries (rollback) can decode it via decodeObject(of: [Tab.self]) which
+        //   matches against NSStringFromClass(Tab.self) = "DuckDuckGo_Privacy_Browser.Tab"
+        // - New binaries can decode it via the setClass remapping in init?(coder:)
         if let archiver = coder as? NSKeyedArchiver {
-            archiver.setClassName("Tab", for: TabRestorationData.self)
+            archiver.setClassName(NSStringFromClass(Tab.self), for: TabRestorationData.self)
         }
 
         let restorationData: [TabRestorationData] = tabs.map { anyTab in

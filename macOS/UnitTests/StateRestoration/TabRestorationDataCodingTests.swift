@@ -227,6 +227,79 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(tab.lastSelectedAt, date)
     }
 
+    // MARK: - Test 8: Backwards compatibility — old Tab-encoded archive decoded by new code
+
+    @MainActor
+    func testLegacyTabEncodedArchiveDecodesAsTabRestorationData() throws {
+        let url = URL(string: "https://legacy.example.com")!
+        let tab = Tab(content: .url(url, credential: nil, source: .link), shouldLoadInBackground: true)
+        tab.title = "Legacy Tab"
+
+        // Encode exactly as old TabCollection.encode(with:) did — no class name remapping
+        let archiver = NSKeyedArchiver(requiringSecureCoding: true)
+        archiver.encode([tab], forKey: NSKeyedArchiveRootObjectKey)
+        archiver.finishEncoding()
+
+        // Decode with class remapping — exactly as new TabCollection.init?(coder:) does
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: archiver.encodedData)
+        unarchiver.requiresSecureCoding = true
+        unarchiver.setClass(TabRestorationData.self, forClassName: "Tab")
+        unarchiver.setClass(TabRestorationData.self, forClassName: NSStringFromClass(Tab.self))
+
+        let result = unarchiver.decodeObject(
+            of: [NSArray.self, TabRestorationData.self],
+            forKey: NSKeyedArchiveRootObjectKey
+        ) as? [TabRestorationData]
+
+        let decoded = try XCTUnwrap(result?.first)
+        XCTAssertEqual(decoded.uuid, tab.uuid)
+        XCTAssertEqual(decoded.content.urlForWebView, url)
+        XCTAssertEqual(decoded.title, "Legacy Tab")
+    }
+
+    // MARK: - Test 9: Rollback safety — new TabRestorationData archive decoded as Tab by old code
+
+    @MainActor
+    func testNewArchiveDecodesAsTabForRollback() throws {
+        let url = URL(string: "https://new-version.example.com")!
+        let suspended = SuspendedTab(
+            uuid: "rollback-uuid",
+            content: .url(url, credential: nil, source: .pendingStateRestoration),
+            title: "New Tab"
+        )
+
+        // Encode exactly as new TabCollection.encode(with:) does
+        let archiver = NSKeyedArchiver(requiringSecureCoding: true)
+        archiver.setClassName(NSStringFromClass(Tab.self), for: TabRestorationData.self)
+        let restorationData = TabRestorationData(
+            uuid: suspended.uuid,
+            content: suspended.content,
+            title: suspended.title,
+            favicon: nil,
+            interactionStateData: nil,
+            lastSelectedAt: nil,
+            visitedDomainURLs: nil,
+            tabSnapshotIdentifier: nil
+        )
+        archiver.encode([restorationData], forKey: NSKeyedArchiveRootObjectKey)
+        archiver.finishEncoding()
+
+        // Decode exactly as old TabCollection.init?(coder:) did — no class remapping,
+        // just decodeObject(of: [Tab.self])
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: archiver.encodedData)
+        unarchiver.requiresSecureCoding = true
+
+        let result = unarchiver.decodeObject(
+            of: [NSArray.self, Tab.self],
+            forKey: NSKeyedArchiveRootObjectKey
+        ) as? [Tab]
+
+        let decoded = try XCTUnwrap(result?.first)
+        XCTAssertEqual(decoded.uuid, "rollback-uuid")
+        XCTAssertEqual(decoded.content.urlForWebView, url)
+        XCTAssertEqual(decoded.title, "New Tab")
+    }
+
     // MARK: - Helpers
 
     private func encodeThenDecode(_ data: TabRestorationData) throws -> TabRestorationData {

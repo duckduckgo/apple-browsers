@@ -104,8 +104,8 @@ public extension OnboardingTheme.ContextualOnboardingMetrics {
         public let borderInset: CGFloat
         /// Rendered size of the leading icon in a row.
         public let iconSize: CGSize
-        /// Maximum height for a single option list row.
-        public let itemMaxHeight: CGFloat
+        /// Minimum height for a single option list row.
+        public let itemMinHeight: CGFloat
         /// Maximum width for a single option list row.
         public let itemMaxWidth: CGFloat?
         /// Vertical spacing between adjacent option list rows.
@@ -118,7 +118,7 @@ public extension OnboardingTheme.ContextualOnboardingMetrics {
             borderWidth: CGFloat,
             borderInset: CGFloat,
             iconSize: CGSize,
-            itemMaxHeight: CGFloat,
+            itemMinHeight: CGFloat,
             itemMaxWidth: CGFloat? = .infinity,
             interItemSpacing: CGFloat? = nil,
             innerContentHorizontalSpacing: CGFloat? = nil
@@ -127,7 +127,7 @@ public extension OnboardingTheme.ContextualOnboardingMetrics {
             self.borderWidth = borderWidth
             self.borderInset = borderInset
             self.iconSize = iconSize
-            self.itemMaxHeight = itemMaxHeight
+            self.itemMinHeight = itemMinHeight
             self.itemMaxWidth = itemMaxWidth
             self.interItemSpacing = interItemSpacing
             self.innerContentHorizontalSpacing = innerContentHorizontalSpacing

@@ -1975,6 +1975,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno Classic";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
 
@@ -2543,7 +2546,7 @@ https://duckduckgo.com/mac";
 "onboarding.privacypro.promo.buttons.learnMore" = "Learn More";
 
 /* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
-"onboarding.privacypro.promo.buttons.rebranding.skip" = "No Thanks";
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "No thanks";
 
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Skip";
@@ -2589,6 +2592,9 @@ https://duckduckgo.com/mac";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Got it! I’ll skip the other tips.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Try it free!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Try it for free!";

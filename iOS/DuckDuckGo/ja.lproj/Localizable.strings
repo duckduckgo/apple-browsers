@@ -2085,6 +2085,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "エアストリーム";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "インフェルノ・クラシック";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "インフェルノ";
 
@@ -2781,6 +2784,9 @@
 "onboarding.skip.title" = "了解！他のヒントはスキップします。";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "無料で試す";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "無料でお試しください。";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3064,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "このサイトはSafariで開こうとしています。";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "ブランド刷新";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "最近の処理ログ";

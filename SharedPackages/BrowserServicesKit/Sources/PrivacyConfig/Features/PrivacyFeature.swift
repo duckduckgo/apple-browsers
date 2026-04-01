@@ -252,6 +252,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case screenTimeCleaning
 
     case minimalChromeInLandscape
+
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
+    case onboardingRebranding
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

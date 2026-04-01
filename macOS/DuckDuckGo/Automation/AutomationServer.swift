@@ -77,7 +77,7 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
         for windowController in windowControllersManager.mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
 
-            for tab in tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? [] where !seenPinnedTabUUIDs.contains(tab.uuid) {
+            for tab in tabCollectionViewModel.pinnedTabs where !seenPinnedTabUUIDs.contains(tab.uuid) {
                 seenPinnedTabUUIDs.insert(tab.uuid)
                 body(tab)
             }
@@ -93,7 +93,7 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
         for windowController in windowControllersManager.mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
 
-            if let index = tabCollectionViewModel.pinnedTabsCollection?.loadedTabs.firstIndex(where: predicate) {
+            if let index = tabCollectionViewModel.pinnedTabs.firstIndex(where: predicate) {
                 return (windowController, .pinned(index))
             }
 

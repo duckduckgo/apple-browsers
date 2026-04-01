@@ -137,22 +137,83 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     // MARK: - Files (Implemented in Task 3)
 
     public func putFile(uuid: String, chatId: String, data: Data) throws {
-        fatalError("Implemented in Task 3")
+        let fileURL = filesDirectoryURL.appendingPathComponent(uuid)
+
+        do {
+            try data.write(to: fileURL, options: [.atomic, .completeFileProtection])
+        } catch {
+            throw DuckAiNativeDataStoreError.fileWriteError(error)
+        }
+
+        let record = FileRecord(uuid: uuid, chatId: chatId, dataSize: data.count, filePath: uuid)
+        do {
+            try dbQueue.write { db in
+                try record.save(db)
+            }
+        } catch {
+            try? FileManager.default.removeItem(at: fileURL)
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
     }
 
     public func getFile(uuid: String) throws -> DuckAiFileContent? {
-        fatalError("Implemented in Task 3")
+        let record: FileRecord? = try dbQueue.read { db in
+            try FileRecord.fetchOne(db, key: uuid)
+        }
+
+        guard let record else { return nil }
+
+        let fileURL = filesDirectoryURL.appendingPathComponent(record.filePath)
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
+
+        let data: Data
+        do {
+            data = try Data(contentsOf: fileURL)
+        } catch {
+            throw DuckAiNativeDataStoreError.fileReadError(error)
+        }
+
+        return DuckAiFileContent(uuid: record.uuid, chatId: record.chatId, data: data)
     }
 
     public func listFiles() throws -> [DuckAiFileMetadata] {
-        fatalError("Implemented in Task 3")
+        do {
+            return try dbQueue.read { db in
+                let records = try FileRecord.fetchAll(db)
+                return records.map { DuckAiFileMetadata(uuid: $0.uuid, chatId: $0.chatId, dataSize: $0.dataSize) }
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
     }
 
     public func deleteFile(uuid: String) throws {
-        fatalError("Implemented in Task 3")
+        let fileURL = filesDirectoryURL.appendingPathComponent(uuid)
+        try? FileManager.default.removeItem(at: fileURL)
+
+        do {
+            try dbQueue.write { db in
+                try db.execute(sql: "DELETE FROM duck_ai_files WHERE uuid = ?", arguments: [uuid])
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
     }
 
     public func deleteAllFiles() throws {
-        fatalError("Implemented in Task 3")
+        let fileManager = FileManager.default
+        if let contents = try? fileManager.contentsOfDirectory(at: filesDirectoryURL, includingPropertiesForKeys: nil) {
+            for fileURL in contents {
+                try? fileManager.removeItem(at: fileURL)
+            }
+        }
+
+        do {
+            try dbQueue.write { db in
+                try db.execute(sql: "DELETE FROM duck_ai_files")
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
     }
 }

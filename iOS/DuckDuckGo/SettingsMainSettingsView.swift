@@ -112,7 +112,7 @@ struct SettingsMainSettingsView: View {
             if viewModel.state.youTubeAdBlockingAvailable {
                 AnyView(NavigationLink(destination: SettingsYouTubeAdBlockingView().environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.youTubeAdBlockingTitle,
-                                     image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayer))
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayerBlocked))
                 })
             }
         }

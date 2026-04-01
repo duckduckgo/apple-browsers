@@ -61,7 +61,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
         let result = sut.proceedButtonText
 
         // Then
-        XCTAssertEqual(result, UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree)
+        XCTAssertEqual(result, UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.tryItFree)
     }
 
     func testReturnsNonFreeTrialTextWhenUserIsNotEligibleForFreeTrial() {

@@ -257,7 +257,7 @@ final class PreferencesSidebarModel: ObservableObject {
         subscribeToLocalFeatureFlagOverrideChanges()
     }
 
-    func subscribeToLocalFeatureFlagOverrideChanges() {
+    private func subscribeToLocalFeatureFlagOverrideChanges() {
         if let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> {
             overridesHandler.flagDidChangePublisher
                 .filter { flag, _ in flag == .adBlockingExtension }

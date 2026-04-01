@@ -97,8 +97,8 @@ private extension NewTabPageView {
                             .daxTitle3()
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, -7)
-                            .padding(.trailing, 60)
+                            .padding(.top, Metrics.sectionTitleTopPadding)
+                            .padding(.trailing, Metrics.sectionTitleTrailingPadding)
                     }
 
                     FavoritesView(model: favoritesViewModel)
@@ -218,6 +218,8 @@ private struct Metrics {
     static let sectionSpacing = 32.0
     static let nonGridSectionTopPadding = -8.0
     static let updatedNonGridSectionHorizontalPadding = -8.0
+    static let sectionTitleTopPadding = -7.0
+    static let sectionTitleTrailingPadding = 60.0
 
     static let messageMaximumWidth: CGFloat = 380
     static let messageMaximumWidthPad: CGFloat = 455

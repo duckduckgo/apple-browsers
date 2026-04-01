@@ -206,20 +206,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
         userScript.inputBoxHandler = self
-        syncChipVisibility(hasExistingChat: hasExistingChat)
         if hadPreviousScript {
             resetSessionState()
         }
+        syncChipVisibility(hasExistingChat: hasExistingChat)
     }
 
     func unbind() {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
-        hasSubmittedPrompt = false
-        updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
-        clearAttachments()
         resetSessionState()
     }
 
@@ -303,6 +299,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
 
+        viewController.setExpanded(false, animated: false)
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
         viewController.isCustomizeResponsesButtonHidden = true
@@ -486,11 +483,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
+        let modelId = hasSubmittedPrompt ? nil : persistedModelId
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         showCollapsed()
-        userScript.submitPrompt(text, images: nil, modelId: nil)
+        userScript.submitPrompt(text, images: nil, modelId: modelId)
     }
 
     func handleExternalSubmission(_ type: ExternalSubmissionType) {
@@ -971,7 +969,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
-        updateInputMode(mode, animated: false)
+        updateInputMode(mode, animated: true)
     }
 
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {

@@ -176,7 +176,7 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private func updateTableHeader() {
-        let hasTitleContent = sectionTitle != nil && !sectionTitle!.isEmpty
+        let hasTitleContent = !(sectionTitle?.isEmpty ?? true)
         let hasEscapeHatch = escapeHatchHostingController != nil
 
         guard hasTitleContent || hasEscapeHatch else {
@@ -267,9 +267,8 @@ final class AIChatHistoryListViewController: UIViewController {
             escapeHatchHostingController = hosting
 
             addChild(hosting)
-            hosting.didMove(toParent: self)
-
             updateTableHeader()
+            hosting.didMove(toParent: self)
             updateScrollEnabled()
         } else {
             if let hosting = escapeHatchHostingController {

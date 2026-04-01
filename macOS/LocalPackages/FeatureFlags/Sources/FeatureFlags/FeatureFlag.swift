@@ -623,7 +623,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatMultiplePageContexts:
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
         case .aiChatImageGeneration:
-            return .disabled
+            return .internalOnly
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:

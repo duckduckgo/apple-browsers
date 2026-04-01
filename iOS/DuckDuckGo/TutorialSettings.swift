@@ -25,13 +25,7 @@ protocol TutorialSettings: AnyObject {
     var lastVersionSeen: Int { get }
     var hasSeenOnboarding: Bool { get set }
     var hasSkippedOnboarding: Bool { get set }
-    var pendingOnboardingResumeStep: OnboardingResumeStep? { get set }
 
-}
-
-enum OnboardingResumeStep: String {
-    case duckAIQueryExperimentSelection
-    case duckAIAnswerStep
 }
 
 final class DefaultTutorialSettings: TutorialSettings {
@@ -45,7 +39,6 @@ final class DefaultTutorialSettings: TutorialSettings {
         static let lastVersionSeen = "com.duckduckgo.tutorials.lastVersionSeen"
         static let hasSeenOnboarding = "com.duckduckgo.tutorials.hasSeenOnboarding"
         static let hasSkippedOnboarding = "com.duckduckgo.tutorials.hasSkippedOnboarding"
-        static let pendingOnboardingResumeStep = "com.duckduckgo.tutorials.pendingOnboardingResumeStep"
     }
 
     private func userDefaults() -> UserDefaults {
@@ -75,22 +68,6 @@ final class DefaultTutorialSettings: TutorialSettings {
         }
         set {
             userDefaults().set(newValue, forKey: Keys.hasSkippedOnboarding)
-        }
-    }
-
-    public var pendingOnboardingResumeStep: OnboardingResumeStep? {
-        get {
-            guard let rawValue = userDefaults().string(forKey: Keys.pendingOnboardingResumeStep) else {
-                return nil
-            }
-            return OnboardingResumeStep(rawValue: rawValue)
-        }
-        set {
-            if let newValue {
-                userDefaults().set(newValue.rawValue, forKey: Keys.pendingOnboardingResumeStep)
-            } else {
-                userDefaults().removeObject(forKey: Keys.pendingOnboardingResumeStep)
-            }
         }
     }
 

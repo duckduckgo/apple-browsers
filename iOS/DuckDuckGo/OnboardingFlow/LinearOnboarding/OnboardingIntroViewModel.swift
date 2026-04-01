@@ -192,7 +192,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         pixelReporter.measureConfirmSkipOnboardingCTAAction()
         onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
         tutorialSettings.hasSkippedOnboarding = true
-        tutorialSettings.pendingOnboardingResumeStep = nil
+        AppUserDefaults().duckAIOnboardingResumeStep = nil
         contextualDaxDialogs.disableContextualDaxDialogs()
         onCompletingOnboardingIntro?()
     }
@@ -344,7 +344,7 @@ private extension OnboardingIntroViewModel {
     func makeNextViewState() {
         guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) else {
             assertionFailure("Onboarding Step index not found.")
-            tutorialSettings.pendingOnboardingResumeStep = nil
+            AppUserDefaults().duckAIOnboardingResumeStep = nil
             onCompletingOnboardingIntro?()
             return
         }
@@ -355,7 +355,7 @@ private extension OnboardingIntroViewModel {
         // If the flow does not have any step remaining dismiss it
         guard let nextIntroStep = introSteps[safe: nextStepIndex] else {
             if currentIntroStep != .duckAIQueryExperimentSelection {
-                tutorialSettings.pendingOnboardingResumeStep = nil
+                AppUserDefaults().duckAIOnboardingResumeStep = nil
             }
             onCompletingOnboardingIntro?()
             return
@@ -369,11 +369,11 @@ private extension OnboardingIntroViewModel {
     }
 
     func restorePendingOnboardingStepIfNeeded() {
-        guard tutorialSettings.pendingOnboardingResumeStep == .duckAIQueryExperimentSelection else {
+        guard AppUserDefaults().duckAIOnboardingResumeStep == .duckAIQueryExperimentSelection else {
             return
         }
         guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
-            tutorialSettings.pendingOnboardingResumeStep = nil
+            AppUserDefaults().duckAIOnboardingResumeStep = nil
             return
         }
 
@@ -390,7 +390,7 @@ private extension OnboardingIntroViewModel {
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
         switch step {
         case .duckAIQueryExperimentSelection:
-            tutorialSettings.pendingOnboardingResumeStep = .duckAIQueryExperimentSelection
+            AppUserDefaults().duckAIOnboardingResumeStep = .duckAIQueryExperimentSelection
         default:
             break
         }

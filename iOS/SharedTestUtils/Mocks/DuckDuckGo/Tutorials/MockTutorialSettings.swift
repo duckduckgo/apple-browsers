@@ -24,7 +24,6 @@ class MockTutorialSettings: TutorialSettings {
     var lastVersionSeen: Int { 0 }
     var hasSeenOnboarding: Bool
     var hasSkippedOnboarding: Bool
-    var pendingOnboardingResumeStep: OnboardingResumeStep?
 
     init(hasSeenOnboarding: Bool, hasSkippedOnboarding: Bool = false) {
         self.hasSeenOnboarding = hasSeenOnboarding

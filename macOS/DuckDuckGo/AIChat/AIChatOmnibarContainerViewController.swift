@@ -65,6 +65,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
         static let attachmentsErrorHeight: CGFloat = 18
         static let maxAttachments: Int = 3
+        static let attachmentsDisplayCap: Int = maxAttachments + 1
         static let suggestionsBottomPadding: CGFloat = 4
     }
 
@@ -79,7 +80,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let attachmentsContainerView = AIChatImageAttachmentsContainerView()
 
     private let attachmentsErrorLabel: NSTextField = {
-        let label = NSTextField(labelWithString: "")
+        let label = NSTextField(labelWithString: UserText.aiChatAttachmentsLimitError)
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: 11)
         label.textColor = .systemRed
@@ -653,8 +654,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }
-            let displayCap = Constants.maxAttachments + 1
-            let remaining = displayCap - self.attachmentsContainerView.attachments.count
+            let remaining = Constants.attachmentsDisplayCap - self.attachmentsContainerView.attachments.count
             for url in panel.urls.prefix(max(remaining, 0)) {
                 self.addImageAttachment(from: url)
             }
@@ -669,8 +669,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Attempts to add an image attachment from a drag-and-drop operation.
     /// - Returns: `true` if the image was accepted, `false` if attachments are full.
     func addImageAttachmentFromDrop(_ url: URL) -> Bool {
-        let displayCap = Constants.maxAttachments + 1
-        guard attachmentsContainerView.attachments.count < displayCap else { return false }
+        guard attachmentsContainerView.attachments.count < Constants.attachmentsDisplayCap else { return false }
         addImageAttachment(from: url)
         return true
     }
@@ -755,8 +754,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             ? Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
             : 0
 
-        // Show error when too many images are attached
-        attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentsLimitError
         attachmentsErrorLabel.isHidden = !hasExcess
 
         // Disable the upload button when at max attachments and update tooltip

@@ -71,7 +71,7 @@ final class AIChatOmnibarToolButton: NSView {
     /// Optional text label shown next to the icon. When set, the button expands horizontally.
     var label: String? {
         didSet {
-            let hasLabel = label != nil && !label!.isEmpty
+            let hasLabel = label.map { !$0.isEmpty } ?? false
             textLabel.stringValue = label ?? ""
             textLabel.isHidden = !hasLabel
             iconCenterXConstraint?.isActive = !hasLabel
@@ -195,7 +195,7 @@ final class AIChatOmnibarToolButton: NSView {
 
     override func layout() {
         super.layout()
-        let hasLabel = label != nil && !label!.isEmpty
+        let hasLabel = label.map { !$0.isEmpty } ?? false
         if hasLabel {
             // Full-width rounded rect when label is shown
             backgroundLayer.frame = bounds

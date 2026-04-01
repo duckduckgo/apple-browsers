@@ -238,6 +238,7 @@ struct SettingsCellView: View, Identifiable {
 struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
 
     let label: String
+    let subtitle: String?
     let options: [T?]
     @Binding var selectedOption: T
 
@@ -250,10 +251,12 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
     /// But with specific design
     /// - Parameters:
     ///   - label: The label to display above the Picker.
+    ///   - subtitle: Optional subtitle text displayed below the label.
     ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
     ///   - selectedOption: A binding to a state variable that represents the selected option.
-    init(label: String, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
+    init(label: String, subtitle: String? = nil, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
         self.label = label
+        self.subtitle = subtitle
         self.options = options
         self._selectedOption = selectedOption
         self.iconProvider = iconProvider
@@ -261,9 +264,18 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
 
     var body: some View {
         HStack {
-            Text(label)
-                .daxBodyRegular()
-                .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(label)
+                    .daxBodyRegular()
+                    .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
+                if let subtitle {
+                    Text(subtitle)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
+            }
+            .layoutPriority(-1)
+            Spacer(minLength: 16)
             Menu {
                 ForEach(options, id: \.self) { option in
 
@@ -279,20 +291,33 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
                 }
             } label: {
                 HStack {
-                    Text(selectedOption.description)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                    pickerSelectionLabel
 
                     Image(systemName: "chevron.up.chevron.down")
                         .font(Font.system(.footnote).weight(.bold))
                         .foregroundColor(Color(UIColor.tertiaryLabel))
                         .padding(.trailing, -2)
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .frame(maxWidth: .infinity)
+            .fixedSize()
         }
         .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    private var pickerSelectionLabel: some View {
+        ZStack(alignment: .trailing) {
+            ForEach(options.compactMap { $0 }, id: \.self) { option in
+                Text(option.description)
+                    .daxSubheadRegular()
+                    .lineLimit(1)
+                    .hidden()
+            }
+
+            Text(selectedOption.description)
+                .daxSubheadRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+        }
     }
 
     private func getButtonWithAction(action: @escaping () -> Void,

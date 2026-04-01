@@ -123,6 +123,10 @@ struct SettingsState {
 
     // Autoplay
     var autoplayBlockingMode: AutoplayBlockingMode
+  
+    // YouTube Ad Blocking
+    var youTubeAdBlockingAvailable: Bool
+    var youTubeAdBlockingEnabled: Bool
 
     static var defaults: SettingsState {
         return SettingsState(
@@ -177,7 +181,9 @@ struct SettingsState {
             duckPlayerAutoplay: true,
             duckPlayerNativeUISERPEnabled: true,
             duckPlayerNativeYoutubeMode: .ask,
-            autoplayBlockingMode: .blockAudio
+            autoplayBlockingMode: .blockAudio,
+            youTubeAdBlockingAvailable: false,
+            youTubeAdBlockingEnabled: false
         )
     }
 }

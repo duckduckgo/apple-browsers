@@ -36,6 +36,14 @@ import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
 
+enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
+    case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
+}
+
+struct YouTubeAdBlockingKeys: StoringKeys {
+    let youTubeAdBlockingEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabled)
+}
+
 final class SettingsViewModel: ObservableObject {
 
     // Dependencies
@@ -81,6 +89,10 @@ final class SettingsViewModel: ObservableObject {
     }()
 
     private var afterInactivityStorage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> {
+        keyValueStore.throwingKeyedStoring()
+    }
+
+    private var youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> {
         keyValueStore.throwingKeyedStoring()
     }
 
@@ -136,6 +148,8 @@ final class SettingsViewModel: ObservableObject {
 
     // View State
     @Published private(set) var state: SettingsState
+    private var lastEnabledDuckPlayerMode: DuckPlayerMode?
+    private var lastEnabledNativeYoutubeMode: NativeDuckPlayerYoutubeMode?
 
     // MARK: Cell Visibility
     enum Features {
@@ -500,7 +514,7 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerMode = $0
                 self.state.duckPlayerMode = $0
-                
+
                 switch self.state.duckPlayerMode {
                 case .alwaysAsk:
                     Pixel.fire(pixel: Pixel.Event.duckPlayerSettingBackToDefault)
@@ -514,7 +528,87 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    
+
+    private var resolvedDuckPlayerMode: DuckPlayerMode {
+        if let lastEnabledDuckPlayerMode {
+            return lastEnabledDuckPlayerMode
+        }
+        if let current = state.duckPlayerMode, current != .disabled {
+            return current
+        }
+        return .alwaysAsk
+    }
+
+    private var resolvedNativeYoutubeMode: NativeDuckPlayerYoutubeMode {
+        if let lastEnabledNativeYoutubeMode {
+            return lastEnabledNativeYoutubeMode
+        }
+        let current = state.duckPlayerNativeYoutubeMode
+        return current != .never ? current : .ask
+    }
+
+    var isDuckPlayerEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerMode != .disabled
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerMode ?? .alwaysAsk
+
+                if !newValue {
+                    if oldMode != .disabled {
+                        self.lastEnabledDuckPlayerMode = oldMode
+                    }
+                    self.appSettings.duckPlayerMode = .disabled
+                    self.state.duckPlayerMode = .disabled
+                } else {
+                    let restoredMode = self.resolvedDuckPlayerMode
+                    self.appSettings.duckPlayerMode = restoredMode
+                    self.state.duckPlayerMode = restoredMode
+                }
+
+                if oldMode != self.state.duckPlayerMode {
+                    switch self.state.duckPlayerMode {
+                    case .enabled:
+                        Pixel.fire(pixel: .duckPlayerSettingAlwaysSettings)
+                    case .alwaysAsk:
+                        Pixel.fire(pixel: .duckPlayerSettingBackToDefault)
+                    case .disabled:
+                        Pixel.fire(pixel: .duckPlayerSettingNeverSettings)
+                    case .none:
+                        break
+                    }
+                }
+            }
+        )
+    }
+
+    var isAlwaysOpenBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerMode == .enabled
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerMode ?? .alwaysAsk
+                let newMode: DuckPlayerMode = newValue ? .enabled : .alwaysAsk
+
+                self.appSettings.duckPlayerMode = newMode
+                self.state.duckPlayerMode = newMode
+
+                if oldMode != newMode {
+                    switch newMode {
+                    case .enabled:
+                        Pixel.fire(pixel: .duckPlayerSettingAlwaysSettings)
+                    case .alwaysAsk:
+                        Pixel.fire(pixel: .duckPlayerSettingBackToDefault)
+                    case .disabled:
+                        Pixel.fire(pixel: .duckPlayerSettingNeverSettings)
+                    }
+                }
+            }
+        )
+    }
+
     var duckPlayerOpenInNewTabBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.duckPlayerOpenInNewTab },
@@ -561,6 +655,16 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var youTubeAdBlockingEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.youTubeAdBlockingEnabled },
+            set: {
+                try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+                self.state.youTubeAdBlockingEnabled = $0
+            }
+        )
+    }
+
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
@@ -577,6 +681,66 @@ final class SettingsViewModel: ObservableObject {
                     self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
                 case .never:
                     self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                }
+            }
+        )
+    }
+
+    var isShowDuckPlayerOnYoutubeBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerNativeYoutubeMode != .never
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerNativeYoutubeMode
+
+                if !newValue {
+                    if oldMode != .never {
+                        self.lastEnabledNativeYoutubeMode = oldMode
+                    }
+                    self.appSettings.duckPlayerNativeYoutubeMode = .never
+                    self.state.duckPlayerNativeYoutubeMode = .never
+                } else {
+                    let restoredMode = self.resolvedNativeYoutubeMode
+                    self.appSettings.duckPlayerNativeYoutubeMode = restoredMode
+                    self.state.duckPlayerNativeYoutubeMode = restoredMode
+                }
+
+                if oldMode != self.state.duckPlayerNativeYoutubeMode {
+                    switch self.state.duckPlayerNativeYoutubeMode {
+                    case .auto:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                    case .ask:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                    case .never:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                    }
+                }
+            }
+        )
+    }
+
+    var isOpenAutomaticallyBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerNativeYoutubeMode == .auto
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerNativeYoutubeMode
+                let newMode: NativeDuckPlayerYoutubeMode = newValue ? .auto : .ask
+
+                self.appSettings.duckPlayerNativeYoutubeMode = newMode
+                self.state.duckPlayerNativeYoutubeMode = newMode
+
+                if oldMode != newMode {
+                    switch newMode {
+                    case .auto:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                    case .ask:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                    case .never:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                    }
                 }
             }
         )
@@ -822,14 +986,16 @@ extension SettingsViewModel {
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
             syncSource: nil,
-            duckPlayerEnabled: featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage,
+            duckPlayerEnabled: !featureFlagger.isFeatureOn(.adBlockingExtension) && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
             duckPlayerMode: duckPlayerSettings.mode,
             duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
             duckPlayerAutoplay: duckPlayerSettings.autoplay,
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
-            autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode
+            autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
+            youTubeAdBlockingAvailable: featureFlagger.isFeatureOn(.adBlockingExtension),
+            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? true
         )
 
         // Subscribe to DuckPlayerSettings updates

@@ -2085,6 +2085,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Levegő";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Klasszikus lángnyelvek";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Lángnyelvek";
 
@@ -2781,6 +2784,9 @@
 "onboarding.skip.title" = "Értem! Kihagyom a többi tippet.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Próbáld ki ingyen!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Próbáld ki ingyen!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3064,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Az oldal a Safariban próbál megnyílni.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "ÚJRAMÁRKÁZVA";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Legutóbbi feldolgozási naplók";

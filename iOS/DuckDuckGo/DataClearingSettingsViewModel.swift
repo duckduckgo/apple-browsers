@@ -112,7 +112,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
         Binding<FireButtonAnimationType>(
             get: { self.fireButtonAnimation },
             set: {
-                Pixel.fire(pixel: .settingsFireButtonSelectorPressed)
+                Pixel.fire(pixel: .settingsFireButtonSelectorPressed, withAdditionalParameters: [PixelParameters.fireAnimation: $0.rawValue])
                 self.appSettings.currentFireButtonAnimation = $0
                 self.fireButtonAnimation = $0
                 NotificationCenter.default.post(name: AppUserDefaults.Notifications.currentFireButtonAnimationChange, object: self)

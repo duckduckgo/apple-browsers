@@ -1230,6 +1230,30 @@ extension Pixel {
          */
         case subscriptionOnboardingPromotionDismiss
 
+        /**
+         * Event Trigger: The subscription promotion modal is shown to a returning user who skipped onboarding
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the CTA on the skipped-onboarding subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionTap
+
+        /**
+         * Event Trigger: The user dismissed the skipped-onboarding subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionDismiss
+
         // Win-back Offer
         case subscriptionWinBackOfferLaunchPromptShown
         case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -2815,6 +2839,10 @@ extension Pixel.Event {
         case .subscriptionOnboardingPromotionTap: return "m_privacy-pro_onboarding_promotion_tap"
 
         case .subscriptionOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
+
+        case .subscriptionSkippedOnboardingPromotionImpression: return "m_privacy-pro_skipped_onboarding_promotion_impression"
+        case .subscriptionSkippedOnboardingPromotionTap: return "m_privacy-pro_skipped_onboarding_promotion_tap"
+        case .subscriptionSkippedOnboardingPromotionDismiss: return "m_privacy-pro_skipped_onboarding_promotion_dismiss"
 
         // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_privacy-pro_winback_launch_prompt_shown"

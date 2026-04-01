@@ -231,12 +231,6 @@ extension OnboardingRebranding {
 
                 experimentExitOverlay
             }
-            .overlay(alignment: .topLeading) {
-                RebrandingBadge()
-                    .padding(.leading, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
-                    .padding(.top, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeTopPadding)
-                    .opacity(isExperimentExitTransitionActive ? 0 : 1)
-            }
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
         }
 
@@ -582,22 +576,6 @@ extension OnboardingRebranding {
 
     }
 
-}
-
-private struct RebrandingBadge: View {
-    var body: some View {
-        Text("REBRANDED")
-            .font(.caption2.weight(.semibold))
-            .textCase(.uppercase)
-            .foregroundColor(.white)
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.7))
-            )
-            .accessibilityIdentifier("RebrandedBadge")
-    }
 }
 
 private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {

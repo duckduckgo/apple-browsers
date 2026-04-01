@@ -113,27 +113,19 @@ final class SuggestionTrayManager: NSObject {
     func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil) {
         guard suggestionTrayViewController == nil else { return }
         
-        let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
-        
-        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
-            SuggestionTrayViewController(
-                coder: coder,
-                favoritesViewModel: self.dependencies.favoritesViewModel,
-                bookmarksDatabase: self.dependencies.bookmarksDatabase,
-                historyManager: self.dependencies.historyManager,
-                tabsModelProvider: self.dependencies.tabsModelProvider,
-                featureFlagger: self.dependencies.featureFlagger,
-                appSettings: self.dependencies.appSettings,
-                aiChatSettings: self.dependencies.aiChatSettings,
-                featureDiscovery: self.dependencies.featureDiscovery,
-                newTabPageDependencies: self.dependencies.newTabPageDependencies,
-                productSurfaceTelemetry: self.dependencies.productSurfaceTelemetry,
-                hideBorder: true
-            )
-        }) else {
-            assertionFailure("Failed to instantiate SuggestionTrayViewController")
-            return
-        }
+
+        let controller = SuggestionTrayViewController(
+            favoritesViewModel: self.dependencies.favoritesViewModel,
+            bookmarksDatabase: self.dependencies.bookmarksDatabase,
+            historyManager: self.dependencies.historyManager,
+            tabsModelProvider: self.dependencies.tabsModelProvider,
+            featureFlagger: self.dependencies.featureFlagger,
+            appSettings: self.dependencies.appSettings,
+            aiChatSettings: self.dependencies.aiChatSettings,
+            featureDiscovery: self.dependencies.featureDiscovery,
+            newTabPageDependencies: self.dependencies.newTabPageDependencies,
+            productSurfaceTelemetry: self.dependencies.productSurfaceTelemetry,
+            hideBorder: true)
 
         controller.coversFullScreen = true
 

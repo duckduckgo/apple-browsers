@@ -2085,6 +2085,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračna struja";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Pakao Klasik";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Pakao";
 
@@ -2781,6 +2784,9 @@
 "onboarding.skip.title" = "Shvaćam! Preskočit ću ostale savjete.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Isprobaj besplatno!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Isprobaj besplatno!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3064,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Ova stranica želi se otvoriti u Safariju.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "REDIZAJNIRANO";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedavni zapisnici obrade";

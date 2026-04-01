@@ -210,12 +210,12 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
            originalTabCollection == lastKeyMainWindowController.mainViewController.tabCollectionViewModel.tabCollection {
             // Original window still exists and it is key
             tabCollectionViewModel = lastKeyMainWindowController.mainViewController.tabCollectionViewModel
-            tabIndex = min(recentlyClosedTab.index.item, tabCollectionViewModel.tabs.count)
+            tabIndex = min(recentlyClosedTab.index.item, tabCollectionViewModel.tabCollection.tabs.count)
 
         } else if let lastKeyMainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             // Original window is closed, reopen the tab in the current window
             tabCollectionViewModel = lastKeyMainWindowController.mainViewController.tabCollectionViewModel
-            tabIndex = tabCollectionViewModel.tabs.count
+            tabIndex = tabCollectionViewModel.tabCollection.tabs.count
 
         } else {
             // There is no window available, create a new one

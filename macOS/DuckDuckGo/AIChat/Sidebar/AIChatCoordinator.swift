@@ -741,7 +741,7 @@ extension AIChatCoordinator: AIChatSidebarResizeDelegate {
     private func performOrphanCleanup() {
         let currentTabIDsFromCollections = Set(
             windowControllersManager.allTabCollectionViewModels.flatMap { tabCollectionViewModel in
-                let unpinnedTabIDs = tabCollectionViewModel.tabs.map(\.uuid)
+                let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
                 let pinnedTabIDs = tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.uuid) ?? []
                 return unpinnedTabIDs + pinnedTabIDs
             }

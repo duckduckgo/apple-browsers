@@ -1289,7 +1289,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
     /// Closes the window if it has no more regular tabs and its pinned tabs are available in other windows
     func closeWindowIfNeeded() -> Bool {
         guard let window = view.window,
-              tabCollectionViewModel.tabs.isEmpty else { return false }
+              tabCollectionViewModel.tabCollection.tabs.isEmpty else { return false }
 
         let noPinnedTabs = tabCollectionViewModel.isBurner || tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.isEmpty != false
 

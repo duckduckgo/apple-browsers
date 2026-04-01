@@ -155,7 +155,7 @@ extension TabCollectionViewModelTests {
         let tab = Tab(parentTab: parentPinnedTab)
         tabCollectionViewModel.insert(tab, selected: false)
 
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 2)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 2)
         XCTAssertIdentical(tab, tabCollectionViewModel.tabViewModel(at: 0)?.tab)
     }
 
@@ -185,7 +185,7 @@ extension TabCollectionViewModelTests {
                                                             tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
         tabCollectionViewModel.appendPinnedTab()
 
-        let index = tabCollectionViewModel.tabs.count
+        let index = tabCollectionViewModel.tabCollection.tabs.count
         tabCollectionViewModel.insertOrAppendNewTab()
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: index))
 
@@ -383,12 +383,12 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.appendPinnedTab(content: tabContent)
 
         XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 1)
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
 
         tabCollectionViewModel.unpinTab(at: 0)
 
         XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 0)
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 2)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 2)
         XCTAssertEqual(tabCollectionViewModel.tabs.first?.content, tabContent)
     }
 

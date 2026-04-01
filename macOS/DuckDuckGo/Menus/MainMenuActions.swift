@@ -185,7 +185,7 @@ extension AppDelegate {
         // History View doesn't currently support having new data pushed to it
         // so we need to instruct all open history tabs to reload themselves.
         let historyTabs = self.windowControllersManager.mainWindowControllers
-            .flatMap(\.mainViewController.tabCollectionViewModel.tabs)
+            .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
             .filter { $0.content.isHistory }
         historyTabs.forEach { $0.reload() }
     }
@@ -1100,7 +1100,7 @@ extension MainViewController {
                     return
                 }
 
-                if tabCollectionViewModel.tabs.isEmpty {
+                if tabCollectionViewModel.tabCollection.tabs.isEmpty {
                     view.window?.performClose(sender)
                 } else {
                     tab.stopAllMediaAndLoading()
@@ -1691,7 +1691,7 @@ extension MainViewController {
     }
 
     @objc func resetPinnedTabs(_ sender: Any?) {
-        if tabCollectionViewModel.selectedTabIndex?.isPinnedTab == true, tabCollectionViewModel.tabs.count > 0 {
+        if tabCollectionViewModel.selectedTabIndex?.isPinnedTab == true, tabCollectionViewModel.tabCollection.tabs.count > 0 {
             tabCollectionViewModel.select(at: .unpinned(0))
         }
         Application.appDelegate.resetPinnedTabs(sender)

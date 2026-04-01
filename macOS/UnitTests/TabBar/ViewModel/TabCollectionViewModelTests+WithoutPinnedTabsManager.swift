@@ -64,7 +64,7 @@ extension TabCollectionViewModelTests {
 
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection())
 
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
         XCTAssertEqual(tabCollectionViewModel.tabs[0].content, .newtab)
     }
 
@@ -215,7 +215,7 @@ extension TabCollectionViewModelTests {
     func test_WithoutPinnedTabsManager_WhenAppendNewTabIsCalledThenNewTabIsAlsoSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
-        let index = tabCollectionViewModel.tabs.count
+        let index = tabCollectionViewModel.tabCollection.tabs.count
         tabCollectionViewModel.appendNewTab()
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: index))
     }
@@ -235,7 +235,7 @@ extension TabCollectionViewModelTests {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
         tabCollectionViewModel.append(tab: Tab(), selected: true)
-        let lastTabViewModel = tabCollectionViewModel.tabViewModel(at: tabCollectionViewModel.tabs.count - 1)
+        let lastTabViewModel = tabCollectionViewModel.tabViewModel(at: tabCollectionViewModel.tabCollection.tabs.count - 1)
 
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === lastTabViewModel)
     }
@@ -272,7 +272,7 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.insert(tab, selected: false)
 
         XCTAssert(tab !== tabCollectionViewModel.tabViewModel(at: 0)?.tab)
-        XCTAssert(tabCollectionViewModel.tabs.count == 1)
+        XCTAssert(tabCollectionViewModel.tabCollection.tabs.count == 1)
     }
 
     @MainActor
@@ -328,7 +328,7 @@ extension TabCollectionViewModelTests {
         var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: nil,
                                                             tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
 
-        let index = tabCollectionViewModel.tabs.count
+        let index = tabCollectionViewModel.tabCollection.tabs.count
         tabCollectionViewModel.insertOrAppendNewTab()
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: index))
 
@@ -351,7 +351,7 @@ extension TabCollectionViewModelTests {
 
         tabCollectionViewModel.remove(at: .unpinned(1))
 
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
     }
 
     @MainActor
@@ -397,7 +397,7 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.remove(at: .unpinned(0))
 
         XCTAssertNil(tabCollectionViewModel.selectionIndex)
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 0)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0)
     }
 
     @MainActor

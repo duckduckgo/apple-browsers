@@ -999,7 +999,7 @@ final class Fire: FireProtocol {
             func coordinatorForTabID(_ tabID: TabIdentifier) -> AIChatCoordinating? {
                 for windowController in windowControllersManager.mainWindowControllers {
                     let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
-                    let hasUnpinnedTab = tabCollectionViewModel.tabs.contains { $0.uuid == tabID }
+                    let hasUnpinnedTab = tabCollectionViewModel.tabCollection.tabs.contains { $0.uuid == tabID }
                     let hasPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs.contains { $0.uuid == tabID } ?? false
                     if hasUnpinnedTab || hasPinnedTab {
                         return windowController.mainViewController.aiChatCoordinator
@@ -1050,7 +1050,7 @@ final class Fire: FireProtocol {
                      selectedDomains: _,
                      close: let shouldClose):
             if shouldClose {
-                let unpinnedTabIDs = tabCollectionViewModel.tabs.map(\.uuid)
+                let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
                 let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.map(\.uuid) ?? []
                 closeFloatingAIChatWindows(for: unpinnedTabIDs + pinnedTabIDs)
                 // If closing last Window: Insert a new tab to prevent key window closing:
@@ -1071,7 +1071,7 @@ final class Fire: FireProtocol {
             guard shouldClose else { break }
             for windowController in mainWindowControllers {
                 let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
-                let unpinnedTabIDs = tabCollectionViewModel.tabs.map(\.uuid)
+                let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
                 let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.map(\.uuid) ?? []
                 closeFloatingAIChatWindows(for: unpinnedTabIDs + pinnedTabIDs)
                 // If closing all Tabs/Windows: Insert a new tab to prevent key window closing:

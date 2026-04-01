@@ -86,8 +86,8 @@ final class FireTests: XCTestCase {
         let windowCountBeforeBurning = Application.appDelegate.windowControllersManager.mainWindowControllers.count
         let windowControllersBeforeBurning = Set(Application.appDelegate.windowControllersManager.mainWindowControllers.map { ObjectIdentifier($0) })
 
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 3)
-        XCTAssertEqual(tabCollectionViewModel.tabs.first?.content, .newtab)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 3)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.first?.content, .newtab)
         XCTAssertGreaterThan(windowCountBeforeBurning, 0, "Should have at least one window before burning")
 
         let burningExpectation = expectation(description: "Burning")
@@ -99,9 +99,9 @@ final class FireTests: XCTestCase {
         wait(for: [burningExpectation], timeout: 5)
 
         // Verify: All old tabs cleared and a new tab was added to keep window open
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1,
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1,
                        "A new tab should be added to keep the window open (original 3 tabs cleared)")
-        XCTAssertEqual(tabCollectionViewModel.tabs.first?.content, .newtab,
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.first?.content, .newtab,
                        "New tab should be a newtab")
 
         // Verify: Window is still open (not closed and reopened)
@@ -222,7 +222,7 @@ final class FireTests: XCTestCase {
         await fulfillment(of: [burningExpectation], timeout: 5)
 
         // Verify: No new tab is inserted because pinned tabs exist (window stays open with pinned tabs only)
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 0, "No new regular tab should be inserted when pinned tabs exist")
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0, "No new regular tab should be inserted when pinned tabs exist")
         XCTAssertEqual(tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.content.userEditableUrl), urls as [URL?], "Pinned tabs should be preserved")
     }
 

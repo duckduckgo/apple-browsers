@@ -18,6 +18,7 @@
 
 import AIChat
 import AppUpdaterShared
+import DuckAiDataStore
 import BrowserServicesKit
 import Foundation
 import HistoryView
@@ -57,6 +58,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
@@ -90,6 +92,37 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
+
+        do {
+            let containerURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("DuckAiNativeStorage")
+            let nativeStorageFileStore = try KeyValueFileStore(
+                location: containerURL,
+                name: "settings.plist"
+            )
+            let nativeDataStore = try DuckAiNativeDataStore(
+                databaseURL: containerURL.appendingPathComponent("chats.db"),
+                filesDirectoryURL: containerURL.appendingPathComponent("files")
+            )
+            let nativeStorageHandler = DuckAiNativeStorageHandler(
+                settingsStore: nativeStorageFileStore.throwingKeyedStoring(),
+                dataStore: nativeDataStore
+            )
+            var originRules: [HostnameMatchingRule] = [
+                .exact(hostname: "duck.ai"),
+                .exact(hostname: "duckduckgo.com")
+            ]
+            if let customHostname = aiChatDebugURLSettings.customURLHostname {
+                originRules.append(.exact(hostname: customHostname))
+            }
+            duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
+                handler: nativeStorageHandler,
+                originRules: originRules
+            )
+        } catch {
+            duckAiNativeStorageUserScript = nil
+            assertionFailure("Failed to initialize DuckAiNativeStorage: \(error)")
+        }
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
@@ -192,6 +225,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         if let serpSettingsUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        }
+
+        if let duckAiNativeStorageUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
 
         if let specialPages = specialPages {

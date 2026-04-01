@@ -52,7 +52,7 @@ extension TabCollection: NSSecureCoding {
             self.init(tabs: tabs)
         } else {
             // Eager restoration: materialize all tabs immediately (pre-feature behavior)
-            let tabs: [Tab] = MainActor.assumeIsolated {
+            let tabs: [Tab] = MainActor.assumeMainThread {
                 restorationDataArray.map { SuspendedTab(from: $0).materialize() }
             }
             self.init(tabs: tabs)

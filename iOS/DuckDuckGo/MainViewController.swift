@@ -1993,19 +1993,42 @@ class MainViewController: UIViewController {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
+        let wasMinimalChrome = isInMinimalChromeLayout
+        // Capture a snapshot of the toolbar before applyWidth hides it, so we can animate it out.
+        // We can't keep toolbar.isHidden = false because the async showBars() call in applyWidth
+        // would reset toolbarBottom.constant via updateToolbarConstant.
+        let toolbarSnapshot: UIView? = {
+            guard !wasMinimalChrome, isMinimalChromeMode(for: size) else { return nil }
+            guard let snapshot = viewCoordinator.toolbar.snapshotView(afterScreenUpdates: false) else { return nil }
+            snapshot.frame = viewCoordinator.toolbar.frame
+            view.addSubview(snapshot)
+            return snapshot
+        }()
+
         let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
             && (AppWidthObserver.shared.isPad || isInMinimalChromeLayout || featureFlagger.isFeatureOn(.minimalChromeInLandscape))
         if needsWidthUpdate {
             applyWidth(for: size)
         }
 
+        let isShowingToolbar = wasMinimalChrome && !isInMinimalChromeLayout
+        if isShowingToolbar {
+            viewCoordinator.toolbar.alpha = 0
+        }
+
         self.showMenuHighlighterIfNeeded()
         updateChromeForDuckPlayer()
 
         coordinator.animate { _ in
+            toolbarSnapshot?.alpha = 0
+            if isShowingToolbar {
+                self.viewCoordinator.toolbar.alpha = 1
+            }
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
         } completion: { _ in
+            toolbarSnapshot?.removeFromSuperview()
+
             self.omniBar.barView.textField.suppressResignFirstResponder = false
             if isKeyboardShowing {
                 self.omniBar.beginEditing(animated: false)

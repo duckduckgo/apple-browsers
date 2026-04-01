@@ -371,9 +371,11 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             if coordinator.omniBar.isExpandedPhone {
                 cell.omniBar?.isExpandedPhone = true
 
+                let container = controller.barView.tabSwitcherContainerView
+                container.subviews.forEach { $0.removeFromSuperview() }
+
                 let tsButton = TabSwitcherStaticButton()
                 tsButton.translatesAutoresizingMaskIntoConstraints = false
-                let container = controller.barView.tabSwitcherContainerView
                 container.addSubview(tsButton)
                 NSLayoutConstraint.activate([
                     tsButton.centerXAnchor.constraint(equalTo: container.centerXAnchor),

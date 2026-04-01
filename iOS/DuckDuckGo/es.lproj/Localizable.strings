@@ -2085,6 +2085,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Corriente de aire";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Infierno Clásico";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Infierno";
 
@@ -2781,6 +2784,9 @@
 "onboarding.skip.title" = "Entendido. Me saltaré los otros consejos.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "¡Pruébalo gratis!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "¡Pruébalas gratis!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3064,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Este sitio quiere abrirse en Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "CAMBIO DE NOMBRE";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Registros de procesamiento recientes";
@@ -4568,3 +4571,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Permitir audio y vídeo";
+"autoplay.mode.blockAll" = "Bloquear audio y vídeo";
+"autoplay.mode.blockAudio" = "Bloquear audio";
+"settings.autoplay" = "Reproducción automática";
+"settings.autoplay.duck.player.link" = "Configuración de Duck Player";
+"settings.autoplay.footer" = "La configuración de reproducción automática solo se aplicará a las pestañas recién abiertas. No se pueden aplicar cambios a las pestañas existentes a menos que se reinicie la aplicación. Para gestionar la reproducción automática en Duck Player, ve a ";
+"settings.media.section" = "Medios de comunicación";

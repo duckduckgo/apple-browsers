@@ -1224,6 +1224,30 @@ extension Pixel {
          */
         case subscriptionOnboardingPromotionDismiss
 
+        /**
+         * Event Trigger: The subscription promotion modal is shown to a returning user who skipped onboarding
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the CTA on the skipped-onboarding subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionTap
+
+        /**
+         * Event Trigger: The user dismissed the skipped-onboarding subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionDismiss
+
         // Win-back Offer
         case subscriptionWinBackOfferLaunchPromptShown
         case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -1289,6 +1313,8 @@ extension Pixel {
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
         case settingsWhatsNewOpen
+        case settingsAutoplayOpen
+        case settingsAutoplayChanged
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1462,6 +1488,7 @@ extension Pixel {
         case aiChatSettingsDisabled
         case aiChatSettingsAutoContextEnabled
         case aiChatSettingsAutoContextDisabled
+        case aiChatSettingsDefaultTogglePositionChanged
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -1803,6 +1830,8 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
+        case .settingsAutoplayOpen: return "m_settings_autoplay_open"
+        case .settingsAutoplayChanged: return "m_settings_autoplay_changed"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -2799,6 +2828,10 @@ extension Pixel.Event {
 
         case .subscriptionOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
 
+        case .subscriptionSkippedOnboardingPromotionImpression: return "m_privacy-pro_skipped_onboarding_promotion_impression"
+        case .subscriptionSkippedOnboardingPromotionTap: return "m_privacy-pro_skipped_onboarding_promotion_tap"
+        case .subscriptionSkippedOnboardingPromotionDismiss: return "m_privacy-pro_skipped_onboarding_promotion_dismiss"
+
         // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_privacy-pro_winback_launch_prompt_shown"
         case .subscriptionWinBackOfferLaunchPromptCTAClicked: return "m_privacy-pro_winback_launch_prompt_clicked"
@@ -3035,6 +3068,7 @@ extension Pixel.Event {
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
         case .aiChatSettingsAutoContextEnabled: return "m_aichat_settings_auto_context_enabled"
         case .aiChatSettingsAutoContextDisabled: return "m_aichat_settings_auto_context_disabled"
+        case .aiChatSettingsDefaultTogglePositionChanged: return "m_aichat_settings_default_toggle_position_changed"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 

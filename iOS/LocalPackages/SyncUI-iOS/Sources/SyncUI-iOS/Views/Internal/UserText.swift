@@ -236,7 +236,6 @@ public struct UserText {
 
     // Simplified Sync Toggle
     static let simplifiedSyncConnecting = NotLocalizedString("sync.simplified.connecting", bundle: Bundle.module, value: "Connecting...", comment: "Text shown next to toggle while sync is being set up")
-    static let simplifiedSyncSetupFailedToast = NotLocalizedString("sync.simplified.setup.failed.toast", bundle: Bundle.module, value: "Failed to enable Sync & Backup", comment: "Toast message shown when sync setup fails")
 
     // Simplified Sync Another Device Prompt
     static let simplifiedSyncAnotherDeviceTitle = NotLocalizedString("sync.simplified.another.device.title", bundle: Bundle.module, value: "Sync your data with another device?", comment: "Prompt title after enabling sync")

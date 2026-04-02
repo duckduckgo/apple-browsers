@@ -496,7 +496,7 @@ extension SimplifiedSyncSettingsView {
             }
 
             Button {
-                model.copyCode()
+                model.simplifiedCopyRecoveryCode()
             } label: {
                 Text(UserText.simplifiedCopyRecoveryCodeButton)
                     .foregroundColor(Color(designSystemColor: .accent))

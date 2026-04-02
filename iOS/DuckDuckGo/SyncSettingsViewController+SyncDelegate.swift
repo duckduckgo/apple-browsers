@@ -836,6 +836,12 @@ extension SyncSettingsViewController {
         return SyncAnotherDevicePromptState(rawValue: rawValue) ?? .dismissed
     }
 
+    func simplifiedCopyRecoveryCode() {
+        UIPasteboard.general.string = recoveryCode
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        ActionMessageView.present(message: UserText.simplifiedRecoveryCodeCopiedToast)
+    }
+
     func simplifiedSyncAnotherDevicePromptWasDismissed() {
         let next = simplifiedSyncAnotherDevicePromptState.next
         syncSettingsStore.set(next.rawValue, forKey: SyncAnotherDevicePromptState.storageKey)

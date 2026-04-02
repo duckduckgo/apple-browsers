@@ -78,6 +78,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
     func simplifiedSyncAnotherDevicePromptWasDismissed()
+    func simplifiedCopyRecoveryCode()
     var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState { get }
 
     var syncBookmarksPausedTitle: String? { get }
@@ -448,6 +449,13 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
+    public func simplifiedCopyRecoveryCode() {
+        Task { @MainActor in
+            guard await commonAuthenticate() else { return }
+            delegate?.simplifiedCopyRecoveryCode()
+        }
+    }
+
     public func manageBookmarks() {
         delegate?.launchBookmarksViewController()
     }
@@ -545,4 +553,5 @@ public class SyncSettingsViewModel: ObservableObject {
 
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
+    func simplifiedCopyRecoveryCode() {}
 }

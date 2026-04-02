@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Retomar no Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Abrir sempre os vídeos do YouTube no Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "A reprodução de vídeos abertos no Duck Player será iniciada automaticamente. Desative esta opção se quiser iniciar manualmente a reprodução de vídeos abertos no Duck Player.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Reprodução automática de vídeos";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Abre vídeos num modo de cinema privado que impede que o que vês influencie o teu feed do YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Ativar o Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimental";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "O Duck Player permite-lhe ver YouTube sem anúncios direcionados e impede que a atividade de visualização influencie as suas recomendações.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "O DuckDuckGo fornece todos os Privacy Essentials de que precisas para te protegeres enquanto navegas na Web.";
@@ -3404,6 +3416,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navegador predefinido";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Posição padrão de alternância nos separadores novos.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Posição do alternador";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Eliminar as conversas do Duck.ai";
 
@@ -4555,6 +4571,15 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Obtém o DuckDuckGo para Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "O DuckDuckGo remove os anúncios nos vídeos no YouTube para que possas ver vídeos sem interrupções.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Bloqueio de anúncios do YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Bloquear anúncios no YouTube";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Marcadores";

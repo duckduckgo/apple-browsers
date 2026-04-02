@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Fortsett i Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Åpne alltid YouTube-videoer i Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoer som åpnes i Duck Player, begynner automatisk å spille av. Slå av dette hvis du vil starte avspilling av videoer åpnet i Duck Player manuelt.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatisk avspilling av videoer";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Åpner videoer i en privat kinomodus som hindrer at det du ser på, har innflytelse på YouTube-feeden din.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Aktiver Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentell";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Med Duck Player kan du se på YouTube uten målrettede annonser og forhindre at det du ser på, påvirker anbefalingene du får.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo gir deg alt du trenger for å beskytte personvernet ditt, når du surfer på nettet.";
@@ -3404,6 +3416,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardnettleser";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Standard bryterposisjon på nye faner.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Bryterposisjon";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Slett Duck.ai-chatter";
 
@@ -4555,6 +4571,15 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Skaff deg DuckDuckGo for Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo fjerner videoannonser på YouTube, slik at du kan se videoer uten avbrudd.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube annonseblokkering";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokker annonser på YouTube";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bokmerker";

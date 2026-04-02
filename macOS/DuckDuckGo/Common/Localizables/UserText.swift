@@ -657,10 +657,7 @@ struct UserText {
     static let aiChatToggleSearchLabel = NSLocalizedString("aichat.toggle.search.label", value: "Search", comment: "Label for the search segment in the address bar toggle control")
     static let aiChatToggleAskLabel = NSLocalizedString("aichat.toggle.ask.label", value: "Duck.ai", comment: "Label for the ask AI segment in the address bar toggle control")
 
-    // AI Chat Toggle Popover
-    static let aiChatTogglePopoverTitle = NSLocalizedString("aichat.toggle.popover.title", value: "NEW! Two ways to search privately", comment: "Title for the AI Chat toggle introduction popover")
-    static let aiChatTogglePopoverMessage = NSLocalizedString("aichat.toggle.popover.message", value: "Search as usual or get answers with AI. Either way, your information stays private.", comment: "Message for the AI Chat toggle introduction popover")
-    static let aiChatTogglePopoverButton = NSLocalizedString("aichat.toggle.popover.button", value: "Customize AI Features", comment: "Button text for customizing AI features in the toggle popover")
+
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
     static let aiChatImageUploadButtonTooltip = NSLocalizedString("aichat.image-upload-button.tooltip", value: "Attach image", comment: "Tooltip for the image upload button in AI chat omnibar")
@@ -699,10 +696,15 @@ struct UserText {
 
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")
+    static let duckPlayerEnableToggle = NSLocalizedString("duck-player.enable-toggle", value: "Enable Duck Player", comment: "Duck Player enable toggle in settings")
+    static let duckPlayerAlwaysOpenToggle = NSLocalizedString("duck-player.always-open-toggle", value: "Always open YouTube videos in Duck Player", comment: "Duck Player always open toggle in settings")
+    static let duckPlayerAutoplayToggle = NSLocalizedString("duck-player.autoplay-toggle", value: "Autoplay videos in Duck Player", comment: "Duck Player autoplay toggle in YouTube ad blocking settings")
+    static let duckPlayerNewTabToggle = NSLocalizedString("duck-player.newtab-toggle", value: "Open Duck Player in a new tab when possible", comment: "Duck Player new tab toggle in YouTube ad blocking settings")
     static let duckPlayerAlwaysOpenInPlayer = NSLocalizedString("duck-player.always-open-in-player", value: "Always open YouTube videos in Duck Player", comment: "Private YouTube Player option")
     static let duckPlayerShowPlayerButtons = NSLocalizedString("duck-player.show-buttons", value: "Show option to use Duck Player over YouTube previews on hover", comment: "Private YouTube Player option")
     static let duckPlayerOff = NSLocalizedString("duck-player.off", value: "Never use Duck Player", comment: "Private YouTube Player option")
     static let duckPlayerExplanation = NSLocalizedString("duck-player.explanation", value: "Duck Player provides a clean viewing experience without personalized ads and prevents viewing activity from influencing your YouTube recommendations.", comment: "Private YouTube Player explanation in settings")
+    static let duckPlayerYouTubeAdBlockingExplanation = NSLocalizedString("duck-player.youtube-ad-blocking.explanation", value: "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.", comment: "Duck Player explanation shown in YouTube Ad Blocking settings")
     static let duckPlayerAutoplayPreference = NSLocalizedString("duck-player.video-autoplay-preference", value: "Autoplay videos when opened in Duck Player", comment: "Autoplay preference in settings")
     static let duckPlayerNewTabPreference = NSLocalizedString("duck-player.newtab-preference", value: "Open Duck Player in a new tab whenever possible", comment: "New tab preference in settings")
     static let duckPlayerNewTabPreferenceExtraInfo = NSLocalizedString("duck-player.newtab.info-preference", value: "When browsing YouTube on the web", comment: "New tab preference extra info in settings")
@@ -1189,6 +1191,9 @@ struct UserText {
     static let identityTheftRestoration = NSLocalizedString("preferences.identityTheftRestoration", value: "Identity Theft Restoration", comment: "Title of the option to show the Identity Theft Restoration preferences")
     static let subscriptionSettings = NSLocalizedString("preferences.subscriptionSettings", value: "Subscription Settings", comment: "Title of the option to show the Subscription Settings preferences")
     static let duckPlayer = NSLocalizedString("preferences.duck-player", value: "Duck Player", comment: "Title of the option to show the Duck Player browser preferences")
+    static let youTubeAdBlocking = NSLocalizedString("preferences.youtube-ad-blocking", value: "YouTube Ad Blocking", comment: "Title of the option to show the YouTube Ad Blocking preferences")
+    static let youTubeAdBlockingExplanation = NSLocalizedString("preferences.youtube-ad-blocking.explanation", value: "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation of the YouTube Ad Blocking feature")
+    static let youTubeAdBlockingToggle = NSLocalizedString("preferences.youtube-ad-blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling YouTube ad blocking")
     static let about = NSLocalizedString("preferences.about", value: "About", comment: "Title of the option to show the About screen")
     static let aiFeatures = NSLocalizedString("preferences.aiFeatures", value: "AI Features", comment: "Title of the option to show AI features in preferences")
     static let duckAIShortcuts = NSLocalizedString("preferences.duck-ai-shortcuts", value: "Duck.ai Shortcuts", comment: "Title of a subsection in preferences containing shortcut preferences")

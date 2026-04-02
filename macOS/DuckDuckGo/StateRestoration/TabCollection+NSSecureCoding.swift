@@ -27,12 +27,10 @@ extension TabCollection: NSSecureCoding {
     convenience init?(coder decoder: NSCoder) {
         let useSuspendedTabs = NSApp.delegateTyped.featureFlagger.isFeatureOn(.deferredTabWebViewCreation)
 
-        // Remap both class names to TabRestorationData so we can decode archives from any version:
-        // - "DuckDuckGo_Privacy_Browser.Tab": written by both old versions (actual Tab objects)
-        //   and current version (TabRestorationData encoded under Tab's module-qualified name)
-        // - "Tab": kept as a fallback for any intermediate builds that used the short name
+        // Remap Tab's module-qualified class name to TabRestorationData so we can decode
+        // archives from old versions (actual Tab objects) and current version (TabRestorationData
+        // encoded under Tab's class name for rollback compatibility).
         if let unarchiver = decoder as? NSKeyedUnarchiver {
-            unarchiver.setClass(TabRestorationData.self, forClassName: "Tab")
             unarchiver.setClass(TabRestorationData.self, forClassName: NSStringFromClass(Tab.self))
         }
 
@@ -41,14 +39,12 @@ extension TabCollection: NSSecureCoding {
             forKey: NSKeyedArchiveRootObjectKey
         ) as? [TabRestorationData] else {
             if let unarchiver = decoder as? NSKeyedUnarchiver {
-                unarchiver.setClass(Tab.self, forClassName: "Tab")
                 unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
             }
             return nil
         }
 
         if let unarchiver = decoder as? NSKeyedUnarchiver {
-            unarchiver.setClass(Tab.self, forClassName: "Tab")
             unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
         }
 

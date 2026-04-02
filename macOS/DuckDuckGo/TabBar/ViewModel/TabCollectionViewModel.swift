@@ -289,11 +289,7 @@ final class TabCollectionViewModel: NSObject {
 
     @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
         shouldReturnToPreviousActiveTab = false
-        let result = selectWithoutResettingState(at: index, forceChange: forceChange)
-        if result, case .suspended = tab(at: index) {
-            materialize(at: index)
-        }
-        return result
+        return selectWithoutResettingState(at: index, forceChange: forceChange)
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {
@@ -441,27 +437,34 @@ final class TabCollectionViewModel: NSObject {
         return insertionIndex
     }
 
-    func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
+    func append(tabs: [AnyTab], andSelect shouldSelectLastTab: Bool) {
         guard changesEnabled else { return }
 
         // Prevent multiple tabs in popup windows: redirect each tab to parent/main window
         if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
             for (idx, tab) in tabs.enumerated() {
+                let loadedTab: Tab
+                switch tab {
+                case .loaded(let t): loadedTab = t
+                case .suspended(let s): loadedTab = s.materialize()
+                }
                 let select = shouldSelectLastTab && idx == tabs.indices.last
-                redirectOpenOutsidePopup(tab, selected: select)
+                redirectOpenOutsidePopup(loadedTab, selected: select)
             }
             return
         }
 
-        tabs.forEach {
-            tabCollection.append(tab: $0)
-        }
+        tabCollection.append(tabs: tabs)
         if shouldSelectLastTab {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
 
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
+    }
+
+    func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
+        append(tabs: tabs.map { .loaded($0) }, andSelect: shouldSelectLastTab)
     }
 
     func insertNewTab(after parentTab: Tab, with content: Tab.TabContent = .newtab, selected: Bool = true) {

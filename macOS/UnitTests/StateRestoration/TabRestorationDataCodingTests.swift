@@ -65,16 +65,16 @@ final class TabRestorationDataCodingTests: XCTestCase {
             tabSnapshotIdentifier: nil
         )
 
-        // Encode with className mapping (matches production TabCollection.encode)
+        // Encode with module-qualified class name (matches production TabCollection.encode)
         let archiver = NSKeyedArchiver(requiringSecureCoding: true)
-        archiver.setClassName("Tab", for: TabRestorationData.self)
+        archiver.setClassName(NSStringFromClass(Tab.self), for: TabRestorationData.self)
         archiver.encode([original], forKey: NSKeyedArchiveRootObjectKey)
         archiver.finishEncoding()
 
         // Decode with class remapping (matches production TabCollection.init?(coder:))
         let unarchiver = try NSKeyedUnarchiver(forReadingFrom: archiver.encodedData)
         unarchiver.requiresSecureCoding = true
-        unarchiver.setClass(TabRestorationData.self, forClassName: "Tab")
+        unarchiver.setClass(TabRestorationData.self, forClassName: NSStringFromClass(Tab.self))
 
         let result = unarchiver.decodeObject(
             of: [NSArray.self, TabRestorationData.self],

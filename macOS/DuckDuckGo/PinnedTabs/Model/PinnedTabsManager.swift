@@ -65,6 +65,15 @@ final class PinnedTabsManager {
         return tab
     }
 
+    @MainActor
+    func materializeIfNeeded(at index: Int) {
+        guard case .suspended(let suspended) = tabCollection.tabs[safe: index] else { return }
+        assertionFailure("Pinned tab should never be suspended")
+        let tab = suspended.materialize()
+        tabCollection.replaceTab(at: index, with: .loaded(tab))
+        tabViewModels[tab.uuid] = TabViewModel(tab: tab)
+    }
+
     func isTabPinned(_ tab: Tab) -> Bool {
         tabCollection.contains(tab: tab)
     }

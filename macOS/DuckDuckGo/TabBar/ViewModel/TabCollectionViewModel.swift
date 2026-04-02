@@ -396,10 +396,7 @@ final class TabCollectionViewModel: NSObject {
             return false
         }
 
-        // Pinned tabs should always be loaded, but materialize just in case
-        if case .suspended = pinnedTabsCollection.tabs[index] {
-            assertionFailure("Pinned tab should never be suspended")
-        }
+        pinnedTabsManager?.materializeIfNeeded(at: index)
 
         selectionIndex = .pinned(index)
         return true

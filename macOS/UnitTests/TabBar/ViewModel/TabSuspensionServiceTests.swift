@@ -17,7 +17,6 @@
 //
 
 import PixelKit
-import PixelKitTestingUtilities
 import PrivacyConfig
 import XCTest
 
@@ -32,7 +31,7 @@ final class TabSuspensionServiceTests: XCTestCase {
     private var tabExtensionsBuilder: TestTabExtensionsBuilder!
     private var notificationCenter: NotificationCenter!
     private var mockMemoryUsageMonitor: MockSuspensionMemoryMonitor!
-    private var mockPixelFiring: PixelKitMock!
+    private var mockPixelFiring: MockSuspensionPixelFiring!
 
     private var sut: TabSuspensionService!
 
@@ -43,7 +42,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         tabExtensionsBuilder = TestTabExtensionsBuilder(load: [TabSuspensionExtension.self])
         notificationCenter = NotificationCenter()
         mockMemoryUsageMonitor = MockSuspensionMemoryMonitor()
-        mockPixelFiring = PixelKitMock()
+        mockPixelFiring = MockSuspensionPixelFiring()
     }
 
     override func tearDown() {
@@ -229,10 +228,15 @@ final class TabSuspensionServiceTests: XCTestCase {
         let afterBytes: UInt64 = 400 * 1_048_576
         mockMemoryUsageMonitor.currentPhysFootprintBytes = afterBytes
 
+        let pixelExpectation = expectation(description: "Pixel fired")
+        mockPixelFiring.onFireCalled = { pixelExpectation.fulfill() }
+
         postMemoryPressure(totalMemoryBytes: beforeBytes)
 
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
-        let call = mockPixelFiring.actualFireCalls.first
+        wait(for: [pixelExpectation], timeout: 3)
+
+        XCTAssertEqual(mockPixelFiring.fireCalls.count, 1)
+        let call = mockPixelFiring.fireCalls.first
         XCTAssertEqual(call?.pixel.name, "m_mac_tab_suspension")
         XCTAssertEqual(call?.pixel.parameters?["trigger"], "critical_memory_pressure")
         XCTAssertEqual(call?.pixel.parameters?["tabs_suspended"], "1")
@@ -250,7 +254,7 @@ final class TabSuspensionServiceTests: XCTestCase {
 
         postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
 
-        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+        XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
     }
 
     func testWhenFeatureFlagDisabled_ThenPixelIsNotFired() {
@@ -263,7 +267,7 @@ final class TabSuspensionServiceTests: XCTestCase {
 
         postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
 
-        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+        XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
     }
 
     func testWhenPostMemoryIsHigher_ThenMemoryReclaimedIsZero() {
@@ -277,9 +281,39 @@ final class TabSuspensionServiceTests: XCTestCase {
 
         // Post-suspension memory is higher than before
         mockMemoryUsageMonitor.currentPhysFootprintBytes = 600 * 1_048_576
+
+        let pixelExpectation = expectation(description: "Pixel fired")
+        mockPixelFiring.onFireCalled = { pixelExpectation.fulfill() }
+
         postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
 
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["memory_reclaimed_mb"], "0")
+        wait(for: [pixelExpectation], timeout: 3)
+
+        XCTAssertEqual(mockPixelFiring.fireCalls.first?.pixel.parameters?["memory_reclaimed_mb"], "0")
+    }
+}
+
+private final class MockSuspensionPixelFiring: PixelFiring {
+    struct FireCall {
+        let pixel: PixelKitEvent
+        let frequency: PixelKit.Frequency
+    }
+
+    var fireCalls = [FireCall]()
+    var onFireCalled: (() -> Void)?
+
+    func fire(_ event: PixelKitEvent) {
+        fire(event, frequency: .standard)
+    }
+
+    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, onComplete: { _, _ in })
+    }
+
+    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, includeAppVersionParameter: Bool, withAdditionalParameters: [String: String]?, onComplete: @escaping PixelKit.CompletionBlock) {
+        fireCalls.append(FireCall(pixel: event, frequency: frequency))
+        onFireCalled?()
+        onComplete(true, nil)
     }
 }
 

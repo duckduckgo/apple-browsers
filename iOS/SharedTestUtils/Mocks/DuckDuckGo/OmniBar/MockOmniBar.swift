@@ -32,6 +32,7 @@ final class MockOmniBar: OmniBar {
     var isForwardButtonEnabled: Bool = false
     var omniDelegate: (any DuckDuckGo.OmniBarDelegate)?
     var isExpandedPhone: Bool = false
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) { }
     var isTextFieldEditing: Bool = false
     var text: String?
     
@@ -99,13 +100,14 @@ final class MockOmniBar: OmniBar {
         var aiChatButton: UIButton! = UIButton()
         var menuButton: UIButton! = UIButton()
         var fireButton: UIButton! = UIButton()
-        var tabSwitcherContainerView: UIView = UIView()
         var refreshButton: UIButton! = UIButton()
         var leftIconContainerView: UIView! = UIView()
         var customIconView: UIImageView = UIImageView()
         var clearButton: UIButton! = UIButton()
         var customizableButton: UIButton! = UIButton()
 
+        var tabSwitcherContainerView: UIView = UIView()
+        func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int) { }
         func showSeparator() { }
         func hideSeparator() { }
         func moveSeparatorToTop() { }

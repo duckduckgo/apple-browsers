@@ -1009,6 +1009,23 @@ extension DefaultOmniBarView {
         // no-op
     }
 
+    func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int) {
+        setLayoutMode(mode, animated: false)
+        tabSwitcherContainerView.subviews.forEach { $0.removeFromSuperview() }
+        if mode != .compact {
+            let button = TabSwitcherStaticButton()
+            button.translatesAutoresizingMaskIntoConstraints = false
+            tabSwitcherContainerView.addSubview(button)
+            NSLayoutConstraint.activate([
+                button.centerXAnchor.constraint(equalTo: tabSwitcherContainerView.centerXAnchor),
+                button.centerYAnchor.constraint(equalTo: tabSwitcherContainerView.centerYAnchor),
+                button.widthAnchor.constraint(equalToConstant: 34),
+                button.heightAnchor.constraint(equalToConstant: 44),
+            ])
+            button.tabCount = tabCount
+        }
+    }
+
     func hideButtons() {
         privacyInfoContainer.alpha = 0
         searchAreaView.hideButtons()

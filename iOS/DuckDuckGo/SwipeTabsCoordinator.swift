@@ -368,23 +368,10 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar?.showSeparator()
             cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
-            if coordinator.omniBar.isExpandedPhone {
-                cell.omniBar?.isExpandedPhone = true
-
-                let container = controller.barView.tabSwitcherContainerView
-                container.subviews.forEach { $0.removeFromSuperview() }
-
-                let tsButton = TabSwitcherStaticButton()
-                tsButton.translatesAutoresizingMaskIntoConstraints = false
-                container.addSubview(tsButton)
-                NSLayoutConstraint.activate([
-                    tsButton.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-                    tsButton.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-                    tsButton.widthAnchor.constraint(equalToConstant: 34),
-                    tsButton.heightAnchor.constraint(equalToConstant: 44),
-                ])
-                tsButton.tabCount = tabsModel.count
-            }
+            cell.omniBar?.configureForSwipeTemplate(
+                isExpandedPhone: coordinator.omniBar.isExpandedPhone,
+                tabCount: tabsModel.count
+            )        
 
             if tab?.isAITab == true {
                 cell.omniBar?.enterAIChatMode()

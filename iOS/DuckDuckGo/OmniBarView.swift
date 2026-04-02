@@ -52,6 +52,8 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var fireButton: UIButton! { get }
     var tabSwitcherContainerView: UIView { get }
 
+    func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int)
+
     var refreshButton: UIButton! { get }
     var customizableButton: UIButton! { get }
 

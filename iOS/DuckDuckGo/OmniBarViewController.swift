@@ -391,6 +391,14 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshFireMode(fireMode: fireMode)
     }
 
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) {
+        self.isExpandedPhone = isExpandedPhone
+        barView.configureForSwipeTemplate(
+            mode: isExpandedPhone ? .expandedPhone : .compact,
+            tabCount: tabCount
+        )
+    }
+
     func enterPhoneState() {
         refreshState(state.onEnterPhoneState)
     }

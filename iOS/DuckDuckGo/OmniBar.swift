@@ -30,6 +30,8 @@ protocol OmniBar: AnyObject {
 
     var isExpandedPhone: Bool { get set }
 
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int)
+
     var isTextFieldEditing: Bool { get }
     var text: String? { get set }
 

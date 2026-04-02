@@ -259,15 +259,19 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         Logger.aiChat.debug("DuckAiNativeStorage: ← putFile called")
         guard let dict = params as? [String: Any],
               let uuid = dict["uuid"] as? String,
-              let chatId = dict["chatId"] as? String,
-              let dataString = dict["data"] as? String,
-              let data = dataString.data(using: .utf8) else {
-            Logger.aiChat.error("DuckAiNativeStorage: putFile — invalid params")
+              let chatId = dict["chatId"] as? String else {
+            Logger.aiChat.error("DuckAiNativeStorage: putFile — invalid params (missing uuid or chatId)")
             return nil
         }
+        // Store the entire params JSON opaquely — preserves all FE fields (data, mimeType, fileName, etc.)
+        guard let paramsData = try? JSONSerialization.data(withJSONObject: dict, options: []) else {
+            Logger.aiChat.error("DuckAiNativeStorage: putFile — failed to serialize params")
+            return nil
+        }
+        Logger.aiChat.debug("DuckAiNativeStorage: putFile '\(uuid)' for chat '\(chatId)' (\(paramsData.count) bytes, keys: \(dict.keys.sorted().joined(separator: ", ")))")
         do {
-            try handler.putFile(uuid: uuid, chatId: chatId, data: data)
-            Logger.aiChat.debug("DuckAiNativeStorage: putFile '\(uuid)' succeeded (\(data.count) bytes)")
+            try handler.putFile(uuid: uuid, chatId: chatId, data: paramsData)
+            Logger.aiChat.debug("DuckAiNativeStorage: putFile '\(uuid)' stored successfully")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putFile failed for \(uuid): \(error.localizedDescription)")
         }
@@ -287,9 +291,13 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
                 Logger.aiChat.debug("DuckAiNativeStorage: getFile '\(uuid)' → not found")
                 return FileValueResponse(value: nil)
             }
-            let dataString = String(data: fileContent.data, encoding: .utf8) ?? ""
-            Logger.aiChat.debug("DuckAiNativeStorage: getFile '\(uuid)' → \(fileContent.data.count) bytes")
-            return GetFileResponse(uuid: fileContent.uuid, chatId: fileContent.chatId, data: dataString)
+            // Return the stored JSON opaquely — preserves all FE fields exactly as stored
+            guard let storedDict = try? JSONSerialization.jsonObject(with: fileContent.data) as? [String: Any] else {
+                Logger.aiChat.error("DuckAiNativeStorage: getFile '\(uuid)' — stored data is not valid JSON")
+                return FileValueResponse(value: nil)
+            }
+            Logger.aiChat.debug("DuckAiNativeStorage: getFile '\(uuid)' → \(fileContent.data.count) bytes, keys: \(storedDict.keys.sorted().joined(separator: ", "))")
+            return storedDict.mapValues { AnyCodableValue($0) }
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: getFile failed for \(uuid): \(error.localizedDescription)")
             return FileValueResponse(value: nil)
@@ -380,12 +388,6 @@ private struct AllSettingsResponse: Encodable {
 
 private struct AllChatsResponse: Encodable {
     let chats: [[String: AnyCodableValue]]
-}
-
-private struct GetFileResponse: Encodable {
-    let uuid: String
-    let chatId: String
-    let data: String
 }
 
 private struct FileValueResponse: Encodable {

@@ -19,7 +19,7 @@ jobs:
       matrix:
         platform: [ 'macOS', 'iOS' ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -31,7 +31,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Checkout internal-github-asana-utils repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.APPLE_GH_RO_PAT }}
           path: internal-github-asana-utils

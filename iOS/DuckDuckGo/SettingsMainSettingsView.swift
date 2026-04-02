@@ -48,6 +48,7 @@ struct SettingsMainSettingsView: View {
         SettingsEntry(label: UserText.settingsLogins, build: Self.viewBuilder.buildPasswords),
         SettingsEntry(label: UserText.accessibility, build: Self.viewBuilder.buildAccessibility),
         SettingsEntry(label: UserText.dataClearing, build: Self.viewBuilder.buildDataClearing),
+        SettingsEntry(label: UserText.youTubeAdBlockingTitle, build: Self.viewBuilder.buildYouTubeAdBlocking),
         SettingsEntry(label: UserText.duckPlayerFeatureName, build: Self.viewBuilder.buildDuckPlayer),
     ].sorted(by: { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending })
 
@@ -103,6 +104,15 @@ struct SettingsMainSettingsView: View {
                 AnyView(NavigationLink(destination: SettingsDuckPlayerView().environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName,
                                      image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayer))
+                })
+            }
+        }
+
+        @ViewBuilder func buildYouTubeAdBlocking(viewModel: SettingsViewModel) -> AnyView? {
+            if viewModel.state.youTubeAdBlockingAvailable {
+                AnyView(NavigationLink(destination: SettingsYouTubeAdBlockingView().environmentObject(viewModel)) {
+                    SettingsCellView(label: UserText.youTubeAdBlockingTitle,
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayerBlocked))
                 })
             }
         }

@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Lepj meg!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Keresd meg a listában a **DuckDuckGo** elemet, majd koppints a **Duck.ai hang** lehetőségre, hogy hozzáadd";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Keresd meg a listában a **DuckDuckGo** elemet, majd koppints a **VPN-vezérlés** lehetőségre, hogy hozzáadd";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "A YouTube legutóbbi módosításai érintik a Duck Player működését. Dolgozunk a problémák megoldásán, és köszönjük a megértésedet.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Koppints a minialkalmazásra a szerkesztéséhez, majd állítsd be gyorsparancsként a **Duck.ai** és a **Duck.ai hang** elemeket.";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Keresd meg és válaszd ki a **DuckDuckGo** elemet, majd húzd az ujjad az **Egyéni gyorsparancsok** elemre, és válaszd a **Minialkalmazás hozzáadása** lehetőséget.";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Oldal tartalmának csatolása";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Üzeneteddel együtt elküldve a Duck.ai-nak";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Duck.ai hang gyorsparancsának hozzáadása a Vezérlőközponthoz";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "A DuckDuckGo AI-funkciói privátak és opcionálisak. Az adataidat nem használjuk fel az AI tanítására.";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Kapcsolódó kérdések feltevése";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Duck.ai hozzáadása a Vezérlőközponthoz";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Duck.ai minialkalmazás hozzáadása a kezdőképernyőhöz";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Böngészőre vonatkozó gyorsparancsok";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Beszélgetés a Duck.ai-jal a Siri segítségével";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Címsor";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS verzió";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Gyorsparancsok";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "A Siri gyorsparancsok segítségével hangparanccsal indíthatsz egy Duck.ai hangcsevegést, például „Siri, start DuckDuckGo Voice Chat (Siri, indítsd el a DuckDuckGo hangcsevegést)”. Ez egy gyors, kézhasználat nélküli módja a Duck.ai-jal való csevegésnek.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, start DuckDuckGo Voice Chat (Siri, indítsd el a DuckDuckGo hangcsevegést).";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, talk to DuckDuckGo (Siri, beszélj a DuckDuckGóval).";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, voice chat with DuckDuckGo (Siri, folytass hangcsevegést a DuckDuckGóval).";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Beszélgess a Duck.ai-jal a Siri segítségével!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "DuckDuckGo-előfizetésed hozzáadása ehhez az eszközhöz";
@@ -1578,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Folytatás a Duck Playerben";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "A YouTube videókat mindig a Duck Playerben nyisd meg";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "A Duck Playerben megnyitott videók automatikusan elindulnak. Kapcsold ki, ha a Duck Playerben megnyitott videók lejátszását manuálisan szeretnéd elindítani.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Videók automatikus lejátszása";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Privát mozi módban nyitja meg a videókat, így a nézett tartalom nem befolyásolja a YouTube-hírfolyamodat.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Duck Player engedélyezése";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Kísérleti";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "A Duck Player segítségével célzott hirdetések nélkül nézheted a YouTube-ot, és megakadályozza, hogy a megtekintési tevékenység befolyásolja az ajánlásaidat.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "A DuckDuckGóban minden olyan alapvető adatvédelmi funkciót megtalálsz, amellyel a webes böngészés során gondoskodhatsz saját védelmedről.";
@@ -3179,6 +3230,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Minialkalmazás hozzáadása a kezdőképernyőhöz";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Duck.ai gyorsparancsok hozzáadása a kezdőképernyőhöz";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Add hozzá a DuckDuckGo VPN widgetet a főképernyőhöz";
 
@@ -3404,6 +3458,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "A kapcsoló alapértelmezett helye az új lapokon.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Kapcsoló helyzete";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.ai csevegések törlése";
 
@@ -4555,6 +4613,15 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Töltsd le a DuckDuckGo Windows verzióját!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "A DuckDuckGo eltávolítja a videóhirdetéseket a YouTube-ról, így megszakítás nélkül nézhetsz videókat.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube hirdetések blokkolása";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Hirdetések blokkolása a YouTube-on";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Könyvjelzők";

@@ -34,5 +34,12 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion"]
+    },
+    "m_mac_settings_youtubeadblocking_opened": {
+        "description": "Fired daily when the YouTube Ad Blocking settings pane is opened",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

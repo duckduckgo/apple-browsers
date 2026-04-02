@@ -18,11 +18,17 @@
 
 import Combine
 import Foundation
+import os.log
 import PixelKit
 import PrivacyConfig
 
 enum TabSuspensionPixel: PixelKitEvent {
-    case tabSuspension(trigger: String, tabsSuspended: Int, memoryReclaimedMB: Double)
+
+    enum Trigger: String {
+        case criticalMemoryPressure = "critical_memory_pressure"
+    }
+
+    case tabSuspension(trigger: Trigger, tabsSuspended: Int, memoryReclaimedMB: Double)
 
     var name: String {
         switch self {
@@ -35,7 +41,7 @@ enum TabSuspensionPixel: PixelKitEvent {
         switch self {
         case .tabSuspension(let trigger, let tabsSuspended, let memoryReclaimedMB):
             return [
-                "trigger": trigger,
+                "trigger": trigger.rawValue,
                 "tabs_suspended": String(MemoryReportingBuckets.bucketStandardTabCount(tabsSuspended)),
                 "memory_reclaimed_mb": String(MemoryReportingBuckets.bucketReclaimedMemoryMB(memoryReclaimedMB))
             ]
@@ -91,6 +97,8 @@ final class TabSuspensionService {
             initialMemoryBytes = report.physFootprintBytes + (report.webContentBytes ?? 0)
         }
 
+        Logger.tabSuspension.info("Critical memory pressure event received, starting tab suspension")
+
         let cutoffDate = dateProvider().addingTimeInterval(-Self.minimumInactiveInterval)
         var suspendedCount = 0
 
@@ -104,20 +112,32 @@ final class TabSuspensionService {
             }
         }
 
-        guard suspendedCount > 0 else { return }
+        guard suspendedCount > 0 else {
+            Logger.tabSuspension.info("No tabs were eligible for suspension")
+            return
+        }
 
-        let postReport = memoryUsageMonitor.getCurrentMemoryUsage()
-        let postMemoryBytes = postReport.physFootprintBytes + (postReport.webContentBytes ?? 0)
-        let reclaimedBytes = initialMemoryBytes > postMemoryBytes ? initialMemoryBytes - postMemoryBytes : 0
-        let reclaimedMB = Double(reclaimedBytes) / 1_048_576.0
+        let memoryUsageMonitor = self.memoryUsageMonitor
+        let pixelFiring = self.pixelFiring
 
-        pixelFiring?.fire(
-            TabSuspensionPixel.tabSuspension(
-                trigger: "critical_memory_pressure",
-                tabsSuspended: suspendedCount,
-                memoryReclaimedMB: reclaimedMB
-            ),
-            frequency: .standard
-        )
+        Task.detached {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+
+            let postReport = memoryUsageMonitor.getCurrentMemoryUsage()
+            let postMemoryBytes = postReport.physFootprintBytes + (postReport.webContentBytes ?? 0)
+            let reclaimedBytes = initialMemoryBytes > postMemoryBytes ? initialMemoryBytes - postMemoryBytes : 0
+            let reclaimedMB = Double(reclaimedBytes) / 1_048_576.0
+
+            Logger.tabSuspension.info("Suspended \(suspendedCount) tab(s), memory reclaimed: \(String(format: "%.1f", reclaimedMB)) MB (before: \(initialMemoryBytes / 1_048_576) MB, after: \(postMemoryBytes / 1_048_576) MB)")
+
+            pixelFiring?.fire(
+                TabSuspensionPixel.tabSuspension(
+                    trigger: .criticalMemoryPressure,
+                    tabsSuspended: suspendedCount,
+                    memoryReclaimedMB: reclaimedMB
+                ),
+                frequency: .dailyAndCount
+            )
+        }
     }
 }

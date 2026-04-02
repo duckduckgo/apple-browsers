@@ -2192,6 +2192,9 @@ class MainViewController: UIViewController {
             viewCoordinator.setNavBarContainerExpandableHeight(true)
         } else {
             viewCoordinator.setNavBarContainerExpandableHeight(false)
+            // For top position, the bottom constraint must stay deactivated —
+            // setNavBarContainerExpandableHeight re-activates it via setNavBarContainerBottomToToolbar.
+            viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
         }
 
         swipeTabsCoordinator?.isEnabled = true
@@ -3114,9 +3117,10 @@ extension MainViewController: BrowserChromeDelegate {
     // 1.0 - full size, 0.0 - hidden
     private func updateToolbarConstant(_ ratio: CGFloat) {
         var bottomHeight = toolbarHeight
-        if viewCoordinator.addressBarPosition.isBottom {
+        if viewCoordinator.addressBarPosition.isBottom && !isInMinimalChromeLayout {
             // When position is set to bottom, contentContainer is pinned to top
             // of navigationBarContainer, hence the adjustment.
+            // Skip in minimal chrome — nav bar is positioned independently via keyboard constraint.
             bottomHeight += viewCoordinator.navigationBarContainer.frame.height
         }
         bottomHeight += view.safeAreaInsets.bottom

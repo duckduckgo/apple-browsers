@@ -2073,7 +2073,8 @@ class MainViewController: UIViewController {
 
         DispatchQueue.main.async {
             // Do this async otherwise the toolbar buttons skew to the right
-            if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0 {
+            if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
+               !self.isInMinimalChromeLayout {
                 self.showBars()
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
@@ -3086,13 +3087,14 @@ extension MainViewController: BrowserChromeDelegate {
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
 
-        if viewCoordinator.addressBarPosition.isBottom,
-           !viewCoordinator.isNavigationBarContainerBottomKeyboardBased,
-           !isAnyAITabUTIState {
-            // Push the navigation bar down independently so the content container
-            // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
-            let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
-            viewCoordinator.constraints.navigationBarContainerBottom.constant = navBarHeight * (1.0 - ratio)
+        if viewCoordinator.addressBarPosition.isBottom, !isAnyAITabUTIState {
+            if isInMinimalChromeLayout {
+                let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
+                viewCoordinator.navigationBarContainer.transform = CGAffineTransform(translationX: 0, y: navBarHeight * (1.0 - ratio))
+            } else if !viewCoordinator.isNavigationBarContainerBottomKeyboardBased {
+                let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
+                viewCoordinator.constraints.navigationBarContainerBottom.constant = navBarHeight * (1.0 - ratio)
+            }
         }
     }
 

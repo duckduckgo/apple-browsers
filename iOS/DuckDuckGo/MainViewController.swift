@@ -2170,7 +2170,7 @@ class MainViewController: UIViewController {
         setMinimalChromeMode(false)
         viewCoordinator.navigationBarContainer.transform = .identity
         viewCoordinator.omniBar.barView.setLayoutMode(.compact, animated: false)
-        viewCoordinator.setNavBarContainerExpandableHeight(false)
+        viewCoordinator.resetMinimalChromeLayout()
     }
 
     private func applyMinimalChromeWidth() {
@@ -2183,19 +2183,9 @@ class MainViewController: UIViewController {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         if appSettings.currentAddressBarPosition.isBottom {
-            viewCoordinator.setNavBarContainerBottomToKeyboard()
-            // Extend nav bar to screen edge (past safe area) since there's no toolbar to fill the gap
-            viewCoordinator.constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
-            let screenFloor = viewCoordinator.navigationBarContainer.bottomAnchor
-                .constraint(lessThanOrEqualTo: view.bottomAnchor)
-            screenFloor.isActive = true
-            viewCoordinator.constraints.navigationBarContainerBottomSafeAreaFloor = screenFloor
-            viewCoordinator.setNavBarContainerExpandableHeight(true)
+            viewCoordinator.applyMinimalChromeBottomLayout()
         } else {
-            viewCoordinator.setNavBarContainerExpandableHeight(false)
-            // For top position, the bottom constraint must stay deactivated —
-            // setNavBarContainerExpandableHeight re-activates it via setNavBarContainerBottomToToolbar.
-            viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
+            viewCoordinator.resetMinimalChromeLayout()
         }
 
         swipeTabsCoordinator?.isEnabled = true

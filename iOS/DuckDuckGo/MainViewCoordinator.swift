@@ -441,6 +441,47 @@ class MainViewCoordinator {
         isNavBarContainerBottomKeyboardBased = false
     }
 
+    /// Sets up nav bar for minimal chrome with bottom address bar:
+    /// keyboard-based bottom, expandable height, screen-edge bottom limit.
+    func applyMinimalChromeBottomLayout() {
+        // Bottom: keyboard-based
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+            .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
+        constraints.navigationBarContainerBottom.priority = .defaultHigh
+        constraints.navigationBarContainerBottom.isActive = true
+        isNavBarContainerBottomKeyboardBased = true
+
+        // Bottom limit: screen edge (extends past safe area for home indicator)
+        let limit = navigationBarContainer.bottomAnchor
+            .constraint(lessThanOrEqualTo: superview.bottomAnchor)
+        limit.isActive = true
+        constraints.navigationBarContainerBottomSafeAreaFloor = limit
+
+        // Height: expandable
+        constraints.navigationBarContainerHeight.isActive = false
+        constraints.navigationBarContainerMinHeight.isActive = true
+        constraints.navigationBarCollectionViewSafeAreaBottom.isActive = true
+    }
+
+    /// Resets nav bar from minimal chrome to default layout.
+    func resetMinimalChromeLayout() {
+        // Height: fixed
+        constraints.navigationBarContainerHeight.isActive = true
+        constraints.navigationBarContainerMinHeight.isActive = false
+        constraints.navigationBarCollectionViewSafeAreaBottom.isActive = false
+
+        // Bottom: toolbar-based, active only for bottom address bar
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor = nil
+        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+            .constraint(equalTo: toolbar.topAnchor)
+        constraints.navigationBarContainerBottom.isActive = addressBarPosition.isBottom
+        isNavBarContainerBottomKeyboardBased = false
+    }
+
     /// Switches to expandable height so the container can grow past the safe area
     /// while the collection view (content) stays above it.
     func setNavBarContainerExpandableHeight(_ expandable: Bool) {

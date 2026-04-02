@@ -1578,16 +1578,16 @@ extension Tab: TabDataClearing {
 
 extension Tab {
 
-    // Creates a fresh, unloaded Tab to hold the slot. Because it never navigates,
+    // Creates a fresh, suspended Tab to hold the slot. Because it never navigates,
     // no web content process is spawned. The old Tab (and its WKWebView) is released
     // when replaceTab assigns the new one, letting the OS reclaim the process memory.
     @MainActor
-    func makeUnloadedTab() -> Tab? {
+    func makeSuspendedTab() -> Tab? {
         guard case .url(let url, _, _) = content else {
             return nil
         }
 
-        let unloadedTab = Tab(
+        let suspendedTab = Tab(
             content: .url(url, source: .pendingStateRestoration),
             title: title,
             favicon: favicon,
@@ -1597,7 +1597,7 @@ extension Tab {
             isSuspended: true,
             lastSelectedAt: lastSelectedAt
         )
-        return unloadedTab
+        return suspendedTab
     }
 
     /// Resumes a suspended tab by loading its content URL.

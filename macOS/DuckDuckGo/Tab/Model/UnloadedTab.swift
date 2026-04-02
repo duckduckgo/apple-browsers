@@ -34,6 +34,7 @@ final class UnloadedTab: Identifiable {
     var favicon: NSImage?
     var lastSelectedAt: Date?
     let burnerMode: BurnerMode
+    let isPersistent: Bool
     let interactionStateData: Data?
 
     /// Pass-through from HistoryTabExtension — preserved so re-encoding doesn't lose extension state.
@@ -46,6 +47,7 @@ final class UnloadedTab: Identifiable {
          title: String? = nil,
          favicon: NSImage? = nil,
          lastSelectedAt: Date? = nil,
+         isPersistent: Bool = true,
          interactionStateData: Data? = nil,
          visitedDomainURLs: [URL]? = nil,
          tabSnapshotIdentifier: String? = nil) {
@@ -55,6 +57,7 @@ final class UnloadedTab: Identifiable {
         self.favicon = favicon
         self.lastSelectedAt = lastSelectedAt
         self.burnerMode = .regular
+        self.isPersistent = isPersistent
         self.interactionStateData = interactionStateData
         self.visitedDomainURLs = visitedDomainURLs
         self.tabSnapshotIdentifier = tabSnapshotIdentifier
@@ -68,6 +71,7 @@ final class UnloadedTab: Identifiable {
         self.interactionStateData = data.interactionStateData
         self.lastSelectedAt = data.lastSelectedAt
         self.burnerMode = .regular  // Burner tabs are never persisted
+        self.isPersistent = true    // Restored tabs always come from persistent storage
         self.visitedDomainURLs = data.visitedDomainURLs
         self.tabSnapshotIdentifier = data.tabSnapshotIdentifier
     }

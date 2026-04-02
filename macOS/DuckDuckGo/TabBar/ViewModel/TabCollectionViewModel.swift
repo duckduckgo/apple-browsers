@@ -829,11 +829,11 @@ final class TabCollectionViewModel: NSObject {
         }
         guard tabIndex != selectionIndex else { return }
         guard let loadedTab = oldTab.tab, loadedTab.tabSuspension?.canBeSuspended == true else { return }
-        guard let unloadedTab = loadedTab.makeUnloadedTab() else {
+        guard let suspendedTab = loadedTab.makeSuspendedTab() else {
             return
         }
 
-        _ = replaceTab(at: tabIndex, with: unloadedTab)
+        _ = replaceTab(at: tabIndex, with: suspendedTab)
     }
 
     func resumeTab(at tabIndex: TabIndex) {

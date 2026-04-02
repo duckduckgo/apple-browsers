@@ -69,11 +69,13 @@ extension TabCollection: NSSecureCoding {
             archiver.setClassName(NSStringFromClass(Tab.self), for: TabRestorationData.self)
         }
 
-        let restorationData: [TabRestorationData] = tabs.map { tab in
+        let restorationData: [TabRestorationData] = tabs.compactMap { tab in
             switch tab {
             case .loaded(let tab):
+                guard tab.webView.configuration.websiteDataStore.isPersistent else { return nil }
                 return tab.makeRestorationData()
             case .unloaded(let unloaded):
+                guard unloaded.isPersistent else { return nil }
                 return TabRestorationData(
                     uuid: unloaded.uuid,
                     content: unloaded.content,

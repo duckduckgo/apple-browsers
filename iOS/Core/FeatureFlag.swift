@@ -408,10 +408,22 @@ extension FeatureFlag: FeatureFlagDescribing {
     public static var localOverrideStoreName: String = "com.duckduckgo.app.featureFlag.localOverrides"
 
     private struct Config {
-        var defaultValue: FeatureFlagDefaultValue = .disabled
-        var source: FeatureFlagSource
-        var supportsLocalOverriding: Bool = true
-        var cohortType: (any FeatureFlagCohortDescribing.Type)? = nil
+        let defaultValue: FeatureFlagDefaultValue
+        let source: FeatureFlagSource
+        let supportsLocalOverriding: Bool
+        let cohortType: (any FeatureFlagCohortDescribing.Type)?
+
+        init(
+            defaultValue: FeatureFlagDefaultValue = .disabled,
+            source: FeatureFlagSource,
+            supportsLocalOverriding: Bool = true,
+            cohortType: (any FeatureFlagCohortDescribing.Type)? = nil
+        ) {
+            self.defaultValue = defaultValue
+            self.source = source
+            self.supportsLocalOverriding = supportsLocalOverriding
+            self.cohortType = cohortType
+        }
     }
 
     private var config: Config {

@@ -321,7 +321,6 @@ public enum FeatureFlag: String, CaseIterable {
     case tabSuspensionDebugging
 }
 
-
 extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the autoconsent heuristic action experiment
@@ -331,11 +330,25 @@ extension FeatureFlag: FeatureFlagDescribing {
     }
 
     private struct Config {
-        var defaultValue: FeatureFlagDefaultValue = .disabled
-        var source: FeatureFlagSource
-        var supportsLocalOverriding: Bool = true
-        var cohortType: (any FeatureFlagCohortDescribing.Type)? = nil
-        var category: FeatureFlagCategory = .other
+        let defaultValue: FeatureFlagDefaultValue
+        let source: FeatureFlagSource
+        let supportsLocalOverriding: Bool
+        let cohortType: (any FeatureFlagCohortDescribing.Type)?
+        let category: FeatureFlagCategory
+
+        init(
+            defaultValue: FeatureFlagDefaultValue = .disabled,
+            source: FeatureFlagSource,
+            supportsLocalOverriding: Bool = true,
+            cohortType: (any FeatureFlagCohortDescribing.Type)? = nil,
+            category: FeatureFlagCategory = .other
+        ) {
+            self.defaultValue = defaultValue
+            self.source = source
+            self.supportsLocalOverriding = supportsLocalOverriding
+            self.cohortType = cohortType
+            self.category = category
+        }
     }
 
     private var config: Config {

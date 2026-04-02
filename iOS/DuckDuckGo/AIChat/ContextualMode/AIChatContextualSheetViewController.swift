@@ -421,9 +421,8 @@ final class AIChatContextualSheetViewController: UIViewController {
             return
         }
         Task { @MainActor in
-            let (suggestions, hasMore) = await fetchRecentChats()
-            guard !suggestions.isEmpty else { return }
-            showRecentChatsPopup(with: suggestions, hasMore: hasMore)
+            guard let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader) else { return }
+            showRecentChatsPopup(with: viewModel)
         }
     }
 
@@ -510,28 +509,18 @@ private extension AIChatContextualSheetViewController {
 
     // MARK: - Recent Chats Popup
 
-    static let maxRecentChats = 5
-
-    func fetchRecentChats() async -> (suggestions: [AIChatSuggestion], hasMore: Bool) {
-        guard let reader = suggestionsReader else { return ([], false) }
-        let result = await reader.fetchSuggestions(query: nil, maxChats: Self.maxRecentChats + 1)
-        let all = result.pinned + result.recent
-        let hasMore = all.count > Self.maxRecentChats
-        return (Array(all.prefix(Self.maxRecentChats)), hasMore)
-    }
-
     func prefetchRecentChatsVisibility() {
         recentChatsButton.isHidden = true
         Task { @MainActor in
-            let (suggestions, _) = await fetchRecentChats()
-            recentChatsButton.isHidden = suggestions.isEmpty
+            let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader)
+            recentChatsButton.isHidden = viewModel == nil
         }
     }
 
-    func showRecentChatsPopup(with suggestions: [AIChatSuggestion], hasMore: Bool) {
+    func showRecentChatsPopup(with viewModel: AIChatRecentChatsPopupViewModel) {
         guard let windowScene = view.window?.windowScene else { return }
 
-        let popup = AIChatRecentChatsPopupViewController(suggestions: suggestions, showViewAll: hasMore)
+        let popup = AIChatRecentChatsPopupViewController(viewModel: viewModel)
         popup.delegate = self
 
         // Present on a separate window so the popup is fully independent of the sheet
@@ -810,7 +799,7 @@ extension AIChatContextualSheetViewController: AIChatRecentChatsPopupDelegate {
 
     func recentChatsPopupDidSelectViewAll(_ popup: AIChatRecentChatsPopupViewController) {
         dismissRecentChatsPopup()
-        let url = aiChatSettings.aiChatURL
+        let url = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
     }
 

@@ -53,7 +53,6 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         static let cellLeadingPadding: CGFloat = 6
         static let separatorHorizontalInset: CGFloat = 8
         static let separatorContainerHeight: CGFloat = 21
-        static let maxVisibleChats: Int = 5
         static let popupWidth: CGFloat = 270
         static let popupLeadingOffset: CGFloat = 16
     }
@@ -61,8 +60,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     // MARK: - Properties
 
     weak var delegate: AIChatRecentChatsPopupDelegate?
-    private let suggestions: [AIChatSuggestion]
-    private let showViewAll: Bool
+    private let viewModel: AIChatRecentChatsPopupViewModel
 
     // MARK: - UI Components
 
@@ -104,9 +102,8 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(suggestions: [AIChatSuggestion], showViewAll: Bool = true) {
-        self.suggestions = Array(suggestions.prefix(Constants.maxVisibleChats))
-        self.showViewAll = showViewAll
+    init(viewModel: AIChatRecentChatsPopupViewModel) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -173,25 +170,22 @@ private extension AIChatRecentChatsPopupViewController {
     }
 
     func buildContent() {
-        if !suggestions.isEmpty {
-            // Section header
-            let headerLabel = makeSectionHeader(UserText.aiChatRecentChatsSectionTitle)
-            stackView.addArrangedSubview(headerLabel)
+        guard !viewModel.suggestions.isEmpty else { return }
 
-            // Chat rows
-            for (index, suggestion) in suggestions.enumerated() {
-                let row = makeChatRow(for: suggestion, index: index)
-                stackView.addArrangedSubview(row)
-            }
+        // Section header
+        let headerLabel = makeSectionHeader(UserText.aiChatRecentChatsSectionTitle)
+        stackView.addArrangedSubview(headerLabel)
 
-            if showViewAll {
-                // Separator
-                let separatorContainer = makeSeparator()
-                stackView.addArrangedSubview(separatorContainer)
-            }
+        // Chat rows
+        for (index, suggestion) in viewModel.suggestions.enumerated() {
+            let row = makeChatRow(for: suggestion, index: index)
+            stackView.addArrangedSubview(row)
         }
 
-        if showViewAll {
+        if viewModel.showViewAll {
+            let separatorContainer = makeSeparator()
+            stackView.addArrangedSubview(separatorContainer)
+
             let footer = makeViewAllChatsRow()
             stackView.addArrangedSubview(footer)
         }
@@ -329,10 +323,9 @@ private extension AIChatRecentChatsPopupViewController {
     }
 
     @objc func chatRowTapped(_ gesture: UITapGestureRecognizer) {
-        guard let view = gesture.view else { return }
-        let index = view.tag
-        guard index < suggestions.count else { return }
-        delegate?.recentChatsPopup(self, didSelectChat: suggestions[index])
+        guard let view = gesture.view,
+              let suggestion = viewModel.suggestion(at: view.tag) else { return }
+        delegate?.recentChatsPopup(self, didSelectChat: suggestion)
     }
 
     @objc func viewAllChatsTapped() {

@@ -730,26 +730,17 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
-        let isLargeWidth = AppWidthObserver.shared.isLargeWidth
-
-        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth && !(isAITab && unifiedToggleInputFeature.isAvailable) {
+        if appSettings.currentAddressBarPosition == .bottom && !(isAITab && unifiedToggleInputFeature.isAvailable) {
             /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
             /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
             /// manages its own native bottom layout via the UnifiedToggleInput container.
+
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
             webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        let hideBottomBorder = isLargeWidth || (chromeDelegate?.isToolbarHidden == true)
-        borderView.bottomAlpha = hideBottomBorder ? 0 : barsVisibilityPercent
-        updateContentInsetAdjustment()
-    }
-
-    /// https://app.asana.com/1/137249556945/task/1213037676998807
-    private func updateContentInsetAdjustment() {
-        guard let webView = webView else { return }
-        webView.scrollView.contentInsetAdjustmentBehavior = AppWidthObserver.shared.isLargeWidth ? .never : .automatic
+        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -867,8 +858,6 @@ class TabViewController: UIViewController {
             webViewBottomAnchorConstraint!,
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
-
-        updateContentInsetAdjustment()
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                             pullableView: webViewContainer,
@@ -4210,7 +4199,7 @@ extension TabViewController {
                 
                 switch update {
                 case .showPill(let height):
-                    if self.appSettings.currentAddressBarPosition == .bottom && !AppWidthObserver.shared.isLargeWidth {
+                    if self.appSettings.currentAddressBarPosition == .bottom {
                         let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
                         self.webViewBottomAnchorConstraint?.constant = -targetHeight - height
                     } else {
@@ -4219,7 +4208,7 @@ extension TabViewController {
 
                 case .reset:
                     let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
-                    self.webViewBottomAnchorConstraint?.constant = (self.appSettings.currentAddressBarPosition == .bottom && !AppWidthObserver.shared.isLargeWidth) ? -targetHeight : 0
+                    self.webViewBottomAnchorConstraint?.constant = self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
                 }
                 
                 self.view.layoutIfNeeded()

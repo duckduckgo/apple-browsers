@@ -19,13 +19,6 @@
 
 import Foundation
 
-// Use this instead of NSLocalizedString for strings that are not yet translated.
-// Once translations are available, switch back to NSLocalizedString and add the keys to Localizable.strings.
-// swiftlint:disable:next identifier_name
-func NotLocalizedString(_ key: String, tableName: String? = nil, bundle: Bundle = Bundle.main, value: String = "", comment: String) -> String {
-    return value
-}
-
 struct UserText {
 
     static let favoritesWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.search.and.favorites.display.name",
@@ -229,12 +222,12 @@ struct UserText {
         value: "Quickly start a new AI chat in Duck.ai",
         comment: "Description shown to the user when adding the Duck.ai lock screen widget")
 
-    static let lockScreenVoiceChatTitle = NotLocalizedString(
+    static let lockScreenVoiceChatTitle = NSLocalizedString(
         "lock.screen.widget.voicechat.title",
         value: "Duck.ai Voice",
         comment: "Title shown to the user when adding the Duck.ai Voice lock screen widget")
 
-    static let lockScreenVoiceChatDescription = NotLocalizedString(
+    static let lockScreenVoiceChatDescription = NSLocalizedString(
         "lock.screen.widget.voicechat.description",
         value: "Quickly start a new voice chat in Duck.ai",
         comment: "Description shown to the user when adding the Duck.ai Voice lock screen widget")

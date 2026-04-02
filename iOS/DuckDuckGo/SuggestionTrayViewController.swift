@@ -76,6 +76,8 @@ class SuggestionTrayViewController: UIViewController {
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
     private var pendingEscapeHatchModel: EscapeHatchModel?
+    private var pendingSuggestionsSectionTitle: String?
+    private var pendingFavoritesSectionTitle: String?
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesModel: FavoritesListInteracting
     private let historyManager: HistoryManaging
@@ -342,6 +344,16 @@ class SuggestionTrayViewController: UIViewController {
         newTabPage?.setEscapeHatch(model)
     }
 
+    func setSuggestionsSectionTitle(_ title: String?) {
+        pendingSuggestionsSectionTitle = title
+        autocompleteController?.setSectionTitle(title)
+    }
+
+    func setFavoritesSectionTitle(_ title: String?) {
+        pendingFavoritesSectionTitle = title
+        newTabPage?.setSectionTitle(title)
+    }
+
     private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
         if newTabPage == nil {
             installNewTabPage(animated: animated, onInstall: onInstall)
@@ -376,6 +388,9 @@ class SuggestionTrayViewController: UIViewController {
             controller.hideBorderView()
         }
         controller.setEscapeHatch(pendingEscapeHatchModel)
+        if let pendingFavoritesSectionTitle {
+            controller.setSectionTitle(pendingFavoritesSectionTitle)
+        }
 
         install(controller: controller,
                 animated: animated,
@@ -412,6 +427,9 @@ class SuggestionTrayViewController: UIViewController {
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
         autocompleteController = controller
+        if let pendingSuggestionsSectionTitle {
+            controller.setSectionTitle(pendingSuggestionsSectionTitle)
+        }
     }
 
     private func removeAutocomplete(animated: Bool) {

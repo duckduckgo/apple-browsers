@@ -198,7 +198,7 @@ final class TabCollectionViewModel: NSObject {
         }
         // Materialize the selected tab if suspended — selectUnpinnedTab does this
         // on user-initiated selection, but init sets selectionIndex directly.
-        if case .suspended = tabCollection.tabs[safe: selectionIndex.item] {
+        if case .suspended = tab(at: selectionIndex) {
             materialize(at: selectionIndex)
         }
         self.selectionIndex = selectionIndex

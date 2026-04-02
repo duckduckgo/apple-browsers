@@ -2157,6 +2157,12 @@ class MainViewController: UIViewController {
 
         if appSettings.currentAddressBarPosition.isBottom {
             viewCoordinator.setNavBarContainerBottomToKeyboard()
+            // Extend nav bar to screen edge (past safe area) since there's no toolbar to fill the gap
+            viewCoordinator.constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+            let screenFloor = viewCoordinator.navigationBarContainer.bottomAnchor
+                .constraint(lessThanOrEqualTo: view.bottomAnchor)
+            screenFloor.isActive = true
+            viewCoordinator.constraints.navigationBarContainerBottomSafeAreaFloor = screenFloor
             viewCoordinator.setNavBarContainerExpandableHeight(true)
         } else {
             viewCoordinator.setNavBarContainerExpandableHeight(false)

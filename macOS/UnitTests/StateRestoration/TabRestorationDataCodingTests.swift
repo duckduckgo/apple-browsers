@@ -206,6 +206,8 @@ final class TabRestorationDataCodingTests: XCTestCase {
     func testMaterializedTabFromDecodedDataPreservesFields() throws {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         let interactionState = Data([0xAA, 0xBB])
+        let domainURLs = [URL(string: "https://a.com")!, URL(string: "https://b.com")!]
+        let snapshotID = UUID().uuidString
 
         let original = TabRestorationData(
             uuid: "materialized-uuid",
@@ -214,8 +216,8 @@ final class TabRestorationDataCodingTests: XCTestCase {
             favicon: nil,
             interactionStateData: interactionState,
             lastSelectedAt: date,
-            visitedDomainURLs: nil,
-            tabSnapshotIdentifier: nil
+            visitedDomainURLs: domainURLs,
+            tabSnapshotIdentifier: snapshotID
         )
 
         let decoded = try encodeThenDecode(original)
@@ -225,6 +227,12 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(tab.content.urlForWebView, URL(string: "https://example.com")!)
         XCTAssertEqual(tab.title, "Materialized Example")
         XCTAssertEqual(tab.lastSelectedAt, date)
+
+        let restorationData = tab.makeRestorationData()
+        XCTAssertEqual(restorationData.visitedDomainURLs, domainURLs,
+                       "visitedDomainURLs must survive materialize()")
+        XCTAssertEqual(restorationData.tabSnapshotIdentifier, snapshotID,
+                       "tabSnapshotIdentifier must survive materialize()")
     }
 
     // MARK: - Test 8: Backwards compatibility — old Tab-encoded archive decoded by new code

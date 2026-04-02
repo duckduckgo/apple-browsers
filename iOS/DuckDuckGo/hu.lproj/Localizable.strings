@@ -1534,7 +1534,7 @@
 "duckai.shortcuts.section.header" = "Gyorsparancsok";
 
 /* Description for the Duck.ai Siri education screen */
-"duckai.siri.education.screen.description" = "A Siri gyorsparancsok segítségével hangparanccsal indíthatsz egy Duck.ai hangcsevegést, például „Siri, start DuckDuckGo Voice Chat (Siri, indítsd el a DuckDuckGo hangcsevegést”. Ez egy gyors, kézhasználat nélküli módja a Duck.ai-jal való csevegésnek.";
+"duckai.siri.education.screen.description" = "A Siri gyorsparancsok segítségével hangparanccsal indíthatsz egy Duck.ai hangcsevegést, például „Siri, start DuckDuckGo Voice Chat (Siri, indítsd el a DuckDuckGo hangcsevegést)”. Ez egy gyors, kézhasználat nélküli módja a Duck.ai-jal való csevegésnek.";
 
 /* Duck.ai Siri education screen example command 1 */
 "duckai.siri.education.screen.example1" = "Siri, start DuckDuckGo Voice Chat (Siri, indítsd el a DuckDuckGo hangcsevegést).";

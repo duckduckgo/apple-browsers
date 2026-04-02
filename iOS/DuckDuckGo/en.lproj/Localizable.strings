@@ -1489,14 +1489,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Resume in Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Always open YouTube videos in Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
 
 /* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Autoplay Videos";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Enable Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimental";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player lets you watch YouTube without targeted ads and prevents viewing activity from influencing your recommendations.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo provides all the privacy essentials you need to protect yourself as you browse the web.";
@@ -1974,6 +1986,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno Classic";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -2543,7 +2558,7 @@ https://duckduckgo.com/mac";
 "onboarding.privacypro.promo.buttons.learnMore" = "Learn More";
 
 /* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
-"onboarding.privacypro.promo.buttons.rebranding.skip" = "No Thanks";
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "No thanks";
 
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Skip";
@@ -2589,6 +2604,9 @@ https://duckduckgo.com/mac";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Got it! I’ll skip the other tips.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Try it free!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Try it for free!";
@@ -3172,8 +3190,11 @@ Take back control of your personal information with the browser designed for dat
 /* Option to always default the omnibar toggle to Duck.ai */
 "settings.default.omnibar.mode.duckai" = "Duck.ai";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Default toggle position on new tabs.";
+
 /* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "New Tab Toggle Position";
+"settings.default.omnibar.mode.header" = "Toggle Position";
 
 /* Option to remember the last used omnibar toggle position */
 "settings.default.omnibar.mode.last.used" = "Last Used";
@@ -4293,6 +4314,15 @@ https://duckduckgo.com/windows";
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Get DuckDuckGo for Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube Ad Blocking";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Block ads on YouTube";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bookmarks";

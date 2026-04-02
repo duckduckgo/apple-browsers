@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Folytatás a Duck Playerben";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "A YouTube videókat mindig a Duck Playerben nyisd meg";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "A Duck Playerben megnyitott videók automatikusan elindulnak. Kapcsold ki, ha a Duck Playerben megnyitott videók lejátszását manuálisan szeretnéd elindítani.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Videók automatikus lejátszása";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Privát mozi módban nyitja meg a videókat, így a nézett tartalom nem befolyásolja a YouTube-hírfolyamodat.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Duck Player engedélyezése";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Kísérleti";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "A Duck Player segítségével célzott hirdetések nélkül nézheted a YouTube-ot, és megakadályozza, hogy a megtekintési tevékenység befolyásolja az ajánlásaidat.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "A DuckDuckGóban minden olyan alapvető adatvédelmi funkciót megtalálsz, amellyel a webes böngészés során gondoskodhatsz saját védelmedről.";
@@ -2084,6 +2096,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Levegő";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Klasszikus lángnyelvek";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Lángnyelvek";
@@ -2781,6 +2796,9 @@
 "onboarding.skip.title" = "Értem! Kihagyom a többi tippet.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Próbáld ki ingyen!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Próbáld ki ingyen!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3076,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Az oldal a Safariban próbál megnyílni.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "ÚJRAMÁRKÁZVA";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Legutóbbi feldolgozási naplók";
@@ -3401,6 +3416,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "A kapcsoló alapértelmezett helye az új lapokon.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Kapcsoló helyzete";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.ai csevegések törlése";
 
@@ -4552,6 +4571,15 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Töltsd le a DuckDuckGo Windows verzióját!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "A DuckDuckGo eltávolítja a videóhirdetéseket a YouTube-ról, így megszakítás nélkül nézhetsz videókat.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube hirdetések blokkolása";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Hirdetések blokkolása a YouTube-on";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Könyvjelzők";

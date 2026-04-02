@@ -636,6 +636,14 @@ extension AppDelegate {
         throwTestCppException()
     }
 
+    @objc func crashOnCoreDataException(_ sender: Any?) {
+        DispatchQueue.main.async {
+            NSException(name: NSExceptionName("_NSCoreDataException"),
+                        reason: "Simulated _NSCoreDataException from Debug menu",
+                        userInfo: nil).raise()
+        }
+    }
+
     @MainActor @objc func simulateMemoryPressureCritical(_ sender: Any?) {
         memoryPressureReporter?.simulateMemoryPressureEvent(level: .critical)
     }

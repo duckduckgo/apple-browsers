@@ -130,7 +130,8 @@ extension TabViewController {
             productSurfaceTelemetry: productSurfaceTelemetry,
             privacyStats: privacyStats,
             voiceSearchHelper: voiceSearchHelper,
-            darkReaderFeatureSettings: darkReaderFeatureSettings)
+            darkReaderFeatureSettings: darkReaderFeatureSettings,
+            autoplaySettings: autoplaySettings)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

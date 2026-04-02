@@ -45,8 +45,10 @@ final class IPadTabChatHistoryCoordinator {
     // MARK: - Properties
 
     weak var delegate: AIChatHistoryManagerDelegate?
+    var onSuggestionsVisibilityChanged: ((Bool) -> Void)?
 
     var isInstalled: Bool { historyManager != nil }
+    var hasSuggestions: Bool { historyManager?.hasSuggestions ?? false }
 
     private var historyManager: AIChatHistoryManager?
     private var viewModel: AIChatSuggestionsViewModel?
@@ -59,6 +61,7 @@ final class IPadTabChatHistoryCoordinator {
     private let aiChatSettings: AIChatSettingsProvider
     private let iPadTabFeature: AIChatIPadTabFeatureProviding
     private let textSubject = PassthroughSubject<String, Never>()
+    private var currentQuery = ""
 
     // MARK: - Initialization
 
@@ -109,6 +112,12 @@ final class IPadTabChatHistoryCoordinator {
 
         manager.installInContainerView(clipView, parentViewController: parentViewController)
         manager.subscribeToTextChanges(textSubject.eraseToAnyPublisher())
+        manager.onFetchCompleted = { [weak self] query, hasSuggestions in
+            guard let self else { return }
+            guard query == self.currentQuery else { return }
+            self.onSuggestionsVisibilityChanged?(hasSuggestions)
+        }
+        textSubject.send(currentQuery)
 
         viewModel.$filteredSuggestions
             .receive(on: DispatchQueue.main)
@@ -129,6 +138,7 @@ final class IPadTabChatHistoryCoordinator {
     /// Tears down the chat history list and removes the floating panel.
     func tearDown() {
         cancellables.removeAll()
+        currentQuery = ""
 
         historyManager?.tearDown()
         historyManager = nil
@@ -137,10 +147,12 @@ final class IPadTabChatHistoryCoordinator {
 
         floatingWrapper?.removeFromSuperview()
         floatingWrapper = nil
+        onSuggestionsVisibilityChanged = nil
     }
 
     /// Forwards a text change from the AI Chat text view to filter suggestions.
     func updateQuery(_ query: String) {
+        currentQuery = query
         textSubject.send(query)
     }
 

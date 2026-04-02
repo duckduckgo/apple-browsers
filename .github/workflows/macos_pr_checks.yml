@@ -78,11 +78,11 @@ jobs:
     steps:
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.ref_name }}
 
@@ -107,11 +107,11 @@ jobs:
     steps:
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.ref_name }}
 
@@ -181,13 +181,13 @@ jobs:
 
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
@@ -457,7 +457,7 @@ jobs:
           ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -566,7 +566,7 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -606,7 +606,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Allows scripts to diff against the base branch
 
@@ -673,7 +673,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Create Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:
@@ -694,7 +694,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Close Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:

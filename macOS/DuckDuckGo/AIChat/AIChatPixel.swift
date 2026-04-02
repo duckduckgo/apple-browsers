@@ -198,17 +198,6 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User cancels deletion of a recent chat suggestion in the address bar
     case aiChatRecentChatDeleteCancelled
 
-    // MARK: - Toggle popover pixels
-
-    /// Event Trigger: The toggle popover is shown to the user
-    case aiChatTogglePopoverShown
-
-    /// Event Trigger: User clicks the X button to dismiss the toggle popover
-    case aiChatTogglePopoverDismissButtonClicked
-
-    /// Event Trigger: User clicks the settings button in the toggle popover
-    case aiChatTogglePopoverCustomizeButtonClicked
-
     case aiChatSyncScopedSyncTokenError(reason: String)
     case aiChatSyncEncryptionError(reason: String)
     case aiChatSyncDecryptionError(reason: String)
@@ -373,12 +362,7 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_recent_chat_delete_confirmed"
         case .aiChatRecentChatDeleteCancelled:
             return "aichat_recent_chat_delete_cancelled"
-        case .aiChatTogglePopoverShown:
-            return "aichat_toggle_popover_shown"
-        case .aiChatTogglePopoverDismissButtonClicked:
-            return "aichat_toggle_popover_dismiss_button_clicked"
-        case .aiChatTogglePopoverCustomizeButtonClicked:
-            return "aichat_toggle_popover_customize_button_clicked"
+
         case .aiChatSyncScopedSyncTokenError:
             return "aichat_sync_internal_scoped-sync-token-error"
         case .aiChatSyncEncryptionError:
@@ -464,9 +448,6 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatDeleteButtonClicked,
                 .aiChatRecentChatDeleteConfirmed,
                 .aiChatRecentChatDeleteCancelled,
-                .aiChatTogglePopoverShown,
-                .aiChatTogglePopoverDismissButtonClicked,
-                .aiChatTogglePopoverCustomizeButtonClicked,
                 .aiChatOnboardingTogglePreferenceOn,
                 .aiChatOnboardingTogglePreferenceOff,
                 .aiChatOnboardingFinishedToggleOn,
@@ -564,9 +545,6 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatDeleteButtonClicked,
                 .aiChatRecentChatDeleteConfirmed,
                 .aiChatRecentChatDeleteCancelled,
-                .aiChatTogglePopoverShown,
-                .aiChatTogglePopoverDismissButtonClicked,
-                .aiChatTogglePopoverCustomizeButtonClicked,
                 .aiChatSyncScopedSyncTokenError,
                 .aiChatSyncEncryptionError,
                 .aiChatSyncDecryptionError,

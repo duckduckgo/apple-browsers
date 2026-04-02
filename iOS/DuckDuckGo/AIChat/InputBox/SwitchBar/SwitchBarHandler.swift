@@ -39,6 +39,7 @@ protocol SwitchBarHandling: AnyObject {
     var currentText: String { get }
     var currentToggleState: TextEntryMode { get }
     var isVoiceSearchEnabled: Bool { get }
+    var isAIVoiceChatEnabled: Bool { get }
     var hasUserInteractedWithText: Bool { get }
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
@@ -69,6 +70,7 @@ protocol SwitchBarHandling: AnyObject {
     func updateCurrentText(_ text: String)
     func submitText(_ text: String)
     func setToggleState(_ state: TextEntryMode)
+    func saveToggleState()
     func clearText()
     func microphoneButtonTapped()
     func markUserInteraction()
@@ -79,20 +81,16 @@ protocol SwitchBarHandling: AnyObject {
 }
 
 extension SwitchBarHandling {
+    func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
 }
 
 // MARK: - SwitchBarHandler Implementation
 final class SwitchBarHandler: SwitchBarHandling {
 
-    // MARK: - Constants
-    private enum StorageKey {
-        static let toggleState = "SwitchBarHandler.toggleState"
-    }
-
     // MARK: - Dependencies
     private let voiceSearchHelper: VoiceSearchHelperProtocol
-    private let storage: KeyValueStoring
+    private let toggleModeStorage: ToggleModeStoring
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
@@ -134,7 +132,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
     }
-    
+
+    var isAIVoiceChatEnabled: Bool {
+        voiceShortcutFeature.isAvailable
+    }
+
     var modeParameters: [String: String] {
         ["mode": currentToggleState.rawValue]
     }
@@ -183,8 +185,9 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let devicePlatform: DevicePlatformProviding.Type
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
-         storage: KeyValueStoring,
          aiChatSettings: AIChatSettingsProvider,
+         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
+         initialToggleState: TextEntryMode? = nil,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
@@ -192,14 +195,16 @@ final class SwitchBarHandler: SwitchBarHandling {
          voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
          isFireTab: Bool) {
         self.voiceSearchHelper = voiceSearchHelper
-        self.storage = storage
         self.aiChatSettings = aiChatSettings
+        self.toggleModeStorage = toggleModeStorage
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
         self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
         self.voiceShortcutFeature = voiceShortcutFeature
         self.isFireTab = isFireTab
+
+        applyDefaultOmnibarMode(override: initialToggleState)
 
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
@@ -236,7 +241,6 @@ final class SwitchBarHandler: SwitchBarHandling {
         let isStateChanging = currentToggleState != state
 
         currentToggleState = state
-        saveToggleState()
         updateButtonState(currentText: currentText)
 
         if isStateChanging {
@@ -321,14 +325,12 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     func saveToggleState() {
-        storage.set(currentToggleState.rawValue, forKey: StorageKey.toggleState)
+        toggleModeStorage.save(currentToggleState)
     }
 
-    /// Intentionally not called yet, https://app.asana.com/1/137249556945/project/72649045549333/task/1210814996510636?focus=true
-    func restoreToggleState() {
-        if let storedValue = storage.object(forKey: StorageKey.toggleState) as? String,
-           let restoredState = TextEntryMode(rawValue: storedValue) {
-            currentToggleState = restoredState
+    private func applyDefaultOmnibarMode(override: TextEntryMode? = nil) {
+        currentToggleState = override ?? aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
+            toggleModeStorage.restore()
         }
     }
     
@@ -351,7 +353,8 @@ final class SwitchBarHandler: SwitchBarHandling {
         let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let parameters = [
             "direction": direction,
-            "had_text": String(hadText)
+            "had_text": String(hadText),
+            "default_position": aiChatSettings.defaultOmnibarMode.rawValue
         ]
         Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
     }

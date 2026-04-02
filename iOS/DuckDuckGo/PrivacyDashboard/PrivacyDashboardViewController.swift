@@ -287,6 +287,7 @@ extension PrivacyDashboardViewController {
         let userRefreshCount: Int
         let breakageReportingSubfeature: BreakageReportingSubfeature?
         let isForceDarkModeEnabled: Bool?
+        let autoplayBlockingMode: String?
         let isAfterSuppressedXSafariRedirect: Bool
     }
     
@@ -363,6 +364,7 @@ extension PrivacyDashboardViewController {
                                 privacyExperiments: privacyInfo.privacyExperimentCohorts,
                                 isPirEnabled: nil,
                                 isForceDarkModeEnabled: breakageAdditionalInfo.isForceDarkModeEnabled,
+                                autoplayBlockingMode: breakageAdditionalInfo.autoplayBlockingMode,
                                 isAfterSuppressedXSafariRedirect: breakageAdditionalInfo.isAfterSuppressedXSafariRedirect,
                                 breakageData: breakageData)
     }

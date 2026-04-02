@@ -371,8 +371,8 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar?.configureForSwipeTemplate(
                 isExpandedPhone: coordinator.omniBar.isExpandedPhone,
                 tabCount: tabsModel.count
-            )        
-
+            )
+            
             if tab?.isAITab == true {
                 cell.omniBar?.enterAIChatMode()
             } else if let url {

@@ -694,20 +694,19 @@ public final class PixelKit {
         Self.shared?.cohort(from: cohortLocalDate, dateGenerator: dateGenerator) ?? ""
     }
 
-    public static func pixelLastFireDate(event: PixelKitEvent, namePrefix: String? = nil) -> Date? {
-        Self.shared?.pixelLastFireDate(event: event, namePrefix: namePrefix)
+    public static func pixelLastFireDate(event: PixelKitEvent, namePrefix: String? = nil) throws -> Date? {
+        try Self.shared?.pixelLastFireDate(event: event, namePrefix: namePrefix)
     }
 
-    public func pixelLastFireDate(pixelName: String) -> Date? {
-        var date = try? defaults.object(forKey: userDefaultsKeyName(forPixelName: pixelName)) as? Date
-        if date == nil {
-            date = try? defaults.object(forKey: legacyUserDefaultsKeyName(forPixelName: pixelName)) as? Date
+    public func pixelLastFireDate(pixelName: String) throws -> Date? {
+        if let date = try defaults.object(forKey: userDefaultsKeyName(forPixelName: pixelName)) as? Date {
+            return date
         }
-        return date
+        return try defaults.object(forKey: legacyUserDefaultsKeyName(forPixelName: pixelName)) as? Date
     }
 
-    public func pixelLastFireDate(event: PixelKitEvent, namePrefix: String? = nil) -> Date? {
-        pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix))
+    public func pixelLastFireDate(event: PixelKitEvent, namePrefix: String? = nil) throws -> Date? {
+        try pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix))
     }
 
     private func updatePixelLastFireDate(pixelName: String) throws {
@@ -742,7 +741,7 @@ public final class PixelKit {
 
     private func pixelHasBeenFiredToday(_ name: String) -> Bool {
         guard !dryRun else {
-            if let lastFireDate = pixelLastFireDate(pixelName: name),
+            if let lastFireDate = try? pixelLastFireDate(pixelName: name),
                let twoMinsAgo = pixelCalendar.date(byAdding: .minute, value: -2, to: dateGenerator()) {
                 return lastFireDate >= twoMinsAgo
             }

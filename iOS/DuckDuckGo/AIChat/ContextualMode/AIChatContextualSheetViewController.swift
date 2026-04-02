@@ -306,8 +306,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     deinit {
-        popupWindow?.isHidden = true
-        popupWindow = nil
+        let window = popupWindow
+        MainActor.assumeIsolated {
+            window?.isHidden = true
+        }
     }
 
     // MARK: - Lifecycle
@@ -363,7 +365,6 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        updateButtonContainerCornerRadii()
         updateShadowPath()
     }
 
@@ -421,7 +422,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
         Task { @MainActor in
             let (suggestions, hasMore) = await fetchRecentChats()
-            Logger.aiChat.debug("[SheetVC] Recent chats fetched: \(suggestions.count) results, hasMore: \(hasMore)")
             guard !suggestions.isEmpty else { return }
             showRecentChatsPopup(with: suggestions, hasMore: hasMore)
         }
@@ -510,19 +510,20 @@ private extension AIChatContextualSheetViewController {
 
     // MARK: - Recent Chats Popup
 
+    static let maxRecentChats = 5
+
     func fetchRecentChats() async -> (suggestions: [AIChatSuggestion], hasMore: Bool) {
         guard let reader = suggestionsReader else { return ([], false) }
-        let result = await reader.fetchSuggestions(query: nil, maxChats: 6)
+        let result = await reader.fetchSuggestions(query: nil, maxChats: Self.maxRecentChats + 1)
         let all = result.pinned + result.recent
-        let hasMore = all.count > 5
-        return (Array(all.prefix(5)), hasMore)
+        let hasMore = all.count > Self.maxRecentChats
+        return (Array(all.prefix(Self.maxRecentChats)), hasMore)
     }
 
     func prefetchRecentChatsVisibility() {
         recentChatsButton.isHidden = true
         Task { @MainActor in
             let (suggestions, _) = await fetchRecentChats()
-            Logger.aiChat.debug("[SheetVC] Prefetch recent chats: \(suggestions.count) results, reader: \(self.suggestionsReader != nil)")
             recentChatsButton.isHidden = suggestions.isEmpty
         }
     }
@@ -551,9 +552,11 @@ private extension AIChatContextualSheetViewController {
     }
 
     func dismissRecentChatsPopup() {
+        guard popupWindow != nil else { return }
         popupWindow?.isHidden = true
         popupWindow = nil
         recentChatsPopup = nil
+        view.window?.makeKey()
     }
 
     func updateChipUI(chipState: ChipState) {
@@ -1024,10 +1027,6 @@ private extension AIChatContextualSheetViewController {
         ])
     }
     
-    func updateButtonContainerCornerRadii() {
-        // Corner radii are now handled by PillView.layoutSubviews()
-    }
-
     func updateShadowPath() {
         let shadowPath = UIBezierPath(
             roundedRect: view.bounds,

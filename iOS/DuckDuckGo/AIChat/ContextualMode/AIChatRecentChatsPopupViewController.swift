@@ -91,7 +91,6 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         let blur = UIBlurEffect(style: .systemUltraThinMaterial)
         let effectView = UIVisualEffectView(effect: blur)
         effectView.translatesAutoresizingMaskIntoConstraints = false
-        effectView.alpha = 1
         return effectView
     }()
 

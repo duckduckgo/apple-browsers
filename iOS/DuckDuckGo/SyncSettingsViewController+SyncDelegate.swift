@@ -637,6 +637,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         : UINavigationController(rootViewController: controller)
         
         navController.overrideUserInterfaceStyle = .dark
+        navController.view.backgroundColor = UIColor(baseColor: .gray90)
         navController.setNeedsStatusBarAppearanceUpdate()
         navController.modalPresentationStyle = .fullScreen
         navigationController?.present(navController, animated: true) {

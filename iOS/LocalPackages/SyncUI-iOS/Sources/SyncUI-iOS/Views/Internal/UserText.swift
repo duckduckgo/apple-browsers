@@ -236,11 +236,7 @@ public struct UserText {
 
     // Simplified Sync Toggle
     static let simplifiedSyncConnecting = NotLocalizedString("sync.simplified.connecting", bundle: Bundle.module, value: "Connecting...", comment: "Text shown next to toggle while sync is being set up")
-    static let simplifiedSyncEnabledToast = NotLocalizedString("sync.simplified.enabled.toast", bundle: Bundle.module, value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
     static let simplifiedSyncSetupFailedToast = NotLocalizedString("sync.simplified.setup.failed.toast", bundle: Bundle.module, value: "Failed to enable Sync & Backup", comment: "Toast message shown when sync setup fails")
-    static let simplifiedSyncTurnOffTitle = NotLocalizedString("sync.simplified.turn.off.title", bundle: Bundle.module, value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
-    static let simplifiedSyncTurnOffMessage = NotLocalizedString("sync.simplified.turn.off.message", bundle: Bundle.module, value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
-    static let simplifiedSyncTurnOffAction = NotLocalizedString("sync.simplified.turn.off.action", bundle: Bundle.module, value: "Turn Off", comment: "Alert button to confirm turning off sync")
 
     // Simplified Sync Another Device Prompt
     static let simplifiedSyncAnotherDeviceTitle = NotLocalizedString("sync.simplified.another.device.title", bundle: Bundle.module, value: "Sync your data with another device?", comment: "Prompt title after enabling sync")

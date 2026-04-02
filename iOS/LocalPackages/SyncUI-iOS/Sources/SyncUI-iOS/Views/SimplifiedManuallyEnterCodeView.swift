@@ -31,18 +31,14 @@ public struct SimplifiedManuallyEnterCodeView: View {
     }
 
     public var body: some View {
-        ZStack {
-            Color(baseColor: .gray90)
-                .ignoresSafeArea()
+        VStack {
+            mainPanel
+                .padding(.horizontal, 16)
+                .padding(.top, 20)
 
-            VStack(alignment: .leading, spacing: 0) {
-                codeEntryContainer
-                    .padding(.horizontal, 16)
-                    .padding(.top, 20)
-
-                Spacer()
-            }
+            Spacer()
         }
+        .background(Color(baseColor: .gray90))
         .navigationTitle(UserText.manuallyEnterCodeTitle)
         .modifier(BackButtonModifier())
         .onAppear {
@@ -50,10 +46,8 @@ public struct SimplifiedManuallyEnterCodeView: View {
         }
     }
 
-    // MARK: - Code Entry Container
-
-    private var codeEntryContainer: some View {
-        VStack(alignment: .leading, spacing: 16) {
+    private var mainPanel: some View {
+        VStack(spacing: 16) {
             contentArea
 
             pasteButton
@@ -65,76 +59,92 @@ public struct SimplifiedManuallyEnterCodeView: View {
         )
     }
 
-    // MARK: - Content Area
+    // MARK: - Content area
+
+    /// Invisible text that matches the code display font to private a consistent minimum height for the content area.
+    private var sizingGuide: some View {
+        Text(String(repeating: " \n", count: Constants.codeLineLimit))
+            .codeDisplayStyle()
+            .hidden()
+    }
 
     @ViewBuilder
     private var contentArea: some View {
-        if let code = model.manuallyEnteredCode {
-            codeView(code: code)
-        } else {
-            instructionsView
+        ZStack {
+            sizingGuide
+
+            if let code = model.manuallyEnteredCode {
+                codeView(code: code)
+            } else {
+                instructionsView
+            }
         }
     }
 
     private func codeView(code: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(code)
-                .kerning(2)
-                .monospaceSystemFont(ofSize: 16)
-                .foregroundColor(.white)
-                .lineSpacing(28 - 16)
-                .fixedSize(horizontal: false, vertical: true)
-
-            validationStatusView
-        }
+        Text(code)
+            .codeDisplayStyle()
+            .foregroundColor(.white)
     }
 
-    @ViewBuilder
-    private var validationStatusView: some View {
-        if model.isValidating {
-            HStack(spacing: 8) {
-                SwiftUI.ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: Color(designSystemColor: .textTertiary)))
-                Text(UserText.simplifiedPasteCodeVerifying)
-                    .font(.system(size: 16))
-                    .foregroundColor(Color(designSystemColor: .textTertiary))
-            }
-        } else if model.invalidCode {
-            HStack(spacing: 8) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
-                    .foregroundColor(Color(designSystemColor: .textTertiary))
-                Text(UserText.manuallyEnterCodeValidatingCodeFailedAction)
-                    .font(.system(size: 16))
-                    .foregroundColor(Color(designSystemColor: .textTertiary))
-            }
+    private var verifyingView: some View {
+        HStack(spacing: 4) {
+            SwiftUI.ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: Color(designSystemColor: .textTertiary)))
+            Text(UserText.simplifiedPasteCodeVerifying)
+                .font(.body)
+                .foregroundColor(Color(designSystemColor: .textTertiary))
         }
+        .opacity(model.isValidating ? 1 : 0)
     }
 
     private var instructionsView: some View {
         Text(LocalizedStringKey(UserText.simplifiedPasteCodeInstructions))
-            .font(.system(size: 16))
+            .font(.body)
             .foregroundColor(Color(designSystemColor: .textSecondary))
+            .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 20)
     }
 
-    // MARK: - Paste Button
-
     private var pasteButton: some View {
-        Button(action: model.pasteCode) {
-            HStack(spacing: 8) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.paste)
-                    .frame(width: 16, height: 16)
-                Text(UserText.pasteButton)
-                    .font(.system(size: 15, weight: .bold))
+        VStack(alignment: .center, spacing: 12) {
+            verifyingView
+
+            Button(action: model.pasteCode) {
+                HStack(spacing: 8) {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size16.paste)
+                        .frame(width: 16, height: 16)
+                    Text(UserText.pasteButton)
+                        .font(.system(size: 15, weight: .bold))
+                }
+                .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
+                .padding(.horizontal, 16)
+                .frame(height: 40)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(baseColor: .blue20))
+                )
             }
-            .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
+            .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
-            .frame(height: 40)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(baseColor: .blue30))
-            )
         }
-        .buttonStyle(.plain)
+    }
+
+    private enum Constants {
+        static let codeLineLimit: Int = 6
+    }
+}
+
+// MARK: - Code Display Style
+
+private extension Text {
+    func codeDisplayStyle() -> some View {
+        self
+            .kerning(2)
+            .monospaceSystemFont(ofSize: 16)
+            .lineSpacing(6)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.vertical, 10)
     }
 }

@@ -532,6 +532,10 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         if let tabMode = omniDelegate?.preferredTextEntryModeForCurrentTab() {
             selectedTextEntryMode = tabMode
         }
+        editingStateViewController?.dismissAnimated { [weak self] in
+            // Fix address bar non-activation bug when cancelling the edit from the duck.ai experiment completion dialog.
+            self?.editingStateViewController = nil
+        }
     }
 
     func onSwitchToTab(_ tab: Tab) {

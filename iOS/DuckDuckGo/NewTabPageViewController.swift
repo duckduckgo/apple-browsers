@@ -48,7 +48,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
-    private var pendingExperimentCompletionOnComplete: (() -> Void)?
+    private var isShowingDuckAICompletionDialog = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -120,6 +120,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         registerForNotifications()
     }
 
@@ -235,7 +236,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func dismiss() {
-        consumeExperimentCompletionOnCompleteIfNeeded()
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -252,14 +252,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
-    func experimentCompletionOnboardingCompleted(message: String, onComplete: (() -> Void)? = nil) {
-        showDuckAIOnboardingExperimentCompletionDialog(message: message, onComplete: onComplete)
-        // Mirror onboardingCompleted(): show keyboard immediately after embedding the dialog
+    func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String) {
         chromeDelegate?.omniBar.beginEditing(animated: true)
-        // Highlight the Duck.ai button after the omnibar has transitioned to editing state
         DispatchQueue.main.async { [weak self] in
-            guard let self, let chromeDelegate = self.chromeDelegate, let window = self.view.window else { return }
-            ViewHighlighter.showIn(window, focussedOnView: chromeDelegate.omniBar.barView.aiChatButton)
+            self?.showDuckAIOnboardingCompletionDialog(message: message)
         }
     }
 
@@ -289,24 +285,65 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 
 extension NewTabPageViewController {
 
-    func showDuckAIOnboardingExperimentCompletionDialog(message: String, onComplete: (() -> Void)? = nil) {
+    func showDuckAIOnboardingCompletionDialog(message: String) {
         dismissHostingController(didFinishNTPOnboarding: false)
-        pendingExperimentCompletionOnComplete = onComplete
+        // Completion dialog should not hide NTP background state.
+        newTabPageViewModel.finishOnboarding()
+
+        let presentedHostViewController = parent?.presentedViewController ?? parent
+        guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
+            isShowingDuckAICompletionDialog = false
+            return
+        }
+
+        isShowingDuckAICompletionDialog = true
+        editingController.setLogoHidden(true)
 
         let onDismiss = { [weak self] in
             guard let self else { return }
-            consumeExperimentCompletionOnCompleteIfNeeded()
-            self.daxDialogsManager.dismiss()
-            self.dismissHostingController(didFinishNTPOnboarding: true)
-            ViewHighlighter.hideAll()
-            self.launchNewSearch()
+            let finishDismissal = {
+                editingController.setLogoHidden(false)
+                self.isShowingDuckAICompletionDialog = false
+                self.daxDialogsManager.dismiss()
+                self.dismissHostingController(didFinishNTPOnboarding: true)
+                ViewHighlighter.hideAll()
+            }
+
+            guard let hostingView = self.hostingController?.view else {
+                finishDismissal()
+                return
+            }
+            hostingView.isUserInteractionEnabled = false
+            UIView.animate(withDuration: 0.2, animations: {
+                hostingView.alpha = 0
+            }, completion: { _ in
+                finishDismissal()
+            })
         }
 
         let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
-        embedDialogHostingController(UIHostingController(rootView: root))
+        let hostingController = UIHostingController(rootView: root)
+        self.hostingController = hostingController
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        editingController.addChild(hostingController)
+        let container = editingController.contentStackContainerView
+        container.addSubview(hostingController.view)
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
+                                                        constant: editingController.addressBarToToggleSpacing),
+            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            // Keep stable layout while search/AI input mode changes.
+            hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor)
+        ])
+        hostingController.didMove(toParent: editingController)
+        container.bringSubviewToFront(editingController.switchBarVC.view)
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
+        isShowingDuckAICompletionDialog = false
         dismissHostingController(didFinishNTPOnboarding: false)
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else { return }
@@ -342,45 +379,44 @@ extension NewTabPageViewController {
                 dialogProvider.dismiss()
             }
 
-            // Show keyboard when manually dismissing Dax tips.
+            // Show keyboard when manually dismiss the Dax tips.
             self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }
 
         let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
-        embedDialogHostingController(UIHostingController(rootView: daxDialogView))
-    }
-
-    private func embedDialogHostingController(_ hostingController: UIHostingController<AnyView>) {
+        let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
+
         hostingController.view.backgroundColor = .clear
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         addChild(hostingController)
         view.addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
             hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
             hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
         hostingController.didMove(toParent: self)
+
         newTabPageViewModel.startOnboarding()
     }
 
     private func dismissHostingController(didFinishNTPOnboarding: Bool) {
-        // Ensure experiment completion callback runs even if the dialog is dismissed
-        // through non-primary paths (e.g. opening Duck.ai, navigation changes, tab close).
-        consumeExperimentCompletionOnCompleteIfNeeded()
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
+        isShowingDuckAICompletionDialog = false
         if didFinishNTPOnboarding {
             self.newTabPageViewModel.finishOnboarding()
         }
     }
 
-    private func consumeExperimentCompletionOnCompleteIfNeeded() {
-        guard let completion = pendingExperimentCompletionOnComplete else { return }
-        pendingExperimentCompletionOnComplete = nil
-        completion()
+    func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
+        guard isShowingDuckAICompletionDialog else { return }
+        daxDialogsManager.dismiss()
+        dismissHostingController(didFinishNTPOnboarding: true)
     }
 }

@@ -199,9 +199,8 @@ extension MainViewController {
 
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         DispatchQueue.main.async { [weak self] in
-            newTabPageViewController.experimentCompletionOnboardingCompleted(message: message) {
-                self?.markSearchContextualOnboardingAsSeenForExperiment()
-            }
+            self?.markSearchContextualOnboardingAsSeenForExperiment()
+            newTabPageViewController.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
         }
     }
 

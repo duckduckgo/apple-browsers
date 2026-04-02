@@ -1564,11 +1564,15 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         wakeLazyFireButtonAnimator()
 
-        // Dismiss dax dialog and pulse animation when the user taps on the Fire Button.
-        currentTab?.dismissContextualDaxFireDialog()
+        let isExperimentDuckAIFireFlow = experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse ||
+            experimentDuckAIFireOnboardingFlow.state == .active
+        // Keep the experiment fire onboarding dialog visible until the burn action is confirmed.
+        if !isExperimentDuckAIFireFlow {
+            currentTab?.dismissContextualDaxFireDialog()
+        }
         ViewHighlighter.hideAll()
 
-        if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse || experimentDuckAIFireOnboardingFlow.state == .active {
+        if isExperimentDuckAIFireFlow {
             // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
             setExperimentFireControlsLocked(false)
@@ -3566,6 +3570,7 @@ extension MainViewController: OmniBarDelegate {
         if isShowingAutocompleteSuggestions {
             return .suspended
         } else {
+            newTabPageViewController?.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
             dismissOmniBar()
             return .dismissed
         }
@@ -3852,6 +3857,7 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
                                  aiChat: .addressBarCancelPressedOnAIChat)
+        newTabPageViewController?.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }

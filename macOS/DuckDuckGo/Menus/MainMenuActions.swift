@@ -1568,7 +1568,7 @@ extension MainViewController {
 
         WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
 
-        otherTabs.forEach { tabCollectionViewModel.tabCollection.append(tab: $0) }
+        tabCollectionViewModel.tabCollection.append(tabs: otherTabs)
         tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
 

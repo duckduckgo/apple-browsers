@@ -90,6 +90,22 @@ final class TabCollection: NSObject {
         }
     }
 
+    func append(tabs newTabs: [AnyTab]) {
+        if isPopup {
+            assertionFailure("Popup tab collections must not receive batch appends")
+            return
+        }
+        tabs.append(contentsOf: newTabs)
+
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            for tab in newTabs {
+                if case .loaded(let tab) = tab {
+                    webExtensionManager.eventsListener.didOpenTab(tab)
+                }
+            }
+        }
+    }
+
     @discardableResult
     func insert(_ tab: Tab, at index: Int) -> Bool {
         insert(.loaded(tab), at: index)

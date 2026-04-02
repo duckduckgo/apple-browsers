@@ -726,6 +726,7 @@ public final class PixelKit {
         }
 
         var params: [String: String] = ["suppressedPixel": suppressedPixelName]
+        params[Parameters.appVersion] = appVersion
         params.appendErrorPixelParams(error: error as NSError)
 
         fireRequestWrapper(

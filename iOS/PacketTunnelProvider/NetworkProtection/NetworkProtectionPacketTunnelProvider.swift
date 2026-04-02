@@ -711,20 +711,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     }
 
     private static func configurePixelStorage() {
-        let vpnFileStoreDirectory: URL?
         do {
-            vpnFileStoreDirectory = try Self.vpnFileStoreDirectory()
+            let vpnFileStoreDirectory = try Self.vpnFileStoreDirectory()
+            Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
+            Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
         } catch {
-            vpnFileStoreDirectory = nil
-            // Set up fallback PixelKit first so we can fire a pixel reporting the failure
             Self.setupPixelKit(vpnFileStoreDirectory: nil)
             Pixel.fire(pixel: .networkProtectionPixelStorageSetupFailure, error: error)
         }
-
-        if vpnFileStoreDirectory != nil {
-            Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
-        }
-        Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
     }
 
     enum VPNFileStoreError: DDGError {

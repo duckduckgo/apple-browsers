@@ -41,8 +41,8 @@ extension SimplifiedScanOrShowCodeView {
     private var instructionsWithAppChip: some View {
         VStack(spacing: 8) {
             Text(UserText.simplifiedViewCodeInstructions)
-                .font(.system(size: 15))
-                .foregroundColor(Color(baseColor: .gray30))
+                .daxSubheadRegular()
+                .foregroundColor(SimplifiedSyncStyle.instructionText)
                 .multilineTextAlignment(.center)
 
             appNameChip
@@ -64,7 +64,7 @@ extension SimplifiedScanOrShowCodeView {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(baseColor: .gray90))
+                .fill(SimplifiedSyncStyle.screenBackground)
         )
     }
 
@@ -72,7 +72,7 @@ extension SimplifiedScanOrShowCodeView {
 
     private var qrCodeContainer: some View {
         VStack(spacing: 16) {
-            QRCodeView(string: qrCodeModel.qrCodeString, desiredSize: 240, backgroundColor: Self.qrCodeBackgroundColor)
+            QRCodeView(string: qrCodeModel.qrCodeString, desiredSize: 240, backgroundColor: SimplifiedSyncStyle.qrCodeBackground)
                 .padding(.top, 24)
 
             Text(qrCodeModel.codeForDisplayOrPasting)
@@ -89,7 +89,7 @@ extension SimplifiedScanOrShowCodeView {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.9))
+                .fill(SimplifiedSyncStyle.qrCodeBackground)
         )
         .environment(\.colorScheme, .light)
     }
@@ -118,22 +118,17 @@ extension SimplifiedScanOrShowCodeView {
                     Image(uiImage: DesignSystemImages.Glyphs.Size16.shareApple)
 
                     Text(UserText.simplifiedViewCodeShareButton)
-                        .font(.system(size: 15, weight: .semibold))
+                        .daxSubheadSemibold()
                 }
                 .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(baseColor: .blue20))
+                        .fill(SimplifiedSyncStyle.primaryActionBackground)
                 )
             }
             .buttonStyle(.plain)
         }
     }
-
-    // Using this instead of a design system color, because the associated design system color
-    // is semi-opaque and doesn't give us the correct appearance when we layer up the
-    // various elements of the QR code panel.
-    static let qrCodeBackgroundColor: Color = Color(red: 0.92, green: 0.92, blue: 0.92)
 }

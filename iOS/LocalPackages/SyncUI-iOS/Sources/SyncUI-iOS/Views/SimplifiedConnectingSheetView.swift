@@ -31,9 +31,9 @@ public struct SimplifiedConnectingSheetView: View {
                 .padding(.top, 40)
 
             Text(UserText.simplifiedConnectingTitle)
-                .font(.title3)
-                .bold()
+                .daxTitle3()
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .padding(.horizontal, 40)
 
@@ -41,7 +41,7 @@ public struct SimplifiedConnectingSheetView: View {
                 ProgressView()
                     .tint(Color(designSystemColor: .textSecondary))
                 Text(UserText.simplifiedConnectingStatus)
-                    .font(.footnote)
+                    .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
             .padding(.top, 20)

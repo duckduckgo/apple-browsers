@@ -41,8 +41,8 @@ extension SimplifiedScanOrShowCodeView {
 
     private var instructionsView: some View {
         Text("\(UserText.simplifiedScanInstructions)\n\(UserText.simplifiedScanInstructionsLine2)")
-            .font(.subheadline)
-            .foregroundColor(Color(baseColor: .gray30))
+            .daxSubheadRegular()
+            .foregroundColor(SimplifiedSyncStyle.instructionText)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -77,7 +77,7 @@ extension SimplifiedScanOrShowCodeView {
 
     private var cameraPromptPill: some View {
         Text(UserText.simplifiedScanCameraPrompt)
-            .font(.system(size: 15, weight: .semibold))
+            .daxSubheadSemibold()
             .foregroundColor(.white)
             .padding(.vertical, 8)
             .padding(.horizontal, 20)
@@ -101,14 +101,14 @@ extension SimplifiedScanOrShowCodeView {
                 .padding(.bottom, 20)
 
             Text(UserText.cameraPermissionRequired)
-                .font(.system(size: 20, weight: .bold))
+                .daxTitle3()
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.bottom, 8)
 
             Text(UserText.cameraPermissionInstructions)
-                .font(.system(size: 15))
+                .daxSubheadRegular()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -141,7 +141,7 @@ extension SimplifiedScanOrShowCodeView {
                 .padding(.bottom, 20)
 
             Text(UserText.cameraIsUnavailableTitle)
-                .font(.system(size: 20, weight: .bold))
+                .daxTitle3()
                 .foregroundColor(.white)
 
             Spacer()
@@ -159,8 +159,7 @@ extension SimplifiedScanOrShowCodeView {
         } label: {
             Label {
                 Text(UserText.simplifiedScanManuallyEnterCode)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                    .daxSubheadSemibold()
             } icon: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.keyboard)
             }

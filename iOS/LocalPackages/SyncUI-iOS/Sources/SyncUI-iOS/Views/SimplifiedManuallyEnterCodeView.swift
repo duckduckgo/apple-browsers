@@ -38,7 +38,7 @@ public struct SimplifiedManuallyEnterCodeView: View {
 
             Spacer()
         }
-        .background(Color(baseColor: .gray90))
+        .background(SimplifiedSyncStyle.screenBackground)
         .navigationTitle(UserText.manuallyEnterCodeTitle)
         .modifier(BackButtonModifier())
         .onAppear {
@@ -55,13 +55,13 @@ public struct SimplifiedManuallyEnterCodeView: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color.white.opacity(0.09))
+                .fill(SimplifiedSyncStyle.subduedPanelBackground)
         )
     }
 
     // MARK: - Content area
 
-    /// Invisible text that matches the code display font to private a consistent minimum height for the content area.
+    /// Invisible text that matches the code display font to provide a consistent minimum height for the content area.
     private var sizingGuide: some View {
         Text(String(repeating: " \n", count: Constants.codeLineLimit))
             .codeDisplayStyle()
@@ -116,14 +116,14 @@ public struct SimplifiedManuallyEnterCodeView: View {
                     Image(uiImage: DesignSystemImages.Glyphs.Size16.paste)
                         .frame(width: 16, height: 16)
                     Text(UserText.pasteButton)
-                        .font(.system(size: 15, weight: .bold))
+                        .daxButton()
                 }
                 .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
                 .padding(.horizontal, 16)
                 .frame(height: 40)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(baseColor: .blue20))
+                        .fill(SimplifiedSyncStyle.primaryActionBackground)
                 )
             }
             .buttonStyle(.plain)

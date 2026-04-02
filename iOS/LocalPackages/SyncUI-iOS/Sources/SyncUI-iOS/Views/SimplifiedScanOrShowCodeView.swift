@@ -45,7 +45,7 @@ public struct SimplifiedScanOrShowCodeView: View {
 
             contentPanel
         }
-        .background(Color(baseColor: .gray90))
+        .background(SimplifiedSyncStyle.screenBackground)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(UserText.cancelButton, action: model.cancel)
@@ -53,7 +53,7 @@ public struct SimplifiedScanOrShowCodeView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text(UserText.simplifiedScanTitle)
-                    .font(.headline)
+                    .daxHeadline()
                     .foregroundColor(.white)
             }
         }
@@ -93,4 +93,16 @@ public struct SimplifiedScanOrShowCodeView: View {
             }
         }
     }
+}
+
+enum SimplifiedSyncStyle {
+    static let screenBackground = Color(baseColor: .gray90)
+    static let instructionText = Color(baseColor: .gray30)
+    static let primaryActionBackground = Color(baseColor: .blue20)
+    static let subduedPanelBackground = Color.white.opacity(0.09)
+
+    // Using this instead of a design system color, because the associated design system color
+    // is semi-opaque and doesn't give us the correct appearance when we layer up the
+    // various elements of the QR code panel.
+    static let qrCodeBackground = Color(red: 0.92, green: 0.92, blue: 0.92)
 }

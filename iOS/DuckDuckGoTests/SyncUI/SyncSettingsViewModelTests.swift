@@ -528,8 +528,22 @@ final class SyncSettingsViewModelTests: XCTestCase {
         sut.isSyncWithAnotherDevicePromptVisible = true
 
         sut.dismissSyncWithAnotherDevicePrompt()
+        sut.syncWithAnotherDevicePromptDidDismiss()
 
         XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
+        XCTAssertTrue(delegate.simplifiedSyncAnotherDevicePromptWasDismissedCalled)
+    }
+
+    func testWhenPromptSwipeDismissedThenDelegateIsNotified() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.simplifiedSyncAnotherDevicePromptState = .notYetShown
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.isSyncWithAnotherDevicePromptVisible = true
+
+        // Simulate swipe: SwiftUI sets binding to false, then onDismiss fires
+        sut.isSyncWithAnotherDevicePromptVisible = false
+        sut.syncWithAnotherDevicePromptDidDismiss()
+
         XCTAssertTrue(delegate.simplifiedSyncAnotherDevicePromptWasDismissedCalled)
     }
 

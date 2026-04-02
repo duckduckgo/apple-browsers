@@ -430,6 +430,9 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public func dismissSyncWithAnotherDevicePrompt() {
         isSyncWithAnotherDevicePromptVisible = false
+    }
+
+    public func syncWithAnotherDevicePromptDidDismiss() {
         delegate?.simplifiedSyncAnotherDevicePromptWasDismissed()
     }
 

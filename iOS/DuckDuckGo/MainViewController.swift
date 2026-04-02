@@ -4161,6 +4161,13 @@ extension MainViewController: TabDelegate {
     }
 
     func tab(_ tab: TabViewController,
+             didRequestNewFireTabForUrl url: URL,
+             inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        tabManager.setBrowsingMode(.fire)
+        loadUrlInNewTab(url, inheritedAttribution: attribution)
+    }
+
+    func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {

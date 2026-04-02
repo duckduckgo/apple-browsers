@@ -56,6 +56,10 @@ protocol TabDelegate: AnyObject {
              didRequestNewBackgroundTabForUrl url: URL,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
+    func tab(_ tab: TabViewController,
+             didRequestNewFireTabForUrl url: URL,
+             inheritingAttribution: AdClickAttributionLogic.State?)
+
     func tabLoadingStateDidChange(tab: TabViewController)
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage)
 

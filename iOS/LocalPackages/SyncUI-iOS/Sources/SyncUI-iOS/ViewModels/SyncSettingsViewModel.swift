@@ -422,6 +422,7 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func checkAndShowSyncWithAnotherDevicePrompt() {
+        guard !isBusy else { return }
         guard isSyncEnabled else { return }
         guard devices.count == 1 else { return }
         guard delegate?.simplifiedSyncAnotherDevicePromptState.shouldShow == true else { return }

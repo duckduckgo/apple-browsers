@@ -509,6 +509,19 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
     }
 
+    func testWhenBusyThenPromptIsNotVisible() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.simplifiedSyncAnotherDevicePromptState = .notYetShown
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.isSyncEnabled = true
+        sut.isBusy = true
+        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
+
+        sut.checkAndShowSyncWithAnotherDevicePrompt()
+
+        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
+    }
+
     func testWhenDevicesEmptyThenPromptIsNotVisible() {
         let delegate = MockSyncSettingsViewModelDelegate()
         delegate.simplifiedSyncAnotherDevicePromptState = .notYetShown

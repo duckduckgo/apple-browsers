@@ -150,8 +150,8 @@
             "appVersion",
             {
                 "key": "windowChanged",
-                "description": "Whether the window pointer changed between consecutive willConnectToWindow calls (true/false)",
-                "type": "string"
+                "description": "Whether the window instance changed between consecutive willConnectToWindow calls",
+                "type": "boolean"
             }
         ]
     }

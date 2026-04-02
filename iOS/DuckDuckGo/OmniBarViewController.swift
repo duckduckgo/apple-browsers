@@ -264,12 +264,14 @@ class OmniBarViewController: UIViewController, OmniBar {
             self?.onAIChatBrandingPressed()
         }
         expandableBarView?.onSearchModePressed = { [weak self] in
-            self?.setSelectedTextEntryMode(.search)
-            self?.omniDelegate?.onTextEntryModeDidChange(.search)
+            guard let self else { return }
+            self.setSelectedTextEntryMode(.search)
+            self.omniDelegate?.onTextEntryModeDidChange(.search)
         }
         expandableBarView?.onAIChatModePressed = { [weak self] in
-            self?.setSelectedTextEntryMode(.aiChat)
-            self?.omniDelegate?.onTextEntryModeDidChange(.aiChat)
+            guard let self else { return }
+            self.setSelectedTextEntryMode(.aiChat)
+            self.omniDelegate?.onTextEntryModeDidChange(.aiChat)
         }
         expandableBarView?.onAIChatSendPressed = { [weak self] in
             self?.onAIChatSendPressed()

@@ -289,17 +289,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
-    // MARK: - VC Delegate: Dismiss
-
-    func test_dismissTap_deactivatesOmnibarEditing() {
-        sut.activateFromOmnibar()
-        XCTAssertTrue(sut.isOmnibarSession)
-
-        sut.unifiedToggleInputVCDidTapDismiss(sut.viewController)
-        XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertFalse(sut.isOmnibarSession)
-    }
-
     // MARK: - Omnibar Editing Lifecycle
 
     func test_activateFromOmnibar_setsDisplayState() {
@@ -345,7 +334,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertEqual(sut.viewController.cardPosition, .top)
         XCTAssertTrue(sut.viewController.usesOmnibarMargins)
-        XCTAssertFalse(sut.viewController.showsDismissButton)
         XCTAssertTrue(sut.viewController.isToolbarSubmitHidden)
     }
 
@@ -353,7 +341,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateFromOmnibar(cardPosition: .bottom)
         XCTAssertEqual(sut.viewController.cardPosition, .bottom)
         XCTAssertFalse(sut.viewController.usesOmnibarMargins)
-        XCTAssertFalse(sut.viewController.showsDismissButton)
         XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
     }
 
@@ -368,7 +355,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.viewController.cardPosition, .bottom)
         XCTAssertFalse(sut.viewController.usesOmnibarMargins)
-        XCTAssertFalse(sut.viewController.showsDismissButton)
         XCTAssertFalse(sut.viewController.isToolbarSubmitHidden)
         XCTAssertFalse(sut.viewController.isInputExpanded)
     }
@@ -609,35 +595,35 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_handleExternalQuerySubmission_deactivatesOmnibarEditing() {
         sut.activateFromOmnibar()
-        sut.handleExternalQuerySubmission()
+        sut.handleExternalSubmission(.query)
         XCTAssertEqual(sut.displayState, .hidden)
     }
 
     func test_handleExternalQuerySubmission_hidesAITab() {
         sut.showExpanded()
-        sut.handleExternalQuerySubmission()
+        sut.handleExternalSubmission(.query)
         XCTAssertEqual(sut.displayState, .hidden)
     }
 
     func test_handleExternalQuerySubmission_noOpWhenHidden() {
-        sut.handleExternalQuerySubmission()
+        sut.handleExternalSubmission(.query)
         XCTAssertEqual(sut.displayState, .hidden)
     }
 
     func test_handleExternalPromptSubmission_deactivatesOmnibarEditing() {
         sut.activateFromOmnibar()
-        sut.handleExternalPromptSubmission()
+        sut.handleExternalSubmission(.prompt)
         XCTAssertEqual(sut.displayState, .hidden)
     }
 
     func test_handleExternalPromptSubmission_collapsesAITab() {
         sut.showExpanded()
-        sut.handleExternalPromptSubmission()
+        sut.handleExternalSubmission(.prompt)
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     func test_handleExternalPromptSubmission_noOpWhenHidden() {
-        sut.handleExternalPromptSubmission()
+        sut.handleExternalSubmission(.prompt)
         XCTAssertEqual(sut.displayState, .hidden)
     }
 
@@ -667,16 +653,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.displayState, .aiTab(.expanded))
         XCTAssertEqual(sut.inputMode, .search)
-    }
-
-    // MARK: - VC Delegate: Dismiss from AI Tab
-
-    func test_dismissTap_fromAITab_collapsesInsteadOfDeactivating() {
-        sut.showExpanded()
-        sut.unifiedToggleInputVCDidTapDismiss(sut.viewController)
-
-        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
-        XCTAssertEqual(sut.inputMode, .aiChat)
     }
 
     // MARK: - AI Tab Search Inactive State
@@ -1129,6 +1105,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidChangeHeight() {}
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

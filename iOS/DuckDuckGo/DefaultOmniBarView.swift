@@ -1148,6 +1148,9 @@ extension DefaultOmniBarView {
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
+            if isSearchAreaExpanded, !aiChatTextView.isFirstResponder {
+                aiChatTextView.becomeFirstResponder()
+            }
             return
         }
 

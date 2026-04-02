@@ -25,6 +25,8 @@ protocol FadeOutContainerViewControllerDelegate: AnyObject {
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode)
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat)
     func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool
+    /// Return true to keep the search page visible during duck.ai transition (URL fallback case).
+    func fadeOutContainerViewControllerShouldKeepSearchVisible(_ controller: FadeOutContainerViewController) -> Bool
 }
 
 final class FadeOutContainerViewController: UIViewController {
@@ -157,16 +159,19 @@ final class FadeOutContainerViewController: UIViewController {
 
         let isShowingSuggestions = delegate?.fadeOutContainerViewControllerIsShowingSuggestions(self) ?? false
         let shouldHideSearchImmediately = !isSearchMode && isShowingSuggestions
+        let keepSearchVisible = delegate?.fadeOutContainerViewControllerShouldKeepSearchVisible(self) ?? false
 
-        if shouldHideSearchImmediately {
+        if shouldHideSearchImmediately && !keepSearchVisible {
             searchPageContainer.alpha = 0.0
         }
 
         let animations = {
-            if !shouldHideSearchImmediately {
+            if !shouldHideSearchImmediately && !keepSearchVisible {
                 self.searchPageContainer.alpha = isSearchMode ? 1.0 : 0.0
             }
-            self.chatPageContainer.alpha = isSearchMode ? 0.0 : 1.0
+            if !keepSearchVisible {
+                self.chatPageContainer.alpha = isSearchMode ? 0.0 : 1.0
+            }
         }
 
         let completion: (Bool) -> Void = { [weak self] finished in

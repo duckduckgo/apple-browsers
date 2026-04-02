@@ -74,7 +74,6 @@ final class AIChatDebugMenu: NSMenu {
         UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
     }
 
-
     private func updateWebUIMenuItemsState() {
         customURLLabelMenuItem.title = "Custom URL: [\(debugStorage.customURL ?? "")]"
     }

@@ -1534,7 +1534,7 @@
 "duckai.shortcuts.section.header" = "Accesos directos";
 
 /* Description for the Duck.ai Siri education screen */
-"duckai.siri.education.screen.description" = "Los atajos de Siri te permiten iniciar un chat de voz con Duck.ai con un comando de voz rápido, como <br />«Siri, inicia el chat de voz de DuckDuckGo». Es una manera rápida de chatear con Duck.ai sin usar las manos.";
+"duckai.siri.education.screen.description" = "Los atajos de Siri te permiten iniciar un chat de voz con Duck.ai con un comando de voz rápido, como «Siri, inicia el chat de voz de DuckDuckGo». Es una manera rápida de chatear con Duck.ai sin usar las manos.";
 
 /* Duck.ai Siri education screen example command 1 */
 "duckai.siri.education.screen.example1" = "Siri, inicia el chat de voz de DuckDuckGo.";

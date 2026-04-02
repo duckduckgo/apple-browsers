@@ -47,6 +47,7 @@ final class UnloadedTab: Identifiable {
          title: String? = nil,
          favicon: NSImage? = nil,
          lastSelectedAt: Date? = nil,
+         burnerMode: BurnerMode = .regular,
          isPersistent: Bool = true,
          interactionStateData: Data? = nil,
          visitedDomainURLs: [URL]? = nil,
@@ -56,7 +57,7 @@ final class UnloadedTab: Identifiable {
         self.title = title
         self.favicon = favicon
         self.lastSelectedAt = lastSelectedAt
-        self.burnerMode = .regular
+        self.burnerMode = burnerMode
         self.isPersistent = isPersistent
         self.interactionStateData = interactionStateData
         self.visitedDomainURLs = visitedDomainURLs

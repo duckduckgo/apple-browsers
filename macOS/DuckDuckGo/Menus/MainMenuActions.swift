@@ -1607,7 +1607,8 @@ extension MainViewController {
         (0..<numberOfTabs).forEach { i in
             let url = urls[i % urls.count]
             let unloaded = UnloadedTab(content: .url(url, credential: nil, source: .ui),
-                                         title: url.host ?? url.absoluteString)
+                                         title: url.host ?? url.absoluteString,
+                                         burnerMode: tabCollectionViewModel.burnerMode)
             tabCollectionViewModel.tabCollection.append(tab: .unloaded(unloaded))
         }
         // Notify the delegate so the collection view reloads before we select

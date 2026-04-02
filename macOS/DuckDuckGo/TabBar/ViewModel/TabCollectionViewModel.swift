@@ -1027,7 +1027,7 @@ extension TabCollectionViewModel {
             return tab
         case .suspended(let suspended):
             let tab = suspended.materialize()
-            tabCollection(for: index)?.replaceTab(at: index.item, with: .loaded(tab), suppressWebExtensionEvents: true)
+            tabCollection(for: index)?.replaceTab(at: index.item, with: .loaded(tab))
             return tab
         }
     }

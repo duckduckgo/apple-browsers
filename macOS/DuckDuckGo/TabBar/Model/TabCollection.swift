@@ -228,9 +228,17 @@ final class TabCollection: NSObject {
         tabs[index] = tab
 
         if !suppressWebExtensionEvents {
-            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
-               case .loaded(let oldLoadedTab) = oldTab, case .loaded(let newLoadedTab) = tab {
-                webExtensionManager.eventsListener.didReplaceTab(oldLoadedTab, with: newLoadedTab)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                switch (oldTab, tab) {
+                case (.loaded(let oldLoadedTab), .loaded(let newLoadedTab)):
+                    webExtensionManager.eventsListener.didReplaceTab(oldLoadedTab, with: newLoadedTab)
+                case (.suspended, .loaded(let newLoadedTab)):
+                    webExtensionManager.eventsListener.didOpenTab(newLoadedTab)
+                case (.loaded(let oldLoadedTab), .suspended):
+                    webExtensionManager.eventsListener.didCloseTab(oldLoadedTab, windowIsClosing: false)
+                case (.suspended, .suspended):
+                    break
+                }
             }
         }
     }

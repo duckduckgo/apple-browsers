@@ -2168,6 +2168,7 @@ class MainViewController: UIViewController {
 
     private func tearDownMinimalChrome() {
         setMinimalChromeMode(false)
+        viewCoordinator.navigationBarContainer.transform = .identity
         viewCoordinator.omniBar.barView.setLayoutMode(.compact, animated: false)
         viewCoordinator.setNavBarContainerExpandableHeight(false)
     }

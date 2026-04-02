@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import PixelKit
+import PixelKitTestingUtilities
 import PrivacyConfig
 import XCTest
 
@@ -29,6 +31,8 @@ final class TabSuspensionServiceTests: XCTestCase {
     private var now: Date!
     private var tabExtensionsBuilder: TestTabExtensionsBuilder!
     private var notificationCenter: NotificationCenter!
+    private var mockMemoryUsageMonitor: MockSuspensionMemoryMonitor!
+    private var mockPixelFiring: PixelKitMock!
 
     private var sut: TabSuspensionService!
 
@@ -38,6 +42,8 @@ final class TabSuspensionServiceTests: XCTestCase {
         now = Date()
         tabExtensionsBuilder = TestTabExtensionsBuilder(load: [TabSuspensionExtension.self])
         notificationCenter = NotificationCenter()
+        mockMemoryUsageMonitor = MockSuspensionMemoryMonitor()
+        mockPixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
@@ -47,6 +53,8 @@ final class TabSuspensionServiceTests: XCTestCase {
         now = nil
         tabExtensionsBuilder = nil
         notificationCenter = nil
+        mockMemoryUsageMonitor = nil
+        mockPixelFiring = nil
         super.tearDown()
     }
 
@@ -55,6 +63,8 @@ final class TabSuspensionServiceTests: XCTestCase {
         return TabSuspensionService(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
+            memoryUsageMonitor: mockMemoryUsageMonitor,
+            pixelFiring: mockPixelFiring,
             notificationCenter: notificationCenter,
             dateProvider: { [unowned self] in self.now }
         )
@@ -65,8 +75,24 @@ final class TabSuspensionServiceTests: XCTestCase {
         return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
     }
 
-    private func postMemoryPressure() {
-        notificationCenter.post(name: .memoryPressureCritical, object: nil)
+    private func postMemoryPressure(totalMemoryBytes: UInt64 = 0) {
+        let context = MemoryReportingContext(
+            browserMemoryMB: 0,
+            windows: nil,
+            standardTabs: nil,
+            pinnedTabs: nil,
+            architecture: "ARM",
+            syncEnabled: nil,
+            usedAllocationMB: nil,
+            wcTotalMemoryMB: nil,
+            uptimeMinutes: 0,
+            totalMemoryBytes: totalMemoryBytes
+        )
+        notificationCenter.post(
+            name: .memoryPressureCritical,
+            object: nil,
+            userInfo: [MemoryPressureNotification.contextKey: context]
+        )
     }
 
     // MARK: - Feature Flag
@@ -185,5 +211,88 @@ final class TabSuspensionServiceTests: XCTestCase {
 
         // With the shifted date, the tab was selected only 5 minutes ago relative to "now" — should not be suspended
         XCTAssertFalse(tab.isSuspended)
+    }
+
+    // MARK: - Pixel Firing
+
+    func testWhenTabsSuspended_ThenPixelIsFiredWithCorrectParameters() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
+        let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
+        sut = makeSUT(tabCollectionViewModels: [vm])
+        vm.select(at: .unpinned(1))
+        tab.lastSelectedAt = now.addingTimeInterval(-20 * 60)
+
+        // Set up memory: 500 MB before, 400 MB after → 100 MB reclaimed
+        let beforeBytes: UInt64 = 500 * 1_048_576
+        let afterBytes: UInt64 = 400 * 1_048_576
+        mockMemoryUsageMonitor.currentPhysFootprintBytes = afterBytes
+
+        postMemoryPressure(totalMemoryBytes: beforeBytes)
+
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
+        let call = mockPixelFiring.actualFireCalls.first
+        XCTAssertEqual(call?.pixel.name, "m_mac_tab_suspension")
+        XCTAssertEqual(call?.pixel.parameters?["trigger"], "critical_memory_pressure")
+        XCTAssertEqual(call?.pixel.parameters?["tabs_suspended"], "1")
+        XCTAssertEqual(call?.pixel.parameters?["memory_reclaimed_mb"], "0")
+    }
+
+    func testWhenNoTabsSuspended_ThenPixelIsNotFired() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        // Tab selected 5 minutes ago — won't be suspended
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-5 * 60))
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
+        let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
+        sut = makeSUT(tabCollectionViewModels: [vm])
+        vm.select(at: .unpinned(1))
+
+        postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
+
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenFeatureFlagDisabled_ThenPixelIsNotFired() {
+        featureFlagger.enabledFeatureFlags = []
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-20 * 60))
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
+        let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
+        sut = makeSUT(tabCollectionViewModels: [vm])
+        vm.select(at: .unpinned(1))
+
+        postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
+
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenPostMemoryIsHigher_ThenMemoryReclaimedIsZero() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
+        let vm = makeTabCollectionViewModel(tabs: [tab, selectedTab])
+        sut = makeSUT(tabCollectionViewModels: [vm])
+        vm.select(at: .unpinned(1))
+        tab.lastSelectedAt = nil
+
+        // Post-suspension memory is higher than before
+        mockMemoryUsageMonitor.currentPhysFootprintBytes = 600 * 1_048_576
+        postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
+
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["memory_reclaimed_mb"], "0")
+    }
+}
+
+private class MockSuspensionMemoryMonitor: MemoryUsageMonitoring {
+    var currentPhysFootprintBytes: UInt64 = 0
+    var currentWebContentBytes: UInt64?
+
+    func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport {
+        MemoryUsageMonitor.MemoryReport(
+            residentBytes: 0,
+            physFootprintBytes: currentPhysFootprintBytes,
+            webContentBytes: currentWebContentBytes,
+            webContentProcessCount: nil
+        )
     }
 }

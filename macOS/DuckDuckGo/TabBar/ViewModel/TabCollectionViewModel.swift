@@ -773,19 +773,21 @@ final class TabCollectionViewModel: NSObject {
         insert(tab)
     }
 
-    func suspendTab(at tabIndex: TabIndex) {
-        guard changesEnabled else { return }
+    @discardableResult
+    func suspendTab(at tabIndex: TabIndex) -> Bool {
+        guard changesEnabled else { return false }
         guard let oldTab = tab(at: tabIndex) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
-            return
+            return false
         }
-        guard tabIndex != selectionIndex else { return }
-        guard oldTab.tabSuspension?.canBeSuspended == true else { return }
+        guard tabIndex != selectionIndex else { return false }
+        guard oldTab.tabSuspension?.canBeSuspended == true else { return false }
         guard let suspendedTab = oldTab.makeSuspendedTab() else {
-            return
+            return false
         }
 
         _ = replaceTab(at: tabIndex, with: suspendedTab)
+        return true
     }
 
     func resumeTab(at tabIndex: TabIndex) {

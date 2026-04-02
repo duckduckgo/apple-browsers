@@ -18,7 +18,32 @@
 
 import Combine
 import Foundation
+import PixelKit
 import PrivacyConfig
+
+enum TabSuspensionPixel: PixelKitEvent {
+    case tabSuspension(trigger: String, tabsSuspended: Int, memoryReclaimedMB: Double)
+
+    var name: String {
+        switch self {
+        case .tabSuspension:
+            return "m_mac_tab_suspension"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .tabSuspension(let trigger, let tabsSuspended, let memoryReclaimedMB):
+            return [
+                "trigger": trigger,
+                "tabs_suspended": String(MemoryReportingBuckets.bucketStandardTabCount(tabsSuspended)),
+                "memory_reclaimed_mb": String(MemoryReportingBuckets.bucketReclaimedMemoryMB(memoryReclaimedMB))
+            ]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
 
 @MainActor
 final class TabSuspensionService {
@@ -27,6 +52,8 @@ final class TabSuspensionService {
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let memoryUsageMonitor: MemoryUsageMonitoring
+    private let pixelFiring: PixelFiring?
     private let notificationCenter: NotificationCenter
     private let dateProvider: () -> Date
     private var cancellables: Set<AnyCancellable> = []
@@ -34,11 +61,15 @@ final class TabSuspensionService {
     init(
         windowControllersManager: WindowControllersManagerProtocol,
         featureFlagger: FeatureFlagger,
+        memoryUsageMonitor: MemoryUsageMonitoring,
+        pixelFiring: PixelFiring?,
         notificationCenter: NotificationCenter = .default,
         dateProvider: @escaping () -> Date = { Date() }
     ) {
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
+        self.memoryUsageMonitor = memoryUsageMonitor
+        self.pixelFiring = pixelFiring
         self.notificationCenter = notificationCenter
         self.dateProvider = dateProvider
 
@@ -52,14 +83,41 @@ final class TabSuspensionService {
     private func handleMemoryPressure(_ notification: Notification) {
         guard featureFlagger.isFeatureOn(.tabSuspension) else { return }
 
+        let initialMemoryBytes: UInt64
+        if let context = notification.userInfo?[MemoryPressureNotification.contextKey] as? MemoryReportingContext {
+            initialMemoryBytes = context.totalMemoryBytes
+        } else {
+            let report = memoryUsageMonitor.getCurrentMemoryUsage()
+            initialMemoryBytes = report.physFootprintBytes + (report.webContentBytes ?? 0)
+        }
+
         let cutoffDate = dateProvider().addingTimeInterval(-Self.minimumInactiveInterval)
+        var suspendedCount = 0
 
         for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {
             for (index, tab) in viewModel.tabCollection.tabs.enumerated() where !tab.isSuspended {
                 if tab.lastSelectedAt == nil || tab.lastSelectedAt! < cutoffDate {
-                    viewModel.suspendTab(at: .unpinned(index))
+                    if viewModel.suspendTab(at: .unpinned(index)) {
+                        suspendedCount += 1
+                    }
                 }
             }
         }
+
+        guard suspendedCount > 0 else { return }
+
+        let postReport = memoryUsageMonitor.getCurrentMemoryUsage()
+        let postMemoryBytes = postReport.physFootprintBytes + (postReport.webContentBytes ?? 0)
+        let reclaimedBytes = initialMemoryBytes > postMemoryBytes ? initialMemoryBytes - postMemoryBytes : 0
+        let reclaimedMB = Double(reclaimedBytes) / 1_048_576.0
+
+        pixelFiring?.fire(
+            TabSuspensionPixel.tabSuspension(
+                trigger: "critical_memory_pressure",
+                tabsSuspended: suspendedCount,
+                memoryReclaimedMB: reclaimedMB
+            ),
+            frequency: .standard
+        )
     }
 }

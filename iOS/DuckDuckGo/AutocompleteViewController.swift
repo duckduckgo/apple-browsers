@@ -166,8 +166,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         model.query = query
     }
 
-    /// Re-applies the current filter to existing results without a new network request.
-    /// Needed when the filter changes but the query stays the same (e.g., mode switch).
+    func setSectionTitle(_ title: String?) {
+        model.sectionTitle = title
+    }
+
     func reapplyFilterIfNeeded() {
         guard model.suggestionFilter != suggestionFilter, var results = lastResults else { return }
         if suggestionFilter == .urlsOnly {

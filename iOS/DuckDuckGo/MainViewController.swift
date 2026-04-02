@@ -1199,6 +1199,11 @@ class MainViewController: UIViewController {
 
             let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
             currentTab.borderView.bottomOffset = -bottomOffset
+        } else if isAnyAITabUTIState, let currentTab {
+            let inset = keyboardHeight > 0 ? baseInputHeight : 0
+            if currentTab.webView.scrollView.contentInset.bottom != inset {
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            }
         }
 
         if appSettings.currentAddressBarPosition.isBottom,
@@ -5078,8 +5083,12 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
 
         case .AIChat:
             Pixel.fire(pixel: .voiceSearchAIChatDone)
-            performCancel()
-            openAIChat(query, autoSend: true)
+            if let coordinator = unifiedToggleInputCoordinator, coordinator.isAITabState, coordinator.hasBoundUserScript {
+                coordinator.submitVoicePrompt(query)
+            } else {
+                performCancel()
+                openAIChat(query, autoSend: true)
+            }
         }
     }
 }

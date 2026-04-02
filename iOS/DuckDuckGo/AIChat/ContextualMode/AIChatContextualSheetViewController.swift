@@ -305,6 +305,11 @@ final class AIChatContextualSheetViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        popupWindow?.isHidden = true
+        popupWindow = nil
+    }
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -348,6 +353,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        dismissRecentChatsPopup()
         view.endEditing(true)
         removeKeyboardObserver()
         pixelHandler.fireSheetDismissed()
@@ -520,6 +526,7 @@ private extension AIChatContextualSheetViewController {
         overlay.windowLevel = .normal + 1
         overlay.backgroundColor = .clear
         overlay.isOpaque = false
+        overlay.overrideUserInterfaceStyle = traitCollection.userInterfaceStyle
         overlay.makeKeyAndVisible()
 
         // Convert pill position to screen coordinates for positioning
@@ -1087,6 +1094,7 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
     }
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        dismissRecentChatsPopup()
         delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
     }
 }

@@ -308,10 +308,6 @@ final class AddressBarButtonsViewController: NSViewController {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
-    private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
-        AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
-    }()
-
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager,
@@ -560,7 +556,8 @@ final class AddressBarButtonsViewController: NSViewController {
         if hasPrivacyInfoPulseQueuedAnimation {
             hasPrivacyInfoPulseQueuedAnimation = false
             // Give a bit of delay to have a better animation effect
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                guard let self, !self.privacyDashboardButton.isHidden else { return }
                 ViewHighlighter.highlight(view: self.privacyDashboardButton, inParent: self.view)
             }
         }
@@ -1868,8 +1865,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 searchModeToggleWidthConstraint?.constant = toggleControl.expandedWidth
             }
 
-            // Show the introduction popover when the toggle becomes visible for the first time
-            showTogglePopoverIfNeeded(toggleControl: toggleControl)
         } else if shouldShowToggle && hasUserTypedText && toggleControl.isExpanded {
             toggleControl.setExpanded(false, animated: true)
         } else if !shouldShowToggle && toggleControl.isExpanded {
@@ -1878,21 +1873,6 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         wasToggleVisible = shouldShowToggle
-    }
-
-    private func showTogglePopoverIfNeeded(toggleControl: NSView) {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return }
-
-        /// Delay slightly to ensure the toggle is visible and positioned correctly
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self else { return }
-            self.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(
-                relativeTo: toggleControl,
-                isNewUser: AppDelegate.isNewUser,
-                userDidInteractWithToggle: self.aiChatToggleConditions.hasUserInteractedWithToggle,
-                userDidSeeToggleOnboarding: self.aiChatSettings.userDidSeeToggleOnboarding
-            )
-        }
     }
 
     @IBAction func zoomButtonAction(_ sender: Any) {

@@ -56,11 +56,12 @@ public extension OnboardingRebranding.OnboardingStyles {
                 configuration.label
                     .font(typography.contextual.controlSmall)
                     .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
                     .lineLimit(nil)
                     .foregroundColor(foregroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
-                    .padding()
-                    .frame(minWidth: 0, maxWidth: optionsListMetrics.itemMaxWidth, maxHeight: optionsListMetrics.itemMaxHeight)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal)
+                    .frame(minWidth: 0, maxWidth: optionsListMetrics.itemMaxWidth, minHeight: optionsListMetrics.itemMinHeight)
                     .background(backgroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
                     .cornerRadius(optionsListMetrics.cornerRadius)
                     .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background

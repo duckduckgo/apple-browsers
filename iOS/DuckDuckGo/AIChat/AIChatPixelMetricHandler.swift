@@ -89,7 +89,8 @@ enum VoiceEntryPointSource: String {
     case ntp
     case toolbar
     case addressBar = "address_bar"
-    case controlCenter = "control_center"
-    case widget
+    case controlCenter = "widget.controlcenter"
+    case lockscreenComplication = "widget.lockscreen.complication"
+    case quickActions = "widget.quickactions"
     case siri
 }

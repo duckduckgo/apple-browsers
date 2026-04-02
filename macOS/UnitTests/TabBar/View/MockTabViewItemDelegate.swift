@@ -158,6 +158,10 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
 
     }
 
+    func tabBarViewItemSuspendAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
     func clear() {
         self.audioState = nil
     }

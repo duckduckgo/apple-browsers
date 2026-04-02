@@ -72,6 +72,7 @@ struct ConfigurationIntent: WidgetConfigurationIntent {
 enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
     case passwords
     case duckAI
+    case duckAIVoice
     case voiceSearch
     case favorites
     case emailProtection
@@ -80,6 +81,7 @@ enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
     static var caseDisplayRepresentations: [ShortcutOption: DisplayRepresentation] = [
         .passwords: "Passwords",
         .duckAI: "Duck.ai",
+        .duckAIVoice: "Duck.ai Voice",
         .voiceSearch: "Voice Search",
         .favorites: "Favorites",
         .emailProtection: "Duck Address"
@@ -91,6 +93,7 @@ enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
         switch self {
         case .passwords: return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
         case .duckAI: return Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
+        case .duckAIVoice: return Image(uiImage: DesignSystemImages.Glyphs.Size24.voice)
         case .voiceSearch: return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
         case .favorites: return Image(uiImage: DesignSystemImages.Glyphs.Size24.favorite)
         case .emailProtection: return Image(uiImage: DesignSystemImages.Glyphs.Size24.email)
@@ -101,6 +104,7 @@ enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
         switch self {
         case .passwords: return DeepLinks.openPasswords
         case .duckAI: return DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.quickActions.rawValue)
+        case .duckAIVoice: return DeepLinks.openAIVoiceChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.quickActions.rawValue)
         case .voiceSearch: return DeepLinks.voiceSearch
         case .favorites: return DeepLinks.favorites
         case .emailProtection: return DeepLinks.newEmail

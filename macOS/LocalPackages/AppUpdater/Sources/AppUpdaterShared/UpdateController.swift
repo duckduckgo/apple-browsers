@@ -95,7 +95,6 @@ public protocol UpdateController: UpdateControllerObjC {
     /// - **Sparkle**: Set to `true` when update is downloaded/available, cleared after user action
     ///
     /// **Usage**: Visual indicator in main menu "DuckDuckGo" item and Settings gear icon.
-    /// Persists across app launches until user acknowledges the update.
     var needsNotificationDot: Bool { get set }
     var notificationDotPublisher: AnyPublisher<Bool, Never> { get }
 

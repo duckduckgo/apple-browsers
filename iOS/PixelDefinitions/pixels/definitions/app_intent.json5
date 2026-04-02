@@ -10,9 +10,9 @@
             "pixelSource",
             {
                 "key": "type",
-                "description": "Type of the app intent performed: search for general search intents, duckai for AI chat intents.",
+                "description": "Type of the app intent performed: search for general search intents, duckai for AI chat intents, duckai_voice for AI voice chat intents.",
                 "type": "string",
-                "enum": ["search", "duckai"]
+                "enum": ["search", "duckai", "duckai_voice"]
             }
         ]
     }

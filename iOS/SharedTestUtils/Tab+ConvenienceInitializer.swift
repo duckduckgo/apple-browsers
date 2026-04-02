@@ -33,7 +33,8 @@ extension Tab {
                             supportsTabHistory: Bool = true,
                             isExternalLaunch: Bool = false,
                             shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
+                            preferredTextEntryMode: TextEntryMode = .search,
                             aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: false, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, aichatDebugSettings: aichatDebugSettings)
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: false, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, preferredTextEntryMode: preferredTextEntryMode, aichatDebugSettings: aichatDebugSettings)
     }
 }

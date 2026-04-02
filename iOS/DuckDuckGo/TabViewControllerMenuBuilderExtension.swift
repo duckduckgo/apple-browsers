@@ -193,10 +193,11 @@ extension TabViewController {
     }
     
     private func buildNewTabEntry() -> BrowsingMenuEntry {
-        .regular(name: UserText.actionNewTab,
-                 accessibilityLabel: UserText.keyCommandNewTab,
-                 image: DesignSystemImages.Glyphs.Size24.add,
-                 action: { [weak self] in
+        let title = tabModel.fireTab ? UserText.actionNewFireTab : UserText.actionNewTab
+        return .regular(name: title,
+                        accessibilityLabel: UserText.keyCommandNewTab,
+                        image: DesignSystemImages.Glyphs.Size24.add,
+                        action: { [weak self] in
             self?.onNewTabAction()
         })
     }

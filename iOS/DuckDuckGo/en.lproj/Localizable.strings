@@ -85,9 +85,6 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Open in Background";
 
-/* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Open in New Fire Tab";
-
 /* Create New Tab action */
 "action.title.newTabAction" = "New Tab";
 

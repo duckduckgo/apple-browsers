@@ -238,7 +238,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         let isLandscapeEditing = isExpandedPhone && barView.textField.isEditing
         let newMode: OmniBarLayoutMode
-        if !state.hasLargeWidth || isLandscapeEditing {
+        if isLandscapeEditing || (!state.hasLargeWidth && !isExpandedPhone) {
             newMode = .compact
         } else if isExpandedPhone {
             newMode = .expandedPhone

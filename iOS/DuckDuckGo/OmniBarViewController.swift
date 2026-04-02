@@ -691,7 +691,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
         barView.isPrivacyInfoContainerHidden = !state.showPrivacyIcon
         barView.isClearButtonHidden = !state.showClear
-        barView.isMenuButtonHidden = !state.showMenu
+        barView.isMenuButtonHidden = isExpandedPhone ? false : !state.showMenu
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
         barView.isRefreshButtonHidden = !state.showRefresh || (state.showRefreshOutsideAddressBar && !isExpandedPhone)

@@ -384,8 +384,6 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
                     tsButton.heightAnchor.constraint(equalToConstant: 44),
                 ])
                 tsButton.tabCount = tabsModel.count
-
-                cell.omniBar?.enterPadState()
             }
 
             if tab?.isAITab == true {

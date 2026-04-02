@@ -2152,7 +2152,7 @@ class MainViewController: UIViewController {
         let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight
         setMinimalChromeMode(true)
-        viewCoordinator.omniBar.enterPadState()
+        viewCoordinator.omniBar.enterPhoneState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         if appSettings.currentAddressBarPosition.isBottom {

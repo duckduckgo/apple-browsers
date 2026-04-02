@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Üllata mind!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Leia loendist **DuckDuckGo**, seejärel puuduta suvandit **Duck.ai häälvestlus**, et see lisada";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Leia loendist **DuckDuckGo**, seejärel puuduta **VPN-i juhtimine**, et see lisada";
 
@@ -1224,8 +1227,6 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Kohandatud URL: %@";
-
-/* No comment provided by engineer. */
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Impordi järjehoidjate fail...";
@@ -1461,11 +1462,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playeri funktsionaalsust on mõjutanud hiljutised YouTube'i muudatused. Töötame nende probleemide lahendamise nimel ja täname sind mõistva suhtumise eest.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Puuduta vidinat selle muutmiseks ja seejärel määra otseteedeks **Duck.ai** ja **Duck.ai häälvestlus**";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Leia ja vali **DuckDuckGo**, seejärel libista suvandini **Kohandatud otseteed** ja vali **Lisa vidin**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Lisa lehe sisu";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Saadetud koos sinu sõnumiga Duck.ai-le";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Lisa Duck.ai häälvestluse otsetee juhtimiskeskusesse";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
@@ -1475,6 +1485,12 @@
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Loo lehekülje kokkuvõte";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lisa Duck.ai vidin avalehele";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Kuva Duck.ai nupud ja lingid DuckDuckGo otsingutulemustes.";
@@ -1487,6 +1503,9 @@
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Brauseri otseteed";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Räägi Duck.ai-ga Siri abil";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Aadressiriba";
@@ -1505,6 +1524,24 @@
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Otseteed";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri otseteed lasevad sul alustada Duck.ai häälvestlust kiire häälkäsklusega, näiteks „Siri, alusta DuckDuckGo häälvestlust“. See on kiire ja käed-vaba viis Duck.ai-ga vestlemiseks.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, käivita DuckDuckGo häälvestlus.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, vestle DuckDuckGo-ga.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, alusta häälvestlust DuckDuckGo-ga.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Vestle Duck.ai-ga Siri abil!";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
@@ -1578,26 +1615,11 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Jätka Duck Playeris";
 
-/* Toggle to always open videos in Duck Player */
-"duckplayer.settings.always-open-toggle" = "Ava YouTube'i videod alati Duck Playeris";
-
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playeris avatud videote taasesitus algab automaatselt. Lülitage see välja, kui soovite Duck Playeris avatud videote taasesitust käsitsi alustada.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Videote automaatne esitamine";
-
-/* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Avab videod privaatses kinorežiimis, mis takistab YouTube'i voo mõjutamist vaadatava sisu poolt.";
-
-/* Toggle to enable Duck Player */
-"duckplayer.settings.enable-toggle" = "Luba Duck Player";
-
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentaalne";
-
-/* Explanation footer for Duck Player settings */
-"duckplayer.settings.explanation" = "Duck Player võimaldab vaadata YouTube'i ilma suunatud reklaamideta ja hoiab vaadatav sisu ei mõjuta sinu soovitusi.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo pakub kõik privaatsuseks vajaliku, mida vajad enda kaitsmiseks veebi sirvimisel.";
@@ -2096,9 +2118,6 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
-
-/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
-"fireButtonAnimation.fireRising.legacy.name" = "Inferno Klassikaline";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -2620,8 +2639,6 @@
 "No active subscriptions" = "Aktiivseid tellimusi ei ole";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Olemasolevat tellimust ei leitud";
 
 /* No comment provided by engineer. */
@@ -2662,9 +2679,6 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
-
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Store'i versioonides kuvatakse see kuva ainult siis, kui oled sisse logitud sisekasutajana aadressi **use-login.duckduckgo.com** kaudu.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sain aru";
@@ -2747,9 +2761,6 @@
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Loe edasi";
 
-/* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
-"onboarding.privacypro.promo.buttons.rebranding.skip" = "Ei aitäh";
-
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Jäta vahele";
 
@@ -2794,9 +2805,6 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Sain aru! Jätan muud näpunäited vahele.";
-
-/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
-"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Proovi tasuta!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Proovi seda tasuta!";
@@ -2845,9 +2853,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Loobumine...";
-
-/* No comment provided by engineer. */
-"Override" = "Tühista";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Ei pääse ainult tellijatele mõeldud Duck.ai mudelitele ligi";
@@ -3191,6 +3196,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Lisa vidin avakuvale";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Lisa Duck.ai otseteed oma avakuvale";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Lisa DuckDuckGo VPN vidin oma avakuvale";
 
@@ -3416,10 +3424,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Vaikebrauser";
 
-/* Footer text explaining the toggle position setting in AI Features settings */
-"settings.default.omnibar.mode.footer" = "Lüliti vaikeasend uutel vahekaartidel.";
-/* Header text for the toggle position setting in AI Features settings */
-"settings.default.omnibar.mode.header" = "Lüliti asend";
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Viimati kasutatud";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Otsi";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Kustuta Duck.ai vestlused";
 
@@ -4572,15 +4585,6 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hangi DuckDuckGo for Windows!";
 
-/* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "DuckDuckGo eemaldab YouTube'ist videoreklaamid, et saaksid videoid katkestusteta vaadata.";
-
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "YouTube'i reklaamide blokeerimine";
-
-/* Toggle label for enabling/disabling YouTube ad blocking */
-"youtube.ad.blocking.toggle" = "Reklaamide blokeerimine YouTube'is";
-
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Järjehoidjad";
 
@@ -4596,12 +4600,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Luba heli ja video";
-"autoplay.mode.blockAll" = "Blokeeri heli ja video";
-"autoplay.mode.blockAudio" = "Blokeeri heli";
-"settings.autoplay" = "Automaatne esitamine";
-"settings.autoplay.duck.player.link" = "Duck Playeri seaded";
-"settings.autoplay.footer" = "Automaatse esitamise seaded kehtivad ainult äsjaavatud vahelehtedele. Muudatusi ei saa olemasolevatele vahekaartidele rakendada enne rakenduse taaskäivitamist. Duck Playeris automaatse esitamise haldamiseks valige suvand ";
-"settings.media.section" = "Meedia";

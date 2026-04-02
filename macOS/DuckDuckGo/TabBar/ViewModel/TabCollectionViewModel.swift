@@ -289,7 +289,11 @@ final class TabCollectionViewModel: NSObject {
 
     @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
         shouldReturnToPreviousActiveTab = false
-        return selectWithoutResettingState(at: index, forceChange: forceChange)
+        let result = selectWithoutResettingState(at: index, forceChange: forceChange)
+        if result, let tab = tab(at: index)?.tab, tab.isSuspended {
+            tab.resume()
+        }
+        return result
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {

@@ -1865,7 +1865,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 searchModeToggleWidthConstraint?.constant = toggleControl.expandedWidth
             }
 
-
         } else if shouldShowToggle && hasUserTypedText && toggleControl.isExpanded {
             toggleControl.setExpanded(false, animated: true)
         } else if !shouldShowToggle && toggleControl.isExpanded {
@@ -1875,7 +1874,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         wasToggleVisible = shouldShowToggle
     }
-
 
     @IBAction func zoomButtonAction(_ sender: Any) {
         guard let popovers else { return }

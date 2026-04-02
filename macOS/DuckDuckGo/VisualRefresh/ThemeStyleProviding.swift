@@ -79,22 +79,13 @@ struct ThemeStyle: ThemeStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger) -> ThemeStyle {
+    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
-        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)
+        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
     }
 
-    private static var displaysTabsAnimations: Bool?
-    private static func displaysTabsAnimations(featureFlagger: FeatureFlagger) -> Bool {
-        let output = displaysTabsAnimations ?? featureFlagger.isFeatureOn(.tabAnimations)
-        displaysTabsAnimations = output
-        return output
-    }
-
-    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger) -> ThemeStyle {
-        let displaysTabsAnimations = displaysTabsAnimations(featureFlagger: featureFlagger)
-
-        return ThemeStyle(
+    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) -> ThemeStyle {
+        ThemeStyle(
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
@@ -106,7 +97,7 @@ struct ThemeStyle: ThemeStyleProviding {
             iconsProvider: CurrentIconsProvider(),
             fireButtonSize: 32,
             navigationToolbarButtonsSpacing: 2,
-            tabBarButtonSize: 28,
+            tabBarButtonSize: 30,
             addToolbarShadow: true
         )
     }

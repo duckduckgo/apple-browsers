@@ -40,6 +40,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var currentToggleState: TextEntryMode = .aiChat
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
+    @Published var hasSubmittedPrompt: Bool = false
+
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
+        $hasSubmittedPrompt.eraseToAnyPublisher()
+    }
 
     var isGenerating: Bool = false {
         didSet { updateButtonState() }
@@ -50,6 +55,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     var isVoiceSearchEnabled: Bool {
+        didSet { updateButtonState() }
+    }
+
+    var isAIVoiceChatEnabled: Bool = false {
+        didSet { updateButtonState() }
+    }
+
+    var hidesVoiceButton: Bool = false {
         didSet { updateButtonState() }
     }
 
@@ -168,15 +181,17 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
+        let voiceAvailable = !hidesVoiceButton && isVoiceSearchEnabled && !(isAIVoiceChatEnabled && currentToggleState == .aiChat)
+
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
             buttonState = .stopGeneratingAndSearchGoTo
         } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
             buttonState = .stopGeneratingOnly
         } else if !currentText.isEmpty {
             buttonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat {
-            buttonState = isVoiceSearchEnabled ? .voiceAndSearchGoTo : .searchGoToOnly
-        } else if isVoiceSearchEnabled {
+        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
+            buttonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
+        } else if voiceAvailable {
             buttonState = .voiceOnly
         } else {
             buttonState = .noButtons

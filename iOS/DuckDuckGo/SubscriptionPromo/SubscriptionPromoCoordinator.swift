@@ -83,7 +83,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     func markLaunchPromptPresented() {
         daxDialogsSettings.subscriptionPromotionDialogShown = true
         Logger.subscription.debug("[Subscription Promo] Launch prompt marked as presented.")
-        firePixel(.subscriptionOnboardingPromotionImpression)
+        firePixel(.subscriptionSkippedOnboardingPromotionImpression)
     }
 
     // MARK: - Content
@@ -94,7 +94,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
 
     func proceedButtonText() -> String {
         subscriptionManager.isUserEligibleForFreeTrial()
-            ? UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree
+        ? UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.tryItFree
             : UserText.SubscriptionPromotionOnboarding.Buttons.learnMore
     }
 
@@ -107,7 +107,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
 
     func handleCTAAction() {
         Logger.subscription.debug("[Subscription Promo] CTA action triggered.")
-        firePixel(.subscriptionOnboardingPromotionTap)
+        firePixel(.subscriptionSkippedOnboardingPromotionTap)
 
         let origin = redirectOrigin()
         let comps = SubscriptionURL.purchaseURLComponentsWithOrigin(origin.rawValue)
@@ -117,7 +117,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
 
     func handleDismissAction() {
         Logger.subscription.debug("[Subscription Promo] Dismiss action triggered.")
-        firePixel(.subscriptionOnboardingPromotionDismiss)
+        firePixel(.subscriptionSkippedOnboardingPromotionDismiss)
     }
 
     // MARK: - Private
@@ -148,11 +148,6 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     }
 
     private func redirectOrigin() -> SubscriptionFunnelOrigin {
-        switch (isReturningUser, isFreeTrialEligible) {
-        case (true, true): return .onboardingReinstallFreeTrial
-        case (true, false): return .onboardingReinstallSubscribe
-        case (false, true): return .onboardingNewInstallFreeTrial
-        case (false, false): return .onboardingNewInstallSubscribe
-        }
+        .skippedOnboarding
     }
 }

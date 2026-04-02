@@ -49,7 +49,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showDismiss: Bool { get } // < button inside the address bar
     var showAIChatFullModeBranding: Bool { get } // Unique omnibar view displayed with in full duck.ai mode
     var showAIChatModeToggle: Bool { get }
-    
+
     var allowCustomization: Bool { get } // If the state allows customization
 
     var onEditingStoppedState: OmniBarState { get }
@@ -105,7 +105,7 @@ extension OmniBarState {
     }
     
     var allowCustomization: Bool { true }
-    
+
     var showRefreshOutsideAddressBar: Bool {
         hasLargeWidth
             && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)

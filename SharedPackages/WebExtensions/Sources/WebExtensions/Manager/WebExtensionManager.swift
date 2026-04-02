@@ -23,7 +23,7 @@ import WebKit
 /// Manages web extensions including installation, loading, and lifecycle.
 /// Platform-specific behavior is delegated to the windowTabProvider and lifecycleDelegate.
 @available(macOS 15.4, iOS 18.4, *)
-open class WebExtensionManager: NSObject, WebExtensionManaging {
+open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInstallationPathResolving {
 
     // MARK: - Dependencies
 
@@ -48,6 +48,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
+    /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
+    private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
+
+    /// The scriptlet configuration, if scriptlet support is enabled.
+    private let scriptletConfiguration: ScriptletConfiguration?
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
 
@@ -71,7 +77,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 messageRouter: WebExtensionMessageRouting? = nil,
-                handlerProvider: WebExtensionHandlerProviding? = nil) {
+                handlerProvider: WebExtensionHandlerProviding? = nil,
+                scriptletConfiguration: ScriptletConfiguration? = nil) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -86,8 +93,20 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         self.pixelFiring = pixelFiring
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
+        self.scriptletConfiguration = scriptletConfiguration
 
         super.init()
+
+        if let scriptletConfiguration {
+            let coordinator = WebExtensionScriptletCoordinator(
+                scriptletProvider: scriptletConfiguration.provider,
+                installationTracker: scriptletConfiguration.installationTracker,
+                installer: scriptletConfiguration.installer,
+                cacheRootDirectory: scriptletConfiguration.cacheRootDirectory,
+                installationPathResolver: self
+            )
+            self.scriptletCoordinator = coordinator
+        }
 
         controller.delegate = self
         self.loader.delegate = self
@@ -107,6 +126,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         controller.extensionContexts
     }
 
+    public var extensionsDirectory: URL {
+        storageProvider.extensionsDirectory
+    }
+
     /// Whether the embedded autoconsent web extension is loaded and active.
     public var isAutoconsentExtensionLoaded: Bool {
         contexts.contains { $0.duckDuckGoWebExtensionType == .embedded }
@@ -117,9 +140,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public func installExtension(from sourceURL: URL) async throws {
         Logger.webExtensions.debug("🔄 Installing extension from: \(sourceURL.path)")
 
+        let metadata = try await WKWebExtension.metadata(from: sourceURL)
         let identifier = UUID().uuidString
 
-        _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
+        if metadata.requiresExtraction {
+            _ = try storageProvider.extractExtension(from: sourceURL, identifier: identifier)
+        } else {
+            _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
+        }
+
         Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
 
         do {
@@ -129,13 +158,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
                 uniqueIdentifier: identifier,
                 filename: loadResult.filename,
                 name: loadResult.displayName,
-                version: loadResult.version
+                version: loadResult.version,
+                embeddedType: metadata.type
             )
 
             installationStore.add(installedExtension)
 
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
             pixelFiring.fire(.installed)
+
+            if let type = metadata.type {
+                await scriptletCoordinator?.onExtensionEnabled(for: type)
+            }
         } catch {
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
             unregisterHandlers(for: identifier)
@@ -147,10 +181,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         notifyUpdate()
     }
 
+    @MainActor
     public func uninstallExtension(identifier: String) throws {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
+        let embeddedType = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
         installationStore.remove(uniqueIdentifier: identifier)
+
+        if let embeddedType {
+            scriptletCoordinator?.onExtensionDisabled(for: embeddedType)
+        }
 
         unregisterHandlers(for: identifier)
 
@@ -174,14 +214,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         notifyUpdate()
     }
 
+    @MainActor
     @discardableResult
     public func uninstallAllExtensions() -> [Result<Void, Error>] {
-        let identifiers = installationStore.installedExtensions.map(\.uniqueIdentifier)
-        Logger.webExtensions.debug("🔄 Uninstalling all extensions (count: \(identifiers.count))")
+        let installedExtensions = installationStore.installedExtensions
+        Logger.webExtensions.debug("🔄 Uninstalling all extensions (count: \(installedExtensions.count))")
 
-        let results: [Result<Void, Error>] = identifiers.map { identifier in
+        let results: [Result<Void, Error>] = installedExtensions.map { ext in
             do {
-                try uninstallExtension(identifier: identifier)
+                try uninstallExtension(identifier: ext.uniqueIdentifier)
                 return .success(())
             } catch {
                 return .failure(error)
@@ -233,6 +274,44 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         } else {
             Logger.webExtensions.debug("✅ Successfully unloaded \(successCount) extension(s) from memory")
         }
+    }
+
+    @MainActor
+    public func clearCachedScriptlets() {
+        scriptletConfiguration?.provider.clearCachedScriptlets()
+    }
+
+    @MainActor
+    public func scriptletDebugInfo() -> [ScriptletDebugInfo] {
+        guard let config = scriptletConfiguration else { return [] }
+
+        return DuckDuckGoWebExtensionType.allCases.compactMap { type in
+            let cachedVersion = config.provider.scriptletVersion(for: type)
+            let installedVersion = config.installationTracker.installedVersion(for: type)
+            let scriptletPaths = config.provider.scriptlets(for: type)?.map(\.path)
+
+            guard cachedVersion != nil || installedVersion != nil else { return nil }
+
+            return ScriptletDebugInfo(
+                extensionType: type,
+                cachedVersion: cachedVersion,
+                installedVersion: installedVersion,
+                scriptletPaths: scriptletPaths ?? []
+            )
+        }
+    }
+
+    @MainActor
+    public func reloadExtension(identifier: String) async throws {
+        Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
+
+        try loader.unloadExtension(identifier: identifier, from: controller)
+        unregisterHandlers(for: identifier)
+
+        _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        Logger.webExtensions.info("✅ Reloaded extension '\(identifier)'")
+        notifyUpdate()
     }
 
     // MARK: - Loading
@@ -287,6 +366,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
         let knownIdentifiers = Set(installationStore.installedExtensions.map(\.uniqueIdentifier))
         storageProvider.cleanupOrphanedExtensions(keeping: knownIdentifiers)
+
+        for ext in installationStore.installedExtensions {
+            if let type = ext.embeddedType {
+                await scriptletCoordinator?.onExtensionEnabled(for: type)
+            }
+        }
 
         notifyUpdate()
     }

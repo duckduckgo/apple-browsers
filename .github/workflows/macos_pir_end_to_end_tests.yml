@@ -58,7 +58,7 @@ jobs:
           ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -69,7 +69,7 @@ jobs:
         mode: start
 
     - name: Check out the PIR fake broker code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: DuckDuckGo/pir-fake-broker
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
@@ -171,6 +171,12 @@ jobs:
         pixel-name: m_ci_apple_duration_macos_pir_e2e_tests
         pixel-params: |
           runner: ${{ matrix.runner }}
+
+    - name: Send Status Pixel
+      if: always() && github.ref_name == 'main'
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_status_mac_e2e_pir_${{ steps.run-tests.outcome }}
 
     - name: Prepare test report
       if: always()

@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import AutoconsentStats
 import BrowserServicesKit
+import Combine
 import Common
 import DDGSync
 import History
@@ -62,7 +63,8 @@ extension NewTabPageActionsManager {
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
         syncService: DDGSyncing?,
         pinningManager: PinningManager,
-        promoService: PromoService?
+        promoService: PromoService?,
+        dockCustomization: DockCustomization
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -142,7 +144,7 @@ extension NewTabPageActionsManager {
             pixelHandler: nextStepsPixelHandler,
             cardActionsHandler: NewTabPageNextStepsCardsActionHandler(
                 defaultBrowserProvider: SystemDefaultBrowserProvider(),
-                dockCustomizer: DockCustomizer(),
+                dockCustomizer: dockCustomization,
                 dataImportProvider: dataImportProvider,
                 tabOpener: NewTabPageTabOpener(),
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -154,14 +156,38 @@ extension NewTabPageActionsManager {
             legacySubscriptionCardPersistor: subscriptionCardPersistor,
             persistor: nextStepsCardsPersistor,
             duckPlayerPreferences: duckPlayerPreferences,
-            syncService: syncService
+            syncService: syncService,
+            dockCustomization: dockCustomization
         )
+        let buildType = StandardApplicationBuildType()
+
         if let promoService {
+            let coordinator = freemiumDBPPromotionViewCoordinator
+
+            // Register immediately so the delegate is available for trigger
+            // evaluation and restore. The delegate uses promoService history
+            // to fast-path eligibility during an active display window,
+            // avoiding the wait for async product availability checks.
+            let dateProvider: () -> Date
+            if buildType.isDebugBuild || buildType.isReviewBuild {
+                let debugDateStore = DebugSimulatedDateStore(keyValueStore: keyValueStore)
+                dateProvider = { debugDateStore.simulatedDate ?? Date() }
+            } else {
+                dateProvider = Date.init
+            }
+
+            let delegate = FreemiumDBPPromoDelegate(
+                coordinator: coordinator,
+                historyProvider: promoService,
+                promoId: PromoServiceFactory.freemiumDBP.id,
+                dateProvider: dateProvider
+            )
+            promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: delegate)
+
             let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
             promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)
         }
 
-        let buildType = StandardApplicationBuildType()
         let environment: NewTabPageConfigurationClient.Environment = (buildType.isDebugBuild || buildType.isReviewBuild) ? .development : .production
 
         self.init(scriptClients: [

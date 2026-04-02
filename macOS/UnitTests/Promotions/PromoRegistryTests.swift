@@ -41,7 +41,8 @@ final class PromoRegistryTests: XCTestCase {
             keyValueStore: InMemoryThrowingKeyValueStore(),
             notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
             uiHosting: { nil },
-            isOnboardingCompletedProvider: { true }
+            isOnboardingCompletedProvider: { true },
+            dockCustomization: DockCustomizerMock()
         )
         let dependencies = PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),

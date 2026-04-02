@@ -44,6 +44,12 @@ final class RootViewV2Tests: XCTestCase {
         let windowControllersManager = WindowControllersManagerMock()
         let featureFlagger = MockFeatureFlagger()
 
+        let sharedDuckPlayerPreferences = DuckPlayerPreferences(
+            persistor: DuckPlayerPreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            internalUserDecider: featureFlagger.internalUserDecider
+        )
+
         sidebarModel = PreferencesSidebarModel(
             privacyConfigurationManager: MockPrivacyConfigurationManaging(),
             featureFlagger: featureFlagger,
@@ -65,12 +71,12 @@ final class RootViewV2Tests: XCTestCase {
                 featureFlagger: MockFeatureFlagger()
             ),
             aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+            dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
+                                                  dockCustomizer: DockCustomizerMock(),
+                                                  pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
-            duckPlayerPreferences: DuckPlayerPreferences(
-                persistor: DuckPlayerPreferencesPersistorMock(),
-                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-                internalUserDecider: featureFlagger.internalUserDecider
-            ),
+            duckPlayerPreferences: sharedDuckPlayerPreferences,
+            youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: sharedDuckPlayerPreferences),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
         subscriptionManager = SubscriptionManagerMock()

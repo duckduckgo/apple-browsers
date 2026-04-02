@@ -32,6 +32,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470686549
     case contextualOnboarding
 
+    /// Onboarding rebranding feature flag
+    case onboardingRebranding
+
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715698981
     case unknownUsernameCategorization
 
@@ -58,6 +61,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
+    case adBlockingExtension
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
@@ -246,9 +252,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
-    case crashCollectionDisableKeysSorting
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
 
@@ -269,10 +272,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
-
-    /// Startup Metrics Feature Flag
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
-    case startupMetrics
 
     /// Private Process Name Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
@@ -300,9 +299,26 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
     case tabAnimations
 
+    /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
+    case lazyMenuRebuild
+
     /// Enables the "Add to dock" onboarding step and setting for App Store builds
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725466401987?focus=true
     case addToDockAppStore
+
+    /// Enables removing individual AI chat suggestions from the omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
+    case aiChatRemoveSuggestion
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
+    case screenTimeCleaning
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213876665476278?focus=true
+    case tabSuspension
+
+    /// Gates the Suspend Tab / Resume Tab context menu actions for debugging purposes
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213883766662888?focus=true
+    case tabSuspensionDebugging
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -326,22 +342,23 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
-                .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
                 .aiChatChromeSidebar,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
-                .startupMetrics,
                 .promoQueue,
-                .websitesHistoryFirstTimeQuitSurvey:
+                .lazyMenuRebuild,
+                .websitesHistoryFirstTimeQuitSurvey,
+                .screenTimeCleaning,
+                .addToDockAppStore,
+                .tabAnimations:
             .enabled
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
-             .tabAnimations,
-             .addToDockAppStore:
+             .aiChatRemoveSuggestion:
             .internalOnly
         default:
             .disabled
@@ -366,6 +383,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webExtensions,
                 .embeddedExtension,
                 .forceDarkModeOnWebsites,
+                .adBlockingExtension,
                 .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
                 .scamSiteProtection,
@@ -432,21 +450,25 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
-                .startupMetrics,
                 .privateProcessName,
+                .tabSuspensionDebugging,
+                .tabSuspension,
                 .aiChatChromeSidebar,
                 .webViewLookUpAction,
                 .promoQueue,
                 .semaphoreAlwaysVisible,
-                .websitesHistoryFirstTimeQuitSurvey,
                 .tabAnimations,
-                .addToDockAppStore:
+                .aiChatRemoveSuggestion,
+                .lazyMenuRebuild,
+                .websitesHistoryFirstTimeQuitSurvey,
+                .addToDockAppStore,
+                .screenTimeCleaning,
+                .onboardingRebranding:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth:
             return false
         }
@@ -480,6 +502,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:
             return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
+        case .adBlockingExtension:
+            return .remoteReleasable(.feature(.adBlockingExtension))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .syncCreditCards:
@@ -596,8 +620,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
-        case .crashCollectionDisableKeysSorting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
         case .crashCollectionLimitCallStackTreeDepth:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
         case .freeTrialConversionWideEvent:
@@ -612,8 +634,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
         case .aiChatSidebarFloating:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating))
-        case .startupMetrics:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
         case .aiChatChromeSidebar:
@@ -628,8 +648,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .tabAnimations:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
+        case .lazyMenuRebuild:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
         case .addToDockAppStore:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addToDockAppStore))
+        case .aiChatRemoveSuggestion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion))
+        case .screenTimeCleaning:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning))
+        case .onboardingRebranding:
+            return .disabled
+        case .tabSuspension:
+            return .disabled
+        case .tabSuspensionDebugging:
+            return .disabled
         }
     }
 }

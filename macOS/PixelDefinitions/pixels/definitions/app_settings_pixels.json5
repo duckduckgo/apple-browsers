@@ -27,5 +27,19 @@
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource", "themeChangeSource", "themeName"]
+    },
+    "m_mac_settings_add-to-dock_show-me-how-clicked": {
+        "description": "Fired when Add to Dock Show Me How link in settings is clicked to open the demo video",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_mac_settings_youtubeadblocking_opened": {
+        "description": "Fired daily when the YouTube Ad Blocking settings pane is opened",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

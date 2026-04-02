@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai Tale";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Rediger bokmerke";
 
@@ -1087,6 +1090,12 @@
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Slett chat";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Vil du slette denne chatten?";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Hopp over";
 
@@ -1217,7 +1226,6 @@
 "Custom URL: %@" = "Egendefinert URL-adresse: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Ekskluderte domener fra Dark Reader (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer bokmerkefil ...";
@@ -1570,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Fortsett i Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Åpne alltid YouTube-videoer i Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoer som åpnes i Duck Player, begynner automatisk å spille av. Slå av dette hvis du vil starte avspilling av videoer åpnet i Duck Player manuelt.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatisk avspilling av videoer";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Åpner videoer i en privat kinomodus som hindrer at det du ser på, har innflytelse på YouTube-feeden din.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Aktiver Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentell";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Med Duck Player kan du se på YouTube uten målrettede annonser og forhindre at det du ser på, påvirker anbefalingene du får.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo gir deg alt du trenger for å beskytte personvernet ditt, når du surfer på nettet.";
@@ -1647,12 +1667,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Du ser på Duck Player!\nIngen målrettede annonser her.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Effektiv terskel: %@ s (overstyring)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Effektiv terskel: konfigurasjonsstandard (ingen overstyring)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-postbeskyttelse";
@@ -2083,6 +2097,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftstrøm";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno, klassisk";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
 
@@ -2142,6 +2159,9 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Spør privat";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Still et oppfølgingsspørsmål ...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Installer utvidelse";
@@ -2600,7 +2620,6 @@
 "No active subscriptions" = "Ingen aktive abonnementer";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Ingen ekskluderte domener";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Ingen eksisterende abonnementer er funnet";
@@ -2613,6 +2632,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "Ingen logger";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Ingen treff for «%@»";
 
 /* No comment provided by engineer. */
 "No messages" = "Ingen meldinger";
@@ -2640,6 +2662,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "På App Store-versjoner vises dette skjermbildet bare hvis du er logget på som en intern bruker via **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Den er grei";
@@ -2731,6 +2756,9 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Å, før jeg glemmer det …";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Visste du?";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Privat. Raskt. Færre annonser.";
 
@@ -2742,9 +2770,6 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Heisann.";
-
-/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
-"onboarding.privacypro.promo.title.delayed" = "Visste du?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vil du gjenopprette bokmerkene, passordene og lignende fra den forrige DuckDuckGo-synkroniseringen?";
@@ -2769,6 +2794,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Skjønner! Jeg hopper over de andre tipsene.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Prøv det gratis!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Prøv det gratis!";
@@ -3048,9 +3076,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Dette nettstedet ønsker å åpnes i Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "REBRANDED";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nylige behandlingslogger";
@@ -3391,6 +3416,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardnettleser";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Standard bryterposisjon på nye faner.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Bryterposisjon";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Slett Duck.ai-chatter";
 
@@ -4543,6 +4572,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Skaff deg DuckDuckGo for Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo fjerner videoannonser på YouTube, slik at du kan se videoer uten avbrudd.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube annonseblokkering";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokker annonser på YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bokmerker";
 
@@ -4558,3 +4596,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Tillat lyd og video";
+"autoplay.mode.blockAll" = "Blokker lyd og video";
+"autoplay.mode.blockAudio" = "Blokker lyd";
+"settings.autoplay" = "Autoplay";
+"settings.autoplay.duck.player.link" = "Duck Player-innstillinger";
+"settings.autoplay.footer" = "Innstillingene for automatisk avspilling gjelder kun for nylig åpnede faner. Endringer kan ikke gjøres på eksisterende faner med mindre programmet startes på nytt. For å administrere automatisk avspilling i Duck Player kan du gå til ";
+"settings.media.section" = "Media";

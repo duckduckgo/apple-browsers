@@ -134,12 +134,14 @@ final class EmbeddedWebExtensionTests: XCTestCase {
         let metadata = WebExtensionMetadata(
             type: .embedded,
             version: "1.0.0",
-            displayName: "Test Extension"
+            displayName: "Test Extension",
+            requiresExtraction: false
         )
 
         XCTAssertEqual(metadata.type, .embedded)
         XCTAssertEqual(metadata.version, "1.0.0")
         XCTAssertEqual(metadata.displayName, "Test Extension")
+        XCTAssertFalse(metadata.requiresExtraction)
     }
 }
 

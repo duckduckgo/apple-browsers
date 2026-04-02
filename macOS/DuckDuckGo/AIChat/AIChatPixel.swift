@@ -187,6 +187,17 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a non-pinned recent chat by pressing enter
     case aiChatRecentChatSelectedKeyboard
 
+    // MARK: - Recent chat deletion
+
+    /// Event Trigger: User clicks the delete button on a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteButtonClicked
+
+    /// Event Trigger: User confirms deletion of a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteConfirmed
+
+    /// Event Trigger: User cancels deletion of a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteCancelled
+
     // MARK: - Toggle popover pixels
 
     /// Event Trigger: The toggle popover is shown to the user
@@ -356,6 +367,12 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_recent_chat_selected_mouse"
         case .aiChatRecentChatSelectedKeyboard:
             return "aichat_recent_chat_selected_keyboard"
+        case .aiChatRecentChatDeleteButtonClicked:
+            return "aichat_recent_chat_delete_button_clicked"
+        case .aiChatRecentChatDeleteConfirmed:
+            return "aichat_recent_chat_delete_confirmed"
+        case .aiChatRecentChatDeleteCancelled:
+            return "aichat_recent_chat_delete_cancelled"
         case .aiChatTogglePopoverShown:
             return "aichat_toggle_popover_shown"
         case .aiChatTogglePopoverDismissButtonClicked:
@@ -444,6 +461,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
+                .aiChatRecentChatDeleteButtonClicked,
+                .aiChatRecentChatDeleteConfirmed,
+                .aiChatRecentChatDeleteCancelled,
                 .aiChatTogglePopoverShown,
                 .aiChatTogglePopoverDismissButtonClicked,
                 .aiChatTogglePopoverCustomizeButtonClicked,
@@ -541,6 +561,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
+                .aiChatRecentChatDeleteButtonClicked,
+                .aiChatRecentChatDeleteConfirmed,
+                .aiChatRecentChatDeleteCancelled,
                 .aiChatTogglePopoverShown,
                 .aiChatTogglePopoverDismissButtonClicked,
                 .aiChatTogglePopoverCustomizeButtonClicked,

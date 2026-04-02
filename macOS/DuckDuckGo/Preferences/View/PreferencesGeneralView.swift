@@ -24,6 +24,7 @@ import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKitIcons
 
 extension Preferences {
 
@@ -34,9 +35,8 @@ extension Preferences {
         @ObservedObject var tabsModel: TabsPreferences
         @ObservedObject var dataClearingModel: DataClearingPreferences
         @ObservedObject var maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences
+        @ObservedObject var dockModel: DockPreferencesModel
         @State private var showingCustomHomePageSheet = false
-        @State private var isAddedToDock = false
-        let dockCustomizer: DockCustomization?
         let featureFlagger = NSApp.delegateTyped.featureFlagger
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -57,15 +57,22 @@ extension Preferences {
             firePinnedTabsPixel(newMode)
         }
 
+        private var isPresentingAddToDockDemoVideo: Binding<Bool> {
+            Binding(
+                get: { dockModel.isPresentingAddToDockDemoVideo },
+                set: { dockModel.isPresentingAddToDockDemoVideo = $0 }
+            )
+        }
+
         var body: some View {
             PreferencePane(UserText.general) {
 
                 // SECTION: Shortcuts
-                if let dockCustomizer {
+                if dockModel.canAddToDock {
                     PreferencePaneSection(UserText.shortcuts, spacing: 4) {
                         PreferencePaneSubSection {
                             HStack {
-                                if isAddedToDock || dockCustomizer.isAddedToDock {
+                                if dockModel.isAddedToDock {
                                     HStack {
                                         Image(.checkCircle).foregroundColor(Color(.successGreen))
                                         Text(UserText.isAddedToDock)
@@ -80,10 +87,7 @@ extension Preferences {
                                     .padding(.trailing, 8)
                                     Button(action: {
                                         withAnimation {
-                                            PixelKit.fire(GeneralPixel.userAddedToDockFromSettings,
-                                                          includeAppVersionParameter: false)
-                                            dockCustomizer.addToDock()
-                                            isAddedToDock = true
+                                            dockModel.addToDock(from: .general)
                                         }
                                     }) {
                                         Text(UserText.addToDock)
@@ -94,7 +98,27 @@ extension Preferences {
                             }
                         }
                     }
+                    .onAppear {
+                        dockModel.refresh()
+                    }
+                } else if dockModel.canShowDockInstructions {
+                    PreferencePaneSection(UserText.shortcuts, spacing: 4) {
+                        PreferencePaneSubSection {
+                            HStack(alignment: .top) {
+                                Image(nsImage: DesignSystemImages.Glyphs.Size16.addToTaskbar)
+                                    .foregroundColor(Color(.linkBlue))
+                                Text(UserText.addToDockInstructions)
+                            }
+                            VStack(alignment: .leading, spacing: 1) {
+                                TextMenuItemCaption(UserText.addToDockInstructionsCaption)
+                                TextButton(UserText.addToDockShowMeHow) {
+                                    dockModel.showAddToDockDemoVideo()
+                                }
+                            }
+                        }
+                    }
                 }
+
                 // SECTION: On Startup
                 PreferencePaneSection(UserText.onStartup) {
 
@@ -298,6 +322,11 @@ extension Preferences {
                         }
                     }
                 }
+            }
+            .sheet(isPresented: isPresentingAddToDockDemoVideo) {
+                PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
+                                      videoSize: DockPreferencesModel.demoVideoSize,
+                                      isPresented: isPresentingAddToDockDemoVideo)
             }
         }
     }

@@ -53,6 +53,7 @@ import PixelKit
 import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
+import ScreenTimeDataCleaner
 import ServiceManagement
 import Subscription
 import SyncDataProviders
@@ -123,6 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
+    let tabSuspensionService: TabSuspensionService
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
     let appearancePreferences: AppearancePreferences
@@ -135,6 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
+    let dockPreferences: DockPreferencesModel
     let accessibilityPreferences: AccessibilityPreferences
     let duckPlayer: DuckPlayer
 
@@ -203,7 +206,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
         syncService: syncService,
         pinningManager: pinningManager,
-        promoService: promoService
+        promoService: promoService,
+        dockCustomization: dockCustomization
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -381,8 +385,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController?
-    let dockStateChecker: DockStateChecking
-    var dockCustomization: DockCustomization?
+    let dockCustomization: DockCustomization
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
     static var firstLaunchDate: Date
@@ -417,7 +420,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    init(dockCustomization: DockCustomization?, dockStateChecker: DockStateChecking) {
+    init(dockCustomization: DockCustomization) {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -425,7 +428,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
-        self.dockStateChecker = dockStateChecker
         self.dockCustomization = dockCustomization
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
@@ -580,7 +582,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
-        displaysTabsAnimations = featureFlagger.isFeatureOn(.tabAnimations)
+        displaysTabsAnimations = AnimationsAvailabilityDecider(featureFlagger: featureFlagger).displaysTabsAnimations
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
@@ -772,6 +774,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
+        self.tabSuspensionService = TabSuspensionService(windowControllersManager: windowControllersManager, featureFlagger: featureFlagger)
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
@@ -792,7 +795,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -838,6 +841,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             keyValueStore: UserDefaults.standard
+        )
+        dockPreferences = DockPreferencesModel(
+            featureFlagger: featureFlagger,
+            dockCustomizer: dockCustomization,
+            pixelFiring: PixelKit.shared
         )
         accessibilityPreferences = AccessibilityPreferences()
         duckPlayer = DuckPlayer(
@@ -885,7 +893,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences,
                 syncErrorHandler: syncErrorHandler,
-                webExtensionAvailability: webExtensionAvailability
+                webExtensionAvailability: webExtensionAvailability,
+                dockCustomization: dockCustomization
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -917,7 +926,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
-            webExtensionAvailability: webExtensionAvailability
+            webExtensionAvailability: webExtensionAvailability,
+            dockCustomization: dockCustomization
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -947,7 +957,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 keyValueStore: keyValueStore,
                                                                                 notificationPresenter: notificationPresenter,
                                                                                 uiHosting: { windowControllersManager.activeViewController },
-                                                                                isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted })
+                                                                                isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
+                                                                                dockCustomization: dockCustomization)
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -1165,7 +1176,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let metricsReporter = PerformanceMetricsReporter(
-            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             previousSessionRestored: startupPreferences.restorePreviousSession,
             windowContext: WindowContext(windowControllersManager: windowControllersManager)
@@ -1268,6 +1278,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? store.set(build, for: \.installBuild)
             }
         }
+        dockCustomization.synchronizeNotificationVisibilityWithFirstLaunchDate()
 
         setupWebExtensions()
 
@@ -1388,6 +1399,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         profilerToken.stop()
     }
 
+    func applicationDidResignActive(_ notification: Notification) {
+        cleanScreenTimeDataOnMacOS26()
+    }
+
+    private func cleanScreenTimeDataOnMacOS26() {
+        guard featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
+        guard #available(macOS 26, *) else { return }
+        Task {
+            await ScreenTimeDataCleaner().removeScreenTimeData()
+        }
+    }
+
     private func fireFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
@@ -1448,7 +1471,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily, doNotEnforcePrefix: true)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily, doNotEnforcePrefix: true)
-        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockStateChecker.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
+        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
     }
 
     private func fireDailyFireWindowConfigurationPixels() {
@@ -1492,7 +1515,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
-        let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
+        let notificationPresenter = UpdateNotificationPresenter(
+            pixelFiring: PixelKit.shared,
+            shouldSuppressPostUpdateNotification: { [weak self] in
+                let wc = self?.windowControllersManager.lastKeyMainWindowController
+                            ?? self?.windowControllersManager.mainWindowControllers.last
+                return wc?.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.content == .releaseNotes
+            },
+            showNotificationPopover: { [weak self] popover in
+                guard let wc = self?.windowControllersManager.lastKeyMainWindowController
+                            ?? self?.windowControllersManager.mainWindowControllers.last,
+                      let button = wc.mainViewController.navigationBarViewController.optionsButton else {
+                    return false
+                }
+                let parent = wc.mainViewController
+                guard parent.view.window?.isKeyWindow == true,
+                      (parent.presentedViewControllers ?? []).isEmpty else {
+                    return false
+                }
+                popover.show(onParent: parent, relativeTo: button)
+                return true
+            }
+        )
 
         if buildType.isAppStoreBuild {
             guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {
@@ -1516,6 +1560,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
 
             let allowCustomUpdateFeed = buildType.isDebugBuild || buildType.isReviewBuild
+
             let sparkleUpdateController = sparkleFactory.instantiate(
                 internalUserDecider: internalUserDecider,
                 featureFlagger: featureFlagger,
@@ -1523,6 +1568,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
                 allowCustomUpdateFeed: allowCustomUpdateFeed,
+                isAutoUpdatePaused: { [featureFlagger] in
+                    if buildType.isDebugBuild {
+                        return !featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+                    } else if buildType.isReviewBuild {
+                        return !featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+                    } else {
+                        return false
+                    }
+                },
                 wideEvent: wideEvent,
                 isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
                 openUpdatesPage: { [windowControllersManager] in
@@ -1766,7 +1820,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 autoconsentPreferences: cookiePopupProtectionPreferences,
-                darkReaderExcludedDomainsProvider: darkReaderSettings
+                darkReaderExcludedDomainsProvider: darkReaderSettings,
+                scriptletConfiguration: makeScriptletConfiguration()
             )
             self.webExtensionManager = webExtensionManager
 
@@ -1793,7 +1848,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
 
@@ -1818,6 +1874,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             enabledTypes.insert(.darkReader)
         }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeScriptletConfiguration() -> ScriptletConfiguration {
+        let scriptletsDirectory = URL.sandboxApplicationSupportURL
+            .appendingPathComponent("Scriptlets", isDirectory: true)
+
+        return ScriptletManagerFactory.makeConfiguration(
+            privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            apiService: DefaultAPIService(),
+            baseDirectory: scriptletsDirectory,
+            isProduction: !StandardApplicationBuildType().isDebugBuild
+        )
     }
 
     // MARK: - PixelKit

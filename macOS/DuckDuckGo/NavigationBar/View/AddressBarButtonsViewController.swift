@@ -560,7 +560,8 @@ final class AddressBarButtonsViewController: NSViewController {
         if hasPrivacyInfoPulseQueuedAnimation {
             hasPrivacyInfoPulseQueuedAnimation = false
             // Give a bit of delay to have a better animation effect
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                guard let self, !self.privacyDashboardButton.isHidden else { return }
                 ViewHighlighter.highlight(view: self.privacyDashboardButton, inParent: self.view)
             }
         }

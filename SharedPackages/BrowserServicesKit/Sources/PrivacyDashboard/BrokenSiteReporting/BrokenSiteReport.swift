@@ -105,8 +105,9 @@ public struct BrokenSiteReport {
     let privacyExperiments: String
     let isPirEnabled: Bool?
     let pageLoadTiming: WKPageLoadTiming?
-    let detectorMetrics: [String: String]?
+    let breakageData: String?
     let isForceDarkModeEnabled: Bool?
+    let autoplayBlockingMode: String?
 #if os(iOS)
     let siteType: SiteType
     let atb: String
@@ -145,8 +146,9 @@ public struct BrokenSiteReport {
         privacyExperiments: String,
         isPirEnabled: Bool?,
         isForceDarkModeEnabled: Bool?,
+        autoplayBlockingMode: String? = nil,
         pageLoadTiming: WKPageLoadTiming?,
-        detectorMetrics: [String: String]? = nil
+        breakageData: String? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -176,8 +178,9 @@ public struct BrokenSiteReport {
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
         self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.autoplayBlockingMode = autoplayBlockingMode
         self.pageLoadTiming = pageLoadTiming
-        self.detectorMetrics = detectorMetrics
+        self.breakageData = breakageData
     }
 #endif
 
@@ -215,9 +218,10 @@ public struct BrokenSiteReport {
         privacyExperiments: String,
         isPirEnabled: Bool?,
         isForceDarkModeEnabled: Bool?,
+        autoplayBlockingMode: String? = nil,
         isAfterSuppressedXSafariRedirect: Bool = false,
         pageLoadTiming: WKPageLoadTiming? = nil,
-        detectorMetrics: [String: String]? = nil
+        breakageData: String? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -251,9 +255,10 @@ public struct BrokenSiteReport {
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
         self.pageLoadTiming = pageLoadTiming
-        self.detectorMetrics = detectorMetrics
         self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.autoplayBlockingMode = autoplayBlockingMode
         self.isAfterSuppressedXSafariRedirect = isAfterSuppressedXSafariRedirect
+        self.breakageData = breakageData
     }
 #endif
 
@@ -328,14 +333,12 @@ public struct BrokenSiteReport {
             addPageLoadTimingParameters(to: &result, timing: pageLoadTiming)
         }
 
-        if let detectorMetrics = detectorMetrics {
-            for (key, value) in detectorMetrics {
-                result[key] = value
-            }
-        }
-
         if let isForceDarkModeEnabled {
             result["isForceDarkModeEnabled"] = isForceDarkModeEnabled.description
+        }
+
+        if let autoplayBlockingMode {
+            result["autoplayBlockingMode"] = autoplayBlockingMode
         }
 #if os(iOS)
         result["siteType"] = siteType.rawValue
@@ -346,6 +349,11 @@ public struct BrokenSiteReport {
             result["isAfterSuppressedXSafariRedirect"] = "true"
         }
 #endif
+
+        if let breakageData {
+            result["breakageData"] = breakageData
+        }
+
         return result
     }
 

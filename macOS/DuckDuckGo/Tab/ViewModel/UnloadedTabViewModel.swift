@@ -26,12 +26,15 @@ import WebKit
 /// Conforms to `TabBarViewModel` so the tab bar can render unloaded tabs
 /// identically to loaded ones. All publishers emit static values since
 /// an unloaded tab has no live webView producing state changes.
-final class UnloadedTabViewModel: TabBarViewModel {
+final class UnloadedTabViewModel: TabBarViewModel, Previewable {
 
     let unloadedTab: UnloadedTab
+    private let fileStore: FileStore
 
-    init(unloadedTab: UnloadedTab) {
+    init(unloadedTab: UnloadedTab,
+         fileStore: FileStore = NSApplication.shared.delegateTyped.fileStore) {
         self.unloadedTab = unloadedTab
+        self.fileStore = fileStore
         self.storedFavicon = unloadedTab.favicon
     }
 
@@ -89,5 +92,32 @@ final class UnloadedTabViewModel: TabBarViewModel {
     @MainActor
     func prepareForDataClearing(caller: TabCleanupPreparer) {
         caller.reportNoWebViewToClear()
+    }
+
+    // MARK: - Previewable
+
+    private var cachedSnapshot: NSImage?
+    private var snapshotLoadAttempted = false
+
+    var shouldShowPreview: Bool { true }
+
+    var addressBarString: String {
+        unloadedTab.content.userEditableUrl?.absoluteString ?? ""
+    }
+
+    var snapshot: NSImage? {
+        if let cachedSnapshot { return cachedSnapshot }
+        guard !snapshotLoadAttempted else { return nil }
+        snapshotLoadAttempted = true
+
+        guard let idString = unloadedTab.tabSnapshotIdentifier,
+              let uuid = UUID(uuidString: idString) else { return nil }
+
+        let url = URL.persistenceLocation(for: "\(TabSnapshotStore.directoryName)/\(uuid.uuidString)")
+        guard let data = fileStore.loadData(at: url),
+              let image = NSImage(data: data) else { return nil }
+
+        cachedSnapshot = image
+        return image
     }
 }

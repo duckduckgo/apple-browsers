@@ -158,6 +158,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var selectionIndexCancellable: AnyCancellable?
     private var mouseDownCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+    private var hoverMaterializationTimer: Timer?
     private var previousScrollViewWidth: CGFloat = .zero
     var aiChatCoordinator: AIChatCoordinating? {
         didSet {
@@ -1548,33 +1549,39 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
 
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: tabIndex) else {
-            Logger.general.error("TabBarViewController: Showing tab preview window failed - tabViewModel not found for index \(String(reflecting: tabIndex))")
+        guard let previewable = tabCollectionViewModel.tabBarViewModel(at: tabIndex) as? Previewable else {
+            Logger.general.error("TabBarViewController: Showing tab preview window failed - previewable not found for index \(String(reflecting: tabIndex))")
             return
+        }
+
+        let isSelected: Bool
+        if let loadedVM = previewable as? TabViewModel {
+            isSelected = tabCollectionViewModel.selectedTabViewModel === loadedVM
+        } else {
+            isSelected = false
         }
 
         if isPinned {
             let position = pinnedTabsContainerView.frame.minX + tabBarViewItem.view.frame.minX
-            showTabPreview(for: tabViewModel, from: position)
+            showTabPreview(for: previewable, isSelected: isSelected, from: position)
         } else {
             guard let clipView = collectionView.clipView else {
                 Logger.general.error("TabBarViewController: Showing tab preview window failed - clip view not found")
                 return
             }
             let position = scrollView.frame.minX + tabBarViewItem.view.frame.minX - clipView.bounds.origin.x
-            showTabPreview(for: tabViewModel, from: position)
+            showTabPreview(for: previewable, isSelected: isSelected, from: position)
         }
     }
 
-    private func showTabPreview(for tabViewModel: TabViewModel, from xPosition: CGFloat) {
+    private func showTabPreview(for previewable: Previewable, isSelected: Bool, from xPosition: CGFloat) {
         guard shouldDisplayTabPreviews else {
             Logger.tabPreview.error("Not showing tab preview: shouldDisplayTabPreviews == false")
             hideTabPreview(allowQuickRedisplay: true)
             return
         }
 
-        let isSelected = tabCollectionViewModel.selectedTabViewModel === tabViewModel
-        tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: tabViewModel,
+        tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: previewable,
                                                                     isSelected: isSelected)
 
         guard let window = view.window else {
@@ -2195,9 +2202,31 @@ extension TabBarViewController: TabBarViewItemDelegate {
             if sourceCollectionView?.visibleRect.intersects(tabBarViewItem.view.frame) == true {
                 showTabPreview(for: tabBarViewItem)
             }
-        } else if !shouldDisplayTabPreviews {
-            hideTabPreview(withDelay: true, allowQuickRedisplay: true)
+            scheduleMaterializationOnHover(for: tabBarViewItem)
+        } else {
+            cancelHoverMaterialization()
+            if !shouldDisplayTabPreviews {
+                hideTabPreview(withDelay: true, allowQuickRedisplay: true)
+            }
         }
+    }
+
+    private func scheduleMaterializationOnHover(for tabBarViewItem: TabBarViewItem) {
+        hoverMaterializationTimer?.invalidate()
+
+        guard let unloadedVM = tabBarViewItem.tabViewModel as? UnloadedTabViewModel else { return }
+        let uuid = unloadedVM.unloadedTab.uuid
+
+        hoverMaterializationTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
+            guard let self,
+                  let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) else { return }
+            tabCollectionViewModel.materialize(at: index)
+        }
+    }
+
+    private func cancelHoverMaterialization() {
+        hoverMaterializationTimer?.invalidate()
+        hoverMaterializationTimer = nil
     }
 
     func tabBarViewItemShouldHideSeparator(_ tabBarViewItem: TabBarViewItem) -> Bool {

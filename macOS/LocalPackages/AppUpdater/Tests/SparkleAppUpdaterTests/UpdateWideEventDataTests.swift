@@ -284,22 +284,22 @@ final class UpdateWideEventDataTests: XCTestCase {
     }
 
     func test_pixelParameters_internalUser_formatsAsString() {
-        // Given - internal user via standard WideEventAppData infra
+        // Given - internal user via feature data
         let internalData = UpdateWideEventData(
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
+            internalUser: true,
             contextData: WideEventContextData(name: "sparkle_update"),
-            appData: WideEventAppData(internalUser: true),
             globalData: WideEventGlobalData()
         )
 
         // When
-        let internalParams = internalData.appData.pixelParameters()
+        let internalParams = internalData.pixelParameters()
 
         // Then
-        XCTAssertEqual(internalParams["app.internal_user"], "true")
+        XCTAssertEqual(internalParams["feature.data.ext.internal_user"], "true")
 
         // Given - external user
         let externalData = UpdateWideEventData(
@@ -307,16 +307,39 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
+            internalUser: false,
             contextData: WideEventContextData(name: "sparkle_update"),
-            appData: WideEventAppData(internalUser: false),
             globalData: WideEventGlobalData()
         )
 
         // When
-        let externalParams = externalData.appData.pixelParameters()
+        let externalParams = externalData.pixelParameters()
 
         // Then
-        XCTAssertNil(externalParams["app.internal_user"])
+        XCTAssertNil(externalParams["feature.data.ext.internal_user"])
+    }
+
+    func test_pixelParameters_internalUser_fallsBackToAppData() {
+        // Given - simulates a deserialized old event where internalUser
+        // was stored in appData rather than feature data
+        var appData = WideEventAppData()
+        appData.internalUser = true
+
+        let data = UpdateWideEventData(
+            fromVersion: "1.0.0",
+            fromBuild: "100",
+            initiationType: .automatic,
+            updateConfiguration: .automatic,
+            contextData: WideEventContextData(name: "sparkle_update"),
+            appData: appData,
+            globalData: WideEventGlobalData()
+        )
+
+        // When
+        let params = data.pixelParameters()
+
+        // Then
+        XCTAssertEqual(params["feature.data.ext.internal_user"], "true")
     }
 
     func test_pixelParameters_manualInitiation_serializesCorrectly() {

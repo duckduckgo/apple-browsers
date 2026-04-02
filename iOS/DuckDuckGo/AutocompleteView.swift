@@ -80,6 +80,7 @@ struct AutocompleteView: View {
         .modifier(DisableSelection())
         .modifier(DismissKeyboardOnSwipe())
         .environmentObject(model)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
    }
 
 }

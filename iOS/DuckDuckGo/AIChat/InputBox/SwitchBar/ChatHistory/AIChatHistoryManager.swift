@@ -42,6 +42,7 @@ final class AIChatHistoryManager {
     // MARK: - Properties
 
     weak var delegate: AIChatHistoryManagerDelegate?
+    var onFetchCompleted: (@MainActor (String, Bool) -> Void)?
 
     var hasSuggestions: Bool {
         viewModel.hasSuggestions
@@ -119,7 +120,9 @@ final class AIChatHistoryManager {
             viewController.setScrollableTitle(pendingSectionTitle)
         }
 
-        fetchSuggestionsIfNeeded(query: "")
+        if !isIPadExperience {
+            fetchSuggestionsIfNeeded(query: "")
+        }
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
@@ -160,6 +163,8 @@ final class AIChatHistoryManager {
             guard !Task.isCancelled else { return }
             viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
             hasCompletedInitialFetch = true
+            let hasSuggestions = !(suggestions.pinned.isEmpty && suggestions.recent.isEmpty)
+            onFetchCompleted?(query, hasSuggestions)
         }
     }
 
@@ -178,5 +183,6 @@ final class AIChatHistoryManager {
 
         suggestionsReader.tearDown()
         viewModel.clearAllChats()
+        onFetchCompleted = nil
     }
 }

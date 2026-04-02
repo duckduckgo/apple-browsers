@@ -105,6 +105,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var swipeContainerManager: SwipeContainerManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private var aiChatHistoryManager: AIChatHistoryManager?
+    private var isShowingURLFallback = false
+
+    private var chatHasSuggestions: Bool {
+        aiChatHistoryManager?.hasSuggestions ?? false
+    }
+
     private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
 
@@ -183,6 +189,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
+        applyURLFallbackForModeChange(mode)
         if !animated {
             swipeContainerManager?.animateProgrammaticModeChanges = false
         }
@@ -326,6 +333,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             if hasAutocomplete { return UserText.sectionTitleSuggestions }
             return ""
         case .aiChat:
+            if isShowingURLFallback { return UserText.sectionTitleSuggestions }
             if hasChatHistory {
                 return switchBarHandler.currentText.isEmpty ? UserText.aiChatRecentChatsTitle : UserText.aiChatSuggestedChatsTitle
             }
@@ -380,8 +388,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         aiChatHistoryManager = manager
         manager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] hasSuggestions in
                 guard let self else { return }
+                self.updateURLFallbackSuggestions(hasSuggestions: hasSuggestions, mode: self.switchBarHandler.currentToggleState)
                 self.updateSectionTitle()
                 self.scheduleAnimation {
                     self.updateDaxVisibility()
@@ -412,6 +421,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                     self.updateDaxVisibility()
                     self.view.layoutIfNeeded()
                 }
+
+                self.updateURLFallbackForCurrentText()
             }
             .store(in: &cancellables)
 
@@ -501,17 +512,61 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isChatHistoryPending = aiChatHistoryManager != nil
             && aiChatHistoryManager?.hasCompletedInitialFetch != true
             && switchBarHandler.currentToggleState == .aiChat
+        let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
 
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
         } else {
-            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending
+            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
         updateSectionTitle()
+    }
+
+    // MARK: - URL Fallback Suggestions
+
+    private func applyURLFallbackForModeChange(_ mode: TextEntryMode) {
+        restoreFullSuggestions()
+        if mode == .aiChat {
+            updateURLFallbackSuggestions(hasSuggestions: chatHasSuggestions, mode: mode)
+        }
+    }
+
+    private func restoreFullSuggestions() {
+        guard isShowingURLFallback else { return }
+        suggestionTrayManager?.resetSuggestionFilter()
+        swipeContainerManager?.setSearchPageVisible(false, animated: false)
+        isShowingURLFallback = false
+    }
+
+    private func updateURLFallbackForCurrentText() {
+        let mode = switchBarHandler.currentToggleState
+        guard mode == .aiChat else { return }
+        updateURLFallbackSuggestions(hasSuggestions: chatHasSuggestions, mode: mode)
+    }
+
+    private func updateURLFallbackSuggestions(hasSuggestions: Bool, mode: TextEntryMode) {
+        guard mode == .aiChat else {
+            restoreFullSuggestions()
+            return
+        }
+        let query = switchBarHandler.currentText
+        let shouldShow = !hasSuggestions && !query.isBlank
+        if shouldShow {
+            suggestionTrayManager?.showURLOnlySuggestions(for: query, animated: false)
+            if !isShowingURLFallback {
+                swipeContainerManager?.setSearchPageVisible(true, animated: false)
+            }
+            isShowingURLFallback = true
+        } else if isShowingURLFallback {
+            suggestionTrayManager?.hideURLOnlySuggestions(animated: true)
+            swipeContainerManager?.setSearchPageVisible(false, animated: true)
+            swipeContainerManager?.restoreChatPageVisibility()
+            isShowingURLFallback = false
+        }
     }
 
     private enum Metrics {
@@ -526,6 +581,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 extension UnifiedInputContentContainerViewController: SwipeContainerViewControllerDelegate {
 
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didSwipeToMode mode: TextEntryMode) {
+        applyURLFallbackForModeChange(mode)
         switchBarHandler.setToggleState(mode)
         delegate?.unifiedInputEditingStateDidChangeMode(mode)
         scheduleAnimation {
@@ -543,6 +599,7 @@ extension UnifiedInputContentContainerViewController: SwipeContainerViewControll
 extension UnifiedInputContentContainerViewController: FadeOutContainerViewControllerDelegate {
 
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
+        applyURLFallbackForModeChange(mode)
         switchBarHandler.setToggleState(mode)
         delegate?.unifiedInputEditingStateDidChangeMode(mode)
     }
@@ -553,6 +610,10 @@ extension UnifiedInputContentContainerViewController: FadeOutContainerViewContro
 
     func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
         return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
+    }
+
+    func fadeOutContainerViewControllerShouldKeepSearchVisible(_ controller: FadeOutContainerViewController) -> Bool {
+        return isShowingURLFallback
     }
 }
 
@@ -578,6 +639,10 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
         delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
+    }
+
+    func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {
+        updateDaxVisibility()
     }
 }
 

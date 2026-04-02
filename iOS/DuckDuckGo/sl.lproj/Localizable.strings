@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Nadaljuj predvajanje v predvajalniku Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Videoposnetke YouTube vedno odpri s predvajalnikom Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoposnetki, odprti v predvajalniku Duck Player, se bodo samodejno začeli predvajati. To možnost izklopite, če želite ročno začeti predvajanje videoposnetkov, odprtih v predvajalniku Duck Player.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Samodejno predvajaj videoposnetke";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Videoposnetke odpre v načinu zasebnega kina, ki preprečuje, da bi vsebina, ki jo gledate, vplivala na vaša priporočila YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Omogoči predvajalnik Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Poskusno";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player vam omogoča gledanje YouTube brez ciljanih oglasov in preprečuje, da bi dejavnost gledanja vplivala na vaša priporočila.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo zagotavlja vse bistvene elemente zasebnosti, ki jih potrebujete, da se zaščitite med brskanjem po spletu.";
@@ -1595,7 +1607,6 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Več";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Odpri Duck Player v novem zavihku";
 
@@ -1607,7 +1618,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Rezultati iskanja v DuckDuckGo";
-
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Da bo ta nastavitev začela veljati, zaprite vse zavihke.";
 
@@ -2084,6 +2094,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračni tok";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Klasični inferno";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Pekel";
@@ -2781,6 +2794,9 @@
 "onboarding.skip.title" = "Razumem! Druge nasvete bom preskočil/-a.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Preizkusite brezplačno!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Preizkusite brezplačno!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3074,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "To spletno mesto se želi odpreti v brskalniku Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "PREIMENOVANO";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedavni dnevniki obdelave";
@@ -3401,6 +3414,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Privzet brskalnik";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Privzeti položaj preklopnika na novih zavihkih.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Položaj preklopnika";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Izbriši klepete Duck.ai";
 
@@ -4553,6 +4570,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pridobite DuckDuckGo za Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo odstrani video oglase na YouTube, tako da lahko videoposnetke gledate brez prekinitev.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blokiranje oglasov na YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Zaznamki";
 
@@ -4568,3 +4594,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Dovoli zvok in video";
+"autoplay.mode.blockAll" = "Blokiraj zvok in video";
+"autoplay.mode.blockAudio" = "Blokiraj zvok";
+"settings.autoplay" = "Samodejno predvajanje";
+"settings.autoplay.duck.player.link" = "Nastavitve predvajalnika Duck Player";
+"settings.autoplay.footer" = "Nastavitve samodejnega predvajanja bodo veljale samo za novo odprte zavihke. Sprememb ni mogoče uporabiti za obstoječe zavihke, razen če se aplikacija znova zažene. Če želite upravljati samodejno predvajanje v predvajalniku Duck Player, obiščite ";
+"settings.media.section" = "Mediji";

@@ -186,7 +186,8 @@ extension TabViewController {
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             privacyStats: MockPrivacyStats(),
             voiceSearchHelper: MockVoiceSearchHelper(),
-            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+            autoplaySettings: MockAutoplaySettings()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -265,4 +266,8 @@ struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
     func setForceDarkModeEnabled(_ enabled: Bool) {}
     func themeDidChange() {}
+}
+
+final class MockAutoplaySettings: AutoplaySettings {
+    var currentAutoplayBlockingMode: AutoplayBlockingMode = .blockAudio
 }

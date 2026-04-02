@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Jatka Duck Playerissa";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Avaa aina YouTube-videot Duck Playerissa";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playerissa avatut videot toistetaan automaattisesti. Poista tämä käytöstä, jos haluat toistaa Duck Playerissa avatut videot manuaalisesti.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Toista videot automaattisesti";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Avaa videot yksityisessä teatteritilassa, jolloin katsomasi sisältö ei vaikuta YouTube-syötteeseesi.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Ota Duck Player käyttöön";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Kokeellinen";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Playerin avulla voit katsella YouTubea ilman kohdennettuja mainoksia, eikä katsomasi sisältö vaikuta suosituksiisi.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo tarjoaa kaikki Privacy Essentials ominaisuudet, joita tarvitset suojautuaksesi selatessasi verkkoa.";
@@ -2084,6 +2096,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ilmavirta";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno-klassikko";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Tulimyrsky";
@@ -2781,6 +2796,9 @@
 "onboarding.skip.title" = "Selvä! Ohitan muut vinkit.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Kokeile maksutta!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Kokeile ilmaiseksi!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3076,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Tämä sivusto haluaa avata Safarin.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "UUDELLEENBRÄNDÄTTY";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Viimeaikaiset käsittelylokit";
@@ -3401,6 +3416,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Oletusselain";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Oletusarvoinen vaihtopainikkeen asento uusilla välilehdillä.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Vaihtopainikkeen asento";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Poista Duck.ai-keskustelut";
 
@@ -4553,6 +4572,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hanki DuckDuckGo Windowsille!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo poistaa videomainokset YouTubesta, joten voit katsoa videoita keskeytyksettä.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube-mainosten esto";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Estä mainokset YouTubessa";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Kirjanmerkit";
 
@@ -4568,3 +4596,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Salli ääni ja video";
+"autoplay.mode.blockAll" = "Estä ääni ja video";
+"autoplay.mode.blockAudio" = "Estä ääni";
+"settings.autoplay" = "Automaattinen toisto";
+"settings.autoplay.duck.player.link" = "Duck Player -asetukset";
+"settings.autoplay.footer" = "Automaattisen toiston asetukset koskevat vain uusia avattuja välilehtiä. Muutoksia ei voida ottaa käyttöön aiemmilla välilehdillä, ellei sovellusta käynnistetä uudelleen. Voit hallita automaattista toistoa Duck Playerissa kohdassa ";
+"settings.media.section" = "Media";

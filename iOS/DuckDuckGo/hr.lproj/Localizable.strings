@@ -1578,14 +1578,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Nastavi u Duck Playeru";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Uvijek otvaraj YouTube videozapise u Duck Playeru";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videozapisi otvoreni u Duck Playeru automatski će započeti reprodukciju. Isključi ovo ako želiš ručno pokrenuti reprodukciju videozapisa otvorenih u Duck Playeru.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatska reprodukcija videozapisa";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Otvara videozapise u načinu rada privatnog kina koji sprječava da ono što gledaš utječe na tvoj YouTube feed.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Omogući Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentalno";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player ti omogućuje gledanje YouTubea bez ciljanih oglasa i sprječava da aktivnost gledanja utječe na tvoje preporuke.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo pruža sve bitne elemente Privacy Essentials koje su ti potrebne da se zaštitiš dok pregledavaš web.";
@@ -2084,6 +2096,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračna struja";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Pakao Klasik";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Pakao";
@@ -2781,6 +2796,9 @@
 "onboarding.skip.title" = "Shvaćam! Preskočit ću ostale savjete.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Isprobaj besplatno!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Isprobaj besplatno!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3058,9 +3076,6 @@
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "Ova stranica želi se otvoriti u Safariju.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "REDIZAJNIRANO";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedavni zapisnici obrade";
@@ -3401,6 +3416,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Zadani preglednik";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Zadani položaj preklopnika na novim karticama.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Položaj preklopnika";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Izbriši Duck.ai čavrljanja";
 
@@ -4553,6 +4572,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Nabavi DuckDuckGo za Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo uklanja video oglase na YouTubeu, tako da možeš gledati videozapise bez prekida.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blokiranje YouTube oglasa";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokiraj oglase na YouTubeu";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Knjižne oznake";
 
@@ -4568,3 +4596,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Omogući zvuk i video";
+"autoplay.mode.blockAll" = "Blokiraj zvuk i video";
+"autoplay.mode.blockAudio" = "Blokiraj zvuk";
+"settings.autoplay" = "Automatsko pokretanje";
+"settings.autoplay.duck.player.link" = "Postavke Duck Playera";
+"settings.autoplay.footer" = "Postavke automatske reprodukcije primjenjivat će se samo na novootvorene kartice. Izmjene se ne mogu primijeniti na postojeće kartice osim ako se aplikacija ne pokrene ponovno. Za upravljanje automatskom reprodukcijom u Duck Playeru, idi na ";
+"settings.media.section" = "Mediji";

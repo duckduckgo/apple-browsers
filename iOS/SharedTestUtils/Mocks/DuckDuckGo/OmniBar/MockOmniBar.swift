@@ -31,7 +31,7 @@ final class MockOmniBar: OmniBar {
     var isBackButtonEnabled: Bool = false
     var isForwardButtonEnabled: Bool = false
     var omniDelegate: (any DuckDuckGo.OmniBarDelegate)?
-    var isPhoneLandscape: Bool = false
+    var isExpandedPhone: Bool = false
     var isTextFieldEditing: Bool = false
     var text: String?
     
@@ -98,6 +98,7 @@ final class MockOmniBar: OmniBar {
         var bookmarksButton: UIButton! = UIButton()
         var aiChatButton: UIButton! = UIButton()
         var menuButton: UIButton! = UIButton()
+        var fireButton: UIButton! = UIButton()
         var tabSwitcherContainerView: UIView = UIView()
         var refreshButton: UIButton! = UIButton()
         var leftIconContainerView: UIView! = UIView()

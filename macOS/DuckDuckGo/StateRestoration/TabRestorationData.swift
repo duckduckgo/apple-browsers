@@ -27,7 +27,7 @@ import Foundation
 ///
 /// Shared by:
 /// - `Tab.init?(coder:)` — decodes through this type, then constructs a full `Tab`
-/// - `SuspendedTab.init(from:)` — creates a lightweight suspended tab from these fields
+/// - `UnloadedTab.init(from:)` — creates a lightweight unloaded tab from these fields
 /// - Encoding path (Phase 2b) — converts `AnyTab` back to this type for archiving
 final class TabRestorationData: NSObject, NSSecureCoding {
 

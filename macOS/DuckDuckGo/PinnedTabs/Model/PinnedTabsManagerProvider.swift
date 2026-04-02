@@ -202,7 +202,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
         let allTabs: [Tab] = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }.map { tab in
             switch tab {
             case .loaded(let tab): tab
-            case .suspended(let suspended): suspended.materialize()
+            case .unloaded(let unloaded): unloaded.materialize()
             }
         }
         perWindowPinnedTabsManagers.forEach { $0.tabCollection.removeAll() }

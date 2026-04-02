@@ -67,9 +67,9 @@ final class PinnedTabsManager {
 
     @MainActor
     func materializeIfNeeded(at index: Int) {
-        guard case .suspended(let suspended) = tabCollection.tabs[safe: index] else { return }
+        guard case .unloaded(let unloaded) = tabCollection.tabs[safe: index] else { return }
         assertionFailure("Pinned tab should never be suspended")
-        let tab = suspended.materialize()
+        let tab = unloaded.materialize()
         tabCollection.replaceTab(at: index, with: .loaded(tab))
         tabViewModels[tab.uuid] = TabViewModel(tab: tab)
     }
@@ -110,8 +110,8 @@ final class PinnedTabsManager {
             switch anyTab {
             case .loaded:
                 tabCollection.append(tab: anyTab)
-            case .suspended(let suspended):
-                tabCollection.append(tab: .loaded(suspended.materialize()))
+            case .unloaded(let unloaded):
+                tabCollection.append(tab: .loaded(unloaded.materialize()))
             }
         }
         collection.clearAfterMerge()

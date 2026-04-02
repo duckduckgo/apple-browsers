@@ -34,14 +34,14 @@ protocol TabLazyLoaderDataSource: AnyObject {
     var isSelectedTabLoadingPublisher: AnyPublisher<Bool, Never> { get }
 
     var totalTabCount: Int { get }
-    var suspendedTabCount: Int { get }
+    var unloadedTabCount: Int { get }
     func isSuspended(at index: Int) -> Bool
     func materialize(at index: TabIndex) -> Tab?
 }
 
 extension TabLazyLoaderDataSource {
     var qualifiesForLazyLoading: Bool {
-        if suspendedTabCount > 0 {
+        if unloadedTabCount > 0 {
             return true
         }
 
@@ -92,15 +92,15 @@ extension TabCollectionViewModel: TabLazyLoaderDataSource {
             .eraseToAnyPublisher()
     }
 
-    var suspendedTabCount: Int {
-        tabCollection.tabs.filter { if case .suspended = $0 { return true }; return false }.count
+    var unloadedTabCount: Int {
+        tabCollection.tabs.filter { if case .unloaded = $0 { return true }; return false }.count
     }
 
     var totalTabCount: Int { tabCollection.tabs.count }
 
     func isSuspended(at index: Int) -> Bool {
         guard tabCollection.tabs.indices.contains(index) else { return false }
-        if case .suspended = tabCollection.tabs[index] { return true }
+        if case .unloaded = tabCollection.tabs[index] { return true }
         return false
     }
 }

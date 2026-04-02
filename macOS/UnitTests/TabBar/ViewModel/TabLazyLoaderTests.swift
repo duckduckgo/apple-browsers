@@ -92,7 +92,7 @@ private final class TabLazyLoaderDataSourceMock: TabLazyLoaderDataSource {
     var isSelectedTabLoadingSubject = PassthroughSubject<Bool, Never>()
 
     var totalTabCount: Int { loadedTabs.count }
-    var suspendedTabCount: Int { 0 }
+    var unloadedTabCount: Int { 0 }
     func isSuspended(at index: Int) -> Bool { false }
     func materialize(at index: TabIndex) -> TabMock? { nil }
 }

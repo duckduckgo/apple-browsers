@@ -196,9 +196,9 @@ final class TabCollectionViewModel: NSObject {
         if tabCollection.tabs.isEmpty {
             appendNewTab(with: homePage)
         }
-        // Materialize the selected tab if suspended — selectUnpinnedTab does this
+        // Materialize the selected tab if unloaded — selectUnpinnedTab does this
         // on user-initiated selection, but init sets selectionIndex directly.
-        if case .suspended = tab(at: selectionIndex) {
+        if case .unloaded = tab(at: selectionIndex) {
             materialize(at: selectionIndex)
         }
         self.selectionIndex = selectionIndex
@@ -377,8 +377,8 @@ final class TabCollectionViewModel: NSObject {
             return false
         }
 
-        // Materialize suspended tab on selection
-        if case .suspended = tabCollection.tabs[index] {
+        // Materialize unloaded tab on selection
+        if case .unloaded = tabCollection.tabs[index] {
             materialize(at: .unpinned(index))
         }
 
@@ -450,7 +450,7 @@ final class TabCollectionViewModel: NSObject {
                 let loadedTab: Tab
                 switch tab {
                 case .loaded(let t): loadedTab = t
-                case .suspended(let s): loadedTab = s.materialize()
+                case .unloaded(let s): loadedTab = s.materialize()
                 }
                 let select = shouldSelectLastTab && idx == tabs.indices.last
                 redirectOpenOutsidePopup(loadedTab, selected: select)
@@ -766,7 +766,7 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        // Materialize if suspended before duplicating
+        // Materialize if unloaded before duplicating
         let loadedTab: Tab
         if let tab = tab.tab {
             loadedTab = tab
@@ -798,7 +798,7 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        // Materialize if suspended — pinned tabs must always be loaded
+        // Materialize if unloaded — pinned tabs must always be loaded
         guard let tab = materialize(at: .unpinned(index)) else { return }
 
         pinnedTabsManager?.pin(tab)
@@ -829,11 +829,11 @@ final class TabCollectionViewModel: NSObject {
         }
         guard tabIndex != selectionIndex else { return }
         guard let loadedTab = oldTab.tab, loadedTab.tabSuspension?.canBeSuspended == true else { return }
-        guard let suspendedTab = loadedTab.makeSuspendedTab() else {
+        guard let unloadedTab = loadedTab.makeUnloadedTab() else {
             return
         }
 
-        _ = replaceTab(at: tabIndex, with: suspendedTab)
+        _ = replaceTab(at: tabIndex, with: unloadedTab)
     }
 
     func resumeTab(at tabIndex: TabIndex) {
@@ -915,14 +915,14 @@ final class TabCollectionViewModel: NSObject {
                 switch tab {
                 case .loaded(let tab):
                     self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
-                case .suspended(let suspended):
-                    self.tabViewModels[suspended.uuid] = SuspendedTabViewModel(suspendedTab: suspended)
+                case .unloaded(let unloaded):
+                    self.tabViewModels[unloaded.uuid] = UnloadedTabViewModel(unloadedTab: unloaded)
                 }
             }
 
-            // Detect materialization: existing UUID but inner object changed from suspended to loaded
+            // Detect materialization: existing UUID but inner object changed from unloaded to loaded
             for (index, tab) in newTabs.enumerated() where !addedUUIDs.contains(tab.uuid) {
-                if case .loaded(let tab) = tab, self.tabViewModels[tab.uuid] is SuspendedTabViewModel {
+                if case .loaded(let tab) = tab, self.tabViewModels[tab.uuid] is UnloadedTabViewModel {
                     self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
                     self.updateSelectedTabViewModel()
                     self.delegate?.tabCollectionViewModel(self, didMaterializeTabAt: index)
@@ -1019,7 +1019,7 @@ extension TabCollectionViewModel {
         }
     }
 
-    /// Materializes a suspended tab into a full Tab.
+    /// Materializes an unloaded tab into a full Tab.
     /// If already loaded, returns the existing Tab.
     @discardableResult
     func materialize(at index: TabIndex) -> Tab? {
@@ -1029,8 +1029,8 @@ extension TabCollectionViewModel {
         switch tab {
         case .loaded(let tab):
             return tab
-        case .suspended(let suspended):
-            let tab = suspended.materialize()
+        case .unloaded(let unloaded):
+            let tab = unloaded.materialize()
             tabCollection(for: index)?.replaceTab(at: index.item, with: .loaded(tab))
             return tab
         }

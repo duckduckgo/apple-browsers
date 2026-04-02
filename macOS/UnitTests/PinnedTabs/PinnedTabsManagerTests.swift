@@ -132,16 +132,16 @@ class PinnedTabsManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testSetUpMaterializesSuspendedTabs() {
+    func testSetUpMaterializesUnloadedTabs() {
         let manager = PinnedTabsManager()
-        let suspendedA = SuspendedTab(content: .url("https://a.com".url!, source: .pendingStateRestoration))
-        let suspendedB = SuspendedTab(content: .url("https://b.com".url!, source: .pendingStateRestoration))
-        let collection = TabCollection(tabs: [.suspended(suspendedA), .suspended(suspendedB)])
+        let suspendedA = UnloadedTab(content: .url("https://a.com".url!, source: .pendingStateRestoration))
+        let suspendedB = UnloadedTab(content: .url("https://b.com".url!, source: .pendingStateRestoration))
+        let collection = TabCollection(tabs: [.unloaded(suspendedA), .unloaded(suspendedB)])
 
         manager.setUp(movingTabsFrom: collection)
 
         XCTAssertEqual(manager.tabCollection.tabs.count, 2)
-        XCTAssertEqual(manager.tabCollection.loadedTabs.count, 2, "All suspended tabs should be materialized")
+        XCTAssertEqual(manager.tabCollection.loadedTabs.count, 2, "All unloaded tabs should be materialized")
         XCTAssertEqual(manager.tabCollection.loadedTabs[0].url?.host, "a.com")
         XCTAssertEqual(manager.tabCollection.loadedTabs[1].url?.host, "b.com")
     }
@@ -149,9 +149,9 @@ class PinnedTabsManagerTests: XCTestCase {
     @MainActor
     func testSetUpCreatesViewModelsForMaterializedTabs() {
         let manager = PinnedTabsManager()
-        let suspendedA = SuspendedTab(content: .url("https://a.com".url!, source: .pendingStateRestoration))
+        let suspendedA = UnloadedTab(content: .url("https://a.com".url!, source: .pendingStateRestoration))
         let loadedB = Tab("https://b.com")
-        let collection = TabCollection(tabs: [.suspended(suspendedA), .loaded(loadedB)])
+        let collection = TabCollection(tabs: [.unloaded(suspendedA), .loaded(loadedB)])
 
         manager.setUp(movingTabsFrom: collection)
 

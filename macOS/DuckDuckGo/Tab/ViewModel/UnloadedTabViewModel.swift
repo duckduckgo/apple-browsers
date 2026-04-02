@@ -1,5 +1,5 @@
 //
-//  SuspendedTabViewModel.swift
+//  UnloadedTabViewModel.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -21,26 +21,26 @@ import Combine
 import Foundation
 import WebKit
 
-/// View model for a suspended (not yet materialized) tab.
+/// View model for an unloaded (not yet materialized) tab.
 ///
-/// Conforms to `TabBarViewModel` so the tab bar can render suspended tabs
+/// Conforms to `TabBarViewModel` so the tab bar can render unloaded tabs
 /// identically to loaded ones. All publishers emit static values since
-/// a suspended tab has no live webView producing state changes.
-final class SuspendedTabViewModel: TabBarViewModel {
+/// an unloaded tab has no live webView producing state changes.
+final class UnloadedTabViewModel: TabBarViewModel {
 
-    let suspendedTab: SuspendedTab
+    let unloadedTab: UnloadedTab
 
-    init(suspendedTab: SuspendedTab) {
-        self.suspendedTab = suspendedTab
-        self.storedFavicon = suspendedTab.favicon
+    init(unloadedTab: UnloadedTab) {
+        self.unloadedTab = unloadedTab
+        self.storedFavicon = unloadedTab.favicon
     }
 
     // MARK: - TabBarViewModel
 
-    var tabContent: Tab.TabContent { suspendedTab.content }
+    var tabContent: Tab.TabContent { unloadedTab.content }
     var isPinned: Bool { false }
-    var title: String { suspendedTab.title ?? "" }
-    var url: URL? { suspendedTab.content.urlForWebView }
+    var title: String { unloadedTab.title ?? "" }
+    var url: URL? { unloadedTab.content.urlForWebView }
 
     var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
         Just((title, false)).eraseToAnyPublisher()
@@ -52,7 +52,7 @@ final class SuspendedTabViewModel: TabBarViewModel {
     var faviconPublisher: Published<NSImage?>.Publisher { $storedFavicon }
 
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> {
-        Just(suspendedTab.content).eraseToAnyPublisher()
+        Just(unloadedTab.content).eraseToAnyPublisher()
     }
 
     @Published private var storedUsedPermissions: Permissions = [:]
@@ -84,7 +84,7 @@ final class SuspendedTabViewModel: TabBarViewModel {
 
     // MARK: - TabDataClearing
 
-    /// Suspended tabs have no webView — signal completion immediately to prevent
+    /// Unloaded tabs have no webView — signal completion immediately to prevent
     /// `TabCleanupPreparer` from hanging while waiting for a navigation callback.
     @MainActor
     func prepareForDataClearing(caller: TabCleanupPreparer) {

@@ -1310,45 +1310,45 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.openWindowCalls, [])
     }
 
-    // MARK: - Suspended Tab Materialization
+    // MARK: - Unloaded Tab Materialization
 
     @MainActor
-    func testSelectingSuspendedTabMaterializesIt() {
+    func testSelectingUnloadedTabMaterializesIt() {
         let loadedTab = Tab(content: .newtab)
-        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
-        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .suspended(suspended)])
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)])
         let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
         let delegate = TabCollectionViewModelDelegateMock()
         vm.delegate = delegate
 
         vm.select(at: .unpinned(1))
 
-        XCTAssertNotNil(vm.tabs[1].tab, "Suspended tab should be materialized after selection")
+        XCTAssertNotNil(vm.tabs[1].tab, "Unloaded tab should be materialized after selection")
         XCTAssertNotNil(vm.tabViewModel(at: 1), "TabViewModel should exist for materialized tab")
         XCTAssertTrue(delegate.didMaterializeCalled)
     }
 
     @MainActor
-    func testInitMaterializesSelectedSuspendedTabPreservingIdentity() {
-        let suspended = SuspendedTab(
+    func testInitMaterializesSelectedUnloadedTabPreservingIdentity() {
+        let unloaded = UnloadedTab(
             uuid: "test-uuid",
             content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
             title: "DuckDuckGo"
         )
-        let tabCollection = TabCollection(tabs: [.suspended(suspended)])
+        let tabCollection = TabCollection(tabs: [.unloaded(unloaded)])
         let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
 
         let materializedTab = vm.tabs[0].tab
-        XCTAssertNotNil(materializedTab, "Init should materialize the selected suspended tab")
+        XCTAssertNotNil(materializedTab, "Init should materialize the selected unloaded tab")
         XCTAssertEqual(materializedTab?.uuid, "test-uuid")
         XCTAssertEqual(materializedTab?.url, .duckDuckGo)
     }
 
     @MainActor
-    func testInitMaterializesNonZeroSelectedSuspendedTab() {
+    func testInitMaterializesNonZeroSelectedUnloadedTab() {
         let loadedTab = Tab(content: .newtab)
-        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
-        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .suspended(suspended)])
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)])
 
         let vm = TabCollectionViewModel(
             tabCollection: tabCollection,
@@ -1356,7 +1356,7 @@ final class TabCollectionViewModelTests: XCTestCase {
             pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
         )
 
-        XCTAssertNotNil(vm.tabs[1].tab, "Init should materialize the selected suspended tab at index 1")
+        XCTAssertNotNil(vm.tabs[1].tab, "Init should materialize the selected unloaded tab at index 1")
         XCTAssertNotNil(vm.tabViewModel(at: 1))
         XCTAssertEqual(vm.selectionIndex, .unpinned(1))
     }

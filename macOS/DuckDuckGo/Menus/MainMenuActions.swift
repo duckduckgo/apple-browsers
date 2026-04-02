@@ -1606,16 +1606,16 @@ extension MainViewController {
         let urls = Self.debugTabURLs
         (0..<numberOfTabs).forEach { i in
             let url = urls[i % urls.count]
-            let suspended = SuspendedTab(content: .url(url, credential: nil, source: .ui),
+            let unloaded = UnloadedTab(content: .url(url, credential: nil, source: .ui),
                                          title: url.host ?? url.absoluteString)
-            tabCollectionViewModel.tabCollection.append(tab: .suspended(suspended))
+            tabCollectionViewModel.tabCollection.append(tab: .unloaded(unloaded))
         }
         // Notify the delegate so the collection view reloads before we select
         tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)
         let lastIndex = tabCollectionViewModel.tabs.count - 1
         tabCollectionViewModel.select(at: .unpinned(lastIndex))
 
-        // Trigger background materialization of suspended tabs
+        // Trigger background materialization of unloaded tabs
         tabCollectionViewModel.setUpLazyLoadingIfNeeded(force: true)
     }
 

@@ -138,11 +138,11 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         switch tab {
         case .loaded(let tab):
             cacheItem = RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: tabIndex)
-        case .suspended(let suspended):
-            cacheItem = RecentlyClosedTab(tabContent: suspended.content,
-                                          favicon: suspended.favicon,
-                                          title: suspended.title,
-                                          interactionData: suspended.interactionStateData,
+        case .unloaded(let unloaded):
+            cacheItem = RecentlyClosedTab(tabContent: unloaded.content,
+                                          favicon: unloaded.favicon,
+                                          title: unloaded.title,
+                                          interactionData: unloaded.interactionStateData,
                                           originalTabCollection: tabCollection,
                                           index: tabIndex)
         }
@@ -162,11 +162,11 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
             switch tab {
             case .loaded(let tab):
                 return RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: .unpinned(offset))
-            case .suspended(let suspended):
-                return RecentlyClosedTab(tabContent: suspended.content,
-                                         favicon: suspended.favicon,
-                                         title: suspended.title,
-                                         interactionData: suspended.interactionStateData,
+            case .unloaded(let unloaded):
+                return RecentlyClosedTab(tabContent: unloaded.content,
+                                         favicon: unloaded.favicon,
+                                         title: unloaded.title,
+                                         interactionData: unloaded.interactionStateData,
                                          originalTabCollection: tabCollection,
                                          index: .unpinned(offset))
             }

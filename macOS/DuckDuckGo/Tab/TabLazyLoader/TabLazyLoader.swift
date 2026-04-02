@@ -176,7 +176,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
 
         if let tab = findTabToLoad() {
             lazyLoadTab(tab)
-        } else if let index = findNextSuspendedTabIndex(),
+        } else if let index = findNextUnloadedTabIndex(),
                   let tab = dataSource.materialize(at: .unpinned(index)) {
             lazyLoadTab(tab)
         } else if numberOfTabsInProgress.value == 0 {
@@ -196,7 +196,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
 
         if findRecentlySelectedTabToLoad(from: dataSource.loadedTabs) != nil { return true }
 
-        return findNextSuspendedTabIndex() != nil
+        return findNextUnloadedTabIndex() != nil
     }
 
     private func findTabToLoad() -> DataSource.Tab? {
@@ -221,7 +221,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
         return nil
     }
 
-    private func findNextSuspendedTabIndex() -> Int? {
+    private func findNextUnloadedTabIndex() -> Int? {
         let center = dataSource.selectedTabIndex?.item ?? 0
         let count = dataSource.totalTabCount
         for offset in 0..<count {

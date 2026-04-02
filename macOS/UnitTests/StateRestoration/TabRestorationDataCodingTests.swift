@@ -169,18 +169,18 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertNil(decoded.tabSnapshotIdentifier)
     }
 
-    // MARK: - Test 6: SuspendedTab from decoded data preserves fields
+    // MARK: - Test 6: UnloadedTab from decoded data preserves fields
 
-    func testSuspendedTabFromDecodedDataPreservesFields() throws {
+    func testUnloadedTabFromDecodedDataPreservesFields() throws {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         let interactionState = Data([0xAA, 0xBB])
         let visitedURLs = [URL(string: "https://example.com")!]
         let snapshotID = "snapshot-123"
 
         let original = TabRestorationData(
-            uuid: "suspended-uuid",
+            uuid: "unloaded-uuid",
             content: .url(URL(string: "https://example.com")!, credential: nil, source: .pendingStateRestoration),
-            title: "Suspended Example",
+            title: "Unloaded Example",
             favicon: nil,
             interactionStateData: interactionState,
             lastSelectedAt: date,
@@ -189,15 +189,15 @@ final class TabRestorationDataCodingTests: XCTestCase {
         )
 
         let decoded = try encodeThenDecode(original)
-        let suspended = SuspendedTab(from: decoded)
+        let unloaded = UnloadedTab(from: decoded)
 
-        XCTAssertEqual(suspended.uuid, "suspended-uuid")
-        XCTAssertEqual(suspended.content.urlForWebView, URL(string: "https://example.com")!)
-        XCTAssertEqual(suspended.title, "Suspended Example")
-        XCTAssertEqual(suspended.interactionStateData, interactionState)
-        XCTAssertEqual(suspended.lastSelectedAt, date)
-        XCTAssertEqual(suspended.visitedDomainURLs, visitedURLs)
-        XCTAssertEqual(suspended.tabSnapshotIdentifier, snapshotID)
+        XCTAssertEqual(unloaded.uuid, "unloaded-uuid")
+        XCTAssertEqual(unloaded.content.urlForWebView, URL(string: "https://example.com")!)
+        XCTAssertEqual(unloaded.title, "Unloaded Example")
+        XCTAssertEqual(unloaded.interactionStateData, interactionState)
+        XCTAssertEqual(unloaded.lastSelectedAt, date)
+        XCTAssertEqual(unloaded.visitedDomainURLs, visitedURLs)
+        XCTAssertEqual(unloaded.tabSnapshotIdentifier, snapshotID)
     }
 
     // MARK: - Test 7: Materialized tab from decoded data preserves extension fields
@@ -216,7 +216,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             builder.override { snapshotMock }
         }}
 
-        let suspended = SuspendedTab(
+        let unloaded = UnloadedTab(
             uuid: "materialized-uuid",
             content: .url(URL(string: "https://example.com")!, credential: nil, source: .pendingStateRestoration),
             title: "Materialized Example",
@@ -224,7 +224,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             tabSnapshotIdentifier: snapshotID
         )
 
-        let tab = suspended.materialize(extensionsBuilder: extensionsBuilder)
+        let tab = unloaded.materialize(extensionsBuilder: extensionsBuilder)
 
         XCTAssertEqual(tab.uuid, "materialized-uuid")
         XCTAssertEqual(tab.content.urlForWebView, URL(string: "https://example.com")!)
@@ -271,7 +271,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
     @MainActor
     func testNewArchiveDecodesAsTabForRollback() throws {
         let url = URL(string: "https://new-version.example.com")!
-        let suspended = SuspendedTab(
+        let unloaded = UnloadedTab(
             uuid: "rollback-uuid",
             content: .url(url, credential: nil, source: .pendingStateRestoration),
             title: "New Tab"
@@ -281,9 +281,9 @@ final class TabRestorationDataCodingTests: XCTestCase {
         let archiver = NSKeyedArchiver(requiringSecureCoding: true)
         archiver.setClassName(NSStringFromClass(Tab.self), for: TabRestorationData.self)
         let restorationData = TabRestorationData(
-            uuid: suspended.uuid,
-            content: suspended.content,
-            title: suspended.title,
+            uuid: unloaded.uuid,
+            content: unloaded.content,
+            title: unloaded.title,
             favicon: nil,
             interactionStateData: nil,
             lastSelectedAt: nil,

@@ -21,20 +21,20 @@ import Combine
 import Foundation
 import History
 
-/// A tab that is either fully loaded (has a `WKWebView`) or suspended (data-only).
+/// A tab that is either fully loaded (has a `WKWebView`) or unloaded (data-only).
 ///
 /// `TabCollection` stores `[AnyTab]`. Consumers use computed properties to access
 /// common fields without pattern matching. Selection always materializes first,
 /// so code receiving a "selected tab" always gets a `.loaded` tab.
 enum AnyTab: Identifiable {
-    case suspended(SuspendedTab)
+    case unloaded(UnloadedTab)
     case loaded(Tab)
 
     // MARK: - Common Properties
 
     var uuid: TabIdentifier {
         switch self {
-        case .suspended(let s): s.uuid
+        case .unloaded(let s): s.uuid
         case .loaded(let t): t.uuid
         }
     }
@@ -43,49 +43,49 @@ enum AnyTab: Identifiable {
 
     var content: Tab.TabContent {
         switch self {
-        case .suspended(let s): s.content
+        case .unloaded(let s): s.content
         case .loaded(let t): t.content
         }
     }
 
     var title: String? {
         switch self {
-        case .suspended(let s): s.title
+        case .unloaded(let s): s.title
         case .loaded(let t): t.title
         }
     }
 
     var favicon: NSImage? {
         switch self {
-        case .suspended(let s): s.favicon
+        case .unloaded(let s): s.favicon
         case .loaded(let t): t.favicon
         }
     }
 
     var lastSelectedAt: Date? {
         switch self {
-        case .suspended(let s): s.lastSelectedAt
+        case .unloaded(let s): s.lastSelectedAt
         case .loaded(let t): t.lastSelectedAt
         }
     }
 
     var burnerMode: BurnerMode {
         switch self {
-        case .suspended(let s): s.burnerMode
+        case .unloaded(let s): s.burnerMode
         case .loaded(let t): t.burnerMode
         }
     }
 
     var interactionStateData: Data? {
         switch self {
-        case .suspended(let s): s.interactionStateData
+        case .unloaded(let s): s.interactionStateData
         case .loaded(let t): t.getActualInteractionStateData()
         }
     }
 
     var isSuspended: Bool {
         switch self {
-        case .suspended: return true
+        case .unloaded: return true
         case .loaded(let t): return t.isSuspended
         }
     }
@@ -93,13 +93,13 @@ enum AnyTab: Identifiable {
     var isUrl: Bool { content.isExternalUrl }
     var url: URL? { content.urlForWebView }
 
-    /// Returns the loaded `Tab`, or `nil` if suspended.
+    /// Returns the loaded `Tab`, or `nil` if unloaded.
     var tab: Tab? {
         if case .loaded(let t) = self { t } else { nil }
     }
 
     func reload() {
-        // Suspended tabs have no web view — intentionally a no-op.
+        // Unloaded tabs have no web view — intentionally a no-op.
         if case .loaded(let tab) = self {
             tab.reload()
         }
@@ -107,7 +107,7 @@ enum AnyTab: Identifiable {
 
     var localHistory: [Visit] {
         switch self {
-        case .suspended: []
+        case .unloaded: []
         case .loaded(let t): t.localHistory
         }
     }
@@ -115,7 +115,7 @@ enum AnyTab: Identifiable {
     var tabSnapshotIdentifier: UUID? {
         switch self {
         case .loaded(let tab): tab.tabSnapshotIdentifier
-        case .suspended(let s): s.tabSnapshotIdentifier.flatMap(UUID.init)
+        case .unloaded(let s): s.tabSnapshotIdentifier.flatMap(UUID.init)
         }
     }
 
@@ -123,18 +123,18 @@ enum AnyTab: Identifiable {
         switch self {
         case .loaded(let tab):
             tab.localHistoryDomains
-        case .suspended(let suspended):
-            Set(suspended.visitedDomainURLs?.compactMap(\.host) ?? [])
+        case .unloaded(let unloaded):
+            Set(unloaded.visitedDomainURLs?.compactMap(\.host) ?? [])
         }
     }
 
     // MARK: - Publishers for AppStateChangedPublisher
 
     /// Emits when content, favicon, or title change.
-    /// Returns `Empty` for suspended tabs (no observable state changes).
+    /// Returns `Empty` for unloaded tabs (no observable state changes).
     var stateChanged: AnyPublisher<Void, Never> {
         switch self {
-        case .suspended: Empty().eraseToAnyPublisher()
+        case .unloaded: Empty().eraseToAnyPublisher()
         case .loaded(let tab): tab.stateChanged
         }
     }
@@ -142,7 +142,7 @@ enum AnyTab: Identifiable {
     /// Emits when tab content changes.
     var contentChanged: AnyPublisher<Void, Never> {
         switch self {
-        case .suspended: Empty().eraseToAnyPublisher()
+        case .unloaded: Empty().eraseToAnyPublisher()
         case .loaded(let tab): tab.$content.asVoid().eraseToAnyPublisher()
         }
     }
@@ -154,13 +154,13 @@ enum AnyTab: Identifiable {
 // 1. `NestedObjectChanges` uses `Set<Element>` internally for diffing
 // 2. Auto-synthesized equality would compare enum cases + associated values by value,
 //    but we need identity semantics (two `.loaded` wrapping the same `Tab` instance are equal)
-// 3. When materialization swaps `.suspended` → `.loaded`, the different hash values
+// 3. When materialization swaps `.unloaded` → `.loaded`, the different hash values
 //    cause `NestedObjectChanges` to re-subscribe (correct behavior)
 
 extension AnyTab: Hashable {
     static func == (lhs: AnyTab, rhs: AnyTab) -> Bool {
         switch (lhs, rhs) {
-        case (.suspended(let a), .suspended(let b)): a === b
+        case (.unloaded(let a), .unloaded(let b)): a === b
         case (.loaded(let a), .loaded(let b)): a === b
         default: false
         }
@@ -168,7 +168,7 @@ extension AnyTab: Hashable {
 
     func hash(into hasher: inout Hasher) {
         switch self {
-        case .suspended(let s): hasher.combine(ObjectIdentifier(s))
+        case .unloaded(let s): hasher.combine(ObjectIdentifier(s))
         case .loaded(let t): hasher.combine(ObjectIdentifier(t))
         }
     }

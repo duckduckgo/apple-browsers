@@ -1,5 +1,5 @@
 //
-//  SuspendedTab.swift
+//  UnloadedTab.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -25,7 +25,7 @@ import Foundation
 /// serialization data needed to render the tab bar item and re-encode the session.
 /// When the user selects this tab (or the lazy loader reaches it), it is materialized
 /// into a full `Tab` via ``materialize()``.
-final class SuspendedTab: Identifiable {
+final class UnloadedTab: Identifiable {
 
     let uuid: TabIdentifier
     var id: TabIdentifier { uuid }
@@ -72,7 +72,7 @@ final class SuspendedTab: Identifiable {
         self.tabSnapshotIdentifier = data.tabSnapshotIdentifier
     }
 
-    /// Creates a full `Tab` from this suspended tab's stored data.
+    /// Creates a full `Tab` from this unloaded tab's stored data.
     ///
     /// The `Tab` convenience init resolves all other dependencies (privacy features,
     /// favicon management, etc.) from `AppDelegate` defaults.
@@ -101,8 +101,8 @@ final class SuspendedTab: Identifiable {
 
 // MARK: - Hashable (identity-based)
 
-extension SuspendedTab: Hashable {
-    static func == (lhs: SuspendedTab, rhs: SuspendedTab) -> Bool {
+extension UnloadedTab: Hashable {
+    static func == (lhs: UnloadedTab, rhs: UnloadedTab) -> Bool {
         lhs === rhs
     }
 

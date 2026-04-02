@@ -25,7 +25,7 @@ extension TabCollection: NSSecureCoding {
     static var supportsSecureCoding: Bool { true }
 
     convenience init?(coder decoder: NSCoder) {
-        let useSuspendedTabs = NSApp.delegateTyped.featureFlagger.isFeatureOn(.deferredTabWebViewCreation)
+        let useUnloadedTabs = NSApp.delegateTyped.featureFlagger.isFeatureOn(.deferredTabWebViewCreation)
 
         // Remap Tab's module-qualified class name to TabRestorationData so we can decode
         // archives from old versions (actual Tab objects) and current version (TabRestorationData
@@ -48,13 +48,13 @@ extension TabCollection: NSSecureCoding {
             unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
         }
 
-        if useSuspendedTabs {
-            let tabs: [AnyTab] = restorationDataArray.map { .suspended(SuspendedTab(from: $0)) }
+        if useUnloadedTabs {
+            let tabs: [AnyTab] = restorationDataArray.map { .unloaded(UnloadedTab(from: $0)) }
             self.init(tabs: tabs)
         } else {
             // Eager restoration: materialize all tabs immediately (pre-feature behavior)
             let tabs: [Tab] = MainActor.assumeMainThread {
-                restorationDataArray.map { SuspendedTab(from: $0).materialize() }
+                restorationDataArray.map { UnloadedTab(from: $0).materialize() }
             }
             self.init(tabs: tabs)
         }
@@ -73,16 +73,16 @@ extension TabCollection: NSSecureCoding {
             switch tab {
             case .loaded(let tab):
                 return tab.makeRestorationData()
-            case .suspended(let suspended):
+            case .unloaded(let unloaded):
                 return TabRestorationData(
-                    uuid: suspended.uuid,
-                    content: suspended.content,
-                    title: suspended.title,
-                    favicon: suspended.favicon,
-                    interactionStateData: suspended.interactionStateData,
-                    lastSelectedAt: suspended.lastSelectedAt,
-                    visitedDomainURLs: suspended.visitedDomainURLs,
-                    tabSnapshotIdentifier: suspended.tabSnapshotIdentifier
+                    uuid: unloaded.uuid,
+                    content: unloaded.content,
+                    title: unloaded.title,
+                    favicon: unloaded.favicon,
+                    interactionStateData: unloaded.interactionStateData,
+                    lastSelectedAt: unloaded.lastSelectedAt,
+                    visitedDomainURLs: unloaded.visitedDomainURLs,
+                    tabSnapshotIdentifier: unloaded.tabSnapshotIdentifier
                 )
             }
         }

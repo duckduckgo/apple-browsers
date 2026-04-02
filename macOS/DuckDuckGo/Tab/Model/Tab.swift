@@ -1582,12 +1582,12 @@ extension Tab {
     // no web content process is spawned. The old Tab (and its WKWebView) is released
     // when replaceTab assigns the new one, letting the OS reclaim the process memory.
     @MainActor
-    func makeSuspendedTab() -> Tab? {
+    func makeUnloadedTab() -> Tab? {
         guard case .url(let url, _, _) = content else {
             return nil
         }
 
-        let suspendedTab = Tab(
+        let unloadedTab = Tab(
             content: .url(url, source: .pendingStateRestoration),
             title: title,
             favicon: favicon,
@@ -1597,7 +1597,7 @@ extension Tab {
             isSuspended: true,
             lastSelectedAt: lastSelectedAt
         )
-        return suspendedTab
+        return unloadedTab
     }
 
     /// Resumes a suspended tab by loading its content URL.

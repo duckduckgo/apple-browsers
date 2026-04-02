@@ -248,11 +248,11 @@ final class TabCollection: NSObject {
                 switch (oldTab, tab) {
                 case (.loaded(let oldLoadedTab), .loaded(let newLoadedTab)):
                     webExtensionManager.eventsListener.didReplaceTab(oldLoadedTab, with: newLoadedTab)
-                case (.suspended, .loaded(let newLoadedTab)):
+                case (.unloaded, .loaded(let newLoadedTab)):
                     webExtensionManager.eventsListener.didOpenTab(newLoadedTab)
-                case (.loaded(let oldLoadedTab), .suspended):
+                case (.loaded(let oldLoadedTab), .unloaded):
                     webExtensionManager.eventsListener.didCloseTab(oldLoadedTab, windowIsClosing: false)
-                case (.suspended, .suspended):
+                case (.unloaded, .unloaded):
                     break
                 }
             }
@@ -294,7 +294,7 @@ final class TabCollection: NSObject {
     var localHistoryOfRemovedTabs = [Visit]()
 
     private func keepLocalHistory(of tab: AnyTab) {
-        // Suspended tabs have no navigation history
+        // Unloaded tabs have no navigation history
         for visit in tab.localHistory where !localHistoryOfRemovedTabs.contains(visit) {
             localHistoryOfRemovedTabs.append(visit)
         }

@@ -310,7 +310,7 @@ protocol HistoryExtensionProtocol: AnyObject, NavigationResponder {
 extension HistoryTabExtension: HistoryExtensionProtocol, TabExtension {
     func getPublicProtocol() -> HistoryExtensionProtocol { self }
 
-    /// Seed visited-domain IDs from a suspended tab's persisted state.
+    /// Seed visited-domain IDs from an unloaded tab's persisted state.
     /// Same data that `awakeAfter(using:)` would set from an NSCoder.
     func restoreVisitedDomainURLs(_ urls: [URL]) {
         localHistoryIDs = urls

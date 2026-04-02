@@ -225,13 +225,13 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertEqual(popup.tabs.count, 1)
     }
 
-    // MARK: - Suspended Tabs
+    // MARK: - Unloaded Tabs
 
     @MainActor
-    func testLoadedTabsFiltersSuspendedTabs() {
+    func testLoadedTabsFiltersUnloadedTabs() {
         let loadedTab = Tab()
-        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
-        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .suspended(suspended)])
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)])
 
         XCTAssertEqual(tabCollection.tabs.count, 2)
         XCTAssertEqual(tabCollection.loadedTabs.count, 1)
@@ -239,12 +239,12 @@ final class TabCollectionTests: XCTestCase {
     }
 
     @MainActor
-    func testLocalHistoryDomainsIncludesSuspendedTabVisitedDomains() {
-        let suspended = SuspendedTab(
+    func testLocalHistoryDomainsIncludesUnloadedTabVisitedDomains() {
+        let unloaded = UnloadedTab(
             content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
             visitedDomainURLs: [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
         )
-        let tabCollection = TabCollection(tabs: [.suspended(suspended)])
+        let tabCollection = TabCollection(tabs: [.unloaded(unloaded)])
 
         let domains = tabCollection.localHistoryDomains
         XCTAssertTrue(domains.contains("example.com"))
@@ -252,18 +252,18 @@ final class TabCollectionTests: XCTestCase {
     }
 
     @MainActor
-    func testLocalHistoryDomainsEmptyForSuspendedTabWithoutVisitedDomains() {
-        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
-        let tabCollection = TabCollection(tabs: [.suspended(suspended)])
+    func testLocalHistoryDomainsEmptyForUnloadedTabWithoutVisitedDomains() {
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.unloaded(unloaded)])
 
         XCTAssertTrue(tabCollection.localHistoryDomains.isEmpty)
     }
 
     @MainActor
-    func testRemoveSuspendedTab() {
+    func testRemoveUnloadedTab() {
         let loadedTab = Tab()
-        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
-        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .suspended(suspended)])
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)])
 
         XCTAssertTrue(tabCollection.removeTab(at: 1))
         XCTAssertEqual(tabCollection.tabs.count, 1)
@@ -274,14 +274,14 @@ final class TabCollectionTests: XCTestCase {
     func testContainsAndFirstIndexWithMixedTabs() {
         let tab1 = Tab()
         let tab2 = Tab()
-        let suspended = SuspendedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
-        let tabCollection = TabCollection(tabs: [.loaded(tab1), .suspended(suspended), .loaded(tab2)])
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(tab1), .unloaded(unloaded), .loaded(tab2)])
 
         XCTAssertTrue(tabCollection.contains(tab: tab1))
         XCTAssertTrue(tabCollection.contains(tab: tab2))
         XCTAssertEqual(tabCollection.firstIndex(of: tab1), 0)
         XCTAssertEqual(tabCollection.firstIndex(of: tab2), 2)
-        XCTAssertTrue(tabCollection.contains(uuid: suspended.uuid))
+        XCTAssertTrue(tabCollection.contains(uuid: unloaded.uuid))
     }
 
     // MARK: - AnyTab Identity vs UUID Equality
@@ -300,15 +300,15 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertNotEqual(AnyTab.loaded(tab), AnyTab.loaded(otherTab))
 
         // Suspended vs loaded with same UUID → not equal
-        let suspended = SuspendedTab(uuid: tab.uuid, content: tab.content)
-        XCTAssertNotEqual(AnyTab.loaded(tab), AnyTab.suspended(suspended))
+        let unloaded = UnloadedTab(uuid: tab.uuid, content: tab.content)
+        XCTAssertNotEqual(AnyTab.loaded(tab), AnyTab.unloaded(unloaded))
     }
 
     @MainActor
     func testContainsUUIDMatchesSuspendedAndLoadedTabs() {
         let tab = Tab()
-        let suspended = SuspendedTab(uuid: "specific-uuid", content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
-        let tabCollection = TabCollection(tabs: [.loaded(tab), .suspended(suspended)])
+        let unloaded = UnloadedTab(uuid: "specific-uuid", content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(tab), .unloaded(unloaded)])
 
         // UUID lookup finds both types
         XCTAssertTrue(tabCollection.contains(uuid: tab.uuid))

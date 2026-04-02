@@ -349,6 +349,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
         showDimmingView(animated: animated)
+        prefetchRecentChatsVisibility()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -419,9 +420,10 @@ final class AIChatContextualSheetViewController: UIViewController {
             return
         }
         Task { @MainActor in
-            let suggestions = await fetchRecentChats()
-            Logger.aiChat.debug("[SheetVC] Recent chats fetched: \(suggestions.count) results")
-            showRecentChatsPopup(with: suggestions)
+            let (suggestions, hasMore) = await fetchRecentChats()
+            Logger.aiChat.debug("[SheetVC] Recent chats fetched: \(suggestions.count) results, hasMore: \(hasMore)")
+            guard !suggestions.isEmpty else { return }
+            showRecentChatsPopup(with: suggestions, hasMore: hasMore)
         }
     }
 
@@ -508,16 +510,27 @@ private extension AIChatContextualSheetViewController {
 
     // MARK: - Recent Chats Popup
 
-    func fetchRecentChats() async -> [AIChatSuggestion] {
-        guard let reader = suggestionsReader else { return [] }
-        let result = await reader.fetchSuggestions(query: nil, maxChats: 5)
-        return result.pinned + result.recent
+    func fetchRecentChats() async -> (suggestions: [AIChatSuggestion], hasMore: Bool) {
+        guard let reader = suggestionsReader else { return ([], false) }
+        let result = await reader.fetchSuggestions(query: nil, maxChats: 6)
+        let all = result.pinned + result.recent
+        let hasMore = all.count > 5
+        return (Array(all.prefix(5)), hasMore)
     }
 
-    func showRecentChatsPopup(with suggestions: [AIChatSuggestion]) {
+    func prefetchRecentChatsVisibility() {
+        recentChatsButton.isHidden = true
+        Task { @MainActor in
+            let (suggestions, _) = await fetchRecentChats()
+            Logger.aiChat.debug("[SheetVC] Prefetch recent chats: \(suggestions.count) results, reader: \(self.suggestionsReader != nil)")
+            recentChatsButton.isHidden = suggestions.isEmpty
+        }
+    }
+
+    func showRecentChatsPopup(with suggestions: [AIChatSuggestion], hasMore: Bool) {
         guard let windowScene = view.window?.windowScene else { return }
 
-        let popup = AIChatRecentChatsPopupViewController(suggestions: suggestions)
+        let popup = AIChatRecentChatsPopupViewController(suggestions: suggestions, showViewAll: hasMore)
         popup.delegate = self
 
         // Present on a separate window so the popup is fully independent of the sheet

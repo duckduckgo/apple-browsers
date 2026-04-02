@@ -62,6 +62,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
 
     weak var delegate: AIChatRecentChatsPopupDelegate?
     private let suggestions: [AIChatSuggestion]
+    private let showViewAll: Bool
 
     // MARK: - UI Components
 
@@ -104,8 +105,9 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(suggestions: [AIChatSuggestion]) {
+    init(suggestions: [AIChatSuggestion], showViewAll: Bool = true) {
         self.suggestions = Array(suggestions.prefix(Constants.maxVisibleChats))
+        self.showViewAll = showViewAll
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -183,14 +185,17 @@ private extension AIChatRecentChatsPopupViewController {
                 stackView.addArrangedSubview(row)
             }
 
-            // Separator
-            let separatorContainer = makeSeparator()
-            stackView.addArrangedSubview(separatorContainer)
+            if showViewAll {
+                // Separator
+                let separatorContainer = makeSeparator()
+                stackView.addArrangedSubview(separatorContainer)
+            }
         }
 
-        // View all chats footer (always shown)
-        let footer = makeViewAllChatsRow()
-        stackView.addArrangedSubview(footer)
+        if showViewAll {
+            let footer = makeViewAllChatsRow()
+            stackView.addArrangedSubview(footer)
+        }
     }
 
     // MARK: - Row Builders

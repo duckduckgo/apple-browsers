@@ -336,7 +336,11 @@ private extension Tab {
 class HistoryTabExtensionMock: TabExtension, HistoryExtensionProtocol {
 
     var localHistory: [Visit] = []
+    var restoredURLs: [URL]?
     func getPublicProtocol() -> HistoryExtensionProtocol { self }
 
     func clearNavigationHistory(keepingCurrent: Bool) {}
+    func restoreVisitedDomainURLs(_ urls: [URL]) {
+        restoredURLs = urls
+    }
 }

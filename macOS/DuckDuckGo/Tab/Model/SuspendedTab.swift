@@ -77,14 +77,25 @@ final class SuspendedTab: Identifiable {
     /// The `Tab` convenience init resolves all other dependencies (privacy features,
     /// favicon management, etc.) from `AppDelegate` defaults.
     @MainActor
-    func materialize() -> Tab {
-        Tab(uuid: uuid,
-            content: content,
-            title: title,
-            favicon: favicon,
-            interactionStateData: interactionStateData,
-            burnerMode: burnerMode,
-            lastSelectedAt: lastSelectedAt)
+    func materialize(extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default) -> Tab {
+        let tab = Tab(uuid: uuid,
+                      content: content,
+                      extensionsBuilder: extensionsBuilder,
+                      title: title,
+                      favicon: favicon,
+                      interactionStateData: interactionStateData,
+                      burnerMode: burnerMode,
+                      lastSelectedAt: lastSelectedAt)
+
+        if let visitedDomainURLs {
+            tab.history?.restoreVisitedDomainURLs(visitedDomainURLs)
+        }
+        if let snapshotIdString = tabSnapshotIdentifier,
+           let snapshotId = UUID(uuidString: snapshotIdString) {
+            tab.tabSnapshots?.setIdentifier(snapshotId)
+        }
+
+        return tab
     }
 }
 

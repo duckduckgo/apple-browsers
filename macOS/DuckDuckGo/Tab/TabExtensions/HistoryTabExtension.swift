@@ -304,10 +304,17 @@ extension HistoryTabExtension: NavigationResponder {
 protocol HistoryExtensionProtocol: AnyObject, NavigationResponder {
     var localHistory: [Visit] { get }
     func clearNavigationHistory(keepingCurrent: Bool)
+    func restoreVisitedDomainURLs(_ urls: [URL])
 }
 
 extension HistoryTabExtension: HistoryExtensionProtocol, TabExtension {
     func getPublicProtocol() -> HistoryExtensionProtocol { self }
+
+    /// Seed visited-domain IDs from a suspended tab's persisted state.
+    /// Same data that `awakeAfter(using:)` would set from an NSCoder.
+    func restoreVisitedDomainURLs(_ urls: [URL]) {
+        localHistoryIDs = urls
+    }
 }
 
 extension TabExtensions {

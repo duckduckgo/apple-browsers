@@ -200,39 +200,40 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(suspended.tabSnapshotIdentifier, snapshotID)
     }
 
-    // MARK: - Test 7: Materialized tab from decoded data preserves fields (flag-OFF path)
+    // MARK: - Test 7: Materialized tab from decoded data preserves extension fields
 
     @MainActor
     func testMaterializedTabFromDecodedDataPreservesFields() throws {
-        let date = Date(timeIntervalSince1970: 1_700_000_000)
-        let interactionState = Data([0xAA, 0xBB])
         let domainURLs = [URL(string: "https://a.com")!, URL(string: "https://b.com")!]
         let snapshotID = UUID().uuidString
 
-        let original = TabRestorationData(
+        let historyMock = HistoryTabExtensionMock()
+        let snapshotMock = TabSnapshotExtensionMock()
+        let extensionsBuilder = TestTabExtensionsBuilder(
+            load: [HistoryTabExtensionMock.self, TabSnapshotExtensionMock.self]
+        ) { builder in { _, _ in
+            builder.override { historyMock }
+            builder.override { snapshotMock }
+        }}
+
+        let suspended = SuspendedTab(
             uuid: "materialized-uuid",
             content: .url(URL(string: "https://example.com")!, credential: nil, source: .pendingStateRestoration),
             title: "Materialized Example",
-            favicon: nil,
-            interactionStateData: interactionState,
-            lastSelectedAt: date,
             visitedDomainURLs: domainURLs,
             tabSnapshotIdentifier: snapshotID
         )
 
-        let decoded = try encodeThenDecode(original)
-        let tab = SuspendedTab(from: decoded).materialize()
+        let tab = suspended.materialize(extensionsBuilder: extensionsBuilder)
 
         XCTAssertEqual(tab.uuid, "materialized-uuid")
         XCTAssertEqual(tab.content.urlForWebView, URL(string: "https://example.com")!)
         XCTAssertEqual(tab.title, "Materialized Example")
-        XCTAssertEqual(tab.lastSelectedAt, date)
 
-        let restorationData = tab.makeRestorationData()
-        XCTAssertEqual(restorationData.visitedDomainURLs, domainURLs,
-                       "visitedDomainURLs must survive materialize()")
-        XCTAssertEqual(restorationData.tabSnapshotIdentifier, snapshotID,
-                       "tabSnapshotIdentifier must survive materialize()")
+        XCTAssertEqual(historyMock.restoredURLs, domainURLs,
+                       "visitedDomainURLs must be injected into HistoryTabExtension")
+        XCTAssertEqual(snapshotMock.setIdentifierValue, UUID(uuidString: snapshotID),
+                       "tabSnapshotIdentifier must be injected into TabSnapshotExtension")
     }
 
     // MARK: - Test 8: Backwards compatibility — old Tab-encoded archive decoded by new code
@@ -334,4 +335,23 @@ final class TabRestorationDataCodingTests: XCTestCase {
             tabSnapshotIdentifier: nil
         )
     }
+}
+
+// MARK: - Mocks
+
+private class TabSnapshotExtensionMock: TabExtension, TabSnapshotExtensionProtocol {
+
+    var snapshot: NSImage?
+    var identifier = UUID()
+    var setIdentifierValue: UUID?
+
+    func getPublicProtocol() -> TabSnapshotExtensionProtocol { self }
+
+    func setIdentifier(_ identifier: UUID) {
+        self.identifier = identifier
+        setIdentifierValue = identifier
+    }
+
+    func renderWebViewSnapshot() async {}
+    func renderSnapshot(from view: @escaping () -> NSView?) async {}
 }

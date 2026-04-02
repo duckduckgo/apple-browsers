@@ -160,7 +160,7 @@ final class WatchdogTests: XCTestCase {
     func testPausePreventsHangDetection() async throws {
         let pauseWatchdog = Watchdog(settings: .quickIntervals)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = pauseWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -184,7 +184,7 @@ final class WatchdogTests: XCTestCase {
     func testResumeAfterPauseDetectsHangs() async throws {
         let resumeWatchdog = Watchdog(settings: .quickIntervals)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = resumeWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -320,7 +320,7 @@ final class WatchdogTests: XCTestCase {
     func testWatchdogDetectsMainThreadHang() async throws {
         let hangWatchdog = Watchdog(settings: .quickIntervals)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = hangWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -344,7 +344,7 @@ final class WatchdogTests: XCTestCase {
     func testHangStateTransitions() async throws {
         let hangWatchdog = Watchdog(settings: .quickIntervals)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = hangWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -392,7 +392,7 @@ final class WatchdogTests: XCTestCase {
     func testRecoveryStatesAfterHanging() async throws {
         let recoveryWatchdog = Watchdog(settings: .quickIntervals)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = recoveryWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -417,7 +417,7 @@ final class WatchdogTests: XCTestCase {
     func testRecoveryStatesAfterTimeout() async throws {
         let recoveryWatchdog = Watchdog(settings: .quickIntervals)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = recoveryWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -450,7 +450,7 @@ final class WatchdogTests: XCTestCase {
         }
         let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -478,7 +478,7 @@ final class WatchdogTests: XCTestCase {
         }
         let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -502,7 +502,7 @@ final class WatchdogTests: XCTestCase {
         }
         let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
 
-        let receivedStates = ThreadsafeStore<Watchdog.DetectionState>()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
         let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
             receivedStates.append(event)
         }
@@ -556,13 +556,13 @@ private extension WatchdogTests {
 
 }
 
-private extension Collection where Element == Watchdog.DetectionState {
+private extension Collection where Element == WatchdogDetectionState {
 
-    func containsState(_ state: Watchdog.DetectionState) -> Bool {
+    func containsState(_ state: WatchdogDetectionState) -> Bool {
         contains { $0 == state }
     }
 
-    func containsRecovery(after origin: Watchdog.RecoveryOrigin) -> Bool {
+    func containsRecovery(after origin: WatchdogRecoveryOrigin) -> Bool {
         contains {
             if case .recovery(let o, _) = $0, o == origin { return true }
             return false

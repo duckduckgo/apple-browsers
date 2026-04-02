@@ -144,6 +144,8 @@ enum Preferences {
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection),
                                         windowControllersManager: model.searchPreferences.windowControllersManager)
+                case .youTubeAdBlocking:
+                    YouTubeAdBlockingView(model: model.youTubeAdBlockingPreferences)
                 case .general:
                     GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: model.downloadsPreferences,

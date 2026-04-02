@@ -460,26 +460,32 @@ private extension AIChatContextualSheetViewController {
     func updateChipUI(chipState: ChipState) {
         switch chipState {
         case .placeholder:
-            if contextualInputViewController.isContextChipVisible {
-                contextualInputViewController.updateContextChipState(.placeholder)
-                contextualInputViewController.setChipTapCallback { [weak self] in
-                    guard let self else { return }
-                    self.pixelHandler.firePageContextPlaceholderTapped()
-                    self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+            if featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) {
+                if contextualInputViewController.isContextChipVisible {
+                    contextualInputViewController.hideContextChip()
                 }
             } else {
-                let chipView = createPlaceholderChipView(
-                    onTapToAttach: { [weak self] in
+                if contextualInputViewController.isContextChipVisible {
+                    contextualInputViewController.updateContextChipState(.placeholder)
+                    contextualInputViewController.setChipTapCallback { [weak self] in
                         guard let self else { return }
                         self.pixelHandler.firePageContextPlaceholderTapped()
                         self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-                    },
-                    onRemove: { [weak self] in
-                        self?.handleChipRemoved()
                     }
-                )
-                contextualInputViewController.showContextChip(chipView)
-                pixelHandler.firePageContextPlaceholderShown()
+                } else {
+                    let chipView = createPlaceholderChipView(
+                        onTapToAttach: { [weak self] in
+                            guard let self else { return }
+                            self.pixelHandler.firePageContextPlaceholderTapped()
+                            self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+                        },
+                        onRemove: { [weak self] in
+                            self?.handleChipRemoved()
+                        }
+                    )
+                    contextualInputViewController.showContextChip(chipView)
+                    pixelHandler.firePageContextPlaceholderShown()
+                }
             }
         case .attached(let context):
             if contextualInputViewController.isContextChipVisible {
@@ -650,12 +656,18 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
+        case .askAboutPage:
+            delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+            contextualInputViewController.becomeFirstResponder()
         case .summarize:
             pixelHandler.fireQuickActionSummarizeSelected()
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-        }
-        if !action.prompt.isEmpty {
-            contextualInputViewController.appendText(action.prompt)
+            if !action.prompt.isEmpty {
+                contextualInputViewController.appendText(action.prompt)
+            }
+        case .summarizePage:
+            pixelHandler.fireQuickActionSummarizeSelected()
+            delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: action.prompt)
         }
     }
 
@@ -750,6 +762,7 @@ private extension AIChatContextualSheetViewController {
     func apply(_ viewState: SheetViewState) {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
         newChatButton.isHidden = !viewState.shouldShowNewChatButton
+        contextualInputViewController.updateQuickActions(with: viewState.quickActions)
 
         switch viewState.content {
         case .nativeInput:

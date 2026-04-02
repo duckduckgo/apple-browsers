@@ -1820,7 +1820,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 autoconsentPreferences: cookiePopupProtectionPreferences,
-                darkReaderExcludedDomainsProvider: darkReaderSettings
+                darkReaderExcludedDomainsProvider: darkReaderSettings,
+                scriptletConfiguration: makeScriptletConfiguration()
             )
             self.webExtensionManager = webExtensionManager
 
@@ -1847,7 +1848,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
 
@@ -1872,6 +1874,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             enabledTypes.insert(.darkReader)
         }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeScriptletConfiguration() -> ScriptletConfiguration {
+        let scriptletsDirectory = URL.sandboxApplicationSupportURL
+            .appendingPathComponent("Scriptlets", isDirectory: true)
+
+        return ScriptletManagerFactory.makeConfiguration(
+            privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            apiService: DefaultAPIService(),
+            baseDirectory: scriptletsDirectory,
+            isProduction: !StandardApplicationBuildType().isDebugBuild
+        )
     }
 
     // MARK: - PixelKit

@@ -479,8 +479,9 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
 
     func loadInstalledExtensions() async {}
     func installExtension(from sourceURL: URL) async throws {}
-    func uninstallExtension(identifier: String) throws {}
+    @MainActor func uninstallExtension(identifier: String) throws {}
 
+    @MainActor
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>] {
         uninstallAllExtensionsCalled = true
@@ -492,7 +493,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
         syncEmbeddedExtensionsCalled = true
     }
 
-    func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
+    @MainActor func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
         uninstallEmbeddedExtensionCalled = true
         uninstalledEmbeddedType = type
         uninstallEmbeddedExtensionHandler?()
@@ -514,6 +515,8 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
+    @MainActor func clearCachedScriptlets() {}
+    @MainActor func scriptletDebugInfo() -> [ScriptletDebugInfo] { [] }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

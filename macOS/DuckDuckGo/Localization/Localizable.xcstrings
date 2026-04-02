@@ -24811,6 +24811,126 @@
         }
       }
     },
+    "duck-player.always-open-toggle" : {
+      "comment" : "Duck Player always open toggle in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-Videos immer im Duck Player öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always open YouTube videos in Duck Player"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir siempre los vídeos de YouTube en Duck Player"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toujours ouvrir les vidéos YouTube dans Duck Player"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri sempre i video di YouTube in Duck Player"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-video's altijd openen in Duck Player"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zawsze otwieraj filmy z YouTube w odtwarzaczu Duck Player"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir sempre os vídeos do YouTube no Duck Player"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда открывать видео из YouTube в Duck Player"
+          }
+        }
+      }
+    },
+    "duck-player.autoplay-toggle" : {
+      "comment" : "Duck Player autoplay toggle in YouTube ad blocking settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos im Duck Player automatisch abspielen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Autoplay videos in Duck Player"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproducción automática de vídeos en Duck Player"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture automatique des vidéos dans Duck Player"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riproduzione automatica dei video in Duck Player"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video's automatisch afspelen in Duck Player"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatyczne odtwarzanie filmów w Duck Player"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproduzir automaticamente vídeos no Duck Player"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматически проигрывать видео в Duck Player"
+          }
+        }
+      }
+    },
     "duck-player.contingency-title" : {
       "comment" : "Title for message explaining to the user that Duck Player is not available",
       "extractionState" : "extracted_with_value",
@@ -24867,6 +24987,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck Player недоступен"
+          }
+        }
+      }
+    },
+    "duck-player.enable-toggle" : {
+      "comment" : "Duck Player enable toggle in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck Player aktivieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable Duck Player"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activar Duck Player"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer Duck Player"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abilita Duck Player"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck Player inschakelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włącz Duck Player"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar o Duck Player"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить Duck Player"
           }
         }
       }
@@ -24981,6 +25161,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Abrir o Duck Player num novo separador sempre que possível"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По возможности открывать Duck Player в новой вкладке"
+          }
+        }
+      }
+    },
+    "duck-player.newtab-toggle" : {
+      "comment" : "Duck Player new tab toggle in YouTube ad blocking settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne Duck Player, wenn möglich, in einem neuen Tab"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck Player in a new tab when possible"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre Duck Player en una pestaña nueva cuando sea posible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir Duck Player dans un nouvel onglet quand c’est possible"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri sempre Duck Player in una nuova scheda quando possibile"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck Player waar mogelijk openen op een nieuw tabblad"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwieraj Duck Player w nowej karcie, gdy tylko jest to możliwe"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir o Duck Player num novo separador quando for possível"
           }
         },
         "ru" : {
@@ -25467,6 +25707,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настройки видео"
+          }
+        }
+      }
+    },
+    "duck-player.youtube-ad-blocking.explanation" : {
+      "comment" : "Duck Player explanation shown in YouTube Ad Blocking settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet Videos in einem privaten Theatermodus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre vídeos en modo teatro privado que impide que lo que ves influya en tu feed de YouTube."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre les vidéos en mode théâtre privé et empêche ce que tu regardes d’influencer ton flux YouTube."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apre i video in una modalità cinema privata che impedisce a ciò che guardi di influenzare il tuo feed di YouTube."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opent video's in een privébioscoopmodus die voorkomt dat wat je bekijkt je YouTube-feed beïnvloedt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwiera filmy w prywatnym trybie kinowym, dzięki czemu to, co oglądasz, nie wpływa na Twój kanał na YouTube."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre vídeos num modo de cinema privado que impede que o que vês influencie o teu feed do YouTube."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывает видео в режиме «личного кинотеатра»: ваши просмотры не влияют на ленту рекомендаций YouTube."
           }
         }
       }
@@ -85744,6 +86044,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Защита от отслеживания онлайн"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking" : {
+      "comment" : "Title of the option to show the YouTube Ad Blocking preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-Werbung blockieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube Ad Blocking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueo de anuncios en YouTube"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocage des publicités sur YouTube"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocco degli annunci su YouTube"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkering van YouTube-advertenties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie reklam w serwisie YouTube"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueio de anúncios do YouTube"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка рекламы на YouTube"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.explanation" : {
+      "comment" : "Explanation of the YouTube Ad Blocking feature",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo entfernt Video-Werbung auf YouTube, sodass du Videos ohne Unterbrechungen ansehen kannst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo elimina los anuncios de vídeo en YouTube, para que puedas ver vídeos sin interrupciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo supprime les publicités vidéo sur YouTube, afin que vous puissiez regarder des vidéos sans interruption."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo rimuove gli annunci video su YouTube, così puoi guardare i video senza interruzioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo verwijdert videoadvertenties op YouTube, zodat je ongestoord video's kunt bekijken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo usuwa reklamy wideo z YouTube, dzięki czemu możesz oglądać filmy bez przerw."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo remove os anúncios nos vídeos no YouTube para que possas ver vídeos sem interrupções."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo удаляет рекламу на YouTube, позволяя вам смотреть видео без перерыва."
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.toggle" : {
+      "comment" : "Toggle label for enabling YouTube ad blocking",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werbung auf YouTube blockieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block ads on YouTube"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear anuncios en YouTube"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquer les publicités sur YouTube"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca gli annunci su YouTube"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advertenties op YouTube blokkeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuj reklamy na YouTube"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear anúncios no YouTube"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировать рекламу на YouTube"
           }
         }
       }

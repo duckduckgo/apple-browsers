@@ -165,6 +165,7 @@ class MainViewController: UIViewController {
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
+    private let fireModeCapability: FireModeCapable
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -448,6 +449,7 @@ class MainViewController: UIViewController {
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.voiceShortcutFeature = voiceShortcutFeature
         self.toggleModeStorage = toggleModeStorage
+        self.fireModeCapability = FireModeCapability.create(using: featureFlagger)
 
         super.init(nibName: nil, bundle: nil)
         
@@ -808,7 +810,7 @@ class MainViewController: UIViewController {
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
-        controller.fireModeCapability = FireModeCapability.create(using: featureFlagger)
+        controller.fireModeCapability = fireModeCapability
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -1225,7 +1227,7 @@ class MainViewController: UIViewController {
     private func initTabButton() {
         assert(tabSwitcherButton == nil)
 
-        tabSwitcherButton = TabSwitcherStaticButton()
+        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
 
         tabSwitcherButton?.delegate = self
         viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
@@ -1236,7 +1238,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
 
         // Omnibar tab switcher button (for iPhone landscape combined bar)
-        let omniBarTabSwitcher = TabSwitcherStaticButton()
+        let omniBarTabSwitcher = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
         omniBarTabSwitcher.delegate = self
         omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
         let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
@@ -3574,6 +3576,20 @@ extension MainViewController: OmniBarDelegate {
         newTab()
     }
 
+    private func newFireTabLongPressMenuAction() {
+        // TODO: - Add pixel
+        tabManager.setBrowsingMode(.fire)
+        performCancel()
+        newTab()
+    }
+    
+    private func newNormalTabLongPressMenuAction() {
+        // TODO: - Add pixel
+        tabManager.setBrowsingMode(.normal)
+        performCancel()
+        newTab()
+    }
+
     private var isSERPPresented: Bool {
         guard let tabURL = currentTab?.url else { return false }
         return tabURL.isDuckDuckGoSearch
@@ -4577,8 +4593,16 @@ extension MainViewController: BookmarksDelegate {
 
 extension MainViewController: TabSwitcherButtonDelegate {
 
-    func launchNewTab(_ button: TabSwitcherButton) {
+    func launchNewTabWithCurrentMode(_ button: TabSwitcherButton) {
         newTabShortcutAction()
+    }
+    
+    func launchNewNormalTab(_ button: any TabSwitcherButton) {
+        newNormalTabLongPressMenuAction()
+    }
+
+    func launchNewFireTab(_ button: TabSwitcherButton) {
+        newFireTabLongPressMenuAction()
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {

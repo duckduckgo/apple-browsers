@@ -560,17 +560,19 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
     private var onGotItPressed: (() -> Void)?
     private var onFireButtonPressed: (() -> Void)?
     private var onManualDismissPressed: (() -> Void)?
+    private var onSuggestionPressed: (() -> Void)?
 
     init(expectation: XCTestExpectation) {
         self.expectation = expectation
     }
 
-    func makeView(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
+    func makeView(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         capturedType = type
         capturedDelegate = delegate
         self.onGotItPressed = onGotItPressed
         self.onFireButtonPressed = onFireButtonPressed
-        self.onManualDismissPressed = onDismiss
+        self.onManualDismissPressed = onManualDismiss
+        self.onSuggestionPressed = onSuggestionPressed
         expectation.fulfill()
         return AnyView(OnboardingFinalDialog(highFiveAction: {}, onManualDismiss: {}))
     }
@@ -585,6 +587,10 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
 
     func performOnManualDismiss() {
         onManualDismissPressed?()
+    }
+
+    func performOnSuggestionPressed() {
+        onSuggestionPressed?()
     }
 
 }
@@ -619,7 +625,11 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var measureFireButtonTryItCalled = false
     var measureLastDialogShownCalled = false
     var measureSiteVisitedCalled = false
+    var measureSuggestionPressedCalled = false
     var dismissedDialog: ContextualDialogType?
+    var manuallyDismissedDialog: ContextualDialogType?
+    var shownDialog: ContextualDialogType?
+    var gotItPressedDialog: ContextualDialogType?
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -651,6 +661,22 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
     func measureDialogDismissed(dialogType: ContextualDialogType) {
         dismissedDialog = dialogType
+    }
+
+    func measureDialogManuallyDismissed(dialogType: ContextualDialogType) {
+        manuallyDismissedDialog = dialogType
+    }
+
+    func measureSuggestionPressed() {
+        measureSuggestionPressedCalled = true
+    }
+
+    func measureDialogShown(dialogType: ContextualDialogType) {
+        shownDialog = dialogType
+    }
+
+    func measureGotItPressed(dialogType: ContextualDialogType) {
+        gotItPressedDialog = dialogType
     }
 }
  private class DockCustomizerMock: DockCustomization {

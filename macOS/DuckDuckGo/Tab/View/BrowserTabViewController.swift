@@ -680,10 +680,19 @@ final class BrowserTabViewController: NSViewController {
             }
         }
 
+        let onManualDismissAction = { [weak self] in
+            guard let self else { return }
+            if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+                onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: lastDialog)
+            }
+            onDismissAction()
+        }
+
         let onGotItPressed = { [weak self] in
             guard let self else { return }
 
             onboardingDialogTypeProvider.gotItPressed()
+            onboardingPixelReporter.measureGotItPressed(dialogType: dialogType)
 
             let currentState = onboardingDialogTypeProvider.lastDialog
 
@@ -700,9 +709,13 @@ final class BrowserTabViewController: NSViewController {
             for: dialogType,
             delegate: tab,
             onDismiss: onDismissAction,
+            onManualDismiss: onManualDismissAction,
             onGotItPressed: onGotItPressed,
             onFireButtonPressed: { [weak delegate] in
                 delegate?.dismissViewHighlight()
+            },
+            onSuggestionPressed: { [weak onboardingPixelReporter] in
+                onboardingPixelReporter?.measureSuggestionPressed()
             })
         let hostingController = NSHostingController(rootView: AnyView(daxView))
         insertChild(hostingController, in: containerStackView, at: 0)

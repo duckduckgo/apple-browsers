@@ -96,7 +96,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
 }
 
-public enum OnboardingSharedPixelEvent: PixelKitEvent {
+public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
     // Linear onboarding events
     case welcome(EngagementEvent)
     case setDefault(EngagementEvent)
@@ -114,7 +114,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
 
-    public enum EngagementEvent {
+    public enum EngagementEvent: Equatable {
         public enum Value: String {
             case engage
             case dismiss
@@ -124,7 +124,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
         case clicked(Value)
     }
 
-    public enum SearchExperienceEvent {
+    public enum SearchExperienceEvent: Equatable {
         public enum Value: String {
             case searchOnly = "search_only"
             case searchPlusDuckAI = "search_plus_duckai"
@@ -134,7 +134,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
         case clicked(Value)
     }
 
-    public enum SuggestedOrCustomEvent {
+    public enum SuggestedOrCustomEvent: Equatable {
         public enum Value: String {
             case suggested
             case custom
@@ -145,7 +145,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
         case clicked(Value)
     }
 
-    public enum CustomizeEvent {
+    public enum CustomizeEvent: Equatable {
         public enum Value: String {
             case bookmarksBar = "bookmarks_bar"
             case restoreSession = "restore_session"

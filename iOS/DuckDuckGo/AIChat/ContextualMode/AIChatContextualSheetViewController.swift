@@ -95,6 +95,15 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Types
 
+    /// A view that automatically keeps its corner radius at half its height (pill shape).
+    private final class PillView: UIView {
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            layer.cornerRadius = bounds.height / 2
+            layer.cornerCurve = .continuous
+        }
+    }
+
     /// Factory closure for creating web view controllers, eliminating prop drilling
     typealias WebViewControllerFactory = () -> AIChatContextualWebViewController?
 
@@ -109,6 +118,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let pixelHandler: AIChatContextualModePixelFiring
     private let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
+    private let suggestionsReader: AIChatSuggestionsReading?
+    private var recentChatsPopup: AIChatRecentChatsPopupViewController?
+    private var popupWindow: UIWindow?
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
@@ -141,8 +153,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     }()
 
     private lazy var leftButtonContainer: UIView = {
-        let view = UIView()
+        let view = PillView()
         view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -177,6 +190,17 @@ final class AIChatContextualSheetViewController: UIViewController {
         return button
     }()
 
+    private lazy var recentChatsButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(DesignSystemImages.Glyphs.Size24.list, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
+        button.accessibilityLabel = UserText.aiChatRecentChatsButtonAccessibility
+        button.accessibilityTraits = .button
+        return button
+    }()
+
     private lazy var titleContainer: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
@@ -204,8 +228,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     }()
 
     private lazy var rightButtonContainer: UIView = {
-        let view = UIView()
+        let view = PillView()
         view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -262,7 +287,8 @@ final class AIChatContextualSheetViewController: UIViewController {
          webViewControllerFactory: @escaping WebViewControllerFactory,
          pixelHandler: AIChatContextualModePixelFiring,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         suggestionsReader: AIChatSuggestionsReading? = nil) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -270,6 +296,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.pixelHandler = pixelHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.suggestionsReader = suggestionsReader
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -356,6 +383,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func expandButtonTapped() {
+        dismissRecentChatsPopup()
         pixelHandler.fireExpandButtonTapped()
         let url = sessionState.contextualChatURL ?? aiChatSettings.aiChatURL
         Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.absoluteString)")
@@ -363,17 +391,32 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     @objc private func newChatButtonTapped() {
+        dismissRecentChatsPopup()
         pixelHandler.fireNewChatButtonTapped()
         delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
     }
 
     @objc private func fireButtonTapped() {
+        dismissRecentChatsPopup()
         pixelHandler.fireFireButtonTapped()
         showFireConfirmation()
     }
 
     @objc private func closeButtonTapped() {
+        dismissRecentChatsPopup()
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
+    }
+
+    @objc private func recentChatsButtonTapped() {
+        if recentChatsPopup != nil {
+            dismissRecentChatsPopup()
+            return
+        }
+        Task { @MainActor in
+            let suggestions = await fetchRecentChats()
+            Logger.aiChat.debug("[SheetVC] Recent chats fetched: \(suggestions.count) results")
+            showRecentChatsPopup(with: suggestions)
+        }
     }
 
 }
@@ -455,6 +498,42 @@ private extension AIChatContextualSheetViewController {
     /// For placeholder chips: do nothing (X is hidden, placeholder can never be removed).
     private func handleChipRemoved() {
         delegate?.aiChatContextualSheetViewControllerDidRequestRemoveChip(self)
+    }
+
+    // MARK: - Recent Chats Popup
+
+    func fetchRecentChats() async -> [AIChatSuggestion] {
+        guard let reader = suggestionsReader else { return [] }
+        let result = await reader.fetchSuggestions(query: nil, maxChats: 5)
+        return result.pinned + result.recent
+    }
+
+    func showRecentChatsPopup(with suggestions: [AIChatSuggestion]) {
+        guard let windowScene = view.window?.windowScene else { return }
+
+        let popup = AIChatRecentChatsPopupViewController(suggestions: suggestions)
+        popup.delegate = self
+
+        // Present on a separate window so the popup is fully independent of the sheet
+        let overlay = UIWindow(windowScene: windowScene)
+        overlay.rootViewController = popup
+        overlay.windowLevel = .normal + 1
+        overlay.backgroundColor = .clear
+        overlay.isOpaque = false
+        overlay.makeKeyAndVisible()
+
+        // Convert pill position to screen coordinates for positioning
+        let pillFrameInScreen = leftButtonContainer.convert(leftButtonContainer.bounds, to: nil)
+        popup.anchorContentView(pillFrame: pillFrameInScreen)
+
+        popupWindow = overlay
+        recentChatsPopup = popup
+    }
+
+    func dismissRecentChatsPopup() {
+        popupWindow?.isHidden = true
+        popupWindow = nil
+        recentChatsPopup = nil
     }
 
     func updateChipUI(chipState: ChipState) {
@@ -696,6 +775,27 @@ extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate
     }
 }
 
+// MARK: - AIChatRecentChatsPopupDelegate
+
+extension AIChatContextualSheetViewController: AIChatRecentChatsPopupDelegate {
+
+    func recentChatsPopup(_ popup: AIChatRecentChatsPopupViewController, didSelectChat chat: AIChatSuggestion) {
+        dismissRecentChatsPopup()
+        let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+    }
+
+    func recentChatsPopupDidSelectViewAll(_ popup: AIChatRecentChatsPopupViewController) {
+        dismissRecentChatsPopup()
+        let url = aiChatSettings.aiChatURL
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+    }
+
+    func recentChatsPopupDidDismiss(_ popup: AIChatRecentChatsPopupViewController) {
+        dismissRecentChatsPopup()
+    }
+}
+
 // MARK: - AIChatContextualWebViewControllerDelegate
 
 extension AIChatContextualSheetViewController: AIChatContextualWebViewControllerDelegate {
@@ -824,6 +924,9 @@ private extension AIChatContextualSheetViewController {
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.addSubview(leftButtonStack)
         leftButtonStack.addArrangedSubview(expandButton)
+        if suggestionsReader != nil {
+            leftButtonStack.addArrangedSubview(recentChatsButton)
+        }
         leftButtonStack.addArrangedSubview(newChatButton)
 
         headerView.addSubview(titleContainer)
@@ -874,6 +977,9 @@ private extension AIChatContextualSheetViewController {
             newChatButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             newChatButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
+            recentChatsButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+
             titleContainer.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
@@ -899,15 +1005,7 @@ private extension AIChatContextualSheetViewController {
     }
     
     func updateButtonContainerCornerRadii() {
-        let leftHeight = leftButtonContainer.bounds.height
-        if leftHeight > 0 {
-            leftButtonContainer.layer.cornerRadius = leftHeight / 2
-        }
-
-        let rightHeight = rightButtonContainer.bounds.height
-        if rightHeight > 0 {
-            rightButtonContainer.layer.cornerRadius = rightHeight / 2
-        }
+        // Corner radii are now handled by PillView.layoutSubviews()
     }
 
     func updateShadowPath() {

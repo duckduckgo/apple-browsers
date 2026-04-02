@@ -2218,9 +2218,11 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let uuid = unloadedVM.unloadedTab.uuid
 
         hoverMaterializationTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
-            guard let self,
-                  let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) else { return }
-            tabCollectionViewModel.materialize(at: index)
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) else { return }
+                tabCollectionViewModel.materialize(at: index)
+            }
         }
     }
 

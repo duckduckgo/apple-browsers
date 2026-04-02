@@ -3,7 +3,7 @@
         "description": "Sent after tab suspension completes in response to a trigger event. Reports the number of tabs suspended and estimated memory reclaimed.",
         "owners": ["ayoy"],
         "triggers": ["other"],
-        "suffixes": ["daily", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             {

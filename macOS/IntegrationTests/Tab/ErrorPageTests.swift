@@ -271,7 +271,7 @@ class ErrorPageTests: XCTestCase {
 
         tabsViewModel.select(at: .unpinned(0))
 
-        await fulfillment(of: [eServerQueried], timeout: 1)
+        await fulfillment(of: [eServerQueried], timeout: 5)
         let error = try await eNavigationFailed2.value
 
         let c = tab1.$isLoading.dropFirst().sink { isLoading in

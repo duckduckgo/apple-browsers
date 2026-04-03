@@ -335,12 +335,17 @@ extension NewTabPageViewController {
         let container = editingController.contentStackContainerView
         container.addSubview(hostingController.view)
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
-                                                        constant: editingController.addressBarToToggleSpacing),
+            // Keep the completion content pinned to the top; in bottom-bar mode it gets cropped from the bottom
+            // as the bar moves up with the keyboard.
+            editingController.isUsingTopBarPositionForLayout ?
+                hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
+                                                            constant: editingController.addressBarToToggleSpacing) :
+                hostingController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            editingController.isUsingTopBarPositionForLayout ?
+                hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor) :
+                hostingController.view.bottomAnchor.constraint(equalTo: editingController.contentStackBottomAnchor),
             hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            // Keep stable layout while search/AI input mode changes.
-            hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor)
+            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor)
         ])
         hostingController.didMove(toParent: editingController)
         container.bringSubviewToFront(editingController.switchBarVC.view)

@@ -86,6 +86,7 @@ final class PromoServiceTests: XCTestCase {
                     XCTFail("Second promo should not be shown")
                 } else if promos.contains(where: { $0.id == "promo-1" }) {
                     shownExpectation.fulfill()
+                    delegate1.completeShow(with: .actioned)
                 }
             }
             .store(in: &cancellables)
@@ -101,9 +102,7 @@ final class PromoServiceTests: XCTestCase {
         // When: Trigger is sent
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
-        await fulfillment(of: [shownExpectation], timeout: timeout)
-        delegate1.completeShow(with: .actioned)
-        await fulfillment(of: [resultExpectation], timeout: timeout)
+        await fulfillment(of: [shownExpectation, resultExpectation], timeout: timeout)
 
         // Then: Promo history records contain expected history
         let record1 = historyStore.record(for: "promo-1")
@@ -129,6 +128,8 @@ final class PromoServiceTests: XCTestCase {
             .sink { promos in
                 if promos.contains(where: { $0.id == "coexist-a" }) && promos.contains(where: { $0.id == "coexist-b" }) {
                     shownExpectation.fulfill()
+                    delegate1.completeShow(with: .actioned)
+                    delegate2.completeShow(with: .actioned)
                 }
             }
             .store(in: &cancellables)
@@ -148,10 +149,7 @@ final class PromoServiceTests: XCTestCase {
         // When: Trigger is sent
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
-        await fulfillment(of: [shownExpectation], timeout: timeout)
-        delegate1.completeShow(with: .actioned)
-        delegate2.completeShow(with: .actioned)
-        await fulfillment(of: [resultExpectation], timeout: timeout)
+        await fulfillment(of: [shownExpectation, resultExpectation], timeout: timeout)
 
         // Then: Promo history records contain expected history
         let recordA = historyStore.record(for: "coexist-a")
@@ -334,6 +332,7 @@ final class PromoServiceTests: XCTestCase {
                     XCTFail("New tab page context should be blocked by global context promo")
                 } else if promos.contains(where: { $0.id == "global" }) {
                     shownExpectation.fulfill()
+                    delegate1.completeShow(with: .actioned)
                 }
             }
             .store(in: &cancellables)
@@ -350,9 +349,7 @@ final class PromoServiceTests: XCTestCase {
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
         triggerSubject.send(.newTabPageAppeared)
-        await fulfillment(of: [shownExpectation], timeout: timeout)
-        delegate1.completeShow(with: .actioned)
-        await fulfillment(of: [resultExpectation], timeout: timeout)
+        await fulfillment(of: [shownExpectation, resultExpectation], timeout: timeout)
 
         // Then: Promo history records contain expected history
         let record1 = historyStore.record(for: "global")
@@ -615,8 +612,7 @@ final class PromoServiceTests: XCTestCase {
         // When
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
-        await fulfillment(of: [shownExpectation], timeout: timeout)
-        await fulfillment(of: [resultExpectation], timeout: timeout)
+        await fulfillment(of: [shownExpectation, resultExpectation], timeout: timeout)
 
         // Then
         let record1 = historyStore.record(for: "high-priority")

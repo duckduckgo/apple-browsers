@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Overrask mig!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Find **DuckDuckGo** på listen, og tryk derefter på **Duck.ai stemme** for at tilføje det";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Find **DuckDuckGo** på listen, og tryk derefter på **VPN-kontrol** for at tilføje det";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Players funktionalitet er påvirket af de seneste ændringer på YouTube. Vi arbejder på at løse disse problemer og sætter pris på din forståelse.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Tryk på widgeten for at redigere den, og indstil derefter **Duck.ai** og **Duck.ai stemme** som dine genveje.";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Find og vælg **DuckDuckGo**, stryg derefter til **Brugerdefinerede genveje**, og vælg **Tilføj widget**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Vedhæft sideindhold";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sendt sammen med din besked til Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Tilføj en genvej til Duck.ai stemme til dit kontrolcenter";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI-funktioner er private og valgfrie. Dine data bruges ikke til at træne AI.";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Stil opfølgende spørgsmål";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Tilføj Duck.ai til Kontrolcenter";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Tilføj Duck.ai-widget til startskærmen";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Browsergenveje";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Tal med Duck.ai via Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresselinje";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo til iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Genveje";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Med Siri-genveje kan du starte en Duck.ai-stemmechat med en hurtig stemmekommando, f.eks. \"Siri, start DuckDuckGo-stemmechat\". Det er en hurtig og håndfri måde at chatte med Duck.ai på.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, start DuckDuckGo stemmechat.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, tal med DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, stemmechat med DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Tal med Duck.ai ved hjælp af Siri!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Tilføj dit DuckDuckGo-abonnement til denne enhed";
@@ -1578,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Genoptag i Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Åbn altid YouTube-videoer i Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoer, der åbnes i Duck Player, vil automatisk begynde at afspille. Slå dette fra, hvis du manuelt vil starte afspilning af videoer, der åbnes i Duck Player.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatisk afspilning af videoer";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Åbner videoer i en privat biograftilstand, så det, du ser, ikke påvirker dit YouTube-feed.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Slå Duck Player til";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentel";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Med Duck Player kan du se YouTube uden målrettede annoncer og undgå, at seeraktiviteten påvirker dine anbefalinger.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo giver dig de Privacy Essentials, du har brug for for at beskytte dig selv, når du surfer på nettet.";
@@ -1595,7 +1646,6 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Mere info";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Åbn Duck Player i en ny fane";
 
@@ -1607,7 +1657,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "DuckDuckGo Search-resultater";
-
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Luk alle faner for, at denne indstilling kan træde i kraft.";
 
@@ -2084,6 +2133,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno klassisk";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -2781,6 +2833,9 @@
 "onboarding.skip.title" = "Forstået! Jeg springer de andre tips over.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Prøv det gratis!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Prøv det gratis!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3060,9 +3115,6 @@
 "prompt.x-safari-https.try-open.title" = "Dette websted vil åbne Safari.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "OMDØBT";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Seneste behandlingslogfiler";
 
 /* No comment provided by engineer. */
@@ -3175,6 +3227,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Tilføj widget til startskærmen";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Tilføj Duck.ai-genveje til din startskærm";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Tilføj DuckDuckGo VPN-widget til din startskærm";
@@ -3401,6 +3456,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardbrowser";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Standardposition for faneskift på nye faner.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Kontaktens position";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Slet Duck.ai-chats";
 
@@ -4553,6 +4612,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Få DuckDuckGo til Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo fjerner videoannoncer på YouTube, så du kan se videoer uden afbrydelser.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blokering af YouTube-annoncer";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Bloker annoncer på YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bogmærker";
 
@@ -4568,3 +4636,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Tillad lyd og video";
+"autoplay.mode.blockAll" = "Bloker lyd og video";
+"autoplay.mode.blockAudio" = "Bloker lyd";
+"settings.autoplay" = "Automatisk afspilning";
+"settings.autoplay.duck.player.link" = "Indstillinger for Duck Player";
+"settings.autoplay.footer" = "Indstillinger for automatisk afspilning gælder kun for nyligt åbnede faner. Ændringer kan ikke anvendes på eksisterende faner, medmindre programmet genstartes. For at administrere automatisk afspilning i Duck Player skal du gå til ";
+"settings.media.section" = "Medier";

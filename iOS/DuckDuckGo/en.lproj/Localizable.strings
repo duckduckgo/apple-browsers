@@ -907,6 +907,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Update username?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Allow Audio and Video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Block Audio and Video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Block Audio";
+
 /* View plans button text during Black Friday campaign */
 "black-friday.campaign.view.plans.cta" = "Save %d%% on First Year";
 
@@ -1110,6 +1119,9 @@
 
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Surprise me!";
+
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Find **DuckDuckGo** in the list, then tap **Duck.ai Voice** to add it";
 
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Find **DuckDuckGo** in the list, then tap **VPN control** to add it";
@@ -1366,11 +1378,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Tap the widget to edit it, then set **Duck.ai** and **Duck.ai Voice** as your shortcuts";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Find and select **DuckDuckGo**, then swipe to **Custom Shortcuts** and select **Add Widget**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Attach Page Content";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sent with your message to Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Add Duck.ai Voice Shortcut to Your Control Center";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
@@ -1380,6 +1401,12 @@
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Summarize This Page";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Add Duck.ai to Control Center";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Add Duck.ai Widget to Home Screen";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Show Duck.ai buttons and links in DuckDuckGo search results.";
@@ -1392,6 +1419,9 @@
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Browser shortcuts";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Talk with Duck.ai via Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Address Bar";
@@ -1410,6 +1440,24 @@
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Shortcuts";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri Shortcuts let you start a Duck.ai voice chat with a quick voice command, like \"Siri, start DuckDuckGo Voice Chat\". It's a fast, hands-free way to chat with Duck.ai.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, start DuckDuckGo Voice Chat.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, talk to DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, voice chat with DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Talk with Duck.ai using Siri!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Add your DuckDuckGo subscription to this device";
@@ -1480,14 +1528,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Resume in Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Always open YouTube videos in Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Auto-play videos";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Autoplay Videos";
+
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Enable Duck Player";
 
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimental";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player lets you watch YouTube without targeted ads and prevents viewing activity from influencing your recommendations.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo provides all the privacy essentials you need to protect yourself as you browse the web.";
@@ -1965,6 +2025,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno Classic";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -2534,7 +2597,7 @@ https://duckduckgo.com/mac";
 "onboarding.privacypro.promo.buttons.learnMore" = "Learn More";
 
 /* Button to decline and dismiss the subscription promotion and continue the onboarding process. */
-"onboarding.privacypro.promo.buttons.rebranding.skip" = "No Thanks";
+"onboarding.privacypro.promo.buttons.rebranding.skip" = "No thanks";
 
 /* Button to continue the onboarding process. */
 "onboarding.privacypro.promo.buttons.skip" = "Skip";
@@ -2580,6 +2643,9 @@ https://duckduckgo.com/mac";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Got it! I’ll skip the other tips.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Try it free!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Try it for free!";
@@ -2926,6 +2992,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Add Widget to Home Screen";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Add Duck.ai Shortcuts to Your Home Screen";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Add DuckDuckGo VPN Widget to Your Home Screen";
 
@@ -3103,6 +3172,15 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatically Delete Data";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Autoplay";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Player Settings";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Autoplay settings will only apply to newly opened tabs. Changes cannot be applied to existing tabs unless the application is restarted. To manage autoplay in Duck Player, go to ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browser Feedback";
 
@@ -3154,8 +3232,11 @@ Take back control of your personal information with the browser designed for dat
 /* Option to always default the omnibar toggle to Duck.ai */
 "settings.default.omnibar.mode.duckai" = "Duck.ai";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Default toggle position on new tabs.";
+
 /* Label for the default omnibar toggle position picker in AI Features settings */
-"settings.default.omnibar.mode.header" = "New Tab Toggle Position";
+"settings.default.omnibar.mode.header" = "Toggle Position";
 
 /* Option to remember the last used omnibar toggle position */
 "settings.default.omnibar.mode.last.used" = "Last Used";
@@ -3252,6 +3333,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Manage Account";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Media";
 
 /* Settings title for the 'More' section */
 "settings.more" = "More from DuckDuckGo";
@@ -4272,6 +4356,15 @@ https://duckduckgo.com/windows";
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Get DuckDuckGo for Windows!";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube Ad Blocking";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Block ads on YouTube";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bookmarks";

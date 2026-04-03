@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Изненадайте ме!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Намерете **DuckDuckGo** в списъка, след това изберете **Duck.ai Voice**, за да го добавите";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Открийте **DuckDuckGo** в списъка и след това натиснете **Управление на VPN**, за да го добавите";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Функционалността на Duck Player е засегната от последните промени в YouTube. Работим за отстраняване на тези проблеми и оценяваме вашето разбиране.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Изберете приспособлението, за да го редактирате и след това задайте **Duck.ai** и **Duck.ai Voice** като преки пътища";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Намерете и изберете **DuckDuckGo**, след това плъзнете до **Персонализирани преки пътища** и изберете **Добавяне на приспособление**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Прикачи съдържанието на страницата";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Изпратено с твоето съобщение до Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Добавяне на пряк път за Duck.ai Voice към Центъра за управление";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Функциите на DuckDuckGo AI са поверителни и незадължителни. Вашите данни не се използват за обучение на изкуствен интелект.";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Задаване на допълнителни въпроси";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Добавяне на Duck.ai към Центъра за управление";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Добавяне на приспособлението Duck.ai към началния екран";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Бързи връзки за браузъра";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Разговор с Duck.ai чрез Сири";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Адресна лента";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo за iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Бързи Връзки";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Можете да използвате преките пътища на Сири, за да започнете гласов чат с Duck.ai чрез бърза гласова команда, като например „Сири, стартирай гласовия чат на DuckDuckGo\". Това е бърз начин да започнете чат с Duck.ai, без да използвате ръцете си.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Сири, стартирай гласовия чат на DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Сири, говори с DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Сири, гласов чат с DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Говорете с Duck.ai чрез Сири!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Добавете абонамента си за DuckDuckGo към това устройство";
@@ -1578,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Продължаване в Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Винаги отваряйте видеоклипове от YouTube в Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Видеата, отворени в Duck Player, ще започнат да се възпроизвеждат автоматично. Изключете това, ако искате ръчно да стартирате възпроизвеждането на видеата, отворени в Duck Player.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Автоматично пускане на видеа";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Отваря видеоклипове в режим на частен киносалон, който предотвратява влиянието на гледаното от теб съдържание върху емисията ти в YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Активирай Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Експериментално";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player ти позволява да гледаш YouTube без таргетирани реклами и предотвратява влиянието на активността при гледане върху препоръките ти.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "В Privacy Essentials на DuckDuckGo са осигурени всички настройки за поверителност, необходими за защита при сърфиране в мрежата.";
@@ -1595,7 +1646,6 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Научете повече";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Отворете Duck Player в нов раздел";
 
@@ -1607,7 +1657,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Резултати от DuckDuckGo Search";
-
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Моля, затворете всички раздели, за да влезе в сила тази настройка.";
 
@@ -2084,6 +2133,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Въздушна струя";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Стандартен огън";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Адски огън";
@@ -2781,6 +2833,9 @@
 "onboarding.skip.title" = "Разбрах! Ще пропусна другите съвети.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Изпробвай безплатно!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Пробвайте безплатно!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3060,9 +3115,6 @@
 "prompt.x-safari-https.try-open.title" = "Този сайт иска да се отвори в Safari.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "РЕБРАНДИРАН";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Последни регистри за обработка";
 
 /* No comment provided by engineer. */
@@ -3175,6 +3227,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Добавяне на приспособлението към началния екран";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Добавяне на преки пътища за Duck.ai към началния екран";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Добавяне на приспособлението DuckDuckGo VPN към началния екран";
@@ -3401,6 +3456,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузър по подразбиране";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Позиция по подразбиране на превключвателя в нови раздели.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Позиция на превключвателя";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Изтриване на чатове с Duck.ai";
 
@@ -4553,6 +4612,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Вземете DuckDuckGo за Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo премахва рекламите на видеоклипове в YouTube, за да можеш да гледаш видеоклипове без прекъсване.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Блокиране на реклами в YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Блокирай рекламите в YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Отметки";
 
@@ -4568,3 +4636,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Разрешаване на аудио и видео";
+"autoplay.mode.blockAll" = "Блокиране аудио и видео";
+"autoplay.mode.blockAudio" = "Блокиране на аудио";
+"settings.autoplay" = "Автоматично възпроизвеждане";
+"settings.autoplay.duck.player.link" = "Настройки на Duck Player";
+"settings.autoplay.footer" = "Настройките за автоматично възпроизвеждане ще се прилагат само за новоотворени раздели. Промените не могат да бъдат приложени към съществуващи раздели, освен ако приложението не бъде рестартирано. За да управлявате автоматичното възпроизвеждане в Duck Player, отидете на ";
+"settings.media.section" = "Медии";

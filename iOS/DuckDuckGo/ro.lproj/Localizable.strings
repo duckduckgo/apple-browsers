@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Surprinde-mă!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Găsește **DuckDuckGo** în listă, apoi atinge **Duck.ai Voice** pentru a-l adăuga";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Găsește **DuckDuckGo** în listă, apoi atinge **Control VPN** pentru a-l adăuga.";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Funcționalitatea Duck Player a fost afectată de modificările recente ale YouTube. Lucrăm pentru a remedia aceste probleme și apreciem înțelegerea ta.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Atinge widgetul pentru a-l edita, apoi setează **Duck.ai** și **Duck.ai Voice** ca scurtături";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Găsește și selectează **DuckDuckGo**, apoi glisează la **Custom Shortcuts** și selectează **Adaugă widget**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Atașează conținutul paginii";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Trimis cu mesajul tău către Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Adaugă comanda rapidă vocală Duck.ai la Centrul de control";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Pune întrebări suplimentare";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Adaugă Duck.ai la Centrul de control";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Adaugă widgetul Duck.ai la ecranul de întâmpinare";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Comenzi rapide pentru browser";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Vorbește cu Duck.ai prin Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Bara de adrese";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pentru iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Scurtături";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Comenzile rapide Siri îți permit să inițiezi un chat vocal Duck.ai cu o comandă vocală rapidă, cum ar fi „Siri, pornește chatul vocal DuckDuckGo”. Este o modalitate rapidă, fără mâini, de a face chat cu Duck.ai.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, pornește chatul vocal DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, vorbește cu DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, fă chat vocal cu DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Vorbește cu Duck.ai folosind Siri!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Adaugă abonamentul tău DuckDuckGo pe acest dispozitiv";
@@ -1578,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Continuă în Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Deschide întotdeauna videoclipurile YouTube în Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoclipurile deschise în Duck Player vor începe redarea automat. Dezactivează această opțiune dacă vrei să pornești manual redarea videoclipurilor deschise în Duck Player.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Redă automat videoclipurile";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Deschide videoclipuri într-un mod cinematografic privat, care împiedică ceea ce vizionezi să îți influențeze fluxul YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Activează Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimental";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player îți permite să vizionezi YouTube fără reclame direcționate și împiedică activitatea de vizionare să îți influențeze recomandările.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo oferă toate elementele de confidențialitate esențiale de care ai nevoie pentru a te proteja în timp ce navighezi pe web.";
@@ -2084,6 +2135,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Flăcări clasice";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Infern";
@@ -2781,6 +2835,9 @@
 "onboarding.skip.title" = "Am înțeles! O să omit celelalte sfaturi.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Încearcă gratuit!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Încearcă gratuit!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3060,9 +3117,6 @@
 "prompt.x-safari-https.try-open.title" = "Acest site vrea să se deschidă în Safari.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "NE-AM REDEFINIT BRANDUL";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Jurnale de procesare recente";
 
 /* No comment provided by engineer. */
@@ -3175,6 +3229,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Adaugă un widget la ecranul de întâmpinare";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Adaugă comenzi rapide Duck.ai pe ecranul de pornire";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Adaugă widgetul VPN DuckDuckGo pe ecranul tău de pornire";
@@ -3401,6 +3458,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Browser implicit";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Poziția implicită de comutare în filele noi.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Poziția comutatorului";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Șterge chaturile Duck.ai";
 
@@ -4553,6 +4614,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Descarcă DuckDuckGo pentru Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo elimină reclamele video de pe YouTube, astfel încât să poți viziona videoclipuri fără întrerupere.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blocarea reclamelor pe YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blochează reclamele pe YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Semne de carte";
 
@@ -4568,3 +4638,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Permite redarea audio și video automată";
+"autoplay.mode.blockAll" = "Blochează redarea audio și video automată";
+"autoplay.mode.blockAudio" = "Blochează redarea audio automată";
+"settings.autoplay" = "Redare automată";
+"settings.autoplay.duck.player.link" = "Setări Duck Player";
+"settings.autoplay.footer" = "Setările de redare automată se vor aplica doar filelor nou deschise. Modificările nu pot fi aplicate filelor existente decât dacă aplicația este repornită. Pentru a gestiona redarea automată în Duck Player, accesează ";
+"settings.media.section" = "Media";

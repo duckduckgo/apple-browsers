@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Nustebink mane!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Sąraše raskite **DuckDuckGo**, tada bakstelėkite **Duck.ai balsas**, kad jį pridėtumėte.";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Sąraše raskite **DuckDuckGo**, tada palieskite **VPN valdymą**, kad jį pridėtumėte.";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Neseniai atlikti „YouTube“ pakeitimai turėjo įtakos „Duck Player“ funkcijoms. Stengiamės pašalinti šias triktis ir dėkojame už supratingumą.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Palieskite valdiklį, kad jį redaguotummėte, tada nustatykite **Duck.ai** ir **Duck.ai balsą** kaip savo sparčiuosius klavišus";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Suraskite ir pasirinkite **DuckDuckGo**, tada perbraukite į **Pasirinktiniai spartieji klavišai** ir pasirinkite **Pridėti valdiklį**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Pridėkite puslapio turinį";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Išsiųstas su jūsų žinute Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Pridėkite „Duck.ai“ balso sparčiuosius klavišus į savo valdymo centrą";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "„DuckDuckGo“ DI funkcijos yra privačios ir neprivalomos. Tavo duomenys nenaudojami dirbtinio intelekto mokymui.";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Užduokite papildomus klausimus";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Pridėti „Duck.ai“ į valdymo centrą";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Pridėti „Duck.ai“ valdiklį pagrindiniame ekrane";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Naršyklės šaukiniai";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Kalbėti su „Duck.ai“ per „Siri“";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adreso juosta";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "„iOS“ skirta „DuckDuckGo“";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Šaukiniai";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "„Siri“ spartieji klavišai leidžia jums pradėti „Duck.ai“ balso pokalbį naudojant greitą balso komandą, pavyzdžiui, „Siri, pradėk „DuckDuckGo“ balso pokalbį“. Tai greitas ir laisvų rankų nereikalaujantis būdas kalbėtis su „Duck.ai“.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, pradėk „DuckDuckGo“ balso pokalbį.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, kalbėk su „DuckDuckGo“.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, balso pokalbis su „DuckDuckGo“.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Kalbėkite su „Duck.ai“ naudodami „Siri“!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Pridėkite savo „DuckDuckGo“ prenumeratą prie šio įrenginio";
@@ -1578,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Tęsti su „Duck Player“";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Visada atidaryti „YouTube“ vaizdo įrašus per „Duck Player“";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Vaizdo įrašai, atidaryti „Duck Player“, bus automatiškai paleidžiami. Išjunk šią funkciją, jei nori rankiniu būdu paleisti „Duck Player“ atidarytų vaizdo įrašų atkūrimą.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatiškai paleidžiami vaizdo įrašai";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Atidaro vaizdo įrašus privačiu kino teatro režimu, kad tai, ką žiūri, nedarytų įtakos tavo „YouTube“ srautui.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Įjungti „Duck Player“";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentinis";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "„Duck Player“ leidžia žiūrėti „YouTube“ be tikslinių reklamų ir užtikrina, kad žiūrėjimo veikla nedarytų įtakos tavo rekomendacijoms.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "„DuckDuckGo“ suteikia visas pagrindines privatumą užtikrinančias priemones, kurių reikia norint apsisaugoti naršant internete.";
@@ -2084,6 +2135,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "„Airstream“";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Klasikinė pragariška ugnis";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "„Inferno“";
@@ -2781,6 +2835,9 @@
 "onboarding.skip.title" = "Supratau! Praleisiu kitus patarimus.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Išbandyk nemokamai!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Išbandyk nemokamai!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3060,9 +3117,6 @@
 "prompt.x-safari-https.try-open.title" = "Ši svetainė nori atsidaryti naršyklėje „Safari“.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "PERVADINTAS";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Naujausi apdorojimo žurnalai";
 
 /* No comment provided by engineer. */
@@ -3175,6 +3229,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Įtraukti valdiklį į pagrindinį ekraną";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Pridėkite „Duck.ai“ sparčiuosius klavišus pagrindiniame ekrane";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Pridėkite „DuckDuckGo“ VPN valdiklį prie pagrindinio ekrano";
@@ -3401,6 +3458,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Numatytoji naršyklė";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Numatytoji perjungiklio padėtis naujose kortelėse.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Perjungiklio padėtis";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Ištrinti „Duck.ai“ pokalbius";
 
@@ -4553,6 +4614,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Gaukite „DuckDuckGo“, skirtą „Windows“!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "„DuckDuckGo“ pašalina vaizdo įrašų reklamas „YouTube“ platformoje, todėl gali žiūrėti vaizdo įrašus be trikdžių.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "„YouTube“ reklamų blokavimas";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokuoti reklamas „YouTube“";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Žymės";
 
@@ -4568,3 +4638,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Leisti garsą ir vaizdą";
+"autoplay.mode.blockAll" = "Blokuoti garsą ir vaizdą";
+"autoplay.mode.blockAudio" = "Blokuoti garsą";
+"settings.autoplay" = "Automatinis paleidimas";
+"settings.autoplay.duck.player.link" = "„Duck Player“ nuostatos";
+"settings.autoplay.footer" = "Automatinio paleidimo nuostatos galios tik naujai atvertoms kortelėms. Pakeitimų negalima pritaikyti esamoms kortelėms iš naujo nepaleidus programos. Jei nori valdyti automatinį paleidimą „Duck Player“ programoje, eik į ";
+"settings.media.section" = "Medija";

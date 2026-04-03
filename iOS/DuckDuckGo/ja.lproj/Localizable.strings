@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "何が出るかな？";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "リストから**DuckDuckGo**を探し、**Duck.ai Voice**をタップして追加する";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "リストで**DuckDuckGo**を見つけて、**VPNコントロール**をタップして追加します";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playerの機能は、YouTubeの最近の変更の影響を受けています。これらの問題の解決に取り組んでいますので、ご理解のほどよろしくお願い申し上げます。";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "ウィジェットをタップして編集し、**Duck.ai**と**Duck.ai Voice**をショートカットとして設定する";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "**DuckDuckGo**を探して選択し、**Custom Shortcuts**までスワイプして、**Add Widget**を選択する";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "ページの内容を添付";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Duck.aiに送信するメッセージと一緒に送信されます";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "コントロールセンターにDuck.ai Voiceショートカットを追加する";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "フォローアップの質問をする";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Duck.aiをコントロールセンターに追加";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "ホーム画面にDuck.aiウィジェットを追加してください。";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "ブラウザのショートカット";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Siri経由でDuck.aiと話す";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "アドレスバー";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "iOS用DuckDuckGo";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "ショートカット";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siriショートカットを使用すると、素早い音声コマンドでDuck.aiボイスチャットを開始できます。これは、Duck.aiとハンズフリーで素早くチャットする方法です。";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri、DuckDuckGoボイスチャットを開始して。";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri、DuckDuckGoに話しかけてください。";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri、DuckDuckGoとボイスチャットして。";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Siriを使ってDuck.aiと話そう！";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "このデバイスにDuckDuckGoのサブスクリプションを追加";
@@ -1578,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Duck Playerで再開";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "YouTube動画を常にDuck Playerで開く";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playerで開いたビデオは自動的に再生を開始します。Duck Playerで開いたビデオの再生を手動で開始したい場合は、これをオフにしてください。";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "自動再生動画";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "動画をプライベートシアターモードで開くことで、視聴内容がYouTubeのフィードに影響するのを防ぎます。";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Duck Playerを有効にする";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "実験的";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Playerを使用すると、ターゲット広告なしでYouTubeを視聴でき、視聴アクティビティがおすすめに影響するのを防ぐことができます。";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGoは、Webを閲覧する際に自分自身を保護するために必要なプライバシーの基本をすべて提供します。";
@@ -2084,6 +2135,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "エアストリーム";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "インフェルノ・クラシック";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "インフェルノ";
@@ -2781,6 +2835,9 @@
 "onboarding.skip.title" = "了解！他のヒントはスキップします。";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "無料で試す";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "無料でお試しください。";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3060,9 +3117,6 @@
 "prompt.x-safari-https.try-open.title" = "このサイトはSafariで開こうとしています。";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "ブランド刷新";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "最近の処理ログ";
 
 /* No comment provided by engineer. */
@@ -3175,6 +3229,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "ホーム画面にウィジェットを追加";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "ホーム画面にDuck.aiショートカットを追加する";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "DuckDuckGo VPNウィジェットをホーム画面に追加";
@@ -3401,6 +3458,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "デフォルトのブラウザ";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "新しいタブでのデフォルトのトグル位置。";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "トグルの位置";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.aiのチャットを削除";
 
@@ -4553,6 +4614,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "DuckDuckGo for Windowsを入手！";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGoがYouTubeの動画広告を削除し、中断せずに動画を視聴できるようにします。";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube広告ブロック";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "YouTubeで広告をブロック";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "ブックマーク";
 
@@ -4568,3 +4638,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "オーディオとビデオを許可する";
+"autoplay.mode.blockAll" = "オーディオとビデオをブロックする";
+"autoplay.mode.blockAudio" = "オーディオをブロックする";
+"settings.autoplay" = "自動再生";
+"settings.autoplay.duck.player.link" = "Duck Player 設定";
+"settings.autoplay.footer" = "自動再生設定は新しく開いたタブにのみ適用されます。アプリケーションを再起動しない限り、既存のタブに変更を適用することはできません。Duck Playerで自動再生を管理するには、 ";
+"settings.media.section" = "メディア";

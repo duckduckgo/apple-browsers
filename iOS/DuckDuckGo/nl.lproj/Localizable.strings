@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Verras me!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Zoek **DuckDuckGo** in de lijst en tik vervolgens op **Duck.ai Voice** om toe te voegen.";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Zoek **DuckDuckGo** in de lijst en tik vervolgens op **VPN-bediening** om het toe te voegen.";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Recente wijzigingen in YouTube hebben invloed op de functionaliteit van Duck Player. We werken aan een oplossing voor deze problemen. Bedankt voor je begrip.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Tik op de widget om deze te bewerken en stel **Duck.ai** en **Duck.ai Voice** in als snelkoppelingen.";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Zoek en selecteer **DuckDuckGo**, veeg vervolgens naar **Aangepaste snelkoppelingen** en selecteer **Widget toevoegen**.";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Pagina-inhoud bijvoegen";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Wordt samen met je bericht naar Duck.ai gestuurd";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Voeg de Duck.ai spraaksneltoets toe aan je controlecentrum";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI-functies zijn privé en optioneel. Je gegevens worden niet gebruikt om AI te trainen.";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Stel vervolgvragen";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Duck.ai toevoegen aan het controlecentrum";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Duck.ai-widget toevoegen aan startscherm";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Browsersnelkoppelingen";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Bedien Duck.ai met Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresbalk";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo voor iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Sneltoetsen";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Met Siri Shortcuts kun je een Duck.ai-spraakchat starten met een snel spraakcommando, zoals \"Siri, start DuckDuckGo Voice Chat\". Het is een snelle, handsfree manier om met Duck.ai te chatten.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, start DuckDuckGo spraakchat.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, praat met DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, spraakchat met DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Praat met Duck.ai met behulp van Siri!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Voeg je DuckDuckGo-abonnement toe aan dit apparaat";
@@ -1578,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Hervatten in Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "YouTube-video's altijd openen in Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Video's die je in Duck Player opent, worden automatisch afgespeeld. Schakel deze functie uit als je het afspelen van video's in Duck Player handmatig wilt starten.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Video's automatisch afspelen";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Opent video's in een privébioscoopmodus die voorkomt dat wat je bekijkt je YouTube-feed beïnvloedt.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Duck Player inschakelen";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimenteel";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Met Duck Player kun je YouTube bekijken zonder gerichte advertenties en heeft je kijkactiviteit geen invloed op je aanbevelingen.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo biedt alle Privacy Essentials die je nodig hebt om jezelf te beschermen terwijl je op internet surft.";
@@ -2084,6 +2135,9 @@
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luchtstroom";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Vuurzee Klassiek";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Vuurzee";
@@ -2781,6 +2835,9 @@
 "onboarding.skip.title" = "Ik snap het! Ik sla de andere tips over.";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Probeer het gratis!";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Probeer het gratis!";
 
 /* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
@@ -3060,9 +3117,6 @@
 "prompt.x-safari-https.try-open.title" = "Deze site wil Safari openen.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "REBRANDED";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Recente verwerkingslogboeken";
 
 /* No comment provided by engineer. */
@@ -3175,6 +3229,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Widget toevoegen aan startscherm";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Voeg Duck.ai-snelkoppelingen toe aan je startscherm";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Voeg de DuckDuckGo VPN-widget toe aan je startscherm";
@@ -3401,6 +3458,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standaardbrowser";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Standaardpositie van de schakelaar op nieuwe tabbladen.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Schakelpositie";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.ai-chats verwijderen";
 
@@ -4553,6 +4614,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Download DuckDuckGo voor Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo verwijdert videoadvertenties op YouTube, zodat je ongestoord video's kunt bekijken.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blokkering van YouTube-advertenties";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Advertenties op YouTube blokkeren";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bladwijzers";
 
@@ -4568,3 +4638,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Audio en video toestaan";
+"autoplay.mode.blockAll" = "Audio en video blokkeren";
+"autoplay.mode.blockAudio" = "Audio blokkeren";
+"settings.autoplay" = "Automatisch afspelen";
+"settings.autoplay.duck.player.link" = "Duck Player-instellingen";
+"settings.autoplay.footer" = "Autoplay-instellingen gelden alleen voor nieuw geopende tabbladen. Wijzigingen kunnen niet worden toegepast op bestaande tabbladen, tenzij de applicatie opnieuw wordt opgestart. Ga om de automatische afspeelfunctie in Duck Player te beheren naar ";
+"settings.media.section" = "Media";

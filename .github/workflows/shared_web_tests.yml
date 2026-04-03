@@ -51,7 +51,7 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -59,7 +59,7 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Checkout shared web tests
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
         repository: duckduckgo/shared-web-tests
@@ -71,13 +71,43 @@ jobs:
         PROJECT_ROOT="$(pwd)"
         . iOS/scripts/shared_web_tests.sh
 
+    - name: Collect diagnostic logs on failure
+      if: failure() || cancelled()
+      run: |
+        set +e
+        mkdir -p tmp/diagnostics
+
+        echo "=== Searching for ddgdriver output.log files ==="
+        find . -name "output.log" -not -path "*/node_modules/*" 2>/dev/null | while read f; do
+          echo "Found: $f ($(wc -c < "$f") bytes)"
+          cp "$f" "tmp/diagnostics/ddgdriver_output_$(echo "$f" | tr '/' '_').log" 2>/dev/null || true
+        done
+
+        echo "=== Process snapshot ==="
+        ps -axo pid,ppid,command | grep -iE "duckduckgo|ddgdriver|wpt|simctl" > tmp/diagnostics/ios_processes.log 2>&1 || true
+
+        echo "=== Booted simulators ==="
+        xcrun simctl list devices booted -j 2>/dev/null > tmp/diagnostics/ios_booted_sims.json || true
+
+        UDID=$(xcrun simctl list devices booted -j 2>/dev/null \
+          | python3 -c "import sys,json; devs=[d for dl in json.load(sys.stdin).get('devices',{}).values() for d in dl if d.get('state')=='Booted']; print(devs[0]['udid'] if devs else '')" 2>/dev/null)
+        if [ -n "$UDID" ]; then
+          echo "Collecting app logs from simulator $UDID"
+          xcrun simctl spawn "$UDID" log show --last 15m --info --debug \
+            --predicate 'subsystem == "com.duckduckgo.mobile.ios"' \
+            --style compact > tmp/diagnostics/ios_simulator_app.log 2>&1 || true
+        fi
+
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
         name: iOS-BuildLogs
+        if-no-files-found: warn
         path: |
             tmp/test_out_*.log
+            tmp/shared-web-tests/**/output.log
+            tmp/diagnostics/
         retention-days: 7
 
   macos-shared-web-tests:
@@ -91,51 +121,18 @@ jobs:
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
       with:
-        ssh-private-key: |
-          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
-
-    - name: Setup Ruby and dependencies
-      uses: ./.github/actions/setup-ruby
-      with:
-        working-directory: macOS
-        cache-key-prefix: macos-ruby
-
-    - name: Sync code signing assets
-      id: sync-signing-first-attempt
-      continue-on-error: true
-      env:
-        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      working-directory: macOS
-      run: bundle exec fastlane sync_signing_ci
-
-    - name: Retry sync code signing assets
-      if: steps.sync-signing-first-attempt.outcome == 'failure'
-      env:
-        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      working-directory: macOS
-      run: |
-        echo "First attempt to sync code signing assets failed. Retrying..."
-        bundle exec fastlane sync_signing_ci
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
     - name: Checkout shared web tests
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
         repository: duckduckgo/shared-web-tests
@@ -150,11 +147,13 @@ jobs:
         fi
 
     - name: Build macOS app
+      # Debug configuration required: the automation server only starts when
+      # LaunchOptionsHandler.isWebDriverAutomationSession detects isDebugBuild.
       run: |
         xcodebuild build \
           -workspace DuckDuckGo.xcworkspace \
           -scheme "macOS Browser" \
-          -configuration CI \
+          -configuration Debug \
           -destination "platform=macOS" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
@@ -162,13 +161,16 @@ jobs:
           ONLY_ACTIVE_ARCH=YES \
           DEBUG_INFORMATION_FORMAT=dwarf \
           COMPILER_INDEX_STORE_ENABLE=NO \
-          DEPLOYMENT_LOCATION=NO
+          DEPLOYMENT_LOCATION=NO \
+          CODE_SIGNING_ALLOWED=NO
 
     - name: Build and run tests
+      shell: bash
       run: |
         cd tmp/shared-web-tests
         log_path="../../tmp/test_out_macos_$(date +"%Y%m%d_%H%M%S").log"
         mkdir -p "$(dirname "$log_path")"
+        touch "$log_path"
 
         if ! npm run build; then
           echo "npm build failed."
@@ -176,32 +178,56 @@ jobs:
         fi
 
         if ! grep -q "Start web-platform-tests hosts" /etc/hosts; then
-          sudo -- sh -c 'npm run install-hosts'
+          sudo -- sh -c 'npm run install-hosts' || true
         fi
 
-        pushd webdriver
-        cargo build
-        popd
-
-        MACOS_APP_PATH="$(pwd)/../../DerivedData/Build/Products/CI/DuckDuckGo.app"
+        MACOS_APP_PATH="$(pwd)/../../DerivedData/Build/Products/Debug/DuckDuckGo.app"
         export MACOS_APP_PATH
         export TARGET_PLATFORM=macos
 
-        source build/_venv3/bin/activate 2>/dev/null || true
+        set +e
+        source build/_venv3/bin/activate 2>/dev/null
+        set -e
         TARGET_PLATFORM=macos ./build/wpt run \
           --product duckduckgo \
           --binary webdriver/target/debug/ddgdriver \
           --log-mach - --log-mach-level info \
           duckduckgo \
-          2>&1 | tee "$log_path"
+          2>&1 | tee -a "$log_path"
+
+    - name: Collect diagnostic logs on failure
+      if: failure() || cancelled()
+      run: |
+        set +e
+        mkdir -p tmp/diagnostics
+
+        echo "=== Searching for ddgdriver output.log files ==="
+        find . -name "output.log" -not -path "*/node_modules/*" 2>/dev/null | while read f; do
+          echo "Found: $f ($(wc -c < "$f") bytes)"
+          cp "$f" "tmp/diagnostics/ddgdriver_output_$(echo "$f" | tr '/' '_').log" 2>/dev/null || true
+        done
+
+        echo "=== Process snapshot ==="
+        ps -axo pid,ppid,command | grep -iE "duckduckgo|ddgdriver|wpt" > tmp/diagnostics/macos_processes.log 2>&1 || true
+
+        echo "=== macOS app system logs ==="
+        log show --last 15m --info --debug \
+          --predicate 'subsystem == "com.duckduckgo.macos.browser" OR subsystem == "com.duckduckgo.macos.browser.debug"' \
+          --style compact > tmp/diagnostics/macos_app_system.log 2>&1 || true
+
+        echo "=== DerivedData build products ==="
+        ls -la DerivedData/Build/Products/Debug/ > tmp/diagnostics/macos_build_products.log 2>&1 || true
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
         name: macOS-BuildLogs
+        if-no-files-found: warn
         path: |
             tmp/test_out_*.log
+            tmp/shared-web-tests/**/output.log
+            tmp/diagnostics/
         retention-days: 7
 
   create-asana-task:
@@ -214,7 +240,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Create Asana task when workflow failed
         uses: duckduckgo/native-github-asana-sync@v1.1
         with:

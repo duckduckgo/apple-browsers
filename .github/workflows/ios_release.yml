@@ -76,7 +76,7 @@ jobs:
     steps:
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}

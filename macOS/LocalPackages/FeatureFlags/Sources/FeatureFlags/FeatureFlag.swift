@@ -154,6 +154,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Hide manual update option — always use automatic updates
     case automaticUpdatesOnly
 
+    /// Skip the automatic update check triggered when the release notes page loads
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1213741383383740
+    case skipReleaseNotesUpdateCheck
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
@@ -352,7 +356,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordsStatusBar,
              .aiChatSidebarFloating,
              .semaphoreAlwaysVisible,
-             .aiChatRemoveSuggestion:
+             .aiChatRemoveSuggestion,
+             .skipReleaseNotesUpdateCheck:
             .internalOnly
         default:
             .disabled
@@ -410,6 +415,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncFeatureLevel3,
                 .appStoreUpdateFlow,
                 .automaticUpdatesOnly,
+                .skipReleaseNotesUpdateCheck,
                 .unifiedURLPredictor,
                 .winBackOffer,
                 .syncCreditCards,
@@ -560,6 +566,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .automaticUpdatesOnly:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.automaticUpdatesOnly))
+        case .skipReleaseNotesUpdateCheck:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.skipReleaseNotesUpdateCheck))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .winBackOffer:

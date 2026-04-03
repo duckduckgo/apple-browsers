@@ -135,6 +135,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly
 
+    /// Skip the automatic update check triggered when the release notes page loads
+    case skipReleaseNotesUpdateCheck
+
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit

@@ -77,7 +77,8 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
                 .appStoreUpdateFlow,
-                .automaticUpdatesOnly:
+                .automaticUpdatesOnly,
+                .skipReleaseNotesUpdateCheck:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,

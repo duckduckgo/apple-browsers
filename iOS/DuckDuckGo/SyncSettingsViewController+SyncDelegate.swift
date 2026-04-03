@@ -202,12 +202,14 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
                 AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
+                self.enableAutoRestoreByDefaultIfNeeded()
                 self.refreshDevices(clearDevices: false)
                 ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast, onDidDismiss: {
                     optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
                 })
             } catch {
-                await self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncSignupError)
+                self.firePixelIfNeededFor(event: .syncSignupError, error: error)
+                ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
             }
         }
     }
@@ -330,6 +332,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             })
             let controller = DismissibleHostingController(rootView: readyView, onDismiss: { [weak self] in
                 self?.viewModel.clearPendingPreservedAccountContinuation()
+                self?.viewModel.isBusy = false
                 if self?.needsPreservedAccountCleanupBeforeServerOperation == false {
                     self?.autoRestorePromptSource = nil
                 }
@@ -629,7 +632,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
             }
         } else {
-            controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
+            if useSimplifiedLayout {
+                controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+            } else {
+                controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
+            }
         }
         
         let navController = UIDevice.current.userInterfaceIdiom == .phone

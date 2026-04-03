@@ -29,7 +29,7 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -118,7 +118,7 @@ jobs:
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4 # Don't need submodules here as this is only for the tests folder
+      uses: actions/checkout@v6 # Don't need submodules here as this is only for the tests folder
 
     - name: Start measuring duration
       id: start-duration
@@ -188,7 +188,7 @@ jobs:
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Create Asana task when workflow failed
       run: |
         curl -s "https://app.asana.com/api/1.0/tasks" \

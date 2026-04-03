@@ -114,6 +114,14 @@ final class SuggestionTrayManager: NSObject {
     
     // MARK: - Public Methods
 
+    func setSuggestionsSectionTitle(_ title: String?) {
+        suggestionTrayViewController?.setSuggestionsSectionTitle(title)
+    }
+
+    func setFavoritesSectionTitle(_ title: String?) {
+        suggestionTrayViewController?.setFavoritesSectionTitle(title)
+    }
+
     /// Installs the suggestion tray in the provided container view
     func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil) {
         guard suggestionTrayViewController == nil else { return }

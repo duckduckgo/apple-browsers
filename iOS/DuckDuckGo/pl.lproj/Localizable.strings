@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Zaskocz mnie!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Znajdź **DuckDuckGo** na liście, a następnie dotknij **Tryb głosowy Duck.ai**, aby go dodać";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Znajdź **DuckDuckGo** na liście, a następnie dotknij opcji **kontrola VPN**, aby ją dodać";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Ostatnie zmiany w serwisie YouTube miały wpływ na działanie Duck Player. Pracujemy nad rozwiązaniem tych problemów i dziękujemy za zrozumienie.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Stuknij widżet, aby go edytować, a następnie ustaw skróty **Duck.ai** i **Duck.ai Voice**";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Znajdź i zaznacz **DuckDuckGo**, a następnie przesuń palcem do **Niestandardowe skróty** i wybierz **Dodaj widżet**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Dołącz zawartość strony";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Wysyłane z Twoją wiadomością do Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Dodaj Duck.ai skrót głosowy do swojego Centrum Sterowania";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcje sztucznej inteligencji DuckDuckGo są prywatne i opcjonalne. Twoje dane nie są używane do trenowania AI.";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Zadawaj pytania uzupełniające";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Dodaj Duck.ai do Centrum Sterowania";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Dodaj widżet Duck.ai do ekranu głównego";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Skróty przeglądarki";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Porozmawiaj z Duck.ai za pomocą Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Pasek adresu";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo dla systemu iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Skróty";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Skróty Siri umożliwiają rozpoczęcie czatu głosowego Duck.ai za pomocą szybkiego polecenia głosowego, takiego jak \"Siri, uruchom czat głosowy DuckDuckGo\". To szybki sposób rozmawiania z Duck.ai bez użycia rąk.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, uruchom DuckDuckGo Voice Chat.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, porozmawiaj z DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, czat głosowy z DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Porozmawiaj z Duck.ai używając Siri!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Dodaj subskrypcję DuckDuckGo do tego urządzenia";
@@ -3190,6 +3229,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Dodaj widżet do ekranu głównego";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Dodaj skrót Duck.ai na ekran główny";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Dodaj widżet DuckDuckGo VPN do ekranu głównego";

@@ -1199,6 +1199,11 @@ class MainViewController: UIViewController {
 
             let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
             currentTab.borderView.bottomOffset = -bottomOffset
+        } else if isAnyAITabUTIState, let currentTab {
+            let inset = keyboardHeight > 0 ? baseInputHeight : 0
+            if currentTab.webView.scrollView.contentInset.bottom != inset {
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            }
         }
 
         if appSettings.currentAddressBarPosition.isBottom,
@@ -2127,7 +2132,6 @@ class MainViewController: UIViewController {
         viewCoordinator.tabBarContainer.isHidden = false
         viewCoordinator.toolbar.isHidden = true
         viewCoordinator.omniBar.enterPadState()
-        viewCoordinator.moveAddressBarToPosition(.top)
 
         swipeTabsCoordinator?.isEnabled = false
     }
@@ -2136,7 +2140,6 @@ class MainViewController: UIViewController {
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = false
         viewCoordinator.omniBar.enterPhoneState()
-        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         swipeTabsCoordinator?.isEnabled = true
     }
@@ -3072,26 +3075,20 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     var barsMaxHeight: CGFloat {
-        if viewCoordinator.toolbar.isHidden {
-            return viewCoordinator.omniBar.barView.expectedHeight
-        }
-        return max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
+        max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
     }
 
     // 1.0 - full size, 0.0 - hidden
     private func updateToolbarConstant(_ ratio: CGFloat) {
-        let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
+        var bottomHeight = toolbarHeight
+        if viewCoordinator.addressBarPosition.isBottom {
+            // When position is set to bottom, contentContainer is pinned to top
+            // of navigationBarContainer, hence the adjustment.
+            bottomHeight += viewCoordinator.navigationBarContainer.frame.height
+        }
+        bottomHeight += view.safeAreaInsets.bottom
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
-
-        if viewCoordinator.addressBarPosition.isBottom,
-           !viewCoordinator.isNavigationBarContainerBottomKeyboardBased,
-           !isAnyAITabUTIState {
-            // Push the navigation bar down independently so the content container
-            // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
-            let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
-            viewCoordinator.constraints.navigationBarContainerBottom.constant = navBarHeight * (1.0 - ratio)
-        }
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -5086,8 +5083,12 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
 
         case .AIChat:
             Pixel.fire(pixel: .voiceSearchAIChatDone)
-            performCancel()
-            openAIChat(query, autoSend: true)
+            if let coordinator = unifiedToggleInputCoordinator, coordinator.isAITabState, coordinator.hasBoundUserScript {
+                coordinator.submitVoicePrompt(query)
+            } else {
+                performCancel()
+                openAIChat(query, autoSend: true)
+            }
         }
     }
 }

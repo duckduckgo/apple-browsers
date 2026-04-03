@@ -58,7 +58,7 @@ jobs:
           ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -69,7 +69,7 @@ jobs:
         mode: start
 
     - name: Check out the PIR fake broker code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: DuckDuckGo/pir-fake-broker
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}

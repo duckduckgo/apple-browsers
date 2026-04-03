@@ -452,6 +452,7 @@
 		5F94A9DD9D48374FDBD4EC49 /* RebrandedAddToDockTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3E2B5140E5464B0AA21D09 /* RebrandedAddToDockTutorialView.swift */; };
 		6505529D2D6741BD0067D4F2 /* muteAudio.js in Resources */ = {isa = PBXBuildFile; fileRef = 650552962D673E440067D4F2 /* muteAudio.js */; };
 		650552A22D67768E0067D4F2 /* DuckPlayerEntryPillViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 650552A12D67768E0067D4F2 /* DuckPlayerEntryPillViewModel.swift */; };
+		652A1E08DFB4460E2E44DEAF /* WebViewInputAccessoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */; };
 		6526CA6D2D70CABD0048819E /* DuckPlayerMiniPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6526CA6C2D70CABD0048819E /* DuckPlayerMiniPillView.swift */; };
 		6526CA6F2D70CE2A0048819E /* DuckPlayerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6526CA6E2D70CE260048819E /* DuckPlayerState.swift */; };
 		6526CA712D70E0BB0048819E /* DuckPlayerViewUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6526CA702D70E0BB0048819E /* DuckPlayerViewUtils.swift */; };
@@ -4302,6 +4303,7 @@
 		BDFA663E2EB4186700F7801B /* HealthOverviewSectionPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthOverviewSectionPresenter.swift; sourceTree = "<group>"; };
 		BDFF03192BA39C5A00F324C9 /* NetworkProtectionFeatureVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionFeatureVisibility.swift; sourceTree = "<group>"; };
 		BDFF031C2BA3D2BD00F324C9 /* DefaultNetworkProtectionVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultNetworkProtectionVisibility.swift; sourceTree = "<group>"; };
+		BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewInputAccessoryTests.swift; sourceTree = "<group>"; };
 		C1056A552E253D98003220BA /* AutofillCredentialsImportPresentationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCredentialsImportPresentationManagerTests.swift; sourceTree = "<group>"; };
 		C106BAC22E4627E000DDF54A /* DaxEasterEggFullScreenViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggFullScreenViewController.swift; sourceTree = "<group>"; };
 		C106BAC42E4628DD00DDF54A /* DaxEasterEggZoomTransitionAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggZoomTransitionAnimator.swift; sourceTree = "<group>"; };
@@ -7123,6 +7125,7 @@
 				F1E092B31E92A6B900732CCC /* Core */,
 				F17843E81F36226700390DCD /* MockFiles */,
 				84E341AC1E2F7EFB00BDBA6F /* Info.plist */,
+				BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */,
 			);
 			name = UnitTests;
 			path = DuckDuckGoTests;
@@ -13211,6 +13214,7 @@
 				C1CDA31E2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift in Sources */,
 				9F7CFF7D2C89B69A0012833E /* AppIconPickerViewModelTests.swift in Sources */,
 				F189AED71F18F6DE001EBAE1 /* TabTests.swift in Sources */,
+				652A1E08DFB4460E2E44DEAF /* WebViewInputAccessoryTests.swift in Sources */,
 				C163DC962DC92FDC0026852D /* OnboardingSubscriptionPromotionHelpingTests.swift in Sources */,
 				CB596FF12ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */,

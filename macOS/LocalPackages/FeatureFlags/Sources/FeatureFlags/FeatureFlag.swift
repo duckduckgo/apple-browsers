@@ -329,341 +329,227 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    public var defaultValue: FeatureFlagDefaultValue {
-        switch self {
-        case .supportsAlternateStripePaymentFlow,
-                .refactorOfSyncPreferences,
-                .syncCreditCards,
-                .syncIdentities,
-                .dataImportNewSafariFilePicker,
-                .blurryAddressBarTahoeFix,
-                .firstTimeQuitSurvey,
-                .aiChatOmnibarOnboarding,
-                .autofillPasswordSearchPrioritizeDomain,
-                .warnBeforeQuit,
-                .wideEventPostEndpoint,
-                .crashCollectionLimitCallStackTreeDepth,
-                .memoryUsageReporting,
-                .aiChatSidebarResizable,
-                .aiChatChromeSidebar,
-                .nextStepsListWidget,
-                .webViewLookUpAction,
-                .promoQueue,
-                .lazyMenuRebuild,
-                .websitesHistoryFirstTimeQuitSurvey,
-                .screenTimeCleaning,
-                .addToDockAppStore,
-                .tabAnimations:
-            .enabled
-        case .autofillPasswordsStatusBar,
-             .aiChatSidebarFloating,
-             .semaphoreAlwaysVisible,
-             .aiChatRemoveSuggestion:
-            .internalOnly
-        default:
-            .disabled
+    private struct Config {
+        let defaultValue: FeatureFlagDefaultValue
+        let source: FeatureFlagSource
+        let supportsLocalOverriding: Bool
+        let cohortType: (any FeatureFlagCohortDescribing.Type)?
+        let category: FeatureFlagCategory
+
+        init(
+            defaultValue: FeatureFlagDefaultValue = .disabled,
+            source: FeatureFlagSource,
+            supportsLocalOverriding: Bool = true,
+            cohortType: (any FeatureFlagCohortDescribing.Type)? = nil,
+            category: FeatureFlagCategory = .other
+        ) {
+            self.defaultValue = defaultValue
+            self.source = source
+            self.supportsLocalOverriding = supportsLocalOverriding
+            self.cohortType = cohortType
+            self.category = category
         }
     }
 
-    public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
+    private var config: Config {
         switch self {
-        case .heuristicAction:
-            return HeuristicActionCohort.self
-        default:
-            return nil
-        }
-    }
-
-    public var supportsLocalOverriding: Bool {
-        switch self {
-        case .autofillPartialFormSaves,
-                .networkProtectionAppStoreSysex,
-                .networkProtectionAppStoreSysexMessage,
-                .syncSeamlessAccountSwitching,
-                .webExtensions,
-                .embeddedExtension,
-                .forceDarkModeOnWebsites,
-                .adBlockingExtension,
-                .autoUpdateInDEBUG,
-                .autoUpdateInREVIEW,
-                .scamSiteProtection,
-                .tabCrashDebugging,
-                .maliciousSiteProtection,
-                .delayedWebviewPresentation,
-                .syncSetupBarcodeIsUrlBased,
-                .paidAIChat,
-                .exchangeKeysToSyncWithAnotherDevice,
-                .canScanUrlBasedSyncSetupBarcodes,
-                .osSupportForceUnsupportedMessage,
-                .osSupportForceWillSoonDropSupportMessage,
-                .willSoonDropBigSurSupport,
-                .hangReporting,
-                .aiChatPageContext,
-                .aiChatKeepSession,
-                .aiChatOmnibarToggle,
-                .aiChatOmnibarCluster,
-                .aiChatSuggestions,
-                .aiChatOmnibarTools,
-                .aiChatOmnibarOnboarding,
-                .newTabPageOmnibar,
-                .newTabPageTabIDs,
-                .supportsAlternateStripePaymentFlow,
-                .refactorOfSyncPreferences,
-                .newSyncEntryPoints,
-                .dbpEmailConfirmationDecoupling,
-                .dbpRemoteBrokerDelivery,
-                .dbpClickActionDelayReductionOptimization,
-                .dbpWebViewUserAgent,
-                .syncFeatureLevel3,
-                .appStoreUpdateFlow,
-                .automaticUpdatesOnly,
-                .unifiedURLPredictor,
-                .winBackOffer,
-                .syncCreditCards,
-                .syncIdentities,
-                .dataImportNewSafariFilePicker,
-                .storeSerpSettings,
-                .blurryAddressBarTahoeFix,
-                .dataImportNewExperience,
-                .attributedMetrics,
-                .showHideAIGeneratedImagesSection,
-                .standaloneMigration,
-                .blackFridayCampaign,
-                .allowProTierPurchase,
-                .popupBlocking,
-                .webNotifications,
-                .newPermissionView,
-                .firstTimeQuitSurvey,
-                .autofillPasswordSearchPrioritizeDomain,
-                .autofillPasswordsStatusBar,
-                .warnBeforeQuit,
-                .memoryUsageMonitor,
-                .memoryUsageReporting,
-                .aiChatSync,
-                .heuristicAction,
-                .nextStepsListWidget,
-                .nextStepsListAdvancedCardOrdering,
-                .wideEventPostEndpoint,
-                .freeTrialConversionWideEvent,
-                .supportsSyncChatsDeletion,
-                .aiChatMultiplePageContexts,
-                .aiChatSidebarResizable,
-                .aiChatNtpRecentChats,
-                .aiChatSidebarFloating,
-                .privateProcessName,
-                .tabSuspensionDebugging,
-                .tabSuspension,
-                .aiChatChromeSidebar,
-                .webViewLookUpAction,
-                .promoQueue,
-                .semaphoreAlwaysVisible,
-                .tabAnimations,
-                .aiChatRemoveSuggestion,
-                .lazyMenuRebuild,
-                .websitesHistoryFirstTimeQuitSurvey,
-                .addToDockAppStore,
-                .screenTimeCleaning,
-                .onboardingRebranding:
-            return true
-        case .freemiumDBP,
-                .contextualOnboarding,
-                .unknownUsernameCategorization,
-                .credentialsImportPromotionForExistingUsers,
-                .crashCollectionLimitCallStackTreeDepth:
-            return false
-        }
-    }
-
-    public var source: FeatureFlagSource {
-        switch self {
-        case .unknownUsernameCategorization:
-            return .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization))
-        case .freemiumDBP:
-            return .remoteReleasable(.subfeature(DBPSubfeature.freemium))
         case .maliciousSiteProtection:
-            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
-        case .contextualOnboarding:
-            return .remoteReleasable(.feature(.contextualOnboarding))
-        case .credentialsImportPromotionForExistingUsers:
-            return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
-        case .networkProtectionAppStoreSysex:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
-        case .networkProtectionAppStoreSysexMessage:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
-        case .autoUpdateInDEBUG:
-            return .disabled
-        case .autoUpdateInREVIEW:
-            return .disabled
-        case .autofillPartialFormSaves:
-            return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
-        case .webExtensions:
-            return .remoteReleasable(.feature(.webExtensions))
-        case .embeddedExtension:
-            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
-        case .forceDarkModeOnWebsites:
-            return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
-        case .adBlockingExtension:
-            return .remoteReleasable(.feature(.adBlockingExtension))
-        case .syncSeamlessAccountSwitching:
-            return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
-        case .syncCreditCards:
-            return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
-        case .syncIdentities:
-            return .remoteReleasable(.subfeature(SyncSubfeature.syncIdentities))
+            Config(source: .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault)))
         case .scamSiteProtection:
-            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
-        case .tabCrashDebugging:
-            return .disabled
-        case .delayedWebviewPresentation:
-            return .remoteReleasable(.feature(.delayedWebviewPresentation))
-        case .dbpRemoteBrokerDelivery:
-            return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
-        case .dbpEmailConfirmationDecoupling:
-            return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
-        case .dbpClickActionDelayReductionOptimization:
-            return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
-        case .dbpWebViewUserAgent:
-            return .remoteReleasable(.subfeature(DBPSubfeature.webViewUserAgent))
-        case .syncSetupBarcodeIsUrlBased:
-            return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
-        case .exchangeKeysToSyncWithAnotherDevice:
-            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
-        case .canScanUrlBasedSyncSetupBarcodes:
-            return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
-        case .paidAIChat:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
-        case .aiChatPageContext:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
-        case .aiChatKeepSession:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
-        case .aiChatOmnibarToggle:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarToggle))
-        case .aiChatOmnibarCluster:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
-        case .aiChatSuggestions:
-            return .remoteReleasable(.feature(.duckAiChatHistory))
-        case .aiChatOmnibarTools:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools))
-        case .aiChatOmnibarOnboarding:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
-        case .osSupportForceUnsupportedMessage:
-            return .disabled
-        case .osSupportForceWillSoonDropSupportMessage:
-            return .disabled
-        case .willSoonDropBigSurSupport:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
-        case .hangReporting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
-        case .newTabPageOmnibar:
-            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
-        case .newTabPageTabIDs:
-            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPageTabIDs))
-        case .supportsAlternateStripePaymentFlow:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
-        case .refactorOfSyncPreferences:
-            return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
-        case .newSyncEntryPoints:
-            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
-        case .syncFeatureLevel3:
-            return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
-        case .appStoreUpdateFlow:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
-        case .automaticUpdatesOnly:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.automaticUpdatesOnly))
-        case .unifiedURLPredictor:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .winBackOffer:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
-        case .blackFridayCampaign:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
-        case .dataImportNewSafariFilePicker:
-            return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
-        case .storeSerpSettings:
-            return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
-        case .blurryAddressBarTahoeFix:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
-        case .dataImportNewExperience:
-            return .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience))
-        case .attributedMetrics:
-            return .remoteReleasable(.feature(.attributedMetrics))
-        case .showHideAIGeneratedImagesSection:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
-        case .standaloneMigration:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
-        case .allowProTierPurchase:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
-        case .popupBlocking:
-            return .remoteReleasable(.feature(.popupBlocking))
-        case .webNotifications:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
-        case .newPermissionView:
-            return .remoteReleasable(.feature(.combinedPermissionView))
-        case .firstTimeQuitSurvey:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
-        case .autofillPasswordSearchPrioritizeDomain:
-            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
-        case .autofillPasswordsStatusBar:
-            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordsStatusBar))
-        case .warnBeforeQuit:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
-        case .memoryUsageMonitor:
-            return .disabled
-        case .memoryUsageReporting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
-        case .aiChatSync:
-            return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
-        case .heuristicAction:
-            return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
-        case .nextStepsListWidget:
-            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.nextStepsListWidget))
-        case .nextStepsListAdvancedCardOrdering:
-            return .disabled
-        case .wideEventPostEndpoint:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
-        case .crashCollectionLimitCallStackTreeDepth:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
-        case .freeTrialConversionWideEvent:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
-        case .supportsSyncChatsDeletion:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
-        case .aiChatMultiplePageContexts:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
-        case .aiChatSidebarResizable:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
-        case .aiChatNtpRecentChats:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
-        case .aiChatSidebarFloating:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating))
-        case .privateProcessName:
-            return .disabled
-        case .aiChatChromeSidebar:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
-        case .webViewLookUpAction:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .semaphoreAlwaysVisible:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
-        case .promoQueue:
-            return .remoteReleasable(.feature(.promoQueue))
-        case .websitesHistoryFirstTimeQuitSurvey:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
-        case .tabAnimations:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations))
-        case .lazyMenuRebuild:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
-        case .addToDockAppStore:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addToDockAppStore))
-        case .aiChatRemoveSuggestion:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion))
-        case .screenTimeCleaning:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning))
+            Config(source: .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection)))
+        case .freemiumDBP:
+            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.freemium)), supportsLocalOverriding: false)
+        case .contextualOnboarding:
+            Config(source: .remoteReleasable(.feature(.contextualOnboarding)), supportsLocalOverriding: false)
         case .onboardingRebranding:
-            return .disabled
+            Config(source: .disabled)
+        case .unknownUsernameCategorization:
+            Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization)), supportsLocalOverriding: false)
+        case .credentialsImportPromotionForExistingUsers:
+            Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers)), supportsLocalOverriding: false)
+        case .networkProtectionAppStoreSysex:
+            Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension)), category: .vpn)
+        case .networkProtectionAppStoreSysexMessage:
+            Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage)), category: .vpn)
+        case .autoUpdateInDEBUG:
+            Config(source: .disabled, category: .updates)
+        case .autoUpdateInREVIEW:
+            Config(source: .disabled, category: .updates)
+        case .autofillPartialFormSaves:
+            Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves)))
+        case .webExtensions:
+            Config(source: .remoteReleasable(.feature(.webExtensions)), category: .webExtensions)
+        case .embeddedExtension:
+            Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)), category: .webExtensions)
+        case .adBlockingExtension:
+            Config(source: .remoteReleasable(.feature(.adBlockingExtension)), category: .webExtensions)
+        case .forceDarkModeOnWebsites:
+            Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)), category: .webExtensions)
+        case .syncSeamlessAccountSwitching:
+            Config(source: .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching)), category: .sync)
+        case .tabCrashDebugging:
+            Config(source: .disabled)
+        case .delayedWebviewPresentation:
+            Config(source: .remoteReleasable(.feature(.delayedWebviewPresentation)))
+        case .dbpRemoteBrokerDelivery:
+            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery)), category: .dbp)
+        case .dbpEmailConfirmationDecoupling:
+            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling)), category: .dbp)
+        case .dbpClickActionDelayReductionOptimization:
+            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization)), category: .dbp)
+        case .dbpWebViewUserAgent:
+            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.webViewUserAgent)), category: .dbp)
+        case .syncSetupBarcodeIsUrlBased:
+            Config(source: .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased)), category: .sync)
+        case .exchangeKeysToSyncWithAnotherDevice:
+            Config(source: .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice)), category: .sync)
+        case .canScanUrlBasedSyncSetupBarcodes:
+            Config(source: .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes)), category: .sync)
+        case .paidAIChat:
+            Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat)), category: .subscription)
+        case .aiChatPageContext:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.pageContext)), category: .duckAI)
+        case .aiChatKeepSession:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.keepSession)), category: .duckAI)
+        case .aiChatOmnibarToggle:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarToggle)), category: .duckAI)
+        case .aiChatOmnibarCluster:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster)), category: .duckAI)
+        case .aiChatSuggestions:
+            Config(source: .remoteReleasable(.feature(.duckAiChatHistory)), category: .duckAI)
+        case .aiChatOmnibarTools:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools)), category: .duckAI)
+        case .aiChatOmnibarOnboarding:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding)), category: .duckAI)
+        case .osSupportForceUnsupportedMessage:
+            Config(source: .disabled, category: .osSupportWarnings)
+        case .osSupportForceWillSoonDropSupportMessage:
+            Config(source: .disabled, category: .osSupportWarnings)
+        case .willSoonDropBigSurSupport:
+            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport)), category: .osSupportWarnings)
+        case .hangReporting:
+            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting)))
+        case .newTabPageOmnibar:
+            Config(source: .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar)))
+        case .newTabPageTabIDs:
+            Config(source: .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPageTabIDs)))
+        case .supportsAlternateStripePaymentFlow:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow)), category: .subscription)
+        case .refactorOfSyncPreferences:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences)))
+        case .newSyncEntryPoints:
+            Config(source: .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints)))
+        case .syncFeatureLevel3:
+            Config(source: .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount)))
+        case .appStoreUpdateFlow:
+            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow)), category: .updates)
+        case .automaticUpdatesOnly:
+            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.automaticUpdatesOnly)), category: .updates)
+        case .unifiedURLPredictor:
+            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor)))
+        case .winBackOffer:
+            Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer)), category: .vpn)
+        case .blackFridayCampaign:
+            Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign)), category: .subscription)
+        case .syncCreditCards:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards)))
+        case .syncIdentities:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(SyncSubfeature.syncIdentities)))
+        case .dataImportNewSafariFilePicker:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker)))
+        case .storeSerpSettings:
+            Config(source: .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings)))
+        case .blurryAddressBarTahoeFix:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix)))
+        case .dataImportNewExperience:
+            Config(source: .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience)))
+        case .attributedMetrics:
+            Config(source: .remoteReleasable(.feature(.attributedMetrics)))
+        case .showHideAIGeneratedImagesSection:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages)))
+        case .standaloneMigration:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration)), category: .duckAI)
+        case .allowProTierPurchase:
+            Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase)), category: .subscription)
+        case .popupBlocking:
+            Config(source: .remoteReleasable(.feature(.popupBlocking)), category: .popupBlocking)
+        case .webNotifications:
+            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications)), category: .webNotifications)
+        case .newPermissionView:
+            Config(source: .remoteReleasable(.feature(.combinedPermissionView)))
+        case .firstTimeQuitSurvey:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey)))
+        case .autofillPasswordSearchPrioritizeDomain:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain)))
+        case .autofillPasswordsStatusBar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordsStatusBar)))
+        case .warnBeforeQuit:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit)))
+        case .memoryUsageMonitor:
+            Config(source: .disabled)
+        case .memoryUsageReporting:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting)))
+        case .aiChatSync:
+            Config(source: .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync)))
+        case .heuristicAction:
+            Config(source: .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction)), cohortType: HeuristicActionCohort.self)
+        case .nextStepsListWidget:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.nextStepsListWidget)))
+        case .nextStepsListAdvancedCardOrdering:
+            Config(source: .disabled)
+        case .wideEventPostEndpoint:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint)))
+        case .crashCollectionLimitCallStackTreeDepth:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth)), supportsLocalOverriding: false)
+        case .freeTrialConversionWideEvent:
+            Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
+        case .supportsSyncChatsDeletion:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
+        case .aiChatMultiplePageContexts:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts)), category: .duckAI)
+        case .aiChatSidebarResizable:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable)), category: .duckAI)
+        case .aiChatNtpRecentChats:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats)), category: .duckAI)
+        case .aiChatSidebarFloating:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating)), category: .duckAI)
+        case .privateProcessName:
+            Config(source: .disabled)
+        case .aiChatChromeSidebar:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebar)), category: .duckAI)
+        case .webViewLookUpAction:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction)))
+        case .semaphoreAlwaysVisible:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible)))
+        case .promoQueue:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.feature(.promoQueue)))
+        case .websitesHistoryFirstTimeQuitSurvey:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey)))
+        case .tabAnimations:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabAnimations)))
+        case .lazyMenuRebuild:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.lazyMenuRebuild)))
+        case .addToDockAppStore:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.addToDockAppStore)))
+        case .aiChatRemoveSuggestion:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion)), category: .duckAI)
+        case .screenTimeCleaning:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning)))
         case .tabSuspension:
-            return .disabled
+            Config(source: .disabled)
         case .tabSuspensionDebugging:
-            return .disabled
+            Config(source: .disabled)
         }
     }
+
+    public var defaultValue: FeatureFlagDefaultValue { config.defaultValue }
+    public var source: FeatureFlagSource { config.source }
+    public var supportsLocalOverriding: Bool { config.supportsLocalOverriding }
+    public var cohortType: (any FeatureFlagCohortDescribing.Type)? { config.cohortType }
+}
+
+extension FeatureFlag: FeatureFlagCategorization {
+    public var category: FeatureFlagCategory { config.category }
 }
 
 public extension FeatureFlagger {

@@ -194,8 +194,8 @@ func inlineTextItems(from text: String, replacing replacements: [String: any Inl
 
 /// Parses an attributed string into inline segments, converting `NSTextAttachment` runs into inline images.
 ///
-/// Non-attachment runs are preserved as `.attributed` segments, and attachments without a platform image
-/// fall back to `.attributed` so content is not dropped.
+/// Non-attachment runs are preserved as `.attributed` segments. Attachments without an image are converted
+/// into transparent placeholder images sized from attachment bounds, preserving inline spacing.
 func inlineTextItems(from attributedString: NSAttributedString) -> [InlineTextItem] {
     guard attributedString.length > 0 else {
         return [.text("")]
@@ -212,7 +212,7 @@ func inlineTextItems(from attributedString: NSAttributedString) -> [InlineTextIt
             items.append(.attributed(attributedString.attributedSubstring(from: range)))
             return
         }
-        guard let image = attachment.platformImage else { return }
+        guard let image = attachment.platformImage ?? placeholderImage(for: attachment.bounds.size) else { return }
 
         // Preserve vertical alignment configured on the attachment itself.
         let attributes = attributedString.attributes(at: range.location, effectiveRange: nil)
@@ -225,6 +225,20 @@ func inlineTextItems(from attributedString: NSAttributedString) -> [InlineTextIt
     }
 
     return items
+}
+
+private func placeholderImage(for size: CGSize) -> PlatformImageType? {
+    let normalizedSize = CGSize(width: max(size.width, 0), height: max(size.height, 1) )
+    guard normalizedSize.width > 0, normalizedSize.height > 0 else { return nil }
+#if os(iOS)
+    let renderer = UIGraphicsImageRenderer(size: normalizedSize)
+    return renderer.image { _ in
+        UIColor.clear.setFill()
+        UIBezierPath(rect: CGRect(origin: .zero, size: normalizedSize)).fill()
+    }
+#elseif os(macOS)
+    return NSImage(size: normalizedSize)
+#endif
 }
 
 private func foregroundColor(from attributes: [NSAttributedString.Key: Any]) -> Color? {

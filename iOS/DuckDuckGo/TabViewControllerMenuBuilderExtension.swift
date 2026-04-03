@@ -193,8 +193,12 @@ extension TabViewController {
     }
     
     private func buildNewTabEntry() -> BrowsingMenuEntry {
+        return tabModel.fireTab ? buildNewFireTabEntry() : buildNewNormalTabEntry()
+    }
+    
+    private func buildNewNormalTabEntry() -> BrowsingMenuEntry {
         let title = tabModel.fireTab ? UserText.actionNewFireTab : UserText.actionNewTab
-        return .regular(name: title,
+        return .regular(name: UserText.actionNewTab,
                         accessibilityLabel: UserText.keyCommandNewTab,
                         image: DesignSystemImages.Glyphs.Size24.add,
                         action: { [weak self] in
@@ -202,6 +206,16 @@ extension TabViewController {
         })
     }
     
+    private func buildNewFireTabEntry() -> BrowsingMenuEntry {
+        let title = tabModel.fireTab ? UserText.actionNewFireTab : UserText.actionNewTab
+        return .regular(name: UserText.actionNewFireTab,
+                        accessibilityLabel: UserText.actionNewFireTab,
+                        image: DesignSystemImages.Glyphs.Size24.add,
+                        action: { [weak self] in
+            self?.onNewFireTabAction()
+        })
+    }
+
     private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionDownloads,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
@@ -382,6 +396,7 @@ extension TabViewController {
     }
     
     private func onNewFireTabAction() {
+        // TODO: - Add pixel
         delegate?.tabDidRequestNewTab(self)
     }
 

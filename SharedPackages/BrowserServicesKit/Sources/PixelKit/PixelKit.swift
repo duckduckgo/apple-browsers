@@ -720,14 +720,14 @@ public final class PixelKit {
     }
 
     private func fireStorageWriteErrorPixel(suppressedPixelName: String, error: Error) {
-        let platformSuffix: String
+        let pixelName: String
         switch source {
         case Source.iOS.rawValue:
-            platformSuffix = "_ios_phone"
+            pixelName = "m_pixel_fire_suppressed_storage_error_ios_phone"
         case Source.iPadOS.rawValue:
-            platformSuffix = "_ios_tablet"
+            pixelName = "m_pixel_fire_suppressed_storage_error_ios_tablet"
         default:
-            platformSuffix = "_macos"
+            pixelName = "m_mac_pixel_fire_suppressed_storage_error"
         }
 
         var params: [String: String] = ["suppressedPixel": suppressedPixelName]
@@ -735,7 +735,7 @@ public final class PixelKit {
         params.appendErrorPixelParams(error: error as NSError)
 
         fireRequestWrapper(
-            "m_pixel_fire_suppressed_storage_error" + platformSuffix,
+            pixelName,
             defaultHeaders,
             params,
             nil,

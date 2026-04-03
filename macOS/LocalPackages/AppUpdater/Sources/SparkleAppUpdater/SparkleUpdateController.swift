@@ -498,7 +498,9 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     @objc public func runUpdateFromMenuItem() {
-        openUpdatesPage()
+        if !featureFlagger.isFeatureOn(.skipReleaseNotesUpdateCheck) {
+            openUpdatesPage()
+        }
         runUpdate()
     }
 

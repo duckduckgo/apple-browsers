@@ -90,7 +90,12 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureSearchExperienceSelectionImpression()
     func measureChooseAIChat()
     func measureChooseSearchOnly()
+    func measureDuckAIQueryExperimentSelectionImpression()
+    func measureDuckAIQueryExperimentChooseSearchOnly()
+    func measureDuckAIQueryExperimentChooseAIChat()
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource)
 }
+
 
 protocol OnboardingCustomInteractionPixelReporting {
     func measureCustomSearch()
@@ -107,11 +112,14 @@ protocol OnboardingDaxDialogsReporting {
     func measureTryVisitSiteDialogDismissButtonTapped()
     func measureTrackersDialogDismissButtonTapped()
     func measureFireDialogDismissButtonTapped()
+    func measureDuckAIExperimentFireButtonCTAAction()
+    func measureDuckAIExperimentFinalDialogImpression()
     func measureEndOfJourneyDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogDismissButtonTapped()
     func measureSubscriptionDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
 }
+
 
 protocol OnboardingAddToDockReporting {
     func measureAddToDockPromoImpression()
@@ -180,6 +188,13 @@ final class OnboardingPixelReporter {
 
 }
 
+enum DuckAIQueryExperimentPromptSource: String {
+    case custom
+    case option1
+    case option2
+    case option3
+}
+
 // MARK: - Fire Enqueued Pixels
 
 extension OnboardingPixelReporter {
@@ -195,6 +210,14 @@ extension OnboardingPixelReporter {
 // MARK: - OnboardingPixelReporter + Intro
 
 extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
+    private enum DuckAIQueryExperimentMetric {
+        enum Name: String {
+            case search = "search_type"
+            case aiChat = "aichat_type"
+        }
+        // TODO: validate from the Experiment Design
+        static let conversionWindow: ConversionWindow = 0...0
+    }
 
     func measureSkipOnboardingCTAAction() {
         fire(event: .onboardingIntroSkipOnboardingCTAPressed, unique: false)
@@ -259,6 +282,36 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureChooseSearchOnly() {
         fire(event: .onboardingIntroSearchOnlySelected, unique: false)
     }
+
+    func measureDuckAIQueryExperimentSelectionImpression() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleImpressionUnique, unique: true)
+    }
+
+    func measureDuckAIQueryExperimentChooseSearchOnly() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedSearch, unique: false)
+    }
+
+    func measureDuckAIQueryExperimentChooseAIChat() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedAI, unique: false)
+    }
+
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+        let metricName: DuckAIQueryExperimentMetric.Name
+        switch selection {
+        case .duckAI:
+            metricName = .aiChat
+        case .search:
+            metricName = .search
+        }
+
+        experimentPixel.fireExperimentPixel(
+            for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+            metric: metricName.rawValue,
+            conversionWindowDays: DuckAIQueryExperimentMetric.conversionWindow,
+            value: promptSource.rawValue
+        )
+    }
+
 }
 
 // MARK: - OnboardingPixelReporter + Custom Interaction
@@ -322,6 +375,14 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureFireDialogDismissButtonTapped() {
         fire(event: .onboardingFireDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureDuckAIExperimentFireButtonCTAAction() {
+        fire(event: .onboardingDuckAIExperimentFireButtonCTAPressed, unique: false)
+    }
+
+    func measureDuckAIExperimentFinalDialogImpression() {
+        fire(event: .onboardingDuckAIExperimentFinalDialogShownUnique, unique: true)
     }
 
     func measureEndOfJourneyDialogNewTabDismissButtonTapped() {

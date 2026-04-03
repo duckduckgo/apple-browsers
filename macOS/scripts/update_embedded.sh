@@ -9,7 +9,8 @@ base_dir="${script_dir}/.."
 # The following URLs shall match the ones in AppConfigurationURLprovider.swift.
 # Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
 TDS_URL="https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds.json"
-CONFIG_URL="https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json"
+# TODO(rollback): Revert this temporary PR override URL after privacy-configuration PR #4630 is merged.
+CONFIG_URL="https://duckduckgo.github.io/privacy-configuration/pr-4630/v4/macos-config.json"
 
 DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=combined"
 

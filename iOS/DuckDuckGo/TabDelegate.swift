@@ -152,5 +152,5 @@ extension TabDelegate {
     func tabDidRequestClose(_ tab: TabViewController) {
         tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
     }
-    
+
 }

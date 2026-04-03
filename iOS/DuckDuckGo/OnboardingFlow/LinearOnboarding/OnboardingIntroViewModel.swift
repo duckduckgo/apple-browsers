@@ -24,7 +24,7 @@ import Foundation
 import Onboarding
 import SystemSettingsPiPTutorial
 import SetDefaultBrowserCore
-import AIChat
+import PrivacyConfig
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
@@ -93,9 +93,9 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     let copy: Copy
     var onCompletingOnboardingIntro: (() -> Void)?
-    private var introSteps: [OnboardingIntroStep] {
-        onboardingManager.onboardingSteps
-    }
+    var onOpenAIChatFromOnboarding: ((String?, Bool) -> Void)?
+    var onSearchFromOnboarding: ((String) -> Void)?
+    private var introSteps: [OnboardingIntroStep]
     private var currentIntroStep: OnboardingIntroStep
 
     private let defaultBrowserManager: DefaultBrowserManaging
@@ -106,6 +106,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
+    private let featureFlagger: FeatureFlagger
     private let restorePromptHandler: OnboardingRestorePromptHandling
     private let tutorialSettings: TutorialSettings
 
@@ -128,6 +129,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: { AppIconManager.shared.appIcon },
             addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition },
+            featureFlagger: AppDependencyProvider.shared.featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: DefaultTutorialSettings()
         )
@@ -143,6 +145,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider,
         appIconProvider: @escaping () -> AppIcon,
         addressBarPositionProvider: @escaping () -> AddressBarPosition,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         restorePromptHandler: OnboardingRestorePromptHandling,
         tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
@@ -154,11 +157,19 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.appIconProvider = appIconProvider
         self.addressBarPositionProvider = addressBarPositionProvider
+        self.featureFlagger = featureFlagger
         self.restorePromptHandler = restorePromptHandler
         self.tutorialSettings = tutorialSettings
 
+        introSteps = onboardingManager.onboardingSteps
         currentIntroStep = currentOnboardingStep
         copy = .default
+
+        // TODO: Temporary override for dev validation; remove when onboarding should no longer launch on every app start.
+        // let forcedExperimentStep: OnboardingIntroStep = .searchExperienceSelection
+        // introSteps = [forcedExperimentStep]
+        // currentIntroStep = forcedExperimentStep
+
     }
 
     func onAppear() {
@@ -226,14 +237,49 @@ final class OnboardingIntroViewModel: ObservableObject {
     func selectSearchExperienceAction() {
         if onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding {
             pixelReporter.measureChooseAIChat()
+            insertExperimentStepIfNeeded()
         } else {
             pixelReporter.measureChooseSearchOnly()
         }
         makeNextViewState()
     }
 
+    func selectDuckAIQueryExperimentAction(selection: DuckAIQueryExperimentMode) {
+        switch selection {
+        case .duckAI:
+            pixelReporter.measureDuckAIQueryExperimentChooseAIChat()
+        case .search:
+            pixelReporter.measureDuckAIQueryExperimentChooseSearchOnly()
+        }
+        makeNextViewState()
+    }
+
     func tapped() {
         isSkipped = true
+    }
+
+    func openAIChatFromOnboarding(prompt: String?, autoSend: Bool) {
+        onOpenAIChatFromOnboarding?(prompt, autoSend)
+    }
+
+    func searchFromOnboarding(query: String) {
+        onSearchFromOnboarding?(query)
+    }
+
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+        pixelReporter.measureDuckAIQueryExperimentQuerySubmission(
+            selection: selection,
+            promptSource: promptSource
+        )
+    }
+
+    var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode {
+        switch resolveDuckAIQueryExperimentCohortID() {
+        case .treatmentB:
+            .search
+        case .treatmentA, .control, .none:
+            .duckAI
+        }
     }
 
     func restoreSyncAccountAction() {
@@ -286,6 +332,8 @@ private extension OnboardingIntroViewModel {
             OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
         case .searchExperienceSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
+        case .duckAIQueryExperimentSelection:
+            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog, step: stepInfo()))
         }
 
         state = viewState
@@ -329,7 +377,27 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureAddressBarPositionSelectionImpression()
         case .chooseSearchExperienceDialog:
             pixelReporter.measureSearchExperienceSelectionImpression()
+        case .duckAIQueryExperimentDialog:
+            pixelReporter.measureDuckAIQueryExperimentSelectionImpression()
         }
+    }
+
+    func insertExperimentStepIfNeeded() {
+        guard
+            let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
+            let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
+            !introSteps.contains(.duckAIQueryExperimentSelection)
+        else {
+            return
+        }
+        introSteps.insert(.duckAIQueryExperimentSelection, at: currentStepIndex + 1)
+    }
+
+    func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else { return nil }
+        // TODO: Temporary override for dev validation; remove once remote cohort mapping is finalized.
+        // return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
+        return .treatmentA
     }
 
     func introDialogType(isReturningUser: Bool) -> OnboardingView.ViewState.Intro.IntroDialogType {

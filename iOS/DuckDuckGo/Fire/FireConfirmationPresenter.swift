@@ -26,6 +26,8 @@ import Core
 import AIChat
 import Persistence
 
+typealias FireConfirmationType = ScopedFireConfirmationViewModel.Flow
+
 struct FireConfirmationPresenter {
     
     let tabsModel: TabsModelReading
@@ -40,13 +42,14 @@ struct FireConfirmationPresenter {
                                  attachPopoverTo source: AnyObject,
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
+                                 confirmationType: FireConfirmationType = .standard,
                                  daxDialogsManager: DaxDialogsManaging,
                                  browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
         if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
+            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, confirmationType: confirmationType, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
         } else {
             presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, pixelSource: pixelSource, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
         }
@@ -57,6 +60,7 @@ struct FireConfirmationPresenter {
                                  sourceRect: CGRect,
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
+                                 confirmationType: FireConfirmationType = .standard,
                                  daxDialogsManager: DaxDialogsManaging,
                                  browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
@@ -66,7 +70,7 @@ struct FireConfirmationPresenter {
             return
         }
         if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
+            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, confirmationType: confirmationType, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
         } else {
             presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, pixelSource: pixelSource, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
         }
@@ -80,12 +84,14 @@ struct FireConfirmationPresenter {
                                                    sourceRect: CGRect,
                                                    tabViewModel: TabViewModel?,
                                                    pixelSource: FireRequest.Source,
+                                                   confirmationType: FireConfirmationType,
                                                    daxDialogsManager: DaxDialogsManaging,
                                                    browsingMode: BrowsingMode,
                                                    onConfirm: @escaping (FireRequest) -> Void,
                                                    onCancel: @escaping () -> Void) {
             let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                             source: pixelSource,
+                                                            flow: confirmationType,
                                                             fireContext: .default(daxDialogsManager: daxDialogsManager),
                                                             browsingMode: browsingMode,
                 onConfirm: { [weak viewController] fireOptions in
@@ -102,6 +108,11 @@ struct FireConfirmationPresenter {
             
             let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
             let hostingController = makeHostingController(with: confirmationView)
+            // Prevent swipe-to-dismiss for the experiment flow: the user must make an
+            // explicit choice (fire or cancel) to keep the locked-controls state consistent.
+            if confirmationType == .duckAIExperiment {
+                hostingController.isModalInPresentation = true
+            }
             let presentingWidth = viewController.view.frame.width
             configurePresentation(for: hostingController,
                                   source: source,

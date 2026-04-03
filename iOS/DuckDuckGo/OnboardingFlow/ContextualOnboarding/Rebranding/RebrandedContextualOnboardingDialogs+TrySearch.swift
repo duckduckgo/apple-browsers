@@ -37,7 +37,10 @@ extension OnboardingRebranding {
 
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                OnboardingBubbleView.withDismissButton(
+                    tailPosition: .bottom(offset: 0.18, direction: .leading),
+                    onDismiss: onManualDismiss
+                ) {
                     OnboardingRebranding.ContextualDaxDialogContent(
                         orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
                         title: title,

@@ -28,7 +28,8 @@ struct AppConfigurationURLProvider: ConfigurationURLProviding {
     public enum Constants {
         public static let baseTdsURLString = "https://staticcdn.duckduckgo.com/trackerblocking/"
         public static let defaultTrackerDataURL = URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds.json")!
-        public static let defaultPrivacyConfigurationURL = URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json")!
+        // TODO(rollback): Revert this temporary PR override URL after privacy-configuration PR #4630 is merged.
+        public static let defaultPrivacyConfigurationURL = URL(string: "https://duckduckgo.github.io/privacy-configuration/pr-4630/v4/macos-config.json")!
     }
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {

@@ -66,10 +66,20 @@ final class NewTabDaxDialogsProvider: NewTabDaxDialogProviding {
 
     @ViewBuilder
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        if featureFlagger.isFeatureOn(.onboardingRebranding) {
+        // TODO: Re-enable `featureFlagger.isFeatureOn(.onboardingRebranding)` once forced-style validation is complete.
+        if DaxDialogs.shouldForceRebrandedOnboarding {
             rebrandedDaxDialogsFactory.createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         } else {
             legacyDaxDialogsFactory.createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
+        }
+    }
+
+    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+        // TODO: Re-enable `featureFlagger.isFeatureOn(.onboardingRebranding)` once forced-style validation is complete.
+        if DaxDialogs.shouldForceRebrandedOnboarding {
+            rebrandedDaxDialogsFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
+        } else {
+            legacyDaxDialogsFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
         }
     }
 

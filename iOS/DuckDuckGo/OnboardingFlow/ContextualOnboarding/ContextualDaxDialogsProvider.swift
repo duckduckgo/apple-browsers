@@ -57,7 +57,8 @@ final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
     }
 
     private var factory: ContextualDaxDialogsFactory {
-        if featureFlagger.isFeatureOn(.onboardingRebranding) {
+        // TODO: Re-enable `featureFlagger.isFeatureOn(.onboardingRebranding)` once forced-style validation is complete.
+        if DaxDialogs.shouldForceRebrandedOnboarding {
             rebrandedDaxDialogsFactory
         } else {
             legacyDaxDialogsFactory

@@ -62,7 +62,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         #if DEBUG
         return AnyView(
             viewWithBackground.overlay(
-                Text(verbatim: "REBRANDED")
+                Text("REBRANDED")
                     .font(.caption2)
                     .foregroundColor(.white)
                     .padding(.horizontal, 6)

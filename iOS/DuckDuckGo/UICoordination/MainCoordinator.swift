@@ -501,10 +501,7 @@ final class MainCoordinator {
         // This ensures flags are reset for subsequent in-app navigations
         tabManager.clearExternalLaunchFlags()
 
-        // Prevent bars from blinking when onboarding is about to start
-        if !controller.needsToShowOnboardingIntro() {
-            controller.showBars()
-        }
+        controller.showBars()
         controller.onForeground()
 
         if #available(iOS 18.4, *) {

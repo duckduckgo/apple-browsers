@@ -86,30 +86,6 @@ private extension RebrandedNewTabDaxDialogFactory {
 
 }
 
-extension RebrandedNewTabDaxDialogFactory {
-
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
-        AnyView(
-            FadeInView {
-                ScrollView(.vertical, showsIndicators: false) {
-                    OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                        message: message,
-                        cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                        dismissAction: onDismiss
-                    )
-                }
-                .scrollIfNeeded()
-            }
-            .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTPChat)
-            .onFirstAppear { [weak self] in
-                self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
-            }
-        )
-    }
-
-}
-
 // MARK: - Subsequent Dialog (Try Visiting A Site!)
 
 private extension RebrandedNewTabDaxDialogFactory {

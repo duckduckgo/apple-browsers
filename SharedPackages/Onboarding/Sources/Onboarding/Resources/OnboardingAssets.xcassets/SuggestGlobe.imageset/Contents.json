@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "AI-Chat-16.svg",
+      "filename" : "Globe-16.svg",
       "idiom" : "universal"
     }
   ],
@@ -10,7 +10,6 @@
     "version" : 1
   },
   "properties" : {
-    "preserves-vector-representation" : true,
     "template-rendering-intent" : "template"
   }
 }

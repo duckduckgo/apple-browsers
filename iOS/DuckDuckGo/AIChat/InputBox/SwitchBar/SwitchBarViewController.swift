@@ -61,9 +61,6 @@ class SwitchBarViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
 
     var segmentedPickerView: UIView? { segmentedPickerHostingController?.viewIfLoaded }
-    var addressBarToToggleSpacing: CGFloat {
-        usesReducedTopPadding ? Constants.textEntryViewReducedTopPadding : Constants.textEntryViewTopPadding
-    }
 
     // Items for the segmented picker
     private let pickerItems = [

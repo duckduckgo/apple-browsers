@@ -53,8 +53,7 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        // TODO: Re-enable `featureFlagger.isFeatureOn(.onboardingRebranding)` once forced-style validation is complete.
-        let controller: Onboarding = if DaxDialogs.shouldForceRebrandedOnboarding {
+        let controller: Onboarding = if featureFlagger.isFeatureOn(.onboardingRebranding) {
             OnboardingIntroViewController.rebranded(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,

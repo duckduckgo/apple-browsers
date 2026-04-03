@@ -22,12 +22,6 @@ import Onboarding
 import DuckUI
 import SystemSettingsPiPTutorial
 import MetricBuilder
-import UIKit
-import DesignResourcesKit
-import DesignResourcesKitIcons
-import Core
-import AIChat
-import UIComponents
 
 // MARK: - OnboardingView
 
@@ -39,7 +33,8 @@ struct OnboardingView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var model: OnboardingIntroViewModel
-    @State private var isExperimentExitTransitionActive = false
+
+    @State private var isPlayingSetAsDefaultVideo: Bool = false
 
     init(model: OnboardingIntroViewModel) {
         self.model = model
@@ -65,8 +60,6 @@ struct OnboardingView: View {
                     }
 #endif
             }
-
-            experimentExitOverlay
         }
     }
 
@@ -77,8 +70,6 @@ struct OnboardingView: View {
                     logoPosition: .top,
                     matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
                     showDialogBox: $model.introState.showDaxDialogBox,
-                    showLogo: !state.type.isExperimentSearchScreen,
-                    showBubbleArrow: !state.type.isExperimentSearchScreen,
                     onTapGesture: {
                         withAnimation {
                             model.tapped()
@@ -99,19 +90,12 @@ struct OnboardingView: View {
                                 addressBarPreferenceSelectionView
                             case .chooseSearchExperienceDialog:
                                 searchExperienceSelectionView
-                            case .duckAIQueryExperimentDialog:
-                                experimentSearchExperienceSelectionView()
                             }
                         }
                     }
                 )
-                .onboardingProgressIndicator(
-                    currentStep: state.step.currentStep,
-                    totalSteps: state.step.totalSteps,
-                    isVisible: !state.type.isExperimentSearchScreen
-                )
+                .onboardingProgressIndicator(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
             }
-            .opacity(isExperimentExitTransitionActive && state.type.isExperimentSearchScreen ? 0 : 1)
             .frame(width: geometry.size.width, alignment: .center)
             .offset(y: geometry.size.height * Metrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass))
             .onAppear {
@@ -124,10 +108,8 @@ struct OnboardingView: View {
                     }
                 }
             }
-            .transition(.opacity)
-            .animation(.easeInOut(duration: 0.25), value: state.type)
         }
-        .padding(16)
+        .padding()
     }
 
     private var landingView: some View {
@@ -253,34 +235,6 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
-    private func experimentSearchExperienceSelectionView() -> some View {
-        DuckAIExperimentSearchContent(
-            defaultMode: model.duckAIQueryExperimentDefaultMode,
-            animateTitle: $model.introState.animateIntroText,
-            onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
-            openAIChatAction: model.openAIChatFromOnboarding,
-            openSearchAction: model.searchFromOnboarding,
-            measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
-            startExitTransitionAction: {
-                beginExperimentExitTransition()
-            }
-        )
-        .onboardingDaxDialogStyle()
-    }
-
-    private var experimentExitOverlay: some View {
-        OnboardingBackground()
-            .opacity(isExperimentExitTransitionActive ? 1 : 0)
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-    }
-
-    private func beginExperimentExitTransition() {
-        withAnimation(.easeInOut(duration: 0.18)) {
-            isExperimentExitTransitionActive = true
-        }
-    }
-
     private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
         // Hide content of Intro dialog before animating
         model.introState.showIntroViewContent = false
@@ -353,7 +307,6 @@ extension OnboardingView.ViewState.Intro {
         case chooseAppIconDialog
         case chooseAddressBarPositionDialog
         case chooseSearchExperienceDialog
-        case duckAIQueryExperimentDialog
     }
 
     struct StepInfo: Equatable {
@@ -363,16 +316,6 @@ extension OnboardingView.ViewState.Intro {
         static let hidden = StepInfo(currentStep: 0, totalSteps: 0)
     }
 
-}
-
-private extension OnboardingView.ViewState.Intro.IntroType {
-    var isExperimentSearchScreen: Bool {
-        if case .duckAIQueryExperimentDialog = self {
-            return true
-        } else {
-            return false
-        }
-    }
 }
 
 // MARK: - Metrics
@@ -390,13 +333,13 @@ private enum Metrics {
 
 private extension View {
 
-    func onboardingProgressIndicator(currentStep: Int, totalSteps: Int, isVisible: Bool = true) -> some View {
+    func onboardingProgressIndicator(currentStep: Int, totalSteps: Int) -> some View {
         overlay(alignment: .topTrailing) {
             OnboardingProgressIndicator(stepInfo: .init(currentStep: currentStep, totalSteps: totalSteps))
                 .padding(.trailing, Metrics.progressBarTrailingPadding)
                 .padding(.top, Metrics.progressBarTopPadding)
                 .transition(.identity)
-                .visibility(totalSteps == 0 || !isVisible ? .invisible : .visible)
+                .visibility(totalSteps == 0 ? .invisible : .visible)
         }
     }
 

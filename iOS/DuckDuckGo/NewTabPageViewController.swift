@@ -22,7 +22,6 @@ import DDGSync
 import Bookmarks
 import BrowserServicesKit
 import Core
-import Onboarding
 import RemoteMessaging
 import Subscription
 
@@ -48,7 +47,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
-    private var isShowingDuckAICompletionDialog = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -256,13 +254,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
-    func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String) {
-        chromeDelegate?.omniBar.beginEditing(animated: true)
-        DispatchQueue.main.async { [weak self] in
-            self?.showDuckAIOnboardingCompletionDialog(message: message)
-        }
-    }
-
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
@@ -289,70 +280,7 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 
 extension NewTabPageViewController {
 
-    func showDuckAIOnboardingCompletionDialog(message: String) {
-        dismissHostingController(didFinishNTPOnboarding: false)
-        // Completion dialog should not hide NTP background state.
-        newTabPageViewModel.finishOnboarding()
-
-        let presentedHostViewController = parent?.presentedViewController ?? parent
-        guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
-            isShowingDuckAICompletionDialog = false
-            return
-        }
-
-        isShowingDuckAICompletionDialog = true
-        editingController.setLogoHidden(true)
-
-        let onDismiss = { [weak self] in
-            guard let self else { return }
-            let finishDismissal = {
-                editingController.setLogoHidden(false)
-                self.isShowingDuckAICompletionDialog = false
-                self.daxDialogsManager.dismiss()
-                self.dismissHostingController(didFinishNTPOnboarding: true)
-                ViewHighlighter.hideAll()
-            }
-
-            guard let hostingView = self.hostingController?.view else {
-                finishDismissal()
-                return
-            }
-            hostingView.isUserInteractionEnabled = false
-            UIView.animate(withDuration: 0.2, animations: {
-                hostingView.alpha = 0
-            }, completion: { _ in
-                finishDismissal()
-            })
-        }
-
-        let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
-        let hostingController = UIHostingController(rootView: root)
-        self.hostingController = hostingController
-        hostingController.view.backgroundColor = .clear
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        editingController.addChild(hostingController)
-        let container = editingController.contentStackContainerView
-        container.addSubview(hostingController.view)
-        NSLayoutConstraint.activate([
-            // Keep the completion content pinned to the top; in bottom-bar mode it gets cropped from the bottom
-            // as the bar moves up with the keyboard.
-            editingController.isUsingTopBarPositionForLayout ?
-                hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
-                                                            constant: editingController.addressBarToToggleSpacing) :
-                hostingController.view.topAnchor.constraint(equalTo: container.topAnchor),
-            editingController.isUsingTopBarPositionForLayout ?
-                hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor) :
-                hostingController.view.bottomAnchor.constraint(equalTo: editingController.contentStackBottomAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-        ])
-        hostingController.didMove(toParent: editingController)
-        container.bringSubviewToFront(editingController.switchBarVC.view)
-    }
-
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
-        isShowingDuckAICompletionDialog = false
         dismissHostingController(didFinishNTPOnboarding: false)
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else { return }
@@ -417,15 +345,8 @@ extension NewTabPageViewController {
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
-        isShowingDuckAICompletionDialog = false
         if didFinishNTPOnboarding {
             self.newTabPageViewModel.finishOnboarding()
         }
-    }
-
-    func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
-        guard isShowingDuckAICompletionDialog else { return }
-        daxDialogsManager.dismiss()
-        dismissHostingController(didFinishNTPOnboarding: true)
     }
 }

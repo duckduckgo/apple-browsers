@@ -631,14 +631,6 @@ public class AppUserDefaults: AppSettings {
 
     @UserDefaultsWrapper(key: .autoClearAIChatHistory, defaultValue: false)
     var autoClearAIChatHistory: Bool
-
-    @UserDefaultsWrapper(key: .duckAIOnboardingResumeStep, defaultValue: nil)
-    private var duckAIOnboardingResumeStepRawValue: String?
-
-    var duckAIOnboardingResumeStep: OnboardingResumeStep? {
-        get { duckAIOnboardingResumeStepRawValue.flatMap(OnboardingResumeStep.init) }
-        set { duckAIOnboardingResumeStepRawValue = newValue?.rawValue }
-    }
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

@@ -38,15 +38,6 @@ protocol NewTabDaxDialogProviding {
     ///
     /// - Returns: A view conforming to `DaxDialog` that represents the Dax dialog.
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> DaxDialog
-
-    /// Creates an experiment completion dialog shown after Duck.ai fire onboarding.
-    ///
-    /// - Parameters:
-    ///   - message: Completion message to display.
-    ///   - onDismiss: Closure called when the dialog is dismissed.
-    ///
-    /// - Returns: Type-erased completion dialog view.
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView
 }
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
@@ -165,23 +156,6 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
         }
-    }
-
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
-        AnyView(
-            OnboardingFinalDialog(
-                logoPosition: .top,
-                message: message,
-                cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                dismissAction: onDismiss
-            )
-            .onboardingDaxDialogStyle()
-            .onboardingContextualBackgroundStyle(background: .illustratedGradient)
-            .onFirstAppear { [weak self] in
-                self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
-            }
-        )
     }
 }
 

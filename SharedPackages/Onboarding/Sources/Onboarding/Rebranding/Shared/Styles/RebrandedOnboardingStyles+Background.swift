@@ -25,26 +25,18 @@ import UIKit
 
 public enum ContextualOnboardingBackgroundType {
     case tryASearch
-    case tryASearchDuckAIExperimentFire
     case tryASearchCompleted
     case tryVisitingASiteNTP
     case trackers
     case fireDialog
     case endOfJourney
     case endOfJourneyNTP
-    case endOfJourneyNTPChat
     case privacyProTrial
 
     var alignment: Alignment {
         switch self {
-        case .tryASearch:
-            return .bottomLeading
-        case .tryASearchDuckAIExperimentFire:
+        case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog:
             return .bottomTrailing
-        case .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog:
-            return .bottomTrailing
-        case .endOfJourneyNTPChat:
-            return .bottomLeading
         case .endOfJourney, .endOfJourneyNTP, .privacyProTrial:
             return .bottom
         }
@@ -53,8 +45,6 @@ public enum ContextualOnboardingBackgroundType {
     var image: Image {
         switch self {
         case .tryASearch:
-            return OnboardingRebrandingImages.Contextual.tryASearchBackground
-        case .tryASearchDuckAIExperimentFire:
             return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .tryASearchCompleted:
             return OnboardingRebrandingImages.Contextual.searchDoneBackground
@@ -68,38 +58,8 @@ public enum ContextualOnboardingBackgroundType {
             return OnboardingRebrandingImages.Contextual.endOfJourneyBackground
         case .endOfJourneyNTP:
             return OnboardingRebrandingImages.Contextual.endOfJourneyBackgroundNewTab
-        case .endOfJourneyNTPChat:
-            return OnboardingRebrandingImages.Contextual.successChatBackground
         case .privacyProTrial:
             return OnboardingRebrandingImages.Contextual.subscriptionPromoBackground
-        }
-    }
-
-    var verticalOffsetRatio: CGFloat {
-        switch self {
-        case .tryASearchDuckAIExperimentFire:
-            // Lower this specific background by 40% of its rendered height.
-            return 0.4
-        default:
-            return 0
-        }
-    }
-
-    var imageScale: CGFloat {
-        switch self {
-        case .tryASearchDuckAIExperimentFire:
-            return 1.1
-        default:
-            return 1
-        }
-    }
-
-    var imageScaleAnchor: UnitPoint {
-        switch self {
-        case .tryASearchDuckAIExperimentFire:
-            return .bottomTrailing
-        default:
-            return .center
         }
     }
 }
@@ -155,7 +115,6 @@ extension OnboardingRebranding.OnboardingStyles {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(maxHeight: maxHeightMetrics)
-                                .scaleEffect(backgroundType.imageScale, anchor: backgroundType.imageScaleAnchor)
                                 .background(
                                     GeometryReader { proxy in
                                         Color.clear
@@ -200,10 +159,9 @@ extension OnboardingRebranding.OnboardingStyles {
         // 2. Use the captured natural image bottom position (imageBottomY) as stable reference
         // 3. Calculate how much to move the image so it extends 90 pixels (scaled) behind the keyboard
         private func calculateImageOffset() -> CGFloat {
-            let baselineVerticalOffset = imageHeight * backgroundType.verticalOffsetRatio
             #if os(iOS)
             // If screen does not respond to keyboard notifications, return default imageOffsetY
-            guard keyboardBehavior.isEnabled else { return imageOffsetY + baselineVerticalOffset }
+            guard keyboardBehavior.isEnabled else { return imageOffsetY }
 
             // Early exit if image height hasn't been captured yet
             guard imageHeight > 0 else { return imageOffsetY }
@@ -212,10 +170,10 @@ extension OnboardingRebranding.OnboardingStyles {
             let keyboardImageOffsetY = ContextualBackgroundStyleMetrics.referenceBackgroundImageOffset * imageHeight / ContextualBackgroundStyleMetrics.referenceBackgroundImageHeight
 
             // Early exit if no keyboard is visible
-            guard keyboardResponder.keyboardFrame.height > 0 else { return keyboardImageOffsetY + baselineVerticalOffset }
+            guard keyboardResponder.keyboardFrame.height > 0 else { return keyboardImageOffsetY }
 
             // Early exit if we haven't captured the natural image position yet
-            guard imageBottomY > 0 else { return imageOffsetY + baselineVerticalOffset }
+            guard imageBottomY > 0 else { return imageOffsetY }
 
             let keyboardFrame = keyboardResponder.keyboardFrame
 
@@ -229,9 +187,9 @@ extension OnboardingRebranding.OnboardingStyles {
             // Calculate how much to move the image
             let offset = targetImageBottom - currentImageBottom
 
-            return offset + baselineVerticalOffset
+            return offset
             #else
-            return imageOffsetY + baselineVerticalOffset
+            return imageOffsetY
             #endif
         }
 
@@ -248,7 +206,7 @@ extension OnboardingRebranding.OnboardingStyles {
             switch backgroundType {
             case .tryASearchCompleted, .trackers, .fireDialog, .endOfJourney:
                 return Self.maxHeightContextualAssets.build(v: vSizeClass, h: hSizeClass)
-            case .tryASearch, .tryASearchDuckAIExperimentFire, .tryVisitingASiteNTP, .endOfJourneyNTP, .endOfJourneyNTPChat, .privacyProTrial:
+            case .tryASearch, .tryVisitingASiteNTP, .endOfJourneyNTP, .privacyProTrial:
                 return Self.maxHeightNewTabPageAssets.build(v: vSizeClass, h: hSizeClass)
             }
             #else

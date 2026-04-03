@@ -157,80 +157,6 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         // Then
         XCTAssertFalse(sut.canBurnSingleTab)
     }
-
-    // MARK: - DuckAI Experiment Flow Tests
-
-    func testWhenDuckAIExperimentFlowAndAITabThenCanBurnSingleTabReturnsTrue() {
-        // Given
-        let aiTabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
-        let sut = makeSUT(tabViewModel: aiTabViewModel, flow: .duckAIExperiment)
-
-        // Then
-        XCTAssertTrue(sut.canBurnSingleTab)
-    }
-
-    func testWhenDuckAIExperimentFlowAndWebTabThenCanBurnSingleTabReturnsFalse() {
-        // Given
-        let webTabViewModel = createTabViewModel()
-        let sut = makeSUT(tabViewModel: webTabViewModel, flow: .duckAIExperiment)
-
-        // Then
-        XCTAssertFalse(sut.canBurnSingleTab)
-    }
-
-    func testWhenDuckAIExperimentFlowThenHeaderTitleUsesDuckAIExperimentCopy() {
-        // Given
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
-
-        // Then
-        XCTAssertEqual(sut.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
-    }
-
-    func testWhenDuckAIExperimentFlowThenShowsDeleteAllButtonIsFalse() {
-        // Given
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
-
-        // Then
-        XCTAssertFalse(sut.showsDeleteAllButton)
-    }
-
-    func testWhenDuckAIExperimentFlowThenIsDuckAIExperimentFlowIsTrue() {
-        // Given
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
-
-        // Then
-        XCTAssertTrue(sut.isDuckAIExperimentFlow)
-    }
-
-    func testWhenDuckAIExperimentFlowThenSubtitleIsNil() {
-        // Given
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
-
-        // Then
-        XCTAssertNil(sut.subtitle)
-    }
-
-    func testWhenDuckAIExperimentFlowAndBurnThisTabCalledThenRequestUsesAIChatsOption() {
-        // Given
-        var capturedRequest: FireRequest?
-        let aiTabViewModel = createAITabViewModel()
-        let sut = makeSUT(tabViewModel: aiTabViewModel, flow: .duckAIExperiment, onConfirm: { request in
-            capturedRequest = request
-        })
-
-        // When
-        sut.burnThisTab()
-
-        // Then
-        XCTAssertNotNil(capturedRequest)
-        XCTAssertEqual(capturedRequest?.options, [.aiChats])
-        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
-        if case .tab(let vm) = capturedRequest?.scope {
-            XCTAssertTrue(vm.tab == aiTabViewModel.tab)
-        } else {
-            XCTFail("Expected scope to be .tab with the correct view model")
-        }
-    }
     
     // MARK: - subtitle Tests - Ongoing Downloads
     
@@ -379,14 +305,12 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     
     private func makeSUT(tabViewModel: TabViewModel?,
                          source: FireRequest.Source = .browsing,
-                         flow: ScopedFireConfirmationViewModel.Flow = .standard,
                          daxDialogsManager: DaxDialogsManaging = DummyDaxDialogsManager(),
                          browsingMode: BrowsingMode = .normal,
                          onConfirm: @escaping (FireRequest) -> Void = { _ in },
                          onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {
         return ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                source: source,
-                                               flow: flow,
                                                fireContext: .default(daxDialogsManager: daxDialogsManager),
                                                downloadManager: mockDownloadManager,
                                                keyValueStore: mockKeyValueStore,
@@ -405,11 +329,6 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         let aiChatURL = URL(string: "https://duckduckgo.com/?ia=chat")!
         let link = Link(title: "AI Chat", url: aiChatURL)
         return Tab(link: link)
-    }
-
-    private func createAITabViewModel() -> TabViewModel {
-        let aiTab = createAITab()
-        return TabViewModel(tab: aiTab, historyManager: mockHistoryManager)
     }
     
     private func createRunningDownload(temporary: Bool = false) -> Download {

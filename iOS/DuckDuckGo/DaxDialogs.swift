@@ -55,8 +55,6 @@ protocol ContextualOnboardingLogic {
     var isAddFavoriteFlow: Bool { get }
     var isDismissedPublisher: PassthroughSubject<Bool, Never> { get }
 
-    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType)
-
     func setTryAnonymousSearchMessageSeen()
     func setSearchMessageSeen()
 
@@ -102,8 +100,6 @@ extension ContentBlockerRulesManager: EntityProviding {
 }
 
 final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, ContextualDaxDialogStatusProvider {
-    // TODO: Temporary override for experiment validation. Remove when onboarding style is controlled by remote config.
-    static let shouldForceRebrandedOnboarding = true
     
     struct MajorTrackers {
         
@@ -182,32 +178,18 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
                                                        pixelName: .daxDialogsWithTrackersUnique,
                                                        message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithMultipleTrackers)
 
-        static let fire = BrowsingSpec(type: .fire,
-                                       pixelName: .daxDialogsFireEducationShownUnique,
-                                       message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
+        static let fire = BrowsingSpec(type: .fire, pixelName: .daxDialogsFireEducationShownUnique)
 
-        static let fireDuckAIExperiment = BrowsingSpec(type: .fire,
-                                                       pixelName: .onboardingDuckAIExperimentFireDialogShownUnique,
-                                                       title: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle,
-                                                       message: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingMessage,
-                                                       allowsManualDismiss: false)
+        static let final = BrowsingSpec(type: .final, pixelName: .daxDialogsEndOfJourneyTabUnique)
 
-        static let final = BrowsingSpec(type: .final,
-                                        pixelName: .daxDialogsEndOfJourneyTabUnique,
-                                        message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage)
-
-        let title: String?
         let message: String
         let pixelName: Pixel.Event
         let type: SpecType
-        let allowsManualDismiss: Bool
 
-        init(type: SpecType, pixelName: Pixel.Event, title: String? = nil, message: String = "", allowsManualDismiss: Bool = true) {
+        init(type: SpecType, pixelName: Pixel.Event, message: String = "") {
             self.type = type
             self.pixelName = pixelName
-            self.title = title
             self.message = message
-            self.allowsManualDismiss = allowsManualDismiss
         }
 
         func format(args: CVarArg...) -> BrowsingSpec {
@@ -222,19 +204,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             BrowsingSpec(
                 type: type,
                 pixelName: pixelName,
-                title: title,
-                message: message,
-                allowsManualDismiss: allowsManualDismiss
-            )
-        }
-
-        func withManualDismissAllowed(_ allowsManualDismiss: Bool) -> BrowsingSpec {
-            BrowsingSpec(
-                type: type,
-                pixelName: pixelName,
-                title: title,
-                message: message,
-                allowsManualDismiss: allowsManualDismiss
+                message: message
             )
         }
     }
@@ -330,10 +300,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     var isShowingFireDialog: Bool {
         guard let lastShownDaxDialogType else { return false }
         return lastShownDaxDialogType == .fire
-    }
-
-    func setLastShownDialog(type: BrowsingSpec.SpecType) {
-        lastShownDaxDialogType = type
     }
 
     var isAddFavoriteFlow: Bool {
@@ -768,6 +734,10 @@ extension DaxDialogs {
 
     func setLastVisitedURL(_ url: URL?) {
         lastVisitedOnboardingWebsiteURL = url
+    }
+
+    func setLastShownDialog(type: BrowsingSpec.SpecType) {
+        lastShownDaxDialogType = type
     }
 
 }

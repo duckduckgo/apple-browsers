@@ -94,11 +94,8 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .fire:
             rootView = AnyView(
                 fireDialog(
-                    title: spec.title,
-                    message: spec.message,
                     delegate: delegate,
-                    pixelName: spec.pixelName,
-                    allowsManualDismiss: spec.allowsManualDismiss
+                    pixelName: spec.pixelName
                 )
             )
         case .final:
@@ -240,18 +237,15 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     private func fireDialog(
-        title: String?,
-        message: String,
         delegate: ContextualOnboardingDelegate,
-        pixelName: Pixel.Event,
-        allowsManualDismiss: Bool
+        pixelName: Pixel.Event
     ) -> some View {
-        let onManualDismiss: (() -> Void)? = allowsManualDismiss ? { [weak delegate, weak self] in
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
             self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
-        } : nil
+        }
 
-        return OnboardingFireDialog(title: title, message: message, onManualDismiss: onManualDismiss)
+        return OnboardingFireDialog(onManualDismiss: onManualDismiss)
             .onFirstAppear { [weak self] in
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
             }

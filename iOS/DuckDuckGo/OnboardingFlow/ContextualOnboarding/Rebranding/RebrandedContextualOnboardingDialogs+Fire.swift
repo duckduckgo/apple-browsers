@@ -17,8 +17,9 @@
 //  limitations under the License.
 //
 
-import Onboarding
 import SwiftUI
+import Onboarding
+import MetricBuilder
 
 // MARK: - Fire Dialog
 
@@ -26,44 +27,15 @@ extension OnboardingRebranding {
 
     struct OnboardingFireDialog: View {
         @Environment(\.onboardingTheme) private var theme
-        @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var contextualMetrics
 
-        let title: String?
-        let message: String
-        let isDuckAIExperiment: Bool
-        let onManualDismiss: (() -> Void)?
-
-        init(title: String? = nil, message: String, isDuckAIExperiment: Bool = false, onManualDismiss: (() -> Void)? = nil) {
-            self.title = title
-            self.message = message
-            self.isDuckAIExperiment = isDuckAIExperiment
-            self.onManualDismiss = onManualDismiss
-        }
+        let onManualDismiss: () -> Void
 
         var body: some View {
-            OnboardingBubbleView(tailPosition: nil) {
-                OnboardingRebranding.OnboardingFireDialogContent(
-                    title: title,
-                    message: message,
-                    titleBodyVerticalSpacingOverride: isDuckAIExperiment ? contextualMetrics.titleBodyVerticalSpacingVerticalLayout * 0.4 : nil
-                )
+            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                OnboardingRebranding.OnboardingFireDialogContent()
             }
-            .ifLet(onManualDismiss) { view, onManualDismiss in
-                view.onboardingDismissable(onManualDismiss)
-            }
-            .padding(dialogContainerPadding)
+            .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
-        }
-
-        private var dialogContainerPadding: EdgeInsets {
-            let base = theme.contextualOnboardingMetrics.containerPadding
-            guard isDuckAIExperiment else { return base }
-            return EdgeInsets(
-                top: base.top * 0.75,
-                leading: base.leading,
-                bottom: base.bottom * 0.75,
-                trailing: base.trailing
-            )
         }
     }
 
@@ -71,24 +43,23 @@ extension OnboardingRebranding {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
 
-        let title: String?
-        let message: String
-        let titleBodyVerticalSpacingOverride: CGFloat?
-
-        init(title: String? = nil, message: String, titleBodyVerticalSpacingOverride: CGFloat? = nil) {
-            self.title = title
-            self.message = message
-            self.titleBodyVerticalSpacingOverride = titleBodyVerticalSpacingOverride
-        }
+        var message = UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage
 
         var body: some View {
             OnboardingRebranding.ContextualDaxDialogContent<EmptyView>(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
-                title: title,
-                titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride,
-                message: message
+                message: attributedMessage
             )
         }
+
+        private let attributedMessage: AttributedString = {
+            var attributedString = AttributedString(UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
+            // Find the range of "Fire Button"
+            if let range = attributedString.range(of: "Fire Button") {
+                attributedString[range].inlinePresentationIntent = .stronglyEmphasized // Bold
+            }
+            return attributedString
+        }()
     }
 
 }

@@ -24,7 +24,7 @@ import UIKit
 /// Protocol for tab controllers that support full mode AIChat content loading.
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String?, autoSend: Bool, payload: Any?, onboardingFlowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?)
+    func load(_ query: String?, autoSend: Bool, payload: Any?, tools: [AIChatRAGTool]?, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?)
 
     /// Loads AIChat in voice mode.
     func loadVoiceMode()
@@ -46,26 +46,16 @@ protocol AITabController {
 extension TabViewController: AITabController {
 
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String? = nil,
-              autoSend: Bool = false,
-              payload: Any? = nil,
-              onboardingFlowType: AIChatOnboardingFlowType = .default,
-              tools: [AIChatRAGTool]? = nil,
-              modelId: String? = nil,
-              images: [AIChatNativePrompt.NativePromptImage]? = nil) {
+    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
 
         aiChatContentHandler.setPayload(payload: payload)
+
         if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: autoSend, images: images, modelId: modelId)
             AIChatPromptHandler.shared.setData(prompt)
         }
 
-        let queryURL = aiChatContentHandler.buildQueryURL(
-            query: query,
-            autoSend: autoSend,
-            onboardingFlowType: onboardingFlowType,
-            tools: tools
-        )
+        let queryURL = aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, tools: tools)
 
         load(url: queryURL)
     }
@@ -93,12 +83,7 @@ extension TabViewController: AITabController {
     
     /// Opens a new AI chat in a new tab.
     func openNewChatInNewTab() {
-        let newChatURL = aiChatContentHandler.buildQueryURL(
-            query: nil,
-            autoSend: false,
-            onboardingFlowType: .default,
-            tools: nil
-        )
+        let newChatURL = aiChatContentHandler.buildQueryURL(query: nil, autoSend: false, tools: nil)
         delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
     }
 

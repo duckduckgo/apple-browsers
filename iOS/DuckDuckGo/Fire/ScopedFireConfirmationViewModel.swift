@@ -24,11 +24,6 @@ import Persistence
 @MainActor
 final class ScopedFireConfirmationViewModel: ObservableObject {
 
-    enum Flow: Equatable {
-        case standard
-        case duckAIExperiment
-    }
-
     // MARK: - Types
 
     enum FireContext {
@@ -61,14 +56,12 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     private let keyValueStore: KeyValueStoring
     private let appSettings: AppSettings
     private let source: FireRequest.Source
-    private let flow: Flow
     private let browsingMode: BrowsingMode
 
     // MARK: - Initializer
 
     init(tabViewModel: TabViewModel?,
          source: FireRequest.Source,
-         flow: Flow = .standard,
          fireContext: FireContext,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          keyValueStore: KeyValueStoring = UserDefaults.standard,
@@ -82,7 +75,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         self.downloadManager = downloadManager
         self.keyValueStore = keyValueStore
         self.appSettings = appSettings
-        self.flow = flow
         self.browsingMode = browsingMode
         self.onConfirm = onConfirm
         self.onCancel = onCancel
@@ -94,13 +86,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// Indicates whether the single tab burn option should be shown.
     /// Returns `true` when a tab view model is available and fire context is default.
     var canBurnSingleTab: Bool {
-        if flow == .duckAIExperiment {
-            guard let tab = tabViewModel?.tab else {
-                return false
-            }
-            return tab.isAITab
-        }
-
         if case .contextualChat = fireContext { return false }
         guard let tab = tabViewModel?.tab, tab.supportsTabHistory else {
             return false
@@ -109,10 +94,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
 
     var headerTitle: String {
-        if flow == .duckAIExperiment {
-            return UserText.contextualChatDeleteConfirmationTitle
-        }
-
         if case .contextualChat = fireContext {
             return UserText.contextualChatDeleteConfirmationTitle
         }
@@ -124,14 +105,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         }
     }
 
-    var showsDeleteAllButton: Bool {
-        flow == .standard
-    }
-
-    var isDuckAIExperimentFlow: Bool {
-        flow == .duckAIExperiment
-    }
-
     var primaryButtonTitle: String {
         if case .contextualChat = fireContext {
             return UserText.contextualChatDeleteConfirmationButton
@@ -140,10 +113,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
 
     var tabScopeButtonTitle: String {
-        if flow == .duckAIExperiment {
-            return UserText.contextualChatDeleteConfirmationButton
-        }
-
         guard let tab = tabViewModel?.tab, tab.isAITab else {
             return UserText.scopedFireConfirmationDeleteThisTabButton
         }
@@ -166,8 +135,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         guard let tabViewModel else {
             return
         }
-        let options: FireRequest.Options = flow == .duckAIExperiment ? [.aiChats] : .all
-        let request = FireRequest(options: options, trigger: .manualFire, scope: .tab(viewModel: tabViewModel), source: source)
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .tab(viewModel: tabViewModel), source: source)
         onConfirm(request)
     }
 
@@ -189,11 +157,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// 6. For normal web tabs → show sign out warning (up to 2 times)
     /// 7. Otherwise → return nil
     private func computeSubtitle() -> String? {
-        if flow == .duckAIExperiment {
-            return nil
-        }
-
-        // Skip all subtitles if in onboarding
         if case .contextualChat = fireContext {
             return nil
         }

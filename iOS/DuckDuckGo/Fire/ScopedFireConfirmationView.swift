@@ -91,36 +91,24 @@ struct ScopedFireConfirmationView: View {
     /// Scope selection buttons
     private var scopeButtons: some View {
         VStack(spacing: Constants.buttonSpacing) {
-            if viewModel.showsDeleteAllButton {
-                // Primary action button - "Delete All" or "Delete Chat" depending on mode
-                Button(action: {
-                    viewModel.burnAllTabs()
-                }) {
-                    Text(viewModel.primaryButtonTitle)
-                }
-                .buttonStyle(PrimaryDestructiveButtonStyle())
-                .accessibilityIdentifier("alert.forget-data.confirm")
+            // Primary action button - "Delete All" or "Delete Chat" depending on mode
+            Button(action: {
+                viewModel.burnAllTabs()
+            }) {
+                Text(viewModel.primaryButtonTitle)
             }
+            .buttonStyle(PrimaryDestructiveButtonStyle())
+            .accessibilityIdentifier("alert.forget-data.confirm")
             
             // This Tab button - Secondary Destructive (outline)
             if viewModel.canBurnSingleTab {
-                if viewModel.isDuckAIExperimentFlow {
-                    Button(action: {
-                        viewModel.burnThisTab()
-                    }) {
-                        Text(viewModel.tabScopeButtonTitle)
-                    }
-                    .buttonStyle(PrimaryDestructiveButtonStyle())
-                    .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
-                } else {
-                    Button(action: {
-                        viewModel.burnThisTab()
-                    }) {
-                        Text(viewModel.tabScopeButtonTitle)
-                    }
-                    .buttonStyle(SecondaryDestructiveButtonStyle())
-                    .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
+                Button(action: {
+                    viewModel.burnThisTab()
+                }) {
+                    Text(viewModel.tabScopeButtonTitle)
                 }
+                .buttonStyle(SecondaryDestructiveButtonStyle())
+                .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
             }
         }
     }

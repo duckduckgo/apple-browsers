@@ -50,8 +50,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     private(set) var didCallSetDaxDialogDismiss = false
     private(set) var didCallClearedBrowserData = false
     private(set) var didCallDisableDaxDialogs = false
-    private(set) var didCallSetLastShownDialog = false
-    private(set) var lastShownDialogType: DaxDialogs.BrowsingSpec.SpecType?
 
     var canStartFavoriteFlow = false
 
@@ -92,11 +90,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     func enableAddFavoriteFlow() {
         didCallEnableAddFavoriteFlow = true
-    }
-
-    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType) {
-        didCallSetLastShownDialog = true
-        lastShownDialogType = type
     }
 
     func setDaxDialogDismiss() {
@@ -178,8 +171,6 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     func setFinalOnboardingDialogSeen() {}
 
     func setPrivacyButtonPulseSeen() { }
-
-    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType) {}
 
     func setDaxDialogDismiss() {}
 

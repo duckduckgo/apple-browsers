@@ -20,7 +20,6 @@
 import SwiftUI
 import Onboarding
 import MetricBuilder
-import DesignResourcesKitIcons
 
 // MARK: - End Of Journey Dialog
 
@@ -31,32 +30,18 @@ extension OnboardingRebranding {
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
 
-        let title: String
+        var title = UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle
         let message: String
         let cta: String
         let dismissAction: () -> Void
-        let onManualDismiss: (() -> Void)?
-
-        init(title: String = UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle, message: String, cta: String, dismissAction: @escaping () -> Void, onManualDismiss: (() -> Void)? = nil) {
-            self.title = title
-            self.message = message
-            self.cta = cta
-            self.dismissAction = dismissAction
-            self.onManualDismiss = onManualDismiss
-        }
+        let onManualDismiss: () -> Void
 
         var body: some View {
-            OnboardingBubbleView(tailPosition: .bottom(offset: 0.18, direction: .leading)) {
+            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
                 OnboardingRebranding.ContextualDaxDialogContent(
                     orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                    title: AttributedString(title),
-                    message: AttributedString(
-                        message.attributedString(
-                            withPlaceholder: UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken,
-                            replacedByImage: DesignSystemImages.Glyphs.Size16.aiChatOnboarding,
-                            verticalOffset: -2
-                        ) ?? NSAttributedString(string: message)
-                    )
+                    title: title,
+                    message: message
                 ) {
                     Button(action: dismissAction) {
                         Text(cta)
@@ -64,9 +49,6 @@ extension OnboardingRebranding {
                     .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                     .buttonStyle(theme.primaryButtonStyle.style)
                 }
-            }
-            .ifLet(onManualDismiss) { view, onDismiss in
-                view.onboardingDismissable(onDismiss)
             }
             .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)

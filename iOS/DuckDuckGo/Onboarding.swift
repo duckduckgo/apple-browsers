@@ -20,7 +20,6 @@
 import Foundation
 import Core
 import UserNotifications
-import AIChat
 
 protocol Onboarding: UIViewController {
     
@@ -41,8 +40,6 @@ protocol OnboardingContent {
 protocol OnboardingDelegate: NSObjectProtocol {
     
     func onboardingCompleted(controller: UIViewController)
-    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType)
-    func searchFromOnboarding(for query: String)
     
 }
 

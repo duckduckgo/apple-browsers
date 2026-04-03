@@ -17,7 +17,6 @@
 //
 
 import SwiftUI
-import UIComponents
 
 extension OnboardingRebranding {
 
@@ -30,12 +29,16 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
 
         private let orientation: ContextualDaxDialogOrientation
+        #if os(iOS)
+        private let title: AttributedString?
+        private let message: AttributedString
+        #else
         private let title: NSAttributedString?
         private let message: NSAttributedString
+        #endif
 
         private let titleTextAlignment: TextAlignment?
         private let messageTextAlignment: TextAlignment?
-        private let titleBodyVerticalSpacingOverride: CGFloat?
         private let content: Content
 
         @State private var shouldShowContent = false
@@ -47,15 +50,13 @@ extension OnboardingRebranding {
             titleTextAlignment: TextAlignment? = nil,
             message: AttributedString,
             messageTextAlignment: TextAlignment? = nil,
-            titleBodyVerticalSpacingOverride: CGFloat? = nil,
             @ViewBuilder content: () -> Content
         ) {
             self.orientation = orientation
-            self.title = title.map(NSAttributedString.init)
+            self.title = title
             self.titleTextAlignment = titleTextAlignment
-            self.message = NSAttributedString(message)
+            self.message = message
             self.messageTextAlignment = messageTextAlignment
-            self.titleBodyVerticalSpacingOverride = titleBodyVerticalSpacingOverride
             self.content = content()
         }
 
@@ -65,7 +66,6 @@ extension OnboardingRebranding {
             titleTextAlignment: TextAlignment? = nil,
             message: String,
             messageTextAlignment: TextAlignment? = nil,
-            titleBodyVerticalSpacingOverride: CGFloat? = nil,
             @ViewBuilder content: () -> Content
         ) {
             self.init(
@@ -74,7 +74,6 @@ extension OnboardingRebranding {
                 titleTextAlignment: titleTextAlignment,
                 message: AttributedString(message),
                 messageTextAlignment: messageTextAlignment,
-                titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride,
                 content: content
             )
         }
@@ -86,7 +85,6 @@ extension OnboardingRebranding {
             titleTextAlignment: TextAlignment? = nil,
             message: NSAttributedString,
             messageTextAlignment: TextAlignment? = nil,
-            titleBodyVerticalSpacingOverride: CGFloat? = nil,
             @ViewBuilder content: () -> Content
         ) {
             self.orientation = orientation
@@ -94,7 +92,6 @@ extension OnboardingRebranding {
             self.titleTextAlignment = titleTextAlignment
             self.message = message
             self.messageTextAlignment = messageTextAlignment
-            self.titleBodyVerticalSpacingOverride = titleBodyVerticalSpacingOverride
             self.content = content()
         }
         #endif
@@ -104,24 +101,12 @@ extension OnboardingRebranding {
                 switch orientation {
                 case .verticalStack:
                     VStack(alignment: .leading, spacing: theme.contentSpacing) {
-                        TitleMessageStack(
-                            title: title,
-                            message: message,
-                            titleBodyVerticalSpacing: titleBodyVerticalSpacingOverride ?? theme.titleBodyVerticalSpacingVerticalLayout,
-                            titleTextAlignment: titleTextAlignment,
-                            messageTextAlignment: messageTextAlignment
-                        )
+                        TitleMessageStack(title: title, message: message, titleBodyVerticalSpacing: theme.titleBodyVerticalSpacingVerticalLayout, titleTextAlignment: titleTextAlignment, messageTextAlignment: messageTextAlignment)
                         content
                     }
                 case let .horizontalStack(alignment):
                     HStack(alignment: alignment) {
-                        TitleMessageStack(
-                            title: title,
-                            message: message,
-                            titleBodyVerticalSpacing: titleBodyVerticalSpacingOverride ?? theme.titleBodyVerticalSpacingHorizontalLayout,
-                            titleTextAlignment: titleTextAlignment,
-                            messageTextAlignment: messageTextAlignment
-                        )
+                        TitleMessageStack(title: title, message: message, titleBodyVerticalSpacing: theme.titleBodyVerticalSpacingHorizontalLayout, titleTextAlignment: titleTextAlignment, messageTextAlignment: messageTextAlignment)
                         Spacer(minLength: theme.contentSpacing)
                         content
                     }
@@ -147,10 +132,9 @@ extension OnboardingRebranding.ContextualDaxDialogContent where Content == Empty
     public init(
         orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
         title: AttributedString? = nil,
-        titleBodyVerticalSpacingOverride: CGFloat? = nil,
         message: AttributedString
     ) {
-        self.init(orientation: orientation, title: title, message: message, titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride) {
+        self.init(orientation: orientation, title: title, message: message) {
             EmptyView()
         }
     }
@@ -159,14 +143,12 @@ extension OnboardingRebranding.ContextualDaxDialogContent where Content == Empty
     public init(
         orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
         title: String? = nil,
-        titleBodyVerticalSpacingOverride: CGFloat? = nil,
         message: String
     ) {
         self.init(
             orientation: orientation,
             title: title.flatMap(AttributedString.init),
-            message: AttributedString(message),
-            titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride
+            message: AttributedString(message)
         ) {
             EmptyView()
         }
@@ -181,10 +163,9 @@ extension OnboardingRebranding.ContextualDaxDialogContent where Content == Empty
     public init(
         orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
         title: NSAttributedString? = nil,
-        titleBodyVerticalSpacingOverride: CGFloat? = nil,
         message: NSAttributedString
     ) {
-        self.init(orientation: orientation, title: title, message: message, titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride) {
+        self.init(orientation: orientation, title: title, message: message) {
             EmptyView()
         }
     }
@@ -198,8 +179,13 @@ private extension OnboardingRebranding {
     struct TitleMessageStack: View {
         @Environment(\.onboardingTheme) private var theme
 
+        #if os(iOS)
+        let title: AttributedString?
+        let message: AttributedString
+        #else
         let title: NSAttributedString?
         let message: NSAttributedString
+        #endif
 
         let titleBodyVerticalSpacing: CGFloat
 
@@ -210,13 +196,13 @@ private extension OnboardingRebranding {
             VStack(alignment: .leading, spacing: titleBodyVerticalSpacing) {
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
-                    Text(attributedStringWithAttachments: title)
+                    StyledAttributedText(title)
                         .font(theme.typography.contextual.title)
                         .multilineTextAlignment(titleAlignment)
                         .frame(maxWidth: .infinity, alignment: Alignment(titleAlignment))
                 }
                 let messageAlignment = messageTextAlignment ?? theme.contextualOnboardingMetrics.contextualBodyTextAlignment
-                Text(attributedStringWithAttachments: message)
+                StyledAttributedText(message)
                     .font(theme.typography.contextual.body)
                     .multilineTextAlignment(messageAlignment)
                     .frame(maxWidth: .infinity, alignment: Alignment(messageAlignment))
@@ -229,6 +215,38 @@ private extension OnboardingRebranding {
 }
 
 // MARK: - Helpers
+
+#if os(iOS)
+private struct StyledAttributedText: View {
+    private let attributedString: AttributedString
+
+    init(_ attributedString: AttributedString) {
+        self.attributedString = attributedString
+    }
+
+    var body: some View {
+        Text(attributedString)
+    }
+}
+#endif
+
+#if os(macOS)
+private struct StyledAttributedText: View {
+    private let attributedString: NSAttributedString
+
+    init(_ attributedString: NSAttributedString) {
+        self.attributedString = attributedString
+    }
+
+    var body: some View {
+        if #available(macOS 12, *) {
+            Text(AttributedString(attributedString))
+        } else {
+            Text(attributedString.string)
+        }
+    }
+}
+#endif
 
 private extension Alignment {
 

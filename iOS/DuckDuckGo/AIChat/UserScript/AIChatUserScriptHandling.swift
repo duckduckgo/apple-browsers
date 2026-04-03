@@ -92,7 +92,6 @@ protocol AIChatUserScriptHandling: AnyObject {
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
-    func responseReceived(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable?
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -193,12 +192,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             }
         }
-        return nil
-    }
-
-    func responseReceived(params: Any, message: UserScriptMessage) async -> Encodable? {
-        let payload = params as? [String: Any]
-        NotificationCenter.default.post(name: .aiChatResponseReceived, object: nil, userInfo: payload)
         return nil
     }
 

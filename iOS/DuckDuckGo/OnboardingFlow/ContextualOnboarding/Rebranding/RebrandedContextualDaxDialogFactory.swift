@@ -72,11 +72,8 @@ final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
         case .fire:
             rootView = AnyView(
                 fireDialog(
-                    title: spec.title,
-                    message: spec.message,
                     delegate: delegate,
-                    pixelName: spec.pixelName,
-                    allowsManualDismiss: spec.allowsManualDismiss
+                    pixelName: spec.pixelName
                 )
             )
         case .final:
@@ -239,29 +236,18 @@ private extension RebrandedContextualDaxDialogFactory {
 private extension RebrandedContextualDaxDialogFactory {
 
     func fireDialog(
-        title: String?,
-        message: String,
         delegate: ContextualOnboardingDelegate,
-        pixelName: Pixel.Event,
-        allowsManualDismiss: Bool
+        pixelName: Pixel.Event
     ) -> some View {
-        let isDuckAIExperimentFireDialog = pixelName == .onboardingDuckAIExperimentFireDialogShownUnique
-        let backgroundType: ContextualOnboardingBackgroundType = isDuckAIExperimentFireDialog ? .tryASearchDuckAIExperimentFire : .fireDialog
-
-        let onManualDismiss: (() -> Void)? = allowsManualDismiss ? { [weak delegate, weak self] in
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
             self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
-        } : nil
+        }
 
         return OnboardingConditionalCenteredScrollableContainerView {
-            OnboardingRebranding.OnboardingFireDialog(
-                title: title,
-                message: message,
-                isDuckAIExperiment: isDuckAIExperimentFireDialog,
-                onManualDismiss: onManualDismiss
-            )
+            OnboardingRebranding.OnboardingFireDialog(onManualDismiss: onManualDismiss)
         }
-        .applyAnimatedContextualOnboardingBackground(backgroundType: backgroundType)
+        .applyAnimatedContextualOnboardingBackground(backgroundType: .fireDialog)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
         }

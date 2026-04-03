@@ -330,6 +330,7 @@ extension TabViewController {
 
     private func buildKeepSignInEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
         guard let domain = link.url.host, !link.url.isDuckDuckGo else { return nil }
+        guard !tabModel.fireTab else { return nil }
         let isFireproofed = fireproofing.isAllowed(cookieDomain: domain)
         
         if isFireproofed {

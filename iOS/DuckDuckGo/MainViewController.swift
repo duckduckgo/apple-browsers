@@ -55,6 +55,16 @@ struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
 
     init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus, tutorialSettings: TutorialSettings) {
+        if AppUserDefaults().duckAIOnboardingResumeStep == .duckAIQueryExperimentSelection {
+            shouldShowOnboarding = true
+            return
+        }
+
+        if AppUserDefaults().duckAIOnboardingResumeStep == .duckAIAnswerStep {
+            shouldShowOnboarding = false
+            return
+        }
+
         switch onboardingStatus {
         case .notOverridden:
             shouldShowOnboarding = !tutorialSettings.hasSeenOnboarding
@@ -138,7 +148,7 @@ class MainViewController: UIViewController {
     var autoClearShouldRefreshUIAfterClear = true
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
-    private var isStartupOnboardingPending = false
+    var isStartupOnboardingPending = false
     private var hasPresentedStartupOnboarding = false
     private lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
@@ -646,6 +656,7 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         startOnboardingFlowIfNotSeenBefore()
+        restorePendingDuckAIAnswerStepIfNeeded()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
@@ -5129,44 +5140,6 @@ extension MainViewController {
         viewCoordinator.toolbarTabSwitcherButton.tintColor = UIColor(singleUseColor: .toolbarButton)
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
-    }
-
-}
-
-extension MainViewController: OnboardingDelegate {
-        
-    func onboardingCompleted(controller: UIViewController) {
-        markOnboardingSeen()
-        controller.modalTransitionStyle = .crossDissolve
-        controller.dismiss(animated: true) { [weak self] in
-            self?.showBars()
-            self?.newTabPageViewController?.onboardingCompleted()
-        }
-    }
-
-    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType) {
-        let shouldArmExperimentFireOnboarding = autoSend && experimentDuckAIFireOnboardingFlow.state != .completed
-        experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
-        experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
-
-        if shouldArmExperimentFireOnboarding {
-            experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
-            enforceSingleTabAfterOnboardingIfNeeded()
-        } else if experimentDuckAIFireOnboardingFlow.state != .completed {
-            experimentDuckAIFireOnboardingFlow.state = .idle
-        }
-
-        setExperimentFireControlsLocked(shouldArmExperimentFireOnboarding)
-        openAIChat(query, autoSend: autoSend, onboardingFlowType: onboardingFlowType)
-    }
-    
-    func markOnboardingSeen() {
-        isStartupOnboardingPending = false
-        tutorialSettings.hasSeenOnboarding = true
-    }
-
-    func needsToShowOnboardingIntro() -> Bool {
-        isStartupOnboardingPending || !tutorialSettings.hasSeenOnboarding
     }
 
 }

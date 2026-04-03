@@ -17,8 +17,19 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Core
 import UIKit
+
+// MARK: - Duck.ai Query Experiment — resume step
+
+/// Persisted checkpoint allowing the experiment onboarding flow to resume after an app relaunch.
+enum OnboardingResumeStep: String {
+    /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
+    case duckAIQueryExperimentSelection
+    /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
+    case duckAIAnswerStep
+}
 
 // MARK: - Duck.ai Query Experiment — onboarding fire flow types
 
@@ -105,6 +116,7 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
         experimentDuckAIFireOnboardingFlow.state = .active
+        AppUserDefaults().duckAIOnboardingResumeStep = .duckAIAnswerStep
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
         showFireButtonPulse()
@@ -195,6 +207,7 @@ extension MainViewController {
     func markSearchContextualOnboardingAsSeenForExperiment() {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
+        AppUserDefaults().duckAIOnboardingResumeStep = nil
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }
@@ -222,6 +235,54 @@ extension MainViewController {
         viewCoordinator.omniBar.barView.menuButton.isUserInteractionEnabled = true
         refreshOmniBar()
         refreshBackForwardButtons()
+    }
+
+    // MARK: App resume
+
+    func restorePendingDuckAIAnswerStepIfNeeded() {
+        guard AppUserDefaults().duckAIOnboardingResumeStep == .duckAIAnswerStep else {
+            return
+        }
+        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+            AppUserDefaults().duckAIOnboardingResumeStep = nil
+            return
+        }
+        guard currentTab?.isAITab == true else {
+            return
+        }
+
+        experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
+        experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+        experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
+        setExperimentFireControlsLocked(true)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await clearDuckAIWebsiteDataForResumeIfNeeded()
+            recreateAIChatTabForResumeIfNeeded()
+            if let currentTab {
+                scheduleExperimentDuckAIFireOnboardingAfterLoadIfNeeded(for: currentTab)
+            }
+        }
+    }
+
+    func recreateAIChatTabForResumeIfNeeded() {
+        guard let currentURL = currentTab?.url,
+              let components = URLComponents(url: currentURL, resolvingAgainstBaseURL: false) else {
+            return
+        }
+        let queryItems = components.queryItems ?? []
+        let query = queryItems.first(where: { $0.name == AIChatURLParameters.promptQueryName })?.value
+        let autoSend = queryItems.first(where: { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })?.value == AIChatURLParameters.autoSubmitPromptQueryValue
+
+        if let tabToClose = currentTab?.tabModel {
+            closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
+        }
+        openAIChat(query, autoSend: autoSend, onboardingFlowType: .mobileAppOnboarding)
+    }
+
+    func clearDuckAIWebsiteDataForResumeIfNeeded() async {
+        let dataStore = DDGWebsiteDataStoreProvider.current(fireMode: tabManager.currentBrowsingMode == .fire)
+        _ = await websiteDataManager.clear(dataStore: dataStore)
     }
 
     // MARK: Fire confirmation (used from onFirePressed)
@@ -257,5 +318,140 @@ extension MainViewController {
                 self?.showFireButtonPulse()
             }
         )
+    }
+}
+
+extension MainViewController: OnboardingDelegate {
+
+    func onboardingCompleted(controller: UIViewController) {
+        markOnboardingSeen()
+        guard experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse else {
+            controller.modalTransitionStyle = .crossDissolve
+            controller.dismiss(animated: true) { [weak self] in
+                self?.showBars()
+                self?.newTabPageViewController?.onboardingCompleted()
+            }
+            return
+        }
+
+        enforceSingleTabAfterOnboardingIfNeeded()
+        let onboardingTransitionSnapshotView = showOnboardingTransitionSnapshot(from: controller)
+        controller.dismiss(animated: false) { [weak self] in
+            guard let self else { return }
+            let chromeRevealDelay: TimeInterval = 0.05
+            let chromeRevealDuration: CGFloat = 0.25
+            let onboardingTransitionBottomFillView = self.showOnboardingTransitionBottomFill()
+
+            self.setBarsVisibility(0, animated: false, animationDuration: nil)
+            self.viewCoordinator.toolbar.alpha = 1 // keep toolbar at its off-screen start position
+            self.setOnboardingChromeOffscreenStartPosition()
+            self.applyExperimentDuckAIStatusBackgroundStyle()
+            self.viewCoordinator.statusBackground.alpha = 0
+            self.viewCoordinator.topSlideContainer.alpha = 0
+            onboardingTransitionBottomFillView?.alpha = 0
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + chromeRevealDelay) {
+                CATransaction.begin()
+                CATransaction.setCompletionBlock {
+                    self.applyExperimentDuckAIStatusBackgroundStyle()
+                    UIView.animate(withDuration: 0.25) {
+                        onboardingTransitionSnapshotView?.alpha = 0
+                    } completion: { _ in
+                        self.viewCoordinator.statusBackground.alpha = 1
+                        self.viewCoordinator.topSlideContainer.alpha = 1
+                        self.hideOnboardingTransitionSnapshot(onboardingTransitionSnapshotView)
+                        self.hideOnboardingTransitionBottomFill(onboardingTransitionBottomFillView)
+                    }
+                }
+                self.setBarsVisibility(1, animated: true, animationDuration: chromeRevealDuration)
+                UIView.animate(withDuration: chromeRevealDuration) {
+                    self.viewCoordinator.statusBackground.alpha = 1
+                    self.viewCoordinator.topSlideContainer.alpha = 1
+                    onboardingTransitionBottomFillView?.alpha = 1
+                }
+                CATransaction.commit()
+            }
+            self.newTabPageViewController?.onboardingCompleted()
+        }
+    }
+
+    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType) {
+        let shouldArmExperimentFireOnboarding = autoSend && experimentDuckAIFireOnboardingFlow.state != .completed
+        experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
+        experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+
+        if shouldArmExperimentFireOnboarding {
+            experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
+            AppUserDefaults().duckAIOnboardingResumeStep = .duckAIAnswerStep
+            enforceSingleTabAfterOnboardingIfNeeded()
+        } else if experimentDuckAIFireOnboardingFlow.state != .completed {
+            experimentDuckAIFireOnboardingFlow.state = .idle
+        }
+
+        setExperimentFireControlsLocked(shouldArmExperimentFireOnboarding)
+        openAIChat(query, autoSend: autoSend, onboardingFlowType: onboardingFlowType)
+    }
+
+    func markOnboardingSeen() {
+        isStartupOnboardingPending = false
+        tutorialSettings.hasSeenOnboarding = true
+        if experimentDuckAIFireOnboardingFlow.state != .awaitingFirstResponse,
+           experimentDuckAIFireOnboardingFlow.state != .active {
+            AppUserDefaults().duckAIOnboardingResumeStep = nil
+        }
+    }
+
+    func needsToShowOnboardingIntro() -> Bool {
+        isStartupOnboardingPending || !tutorialSettings.hasSeenOnboarding
+    }
+
+    private func showOnboardingTransitionSnapshot(from controller: UIViewController) -> UIView? {
+        guard let snapshot = controller.view.snapshotView(afterScreenUpdates: false) else { return nil }
+
+        snapshot.alpha = 1
+        snapshot.frame = view.bounds
+        snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        snapshot.isUserInteractionEnabled = false
+        // Keep snapshot above page content but below browser chrome.
+        view.insertSubview(snapshot, aboveSubview: viewCoordinator.contentContainer)
+        return snapshot
+    }
+
+    private func hideOnboardingTransitionSnapshot(_ snapshot: UIView?) {
+        guard let snapshot else { return }
+        snapshot.removeFromSuperview()
+    }
+
+    private func showOnboardingTransitionBottomFill() -> UIView? {
+        let fill = UIView()
+        fill.translatesAutoresizingMaskIntoConstraints = false
+        fill.isUserInteractionEnabled = false
+        fill.backgroundColor = ThemeManager.shared.currentTheme.barBackgroundColor
+        view.insertSubview(fill, belowSubview: viewCoordinator.toolbar)
+        NSLayoutConstraint.activate([
+            fill.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            fill.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            fill.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            // Extend through the toolbar area to avoid transparent toolbar bleed-through during handoff.
+            fill.topAnchor.constraint(equalTo: viewCoordinator.toolbar.topAnchor)
+        ])
+        return fill
+    }
+
+    private func hideOnboardingTransitionBottomFill(_ fill: UIView?) {
+        guard let fill else { return }
+        fill.removeFromSuperview()
+    }
+
+    private func setOnboardingChromeOffscreenStartPosition() {
+        let browserTabsOffset = viewCoordinator.tabBarContainer.isHidden ? 0 : viewCoordinator.tabBarContainer.frame.size.height
+        let navBarHeight = viewCoordinator.navigationBarContainer.frame.size.height
+        let safeAreaTop = view.safeAreaInsets.top
+
+        // Move tab strip fully above the visible region (including safe-area inset).
+        viewCoordinator.constraints.tabBarContainerTop.constant = -(browserTabsOffset + safeAreaTop)
+        // Move navigation bar container fully above the visible region as well.
+        viewCoordinator.constraints.navigationBarContainerTop.constant = -(navBarHeight + browserTabsOffset + safeAreaTop)
+        view.layoutIfNeeded()
     }
 }

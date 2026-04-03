@@ -392,23 +392,6 @@ extension OnboardingView {
             !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
 
-        private func promptWithOnboardingGuardrails(_ prompt: String?, autoSend: Bool) -> String? {
-            guard
-                selectedMode == .duckAI,
-                autoSend,
-                let prompt,
-                !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            else {
-                return prompt
-            }
-
-            return """
-            \(prompt)
-
-            \(UserText.Onboarding.DuckAIQueryExperiment.onboardingPromptGuardrails)
-            """
-        }
-
         private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryExperimentPromptSource) {
             if autoSend {
                 measureQuerySubmissionAction(selectedMode, promptSource)
@@ -432,7 +415,7 @@ extension OnboardingView {
                 isTransitioningOut = true
             } completion: {
                 if selectedMode == .duckAI {
-                    openAIChatAction(promptWithOnboardingGuardrails(prompt, autoSend: autoSend), autoSend)
+                    openAIChatAction(prompt, autoSend)
                     onModeConfirmed(.duckAI)
                 } else if preloadedSearchQuery != nil {
                     onModeConfirmed(.search)

@@ -2362,23 +2362,8 @@ public struct UserText {
             public static let suggestionOption3VisibleTitle = Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
             public static let suggestionOption3Prompt = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.suggestion.option3.prompt",
-                value: "What are some fascinating facts?",
+                value: "What are 10 fascinating facts across science, nature, and history?",
                 comment: "Prompt submitted when user taps the third suggestion in onboarding Duck.ai query experiment screen."
-            )
-            public static let onboardingPromptGuardrails = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.prompt.guardrails",
-                value: """
-                I'm trying this AI assistant for the first time. Your job is to make an outstanding first impression.
-
-                RULES:
-                1. Always produce a complete, useful response - never ask clarifying questions or say you need more information.
-                2. If the prompt is vague or underspecified, make reasonable assumptions, briefly state them (\"I'll assume you mean...\"), and proceed.
-                3. If the prompt is extremely short (1-3 words), treat it as a request to demo your capabilities on that topic.
-                4. Format your response to be visually clear: use headers, bullets, or structure when it helps readability.
-                5. Match length to usefulness - don't pad, but don't be terse if depth would impress.
-                6. Don't try to continue the chat at the end, I want the answer to be complete with no next steps suggested.
-                """,
-                comment: "Guardrails appended to onboarding Duck.ai experiment prompts."
             )
 
             public static let fireOnboardingTitle = NotLocalizedString(

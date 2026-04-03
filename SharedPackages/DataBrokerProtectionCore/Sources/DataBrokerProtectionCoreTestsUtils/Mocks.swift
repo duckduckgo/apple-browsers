@@ -985,6 +985,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public var wasSaveProfileCalled = false
+    public var saveProfileCallCount = 0
     public var wasFetchProfileCalled = false
     public var wasDeleteProfileDataCalled = false
     public var wasSaveOptOutOperationCalled = false
@@ -1072,6 +1073,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func save(_ profile: DataBrokerProtectionProfile) throws {
         wasSaveProfileCalled = true
+        saveProfileCallCount += 1
         switch saveResult {
         case .success:
             return
@@ -1333,6 +1335,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func clear() {
         wasSaveProfileCalled = false
+        saveProfileCallCount = 0
         wasFetchProfileCalled = false
         wasSaveOptOutOperationCalled = false
         wasBrokerProfileQueryDataCalled = false
@@ -1738,11 +1741,19 @@ public final class MockJobQueueManager: JobQueueManaging {
 
     public var debugRunningStatusString: String { return "" }
 
+    public private(set) var didCallStartImmediateScanOperationsIfPermitted = false
+    public private(set) var didCallStartImmediateOptOutOperationsIfPermitted = false
+    public private(set) var didCallStartScheduledAllOperationsIfPermitted = false
+    public private(set) var didCallStartScheduledScanOperationsIfPermitted = false
+    public private(set) var didCallStop = false
+
     public var startImmediateScanOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
+    public var startImmediateOptOutOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
     public var startScheduledAllOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
     public var startScheduledScanOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
 
     public var startImmediateScanOperationsIfPermittedCalledCompletion: (() -> Void)?
+    public var startImmediateOptOutOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
@@ -1751,33 +1762,61 @@ public final class MockJobQueueManager: JobQueueManaging {
     }
 
     public func startImmediateScanOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+        didCallStartImmediateScanOperationsIfPermitted = true
         errorHandler?(startImmediateScanOperationsIfPermittedCompletionError)
         completion?()
         startImmediateScanOperationsIfPermittedCalledCompletion?()
     }
 
+    public func startImmediateOptOutOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+        didCallStartImmediateOptOutOperationsIfPermitted = true
+        errorHandler?(startImmediateOptOutOperationsIfPermittedCompletionError)
+        completion?()
+        startImmediateOptOutOperationsIfPermittedCalledCompletion?()
+    }
+
     public func startScheduledAllOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+        didCallStartScheduledAllOperationsIfPermitted = true
         errorHandler?(startScheduledAllOperationsIfPermittedCompletionError)
         completion?()
         startScheduledAllOperationsIfPermittedCalledCompletion?()
     }
 
     public func startScheduledScanOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+        didCallStartScheduledScanOperationsIfPermitted = true
         errorHandler?(startScheduledScanOperationsIfPermittedCompletionError)
         completion?()
         startScheduledScanOperationsIfPermittedCalledCompletion?()
     }
 
-    public func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand) {
-    }
-
     public func stop() {
+        didCallStop = true
     }
 
     public func stopScheduledOperationsOnly() {
     }
 
     public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+    }
+
+    public func reset() {
+        didCallStartImmediateScanOperationsIfPermitted = false
+        didCallStartImmediateOptOutOperationsIfPermitted = false
+        didCallStartScheduledAllOperationsIfPermitted = false
+        didCallStartScheduledScanOperationsIfPermitted = false
+        didCallStop = false
+
+        startImmediateScanOperationsIfPermittedCompletionError = nil
+        startImmediateOptOutOperationsIfPermittedCompletionError = nil
+        startScheduledAllOperationsIfPermittedCompletionError = nil
+        startScheduledScanOperationsIfPermittedCompletionError = nil
+
+        startImmediateScanOperationsIfPermittedCalledCompletion = nil
+        startImmediateOptOutOperationsIfPermittedCalledCompletion = nil
+        startScheduledAllOperationsIfPermittedCalledCompletion = nil
+        startScheduledScanOperationsIfPermittedCalledCompletion = nil
+
+        delegate = nil
     }
 }
 
@@ -1873,7 +1912,7 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
             statusReportingDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound,
                                                                  withBrokerURL: nil,
                                                                  version: nil,
-                                                                 stepType: nil,
+                                                                 identifier: nil,
                                                                  dataBrokerParent: nil,
                                                                  isFreeScan: nil)
         }
@@ -1923,14 +1962,17 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     public func dataBrokerOperationDidError(_ error: any Error,
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
-                                            stepType: StepType?,
+                                            identifier: CompletedJobIdentifier?,
                                             dataBrokerParent: String?,
                                             isFreeScan: Bool?) {
         dataBrokerOperationDidErrorCalled = true
         operationErrors.append(error)
     }
 
-    public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?, version: String?, dataBrokerParent: String?) {
+    public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
+                                                           version: String?,
+                                                           dataBrokerParent: String?,
+                                                           identifier: CompletedJobIdentifier) {
 
     }
 }
@@ -1941,6 +1983,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
     public let isClickActionDelayReductionOptimizationOn: Bool
+    public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
@@ -1948,12 +1991,14 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
                 isClickActionDelayReductionOptimizationOn: Bool = false,
+                isContinuedProcessingFeatureOn: Bool = true,
                 isWebViewUserAgentOn: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
         self.isClickActionDelayReductionOptimizationOn = isClickActionDelayReductionOptimizationOn
+        self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
     }
 }
@@ -1961,6 +2006,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
 public final class MockOperationEventsHandler: EventMapping<JobEvent> {
 
     public var profileSavedFired = false
+    public var profileSavedFireCount = 0
     public var firstScanCompletedFired = false
     public var firstScanCompletedAndMatchesFoundFired = false
     public var firstProfileRemovedFired = false
@@ -1980,6 +2026,7 @@ public final class MockOperationEventsHandler: EventMapping<JobEvent> {
         switch event {
         case .profileSaved:
             profileSavedFired = true
+            profileSavedFireCount += 1
         case .firstScanCompleted:
             firstScanCompletedFired = true
         case .firstScanCompletedAndMatchesFound:
@@ -1993,6 +2040,7 @@ public final class MockOperationEventsHandler: EventMapping<JobEvent> {
 
     public func reset() {
         profileSavedFired = false
+        profileSavedFireCount = 0
         firstScanCompletedFired = false
         firstScanCompletedAndMatchesFoundFired = false
         firstProfileRemovedFired = false

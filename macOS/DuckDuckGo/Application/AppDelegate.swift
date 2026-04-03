@@ -124,6 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
+    let tabSuspensionService: TabSuspensionService
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
     let appearancePreferences: AppearancePreferences
@@ -1142,6 +1143,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             logger: .memory
         )
 
+        tabSuspensionService = TabSuspensionService(
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger,
+            memoryUsageMonitor: memoryUsageMonitor,
+            pixelFiring: PixelKit.shared
+        )
+
         super.init()
 
         webExtensionManagerHolder.appDelegate = self
@@ -1174,7 +1182,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let metricsReporter = PerformanceMetricsReporter(
-            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             previousSessionRestored: startupPreferences.restorePreviousSession,
             windowContext: WindowContext(windowControllersManager: windowControllersManager)
@@ -1819,7 +1826,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 autoconsentPreferences: cookiePopupProtectionPreferences,
-                darkReaderExcludedDomainsProvider: darkReaderSettings
+                darkReaderExcludedDomainsProvider: darkReaderSettings,
+                scriptletConfiguration: makeScriptletConfiguration()
             )
             self.webExtensionManager = webExtensionManager
 
@@ -1846,7 +1854,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
 
@@ -1871,6 +1880,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             enabledTypes.insert(.darkReader)
         }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeScriptletConfiguration() -> ScriptletConfiguration {
+        let scriptletsDirectory = URL.sandboxApplicationSupportURL
+            .appendingPathComponent("Scriptlets", isDirectory: true)
+
+        return ScriptletManagerFactory.makeConfiguration(
+            privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            apiService: DefaultAPIService(),
+            baseDirectory: scriptletsDirectory,
+            isProduction: !StandardApplicationBuildType().isDebugBuild
+        )
     }
 
     // MARK: - PixelKit

@@ -10,9 +10,11 @@ tags:
 - runFlow:
     file: ../shared/setup.yaml
 
-# New tab screen - tap Duck.ai button
-- assertVisible: "Duck.ai"
-- tapOn: "Duck.ai"
+# New tab screen - tap Duck.ai button in omnibar
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChatFullModeBranding"
 
@@ -37,8 +39,10 @@ tags:
 
 # Tab Switcher - test Duck.ai access
 - tapOn: "Tab Switcher"
-- assertVisible: "Duck.ai"
-- tapOn: "Duck.ai"
+- assertVisible:
+    id: "TabSwitcher.Button.DuckChat"
+- tapOn:
+    id: "TabSwitcher.Button.DuckChat"
 - assertVisible:
     id: "AIChatFullModeBranding"
 - tapOn: "Tab Switcher"
@@ -59,7 +63,8 @@ tags:
 - tapOn: "Done"
 
 # New tab screen - Duck.ai should not be visible
-- assertNotVisible: "Duck.ai"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.AIChat"
 
 # Browsing - New Chat should not be visible in menu
 - assertVisible:
@@ -77,5 +82,5 @@ tags:
 
 # Tab Switcher - Duck.ai should not be visible
 - tapOn: "Tab Switcher"
-- assertNotVisible: "Duck.ai"
-
+- assertNotVisible:
+    id: "TabSwitcher.Button.DuckChat"

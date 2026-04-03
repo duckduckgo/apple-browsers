@@ -31,6 +31,7 @@ import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import PrivacyStats
+import Networking
 import WebExtensions
 
 @MainActor
@@ -150,6 +151,7 @@ final class MainCoordinator {
             onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
+        let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -182,7 +184,8 @@ final class MainCoordinator {
                                 privacyStats: privacyStats,
                                 voiceSearchHelper: voiceSearchHelper,
                                 launchSourceManager: launchSourceManager,
-                                darkReaderFeatureSettings: darkReaderFeatureSettings)
+                                darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                toggleModeStorage: toggleModeStorage)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -256,7 +259,8 @@ final class MainCoordinator {
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository,
-                                        darkReaderFeatureSettings: darkReaderFeatureSettings)
+                                        darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                        toggleModeStorage: toggleModeStorage)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -345,7 +349,8 @@ final class MainCoordinator {
             mainViewController: controller,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
 
@@ -367,6 +372,21 @@ final class MainCoordinator {
             guard !Task.isCancelled else { return }
             self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
+    }
+
+    @available(iOS 18.4, *)
+    private func makeScriptletConfiguration() -> ScriptletConfiguration {
+        let scriptletsDirectory = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent("Scriptlets", isDirectory: true)
+
+        return ScriptletManagerFactory.makeConfiguration(
+            privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+            apiService: DefaultAPIService(),
+            baseDirectory: scriptletsDirectory,
+            isProduction: !isDebugBuild
+        )
     }
 
     @available(iOS 18.4, *)
@@ -528,7 +548,9 @@ extension MainCoordinator: URLHandling {
     private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
         controller.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
 
-        if url != AppDeepLinkSchemes.openVPN.url && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme {
+        if url != AppDeepLinkSchemes.openVPN.url
+            && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
+            && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
         }
         switch AppDeepLinkSchemes.fromURL(url) {
@@ -555,6 +577,8 @@ extension MainCoordinator: URLHandling {
             handleOpenPasswords(url: url)
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
+        case .openAIVoiceChat:
+            AIChatDeepLinkHandler().handleDeepLink(url, on: controller, voiceMode: true)
         default:
             if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)

@@ -27,6 +27,8 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
+    private let clearCachedScriptletsMenuItem = NSMenuItem(title: "Clear Cached Scriptlets", action: #selector(WebExtensionsDebugMenu.clearCachedScriptlets))
+    private let printScriptletInfoMenuItem = NSMenuItem(title: "Print Scriptlet Info", action: #selector(WebExtensionsDebugMenu.printScriptletInfo))
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
 
     init(webExtensionManager: WebExtensionManaging) {
@@ -37,6 +39,10 @@ final class WebExtensionsDebugMenu: NSMenu {
         installExtensionMenuItem.isEnabled = true
         uninstallAllExtensionsMenuItem.target = self
         uninstallAllExtensionsMenuItem.isEnabled = true
+        clearCachedScriptletsMenuItem.target = self
+        clearCachedScriptletsMenuItem.isEnabled = true
+        printScriptletInfoMenuItem.target = self
+        printScriptletInfoMenuItem.isEnabled = true
         openExtensionsFolderMenuItem.target = self
         openExtensionsFolderMenuItem.isEnabled = true
 
@@ -48,6 +54,8 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         addItem(installExtensionMenuItem)
         addItem(uninstallAllExtensionsMenuItem)
+        addItem(clearCachedScriptletsMenuItem)
+        addItem(printScriptletInfoMenuItem)
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
 
@@ -100,7 +108,33 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func uninstallAllExtensions() {
-        webExtensionManager.uninstallAllExtensions()
+        Task { @MainActor in
+            webExtensionManager.uninstallAllExtensions()
+        }
+    }
+
+    @objc func clearCachedScriptlets() {
+        Task { @MainActor in
+            webExtensionManager.clearCachedScriptlets()
+        }
+    }
+
+    @objc func printScriptletInfo() {
+        Task { @MainActor in
+            let debugInfo = webExtensionManager.scriptletDebugInfo()
+            if debugInfo.isEmpty {
+                Logger.webExtensions.info("[Scriptlets Debug] No scriptlet data found")
+                return
+            }
+            for info in debugInfo {
+                Logger.webExtensions.info("""
+                    [Scriptlets Debug] \(info.extensionType.rawValue) \
+                    | cached: \(info.cachedVersion ?? "none") \
+                    | installed: \(info.installedVersion ?? "none") \
+                    | files: \(info.scriptletPaths.joined(separator: ", "))
+                    """)
+            }
+        }
     }
 
     @objc func openExtensionsFolderInFinder() {
@@ -147,6 +181,8 @@ final class WebExtensionSubMenu: NSMenu {
             return
         }
 
-        try? webExtensionManager.uninstallExtension(identifier: extensionIdentifier)
+        Task { @MainActor in
+            try? webExtensionManager.uninstallExtension(identifier: extensionIdentifier)
+        }
     }
 }

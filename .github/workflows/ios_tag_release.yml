@@ -84,7 +84,7 @@ jobs:
     steps:
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0 # Fetch all history and tags in order to look up tags
         submodules: recursive

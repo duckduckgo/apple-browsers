@@ -33,7 +33,7 @@ public final class MockFeatureFlagger: FeatureFlagger {
         self.internalUserDecider = internalUserDecider
         self.localOverrides = localOverrides
         self.mockActiveExperiments = mockActiveExperiments
-        self.featuresStub = featuresStub
+        self._featuresStub = featuresStub
         self.resolveCohortStub = resolveCohortStub
     }
 
@@ -56,7 +56,12 @@ public final class MockFeatureFlagger: FeatureFlagger {
 
     var mockActiveExperiments: [String: ExperimentData] = [:]
 
-    public var featuresStub: [String: Bool] = [:]
+    private let lock = NSLock()
+    private var _featuresStub: [String: Bool] = [:]
+    public var featuresStub: [String: Bool] {
+        get { lock.withLock { _featuresStub } }
+        set { lock.withLock { _featuresStub = newValue } }
+    }
     public func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
         featuresStub[featureFlag.rawValue] ?? false
     }

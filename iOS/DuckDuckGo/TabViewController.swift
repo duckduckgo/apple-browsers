@@ -868,6 +868,7 @@ class TabViewController: UIViewController {
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
             webView.scrollView.alwaysBounceVertical = false
+            (webView as? WebView)?.setInputAccessoryViewHidden(true)
         }
 
         updateContentMode()
@@ -1069,6 +1070,7 @@ class TabViewController: UIViewController {
                 self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
                 self.pullToRefreshViewAdapter?.setRefreshControlEnabled(!self.isAITab)
                 self.webView.scrollView.alwaysBounceVertical = !self.isAITab
+                (self.webView as? WebView)?.setInputAccessoryViewHidden(self.isAITab)
                 if #available(iOS 18.4, *) {
                     self.notifyWebExtensionOfPropertyChange([.URL])
                 }

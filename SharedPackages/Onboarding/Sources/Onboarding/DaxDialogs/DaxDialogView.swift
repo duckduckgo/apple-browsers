@@ -18,6 +18,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import UIComponents
 
 // MARK: - Metrics
 
@@ -154,15 +155,14 @@ public struct DaxDialogView<Content: View>: View {
             )
 
         if #available(macOS 12.0, iOS 15.0, *) {
-            if let onDismiss = onManualDismiss {
-                styledContent.overlay(alignment: .topTrailing) {
-                    OnboardingDismissButton(action: onDismiss)
-                        .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
-                        .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
+            styledContent
+                .ifLet(onManualDismiss) { view, onDismiss in
+                    view.overlay(alignment: .topTrailing) {
+                        OnboardingDismissButton(action: onDismiss)
+                            .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
+                            .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
+                    }
                 }
-            } else {
-                styledContent
-            }
         } else {
             ZStack(alignment: .topTrailing) {
                 styledContent

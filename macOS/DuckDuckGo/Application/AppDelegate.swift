@@ -774,7 +774,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
-        self.tabSuspensionService = TabSuspensionService(windowControllersManager: windowControllersManager, featureFlagger: featureFlagger)
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
@@ -1142,6 +1141,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared,
             launchDate: appLaunchDate,
             logger: .memory
+        )
+
+        tabSuspensionService = TabSuspensionService(
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger,
+            memoryUsageMonitor: memoryUsageMonitor,
+            pixelFiring: PixelKit.shared
         )
 
         super.init()

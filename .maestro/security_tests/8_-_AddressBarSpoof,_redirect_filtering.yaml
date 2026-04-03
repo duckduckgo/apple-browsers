@@ -21,19 +21,13 @@ tags:
 - assertTrue: ${maestro.copiedText.indexOf("privacy-test-pages") != -1}
 
 # Test 2: Cross-origin redirect chain does not flash intermediate URL
-# Hop 1: privacy-test-pages.site -> first-party.site (instant)
-# Hop 2: first-party.site -> privacy-test-pages.site (2s delay)
-# During the delay, the address bar should NOT show first-party.site
-- tapOn:
-    id: "searchEntry"
-- pressKey: Backspace
-- inputText: "https://privacy-test-pages.site/security/abs/redirect?target=https%3A%2F%2Fwww.first-party.site%2Fsecurity%2Fabs%2Fredirect%3Ftarget%3Dhttps%3A%2F%2Fprivacy-test-pages.site%2Fsecurity%2Faddress-bar-spoofing%2Findex.html%26delay%3D3000"
-- pressKey: Enter
-# Check address bar during the delay - intermediate URL should NOT be visible
+# Click link that triggers: ptp -> first-party.site (instant) -> ptp (3s delay)
+# During the 3s delay, the address bar should NOT show first-party.site
+- tapOn: "Redirect Chain (cross-origin, 3s delay)"
 - copyTextFrom:
     id: "searchEntry"
 - assertTrue: ${maestro.copiedText.indexOf("first-party") == -1}
-# Wait for redirect to complete, then verify final destination
+# Wait for redirect chain to complete, then verify final destination
 - runFlow:
     file: ../shared/delay.yaml
 - copyTextFrom:

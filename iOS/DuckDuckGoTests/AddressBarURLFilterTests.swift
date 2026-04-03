@@ -217,6 +217,22 @@ struct AddressBarURLFilterTests {
         #expect(filter.committedSecurityOrigin == nil)
     }
 
+    @Test("invalidate resets user-initiated flag")
+    func whenInvalidateAfterUserNavigationThenResetsFlag() {
+        // GIVEN
+        var filter = AddressBarURLFilter()
+        filter.beginUserNavigation()
+
+        // WHEN
+        filter.invalidate()
+
+        // THEN
+        #expect(filter.isUserInitiatedNavigation == false)
+        // Next web-driven navigation should be filtered, not treated as user-initiated
+        let crossOrigin = URL(string: "https://evil.com")!
+        #expect(filter.shouldUpdate(for: crossOrigin, currentURL: URL(string: "https://example.com")!) == false)
+    }
+
     // MARK: - Multi-hop redirect chain
 
     @Test("Multi-hop redirect chain blocks all intermediate URLs")

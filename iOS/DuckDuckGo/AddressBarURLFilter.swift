@@ -30,8 +30,8 @@ protocol AddressBarURLFiltering {
 
 struct AddressBarURLFilter: AddressBarURLFiltering {
 
-    var committedSecurityOrigin: SecurityOrigin?
-    var isUserInitiatedNavigation: Bool = false
+    private(set) var committedSecurityOrigin: SecurityOrigin?
+    private(set) var isUserInitiatedNavigation: Bool = false
 
     /// Determines whether a URL change should update the address bar.
     ///
@@ -75,5 +75,6 @@ struct AddressBarURLFilter: AddressBarURLFiltering {
 
     mutating func invalidate() {
         committedSecurityOrigin = nil
+        isUserInitiatedNavigation = false
     }
 }

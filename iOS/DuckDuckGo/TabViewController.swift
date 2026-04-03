@@ -1044,8 +1044,6 @@ class TabViewController: UIViewController {
 
         assert(urlRequest.attribution == .user, "WebView requests should be user attributed")
 
-        addressBarURLFilter.beginUserNavigation()
-
         refreshCountSinceLoad = 0
 
         webView.stopLoading()

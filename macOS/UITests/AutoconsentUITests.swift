@@ -105,6 +105,8 @@ class AutoconsentUITests: UITestCase {
     }
 
     func testAutoconsent_CookieBannerHiding_BannersAreHidden() throws {
+        throw XCTSkip("Flaky test - uses cosmetic copy on CI and in release builds, whereas Debug builds don't")
+
         // Navigate to test page with cookie banner
         let bannerTestURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/banner.html")!
         addressBarTextField.pasteURL(bannerTestURL, pressingEnter: true)

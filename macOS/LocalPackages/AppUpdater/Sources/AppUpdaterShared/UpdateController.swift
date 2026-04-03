@@ -223,10 +223,6 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
     var isAtRestartCheckpoint: Bool { get }
 
     /// Whether the release notes page should automatically trigger an update check on load.
-    ///
-    /// Controlled by the `skipReleaseNotesUpdateCheck` feature flag.
-    /// When `false`, the release notes page will not trigger `checkForUpdateSkippingRollout()`
-    /// on navigation finish, avoiding back-to-back update prompts.
     var shouldAutoCheckOnReleaseNotesLoad: Bool { get }
 
     /// Publisher that emits when the app is about to relaunch for an update.

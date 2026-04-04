@@ -191,7 +191,7 @@ jobs:
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache'
       id: compilation-cache-hash
       run: |
-        hash=$(find DerivedData/CompilationCache.noindex -type f -name "*.index" -o -name "*.actions" 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+        hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
         echo "hash=${hash}" >> $GITHUB_OUTPUT
 
     - name: Save Xcode Compilation Cache
@@ -374,7 +374,7 @@ jobs:
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache'
       id: compilation-cache-hash
       run: |
-        hash=$(find DerivedData/CompilationCache.noindex -type f -name "*.index" -o -name "*.actions" 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+        hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
         echo "hash=${hash}" >> $GITHUB_OUTPUT
 
     - name: Save Xcode Compilation Cache

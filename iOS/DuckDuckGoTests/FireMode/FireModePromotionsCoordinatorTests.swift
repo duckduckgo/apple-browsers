@@ -24,12 +24,12 @@ import Core
 final class FireModePromotionsCoordinatorTests: XCTestCase {
 
     private var sut: FireModePromotionsCoordinator!
-    private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockCapability: MockFireModeCapability!
     private var userDefaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger()
+        mockCapability = MockFireModeCapability()
         userDefaults = UserDefaults(suiteName: "\(type(of: self))")!
         userDefaults.removePersistentDomain(forName: "\(type(of: self))")
         sut = makeSUT()
@@ -38,16 +38,16 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
     override func tearDown() {
         userDefaults.removePersistentDomain(forName: "\(type(of: self))")
         userDefaults = nil
-        mockFeatureFlagger = nil
+        mockCapability = nil
         sut = nil
         super.tearDown()
     }
 
-    // MARK: - Eligibility: Feature Flag
+    // MARK: - NTP Promotion: Feature Flag
 
     func testWhenFeatureFlagIsDisabledThenNotEligible() {
         setNTPEligibleState()
-        mockFeatureFlagger.enabledFeatureFlags.removeAll(where: { $0 == .fireMode })
+        mockCapability.isFireModeEnabled = false
 
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
@@ -58,10 +58,10 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.isNTPPromotionEligible)
     }
 
-    // MARK: - Eligibility: Burn Prerequisite
+    // MARK: - NTP Promotion: Burn Prerequisite
 
     func testWhenUserHasNotBurnedTabsThenNotEligible() {
-        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockCapability.isFireModeEnabled = true
 
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
@@ -73,14 +73,14 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
     }
 
     func testWhenMarkBurnPerformedCalledThenBurnStateIsPersisted() {
-        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockCapability.isFireModeEnabled = true
         sut.markBurnPerformed()
 
         let freshSUT = makeSUT()
         XCTAssertTrue(freshSUT.isNTPPromotionEligible)
     }
 
-    // MARK: - Eligibility: Fire Mode Visited
+    // MARK: - NTP Promotion: Fire Mode Visited
 
     func testWhenUserHasVisitedFireModeThenNotEligible() {
         setNTPEligibleState()
@@ -89,7 +89,7 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    // MARK: - Eligibility: Dismissed
+    // MARK: - NTP Promotion: Dismissed
 
     func testWhenPromotionIsDismissedThenNotEligible() {
         setNTPEligibleState()
@@ -98,7 +98,7 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    // MARK: - Eligibility: Expiration
+    // MARK: - NTP Promotion: Expiration
 
     func testWhenPromotionShownWithinThreeDaysThenEligible() {
         setNTPEligibleState()
@@ -121,7 +121,7 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.isNTPPromotionEligible)
     }
 
-    // MARK: - markNTPPromotionShown
+    // MARK: - NTP Promotion: markNTPPromotionShown
 
     func testWhenMarkShownCalledFirstTimeThenSetsFirstSeenDate() {
         sut.markNTPPromotionShown()
@@ -140,14 +140,101 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(firstDate, secondDate)
     }
 
+    // MARK: - Menu Promotion: Feature Flag
+
+    func testWhenFeatureFlagDisabledThenMenuNotEligible() {
+        XCTAssertFalse(sut.isMenuPromotionEligible)
+    }
+
+    func testWhenFeatureFlagEnabledThenMenuEligible() {
+        mockCapability.isFireModeEnabled = true
+
+        XCTAssertTrue(sut.isMenuPromotionEligible)
+    }
+
+    // MARK: - Menu Promotion: Fire Mode Visited
+
+    func testWhenFireModeVisitedThenMenuNotEligible() {
+        mockCapability.isFireModeEnabled = true
+        sut.markFireModeVisited()
+
+        XCTAssertFalse(sut.isMenuPromotionEligible)
+    }
+
+    // MARK: - Menu Promotion: Engaged
+
+    func testWhenMenuPromotionEngagedThenMenuNotEligible() {
+        mockCapability.isFireModeEnabled = true
+        sut.markMenuPromotionEngaged()
+
+        XCTAssertFalse(sut.isMenuPromotionEligible)
+    }
+
+    // MARK: - Menu Promotion: Open Count
+
+    func testWhenMenuOpenedFourTimesThenMenuStillEligible() {
+        mockCapability.isFireModeEnabled = true
+        for _ in 0..<4 {
+            sut.markMenuOpened()
+        }
+
+        XCTAssertTrue(sut.isMenuPromotionEligible)
+        
+        sut.markMenuOpened()
+
+        XCTAssertFalse(sut.isMenuPromotionEligible)
+    }
+
+    // MARK: - Menu Promotion: Expiration
+
+    func testWhenMenuFirstOpenedWithinFourteenDaysThenMenuEligible() {
+        mockCapability.isFireModeEnabled = true
+        sut.markMenuOpened()
+
+        XCTAssertTrue(sut.isMenuPromotionEligible)
+    }
+
+    func testWhenMenuFirstOpenedMoreThanFourteenDaysAgoThenMenuNotEligible() {
+        mockCapability.isFireModeEnabled = true
+        let fifteenDaysAgo = Date().addingTimeInterval(-15 * 24 * 60 * 60)
+        userDefaults.set(fifteenDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate")
+
+        XCTAssertFalse(sut.isMenuPromotionEligible)
+    }
+
+    // MARK: - Menu Promotion: markMenuOpened
+
+    func testWhenMarkMenuOpenedCalledFirstTimeThenSetsFirstOpenedDate() {
+        sut.markMenuOpened()
+
+        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate") as? Date
+        XCTAssertNotNil(storedDate)
+    }
+
+    func testWhenMarkMenuOpenedCalledMultipleTimesThenDoesNotOverwriteFirstOpenedDate() {
+        sut.markMenuOpened()
+        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate") as? Date
+
+        sut.markMenuOpened()
+        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate") as? Date
+
+        XCTAssertEqual(firstDate, secondDate)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT() -> FireModePromotionsCoordinator {
-        FireModePromotionsCoordinator(featureFlagger: mockFeatureFlagger, userDefaults: userDefaults)
+        FireModePromotionsCoordinator(fireModeCapability: mockCapability, userDefaults: userDefaults)
     }
 
     private func setNTPEligibleState() {
-        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockCapability.isFireModeEnabled = true
         sut.markBurnPerformed()
     }
+}
+
+// MARK: - Mock
+
+private final class MockFireModeCapability: FireModeCapable {
+    var isFireModeEnabled = false
 }

@@ -2962,6 +2962,11 @@ class MainViewController: UIViewController {
         guard currentTab?.isAITab == true else { return }
         action()
     }
+    
+    private func navigateToFireMode() {
+        tabManager.setBrowsingMode(.fire)
+        showTabSwitcher()
+    }
 }
 
 extension MainViewController: FindInPageDelegate {
@@ -3300,6 +3305,9 @@ extension MainViewController: OmniBarDelegate {
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
+
+        fireModePromotionEligibility?.markMenuOpened()
+        tab.fireModePromotionCoordinator = fireModePromotionEligibility
 
         // Determine context for menu building
         let context: BrowsingMenuContext
@@ -4071,8 +4079,7 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
-        tabManager.setBrowsingMode(.fire)
-        showTabSwitcher()
+        navigateToFireMode()
     }
 }
 
@@ -4084,6 +4091,10 @@ extension MainViewController: TabDelegate {
     
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
         newEmailAddress()
+    }
+
+    func tabDidRequestFireMode(tab: TabViewController) {
+        navigateToFireMode()
     }
 
     var isAIChatEnabled: Bool {

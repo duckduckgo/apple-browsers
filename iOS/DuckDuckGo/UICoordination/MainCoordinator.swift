@@ -126,7 +126,8 @@ final class MainCoordinator {
         self.wideEvent = wideEvent
         self.voiceSessionStateManager = VoiceSessionStateManager()
         self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
-        let fireModePromotionsCoordinator = FireModePromotionsCoordinator(featureFlagger: featureFlagger)
+        let fireModeCapability = FireModeCapability.create(using: featureFlagger)
+        let fireModePromotionsCoordinator = FireModePromotionsCoordinator(fireModeCapability: fireModeCapability)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,

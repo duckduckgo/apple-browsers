@@ -197,7 +197,6 @@ extension TabViewController {
     }
     
     private func buildNewNormalTabEntry() -> BrowsingMenuEntry {
-        let title = tabModel.fireTab ? UserText.actionNewFireTab : UserText.actionNewTab
         return .regular(name: UserText.actionNewTab,
                         accessibilityLabel: UserText.keyCommandNewTab,
                         image: DesignSystemImages.Glyphs.Size24.add,
@@ -207,7 +206,6 @@ extension TabViewController {
     }
     
     private func buildNewFireTabEntry() -> BrowsingMenuEntry {
-        let title = tabModel.fireTab ? UserText.actionNewFireTab : UserText.actionNewTab
         return .regular(name: UserText.actionNewFireTab,
                         accessibilityLabel: UserText.actionNewFireTab,
                         image: DesignSystemImages.Glyphs.Size24.add,

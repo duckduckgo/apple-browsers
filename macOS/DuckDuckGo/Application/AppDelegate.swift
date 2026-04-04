@@ -1910,7 +1910,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
                        defaultHeaders: [:],
-                       defaults: .netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+                       defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
             let apiHeaders = APIRequest.Headers(userAgent: userAgent, additionalHeaders: headers)

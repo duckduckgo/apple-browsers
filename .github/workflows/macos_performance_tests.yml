@@ -179,11 +179,15 @@ jobs:
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache'
       id: compilation-cache-hash
       run: |
-        hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
-        echo "hash=${hash}" >> $GITHUB_OUTPUT
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache'
+      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache') && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v4
       with:
         path: macOS/DerivedData/CompilationCache.noindex

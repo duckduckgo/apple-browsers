@@ -300,7 +300,7 @@ jobs:
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-integrationtests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-integrationtests.xcresult && exit 1; }
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache'
+      if: github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -311,7 +311,7 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache') && steps.compilation-cache-hash.outputs.hash
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v4
       with:
         path: macOS/DerivedData/CompilationCache.noindex
@@ -566,7 +566,7 @@ jobs:
           | xcbeautify
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache'
+      if: github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -577,7 +577,7 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache') && steps.compilation-cache-hash.outputs.hash
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v4
       with:
         path: macOS/DerivedData/CompilationCache.noindex

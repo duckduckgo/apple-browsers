@@ -169,7 +169,7 @@ jobs:
         | xcbeautify
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache'
+      if: github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -180,7 +180,7 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sam/test-compilation-cache') && steps.compilation-cache-hash.outputs.hash
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v4
       with:
         path: macOS/DerivedData/CompilationCache.noindex

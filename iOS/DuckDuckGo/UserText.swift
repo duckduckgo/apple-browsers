@@ -2424,6 +2424,12 @@ public struct UserText {
     public static let dataImportBookmarksSubtitle = NSLocalizedString("data.import.bookmarks.subtitle", value: "Select the file containing bookmarks. This is usually a ZIP or HTML file.", comment: "Subtitle for screen to import bookmarks")
     public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value: "Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
 
+    public static let dataImportHubTitle = NSLocalizedString("data.import.hub.title", value: "Bring to DuckDuckGo", comment: "Title for the data import hub screen")
+    public static let dataImportHubImportPasswordsButton = NSLocalizedString("data.import.hub.button.passwords", value: "Import Passwords", comment: "Button title on the data import hub to start password import")
+    public static let dataImportHubImportBookmarksFromSafariButton = NSLocalizedString("data.import.hub.button.bookmarks-from-safari", value: "Import Bookmarks From Safari", comment: "Button title on the data import hub to start Safari bookmarks import")
+    public static let dataImportHubOtherSectionTitle = NSLocalizedString("data.import.hub.section.other", value: "Other", comment: "Section title on the data import hub for secondary import actions")
+    public static let dataImportHubUploadExportedFileButton = NSLocalizedString("data.import.hub.button.upload", value: "Upload Exported File...", comment: "Button title on the data import hub for uploading an export file")
+
 
     public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value: "No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")
     public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value: "The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")

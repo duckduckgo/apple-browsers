@@ -1180,6 +1180,21 @@
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
 
+/* Button title on the data import hub to start Safari bookmarks import */
+"data.import.hub.button.bookmarks-from-safari" = "Import Bookmarks From Safari";
+
+/* Button title on the data import hub to start password import */
+"data.import.hub.button.passwords" = "Import Passwords";
+
+/* Button title on the data import hub for uploading an export file */
+"data.import.hub.button.upload" = "Upload Exported File...";
+
+/* Section title on the data import hub for secondary import actions */
+"data.import.hub.section.other" = "Other";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Bring to DuckDuckGo";
+
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Select **Export**, and on the next screen select **Bookmarks** and **Save to Downloads**.";
 

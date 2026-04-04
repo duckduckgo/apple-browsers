@@ -1916,6 +1916,10 @@
 		C1C1FF522D085AD70017ACCE /* ActionMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C1FF4C2D085AD70017ACCE /* ActionMessageView.swift */; };
 		C1C1FF532D085AD70017ACCE /* NibLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C1FF4F2D085AD70017ACCE /* NibLoading.swift */; };
 		C1C23C102D490CA500B6BDF6 /* ImportArchiveReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C0F2D490CA500B6BDF6 /* ImportArchiveReader.swift */; };
+		A1F4C4E22F8A1B9300D1A111 /* DataImportEntryPointHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C4E12F8A1B9300D1A111 /* DataImportEntryPointHandler.swift */; };
+		A1F4C5042F8A300000D1A111 /* DataImportHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5012F8A300000D1A111 /* DataImportHubView.swift */; };
+		A1F4C5052F8A300000D1A111 /* DataImportHubViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5022F8A300000D1A111 /* DataImportHubViewController.swift */; };
+		A1F4C5062F8A300000D1A111 /* DataImportHubViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5032F8A300000D1A111 /* DataImportHubViewModel.swift */; };
 		C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C292D4C0F1A00B6BDF6 /* DataImportViewController.swift */; };
 		C1C23C2F2D4C0F1A00B6BDF6 /* DataImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C282D4C0F1A00B6BDF6 /* DataImportView.swift */; };
 		C1C23C302D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C2D2D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift */; };
@@ -4449,6 +4453,10 @@
 		C1C1FF4E2D085AD70017ACCE /* FaviconHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconHelper.swift; sourceTree = "<group>"; };
 		C1C1FF4F2D085AD70017ACCE /* NibLoading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NibLoading.swift; sourceTree = "<group>"; };
 		C1C23C0F2D490CA500B6BDF6 /* ImportArchiveReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportArchiveReader.swift; sourceTree = "<group>"; };
+		A1F4C4E12F8A1B9300D1A111 /* DataImportEntryPointHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportEntryPointHandler.swift; sourceTree = "<group>"; };
+		A1F4C5012F8A300000D1A111 /* DataImportHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubView.swift; sourceTree = "<group>"; };
+		A1F4C5022F8A300000D1A111 /* DataImportHubViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubViewController.swift; sourceTree = "<group>"; };
+		A1F4C5032F8A300000D1A111 /* DataImportHubViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubViewModel.swift; sourceTree = "<group>"; };
 		C1C23C252D4C0F1A00B6BDF6 /* DataImportSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryView.swift; sourceTree = "<group>"; };
 		C1C23C262D4C0F1A00B6BDF6 /* DataImportSummaryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewController.swift; sourceTree = "<group>"; };
 		C1C23C272D4C0F1A00B6BDF6 /* DataImportSummaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewModel.swift; sourceTree = "<group>"; };
@@ -9188,9 +9196,21 @@
 			name = DataImport;
 			sourceTree = "<group>";
 		};
+		A1F4C5072F8A300000D1A111 /* Hub */ = {
+			isa = PBXGroup;
+			children = (
+				A1F4C5012F8A300000D1A111 /* DataImportHubView.swift */,
+				A1F4C5022F8A300000D1A111 /* DataImportHubViewController.swift */,
+				A1F4C5032F8A300000D1A111 /* DataImportHubViewModel.swift */,
+			);
+			path = Hub;
+			sourceTree = "<group>";
+		};
 		C1C23C242D4C0C4F00B6BDF6 /* DataImport */ = {
 			isa = PBXGroup;
 			children = (
+				A1F4C4E12F8A1B9300D1A111 /* DataImportEntryPointHandler.swift */,
+				A1F4C5072F8A300000D1A111 /* Hub */,
 				C1C23C282D4C0F1A00B6BDF6 /* DataImportView.swift */,
 				C1C23C292D4C0F1A00B6BDF6 /* DataImportViewController.swift */,
 				C1C23C2A2D4C0F1A00B6BDF6 /* DataImportViewModel.swift */,
@@ -12373,6 +12393,10 @@
 				36F2CA592E604C5100C7039D /* UNUserNotificationCenterRepresentable.swift in Sources */,
 				806DF4092F3B89BD00FBCA3F /* DataClearingCapability.swift in Sources */,
 				F1617C151E57336D00DEDCAF /* TabManager.swift in Sources */,
+				A1F4C4E22F8A1B9300D1A111 /* DataImportEntryPointHandler.swift in Sources */,
+				A1F4C5042F8A300000D1A111 /* DataImportHubView.swift in Sources */,
+				A1F4C5052F8A300000D1A111 /* DataImportHubViewController.swift in Sources */,
+				A1F4C5062F8A300000D1A111 /* DataImportHubViewModel.swift in Sources */,
 				C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */,
 				C1C23C2F2D4C0F1A00B6BDF6 /* DataImportView.swift in Sources */,
 				80C948022F551DCD002EDB79 /* BrowsingMode.swift in Sources */,

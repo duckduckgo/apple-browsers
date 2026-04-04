@@ -25,7 +25,6 @@ protocol AddressBarURLFiltering {
     mutating func commitNavigation(for url: URL?)
     mutating func beginUserNavigation()
     mutating func beginUserReload()
-    mutating func invalidate()
 }
 
 struct AddressBarURLFilter: AddressBarURLFiltering {
@@ -39,6 +38,8 @@ struct AddressBarURLFilter: AddressBarURLFiltering {
     /// (redirects, JS-initiated), the URL is only shown if its security origin matches
     /// the last committed origin. This prevents intermediate redirect URLs from flashing
     /// in the address bar.
+    ///
+    /// Matches macOS behavior: strict SecurityOrigin equality, no host-only fallback.
     func shouldUpdate(for newURL: URL, currentURL: URL?) -> Bool {
         if isUserInitiatedNavigation {
             return true
@@ -50,10 +51,6 @@ struct AddressBarURLFilter: AddressBarURLFiltering {
 
         if let committed = committedSecurityOrigin, !committed.isEmpty {
             return newURL.securityOrigin == committed
-        }
-
-        if let currentHost = currentURL?.host, let newHost = newURL.host {
-            return currentHost == newHost
         }
 
         return true
@@ -71,10 +68,5 @@ struct AddressBarURLFilter: AddressBarURLFiltering {
 
     mutating func beginUserReload() {
         isUserInitiatedNavigation = true
-    }
-
-    mutating func invalidate() {
-        committedSecurityOrigin = nil
-        isUserInitiatedNavigation = false
     }
 }

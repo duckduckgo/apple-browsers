@@ -2099,7 +2099,6 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailNavigation; error: \(error)")
-        addressBarURLFilter.invalidate()
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
@@ -2126,7 +2125,6 @@ extension TabViewController: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
-        addressBarURLFilter.invalidate()
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
@@ -2973,7 +2971,6 @@ extension TabViewController: WKUIDelegate {
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        addressBarURLFilter.invalidate()
         Pixel.fire(pixel: .webKitDidTerminate)
         delegate?.tabContentProcessDidTerminate(tab: self)
     }

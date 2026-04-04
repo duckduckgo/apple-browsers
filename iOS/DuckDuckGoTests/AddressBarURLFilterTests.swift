@@ -147,31 +147,15 @@ struct AddressBarURLFilterTests {
 
     // MARK: - No committed origin fallback
 
-    @Test("Falls back to same-host check when no committed origin exists")
-    func whenNoCommittedOriginThenFallsBackToSameHost() {
+    @Test("Allows update when no committed origin exists")
+    func whenNoCommittedOriginThenShouldAllow() {
         // GIVEN
         let filter = AddressBarURLFilter()
 
-        // WHEN
-        let sameHost = URL(string: "https://example.com/page2")!
-        let differentHost = URL(string: "https://other.com/page")!
-        let currentURL = URL(string: "https://example.com")!
-
-        // THEN
-        #expect(filter.shouldUpdate(for: sameHost, currentURL: currentURL) == true)
-        #expect(filter.shouldUpdate(for: differentHost, currentURL: currentURL) == false)
-    }
-
-    @Test("Allows update when no committed origin and no current URL")
-    func whenNoCommittedOriginAndNoCurrentURLThenShouldAllow() {
-        // GIVEN
-        let filter = AddressBarURLFilter()
-
-        // WHEN
-        let result = filter.shouldUpdate(for: URL(string: "https://example.com")!, currentURL: nil)
-
-        // THEN
-        #expect(result == true)
+        // WHEN/THEN
+        let anyURL = URL(string: "https://example.com/page")!
+        #expect(filter.shouldUpdate(for: anyURL, currentURL: nil) == true)
+        #expect(filter.shouldUpdate(for: anyURL, currentURL: URL(string: "https://other.com")!) == true)
     }
 
     // MARK: - Lifecycle
@@ -202,35 +186,6 @@ struct AddressBarURLFilterTests {
         // THEN
         #expect(filter.isUserInitiatedNavigation == true)
         #expect(filter.committedSecurityOrigin == nil)
-    }
-
-    @Test("invalidate clears committed origin")
-    func whenInvalidateThenClearsOrigin() {
-        // GIVEN
-        var filter = AddressBarURLFilter()
-        filter.commitNavigation(for: URL(string: "https://example.com")!)
-
-        // WHEN
-        filter.invalidate()
-
-        // THEN
-        #expect(filter.committedSecurityOrigin == nil)
-    }
-
-    @Test("invalidate resets user-initiated flag")
-    func whenInvalidateAfterUserNavigationThenResetsFlag() {
-        // GIVEN
-        var filter = AddressBarURLFilter()
-        filter.beginUserNavigation()
-
-        // WHEN
-        filter.invalidate()
-
-        // THEN
-        #expect(filter.isUserInitiatedNavigation == false)
-        // Next web-driven navigation should be filtered, not treated as user-initiated
-        let crossOrigin = URL(string: "https://evil.com")!
-        #expect(filter.shouldUpdate(for: crossOrigin, currentURL: URL(string: "https://example.com")!) == false)
     }
 
     // MARK: - Multi-hop redirect chain

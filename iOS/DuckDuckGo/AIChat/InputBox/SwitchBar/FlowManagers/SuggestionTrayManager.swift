@@ -337,4 +337,8 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
         delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
     }
+
+    func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
+        // no-op: fire mode promotion is only shown on the main new tab page
+    }
 }

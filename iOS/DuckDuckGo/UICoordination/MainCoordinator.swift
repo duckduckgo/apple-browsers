@@ -126,9 +126,11 @@ final class MainCoordinator {
         self.wideEvent = wideEvent
         self.voiceSessionStateManager = VoiceSessionStateManager()
         self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
+        let fireModePromotionsCoordinator = FireModePromotionsCoordinator(featureFlagger: featureFlagger)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
+                                                          fireModePromotionEligibility: fireModePromotionsCoordinator,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
@@ -185,7 +187,8 @@ final class MainCoordinator {
                                 voiceSearchHelper: voiceSearchHelper,
                                 launchSourceManager: launchSourceManager,
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                toggleModeStorage: toggleModeStorage)
+                                toggleModeStorage: toggleModeStorage,
+                                fireModePromotionEligibility: fireModePromotionsCoordinator)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -260,7 +263,8 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                        toggleModeStorage: toggleModeStorage)
+                                        toggleModeStorage: toggleModeStorage,
+                                        fireModePromotionEligibility: fireModePromotionsCoordinator)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 

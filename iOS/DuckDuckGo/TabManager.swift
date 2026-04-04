@@ -144,6 +144,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let launchSourceManager: LaunchSourceManaging
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private let toggleModeStorage: ToggleModeStoring
+    private let fireModePromotionEligibility: FireModePromotionCoordinating?
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -187,7 +188,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          voiceSearchHelper: VoiceSearchHelperProtocol,
          launchSourceManager: LaunchSourceManaging,
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
-         toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil
     ) {
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
@@ -224,6 +226,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.launchSourceManager = launchSourceManager
         self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
+        self.fireModePromotionEligibility = fireModePromotionEligibility
         registerForNotifications()
     }
 
@@ -245,6 +248,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         _currentBrowsingMode = mode
         fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
+        if mode == .fire {
+            fireModePromotionEligibility?.markFireModeVisited()
+        }
         // TODO: - Fire pixel
     }
 

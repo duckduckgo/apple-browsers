@@ -208,17 +208,27 @@ class SettingsLegacyViewProvider: ObservableObject {
                                               productSurfaceTelemetry: self.productSurfaceTelemetry)
     }
 
-    func importPasswords(delegate: DataImportViewControllerDelegate) -> DataImportViewController {
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen,
+                                              delegate: DataImportViewControllerDelegate) -> DataImportViewController {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let viewController = DataImportViewController(importManager: dataImportManager,
-                                                      importScreen: DataImportViewModel.ImportScreen.settings,
+                                                      importScreen: importScreen,
                                                       syncService: syncService,
                                                       keyValueStore: keyValueStore)
         viewController.delegate = delegate
         return viewController
+    }
+
+    func importPasswords(delegate: DataImportViewControllerDelegate) -> UIViewController {
+        switch DataImportEntryPointHandler().destination(for: .settings) {
+        case .legacy(let importScreen):
+            return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
+        case .hub:
+            return DataImportHubViewController()
+        }
     }
 
 }

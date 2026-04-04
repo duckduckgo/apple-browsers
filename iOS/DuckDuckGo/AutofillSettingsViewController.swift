@@ -165,19 +165,30 @@ final class AutofillSettingsViewController: UIViewController {
             source: source)
         navigationController?.pushViewController(autofillCreditCardsViewController, animated: true)
     }
-    
-    private func segueToFileImport() {
+
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(vault: viewModel.secureVault,
                                                   reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: DataImportViewModel.ImportScreen.passwords,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
-        navigationController?.pushViewController(dataImportViewController, animated: true)
+        return dataImportViewController
+    }
+
+    private func segueToFileImport() {
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: .passwords) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+        case .hub:
+            destinationViewController = DataImportHubViewController()
+        }
+        navigationController?.pushViewController(destinationViewController, animated: true)
         Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])
     }
     

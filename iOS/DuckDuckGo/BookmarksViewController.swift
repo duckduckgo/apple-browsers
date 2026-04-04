@@ -667,20 +667,31 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         present(docPicker, animated: true)
     }
 
-    private func segueToDataImport() {
-        finishEditing()
-
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: appSettings.favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: DataImportViewModel.ImportScreen.bookmarks,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
+        return dataImportViewController
+    }
+
+    private func segueToDataImport() {
+        finishEditing()
+
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: .bookmarks) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+        case .hub:
+            destinationViewController = DataImportHubViewController()
+        }
         navigationController?.setToolbarHidden(true, animated: true)
-        navigationController?.pushViewController(dataImportViewController, animated: true)
+        navigationController?.pushViewController(destinationViewController, animated: true)
     }
 
     func importBookmarks(fromHtml html: String) {

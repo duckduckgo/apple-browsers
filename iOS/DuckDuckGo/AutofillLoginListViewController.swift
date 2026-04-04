@@ -429,17 +429,28 @@ final class AutofillLoginListViewController: UIViewController {
         }
     }
 
-    private func segueToFileImport(source: DataImportViewModel.ImportScreen = DataImportViewModel.ImportScreen.passwords) {
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: source,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
-        navigationController?.pushViewController(dataImportViewController, animated: true)
+        return dataImportViewController
+    }
+
+    private func segueToFileImport(source: DataImportViewModel.ImportScreen = .passwords) {
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: source) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+        case .hub:
+            destinationViewController = DataImportHubViewController()
+        }
+        navigationController?.pushViewController(destinationViewController, animated: true)
     }
 
     private func segueToImportViaSync() {

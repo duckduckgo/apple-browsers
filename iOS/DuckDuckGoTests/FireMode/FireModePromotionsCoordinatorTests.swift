@@ -170,53 +170,53 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isMenuPromotionEligible)
     }
 
-    // MARK: - Menu Promotion: Open Count
+    // MARK: - Menu Promotion: Shown Count
 
-    func testWhenMenuOpenedFourTimesThenMenuStillEligible() {
+    func testWhenPromotionShownFiveTimesThenMenuStillEligibleOnFifthAndIneligibleOnSixth() {
         mockCapability.isFireModeEnabled = true
         for _ in 0..<4 {
-            sut.markMenuOpened()
+            sut.markMenuPromotionShown()
         }
 
-        XCTAssertTrue(sut.isMenuPromotionEligible)
-        
-        sut.markMenuOpened()
+        XCTAssertTrue(sut.isMenuPromotionEligible, "Should still be eligible before 5th showing")
 
-        XCTAssertFalse(sut.isMenuPromotionEligible)
+        sut.markMenuPromotionShown()
+
+        XCTAssertFalse(sut.isMenuPromotionEligible, "Should become ineligible after 5th showing")
     }
 
     // MARK: - Menu Promotion: Expiration
 
-    func testWhenMenuFirstOpenedWithinFourteenDaysThenMenuEligible() {
+    func testWhenPromotionFirstShownWithinFourteenDaysThenMenuEligible() {
         mockCapability.isFireModeEnabled = true
-        sut.markMenuOpened()
+        sut.markMenuPromotionShown()
 
         XCTAssertTrue(sut.isMenuPromotionEligible)
     }
 
-    func testWhenMenuFirstOpenedMoreThanFourteenDaysAgoThenMenuNotEligible() {
+    func testWhenPromotionFirstShownMoreThanFourteenDaysAgoThenMenuNotEligible() {
         mockCapability.isFireModeEnabled = true
         let fifteenDaysAgo = Date().addingTimeInterval(-15 * 24 * 60 * 60)
-        userDefaults.set(fifteenDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate")
+        userDefaults.set(fifteenDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate")
 
         XCTAssertFalse(sut.isMenuPromotionEligible)
     }
 
-    // MARK: - Menu Promotion: markMenuOpened
+    // MARK: - Menu Promotion: markMenuPromotionShown
 
-    func testWhenMarkMenuOpenedCalledFirstTimeThenSetsFirstOpenedDate() {
-        sut.markMenuOpened()
+    func testWhenMarkMenuPromotionShownCalledFirstTimeThenSetsFirstShownDate() {
+        sut.markMenuPromotionShown()
 
-        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate") as? Date
+        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
         XCTAssertNotNil(storedDate)
     }
 
-    func testWhenMarkMenuOpenedCalledMultipleTimesThenDoesNotOverwriteFirstOpenedDate() {
-        sut.markMenuOpened()
-        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate") as? Date
+    func testWhenMarkMenuPromotionShownCalledMultipleTimesThenDoesNotOverwriteFirstShownDate() {
+        sut.markMenuPromotionShown()
+        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
 
-        sut.markMenuOpened()
-        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate") as? Date
+        sut.markMenuPromotionShown()
+        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
 
         XCTAssertEqual(firstDate, secondDate)
     }

@@ -3306,7 +3306,6 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        fireModePromotionEligibility?.markMenuOpened()
         tab.fireModePromotionCoordinator = fireModePromotionEligibility
 
         // Determine context for menu building

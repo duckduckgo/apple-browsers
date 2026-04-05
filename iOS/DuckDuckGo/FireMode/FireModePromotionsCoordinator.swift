@@ -32,7 +32,7 @@ protocol FireModePromotionCoordinating {
     func markNTPPromotionEngaged()
 
     var isMenuPromotionEligible: Bool { get }
-    func markMenuOpened()
+    func markMenuPromotionShown()
     func markMenuPromotionEngaged()
 }
 
@@ -45,8 +45,8 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         static let firstSeenDate = "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate"
         static let isDismissed = "com.duckduckgo.ios.firePromotion.ntp.isDismissed"
         static let isEngaged = "com.duckduckgo.ios.firePromotion.ntp.isEngaged"
-        static let menuFirstOpenedDate = "com.duckduckgo.ios.firePromotion.menu.firstOpenedDate"
-        static let menuOpenCount = "com.duckduckgo.ios.firePromotion.menu.openCount"
+        static let menuPromotionFirstShownDate = "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate"
+        static let menuPromotionShownCount = "com.duckduckgo.ios.firePromotion.menu.promotionShownCount"
         static let menuPromotionEngaged = "com.duckduckgo.ios.firePromotion.menu.engaged"
     }
 
@@ -117,27 +117,27 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
     /// - Fire mode feature flag is enabled
     /// - User has NOT visited fire mode themselves
     /// - User has not engaged with the menu promotion
-    /// - Menu has been opened fewer than 5 times
-    /// - Promotion has not expired (14 days since first menu open)
+    /// - Promotion has been shown fewer than 5 times
+    /// - Promotion has not expired (14 days since first shown)
     var isMenuPromotionEligible: Bool {
         guard fireModeCapability.isFireModeEnabled else { return false }
         guard !hasVisitedFireMode else { return false }
         guard !menuPromotionEngaged else { return false }
-        guard menuOpenCount < Self.menuMaxOpenCount else { return false }
+        guard menuPromotionShownCount < Self.menuMaxOpenCount else { return false }
 
-        if let firstOpened = menuFirstOpenedDate {
-            guard Date().timeIntervalSince(firstOpened) < Self.menuExpirationInterval else { return false }
+        if let firstShown = menuPromotionFirstShownDate {
+            guard Date().timeIntervalSince(firstShown) < Self.menuExpirationInterval else { return false }
         }
 
         return true
     }
 
-    func markMenuOpened() {
-        if menuFirstOpenedDate == nil {
-            menuFirstOpenedDate = Date()
+    func markMenuPromotionShown() {
+        if menuPromotionFirstShownDate == nil {
+            menuPromotionFirstShownDate = Date()
         }
-        menuOpenCount += 1
-        // TODO: fire menu promotion opened pixel
+        menuPromotionShownCount += 1
+        // TODO: fire menu promotion shown pixel
     }
 
     func markMenuPromotionEngaged() {
@@ -172,14 +172,14 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         set { userDefaults.set(newValue, forKey: Keys.isEngaged) }
     }
 
-    private var menuFirstOpenedDate: Date? {
-        get { userDefaults.object(forKey: Keys.menuFirstOpenedDate) as? Date }
-        set { userDefaults.set(newValue, forKey: Keys.menuFirstOpenedDate) }
+    private var menuPromotionFirstShownDate: Date? {
+        get { userDefaults.object(forKey: Keys.menuPromotionFirstShownDate) as? Date }
+        set { userDefaults.set(newValue, forKey: Keys.menuPromotionFirstShownDate) }
     }
 
-    private var menuOpenCount: Int {
-        get { userDefaults.integer(forKey: Keys.menuOpenCount) }
-        set { userDefaults.set(newValue, forKey: Keys.menuOpenCount) }
+    private var menuPromotionShownCount: Int {
+        get { userDefaults.integer(forKey: Keys.menuPromotionShownCount) }
+        set { userDefaults.set(newValue, forKey: Keys.menuPromotionShownCount) }
     }
 
     private var menuPromotionEngaged: Bool {

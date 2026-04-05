@@ -96,7 +96,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Fire Tabs
     private static let fireModeAccent = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
     private static let fireModeAccentTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Mandarin.mandarin60)
-    private static let fireModeBackground = DynamicColor(lightColor: x3D3D3D, darkColor: surfaceCanvas.darkColor)
+    private static let fireModeBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x080808)
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))

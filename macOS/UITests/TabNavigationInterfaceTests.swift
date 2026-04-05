@@ -19,7 +19,7 @@
 import Common
 import XCTest
 
-final class TabNavigationLinkTests: UITestCase, TabNavigationTestHelpers {
+final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
 
     override class func setUp() {
         super.setUp()

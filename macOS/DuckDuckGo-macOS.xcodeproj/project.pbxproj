@@ -1590,7 +1590,7 @@
 		4B723E0926B0003E00E14D75 /* CSVLoginExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B723E0426B0003E00E14D75 /* CSVLoginExporterTests.swift */; };
 		4B723E1326B0007A00E14D75 /* CSVLoginExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B723DFD26B0002B00E14D75 /* CSVLoginExporter.swift */; };
 		4B7948152F81DE2600DA4028 /* TabNavigationTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7948142F81DE2600DA4028 /* TabNavigationTestHelpers.swift */; };
-		4B7948172F81DFC100DA4028 /* TabNavigationLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7948162F81DFC100DA4028 /* TabNavigationLinkTests.swift */; };
+		4B7948172F81DFC100DA4028 /* TabNavigationInterfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7948162F81DFC100DA4028 /* TabNavigationInterfaceTests.swift */; };
 		4B7948192F81DFC400DA4028 /* TabNavigationMenuItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7948182F81DFC400DA4028 /* TabNavigationMenuItemTests.swift */; };
 		4B79481B2F81DFC400DA4028 /* TabNavigationPopupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B79481A2F81DFC400DA4028 /* TabNavigationPopupTests.swift */; };
 		4B7A57CF279A4EF300B1C70E /* ChromiumPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7A57CE279A4EF300B1C70E /* ChromiumPreferences.swift */; };
@@ -5216,7 +5216,7 @@
 		4B723E0326B0003E00E14D75 /* MockSecureVault.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockSecureVault.swift; sourceTree = "<group>"; };
 		4B723E0426B0003E00E14D75 /* CSVLoginExporterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CSVLoginExporterTests.swift; sourceTree = "<group>"; };
 		4B7948142F81DE2600DA4028 /* TabNavigationTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabNavigationTestHelpers.swift; sourceTree = "<group>"; };
-		4B7948162F81DFC100DA4028 /* TabNavigationLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabNavigationLinkTests.swift; sourceTree = "<group>"; };
+		4B7948162F81DFC100DA4028 /* TabNavigationInterfaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabNavigationInterfaceTests.swift; sourceTree = "<group>"; };
 		4B7948182F81DFC400DA4028 /* TabNavigationMenuItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabNavigationMenuItemTests.swift; sourceTree = "<group>"; };
 		4B79481A2F81DFC400DA4028 /* TabNavigationPopupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabNavigationPopupTests.swift; sourceTree = "<group>"; };
 		4B7A57CE279A4EF300B1C70E /* ChromiumPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumPreferences.swift; sourceTree = "<group>"; };
@@ -9391,7 +9391,7 @@
 				8438BB162F2874270084DE69 /* WarnBeforeQuitUITests.swift */,
 				376E708D2BD686260082B7EB /* UI Tests.xctestplan */,
 				4B7948142F81DE2600DA4028 /* TabNavigationTestHelpers.swift */,
-				4B7948162F81DFC100DA4028 /* TabNavigationLinkTests.swift */,
+				4B7948162F81DFC100DA4028 /* TabNavigationInterfaceTests.swift */,
 				4B7948182F81DFC400DA4028 /* TabNavigationMenuItemTests.swift */,
 				4B79481A2F81DFC400DA4028 /* TabNavigationPopupTests.swift */,
 			);
@@ -16506,7 +16506,7 @@
 				843A52F82EA8F9170094C215 /* FireDialogGeneralUITests.swift in Sources */,
 				843A52F92EA8F9170094C215 /* FireDialogHistoryDeleteAllUITests.swift in Sources */,
 				843A52FA2EA8F9170094C215 /* FireDialogHistoryMultiSelectDeletionUITests.swift in Sources */,
-				4B7948172F81DFC100DA4028 /* TabNavigationLinkTests.swift in Sources */,
+				4B7948172F81DFC100DA4028 /* TabNavigationInterfaceTests.swift in Sources */,
 				843A52FB2EA8F9170094C215 /* FireDialogHistoryDateDeletionUITests.swift in Sources */,
 				843A52FC2EA8F9170094C215 /* FireDialogWindowScopeUITests.swift in Sources */,
 				843A52FD2EA8F9170094C215 /* FireDialogHistoryIndividualDeletionUITests.swift in Sources */,

@@ -30,7 +30,10 @@ select_xcode_version() {
     fi
     
     echo "Selecting Xcode version $XCODE_VERSION"
-    sudo xcode-select -s "$XCODE_PATH"
+    # sudo xcode-select -s "$XCODE_PATH"
+
+    # Sudo-less xcode-selection
+    echo "DEVELOPER_DIR=$XCODE_PATH" >> "$GITHUB_ENV"
 }
 
 main() {

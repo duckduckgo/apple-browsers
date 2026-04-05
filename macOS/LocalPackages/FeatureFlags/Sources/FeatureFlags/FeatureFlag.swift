@@ -47,6 +47,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1213962493484138?focus=true
     case vpnConnectionFailureLoopDetection
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736

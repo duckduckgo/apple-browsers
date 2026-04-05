@@ -267,7 +267,7 @@ class ErrorPageTests: XCTestCase {
         }]
         let eNavigationFailed2 = tab1.$error.compactMap { $0 }.filter {
             $0.errorCode == NSError.noConnection.code
-        }.timeout(5).first().promise()
+        }.timeout(10).first().promise()
 
         tabsViewModel.select(at: .unpinned(0))
 

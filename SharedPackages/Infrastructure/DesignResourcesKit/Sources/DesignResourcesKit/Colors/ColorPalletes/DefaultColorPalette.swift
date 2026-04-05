@@ -95,6 +95,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Fire Tabs
     private static let fireModeAccent = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+    private static let fireModeAccentDark = DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin40)
     private static let fireModeAccentTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Mandarin.mandarin60)
     private static let fireModeBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x080808)
 
@@ -279,6 +280,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .toolbarButton:
             return DynamicColor(lightColor: x1F1F1F.opacity(0.918), darkColor: .tint(0.905))
         case .fireModeAccent: return fireModeAccent
+        case .fireModeAccentDark: return fireModeAccentDark
         case .fireModeAccentTertiary: return fireModeAccentTertiary
         case .fireModeBackground: return fireModeBackground
         }

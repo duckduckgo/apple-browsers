@@ -58,7 +58,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Backgrounds
     private static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
-    private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
+    private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
     private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
 
     // Shadow

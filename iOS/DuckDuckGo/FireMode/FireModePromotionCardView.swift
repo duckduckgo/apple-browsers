@@ -62,7 +62,7 @@ struct FireModePromotionCardView: View {
                 .scaledToFit()
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
 
-            Text(UserText.fireModeNTPPromotionTitle)
+            Text(UserText.fireModePromotionTitle)
                 .daxHeadline()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
 

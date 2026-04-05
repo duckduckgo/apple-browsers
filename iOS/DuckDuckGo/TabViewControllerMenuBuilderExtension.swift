@@ -965,7 +965,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeFireModePromotionEntry() -> BrowsingMenuEntry? {
         guard !tabModel.fireTab,
               fireModePromotionCoordinator?.isMenuPromotionEligible == true else { return nil }
-        return .regular(name: UserText.fireModeMenuPromotionTitle,
+        return .regular(name: UserText.fireModePromotionTitle,
                         image: DesignSystemImages.Glyphs.Size24.fireTabs,
                         detailBadge: UserText.fireModeMenuPromotionBadge) { [weak self] in
             self?.fireModePromotionCoordinator?.markMenuPromotionEngaged()

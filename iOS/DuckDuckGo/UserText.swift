@@ -83,14 +83,13 @@ public struct UserText {
 
     // MARK: Fire Mode NTP Promotion
 
-    public static let fireModeNTPPromotionTitle = NotLocalizedString("fire.mode.ntp.promotion.title", value: "Try Fire Tabs", comment: "Title for the Fire Mode promotion card shown on the new tab page")
+    public static let fireModePromotionTitle = NotLocalizedString("fire.mode.promotion.title", value: "Try Fire Tabs", comment: "Title for promotion element for pushing users to try fire mode.")
     public static let fireModeNTPPromotionDescription = NotLocalizedString("fire.mode.ntp.promotion.description", value: "Browse without saving local history or sign in to sites with a different account.", comment: "Description for the Fire Mode promotion card shown on the new tab page")
     public static let fireModeNTPPromotionPrimaryAction = NotLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
     public static let fireModeNTPPromotionDismiss = NotLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
 
     // MARK: Fire Mode Menu Promotion
 
-    public static let fireModeMenuPromotionTitle = NotLocalizedString("fire.mode.menu.promotion.title", value: "Try Fire Tabs", comment: "Title for the Fire Mode promotion entry in the browsing menu")
     public static let fireModeMenuPromotionBadge = NotLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
 
     // MARK: - Tab Switcher Fire Mode

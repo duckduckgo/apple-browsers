@@ -138,6 +138,28 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertNotNil(sections[1].header)
     }
 
+    // MARK: - Caching
+
+    func testWhenFetchSucceedsThenLastFetchedSectionsIsCached() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "free-model", accessTier: ["free"]),
+        ]
+
+        XCTAssertNil(provider.lastFetchedSections)
+
+        _ = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(provider.lastFetchedSections?.flatMap(\.items).map(\.id), ["free-model"])
+    }
+
+    func testWhenFetchFailsThenLastFetchedSectionsRemainsNil() async {
+        mockModelsService.errorToThrow = NSError(domain: "test", code: -1)
+
+        _ = await provider.fetchAIModelSections()
+
+        XCTAssertNil(provider.lastFetchedSections)
+    }
+
     // MARK: - Error Handling
 
     func testWhenFetchFailsThenEmptySectionsReturned() async {

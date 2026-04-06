@@ -86,6 +86,13 @@ protocol OmniBar: AnyObject {
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
     func enterAIChatMode()
 
+    /// Transitions the omnibar state to indicate the unified toggle input is active.
+    /// Wraps the current state so it can be restored on exit. Sets `hidesOmniBar = true`.
+    func enterUnifiedInputMode()
+
+    /// Restores the omnibar to the state it was in before unified input activated.
+    func exitUnifiedInputMode()
+
     /// Sets the selected text entry mode for the toggle (search or aiChat).
     func setSelectedTextEntryMode(_ mode: TextEntryMode)
 }

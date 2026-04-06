@@ -128,6 +128,10 @@ protocol OmniBarDelegate: AnyObject {
     func onTextEntryModeDidChange(_ mode: TextEntryMode)
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode?
 
+    /// Called when the omnibar state's `hidesOmniBar` property changes.
+    /// The delegate should hide or show the omnibar collection view accordingly.
+    func onOmniBarHiddenStateChanged(hidden: Bool)
+
     /// When true, the omnibar editing-state transition uses the new behaviour (opaque from frame 0, single logo). Gated by showNTPAfterIdleReturn.
     func useNewOmnibarTransitionBehaviour() -> Bool
     
@@ -231,6 +235,8 @@ extension OmniBarDelegate {
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         nil
     }
+
+    func onOmniBarHiddenStateChanged(hidden: Bool) {}
 
     func useNewOmnibarTransitionBehaviour() -> Bool {
         false

@@ -185,6 +185,21 @@ class MainViewCoordinator {
         toolbarHandler.updateToolbarWithState(state)
     }
 
+    // MARK: - OmniBar State for Unified Input
+
+    /// Transitions the omnibar into the unified input active state, wrapping the current
+    /// omnibar state so it can be restored when unified input deactivates.
+    /// Safe to call multiple times — no-op if already in unified input state.
+    func enterOmniBarUnifiedInputState() {
+        omniBar.enterUnifiedInputMode()
+    }
+
+    /// Restores the omnibar to the state it was in before unified input activated.
+    /// Safe to call when not in unified input state — no-op in that case.
+    func exitOmniBarUnifiedInputState() {
+        omniBar.exitUnifiedInputMode()
+    }
+
     // MARK: - AI Tab Native Input Layout
 
     func showUnifiedToggleInput() {
@@ -202,9 +217,7 @@ class MainViewCoordinator {
     func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
-        navigationBarCollectionView.isUserInteractionEnabled = false
-
-        navigationBarCollectionView.alpha = 0
+        setOmniBarCollectionViewHidden(true)
         unifiedToggleInputContainer.alpha = 1
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.backgroundColor = .clear
@@ -267,22 +280,14 @@ class MainViewCoordinator {
             self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
             self.superview.layoutIfNeeded()
         } completion: { finished in
+            self.exitOmniBarUnifiedInputState()
             self.statusBackground.backgroundColor = savedColor
             self.navigationBarContainer.backgroundColor = nil
             self.suggestionTrayContainer.backgroundColor = .clear
-            self.navigationBarCollectionView.isUserInteractionEnabled = true
 
-            if self.isNavigationChromeHidden {
-                if finished {
-                    self.navigationBarCollectionView.alpha = 0
-                    self.unifiedToggleInputContainer.isHidden = false
-                    self.unifiedToggleInputContainer.alpha = 1
-                }
-            } else {
-                if finished {
-                    self.unifiedToggleInputContainer.isHidden = true
-                    self.unifiedToggleInputContainer.alpha = 1
-                }
+            if finished {
+                self.unifiedToggleInputContainer.isHidden = true
+                self.unifiedToggleInputContainer.alpha = 1
             }
         }
     }
@@ -335,6 +340,14 @@ class MainViewCoordinator {
         constraints.contentContainerTopToSafeArea.isActive = true
     }
 
+    /// Hides or shows the omnibar collection view using alpha so the pan gesture
+    /// for tab swiping stays intact. This is the only method that should control
+    /// the collection view's visibility.
+    func setOmniBarCollectionViewHidden(_ hidden: Bool) {
+        navigationBarCollectionView.alpha = hidden ? 0 : 1
+        navigationBarCollectionView.isUserInteractionEnabled = !hidden
+    }
+
     /// Hides the OmniBar collection view (not the container) so that the UTI inside the container
     /// remains visible when the AI tab chrome is shown. Uses alpha + interaction instead of isHidden
     /// so the pan gesture for tab swiping stays intact.
@@ -346,8 +359,7 @@ class MainViewCoordinator {
             isNavigationChromeHidden = true
             statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             navigationBarContainer.backgroundColor = .clear
-            navigationBarCollectionView.alpha = 0
-            navigationBarCollectionView.isUserInteractionEnabled = false
+            setOmniBarCollectionViewHidden(true)
             constraints.contentContainerTop.isActive = false
             if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
                 constraints.contentContainerTopToSafeArea.isActive = false
@@ -371,8 +383,7 @@ class MainViewCoordinator {
             }
             isNavigationChromeHidden = false
             navigationBarContainer.backgroundColor = nil
-            navigationBarCollectionView.alpha = 1
-            navigationBarCollectionView.isUserInteractionEnabled = true
+            setOmniBarCollectionViewHidden(false)
             constraints.contentContainerTopToSafeArea.isActive = false
             constraints.contentContainerTopToAIChatHeader?.isActive = false
             constraints.contentContainerTop.isActive = true

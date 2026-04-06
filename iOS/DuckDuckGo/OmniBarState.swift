@@ -51,6 +51,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showAIChatModeToggle: Bool { get }
 
     var allowCustomization: Bool { get } // If the state allows customization
+    var hidesOmniBar: Bool { get }
 
     var onEditingStoppedState: OmniBarState { get }
     var onEditingSuspendedState: OmniBarState { get }
@@ -105,6 +106,8 @@ extension OmniBarState {
     }
     
     var allowCustomization: Bool { true }
+
+    var hidesOmniBar: Bool { false }
 
     var showRefreshOutsideAddressBar: Bool {
         hasLargeWidth

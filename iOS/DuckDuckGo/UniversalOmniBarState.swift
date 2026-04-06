@@ -22,6 +22,68 @@ import Core
 import BrowserServicesKit
 
 enum UniversalOmniBarState {
+
+    struct UnifiedInputActiveState: OmniBarState {
+        let baseState: OmniBarState
+
+        var hasLargeWidth: Bool { baseState.hasLargeWidth }
+        let hidesOmniBar = true
+
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        let showAIChatButton = false
+        let clearTextOnStart = false
+        let allowsTrackersAnimation = false
+        let showSearchLoupe = false
+        let showPrivacyIcon = false
+        let showBackground = false
+        let showClear = false
+        let showDismiss = false
+        let showAbort = false
+        let showRefresh = false
+        let showCustomizableButton = false
+        let showMenu = false
+        let showSettings = false
+        let showVoiceSearch = false
+        let showCancel = false
+        let isBrowsing = false
+        let allowCustomization = false
+
+        var name: String { Type.name(self) }
+
+        var onEditingStoppedState: any OmniBarState { baseState.onEditingStoppedState }
+        var onEditingSuspendedState: any OmniBarState { self }
+        var onEditingStartedState: any OmniBarState { baseState.onEditingStartedState }
+        var onTextClearedState: any OmniBarState { baseState }
+        var onTextEnteredState: any OmniBarState { baseState }
+        var onBrowsingStartedState: any OmniBarState { baseState.onBrowsingStartedState }
+        var onBrowsingStoppedState: any OmniBarState { baseState.onBrowsingStoppedState }
+        var onEnterPhoneState: any OmniBarState {
+            Self(baseState: baseState.onEnterPhoneState, dependencies: dependencies, isLoading: isLoading)
+        }
+        var onEnterPadState: any OmniBarState {
+            Self(baseState: baseState.onEnterPadState, dependencies: dependencies, isLoading: isLoading)
+        }
+        var onReloadState: any OmniBarState {
+            Self(baseState: baseState.onReloadState, dependencies: dependencies, isLoading: isLoading)
+        }
+        var onEnterAIChatState: OmniBarState {
+            Self(baseState: baseState.onEnterAIChatState, dependencies: dependencies, isLoading: isLoading)
+        }
+
+        let dependencies: OmnibarDependencyProvider
+        let isLoading: Bool
+
+        func withLoading() -> UniversalOmniBarState.UnifiedInputActiveState {
+            Self.init(baseState: baseState, dependencies: dependencies, isLoading: true)
+        }
+
+        func withoutLoading() -> UniversalOmniBarState.UnifiedInputActiveState {
+            Self.init(baseState: baseState, dependencies: dependencies, isLoading: false)
+        }
+    }
+
     struct EditingSuspendedState: OmniBarState {
         let baseState: OmniBarState
 

@@ -68,6 +68,8 @@ final class MockOmniBar: OmniBar {
     func setDaxEasterEggLogoURL(_ logoURL: String?, searchQuery: String?) { }
     func refreshCustomizableButton() {}
     func enterAIChatMode() { }
+    func enterUnifiedInputMode() { }
+    func exitUnifiedInputMode() { }
     func setSelectedTextEntryMode(_ mode: TextEntryMode) { }
     func setDaxEasterEggLogoURL(_ logoURL: String?) { }
     func refreshFireMode(fireMode: Bool) { }

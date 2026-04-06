@@ -1948,8 +1948,13 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
-            omniLog.debug("refreshOmniBar → enterAIChatMode (isAITab=true, UTI=\(self.unifiedToggleInputFeature.isAvailable, privacy: .public))")
-            viewCoordinator.omniBar.enterAIChatMode()
+            if unifiedToggleInputFeature.isAvailable {
+                omniLog.debug("refreshOmniBar → enterUnifiedInputMode (isAITab=true)")
+                viewCoordinator.enterOmniBarUnifiedInputState()
+            } else {
+                omniLog.debug("refreshOmniBar → enterAIChatMode (isAITab=true, UTI=false)")
+                viewCoordinator.omniBar.enterAIChatMode()
+            }
         } else {
             omniLog.debug("refreshOmniBar → startBrowsing (isAITab=\(tab.isAITab, privacy: .public))")
             viewCoordinator.omniBar.startBrowsing()
@@ -3172,6 +3177,11 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+
+    func onOmniBarHiddenStateChanged(hidden: Bool) {
+        omniLog.debug("MainVC.onOmniBarHiddenStateChanged(hidden: \(hidden, privacy: .public))")
+        viewCoordinator.setOmniBarCollectionViewHidden(hidden)
+    }
 
     func isSuggestionTrayVisible() -> Bool {
         suggestionTrayController?.isShowing == true

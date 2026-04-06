@@ -631,6 +631,7 @@ extension MainViewController {
             viewCoordinator.suggestionTrayContainer.isHidden = false
         case .hide:
             utiLog.debug("MainVC.handleIntent 🔀 case .hide")
+            viewCoordinator.exitOmniBarUnifiedInputState()
             utiLog.debug("MainVC.handleIntent 📐 coordinator.viewController.view.backgroundColor = .clear")
             unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
             utiLog.debug("MainVC.handleIntent 📐 hideUnifiedToggleInput()")
@@ -758,6 +759,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         let inputMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode ?? .search
         utiLog.debug("MainVC.activateFromOmnibarIfNeeded → activateFromOmnibar(position: \(String(describing: position), privacy: .public), inputMode: \(String(describing: inputMode), privacy: .public))")
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
+        viewCoordinator.enterOmniBarUnifiedInputState()
         utiLog.debug("MainVC.activateFromOmnibarIfNeeded → returning .intercept")
         return .intercept
     }

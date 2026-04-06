@@ -663,7 +663,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     func refreshState(_ newState: any OmniBarState) {
         let oldState: OmniBarState = self.state
         if state.requiresUpdate(transitioningInto: newState) {
-            omniLog.debug("OmniBar 🔄 \(self.state.name, privacy: .public) → \(newState.name, privacy: .public) (loading: \(newState.isLoading, privacy: .public))")
+            omniLog.debug("OmniBar 🔄 \(self.state.name, privacy: .public) → \(newState.name, privacy: .public) (loading: \(newState.isLoading, privacy: .public), hidesOmniBar: \(newState.hidesOmniBar, privacy: .public))")
 
             if state.isDifferentState(than: newState) {
                 if newState.clearTextOnStart {
@@ -684,6 +684,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
 
         updateInterface(from: oldState, to: state)
+
+        if oldState.hidesOmniBar != self.state.hidesOmniBar {
+            omniLog.debug("OmniBar 🔀 hidesOmniBar changed: \(oldState.hidesOmniBar, privacy: .public) → \(self.state.hidesOmniBar, privacy: .public)")
+            omniDelegate?.onOmniBarHiddenStateChanged(hidden: self.state.hidesOmniBar)
+        }
 
         UIView.animate(withDuration: 0.0) { [weak self] in
             self?.view.layoutIfNeeded()
@@ -1073,6 +1078,29 @@ extension OmniBarViewController {
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
     func enterAIChatMode() {
         refreshState(state.onEnterAIChatState)
+    }
+
+    func enterUnifiedInputMode() {
+        guard !state.hidesOmniBar else {
+            omniLog.debug("OmniBar ↩️ enterUnifiedInputMode: already in unified input state")
+            return
+        }
+        let wrappedState = UniversalOmniBarState.UnifiedInputActiveState(
+            baseState: state,
+            dependencies: state.dependencies,
+            isLoading: state.isLoading
+        )
+        omniLog.debug("OmniBar → enterUnifiedInputMode (wrapping \(self.state.name, privacy: .public))")
+        refreshState(wrappedState)
+    }
+
+    func exitUnifiedInputMode() {
+        guard let activeState = state as? UniversalOmniBarState.UnifiedInputActiveState else {
+            omniLog.debug("OmniBar ↩️ exitUnifiedInputMode: not in unified input state (\(self.state.name, privacy: .public))")
+            return
+        }
+        omniLog.debug("OmniBar → exitUnifiedInputMode (restoring \(activeState.baseState.name, privacy: .public))")
+        refreshState(activeState.baseState)
     }
 }
 

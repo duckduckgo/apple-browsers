@@ -436,6 +436,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the fire button in the contextual AI chat sheet
     case contextualFireButton
+
+    /// Enables native-side storage for AI Chat (settings, chats, files)
+    case nativeStorage
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

@@ -135,7 +135,8 @@ final class UserScripts: UserScriptsProvider {
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
-        if let nativeStorageHandler = Self.sharedNativeStorageHandler() {
+        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
+           let nativeStorageHandler = Self.sharedNativeStorageHandler() {
             let originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),
                 .exactOrSubdomain(hostname: "duckduckgo.com")

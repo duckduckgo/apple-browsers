@@ -134,6 +134,7 @@ final class MainCoordinator {
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           fireModePromotionEligibility: fireModePromotionsCoordinator,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
+        FireModeCapability.resolve(using: featureFlagger)
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
         let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)

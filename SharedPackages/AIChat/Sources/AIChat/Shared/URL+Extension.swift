@@ -77,6 +77,14 @@ extension URL {
         return false
     }
 
+    /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).
+    public var isDuckAIVoiceMode: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.modeName && $0.value == AIChatURLParameters.voiceModeValue
+        } == true
+    }
+
     /// Returns the chat ID from the URL if present, or nil if not a Duck AI URL with a chat ID.
     public var duckAIChatID: String? {
         guard isDuckAIURL,

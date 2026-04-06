@@ -62,6 +62,7 @@ extension TabViewController: AITabController {
     
     /// Loads AIChat in voice mode.
     func loadVoiceMode() {
+        isVoiceModeRequested = true
         let url = aiChatContentHandler.buildVoiceModeURL()
         load(url: url)
     }

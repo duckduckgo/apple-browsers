@@ -258,7 +258,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showCollapsed)
     }
 
-    func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
+    func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activateKeyboard: Bool = true) {
         displayState = .aiTab(.expanded)
         self.inputMode = inputMode
         isInputVisibleForKeyboard = true
@@ -275,6 +275,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         intentSubject.send(.showExpanded)
+        guard activateKeyboard else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
             self.viewController.activateInput()

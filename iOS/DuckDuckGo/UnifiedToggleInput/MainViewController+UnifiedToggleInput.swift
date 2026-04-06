@@ -205,8 +205,10 @@ extension MainViewController {
             viewCoordinator.showAITabChrome()
             if !coordinator.isAITabState {
                 let hasExistingChat = tab.url?.duckAIChatID != nil
+                let isVoiceMode = (tab.url ?? tab.link?.url)?.isDuckAIVoiceMode == true
+                    || tab.isVoiceModeRequested
                 coordinator.showCollapsed()
-                if !hasExistingChat && !hadSubmittedPrompt {
+                if !hasExistingChat && !hadSubmittedPrompt && !isVoiceMode {
                     DispatchQueue.main.async { [weak coordinator] in
                         guard let coordinator, coordinator.isAITabState else { return }
                         coordinator.showExpanded(inputMode: .aiChat)

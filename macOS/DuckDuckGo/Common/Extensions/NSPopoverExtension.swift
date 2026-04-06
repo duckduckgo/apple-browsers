@@ -197,6 +197,8 @@ extension NSPopover {
         }
 
         let targetView = ColorView(frame: .zero, backgroundColor: .clear)
+        targetView.translatesAutoresizingMaskIntoConstraints = true
+        targetView.autoresizingMask = [.width, .height]
         storageBackgroundView = targetView
 
         return targetView

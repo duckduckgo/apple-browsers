@@ -2396,9 +2396,8 @@ extension TabViewController: WKNavigationDelegate {
         case .duck:
             if navigationAction.isTargetingMainFrame() {
                 duckPlayerNavigationHandler.handleDuckNavigation(navigationAction, webView: webView)
-                completion(.cancel)
-                return
             }
+            completion(.cancel)
 
         case .unknown:
             if navigationAction.navigationType == .linkActivated {

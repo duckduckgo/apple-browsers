@@ -1332,8 +1332,6 @@ extension SettingsViewModel {
         }))
         case .unprotectedSites: pushViewController(legacyViewProvider.unprotectedSites)
         case .fireproofSites: pushViewController(legacyViewProvider.fireproofSites)
-        case .autoclearData:
-            pushViewController(legacyViewProvider.autoclearData)
         case .keyboard: pushViewController(legacyViewProvider.keyboard)
         case .debug: pushViewController(legacyViewProvider.debug)
             

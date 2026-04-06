@@ -22,6 +22,13 @@ import UIKit
 
 class MainViewCoordinator {
 
+    enum StatusBackgroundPresentation: Equatable {
+        case standard
+        case omnibarEditing
+        case aiTabSearchChromeHidden
+        case aiTabChatChromeHidden
+    }
+
     weak var parentController: UIViewController?
     let superview: UIView
 
@@ -53,8 +60,9 @@ class MainViewCoordinator {
 
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
-    private var savedStatusBackgroundColor: UIColor?
-    private var omnibarStatusBackgroundColor: UIColor?
+    private var standardStatusBackgroundColor: UIColor?
+    private var statusBackgroundPresentation: StatusBackgroundPresentation = .standard
+    private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
 
@@ -209,11 +217,8 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.backgroundColor = .clear
 
-        if omnibarStatusBackgroundColor == nil {
-            omnibarStatusBackgroundColor = statusBackground.backgroundColor
-        }
+        beginOmnibarStatusBackgroundPresentation()
         let inlineBackground = UIColor(designSystemColor: .panel)
-        statusBackground.backgroundColor = inlineBackground
         suggestionTrayContainer.backgroundColor = inlineBackground
 
         navigationBarContainer.backgroundColor = .clear
@@ -238,6 +243,15 @@ class MainViewCoordinator {
         setNavBarContainerBottomToToolbar()
     }
 
+    @MainActor
+    func restoreNavBarToKeyboardForOmnibarActive() {
+        guard addressBarPosition.isBottom else { return }
+        if !constraints.navigationBarContainerBottom.isActive {
+            constraints.navigationBarContainerBottom.isActive = true
+        }
+        setNavBarContainerBottomToKeyboard()
+    }
+
 
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
@@ -258,16 +272,13 @@ class MainViewCoordinator {
             setNavBarContainerBottomToToolbar()
         }
 
-        let savedColor = omnibarStatusBackgroundColor
-        omnibarStatusBackgroundColor = nil
-
         UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
             self.navigationBarCollectionView.alpha = 1
             self.unifiedToggleInputContainer.alpha = 0
             self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
             self.superview.layoutIfNeeded()
         } completion: { finished in
-            self.statusBackground.backgroundColor = savedColor
+            self.endOmnibarStatusBackgroundPresentation()
             self.navigationBarContainer.backgroundColor = nil
             self.suggestionTrayContainer.backgroundColor = .clear
             self.navigationBarCollectionView.isUserInteractionEnabled = true
@@ -285,6 +296,16 @@ class MainViewCoordinator {
                 }
             }
         }
+    }
+
+    func setStandardStatusBackgroundColor(_ color: UIColor) {
+        standardStatusBackgroundColor = color
+        applyResolvedStatusBackgroundColor()
+    }
+
+    func setStatusBackgroundPresentation(_ presentation: StatusBackgroundPresentation) {
+        statusBackgroundPresentation = presentation
+        applyResolvedStatusBackgroundColor()
     }
 
     @MainActor
@@ -340,12 +361,7 @@ class MainViewCoordinator {
     /// so the pan gesture for tab swiping stays intact.
     func setNavigationChromeHidden(_ hidden: Bool) {
         if hidden {
-            if !isNavigationChromeHidden {
-                savedStatusBackgroundColor = statusBackground.backgroundColor
-            }
             isNavigationChromeHidden = true
-            statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-            navigationBarContainer.backgroundColor = .clear
             navigationBarCollectionView.alpha = 0
             navigationBarCollectionView.isUserInteractionEnabled = false
             constraints.contentContainerTop.isActive = false
@@ -365,12 +381,7 @@ class MainViewCoordinator {
                 setContentContainerBottomAnchorMode(.unifiedToggleInput)
             }
         } else {
-            if isNavigationChromeHidden {
-                statusBackground.backgroundColor = savedStatusBackgroundColor
-                savedStatusBackgroundColor = nil
-            }
             isNavigationChromeHidden = false
-            navigationBarContainer.backgroundColor = nil
             navigationBarCollectionView.alpha = 1
             navigationBarCollectionView.isUserInteractionEnabled = true
             constraints.contentContainerTopToSafeArea.isActive = false
@@ -387,6 +398,34 @@ class MainViewCoordinator {
             } else {
                 setContentContainerBottomAnchorMode(.toolbar)
             }
+        }
+    }
+
+    private func beginOmnibarStatusBackgroundPresentation() {
+        if statusBackgroundPresentationBeforeOmnibarEditing == nil {
+            statusBackgroundPresentationBeforeOmnibarEditing = statusBackgroundPresentation
+        }
+        setStatusBackgroundPresentation(.omnibarEditing)
+    }
+
+    private func endOmnibarStatusBackgroundPresentation() {
+        let restoredPresentation = statusBackgroundPresentationBeforeOmnibarEditing ?? .standard
+        statusBackgroundPresentationBeforeOmnibarEditing = nil
+        setStatusBackgroundPresentation(restoredPresentation)
+    }
+
+    private func applyResolvedStatusBackgroundColor() {
+        statusBackground.backgroundColor = resolvedStatusBackgroundColor()
+    }
+
+    private func resolvedStatusBackgroundColor() -> UIColor {
+        switch statusBackgroundPresentation {
+        case .standard:
+            standardStatusBackgroundColor ?? statusBackground.backgroundColor ?? UIColor(designSystemColor: .background)
+        case .omnibarEditing, .aiTabSearchChromeHidden:
+            UIColor(designSystemColor: .panel)
+        case .aiTabChatChromeHidden:
+            UIColor(singleUseColor: .duckAIContextualSheetBackground)
         }
     }
 

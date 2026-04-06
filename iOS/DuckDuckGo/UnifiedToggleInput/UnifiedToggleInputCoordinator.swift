@@ -775,9 +775,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func updateImageButtonVisibility() {
         let supportsImages = selectedModelSupportsImageUpload
         viewController.isImageButtonHidden = !supportsImages
-        if !supportsImages {
-            clearAttachments()
-        }
+        viewController.modelSupportsImageAttachments = supportsImages
     }
 
     // MARK: - Subscriptions
@@ -874,7 +872,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
-            let images = UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+            let images = selectedModelSupportsImageUpload
+                ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+                : nil
             let modelId = hasSubmittedPrompt ? nil : persistedModelId
             clearAttachments()
             hasSubmittedPrompt = true

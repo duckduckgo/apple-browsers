@@ -643,7 +643,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .fireMode:
-            Config(source: .disabled)
+            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
         case .autoplayBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking)))
         case .customXSafariRedirectHandling:

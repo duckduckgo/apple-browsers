@@ -28,6 +28,8 @@ import Persistence
 /// per tab, the stores must be created once at app level and shared across all tabs.
 public final class DuckAiNativeStorageProvider {
 
+    public static let directoryName = "DuckAiNativeStorage"
+
     public let handler: DuckAiNativeStorageHandling
 
     public init(containerURL: URL) throws {

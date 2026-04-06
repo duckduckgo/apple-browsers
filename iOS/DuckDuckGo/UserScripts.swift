@@ -65,35 +65,10 @@ final class UserScripts: UserScriptsProvider {
 
     private let isAutoconsentExtensionAvailable: Bool
 
-    private static var nativeStorageProvider: DuckAiNativeStorageProvider?
-
-    private static func sharedNativeStorageHandler() -> DuckAiNativeStorageHandling? {
-        if let existing = nativeStorageProvider {
-            Logger.aiChat.debug("[NativeStorage] iOS: Reusing existing provider, handler=\(String(describing: existing.handler))")
-            return existing.handler
-        }
-        do {
-            guard let groupContainer = FileManager.default.containerURL(
-                forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName
-            ) else {
-                Logger.aiChat.error("[NativeStorage] iOS: App group container URL is nil for group '\(Global.appConfigurationGroupName)'")
-                return nil
-            }
-            let containerURL = groupContainer.appendingPathComponent("DuckAiNativeStorage")
-            Logger.aiChat.debug("[NativeStorage] iOS: Creating provider at \(containerURL.path)")
-            let provider = try DuckAiNativeStorageProvider(containerURL: containerURL)
-            nativeStorageProvider = provider
-            Logger.aiChat.debug("[NativeStorage] iOS: Provider created successfully")
-            return provider.handler
-        } catch {
-            Logger.aiChat.error("[NativeStorage] iOS: Failed to create provider: \(error.localizedDescription)")
-            return nil
-        }
-    }
-
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = AppDependencyProvider.shared.duckAiNativeStorageHandler,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
@@ -136,13 +111,13 @@ final class UserScripts: UserScriptsProvider {
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
-           let nativeStorageHandler = Self.sharedNativeStorageHandler() {
+           let duckAiNativeStorageHandler {
             let originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),
                 .exactOrSubdomain(hostname: "duckduckgo.com")
             ]
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
-                handler: nativeStorageHandler,
+                handler: duckAiNativeStorageHandler,
                 originRules: originRules
             )
         } else {

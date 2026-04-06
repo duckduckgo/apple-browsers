@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Core
 import BrowserServicesKit
@@ -63,6 +64,7 @@ protocol DependencyProvider {
     var tokenHandlerProvider: any SubscriptionTokenHandling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
+    var duckAiNativeStorageHandler: DuckAiNativeStorageHandling? { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -105,6 +107,7 @@ final class AppDependencyProvider: DependencyProvider {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     private init() {
 
@@ -288,6 +291,13 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               wideEvent: wideEvent,
                                                                               freeTrialConversionService: freeTrialConversionService
         )
+
+        if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
+            let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+            duckAiNativeStorageHandler = try? DuckAiNativeStorageProvider(containerURL: containerURL).handler
+        } else {
+            duckAiNativeStorageHandler = nil
+        }
     }
 
 }

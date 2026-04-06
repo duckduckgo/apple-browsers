@@ -64,27 +64,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     private let contentScopePreferences: ContentScopePreferences
 
     // swiftlint:disable:next cyclomatic_complexity
-    private static var nativeStorageProvider: DuckAiNativeStorageProvider?
-
-    private static func sharedNativeStorageHandler() -> DuckAiNativeStorageHandling? {
-        if let existing = nativeStorageProvider {
-            return existing.handler
-        }
-        do {
-            let containerURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-                .appendingPathComponent("DuckAiNativeStorage")
-            let provider = try DuckAiNativeStorageProvider(containerURL: containerURL)
-            nativeStorageProvider = provider
-            return provider.handler
-        } catch {
-            Logger.aiChat.error("UserScripts: Failed to create DuckAiNativeStorageProvider: \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    // swiftlint:disable:next cyclomatic_complexity
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
@@ -113,7 +95,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
         if sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage),
-           let nativeStorageHandler = Self.sharedNativeStorageHandler() {
+           let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),
                 .exactOrSubdomain(hostname: "duckduckgo.com")
@@ -122,7 +104,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                 originRules.append(.exact(hostname: customHostname))
             }
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
-                handler: nativeStorageHandler,
+                handler: duckAiNativeStorageHandler,
                 originRules: originRules
             )
         } else {

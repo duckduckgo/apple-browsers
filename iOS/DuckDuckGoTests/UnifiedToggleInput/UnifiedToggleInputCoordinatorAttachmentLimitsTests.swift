@@ -112,6 +112,48 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
+    // MARK: - Image Button Enabled State
+
+    func testWhenStripIsFullThenImageButtonIsDisabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "a.jpg")
+        sut.addImageAttachment(image: image, fileName: "b.jpg")
+        sut.addImageAttachment(image: image, fileName: "c.jpg")
+
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenAttachmentRemovedFromFullStripThenImageButtonIsEnabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "a.jpg")
+        sut.addImageAttachment(image: image, fileName: "b.jpg")
+        sut.addImageAttachment(image: image, fileName: "c.jpg")
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+
+        let firstId = sut.viewController.currentAttachments.first!.id
+        sut.removeAttachment(id: firstId)
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenConversationLimitReachedThenImageButtonIsDisabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        sut.attachmentUsage = AIChatAttachmentUsage(imagesUsed: 5, filesUsed: 0, fileSizeBytesUsed: 0)
+        sut.updateImageButtonVisibility()
+
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+    }
+
     func testWhenSubmittingOnNonImageModelThenImagesAreNil() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "image-model"

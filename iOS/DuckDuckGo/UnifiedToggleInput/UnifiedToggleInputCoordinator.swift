@@ -706,26 +706,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func presentAttachmentOptions() {
         let remaining = remainingImagesForPicker
+        guard remaining > 0 else { return }
         guard let scene = viewController.view.window?.windowScene,
               let root = scene.keyWindow?.rootViewController else { return }
-
-        let imageActionsDisabled = remaining <= 0
 
         let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            let action = UIAlertAction(title: UserText.aiChatAttachmentOptionTakePhoto, style: .default) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: UserText.aiChatAttachmentOptionTakePhoto, style: .default) { [weak self] _ in
                 self?.presentCamera(from: root)
-            }
-            action.isEnabled = !imageActionsDisabled
-            sheet.addAction(action)
+            })
         }
 
-        let chooseAction = UIAlertAction(title: UserText.aiChatAttachmentOptionChoosePhoto, style: .default) { [weak self] _ in
+        sheet.addAction(UIAlertAction(title: UserText.aiChatAttachmentOptionChoosePhoto, style: .default) { [weak self] _ in
             self?.presentPhotoPicker(from: root, remaining: remaining)
-        }
-        chooseAction.isEnabled = !imageActionsDisabled
-        sheet.addAction(chooseAction)
+        })
 
         sheet.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
 
@@ -776,6 +771,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let supportsImages = selectedModelSupportsImageUpload
         viewController.isImageButtonHidden = !supportsImages
         viewController.modelSupportsImageAttachments = supportsImages
+        updateImageButtonEnabledState()
+    }
+
+    private func updateImageButtonEnabledState() {
+        let canAttachMore = !viewController.isAttachmentsFull && !isConversationImageLimitReached
+        viewController.isImageButtonEnabled = canAttachMore
     }
 
     // MARK: - Subscriptions
@@ -917,6 +918,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {
         attachmentsChangeSubject.send()
+        updateImageButtonEnabledState()
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {

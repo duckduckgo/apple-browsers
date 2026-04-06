@@ -87,18 +87,35 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
+    private let modelsService: AIChatModelsProviding
     private let firePixel: (PixelKitEvent) -> Void
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    private var cachedModels: [NewTabPageDataModel.AiModel] = []
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
+         modelsService: AIChatModelsProviding = AIChatModelsService(),
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
+        self.modelsService = modelsService
         self.firePixel = firePixel
+
+        Task {
+            await fetchModels()
+        }
+    }
+
+    private func fetchModels() async {
+        do {
+            let remoteModels = try await modelsService.fetchModels()
+            cachedModels = remoteModels.map { NewTabPageDataModel.AiModel(id: $0.id, name: $0.name) }
+        } catch {
+            Logger.newTabPageOmnibar.error("Failed to fetch AI models: \(error.localizedDescription)")
+        }
     }
 
     @MainActor
@@ -164,6 +181,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
         set {
         }
+    }
+
+    var aiModels: [NewTabPageDataModel.AiModel] {
+        cachedModels
     }
 
 }

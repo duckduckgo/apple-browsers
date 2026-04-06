@@ -32,6 +32,17 @@ public extension NewTabPageDataModel {
         let showAiSetting: Bool?
         let showCustomizePopover: Bool?
         let enableRecentAiChats: Bool?
+        let aiModels: [AiModel]?
+    }
+
+    public struct AiModel: Codable, Equatable {
+        public let id: String
+        public let name: String
+
+        public init(id: String, name: String) {
+            self.id = id
+            self.name = name
+        }
     }
 
     // MARK: - omnibar_getSuggestions
@@ -189,6 +200,14 @@ public extension NewTabPageDataModel {
     struct SubmitChatAction: Codable, Equatable {
         let chat: String
         let target: OpenTarget
+        let webSearch: Bool?
+        let modelId: String?
+        let images: [SubmitChatImage]?
+    }
+
+    struct SubmitChatImage: Codable, Equatable {
+        public let data: String
+        public let format: String
     }
 
     // MARK: - omnibar_openAiChat

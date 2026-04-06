@@ -50,7 +50,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, webSearch: false, modelId: nil, images: nil)
             return
         }
 
@@ -117,12 +117,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
     }
 
-    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget, webSearch: Bool, modelId: String?, images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?) {
         firePixel(NewTabPagePixel.promptSubmitted)
-
-        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true)
-
-        promptHandler.setData(nativePrompt)
 
         let tabOpener = AIChatTabOpener(
             promptHandler: promptHandler,
@@ -130,12 +126,22 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         )
 
         var behavior = linkOpenBehavior(for: target, using: tabsPreferences)
-        // Check for keyboard modifiers opening on a new tab
         if isCommandPressed() {
             behavior = .newTab(selected: isShiftPressed())
         }
 
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
+
+        // Re-set prompt after tab opener to include tools, model, and images (tab opener overwrites with a plain query)
+        let toolChoice: [String]? = webSearch ? ["WebSearch"] : nil
+        let nativeImages: [AIChatNativePrompt.NativePromptImage]? = images?.compactMap { img in
+            AIChatNativePrompt.NativePromptImage(data: img.data, format: img.format)
+        }
+
+        if toolChoice != nil || nativeImages != nil || modelId != nil {
+            let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true, toolChoice: toolChoice, images: nativeImages, modelId: modelId)
+            promptHandler.setData(nativePrompt)
+        }
     }
 
     @MainActor

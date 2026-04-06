@@ -83,7 +83,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
             showCustomizePopover: configProvider.showCustomizePopover,
-            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled
+            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
+            aiModels: configProvider.aiModels
         )
     }
 
@@ -107,7 +108,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
             showCustomizePopover: configProvider.showCustomizePopover,
-            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled
+            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
+            aiModels: configProvider.aiModels
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -139,7 +141,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.SubmitChatAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        await actionHandler.submitChat(action.chat, target: action.target)
+        await actionHandler.submitChat(action.chat, target: action.target, webSearch: action.webSearch ?? false, modelId: action.modelId, images: action.images)
         return nil
     }
 

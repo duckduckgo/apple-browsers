@@ -41,7 +41,7 @@ class TabSwitcherViewController: UIViewController {
 
         static let cellMinHeight: CGFloat = 140.0
         static let cellMaxHeight: CGFloat = 209.0
-        static let modePickerWidth: CGFloat = 114
+        static let modePickerWidth: CGFloat = 120
     }
 
     struct BookmarkAllResult {
@@ -208,7 +208,9 @@ class TabSwitcherViewController: UIViewController {
         self.pickerViewModel = ImageSegmentedPickerViewModel(
                 items: pickerItems,
                 selectedItem: pickerItems[tabManager.currentBrowsingMode.rawValue],
-                configuration: ImageSegmentedPickerConfiguration(),
+                configuration: ImageSegmentedPickerConfiguration(outerHeight: 44,
+                                                                 innerHeight: 40,
+                                                                 innerHorizontalPadding: 2),
                 scrollProgress: nil,
                 isScrollProgressDriven: false)
         super.init(coder: coder)
@@ -237,7 +239,7 @@ class TabSwitcherViewController: UIViewController {
         addChild(hostingController)
         hostingController.didMove(toParent: self)
 
-        hostingController.view.frame = CGRect(x: 0, y: 0, width: Constants.modePickerWidth, height: 38)
+        hostingController.view.frame = CGRect(x: 0, y: 0, width: Constants.modePickerWidth, height: 44)
         titleBarView.topItem?.titleView = hostingController.view
 
         pickerSelectionCancellable = pickerViewModel.$selectedItem

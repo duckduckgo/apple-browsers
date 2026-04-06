@@ -1796,8 +1796,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if webView.url?.isDuckDuckGoSearch == true, case .connected = netPConnectionStatus {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnabledOnSearch,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         includedParameters: [.appVersion, .atb])
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         }
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading

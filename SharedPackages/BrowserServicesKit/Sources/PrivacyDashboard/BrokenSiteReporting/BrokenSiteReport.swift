@@ -342,7 +342,6 @@ public struct BrokenSiteReport {
         }
 #if os(iOS)
         result["siteType"] = siteType.rawValue
-        result["atb"] = atb
         result["model"] = model
         result["variant"] = variant
         if isAfterSuppressedXSafariRedirect {

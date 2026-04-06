@@ -29,6 +29,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     private var mockKeyValueStore: MockKeyValueStore!
     private var mockHistoryManager: MockHistoryManager!
     private var mockAppSettings: AppSettingsMock!
+    private var mockDataClearingCapability: MockDataClearingCapability!
 
     override func setUp() {
         super.setUp()
@@ -36,6 +37,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         mockKeyValueStore = MockKeyValueStore()
         mockHistoryManager = MockHistoryManager()
         mockAppSettings = AppSettingsMock()
+        mockDataClearingCapability = MockDataClearingCapability()
     }
     
     override func tearDown() {
@@ -43,183 +45,170 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         mockKeyValueStore = nil
         mockHistoryManager = nil
         mockAppSettings = nil
+        mockDataClearingCapability = nil
         super.tearDown()
     }
     
-    // MARK: - burnAllTabs Tests
-    
-    func testWhenBurnAllTabsCalledThenOnConfirmIsCalledWithCorrectRequest() {
+    // MARK: - Button Action Tests
+
+    func testWhenNoTabThenDeleteAllButtonFiresAllScope() {
         // Given
         var capturedRequest: FireRequest?
-        let sut = makeSUT(tabViewModel: nil, onConfirm: { request in
-            capturedRequest = request
-        })
-        
+        let sut = makeSUT(tabViewModel: nil, onConfirm: { capturedRequest = $0 })
+
         // When
-        sut.burnAllTabs()
-        
+        sut.buttons[0].action()
+
         // Then
-        XCTAssertNotNil(capturedRequest)
         XCTAssertEqual(capturedRequest?.options, .all)
         XCTAssertEqual(capturedRequest?.trigger, .manualFire)
-        if case .all = capturedRequest?.scope {
-            // Expected scope
-        } else {
+        if case .all = capturedRequest?.scope {} else {
             XCTFail("Expected scope to be .all")
         }
     }
-    
-    func testWhenBurnFireModesCalledThenOnConfirmIsCalledWithCorrectRequest() {
+
+    func testWhenFireModeThenDeleteAllButtonFiresFireModeScope() {
         // Given
         var capturedRequest: FireRequest?
-        let sut = makeSUT(tabViewModel: nil, browsingMode: .fire, onConfirm: { request in
-            capturedRequest = request
-        })
-        
+        let sut = makeSUT(tabViewModel: nil, browsingMode: .fire, onConfirm: { capturedRequest = $0 })
+
         // When
-        sut.burnAllTabs()
-        
+        sut.buttons[0].action()
+
         // Then
-        XCTAssertNotNil(capturedRequest)
-        XCTAssertEqual(capturedRequest?.options, .all)
-        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
-        if case .fireMode = capturedRequest?.scope {
-            // Expected scope
-        } else {
+        if case .fireMode = capturedRequest?.scope {} else {
             XCTFail("Expected scope to be .fireMode")
         }
     }
-    
-    // MARK: - burnThisTab Tests
-    
-    func testWhenBurnThisTabCalledWithTabViewModelThenOnConfirmIsCalledWithCorrectRequest() {
+
+    func testWhenNormalTabThenSecondButtonFiresTabScope() {
         // Given
         var capturedRequest: FireRequest?
         let tabViewModel = createTabViewModel()
-        let sut = makeSUT(tabViewModel: tabViewModel, onConfirm: { request in
-            capturedRequest = request
-        })
-        
+        let sut = makeSUT(tabViewModel: tabViewModel, onConfirm: { capturedRequest = $0 })
+
         // When
-        sut.burnThisTab()
-        
+        XCTAssertEqual(sut.buttons.count, 2)
+        sut.buttons[1].action()
+
         // Then
-        XCTAssertNotNil(capturedRequest)
-        XCTAssertEqual(capturedRequest?.options, .all)
-        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
         if case .tab(let vm) = capturedRequest?.scope {
             XCTAssertTrue(vm.tab == tabViewModel.tab)
         } else {
-            XCTFail("Expected scope to be .tab with the correct view model")
+            XCTFail("Expected scope to be .tab")
         }
     }
-    
+
     // MARK: - cancel Tests
-    
+
     func testWhenCancelCalledThenOnCancelIsCalled() {
         // Given
         var cancelCalled = false
-        let sut = makeSUT(tabViewModel: nil, onCancel: {
-            cancelCalled = true
-        })
-        
+        let sut = makeSUT(tabViewModel: nil, onCancel: { cancelCalled = true })
+
         // When
         sut.cancel()
-        
+
         // Then
         XCTAssertTrue(cancelCalled)
     }
-    
-    // MARK: - canBurnSingleTab Tests
-    
-    func testWhenTabViewModelIsNilThenCanBurnSingleTabReturnsFalse() {
-        // Given
+
+    // MARK: - Button Layout Tests
+
+    func testWhenNoTabThenSingleDeleteAllButton() {
+        // Given/When
         let sut = makeSUT(tabViewModel: nil)
-        
+
         // Then
-        XCTAssertFalse(sut.canBurnSingleTab)
+        XCTAssertEqual(sut.buttons.count, 1)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
     }
-    
-    func testWhenTabSupportsTabHistoryThenCanBurnSingleTabReturnsTrue() {
-        // Given
+
+    func testWhenNormalTabThenTwoButtonsDeleteAllFirst() {
+        // Given/When
         let sut = makeSUT(tabViewModel: createTabViewModel())
-        
+
         // Then
-        XCTAssertTrue(sut.canBurnSingleTab)
+        XCTAssertEqual(sut.buttons.count, 2)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+        XCTAssertEqual(sut.buttons[1].title, UserText.scopedFireConfirmationDeleteThisTabButton)
+        XCTAssertEqual(sut.buttons[1].style, .secondary)
     }
-    
-    func testWhenTabDoesNotSupportTabHistoryThenCanBurnSingleTabReturnsFalse() {
+
+    func testWhenLegacyTabThenSingleDeleteAllButton() {
         // Given
         let legacyTab = Tab(supportsTabHistory: false)
         let tabViewModel = TabViewModel(tab: legacyTab, historyManager: mockHistoryManager)
+
+        // When
         let sut = makeSUT(tabViewModel: tabViewModel)
-        
+
         // Then
-        XCTAssertFalse(sut.canBurnSingleTab)
+        XCTAssertEqual(sut.buttons.count, 1)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
     }
-    
+
     // MARK: - subtitle Tests - Ongoing Downloads
-    
+
     func testWhenOngoingDownloadsExistThenSubtitleIsDownloadsWarning() {
         // Given
         let runningDownload = createRunningDownload()
         mockDownloadManager.downloadList = [runningDownload]
-        
+
         // When
         let sut = makeSUT(tabViewModel: createTabViewModel())
-        
+
         // Then
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDownloadsWarning)
     }
-    
+
     // MARK: - subtitle Tests - No Tab View Model
-    
+
     func testWhenNoTabViewModelThenSubtitleIsNil() {
         // Given/When
         let sut = makeSUT(tabViewModel: nil)
-        
+
         // Then
         XCTAssertNil(sut.subtitle)
     }
-    
+
     // MARK: - subtitle Tests - Tab Without History Support
-    
+
     func testWhenTabDoesNotSupportTabHistoryThenSubtitleIsNewTabsInfo() {
         // Given
         let legacyTab = Tab(supportsTabHistory: false)
         let tabViewModel = TabViewModel(tab: legacyTab, historyManager: mockHistoryManager)
-        
+
         // When
         let sut = makeSUT(tabViewModel: tabViewModel)
-        
+
         // Then
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationNewTabsInfo)
     }
-    
+
     // MARK: - subtitle Tests - Fire Mode
-    
+
     func testWhenBrowsingModeIsFireThenSubtitleIsNil() {
-        // Given
-        let tabViewModel = createTabViewModel()
-        
-        // When
-        let sut = makeSUT(tabViewModel: tabViewModel, browsingMode: .fire)
-        
+        // Given/When
+        let sut = makeSUT(tabViewModel: createTabViewModel(), browsingMode: .fire)
+
         // Then
         XCTAssertNil(sut.subtitle)
     }
-    
+
     // MARK: - subtitle Tests - AI Tab
-    
+
     func testAITabSubtitle() {
         // Given
         let aiTab = createAITab()
         let tabViewModel = TabViewModel(tab: aiTab, historyManager: mockHistoryManager)
-        
+
         // When ai clearing enabled
         mockAppSettings.autoClearAIChatHistory = true
         var sut = makeSUT(tabViewModel: tabViewModel)
-        
+
         // Then don't show subtitle
         XCTAssertNil(sut.subtitle)
 
@@ -230,77 +219,156 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         // Then show subtitle
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDeleteThisChatDescription)
     }
-    
+
     // MARK: - subtitle Tests - Web Tab
-    
+
     func testWhenWebTabFirstTimeThenSubtitleIsSignOutWarning() {
         // Given
         let tabViewModel = createTabViewModel()
-        
+
         // When first time
         var sut = makeSUT(tabViewModel: tabViewModel)
-        
-        // Then show subtitle
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationSignOutWarning)
-        
+
         // When second time
         sut = makeSUT(tabViewModel: tabViewModel)
-        
-        // Then show subtitle
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationSignOutWarning)
-        
+
         // When more than two times
         sut = makeSUT(tabViewModel: tabViewModel)
-        
-        // Then don't show subtitle
         XCTAssertNil(sut.subtitle)
     }
-    
+
     // MARK: - subtitle Tests - Dax Dialogs (Onboarding)
-    
+
     func testWhenDaxDialogsIsShowingFireDialogThenSubtitleIsNil() {
         // Given
         let mockDaxDialogsManager = DummyDaxDialogsManager()
         mockDaxDialogsManager.isShowingFireDialog = true
-        let tabViewModel = createTabViewModel()
-        
+
         // When
-        let sut = makeSUT(tabViewModel: tabViewModel, daxDialogsManager: mockDaxDialogsManager)
-        
-        // Then - subtitle is nil even though it would normally show sign out warning
+        let sut = makeSUT(tabViewModel: createTabViewModel(), daxDialogsManager: mockDaxDialogsManager)
+
+        // Then
         XCTAssertNil(sut.subtitle)
     }
-    
+
     // MARK: - subtitle Tests - Priority
-    
+
     func testWhenOngoingDownloadsExistEvenForAITabThenSubtitleIsDownloadsWarning() {
         // Given
-        let runningDownload = createRunningDownload()
-        mockDownloadManager.downloadList = [runningDownload]
-        let aiTab = createAITab()
-        let tabViewModel = TabViewModel(tab: aiTab, historyManager: mockHistoryManager)
-        
+        mockDownloadManager.downloadList = [createRunningDownload()]
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+
         // When
         let sut = makeSUT(tabViewModel: tabViewModel)
-        
-        // Then - downloads warning takes priority over AI description
+
+        // Then
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDownloadsWarning)
     }
-    
+
     func testWhenLegacyTabWithOngoingDownloadsThenSubtitleIsDownloadsWarning() {
         // Given
-        let runningDownload = createRunningDownload()
-        mockDownloadManager.downloadList = [runningDownload]
-        let legacyTab = Tab(supportsTabHistory: false)
-        let tabViewModel = TabViewModel(tab: legacyTab, historyManager: mockHistoryManager)
-        
+        mockDownloadManager.downloadList = [createRunningDownload()]
+        let tabViewModel = TabViewModel(tab: Tab(supportsTabHistory: false), historyManager: mockHistoryManager)
+
         // When
         let sut = makeSUT(tabViewModel: tabViewModel)
-        
-        // Then - downloads warning takes priority
+
+        // Then
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDownloadsWarning)
     }
-    
+
+    // MARK: - Fire Button Refinements Tests
+
+    func testWhenRefinementsEnabledOnAITabThenSingleDeleteChatButton() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 1)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteThisChatButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+        XCTAssertEqual(sut.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
+    }
+
+    func testWhenRefinementsDisabledOnAITabThenTwoButtonsDeleteAllFirst() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = false
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 2)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+    }
+
+    func testWhenRefinementsEnabledOnAITabThenSubtitleIsNil() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
+        mockAppSettings.autoClearAIChatHistory = false
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+
+        // Then
+        XCTAssertNil(sut.subtitle)
+    }
+
+    func testWhenRefinementsEnabledOnAITabThenButtonBurnsSingleChat() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
+        var capturedRequest: FireRequest?
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+        let sut = makeSUT(tabViewModel: tabViewModel, onConfirm: { capturedRequest = $0 })
+
+        // When
+        sut.buttons[0].action()
+
+        // Then
+        if case .tab = capturedRequest?.scope {} else {
+            XCTFail("Expected scope to be .tab for AI-only mode")
+        }
+    }
+
+    func testWhenRefinementsEnabledOnNormalTabThenDeleteThisTabIsPrimary() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
+
+        // When
+        let sut = makeSUT(tabViewModel: createTabViewModel())
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 2)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteThisTabButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+        XCTAssertEqual(sut.buttons[1].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[1].style, .secondary)
+    }
+
+    func testWhenRefinementsDisabledOnNormalTabThenDeleteAllIsPrimary() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = false
+
+        // When
+        let sut = makeSUT(tabViewModel: createTabViewModel())
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 2)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+        XCTAssertEqual(sut.buttons[1].title, UserText.scopedFireConfirmationDeleteThisTabButton)
+        XCTAssertEqual(sut.buttons[1].style, .secondary)
+    }
+
     // MARK: - Helpers
     
     private func makeSUT(tabViewModel: TabViewModel?,
@@ -315,6 +383,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                                                downloadManager: mockDownloadManager,
                                                keyValueStore: mockKeyValueStore,
                                                appSettings: mockAppSettings,
+                                               dataClearingCapability: mockDataClearingCapability,
                                                browsingMode: browsingMode,
                                                onConfirm: onConfirm,
                                                onCancel: onCancel)

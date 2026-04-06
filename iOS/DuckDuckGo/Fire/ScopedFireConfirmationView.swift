@@ -91,24 +91,13 @@ struct ScopedFireConfirmationView: View {
     /// Scope selection buttons
     private var scopeButtons: some View {
         VStack(spacing: Constants.buttonSpacing) {
-            // Primary action button - "Delete All" or "Delete Chat" depending on mode
-            Button(action: {
-                viewModel.burnAllTabs()
-            }) {
-                Text(viewModel.primaryButtonTitle)
-            }
-            .buttonStyle(PrimaryDestructiveButtonStyle())
-            .accessibilityIdentifier("alert.forget-data.confirm")
-            
-            // This Tab button - Secondary Destructive (outline)
-            if viewModel.canBurnSingleTab {
-                Button(action: {
-                    viewModel.burnThisTab()
-                }) {
-                    Text(viewModel.tabScopeButtonTitle)
+            ForEach(viewModel.buttons.indices, id: \.self) { index in
+                let button = viewModel.buttons[index]
+                Button(action: button.action) {
+                    Text(button.title)
                 }
-                .buttonStyle(SecondaryDestructiveButtonStyle())
-                .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
+                .modifier(DestructiveButtonModifier(isPrimary: button.style == .primary))
+                .accessibilityIdentifier(button.accessibilityIdentifier)
             }
         }
     }
@@ -126,6 +115,18 @@ struct ScopedFireConfirmationView: View {
             }
     }
     
+}
+
+private struct DestructiveButtonModifier: ViewModifier {
+    let isPrimary: Bool
+
+    func body(content: Content) -> some View {
+        if isPrimary {
+            content.buttonStyle(PrimaryDestructiveButtonStyle())
+        } else {
+            content.buttonStyle(SecondaryDestructiveButtonStyle())
+        }
+    }
 }
 
 private extension ScopedFireConfirmationView {

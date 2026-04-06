@@ -290,10 +290,13 @@ extension MainViewController {
         )
 
         if renderState.isContentVisible {
+            coordinator.contentViewController.setActive(true)
             coordinator.syncContentInputMode(renderState.contentInputMode, animated: false)
             coordinator.pushContentInsets()
             viewCoordinator.showUnifiedInputContent()
+            coordinator.contentViewController.refreshVisibleContentIfNeeded()
         } else {
+            coordinator.contentViewController.setActive(false)
             viewCoordinator.hideUnifiedInputContent()
         }
 
@@ -429,6 +432,7 @@ extension MainViewController {
             recomputeOmnibarEditingHeightIfNeeded()
         case .hideOmnibarEditing:
             viewCoordinator.hideUnifiedToggleInputOmnibar()
+            unifiedToggleInputCoordinator?.contentViewController.setActive(false)
             viewCoordinator.hideUnifiedInputContent()
             unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
             hideSuggestionTray()
@@ -437,6 +441,7 @@ extension MainViewController {
         case .hide:
             unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
             viewCoordinator.hideUnifiedToggleInput()
+            unifiedToggleInputCoordinator?.contentViewController.setActive(false)
             viewCoordinator.hideUnifiedInputContent()
             unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
             hideSuggestionTray()

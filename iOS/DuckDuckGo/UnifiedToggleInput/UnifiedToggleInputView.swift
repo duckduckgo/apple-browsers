@@ -20,7 +20,10 @@
 import AIChat
 import Combine
 import DesignResourcesKit
+import os.log
 import UIKit
+
+private let utiLog = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.duckduckgo", category: "UTI")
 
 // MARK: - Delegate Protocol
 
@@ -74,6 +77,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Hit Testing
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        utiLog.debug("InputView.hitTest - point: \(point.debugDescription, privacy: .public)")
         let result = super.hitTest(point, with: event)
         return result == self ? nil : result
     }
@@ -84,7 +88,11 @@ final class UnifiedToggleInputView: UIView {
 
     var cardPosition: UnifiedToggleInputCardPosition = .bottom {
         didSet {
-            guard cardPosition != oldValue, isExpanded else { return }
+            utiLog.debug("InputView.cardPosition.didSet - \(String(describing: oldValue), privacy: .public) → \(String(describing: self.cardPosition), privacy: .public)")
+            guard cardPosition != oldValue, isExpanded else {
+                utiLog.debug("InputView.cardPosition.didSet ↩️ guard: same value or not expanded")
+                return
+            }
             let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
             cardView.layer.maskedCorners = allCorners
             expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
@@ -104,15 +112,24 @@ final class UnifiedToggleInputView: UIView {
     private(set) var isExpanded = false
 
     var isToolbarSubmitHidden: Bool = false {
-        didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
+        didSet {
+            utiLog.debug("InputView.isToolbarSubmitHidden.didSet - \(oldValue, privacy: .public) → \(self.isToolbarSubmitHidden, privacy: .public)")
+            toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden
+        }
     }
 
     var isToolbarAIVoiceChatActive: Bool = false {
-        didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
+        didSet {
+            utiLog.debug("InputView.isToolbarAIVoiceChatActive.didSet - \(oldValue, privacy: .public) → \(self.isToolbarAIVoiceChatActive, privacy: .public)")
+            toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive
+        }
     }
 
     var isGenerating: Bool = false {
-        didSet { toolsToolbar.isGenerating = isGenerating }
+        didSet {
+            utiLog.debug("InputView.isGenerating.didSet - \(oldValue, privacy: .public) → \(self.isGenerating, privacy: .public)")
+            toolsToolbar.isGenerating = isGenerating
+        }
     }
 
     var modelName: String {
@@ -142,7 +159,10 @@ final class UnifiedToggleInputView: UIView {
     var onAttachmentsLayoutDidChange: (() -> Void)?
 
     var isVoiceSearchAvailable = false {
-        didSet { handler.isVoiceSearchEnabled = isVoiceSearchAvailable }
+        didSet {
+            utiLog.debug("InputView.isVoiceSearchAvailable.didSet - \(oldValue, privacy: .public) → \(self.isVoiceSearchAvailable, privacy: .public)")
+            handler.isVoiceSearchEnabled = isVoiceSearchAvailable
+        }
     }
 
     var usesOmnibarMargins: Bool = false
@@ -176,14 +196,17 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func addAttachment(_ attachment: AIChatImageAttachment) {
+        utiLog.debug("InputView.addAttachment - id: \(attachment.id, privacy: .public)")
         attachmentsStrip.addAttachment(attachment)
     }
 
     func removeAttachment(id: UUID) {
+        utiLog.debug("InputView.removeAttachment - id: \(id, privacy: .public)")
         attachmentsStrip.removeAttachment(id: id)
     }
 
     func removeAllAttachments() {
+        utiLog.debug("InputView.removeAllAttachments")
         attachmentsStrip.removeAllAttachments()
     }
 
@@ -258,6 +281,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Initialization
 
     init(handler: UnifiedToggleInputHandler, isToggleEnabled: Bool = true) {
+        utiLog.debug("InputView.init - isToggleEnabled: \(isToggleEnabled, privacy: .public)")
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
         self.textEntryView = SwitchBarTextEntryView(handler: handler)
@@ -274,6 +298,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Layout
 
     override func layoutSubviews() {
+        utiLog.debug("InputView.layoutSubviews")
         super.layoutSubviews()
         let cardFrame = cardView.frame
         let cardPath = UIBezierPath(roundedRect: cardFrame, cornerRadius: cardView.layer.cornerRadius).cgPath
@@ -285,12 +310,15 @@ final class UnifiedToggleInputView: UIView {
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        utiLog.debug("InputView.traitCollectionDidChange")
         super.traitCollectionDidChange(previousTraitCollection)
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            utiLog.debug("InputView.traitCollectionDidChange 🔀 colorAppearance changed")
             expandedShadow0.shadowColor = expandedShadow0Color
             expandedShadow1.shadowColor = expandedShadow1Color
             cardView.layer.shadowColor = cardShadowColor
             if isExpanded {
+                utiLog.debug("InputView.traitCollectionDidChange 📐 updating borderColor (isExpanded=true)")
                 cardView.layer.borderColor = expandedBorderColor
             }
         }
@@ -300,11 +328,13 @@ final class UnifiedToggleInputView: UIView {
 
     @discardableResult
     override func becomeFirstResponder() -> Bool {
+        utiLog.debug("InputView.becomeFirstResponder")
         return textEntryView.becomeFirstResponder()
     }
 
     @discardableResult
     override func resignFirstResponder() -> Bool {
+        utiLog.debug("InputView.resignFirstResponder")
         return textEntryView.resignFirstResponder()
     }
 
@@ -315,35 +345,54 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Public Methods
 
     func selectAllText() {
+        utiLog.debug("InputView.selectAllText")
         textEntryView.selectAllText()
     }
 
     func updateToggleEnabled(_ enabled: Bool) {
-        guard enabled != isToggleEnabled else { return }
+        utiLog.debug("InputView.updateToggleEnabled - \(self.isToggleEnabled, privacy: .public) → \(enabled, privacy: .public)")
+        guard enabled != isToggleEnabled else {
+            utiLog.debug("InputView.updateToggleEnabled ↩️ guard: no change")
+            return
+        }
         isToggleEnabled = enabled
         if isExpanded {
+            utiLog.debug("InputView.updateToggleEnabled 🔀 isExpanded=true, re-expanding")
             setExpanded(false, animated: false)
             setExpanded(true, animated: false)
         }
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
+        utiLog.debug("InputView.setInputMode - mode: \(String(describing: mode), privacy: .public), animated: \(animated, privacy: .public)")
+        utiLog.debug("InputView.setInputMode → calling handler.setToggleState")
         handler.setToggleState(mode)
         if isToggleEnabled {
+            utiLog.debug("InputView.setInputMode 🔀 isToggleEnabled=true, setting toggleView mode")
             toggleView.setMode(mode, animated: animated)
+        } else {
+            utiLog.debug("InputView.setInputMode 🔀 isToggleEnabled=false, skipping toggleView")
         }
+        utiLog.debug("InputView.setInputMode → calling updateToolbarVisibility")
         updateToolbarVisibility(for: mode, animated: animated)
+        utiLog.debug("InputView.setInputMode → calling updateToggleDisabledSearchPadding")
         updateToggleDisabledSearchPadding(for: mode)
     }
 
     private func updateToggleDisabledSearchPadding(for mode: TextEntryMode) {
-        guard isExpanded else { return }
-        
+        utiLog.debug("InputView.updateToggleDisabledSearchPadding - mode: \(String(describing: mode), privacy: .public)")
+        guard isExpanded else {
+            utiLog.debug("InputView.updateToggleDisabledSearchPadding ↩️ guard: not expanded")
+            return
+        }
+
         if isToggleEnabled {
+            utiLog.debug("InputView.updateToggleDisabledSearchPadding 🔀 isToggleEnabled=true")
             inputTopConstraint.constant = Constants.toggleBottomPadding
             toolbarBottomConstraint.constant = 0
         } else {
             let usePadding = mode == .search && cardPosition == .bottom
+            utiLog.debug("InputView.updateToggleDisabledSearchPadding 🔀 isToggleEnabled=false, usePadding=\(usePadding, privacy: .public)")
             let padding = usePadding ? Constants.toggleDisabledSearchTopPadding : 0
             inputTopConstraint.constant = padding
             toolbarBottomConstraint.constant = -padding
@@ -351,45 +400,58 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func setExpanded(_ expanded: Bool, showToggle: Bool = true, animated: Bool) {
-        guard expanded != isExpanded else { return }
+        utiLog.debug("InputView.setExpanded - \(self.isExpanded, privacy: .public) → \(expanded, privacy: .public), showToggle: \(showToggle, privacy: .public), animated: \(animated, privacy: .public)")
+        guard expanded != isExpanded else {
+            utiLog.debug("InputView.setExpanded ↩️ guard: already \(self.isExpanded, privacy: .public)")
+            return
+        }
         isExpanded = expanded
         handler.isExpanded = expanded
 
         let effectiveToggleEnabled = isToggleEnabled && showToggle
         let toggleHeight: CGFloat = (expanded && effectiveToggleEnabled) ? Constants.toggleHeight : 0
         let showToolbar = expanded && effectiveToggleEnabled && toggleView.selectedMode == .aiChat
+        utiLog.debug("InputView.setExpanded 🔀 effectiveToggleEnabled=\(effectiveToggleEnabled, privacy: .public), showToolbar=\(showToolbar, privacy: .public)")
 
         let hLeadingMargin: CGFloat
         let hTrailingMargin: CGFloat
         let usesDismissMargin = expanded && cardPosition == .top
         if expanded && !usesOmnibarMargins {
             if cardPosition == .bottom {
+                utiLog.debug("InputView.setExpanded 🔀 margins: expanded+bottom")
                 hLeadingMargin = Constants.cardHorizontalMarginBottom
                 hTrailingMargin = Constants.cardHorizontalMarginBottom
             } else {
+                utiLog.debug("InputView.setExpanded 🔀 margins: expanded+top, dismissMargin=\(usesDismissMargin, privacy: .public)")
                 hLeadingMargin = Constants.cardHorizontalMargin
                 hTrailingMargin = usesDismissMargin ? Constants.cardTrailingMarginWithDismiss : Constants.cardHorizontalMargin
             }
         } else if expanded && cardPosition == .top {
+            utiLog.debug("InputView.setExpanded 🔀 margins: expanded+top+omnibar")
             hLeadingMargin = Constants.cardHorizontalMargin
             hTrailingMargin = usesDismissMargin ? Constants.cardTrailingMarginWithDismiss : Constants.cardHorizontalMargin
         } else {
+            utiLog.debug("InputView.setExpanded 🔀 margins: default")
             hLeadingMargin = Constants.cardHorizontalMargin
             hTrailingMargin = Constants.cardHorizontalMargin
         }
 
         let vMargin: CGFloat
         if expanded && !usesOmnibarMargins {
+            utiLog.debug("InputView.setExpanded 🔀 vMargin: expanded+noOmnibar, position=\(String(describing: self.cardPosition), privacy: .public)")
             vMargin = (cardPosition == .bottom) ? Constants.cardVerticalMarginBottom : Constants.cardVerticalMargin
         } else {
+            utiLog.debug("InputView.setExpanded 🔀 vMargin: default")
             vMargin = Constants.cardVerticalMargin
         }
 
         textEntryView.isExpandable = expanded
 
+        utiLog.debug("InputView.setExpanded 📐 shadow0.isHidden=\(!expanded, privacy: .public), shadow1.isHidden=\(!expanded, privacy: .public)")
         expandedShadow0.isHidden = !expanded
         expandedShadow1.isHidden = !expanded
         if expanded {
+            utiLog.debug("InputView.setExpanded 🔀 expanded=true, setting shadow offsets")
             expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
             expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
         }
@@ -422,6 +484,7 @@ final class UnifiedToggleInputView: UIView {
         }
 
         if animated {
+            utiLog.debug("InputView.setExpanded 🔀 animated=true")
             UIView.animate(
                 withDuration: Constants.animationDuration,
                 delay: 0,
@@ -434,17 +497,21 @@ final class UnifiedToggleInputView: UIView {
                 }
             )
         } else {
+            utiLog.debug("InputView.setExpanded 🔀 animated=false")
             changes()
             layoutIfNeeded()
         }
     }
 
     func setExpandedWithToggleHidden(_ expanded: Bool) {
+        utiLog.debug("InputView.setExpandedWithToggleHidden - expanded: \(expanded, privacy: .public)")
         setExpanded(expanded, showToggle: false, animated: false)
     }
 
     func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        utiLog.debug("InputView.animateToggleReveal")
         guard isExpanded, isToggleEnabled else {
+            utiLog.debug("InputView.animateToggleReveal ↩️ guard: isExpanded=\(self.isExpanded, privacy: .public), isToggleEnabled=\(self.isToggleEnabled, privacy: .public)")
             completion?()
             return
         }
@@ -472,12 +539,15 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        utiLog.debug("InputView.animateToggleHide")
         guard isExpanded, isToggleEnabled else {
+            utiLog.debug("InputView.animateToggleHide ↩️ guard: isExpanded=\(self.isExpanded, privacy: .public), isToggleEnabled=\(self.isToggleEnabled, privacy: .public)")
             completion?()
             return
         }
 
         if cardPosition == .top {
+            utiLog.debug("InputView.animateToggleHide 🔀 cardPosition=top, adjusting trailing")
             cardTrailingConstraint.constant = -Constants.cardHorizontalMargin
         }
 
@@ -503,12 +573,17 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func setInactiveCardAppearance(_ inactive: Bool) {
-        guard isExpanded else { return }
+        utiLog.debug("InputView.setInactiveCardAppearance - inactive: \(inactive, privacy: .public)")
+        guard isExpanded else {
+            utiLog.debug("InputView.setInactiveCardAppearance ↩️ guard: not expanded")
+            return
+        }
 
         let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
 
         UIView.animate(withDuration: Constants.animationDuration, delay: 0, options: .curveEaseInOut) {
             if inactive {
+                utiLog.debug("InputView.setInactiveCardAppearance 🔀 inactive=true")
                 self.cardView.layer.maskedCorners = allCorners
                 self.expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
                 self.expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
@@ -520,15 +595,18 @@ final class UnifiedToggleInputView: UIView {
                 self.toolbarHeightConstraint.constant = 0
                 self.toolsToolbar.alpha = 0
             } else {
+                utiLog.debug("InputView.setInactiveCardAppearance 🔀 inactive=false")
                 self.cardView.layer.maskedCorners = allCorners
                 self.expandedShadow0.shadowOffset = CGSize(width: 0, height: 8)
                 self.expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
                 let leadingMargin: CGFloat
                 let trailingMargin: CGFloat
                 if !self.usesOmnibarMargins && self.cardPosition == .bottom {
+                    utiLog.debug("InputView.setInactiveCardAppearance 🔀 margins: noOmnibar+bottom")
                     leadingMargin = Constants.cardHorizontalMarginBottom
                     trailingMargin = Constants.cardHorizontalMarginBottom
                 } else {
+                    utiLog.debug("InputView.setInactiveCardAppearance 🔀 margins: default, position=\(String(describing: self.cardPosition), privacy: .public)")
                     leadingMargin = Constants.cardHorizontalMargin
                     trailingMargin = self.cardPosition == .top ? Constants.cardTrailingMarginWithDismiss : Constants.cardHorizontalMargin
                 }
@@ -551,20 +629,28 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Private
 
     private func updateToolbarVisibility(for mode: TextEntryMode, animated: Bool) {
-        guard isExpanded else { return }
+        utiLog.debug("InputView.updateToolbarVisibility - mode: \(String(describing: mode), privacy: .public), animated: \(animated, privacy: .public)")
+        guard isExpanded else {
+            utiLog.debug("InputView.updateToolbarVisibility ↩️ guard: not expanded")
+            return
+        }
 
         let showToolbar = mode == .aiChat
+        utiLog.debug("InputView.updateToolbarVisibility 🔀 showToolbar=\(showToolbar, privacy: .public)")
+        utiLog.debug("InputView.updateToolbarVisibility 📐 setting toolbarHeight=\(showToolbar ? 56 : 0, privacy: .public)")
         toolbarHeightConstraint.constant = showToolbar ? 56 : 0
         cardView.layer.borderWidth = showToolbar ? 0.5 : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         updateAttachmentsStripLayout()
 
         guard animated else {
+            utiLog.debug("InputView.updateToolbarVisibility ↩️ guard: not animated, applying immediately")
             toolsToolbar.alpha = showToolbar ? 1 : 0
             attachmentsStrip.alpha = attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             layoutIfNeeded()
             return
         }
+        utiLog.debug("InputView.updateToolbarVisibility 🔀 animated=true")
 
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
@@ -575,8 +661,11 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateAttachmentsStripLayout() {
+        utiLog.debug("InputView.updateAttachmentsStripLayout")
         let hasImages = !attachmentsStrip.attachments.isEmpty
         let showStrip = hasImages && isExpanded && handler.currentToggleState == .aiChat
+        utiLog.debug("InputView.updateAttachmentsStripLayout 🔀 hasImages=\(hasImages, privacy: .public), showStrip=\(showStrip, privacy: .public)")
+        utiLog.debug("InputView.updateAttachmentsStripLayout 📐 stripHeight=\(showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0, privacy: .public)")
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
     }
@@ -587,6 +676,7 @@ final class UnifiedToggleInputView: UIView {
 private extension UnifiedToggleInputView {
 
     func setupUI() {
+        utiLog.debug("InputView.setupUI")
         clipsToBounds = false
         backgroundColor = .clear
 
@@ -657,7 +747,11 @@ private extension UnifiedToggleInputView {
         addSubview(toolsToolbar)
 
         textEntryView.onTextInputActivated = { [weak self] in
-            guard let self, !self.isExpanded else { return }
+            guard let self, !self.isExpanded else {
+                utiLog.debug("InputView.onTextInputActivated ↩️ guard: nil self or already expanded")
+                return
+            }
+            utiLog.debug("InputView.onTextInputActivated → calling delegate.didTapWhileCollapsed")
             self.delegate?.unifiedToggleInputViewDidTapWhileCollapsed(self)
         }
 
@@ -665,6 +759,7 @@ private extension UnifiedToggleInputView {
     }
 
     func setupConstraints() {
+        utiLog.debug("InputView.setupConstraints")
         cardTopConstraint = cardView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.cardVerticalMargin)
         cardLeadingConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.cardHorizontalMargin)
         cardTrailingConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin)
@@ -708,6 +803,7 @@ private extension UnifiedToggleInputView {
     }
 
     func setupSubscriptions() {
+        utiLog.debug("InputView.setupSubscriptions")
         handler.textSubmissionPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in

@@ -51,6 +51,8 @@ import UserScript
 import PrivacyConfig
 import WebExtensions
 
+private let omniLog = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.duckduckgo", category: "OmniBarState")
+
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
 
@@ -1946,10 +1948,10 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
-            // AI tabs use branding UI — skip setSelectedTextEntryMode to avoid
-            // flashing the "ask privately" placeholder before branding covers the text field.
+            omniLog.debug("refreshOmniBar → enterAIChatMode (isAITab=true, UTI=\(self.unifiedToggleInputFeature.isAvailable, privacy: .public))")
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
+            omniLog.debug("refreshOmniBar → startBrowsing (isAITab=\(tab.isAITab, privacy: .public))")
             viewCoordinator.omniBar.startBrowsing()
             viewCoordinator.omniBar.setSelectedTextEntryMode(tab.tabModel.preferredTextEntryMode)
         }

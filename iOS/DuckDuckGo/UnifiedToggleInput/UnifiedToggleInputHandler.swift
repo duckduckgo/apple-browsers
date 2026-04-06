@@ -19,6 +19,9 @@
 
 import Combine
 import Foundation
+import os.log
+
+private let utiLog = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.duckduckgo", category: "UTI")
 
 /// Bridges `UnifiedToggleInput` state to `SwitchBarHandling` so `SwitchBarTextEntryView`
 /// can be used directly. Any future improvements to the switchbar text entry are inherited automatically.
@@ -47,27 +50,45 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     var isGenerating: Bool = false {
-        didSet { updateButtonState() }
+        didSet {
+            utiLog.debug("Handler.isGenerating - \(oldValue, privacy: .public) → \(self.isGenerating, privacy: .public)")
+            updateButtonState()
+        }
     }
 
     var isExpanded: Bool = false {
-        didSet { updateButtonState() }
+        didSet {
+            utiLog.debug("Handler.isExpanded - \(oldValue, privacy: .public) → \(self.isExpanded, privacy: .public)")
+            updateButtonState()
+        }
     }
 
     var isVoiceSearchEnabled: Bool {
-        didSet { updateButtonState() }
+        didSet {
+            utiLog.debug("Handler.isVoiceSearchEnabled - \(oldValue, privacy: .public) → \(self.isVoiceSearchEnabled, privacy: .public)")
+            updateButtonState()
+        }
     }
 
     var isAIVoiceChatEnabled: Bool = false {
-        didSet { updateButtonState() }
+        didSet {
+            utiLog.debug("Handler.isAIVoiceChatEnabled - \(oldValue, privacy: .public) → \(self.isAIVoiceChatEnabled, privacy: .public)")
+            updateButtonState()
+        }
     }
 
     var hidesVoiceButton: Bool = false {
-        didSet { updateButtonState() }
+        didSet {
+            utiLog.debug("Handler.hidesVoiceButton - \(oldValue, privacy: .public) → \(self.hidesVoiceButton, privacy: .public)")
+            updateButtonState()
+        }
     }
 
     var isToggleEnabled: Bool {
-        didSet { updateButtonState() }
+        didSet {
+            utiLog.debug("Handler.isToggleEnabled - \(oldValue, privacy: .public) → \(self.isToggleEnabled, privacy: .public)")
+            updateButtonState()
+        }
     }
 
     // MARK: - SwitchBarHandling — Publishers
@@ -125,6 +146,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Initialization
 
     init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
+        utiLog.debug("Handler.init - isVoiceSearchEnabled: \(isVoiceSearchEnabled, privacy: .public), isToggleEnabled: \(isToggleEnabled, privacy: .public)")
         self.isVoiceSearchEnabled = isVoiceSearchEnabled
         self.isToggleEnabled = isToggleEnabled
         updateButtonState()
@@ -133,68 +155,94 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - SwitchBarHandling — Methods
 
     func updateCurrentText(_ text: String) {
+        utiLog.debug("Handler.updateCurrentText - length: \(text.count, privacy: .public)")
         currentText = text
+        utiLog.debug("Handler.updateCurrentText → calling updateButtonState")
         updateButtonState()
     }
 
     func submitText(_ text: String) {
+        utiLog.debug("Handler.submitText - mode: \(String(describing: self.currentToggleState), privacy: .public)")
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else {
+            utiLog.debug("Handler.submitText ↩️ guard: trimmed text is empty")
+            return
+        }
+        utiLog.debug("Handler.submitText → sending textSubmission, mode=\(String(describing: self.currentToggleState), privacy: .public)")
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
     func setToggleState(_ state: TextEntryMode) {
+        utiLog.debug("Handler.setToggleState - \(String(describing: self.currentToggleState), privacy: .public) → \(String(describing: state), privacy: .public)")
         currentToggleState = state
         updateButtonState()
     }
 
     func clearText() {
+        utiLog.debug("Handler.clearText")
         updateCurrentText("")
     }
 
     func microphoneButtonTapped() {
+        utiLog.debug("Handler.microphoneButtonTapped")
         microphoneButtonTappedSubject.send()
     }
 
     func markUserInteraction() {
+        utiLog.debug("Handler.markUserInteraction")
         hasUserInteractedWithText = true
     }
 
     func clearButtonTapped() {
+        utiLog.debug("Handler.clearButtonTapped")
         clearButtonTappedSubject.send()
     }
 
     func searchGoToButtonTapped() {
+        utiLog.debug("Handler.searchGoToButtonTapped")
         searchGoToButtonTappedSubject.send()
     }
 
     func stopGeneratingButtonTapped() {
+        utiLog.debug("Handler.stopGeneratingButtonTapped")
         stopGeneratingButtonTappedSubject.send()
     }
 
     func customizeResponsesButtonTapped() {
+        utiLog.debug("Handler.customizeResponsesButtonTapped")
         customizeResponsesButtonTappedSubject.send()
     }
 
-    func updateBarPosition(isTop: Bool) {}
+    func updateBarPosition(isTop: Bool) {
+        utiLog.debug("Handler.updateBarPosition - isTop: \(isTop, privacy: .public)")
+    }
 
     // MARK: - Private
 
     private func updateButtonState() {
+        let oldButtonState = buttonState
         let voiceAvailable = !hidesVoiceButton && isVoiceSearchEnabled && !(isAIVoiceChatEnabled && currentToggleState == .aiChat)
+        utiLog.debug("Handler.updateButtonState - voiceAvailable=\(voiceAvailable, privacy: .public), isGenerating=\(self.isGenerating, privacy: .public), isExpanded=\(self.isExpanded, privacy: .public), isToggleEnabled=\(self.isToggleEnabled, privacy: .public), textEmpty=\(self.currentText.isEmpty, privacy: .public)")
 
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
+            utiLog.debug("Handler.updateButtonState 🔀 generating+collapsed+aiChat+noToggle → stopGeneratingAndSearchGoTo")
             buttonState = .stopGeneratingAndSearchGoTo
         } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
+            utiLog.debug("Handler.updateButtonState 🔀 generating+collapsed+aiChat → stopGeneratingOnly")
             buttonState = .stopGeneratingOnly
         } else if !currentText.isEmpty {
+            utiLog.debug("Handler.updateButtonState 🔀 hasText → clearOnly")
             buttonState = .clearOnly
         } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
+            utiLog.debug("Handler.updateButtonState 🔀 noToggle+aiChat+collapsed, voiceAvailable=\(voiceAvailable, privacy: .public)")
             buttonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
         } else if voiceAvailable {
+            utiLog.debug("Handler.updateButtonState 🔀 voiceAvailable → voiceOnly")
             buttonState = .voiceOnly
         } else {
+            utiLog.debug("Handler.updateButtonState 🔀 fallthrough → noButtons")
             buttonState = .noButtons
         }
+        utiLog.debug("Handler.updateButtonState - \(String(describing: oldButtonState), privacy: .public) → \(String(describing: self.buttonState), privacy: .public)")
     }
 }

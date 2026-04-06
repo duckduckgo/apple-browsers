@@ -24,6 +24,9 @@ import Suggestions
 import Bookmarks
 import AIChat
 import Core
+import os.log
+
+private let omniLog = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.duckduckgo", category: "OmniBarState")
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 
@@ -104,29 +107,35 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     // MARK: - Text Field Delegate Overrides
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        omniLog.debug("DefaultOmniBar textFieldShouldBeginEditing (state: \(self.state.name, privacy: .public))")
+
         if omniBarView.isSearchAreaExpanded {
+            omniLog.debug("DefaultOmniBar ↩️ searchAreaExpanded → false")
             return false
         }
 
         if unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
             currentText: extractCurrentTextForEditing(textField)
         ) == .intercept {
+            omniLog.debug("DefaultOmniBar ↩️ UTI intercepted → false (state remains: \(self.state.name, privacy: .public))")
             return false
         }
 
         if dependencies.aiChatAddressBarExperience.shouldUseExperimentalEditingState {
+            omniLog.debug("DefaultOmniBar ↩️ experimentalEditingState → false")
             if textFieldTapped {
                 omniDelegate?.onExperimentalAddressBarTapped()
             }
             presentExperimentalEditingState(for: textField, animated: animateNextEditingTransition)
-
             return false
         }
 
         if modeToggleTextModel.isTransitioning {
+            omniLog.debug("DefaultOmniBar → modeToggle transitioning → true")
             return true
         }
 
+        omniLog.debug("DefaultOmniBar → fallthrough to super")
         return super.textFieldShouldBeginEditing(textField)
     }
 

@@ -23,6 +23,9 @@ import AIChat
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
+import os.log
+
+private let omniLog = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.duckduckgo", category: "OmniBarState")
 
 class OmniBarViewController: UIViewController, OmniBar {
 
@@ -660,10 +663,11 @@ class OmniBarViewController: UIViewController, OmniBar {
     func refreshState(_ newState: any OmniBarState) {
         let oldState: OmniBarState = self.state
         if state.requiresUpdate(transitioningInto: newState) {
-            Logger.general.debug("OmniBar entering \(newState.description) from \(self.state.description)")
+            omniLog.debug("OmniBar 🔄 \(self.state.name, privacy: .public) → \(newState.name, privacy: .public) (loading: \(newState.isLoading, privacy: .public))")
 
             if state.isDifferentState(than: newState) {
                 if newState.clearTextOnStart {
+                    omniLog.debug("OmniBar → clearTextOnStart")
                     clear()
                 }
                 cancelAllAnimations()
@@ -671,14 +675,12 @@ class OmniBarViewController: UIViewController, OmniBar {
                 let isExpanded = expandableBarView?.isSearchAreaExpanded == true
                 let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
                 if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
-                    // Note: selectedTextEntryMode is NOT reset here. It is owned by
-                    // refreshOmniBar (per-tab value) and must survive state transitions
-                    // like cancel/stopBrowsing — otherwise performCancel (0.3s after tab
-                    // switch) would overwrite the per-tab mode with the global default.
                     updateTextFieldPlaceholderForSelectedMode()
                 }
             }
             state = newState
+        } else {
+            omniLog.debug("OmniBar ↩️ skip \(self.state.name, privacy: .public) → \(newState.name, privacy: .public) (no update required)")
         }
 
         updateInterface(from: oldState, to: state)
@@ -1009,13 +1011,15 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        omniLog.debug("OmniBar textFieldShouldBeginEditing (state: \(self.state.name, privacy: .public))")
         omniDelegate?.onTextFieldWillBeginEditing(barView, tapped: textFieldTapped)
         return true
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
+        omniLog.debug("OmniBar textFieldDidBeginEditing (state: \(self.state.name, privacy: .public))")
         DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarShown)
-        
+
         DispatchQueue.main.async {
             let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView) ?? true
             self.refreshState(self.state.onEditingStartedState)
@@ -1028,15 +1032,19 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        omniLog.debug("OmniBar textFieldShouldReturn (state: \(self.state.name, privacy: .public))")
         omniDelegate?.onEnterPressed()
         return true
     }
 
     @objc func textFieldDidEndEditing(_ textField: UITextField) {
+        omniLog.debug("OmniBar textFieldDidEndEditing (state: \(self.state.name, privacy: .public))")
         switch omniDelegate?.onEditingEnd() {
         case .dismissed, .none:
+            omniLog.debug("OmniBar → editing dismissed")
             refreshState(state.onEditingStoppedState)
         case .suspended:
+            omniLog.debug("OmniBar → editing suspended")
             refreshState(state.onEditingSuspendedState)
         }
         self.omniDelegate?.onDidEndEditing()

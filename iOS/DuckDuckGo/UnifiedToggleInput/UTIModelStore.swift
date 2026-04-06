@@ -21,6 +21,8 @@ import AIChat
 import os.log
 import Subscription
 
+private let utiLog = OSLog(subsystem: "com.duckduckgo", category: "UTI")
+
 @MainActor
 final class UTIModelStore {
 
@@ -39,20 +41,27 @@ final class UTIModelStore {
         preferences: AIChatPreferencesPersisting,
         subscriptionManager: any SubscriptionManager
     ) {
+        os_log(.debug, log: utiLog, "ModelStore.init")
         self.modelsService = modelsService
         self.preferences = preferences
         self.subscriptionManager = subscriptionManager
     }
 
     var persistedModelId: String? {
+        os_log(.debug, log: utiLog, "ModelStore.persistedModelId")
         let id = preferences.selectedModelId
         if let id, !models.isEmpty {
             if let model = models.first(where: { $0.id == id }) {
-                return model.entityHasAccess ? id : firstAccessibleModelId
+                let result = model.entityHasAccess ? id : firstAccessibleModelId
+                os_log(.debug, log: utiLog, "ModelStore.persistedModelId 🔀 found model, hasAccess=%{public}@, returning=%{public}@", String(describing: model.entityHasAccess), result ?? "nil")
+                return result
             }
+            os_log(.debug, log: utiLog, "ModelStore.persistedModelId 🔀 selectedId not in models, falling back to firstAccessible")
             return firstAccessibleModelId
         }
-        return id ?? firstAccessibleModelId
+        let result = id ?? firstAccessibleModelId
+        os_log(.debug, log: utiLog, "ModelStore.persistedModelId 🔀 id=%{public}@, returning=%{public}@", id ?? "nil", result ?? "nil")
+        return result
     }
 
     var currentModelId: String? {
@@ -60,8 +69,14 @@ final class UTIModelStore {
     }
 
     var selectedModelSupportsImageUpload: Bool {
-        guard !models.isEmpty else { return false }
-        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
+        os_log(.debug, log: utiLog, "ModelStore.selectedModelSupportsImageUpload")
+        guard !models.isEmpty else {
+            os_log(.debug, log: utiLog, "ModelStore.selectedModelSupportsImageUpload ↩️ guard: models is empty")
+            return false
+        }
+        let supports = models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
+        os_log(.debug, log: utiLog, "ModelStore.selectedModelSupportsImageUpload 🔀 result=%{public}@", String(describing: supports))
+        return supports
     }
 
     private var firstAccessibleModelId: String? {
@@ -69,32 +84,51 @@ final class UTIModelStore {
     }
 
     func fetchModels() {
+        os_log(.debug, log: utiLog, "ModelStore.fetchModels")
+        os_log(.debug, log: utiLog, "ModelStore.fetchModels → cancelling previous task")
         modelsFetchTask?.cancel()
         modelsFetchTask = Task { [weak self] in
-            guard let self else { return }
+            guard let self else {
+                os_log(.debug, log: utiLog, "ModelStore.fetchModels ↩️ guard: self is nil")
+                return
+            }
             let state = await self.resolveSubscriptionState()
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else {
+                os_log(.debug, log: utiLog, "ModelStore.fetchModels ↩️ guard: task cancelled after resolveSubscriptionState")
+                return
+            }
+            os_log(.debug, log: utiLog, "ModelStore.fetchModels 🔀 subscriptionState resolved, userTier=%{public}@", String(describing: state.userTier))
             self.subscriptionState = state
             do {
                 let remoteModels = try await modelsService.fetchModels()
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled else {
+                    os_log(.debug, log: utiLog, "ModelStore.fetchModels ↩️ guard: task cancelled after fetchModels")
+                    return
+                }
+                os_log(.debug, log: utiLog, "ModelStore.fetchModels 🔀 fetched %{public}d remote models", remoteModels.count)
                 self.models = Self.resolveModels(from: remoteModels, userTier: state.userTier)
+                os_log(.debug, log: utiLog, "ModelStore.fetchModels → calling clearStaleModelSelectionIfNeeded")
                 self.clearStaleModelSelectionIfNeeded()
+                os_log(.debug, log: utiLog, "ModelStore.fetchModels → calling onModelsUpdated")
                 self.onModelsUpdated?()
             } catch {
+                os_log(.debug, log: utiLog, "ModelStore.fetchModels 🔀 error: %{public}@", error.localizedDescription)
                 os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
             }
         }
     }
 
     func updateSelectedModel(_ modelId: String) {
+        os_log(.debug, log: utiLog, "ModelStore.updateSelectedModel - modelId: %{public}@", modelId)
         preferences.selectedModelId = modelId
         preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
     }
 
     static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
-        remoteModels.map { remote in
+        os_log(.debug, log: utiLog, "ModelStore.resolveModels - count: %{public}d, userTier: %{public}@", remoteModels.count, String(describing: userTier))
+        return remoteModels.map { remote in
             if remote.accessTier.isEmpty {
+                os_log(.debug, log: utiLog, "ModelStore.resolveModels 🔀 model %{public}@ has empty accessTier, using manual init", remote.id)
                 return AIChatModel(
                     id: remote.id,
                     name: remote.name,
@@ -106,38 +140,54 @@ final class UTIModelStore {
                     accessTier: remote.accessTier
                 )
             }
+            os_log(.debug, log: utiLog, "ModelStore.resolveModels 🔀 model %{public}@ using remoteModel init", remote.id)
             return AIChatModel(remoteModel: remote, userTier: userTier)
         }
     }
 
     nonisolated func resolveSubscriptionState() async -> SubscriptionState {
+        os_log(.debug, log: utiLog, "ModelStore.resolveSubscriptionState")
         do {
             let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
             guard subscription.isActive, let tier = subscription.tier else {
+                os_log(.debug, log: utiLog, "ModelStore.resolveSubscriptionState ↩️ guard: inactive or no tier → free")
                 return .free
             }
             let userTier: AIChatUserTier
             switch tier {
-            case .plus: userTier = .plus
-            case .pro: userTier = .pro
+            case .plus:
+                os_log(.debug, log: utiLog, "ModelStore.resolveSubscriptionState 🔀 tier=plus")
+                userTier = .plus
+            case .pro:
+                os_log(.debug, log: utiLog, "ModelStore.resolveSubscriptionState 🔀 tier=pro")
+                userTier = .pro
             }
+            os_log(.debug, log: utiLog, "ModelStore.resolveSubscriptionState 🔀 active subscription, userTier=%{public}@", String(describing: userTier))
             return SubscriptionState(userTier: userTier, hasActiveSubscription: true)
         } catch {
+            os_log(.debug, log: utiLog, "ModelStore.resolveSubscriptionState 🔀 error: %{public}@ → free", error.localizedDescription)
             return .free
         }
     }
 
     func cacheSelectedModelShortName(_ shortName: String) {
+        os_log(.debug, log: utiLog, "ModelStore.cacheSelectedModelShortName - shortName: %{public}@", shortName)
         preferences.selectedModelShortName = shortName
     }
 
     func clearStaleModelSelectionIfNeeded() {
-        guard let selectedId = preferences.selectedModelId, !models.isEmpty else { return }
+        os_log(.debug, log: utiLog, "ModelStore.clearStaleModelSelectionIfNeeded")
+        guard let selectedId = preferences.selectedModelId, !models.isEmpty else {
+            os_log(.debug, log: utiLog, "ModelStore.clearStaleModelSelectionIfNeeded ↩️ guard: no selectedId or models empty")
+            return
+        }
 
         let selectedModel = models.first(where: { $0.id == selectedId })
         let isStale = selectedModel == nil || selectedModel?.entityHasAccess == false
+        os_log(.debug, log: utiLog, "ModelStore.clearStaleModelSelectionIfNeeded 🔀 selectedId=%{public}@, isStale=%{public}@", selectedId, String(describing: isStale))
 
         if isStale {
+            os_log(.debug, log: utiLog, "ModelStore.clearStaleModelSelectionIfNeeded 📐 clearing stale selection")
             preferences.selectedModelId = nil
             preferences.selectedModelShortName = nil
         }

@@ -644,7 +644,6 @@ private extension MainViewController {
         if isAITabSubmission {
             viewCoordinator.hideAITabChrome()
             applyUnifiedInputChromeBackground(.standardChrome, updateWebView: false)
-            // Preempt any synchronous UI refresh triggered by loadQuery so the presentation stays mapped to standard chrome.
         }
         loadQuery(query)
         if isAITabSubmission {

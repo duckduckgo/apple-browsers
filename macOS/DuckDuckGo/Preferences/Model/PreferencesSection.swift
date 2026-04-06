@@ -31,6 +31,7 @@ struct PreferencesSection: Hashable, Identifiable {
     static func defaultSections(includingDuckPlayer: Bool,
                                 includingSync: Bool,
                                 includingAIChat: Bool,
+                                includingYouTubeAdBlocking: Bool,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection
@@ -43,7 +44,9 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.sync)
             }
 
-            if includingDuckPlayer {
+            if includingYouTubeAdBlocking {
+                panes.append(.youTubeAdBlocking)
+            } else if includingDuckPlayer {
                 panes.append(.duckPlayer)
             }
 
@@ -133,6 +136,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case threatProtection
     case cookiePopupProtection
     case emailProtection
+    case youTubeAdBlocking
 
     case general
     case sync
@@ -183,6 +187,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.cookiePopUpProtection
         case .emailProtection:
             return UserText.emailProtectionPreferences
+        case .youTubeAdBlocking:
+            return UserText.youTubeAdBlocking
         case .general:
             return UserText.general
         case .sync:
@@ -240,6 +246,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.cookiePopUpProtectionIcon
         case .emailProtection:
             return settingsIconProvider.emailProtectionIcon
+        case .youTubeAdBlocking:
+            return settingsIconProvider.youTubeAdBlockingIcon
         case .general:
             return settingsIconProvider.generalIcon
         case .sync:

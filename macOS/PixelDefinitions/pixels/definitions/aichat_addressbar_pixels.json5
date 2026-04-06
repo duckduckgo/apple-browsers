@@ -56,27 +56,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_mac_aichat_toggle_popover_shown": {
-        "description": "Fired when the toggle popover is shown to the user",
-        "owners": ["Bunn"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
-    "m_mac_aichat_toggle_popover_dismiss_button_clicked": {
-        "description": "Fired when the user clicks the X button to dismiss the toggle popover",
-        "owners": ["Bunn"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
-    "m_mac_aichat_toggle_popover_customize_button_clicked": {
-        "description": "Fired when the user clicks the settings button in the toggle popover",
-        "owners": ["Bunn"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
+
     "m_mac_aichat_recent_chat_selected_pinned_mouse": {
         "description": "Fired when user selects a pinned recent chat by clicking with the mouse",
         "owners": ["Bunn"],
@@ -137,6 +117,27 @@
     "m_mac_aichat_addressbar_model_selected": {
         "description": "Fired when user selects a model from the model picker menu",
         "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_delete_button_clicked": {
+        "description": "Fired when user clicks the delete button on a recent chat suggestion in the address bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_delete_confirmed": {
+        "description": "Fired when user confirms deletion of a recent chat suggestion in the address bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_delete_cancelled": {
+        "description": "Fired when user cancels deletion of a recent chat suggestion in the address bar",
+        "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]

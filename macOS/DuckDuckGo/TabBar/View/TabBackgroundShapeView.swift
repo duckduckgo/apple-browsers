@@ -128,70 +128,65 @@ private extension TabBackgroundShapeView {
             return nil
         }
 
-        let backgroundPath: CGPath = displaysTopRoundedCorners ?
-            CGPath.topRoundedRect(in: bounds, radius: tabCornerRadius) :
-            CGPath(roundedRect: bounds, cornerWidth: tabCornerRadius, cornerHeight: tabCornerRadius, transform: nil)
-
-        guard shouldDisplayRamps, let tabRampSize else {
-            return backgroundPath
+        if shouldDisplayRamps, let tabRampSize {
+            return .tabBackground(in: bounds, cornerRadius: tabCornerRadius, rampSize: tabRampSize)
         }
 
-        let outputPath = CGMutablePath()
-
-        outputPath.addPath(backgroundPath)
-        outputPath.addPath(.leadingRamp(size: tabRampSize), transform: CGAffineTransform(translationX: -tabRampSize.width, y: 0))
-        outputPath.addPath(.trailingRamp(size: tabRampSize), transform: CGAffineTransform(translationX: bounds.width, y: 0))
-
-        return outputPath
+        return displaysTopRoundedCorners ?
+            .tabBackground(in: bounds, cornerRadius: tabCornerRadius) :
+            CGPath(roundedRect: bounds, cornerWidth: tabCornerRadius, cornerHeight: tabCornerRadius, transform: nil)
     }
 }
 
-// MARK: - Ramp Paths
+// MARK: - Path Builders
 
 private extension CGPath {
 
-    static func leadingRamp(size: NSSize) -> CGPath {
-        let trailing = trailingRamp(size: size)
-        let flipped = CGMutablePath()
-        flipped.addPath(trailing, transform: CGAffineTransform(scaleX: -1, y: 1).translatedBy(x: -size.width, y: 0))
-        return flipped
-    }
-
-    static func trailingRamp(size: NSSize) -> CGPath {
-        let origin = CGPoint(x: size.width, y: 0)
-        let center = CGPoint(x: size.width, y: size.height)
-
-        let path = CGMutablePath()
-        path.move(to: origin)
-        path.addLine(to: .zero)
-        path.addArc(center: center, radius: size.width, startAngle: .pi, endAngle: .pi * 1.5, clockwise: false)
-        path.closeSubpath()
-        return path
-    }
-
-    static func topRoundedRect(in rect: CGRect, radius: CGFloat) -> CGPath {
-        let radius = max(0, min(radius, rect.width * 0.5, rect.height * 0.5))
-        let minX = rect.minX
-        let maxX = rect.maxX
-        let minY = rect.minY
-        let maxY = rect.maxY
+    static func tabBackground(in rect: CGRect, cornerRadius: CGFloat, rampSize: NSSize? = nil) -> CGPath {
+        let cornerRadius = max(0, min(cornerRadius, rect.width * 0.5, rect.height * 0.5))
 
         let path = CGMutablePath()
 
-        // Bottom-Left + Bottom-Right
-        path.move(to: CGPoint(x: minX, y: minY))
-        path.addLine(to: CGPoint(x: maxX, y: minY))
+        // Bottom Edge
+        if let rampSize {
+            path.move(to: CGPoint(x: rect.minX - rampSize.width, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX + rampSize.width, y: rect.minY))
 
-        // Up Right
-        path.addLine(to: CGPoint(x: maxX, y: maxY - radius))
+            // Trailing Ramp
+            let trailingRampCenter = CGPoint(x: rect.maxX + rampSize.width, y: rampSize.height)
+            path.addArc(center: trailingRampCenter, radius: rampSize.width, startAngle: .pi * 1.5, endAngle: .pi, clockwise: true)
+        } else {
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        }
 
-        // Top-Right + Across + Top-Left
-        path.addArc(tangent1End: CGPoint(x: maxX, y: maxY), tangent2End: CGPoint(x: maxX - radius, y: maxY), radius: radius)
-        path.addLine(to: CGPoint(x: minX + radius, y: maxY))
-        path.addArc(tangent1End: CGPoint(x: minX, y: maxY), tangent2End: CGPoint(x: minX, y: maxY - radius), radius: radius)
+        // Right Edge
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - cornerRadius))
 
-        // Down Left
-        path.addLine(to: CGPoint(x: minX, y: minY))
+        // Top-Right Corner
+        path.addArc(tangent1End: CGPoint(x: rect.maxX, y: rect.maxY),
+                     tangent2End: CGPoint(x: rect.maxX - cornerRadius, y: rect.maxY),
+                     radius: cornerRadius)
+
+        // Top Edge
+        path.addLine(to: CGPoint(x: rect.minX + cornerRadius, y: rect.maxY))
+
+        // Top-Left Corner
+        path.addArc(tangent1End: CGPoint(x: rect.minX, y: rect.maxY),
+                     tangent2End: CGPoint(x: rect.minX, y: rect.maxY - cornerRadius),
+                     radius: cornerRadius)
+
+        // Left Edge
+        if let rampSize {
+            path.addLine(to: CGPoint(x: rect.minX, y: rampSize.height))
+
+            // Leading Ramp
+            let leadingRampCenter = CGPoint(x: rect.minX - rampSize.width, y: rampSize.height)
+            path.addArc(center: leadingRampCenter, radius: rampSize.width, startAngle: 0, endAngle: .pi * 1.5, clockwise: true)
+        } else {
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        }
+
         path.closeSubpath()
         return path
     }

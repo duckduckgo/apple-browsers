@@ -146,6 +146,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         }
     }
 
+    func setSectionTitle(_ title: String?) {
+        newTabPageViewModel.sectionTitle = title
+    }
+
     func setFavoritesEditable(_ editable: Bool) {
         newTabPageViewModel.canEditFavorites = editable
         favoritesModel.canEditFavorites = editable

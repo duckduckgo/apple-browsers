@@ -49,7 +49,8 @@ final class PromoServiceTests: XCTestCase {
         isOnboardingCompletedProvider: @escaping () -> Bool = { true },
         evaluationDeferralWindow: TimeInterval = 0,
         registrationFallbackTimeout: TimeInterval = 0,
-        externalActivationWindow: TimeInterval = 0
+        externalActivationWindow: TimeInterval = 0,
+        dateProvider: @escaping () -> Date = Date.init
     ) -> PromoService {
         PromoService(
             promos: promos,
@@ -60,7 +61,8 @@ final class PromoServiceTests: XCTestCase {
             stateQueue: testQueue,
             evaluationDeferralWindow: evaluationDeferralWindow,
             registrationFallbackTimeout: registrationFallbackTimeout,
-            externalActivationWindow: externalActivationWindow
+            externalActivationWindow: externalActivationWindow,
+            dateProvider: dateProvider
         )
     }
 
@@ -1244,6 +1246,46 @@ final class PromoServiceTests: XCTestCase {
     }
 
     // MARK: - Timeout and eligibility
+
+    func testWhenSimulatedDateAdvancesPastTimeoutDeadline_ThenReconcileRecordsTimeoutWithoutWallClock() async {
+        // Given: logical clock and a promo whose wall-clock timeout is long, while show() stays suspended
+        var simulatedNow = Date(timeIntervalSince1970: 1_700_000_000)
+        let delegate = MockPromoDelegate(isEligible: true)
+        let promo = PromoTestHelpers.makePromo(
+            id: "sim-timeout-promo",
+            promoType: PromoType(.inlineMessage, customTimeoutInterval: 100, customTimeoutResult: .actioned),
+            delegate: delegate
+        )
+        let promoService = makeService(promos: [promo], dateProvider: { simulatedNow })
+
+        let visibleExpectation = XCTestExpectation(description: "promo visible")
+        let hiddenExpectation = XCTestExpectation(description: "promo hidden after reconcile")
+        var hasSeenVisible = false
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if !promos.isEmpty, !hasSeenVisible {
+                    hasSeenVisible = true
+                    visibleExpectation.fulfill()
+                }
+                if hasSeenVisible, promos.isEmpty {
+                    hiddenExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [visibleExpectation], timeout: timeout)
+
+        simulatedNow = simulatedNow.addingTimeInterval(101)
+        promoService.reconcileActivePromoTimeoutsAfterSimulatedDateAdvance()
+        await fulfillment(of: [hiddenExpectation], timeout: timeout)
+
+        let record = historyStore.record(for: "sim-timeout-promo")
+        XCTAssertTrue(record.actioned)
+        XCTAssertEqual(record.timesDismissed, 1)
+    }
 
     func testWhenTimeoutFiresBeforeShowReturns_ThenTimeoutResultRecorded() async {
         // Given: promo with short timeout

@@ -56,23 +56,23 @@ extension CABasicAnimation {
         return animation
     }
 
-    static func buildTranslationYAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: CGFloat? = nil, toValue: CGFloat) -> CABasicAnimation {
+    static func buildTranslationYAnimation(duration: TimeInterval, timingFunction: CAMediaTimingFunction, fromValue: CGFloat? = nil, toValue: CGFloat) -> CABasicAnimation {
         let animation = CABasicAnimation(keyPath: "transform.translation.y")
         if let fromValue {
             animation.fromValue = fromValue
         }
         animation.toValue = toValue
         animation.duration = duration
-        animation.timingFunction = CAMediaTimingFunction(name: timingFunctionName)
+        animation.timingFunction = timingFunction
         return animation
     }
 
-    static func buildScaleAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: CGFloat, toValue: CGFloat) -> CABasicAnimation {
+    static func buildScaleAnimation(duration: TimeInterval, timingFunction: CAMediaTimingFunction, fromValue: CGFloat, toValue: CGFloat) -> CABasicAnimation {
         let animation = CABasicAnimation(keyPath: "transform.scale")
         animation.fromValue = fromValue
         animation.toValue = toValue
         animation.duration = duration
-        animation.timingFunction = CAMediaTimingFunction(name: timingFunctionName)
+        animation.timingFunction = timingFunction
         return animation
     }
 }

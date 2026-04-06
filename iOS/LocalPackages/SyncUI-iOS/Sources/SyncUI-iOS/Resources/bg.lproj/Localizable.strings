@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Ако преинсталирате приложението, ще възстановите автоматично данните на това устройство.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Ако преинсталирате приложението DuckDuckGo, ще Ви попитаме дали искате да възстановите данните на това устройство.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Възобновете сесията на Sync & Backup, за да възстановите отметките, паролите и други данни, или продължете с нови настройки.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Включено";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Ако преинсталирате приложението, ще възстановите автоматично данните. Данните в Sync & Backup не могат да бъдат възстановени след 18 месеца неактивност.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Възстановяване при преинсталиране на приложението";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Запазване на PDF за възстановяване";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Ако изгубите устройството си, ще трябва да използвате този код за възстановяване, за да възстановите синхронизираните данни.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Използвайте този код, за да възстановите данните си, ако загубите достъп до това устройство. Данните в Sync & Backup не могат да бъдат възстановени след 18 месеца неактивност. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Ръчно въвеждане на текстов код";

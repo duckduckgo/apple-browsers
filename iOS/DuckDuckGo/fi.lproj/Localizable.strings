@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai-äänitila";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Muokkaa kirjanmerkkiä";
 
@@ -1087,6 +1090,12 @@
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Poista keskustelu";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Poistetaanko tämä keskustelu?";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Ohita";
 
@@ -1168,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Yllätä minut!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Etsi luettelosta **DuckDuckGo** ja lisää se sitten napauttamalla **Duck.ai Voice**";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Etsi luettelosta **DuckDuckGo** ja lisää se sitten napauttamalla **VPN-valvonta**.";
 
@@ -1217,7 +1229,6 @@
 "Custom URL: %@" = "Mukautettu URL-osoite: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Readerin poissulkemat verkkotunnukset (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Tuo kirjanmerkkitiedosto...";
@@ -1453,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "YouTuben viimeaikaiset muutokset ovat vaikuttaneet Duck Playerin toimintaan. Pyrimme korjaamaan nämä ongelmat. Kiitos ymmärryksestä.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Napauta widgetiä muokataksesi sitä ja aseta sitten **Duck.ai** ja **Duck.ai Voice** pikavalinnoiksi";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Etsi ja valitse **DuckDuckGo**, pyyhkäise sitten kohtaan **Mukautetut pikavalinnat** ja valitse **Lisää widget**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Liitä sivun sisältö";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Lähetetty viestisi mukana Duck.ai:lle";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Lisää Duck.ai-äänipikavalinta valvontakeskukseesi";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
@@ -1477,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Esitä jatkokysymyksiä";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lisää Duck.ai valvontakeskukseen";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lisää Duck.ai-widget aloitusnäyttöön";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Selaimen pikakuvakkeet";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Keskustele Duck.ai:n kanssa Sirin kautta";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Osoitekenttä";
@@ -1500,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS:lle";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Pikavalinnat";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri-pikakomentojen avulla voit aloittaa Duck.ai-äänikeskustelun nopeasti äänikomennolla, kuten \"Siri, aloita DuckDuckGo-äänikeskustelu\". Se on nopea ja kätevä tapa keskustella Duck.ai:n kanssa ilman käsiä.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, aloita DuckDuckGo-äänikeskustelu.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, keskustele DuckDuckGo:n kanssa.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, aloita äänikeskustelu DuckDuckGo:n kanssa.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Keskustele Duck.ai:n kanssa Sirin avulla!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Lisää DuckDuckGo-tilauksesi tähän laitteeseen";
@@ -1570,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Jatka Duck Playerissa";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Avaa aina YouTube-videot Duck Playerissa";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playerissa avatut videot toistetaan automaattisesti. Poista tämä käytöstä, jos haluat toistaa Duck Playerissa avatut videot manuaalisesti.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Toista videot automaattisesti";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Avaa videot yksityisessä teatteritilassa, jolloin katsomasi sisältö ei vaikuta YouTube-syötteeseesi.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Ota Duck Player käyttöön";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Kokeellinen";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Playerin avulla voit katsella YouTubea ilman kohdennettuja mainoksia, eikä katsomasi sisältö vaikuta suosituksiisi.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo tarjoaa kaikki Privacy Essentials ominaisuudet, joita tarvitset suojautuaksesi selatessasi verkkoa.";
@@ -1647,12 +1706,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Katsot Duck Playerissa!\nTäällä ei ole kohdennettuja mainoksia.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Voimassa oleva kynnysarvo: %@ s (ohitus)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Voimassa oleva kynnysarvo: konfiguraation oletusarvo (ei ohitusta)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Sähköpostisuojaus";
@@ -2083,6 +2136,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ilmavirta";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno-klassikko";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Tulimyrsky";
 
@@ -2142,6 +2198,9 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Kysy yksityisesti";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Esitä jatkokysymys...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Asenna laajennus";
@@ -2600,7 +2659,6 @@
 "No active subscriptions" = "Ei aktiivisia tilauksia";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Ei poissuljettuja verkkotunnuksia";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Olemassa olevaa tilausta ei löytynyt";
@@ -2613,6 +2671,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "Ei lokitietoja";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Ei osumia haulle \"%@\"";
 
 /* No comment provided by engineer. */
 "No messages" = "Ei viestejä";
@@ -2640,6 +2701,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Storen versioissa tämä näyttö näkyy vain, jos olet kirjautunut sisään sisäisenä käyttäjänä osoitteen **use-login.duckduckgo.com** kautta.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Selvä";
@@ -2731,6 +2795,9 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ai niin, melkein unohdin...";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Tiesitkö?";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Yksityinen. Nopea. Vähemmän mainoksia.";
 
@@ -2742,9 +2809,6 @@
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hei!";
-
-/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
-"onboarding.privacypro.promo.title.delayed" = "Tiesitkö?";
 
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Haluatko palauttaa kirjanmerkit, salasanat ja muita tietoja edellisestä DuckDuckGo-synkronoinnistasi?";
@@ -2769,6 +2833,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Selvä! Ohitan muut vinkit.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Kokeile maksutta!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Kokeile ilmaiseksi!";
@@ -3050,9 +3117,6 @@
 "prompt.x-safari-https.try-open.title" = "Tämä sivusto haluaa avata Safarin.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "UUDELLEENBRÄNDÄTTY";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Viimeaikaiset käsittelylokit";
 
 /* No comment provided by engineer. */
@@ -3165,6 +3229,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Lisää widget aloitusnäyttöön";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Lisää Duck.ai-pikavalintoja aloitusnäyttöön";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Lisää DuckDuckGo VPN -widget aloitusnäyttöön.";
@@ -3391,6 +3458,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Oletusselain";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Oletusarvoinen vaihtopainikkeen asento uusilla välilehdillä.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Vaihtopainikkeen asento";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Poista Duck.ai-keskustelut";
 
@@ -4543,6 +4614,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hanki DuckDuckGo Windowsille!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo poistaa videomainokset YouTubesta, joten voit katsoa videoita keskeytyksettä.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube-mainosten esto";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Estä mainokset YouTubessa";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Kirjanmerkit";
 
@@ -4558,3 +4638,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Salli ääni ja video";
+"autoplay.mode.blockAll" = "Estä ääni ja video";
+"autoplay.mode.blockAudio" = "Estä ääni";
+"settings.autoplay" = "Automaattinen toisto";
+"settings.autoplay.duck.player.link" = "Duck Player -asetukset";
+"settings.autoplay.footer" = "Automaattisen toiston asetukset koskevat vain uusia avattuja välilehtiä. Muutoksia ei voida ottaa käyttöön aiemmilla välilehdillä, ellei sovellusta käynnistetä uudelleen. Voit hallita automaattista toistoa Duck Playerissa kohdassa ";
+"settings.media.section" = "Media";

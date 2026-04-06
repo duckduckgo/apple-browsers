@@ -55,7 +55,7 @@ public extension OnboardingTheme {
             borderWidth: 1,
             borderInset: 0.5,
             iconSize: CGSize(width: 16, height: 16),
-            itemMaxHeight: 40,
+            itemMinHeight: 40
         )
 
         return OnboardingTheme(

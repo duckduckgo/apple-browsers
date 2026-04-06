@@ -60,6 +60,7 @@ final class PreferencesViewController: NSViewController {
         dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
+        youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         subscriptionManager: any SubscriptionManager,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         pinningManager: PinningManager
@@ -87,6 +88,7 @@ final class PreferencesViewController: NSViewController {
                                         dockPreferences: dockPreferences,
                                         accessibilityPreferences: accessibilityPreferences,
                                         duckPlayerPreferences: duckPlayerPreferences,
+                                        youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)
     }

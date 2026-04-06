@@ -40,6 +40,7 @@
 #include <typeinfo>
 #include <cxxabi.h>
 #include <exception>
+#include <ptrauth.h>
 
 #define DESCRIPTION_BUFFER_LENGTH 1024
 
@@ -52,8 +53,23 @@ catch(TYPE value)\
 #define CALL_STACK_SYMBOLS_KEY @"callStackSymbols"
 #define RESERVED_KEY @"reserved"
 
+// ObjC exceptions use objc_typeinfo and share the objc_ehtype_vtable.
+extern "C" const void *const objc_ehtype_vtable[];
+
+static bool isObjCException(const std::type_info *tinfo) {
+    if (tinfo == nullptr) {
+        return false;
+    }
+
+    const void *tinfoVtable = *reinterpret_cast<const void *const *>(tinfo);
+    const void *objcVtable = (const void *)(objc_ehtype_vtable + 2);
+
+    return ptrauth_strip(tinfoVtable, ptrauth_key_cxx_vtable_pointer)
+        == ptrauth_strip(objcVtable, ptrauth_key_cxx_vtable_pointer);
+}
+
 extern "C" void captureStackTrace(void* exc, void* tinfo, void (*dest)(void*)) __attribute__((disable_tail_calls)) {
-    if (tinfo && strcmp(((std::type_info *)tinfo)->name(), "NSException") == 0) {
+    if (isObjCException(static_cast<std::type_info *>(tinfo))) {
         [[[NSThread currentThread] threadDictionary] removeObjectForKey:CALL_STACK_SYMBOLS_KEY];
         return;
     }
@@ -73,13 +89,15 @@ extern "C" terminate_handler SetCxxExceptionTerminateHandler(terminate_handler h
 // get C++ exception currently handled in the `std::terminate` handler
 + (NSException * _Nullable)currentCxxException {
     const char* name = nil;
+    bool isObjCExc = false;
     std::type_info* tinfo = __cxxabiv1::__cxa_current_exception_type();
     if (tinfo) {
         name = tinfo->name();
+        isObjCExc = isObjCException(tinfo);
     }
     
-    // NSException is handled by NSUncaughtExceptionHandler
-    if (name && strcmp(name, "NSException") == 0) {
+    // ObjC exceptions are handled by NSUncaughtExceptionHandler.
+    if (isObjCExc) {
         return nil;
     }
 

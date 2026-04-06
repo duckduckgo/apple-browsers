@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Автоматическое восстановление данных на устройстве в случае переустановки приложения.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "В случае переустановки приложение DuckDuckGo предложит вам восстановить свои данные на этом устройстве.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Восстановите закладки, пароли и другие данные из резервной копии либо начните с нуля.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Включено";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "При переустановке приложения функция Sync & Backup восстанавливает данные автоматически. Содержимое резервных копий утрачивается после 18 месяцев бездействия.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Восстановить при переустановке приложения";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Сохранить код в PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Если вы потеряете свое устройство, этот код позволит вам восстановить синхронизированные данные.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Код поможет восстановить данные, если вы утратите доступ к этому устройству. Резервные копии Sync & Backup не восстанавливаются после 18 месяцев бездействия. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Ввести текстовый код вручную";

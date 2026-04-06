@@ -1,5 +1,5 @@
 {
-  "originHash" : "5c0808e5f05a0769dce87e576451af696f9b988ac225295e4f74f246d42fc875",
+  "originHash" : "39ef0648124dda3a0ab5088cfe8d730356ddb4b41929cc781295b4199abe7d77",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/moon0326/ai-tools-to-new-tab-page",
-        "revision" : "c0d5baf44b4fc47b7acb55e6ef021e2c44a27f37"
+        "revision" : "4493d5fc34bf9259f4ca93fde59806fc920d21df",
+        "version" : "13.35.0"
       }
     },
     {

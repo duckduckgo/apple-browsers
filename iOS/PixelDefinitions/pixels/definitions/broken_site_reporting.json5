@@ -193,6 +193,11 @@
                 "description": "Comma-separated JS performance values"
             },
             {
+                "key": "breakageData",
+                "type": "string",
+                "description": "Breakage detector payload"
+            },
+            {
                 "key": "isPirEnabled",
                 "type": "string",
                 "description": "Whether Personal Information Removal is enabled. Only sent when true.",
@@ -202,6 +207,12 @@
                 "key": "isForceDarkModeEnabled",
                 "type": "boolean",
                 "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "autoplayBlockingMode",
+                "type": "string",
+                "description": "The user's autoplay blocking setting. Only sent when the feature is enabled.",
+                "enum": ["allowAll", "blockAudio", "blockAll"]
             },
             {
                 "key": "isAfterSuppressedXSafariRedirect",
@@ -496,6 +507,11 @@
                 "description": "Comma-separated JS performance values"
             },
             {
+                "key": "breakageData",
+                "type": "string",
+                "description": "Breakage detector payload"
+            },
+            {
                 "key": "isPirEnabled",
                 "type": "string",
                 "description": "Whether Personal Information Removal is enabled. Only sent when true.",
@@ -505,6 +521,12 @@
                 "key": "isForceDarkModeEnabled",
                 "type": "boolean",
                 "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "autoplayBlockingMode",
+                "type": "string",
+                "description": "The user's autoplay blocking setting. Only sent when the feature is enabled.",
+                "enum": ["allowAll", "blockAudio", "blockAll"]
             },
             {
                 "key": "isAfterSuppressedXSafariRedirect",

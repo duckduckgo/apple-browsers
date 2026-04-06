@@ -53,7 +53,9 @@ tags:
     arguments:
         isRunningUITests: true
 
-- tapOn: "Tab Switcher"
+- tapOn:
+    text: "Tab Switcher"
+    retryTapIfNoChange: true
 - tapOn:
     point: 20%, 25%
 

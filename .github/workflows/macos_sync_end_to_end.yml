@@ -54,7 +54,7 @@ jobs:
           ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -237,6 +237,12 @@ jobs:
         pixel-params: |
           runner: ${{ matrix.runner }}
 
+    - name: Send Status Pixel
+      if: always() && github.ref_name == 'main'
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_status_mac_e2e_sync_${{ matrix.os-version }}_${{ steps.run-ui-tests.outcome }}
+
     - name: Prepare test report
       if: always()
       working-directory: macOS
@@ -307,7 +313,7 @@ jobs:
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Create Asana task when workflow failed
       uses: duckduckgo/native-github-asana-sync@v1.1
       with:

@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automatski vrati svoje podatke na ovom uređaju ako ponovno instaliraš aplikaciju.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Ako ponovno instaliraš aplikaciju DuckDuckGo, pitat ćemo te želiš li vratiti podatke na ovom uređaju.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Nastavi sesiju Sync & Backup kako bi vratio oznake, lozinke i još mnogo toga ili nastavi s novim postavljanjem.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Uključeno";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Podaci se automatski vraćaju ako ponovno instaliraš aplikaciju. Podaci Sync & Backup ne mogu se oporaviti nakon 18 (ili više) mjeseci neaktivnosti.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Vraćanje prilikom ponovne instalacije aplikacije";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Spremi PDF za oporavak";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Ako izgubiš svoj uređaj, trebat će ti ova šifra za oporavak za vraćanje sinkroniziranih podataka.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Upotrijebi ovaj kôd za vraćanje podataka ako izgubiš pristup ovom uređaju. Podaci sinkronizacije i sigurnosne kopije (Sync & Backup) ne mogu se oporaviti nakon 18 (ili više) mjeseci neaktivnosti. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Ručno unesi tekstnu šifru";

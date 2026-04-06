@@ -902,6 +902,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Add To Dock more options menu notification", action: #selector(AppDelegate.resetAddToDockFeatureNotification))
                 NSMenuItem(title: "Reset Launch Date To Today", action: #selector(AppDelegate.resetLaunchDateToToday))
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
+                NSMenuItem(title: "Set Launch Date 10 Days In the Past", action: #selector(AppDelegate.setLaunchDay10DaysInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
 
@@ -963,6 +964,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Simulate crash") {
                 NSMenuItem(title: "fatalError", action: #selector(AppDelegate.triggerFatalError))
                 NSMenuItem(title: "NSException", action: #selector(MainViewController.crashOnException))
+                NSMenuItem(title: "_NSCoreDataException", action: #selector(AppDelegate.crashOnCoreDataException))
                 NSMenuItem(title: "C++ exception", action: #selector(AppDelegate.crashOnCxxException))
                 if featureFlagger.isFeatureOn(.tabCrashDebugging) {
                     NSMenuItem(title: "Crash All Tabs", action: #selector(MainViewController.crashAllTabs))
@@ -1075,7 +1077,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
             if StandardApplicationBuildType().isSparkleBuild {
-                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
+                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
             }
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "Promo Queue")

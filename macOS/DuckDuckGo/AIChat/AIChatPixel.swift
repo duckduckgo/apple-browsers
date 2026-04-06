@@ -187,16 +187,16 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a non-pinned recent chat by pressing enter
     case aiChatRecentChatSelectedKeyboard
 
-    // MARK: - Toggle popover pixels
+    // MARK: - Recent chat deletion
 
-    /// Event Trigger: The toggle popover is shown to the user
-    case aiChatTogglePopoverShown
+    /// Event Trigger: User clicks the delete button on a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteButtonClicked
 
-    /// Event Trigger: User clicks the X button to dismiss the toggle popover
-    case aiChatTogglePopoverDismissButtonClicked
+    /// Event Trigger: User confirms deletion of a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteConfirmed
 
-    /// Event Trigger: User clicks the settings button in the toggle popover
-    case aiChatTogglePopoverCustomizeButtonClicked
+    /// Event Trigger: User cancels deletion of a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteCancelled
 
     case aiChatSyncScopedSyncTokenError(reason: String)
     case aiChatSyncEncryptionError(reason: String)
@@ -362,12 +362,13 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_recent_chat_selected_mouse"
         case .aiChatRecentChatSelectedKeyboard:
             return "aichat_recent_chat_selected_keyboard"
-        case .aiChatTogglePopoverShown:
-            return "aichat_toggle_popover_shown"
-        case .aiChatTogglePopoverDismissButtonClicked:
-            return "aichat_toggle_popover_dismiss_button_clicked"
-        case .aiChatTogglePopoverCustomizeButtonClicked:
-            return "aichat_toggle_popover_customize_button_clicked"
+        case .aiChatRecentChatDeleteButtonClicked:
+            return "aichat_recent_chat_delete_button_clicked"
+        case .aiChatRecentChatDeleteConfirmed:
+            return "aichat_recent_chat_delete_confirmed"
+        case .aiChatRecentChatDeleteCancelled:
+            return "aichat_recent_chat_delete_cancelled"
+
         case .aiChatSyncScopedSyncTokenError:
             return "aichat_sync_internal_scoped-sync-token-error"
         case .aiChatSyncEncryptionError:
@@ -454,9 +455,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
-                .aiChatTogglePopoverShown,
-                .aiChatTogglePopoverDismissButtonClicked,
-                .aiChatTogglePopoverCustomizeButtonClicked,
+                .aiChatRecentChatDeleteButtonClicked,
+                .aiChatRecentChatDeleteConfirmed,
+                .aiChatRecentChatDeleteCancelled,
                 .aiChatOnboardingTogglePreferenceOn,
                 .aiChatOnboardingTogglePreferenceOff,
                 .aiChatOnboardingFinishedToggleOn,
@@ -553,9 +554,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
-                .aiChatTogglePopoverShown,
-                .aiChatTogglePopoverDismissButtonClicked,
-                .aiChatTogglePopoverCustomizeButtonClicked,
+                .aiChatRecentChatDeleteButtonClicked,
+                .aiChatRecentChatDeleteConfirmed,
+                .aiChatRecentChatDeleteCancelled,
                 .aiChatSyncScopedSyncTokenError,
                 .aiChatSyncEncryptionError,
                 .aiChatSyncDecryptionError,

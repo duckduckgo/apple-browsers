@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Uygulama yeniden yüklendiğinde bu cihazdaki veriler de otomatik olarak geri yüklenir.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "DuckDuckGo uygulamasını yeniden yüklerseniz, verilerinizi bu cihazda geri yüklemek isteyip istemediğinizi sorarız.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Yer işaretleri, şifreler ve daha fazlasını geri yüklemek için Sync & Backup oturumuna devam edin veya yeni bir kurulum yapın.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Açık";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Uygulamayı yeniden yüklediğinizde verileriniz otomatik olarak geri yüklenir. Sync & Backup verileri 18 ay kullanılmadıktan sonra kurtarılamaz.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Uygulama Yeniden Yüklendiğinde Geri Yükle";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Kurtarma PDF'ini Kaydet";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Cihazınızı kaybederseniz senkronize edilmiş verilerinizi geri yüklemek için bu kurtarma koduna ihtiyacınız olacaktır.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Bu cihaza erişiminizi kaybettiğinizde verilerinizi kurtarmak için bu kodu kullanın. Sync & Backup verileri 18 ay kullanılmadıktan sonra kurtarılamaz. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Metin Kodunu Manuel Olarak Yaz";

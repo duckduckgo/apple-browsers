@@ -82,11 +82,11 @@ class TabsModelProvider: TabsModelProviding {
     private var persistence: TabsModelPersisting
 
     
-    init(normalTabsModel: TabsModel, fireModeTabsModel: TabsModel, persistence: TabsModelPersisting, featureFlagger: FeatureFlagger) {
+    init(normalTabsModel: TabsModel, fireModeTabsModel: TabsModel, persistence: TabsModelPersisting) {
         self._normalTabsModel = normalTabsModel
         self._fireModeTabsModel = fireModeTabsModel
         self.persistence = persistence
-        let capability = FireModeCapability.create(using: featureFlagger)
+        let capability = FireModeCapability.create()
         self.aggregateTabsModel = capability.isFireModeEnabled ? AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel) : normalTabsModel
     }
     

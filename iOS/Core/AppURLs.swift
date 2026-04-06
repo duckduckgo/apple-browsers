@@ -148,7 +148,8 @@ public extension URL {
 
     fileprivate enum ParamValue {
 
-        static let source = "ddg_ios"
+        static let phoneSource = "ddg_ios"
+        static let iPadSource = "ddg_ios_tablet"
         static let appUsage = "app_use"
         static let duckAI = "duckai"
         static let searchHeader = "-1"
@@ -208,9 +209,15 @@ public extension URL {
 public final class StatisticsDependentURLFactory {
 
     private let statisticsStore: StatisticsStore
+    private let isPad: Bool
 
-    init(statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
+    var source: String {
+        isPad ? URL.ParamValue.iPadSource : URL.ParamValue.phoneSource
+    }
+
+    init(statisticsStore: StatisticsStore = StatisticsUserDefaults(), isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.statisticsStore = statisticsStore
+        self.isPad = isPad
     }
 
     // MARK: Search
@@ -256,7 +263,7 @@ public final class StatisticsDependentURLFactory {
     func applyingStatsParams(to url: URL) -> URL {
         var searchURL = url.removingParameters(named: [URL.Param.source, URL.Param.atb])
             .appendingParameter(name: URL.Param.source,
-                                value: URL.ParamValue.source)
+                                value: source)
 
         if let atbWithVariant = statisticsStore.atbWithVariant {
             searchURL = searchURL.appendingParameter(name: URL.Param.atb, value: atbWithVariant)
@@ -309,7 +316,7 @@ public final class StatisticsDependentURLFactory {
 
     func hasCorrectMobileStatsParams(url: URL) -> Bool {
         guard let source = url.getParameter(named: URL.Param.source),
-              source == URL.ParamValue.source
+              source == self.source
         else { return false }
         if let atbWithVariant = statisticsStore.atbWithVariant {
             return atbWithVariant == url.getParameter(named: URL.Param.atb)

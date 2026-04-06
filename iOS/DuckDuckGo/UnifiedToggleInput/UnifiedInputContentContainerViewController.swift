@@ -374,13 +374,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func installChatHistoryList() {
         guard let swipeContainerManager else { return }
 
-        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
-        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        let suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-
-        let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                           aiChatSettings: aiChatSettings,
-                                           viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
+        let manager = makeAIChatHistoryManager()
         manager.delegate = self
         manager.titleLayoutConfiguration = .unifiedInput
         swipeContainerManager.installChatHistory(using: manager)
@@ -398,6 +392,24 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// Creates an `AIChatHistoryManager` configured for the current tab.
+    /// Fire tabs use a no-op reader that always returns empty results,
+    /// preventing chat history from being fetched or displayed.
+    private func makeAIChatHistoryManager() -> AIChatHistoryManager {
+        let suggestionsReader: AIChatSuggestionsReading
+        if switchBarHandler.isFireTab {
+            suggestionsReader = NilSuggestionsReader()
+        } else {
+            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
+
+        return AIChatHistoryManager(suggestionsReader: suggestionsReader,
+                                    aiChatSettings: aiChatSettings,
+                                    viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
     }
 
     private func installDaxLogoView() {

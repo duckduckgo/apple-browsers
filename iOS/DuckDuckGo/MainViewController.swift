@@ -3742,6 +3742,7 @@ extension MainViewController: OmniBarDelegate {
                 in: view,
                 parentViewController: self,
                 searchContainer: viewCoordinator.omniBar.barView.searchContainer,
+                isFireTab: isCurrentTabFireTab(),
                 keyboardLayoutGuide: view.keyboardLayoutGuide
             )
             iPadTabChatHistoryCoordinator.onSuggestionsVisibilityChanged = { [weak self] _ in

@@ -69,17 +69,24 @@ final class UserScripts: UserScriptsProvider {
 
     private static func sharedNativeStorageHandler() -> DuckAiNativeStorageHandling? {
         if let existing = nativeStorageProvider {
+            Logger.aiChat.debug("[NativeStorage] iOS: Reusing existing provider, handler=\(String(describing: existing.handler))")
             return existing.handler
         }
         do {
-            let containerURL = FileManager.default.containerURL(
+            guard let groupContainer = FileManager.default.containerURL(
                 forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName
-            )!.appendingPathComponent("DuckAiNativeStorage")
+            ) else {
+                Logger.aiChat.error("[NativeStorage] iOS: App group container URL is nil for group '\(Global.appConfigurationGroupName)'")
+                return nil
+            }
+            let containerURL = groupContainer.appendingPathComponent("DuckAiNativeStorage")
+            Logger.aiChat.debug("[NativeStorage] iOS: Creating provider at \(containerURL.path)")
             let provider = try DuckAiNativeStorageProvider(containerURL: containerURL)
             nativeStorageProvider = provider
+            Logger.aiChat.debug("[NativeStorage] iOS: Provider created successfully")
             return provider.handler
         } catch {
-            Logger.aiChat.error("UserScripts: Failed to create DuckAiNativeStorageProvider: \(error.localizedDescription)")
+            Logger.aiChat.error("[NativeStorage] iOS: Failed to create provider: \(error.localizedDescription)")
             return nil
         }
     }
@@ -130,8 +137,8 @@ final class UserScripts: UserScriptsProvider {
 
         if let nativeStorageHandler = Self.sharedNativeStorageHandler() {
             let originRules: [HostnameMatchingRule] = [
-                .exact(hostname: "duck.ai"),
-                .exact(hostname: "duckduckgo.com")
+                .exactOrSubdomain(hostname: "duck.ai"),
+                .exactOrSubdomain(hostname: "duckduckgo.com")
             ]
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: nativeStorageHandler,
@@ -157,9 +164,9 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
-            Logger.aiChat.debug("UserScripts: Registered duckAiNativeStorage subfeature with contentScopeUserScriptIsolated")
+            Logger.aiChat.debug("[NativeStorage] iOS: Registered subfeature '\(duckAiNativeStorageUserScript.featureName)' with contentScopeUserScriptIsolated (isolated=\(self.contentScopeUserScriptIsolated.scriptContext.isIsolated), context=\(String(describing: self.contentScopeUserScriptIsolated.scriptContext)))")
         } else {
-            Logger.aiChat.error("UserScripts: duckAiNativeStorageUserScript is nil — not registered")
+            Logger.aiChat.error("[NativeStorage] iOS: duckAiNativeStorageUserScript is nil — NOT registered")
         }
         contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
         contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)

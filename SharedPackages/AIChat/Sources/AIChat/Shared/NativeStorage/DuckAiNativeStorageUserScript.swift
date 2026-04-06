@@ -39,14 +39,14 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         self.handler = handler
         self.messageOriginPolicy = .only(rules: originRules)
         super.init()
-        Logger.aiChat.debug("DuckAiNativeStorageUserScript: Created with origin rules: \(originRules.map { String(describing: $0) }.joined(separator: ", "))")
+        Logger.aiChat.debug("[NativeStorage] Created with origin rules: \(originRules.map { String(describing: $0) }.joined(separator: ", "))")
     }
 
     // MARK: - Subfeature
 
     public func with(broker: UserScriptMessageBroker) {
         self.broker = broker
-        Logger.aiChat.debug("DuckAiNativeStorageUserScript: Registered with broker")
+        Logger.aiChat.debug("[NativeStorage] Registered with broker (featureName='\(self.featureName)', originPolicy=\(String(describing: self.messageOriginPolicy)))")
     }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {

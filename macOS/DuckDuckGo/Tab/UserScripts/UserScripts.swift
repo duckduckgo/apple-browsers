@@ -114,8 +114,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         if let nativeStorageHandler = Self.sharedNativeStorageHandler() {
             var originRules: [HostnameMatchingRule] = [
-                .exact(hostname: "duck.ai"),
-                .exact(hostname: "duckduckgo.com")
+                .exactOrSubdomain(hostname: "duck.ai"),
+                .exactOrSubdomain(hostname: "duckduckgo.com")
             ]
             if let customHostname = aiChatDebugURLSettings.customURLHostname {
                 originRules.append(.exact(hostname: customHostname))

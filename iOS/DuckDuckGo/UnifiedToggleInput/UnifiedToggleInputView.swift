@@ -148,6 +148,10 @@ final class UnifiedToggleInputView: UIView {
     var usesOmnibarMargins: Bool = false
     private(set) var isToggleEnabled: Bool
 
+    var modelSupportsImageAttachments: Bool = true {
+        didSet { updateAttachmentsStripLayout() }
+    }
+
     var handlerIsTopBarPosition: Bool {
         get { handler.isTopBarPosition }
         set { handler.isTopBarPosition = newValue }
@@ -165,6 +169,11 @@ final class UnifiedToggleInputView: UIView {
     var isImageButtonHidden: Bool {
         get { toolsToolbar.isImageButtonHidden }
         set { toolsToolbar.isImageButtonHidden = newValue }
+    }
+
+    var isImageButtonEnabled: Bool {
+        get { toolsToolbar.isImageButtonEnabled }
+        set { toolsToolbar.isImageButtonEnabled = newValue }
     }
 
     var isAttachmentsFull: Bool {
@@ -576,7 +585,7 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateAttachmentsStripLayout() {
         let hasImages = !attachmentsStrip.attachments.isEmpty
-        let showStrip = hasImages && isExpanded && handler.currentToggleState == .aiChat
+        let showStrip = hasImages && isExpanded && handler.currentToggleState == .aiChat && modelSupportsImageAttachments
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
     }

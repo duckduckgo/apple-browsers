@@ -1051,7 +1051,6 @@
 		9888F77B2224980500C46159 /* FeedbackViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9888F77A2224980500C46159 /* FeedbackViewController.swift */; };
 		988AC355257E47C100793C64 /* RequeryLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988AC354257E47C100793C64 /* RequeryLogic.swift */; };
 		988F3DCF237D5C0F00AEE34C /* SchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988F3DCE237D5C0F00AEE34C /* SchemeHandler.swift */; };
-		988F3DD3237DE8D900AEE34C /* ForgetDataAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988F3DD2237DE8D900AEE34C /* ForgetDataAlert.swift */; };
 		98983096255B5019003339A2 /* BookmarksCachingSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98983095255B5019003339A2 /* BookmarksCachingSearchTests.swift */; };
 		98999D5922FDA41500CBBE1B /* BasicAuthenticationAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98999D5822FDA41500CBBE1B /* BasicAuthenticationAlert.swift */; };
 		989F0DA02ECB278600781641 /* ContentBlockerRulesManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 989F0D9F2ECB278600781641 /* ContentBlockerRulesManagerMock.swift */; };
@@ -3747,7 +3746,6 @@
 		9888F77A2224980500C46159 /* FeedbackViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackViewController.swift; sourceTree = "<group>"; };
 		988AC354257E47C100793C64 /* RequeryLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequeryLogic.swift; sourceTree = "<group>"; };
 		988F3DCE237D5C0F00AEE34C /* SchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemeHandler.swift; sourceTree = "<group>"; };
-		988F3DD2237DE8D900AEE34C /* ForgetDataAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetDataAlert.swift; sourceTree = "<group>"; };
 		9896632322C56716007BE4FE /* EtagStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EtagStorage.swift; sourceTree = "<group>"; };
 		98983095255B5019003339A2 /* BookmarksCachingSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksCachingSearchTests.swift; sourceTree = "<group>"; };
 		98987E6E251EAC3B006F75CD /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -10555,7 +10553,6 @@
 				6AC6DAB228804F97002723C0 /* BarsAnimator.swift */,
 				8563A03B1F9288D600F04442 /* BrowserChromeManager.swift */,
 				854A012E2A5563A400FCC628 /* FindInPage.xib */,
-				988F3DD2237DE8D900AEE34C /* ForgetDataAlert.swift */,
 				8577A1C4255D2C0D00D43FCD /* HitTestingToolbar.swift */,
 				85DDE03F2AC6FF65006ABCA2 /* MainView.swift */,
 				F17669D61E43401C003D3222 /* MainViewController.swift */,
@@ -12563,7 +12560,6 @@
 				1DEAADFF2BA7832F00E25A97 /* EmailProtectionView.swift in Sources */,
 				F1AF3A412F44AE2600D2BAD3 /* AppIconManaging.swift in Sources */,
 				31C314A22D2EF614009A412A /* AIChatViewControllerManager.swift in Sources */,
-				988F3DD3237DE8D900AEE34C /* ForgetDataAlert.swift in Sources */,
 				D6FEB8B12B7498A300C3615F /* HeadlessWebView.swift in Sources */,
 				9FDEC7BC2C91204900C7A692 /* AppIconPickerViewModel.swift in Sources */,
 				6FE1F33F2E31310500C88A09 /* MainViewEditingStateTransitioning.swift in Sources */,

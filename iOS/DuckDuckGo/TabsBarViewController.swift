@@ -149,12 +149,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
                 return
             }
-            let presenter = FireConfirmationPresenter(tabsModel: tabsModel,
-                                                      featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                                      historyManager: historyManager,
-                                                      fireproofing: fireproofing,
-                                                      aiChatSettings: aiChatSettings,
-                                                      keyValueFilesStore: keyValueStore)
+            let presenter = FireConfirmationPresenter()
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,

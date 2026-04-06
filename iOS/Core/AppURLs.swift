@@ -75,7 +75,11 @@ public extension URL {
     static let mac = URL(string: "\(base)/mac")!
     static let windows = URL(string: "\(base)/windows")!
 
-    static func makeExtiURL(atb: String) -> URL { URL.exti.appendingParameter(name: Param.atb, value: atb) }
+    static func makeExtiURL(atb: String, isPad: Bool) -> URL {
+        URL.exti
+            .appendingParameter(name: Param.atb, value: atb)
+            .appendingParameter(name: Param.isTablet, value: isPad ? "1" : "0")
+    }
 
     static func isDuckDuckGo(domain: String?) -> Bool {
         guard let domain = domain, let url = URL(string: "https://\(domain)") else { return false }
@@ -143,7 +147,7 @@ public extension URL {
         static let verticalRewrite = "iar"
         static let verticalMaps = "iaxm"
         static let email = "email"
-
+        static let isTablet = "is_tablet"
     }
 
     fileprivate enum ParamValue {
@@ -280,7 +284,8 @@ public final class StatisticsDependentURLFactory {
         return URL.atb.appendingParameters([
             URL.Param.atb: atbWithVariant,
             URL.Param.setAtb: setAtb,
-            URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled
+            URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled,
+            URL.Param.isTablet: isPad ? "1" : "0",
         ])
     }
 
@@ -292,7 +297,8 @@ public final class StatisticsDependentURLFactory {
             URL.Param.activityType: URL.ParamValue.appUsage,
             URL.Param.atb: atbWithVariant,
             URL.Param.setAtb: setAtb,
-            URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled
+            URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled,
+            URL.Param.isTablet: isPad ? "1" : "0",
         ])
     }
 
@@ -303,7 +309,8 @@ public final class StatisticsDependentURLFactory {
 
         var params: [String: String] = [
             URL.Param.atb: atbWithVariant,
-            URL.Param.activityType: URL.ParamValue.duckAI
+            URL.Param.activityType: URL.ParamValue.duckAI,
+            URL.Param.isTablet: isPad ? "1" : "0",
         ]
 
         // set_atb is nil for first prompt (backend identifies this as first-ever prompt)

@@ -414,6 +414,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .sink { [weak self] currentText in
                 guard let self else { return }
 
+                self.updateURLFallbackForCurrentText()
                 self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
                 self.updateSectionTitle()
 
@@ -421,8 +422,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                     self.updateDaxVisibility()
                     self.view.layoutIfNeeded()
                 }
-
-                self.updateURLFallbackForCurrentText()
             }
             .store(in: &cancellables)
 
@@ -517,7 +516,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
         } else {
             isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
         }

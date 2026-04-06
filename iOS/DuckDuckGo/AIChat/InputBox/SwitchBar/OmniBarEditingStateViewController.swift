@@ -440,14 +440,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
                 self.delegate?.onQueryUpdated(currentText)
 
+                self.updateURLFallbackForCurrentText()
+                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
+
                 scheduleAnimation {
                     self.updateDaxVisibility()
                     self.updateSwipeContainerSafeArea()
                     self.view.layoutIfNeeded()
                 }
 
-                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
-                self.updateURLFallbackForCurrentText()
             }
             .store(in: &cancellables)
 
@@ -654,7 +655,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
         } else {
             isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent
         }

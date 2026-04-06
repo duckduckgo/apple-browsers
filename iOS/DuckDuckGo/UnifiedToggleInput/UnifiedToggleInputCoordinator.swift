@@ -775,7 +775,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func updateImageButtonEnabledState() {
-        let canAttachMore = !viewController.isAttachmentsFull && !isConversationImageLimitReached
+        let canAttachMore = !viewController.isAttachmentsFull && !isConversationImageLimitReached && !viewController.isGenerating
         viewController.isImageButtonEnabled = canAttachMore
     }
 
@@ -790,6 +790,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             .sink { [weak self] isGenerating in
                 guard let self else { return }
                 self.viewController.isGenerating = isGenerating
+                self.updateImageButtonEnabledState()
             }
             .store(in: &cancellables)
     }

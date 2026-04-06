@@ -154,6 +154,19 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isImageButtonEnabled)
     }
 
+    func testWhenGeneratingThenImageButtonIsDisabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+
+        sut.aiChatStatus = .streaming
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+
+        sut.aiChatStatus = .ready
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+    }
+
     func testWhenSubmittingOnNonImageModelThenImagesAreNil() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "image-model"

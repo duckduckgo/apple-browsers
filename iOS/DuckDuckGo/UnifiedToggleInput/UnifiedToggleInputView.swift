@@ -149,7 +149,12 @@ final class UnifiedToggleInputView: UIView {
     private(set) var isToggleEnabled: Bool
 
     var modelSupportsImageAttachments: Bool = true {
-        didSet { updateAttachmentsStripLayout() }
+        didSet {
+            updateAttachmentsStripLayout()
+            layoutIfNeeded()
+            onNeedsHierarchyLayout?()
+            onAttachmentsLayoutDidChange?()
+        }
     }
 
     var handlerIsTopBarPosition: Bool {

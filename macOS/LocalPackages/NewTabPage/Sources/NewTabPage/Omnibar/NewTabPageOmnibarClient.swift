@@ -64,6 +64,15 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             }
         }
         .store(in: &cancellables)
+
+        configProvider.modePublisher
+            .filter { $0 == .ai }
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.refreshModelsAndNotify()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -111,6 +120,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     }
 
     @MainActor
+    private func refreshModelsAndNotify() async {
+        _ = await modelsProvider?.fetchAIModelSections()
+        notifyConfigUpdated()
+    }
+
+    @MainActor
     private func notifyConfigUpdated() {
         let config = NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
@@ -120,7 +135,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             selectedModelId: configProvider.selectedModelId,
-            aiModelSections: nil
+            aiModelSections: modelsProvider?.lastFetchedSections
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }

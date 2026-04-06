@@ -25,6 +25,7 @@ import Subscription
 /// using the shared section builder for the NTP dropdown.
 final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
+    private(set) var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
 
@@ -50,7 +51,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                 basicSectionHeader: UserText.aiChatModelPickerBasicModelsSectionHeader
             )
 
-            return sections.map { section in
+            let result = sections.map { section in
                 NewTabPageDataModel.AIModelSection(
                     header: section.header,
                     items: section.items.map { model in
@@ -64,6 +65,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                     }
                 )
             }
+            lastFetchedSections = result
+            return result
         } catch {
             Logger.aiChat.error("Failed to fetch models for NTP: \(error.localizedDescription)")
             return []

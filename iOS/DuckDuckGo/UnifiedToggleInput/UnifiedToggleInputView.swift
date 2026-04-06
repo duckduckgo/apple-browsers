@@ -150,6 +150,7 @@ final class UnifiedToggleInputView: UIView {
 
     var modelSupportsImageAttachments: Bool = true {
         didSet {
+            guard modelSupportsImageAttachments != oldValue else { return }
             updateAttachmentsStripLayout()
             layoutIfNeeded()
             onNeedsHierarchyLayout?()

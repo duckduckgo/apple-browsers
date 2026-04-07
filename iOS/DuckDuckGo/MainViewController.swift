@@ -326,6 +326,7 @@ class MainViewController: UIViewController {
     }
 
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
+    private let fireModePromotionEligibility: FireModePromotionCoordinating?
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -385,7 +386,8 @@ class MainViewController: UIViewController {
         whatsNewRepository: WhatsNewMessageRepository,
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
-        toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+        toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
+        fireModePromotionEligibility: FireModePromotionCoordinating? = nil
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -448,6 +450,7 @@ class MainViewController: UIViewController {
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.voiceShortcutFeature = voiceShortcutFeature
         self.toggleModeStorage = toggleModeStorage
+        self.fireModePromotionEligibility = fireModePromotionEligibility
 
         super.init(nibName: nil, bundle: nil)
         
@@ -508,6 +511,7 @@ class MainViewController: UIViewController {
             remoteMessagingActionHandler: remoteMessagingActionHandler,
             remoteMessagingImageLoader: remoteMessagingImageLoader,
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
+            fireModePromotionEligibility: fireModePromotionEligibility,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
             internalUserCommands: internalUserCommands)
@@ -1467,6 +1471,7 @@ class MainViewController: UIViewController {
                                                   remoteMessagingActionHandler: remoteMessagingActionHandler,
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
+                                                  fireModePromotionEligibility: fireModePromotionEligibility,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
@@ -1527,12 +1532,7 @@ class MainViewController: UIViewController {
     @IBAction func onFirePressed() {
 
         func showFireConfirmation() {
-            let presenter = FireConfirmationPresenter(tabsModel: tabManager.allTabsModel,
-                                                      featureFlagger: featureFlagger,
-                                                      historyManager: historyManager,
-                                                      fireproofing: fireproofing,
-                                                      aiChatSettings: aiChatSettings,
-                                                      keyValueFilesStore: keyValueStore)
+            let presenter = FireConfirmationPresenter()
             let source: UIView = findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
@@ -2963,6 +2963,11 @@ class MainViewController: UIViewController {
         guard currentTab?.isAITab == true else { return }
         action()
     }
+    
+    func navigateToFireMode() {
+        tabManager.setBrowsingMode(.fire)
+        showTabSwitcher()
+    }
 }
 
 extension MainViewController: FindInPageDelegate {
@@ -3301,6 +3306,8 @@ extension MainViewController: OmniBarDelegate {
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
+
+        tab.fireModePromotionCoordinator = fireModePromotionEligibility
 
         // Determine context for menu building
         let context: BrowsingMenuContext
@@ -3955,6 +3962,10 @@ extension MainViewController: OmniBarDelegate {
         toggleModeStorage.save(mode)
     }
     
+    func onFireModeRequested() {
+        navigateToFireMode()
+    }
+
     func isCurrentTabFireTab() -> Bool {
         tabManager.currentTabsModel.currentTab?.fireTab ?? false
     }
@@ -4071,6 +4082,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
         currentNTPEscapeHatch = nil
     }
+
+    func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
+        navigateToFireMode()
+    }
 }
 
 extension MainViewController: TabDelegate {
@@ -4081,6 +4096,10 @@ extension MainViewController: TabDelegate {
     
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
         newEmailAddress()
+    }
+
+    func tabDidRequestFireMode(tab: TabViewController) {
+        navigateToFireMode()
     }
 
     var isAIChatEnabled: Bool {
@@ -4925,6 +4944,10 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
+        if fireRequest.trigger == .manualFire {
+            fireModePromotionEligibility?.markBurnPerformed()
+        }
+
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {

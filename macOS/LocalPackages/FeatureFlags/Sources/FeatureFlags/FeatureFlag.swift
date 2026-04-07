@@ -287,6 +287,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
+    /// Autoplay policy control via WKWebpagePreferences
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
+    case autoplayPolicy
+
     /// Window Semaphore Fullscreen Behavior Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
     case semaphoreAlwaysVisible
@@ -322,6 +326,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the Suspend Tab / Resume Tab context menu actions for debugging purposes
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213883766662888?focus=true
     case tabSuspensionDebugging
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213973058005627?focus=true
+    case aiChatSidebarAboutSchemeNavigationFix
 
     case aiChatNativeStorage
 }
@@ -546,8 +553,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .tabSuspensionDebugging:
             Config(source: .disabled)
+        case .aiChatSidebarAboutSchemeNavigationFix:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarAboutSchemeNavigationFix)), category: .duckAI)
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
+        case .autoplayPolicy:
+            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         }
     }
 

@@ -134,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let downloadsPreferences: DownloadsPreferences
     let searchPreferences: SearchPreferences
     let tabsPreferences: TabsPreferences
+    let autoplayPreferences: AutoplayPreferences
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
@@ -773,6 +774,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
             windowControllersManager: windowControllersManager
         )
+        autoplayPreferences = AutoplayPreferences()
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
 

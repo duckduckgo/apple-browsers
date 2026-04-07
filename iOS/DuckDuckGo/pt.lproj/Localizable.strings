@@ -109,8 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Separadores e dados limpos";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Limpar todos os separadores, dados e conversas do Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Abrir em segundo plano";
@@ -3344,11 +3342,7 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Limpar";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Limpar separadores e dados";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Limpar todos os separadores, dados e conversas do Duck.ai";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Fechar todos os separadores abertos";
@@ -3416,14 +3410,10 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "O Fire Button também elimina o histórico do Duck.ai, incluindo os chats fixados.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Limpar conversas do Duck.ai";
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Limpar dados de navegação";
 
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Limpar os dados automaticamente";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Concluir a configuração";
@@ -3443,11 +3433,7 @@
 /* Settings title for the customize section */
 "settings.customize" = "Personalizar";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Limpa todos os separadores, chats do Duck.ai e dados de quaisquer sites que não tenhas protegido com o Fireproof.";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Fecha todas as abas e limpa os dados de quaisquer sites que não tenha protegido com o Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Limpeza de Dados";
@@ -3507,8 +3493,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animação do Botão de Fogo";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Sites com barreira de segurança";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Sites com Fireproof";

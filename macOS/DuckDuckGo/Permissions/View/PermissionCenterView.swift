@@ -102,6 +102,14 @@ struct PermissionCenterView: View {
                                     viewModel.removeExternalScheme(scheme)
                                 }
                             )
+                        case .autoplayPolicy:
+                            AutoplayPermissionRowView(
+                                item: item,
+                                currentDecision: viewModel.currentAutoplayDecision(),
+                                onDecisionChanged: { decision in
+                                    viewModel.setAutoplayDecision(decision)
+                                }
+                            )
                         default:
                             PermissionRowView(
                                 item: item,
@@ -662,5 +670,76 @@ struct ExternalSchemeRowView: View {
         case .deny:
             return UserText.permissionCenterNeverAllow
         }
+    }
+}
+
+// MARK: - AutoplayPermissionRowView
+
+struct AutoplayPermissionRowView: View {
+
+    let item: PermissionCenterItem
+    let currentDecision: AutoplayDecision
+    let onDecisionChanged: (AutoplayDecision) -> Void
+
+    @State private var selectedDecision: AutoplayDecision
+
+    init(
+        item: PermissionCenterItem,
+        currentDecision: AutoplayDecision,
+        onDecisionChanged: @escaping (AutoplayDecision) -> Void
+    ) {
+        self.item = item
+        self.currentDecision = currentDecision
+        self.onDecisionChanged = onDecisionChanged
+        self._selectedDecision = State(initialValue: currentDecision)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Icon
+            Image(nsImage: item.permissionType.icon)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .frame(width: 24, height: 24)
+
+            // Permission name
+            Text(UserText.permissionAutoplay)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+
+            // Decision dropdown
+            autoplayDecisionPopUpButton
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 12)
+        .padding(.vertical, 12)
+        .onChange(of: selectedDecision) { newValue in
+            onDecisionChanged(newValue)
+        }
+    }
+
+    private var autoplayDecisionPopUpButton: some View {
+        NSPopUpButtonView(selection: $selectedDecision) {
+            let button = NSPopUpButton()
+            button.bezelStyle = .accessoryBarAction
+            button.isBordered = true
+            button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+            let decisions: [(AutoplayDecision, String)] = [
+                (.audioMuted, UserText.autoplayModeBlockAudio),
+                (.allowAll, UserText.autoplayModeAllowAll),
+                (.blockAll, UserText.autoplayModeBlockAll),
+            ]
+
+            for (decision, title) in decisions {
+                let menuItem = button.menu?.addItem(withTitle: title, action: nil, keyEquivalent: "")
+                menuItem?.representedObject = decision
+            }
+
+            return button
+        }
+        .fixedSize()
     }
 }

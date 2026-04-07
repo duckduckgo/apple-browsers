@@ -576,6 +576,11 @@ enum GeneralPixel: PixelKitEvent {
 
     case attributionXattrCanary(variantMatch: String, originMatch: String)
 
+    // Website Autoplay
+    case autoplaySettingAllowAll
+    case autoplaySettingBlockAudio
+    case autoplaySettingBlockAll
+
     var name: String {
         switch self {
         case .crash(let appIdentifier):
@@ -1318,6 +1323,14 @@ enum GeneralPixel: PixelKitEvent {
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
         case .attributionXattrCanary: return "m_mac_attribution-xattr-canary_u"
+
+            // Website Autoplay
+        case .autoplaySettingAllowAll:
+            return "m_mac_autoplay_setting_allow-all"
+        case .autoplaySettingBlockAudio:
+            return "m_mac_autoplay_setting_block-audio"
+        case .autoplaySettingBlockAll:
+            return "m_mac_autoplay_setting_block-all"
         }
     }
 
@@ -1438,6 +1451,9 @@ enum GeneralPixel: PixelKitEvent {
                 .duckPlayerWatchOnYoutube,
                 .duckPlayerAutoplaySettingsOn,
                 .duckPlayerAutoplaySettingsOff,
+                .autoplaySettingAllowAll,
+                .autoplaySettingBlockAudio,
+                .autoplaySettingBlockAll,
                 .duckPlayerNewTabSettingsOn,
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,
@@ -1595,6 +1611,9 @@ enum GeneralPixel: PixelKitEvent {
                 .duckPlayerWatchOnYoutube,
                 .duckPlayerAutoplaySettingsOn,
                 .duckPlayerAutoplaySettingsOff,
+                .autoplaySettingAllowAll,
+                .autoplaySettingBlockAudio,
+                .autoplaySettingBlockAll,
                 .duckPlayerNewTabSettingsOn,
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,

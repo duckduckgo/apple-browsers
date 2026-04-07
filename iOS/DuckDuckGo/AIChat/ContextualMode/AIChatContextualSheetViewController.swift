@@ -199,6 +199,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
         button.accessibilityLabel = UserText.aiChatRecentChatsButtonAccessibility
         button.accessibilityTraits = .button
+        button.isHidden = true
         return button
     }()
 
@@ -309,7 +310,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     deinit {
         let window = popupWindow
         let reader = suggestionsReader
-        MainActor.assumeIsolated {
+        DispatchQueue.main.async {
             window?.isHidden = true
             reader?.tearDown()
         }
@@ -513,7 +514,7 @@ private extension AIChatContextualSheetViewController {
     // MARK: - Recent Chats Popup
 
     func prefetchRecentChatsVisibility() {
-        recentChatsButton.isHidden = true
+        guard suggestionsReader != nil else { return }
         Task { @MainActor in
             let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader)
             recentChatsButton.isHidden = viewModel == nil
@@ -941,6 +942,10 @@ private extension AIChatContextualSheetViewController {
         leftButtonStack.addArrangedSubview(expandButton)
         if suggestionsReader != nil {
             leftButtonStack.addArrangedSubview(recentChatsButton)
+            NSLayoutConstraint.activate([
+                recentChatsButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+                recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            ])
         }
         leftButtonStack.addArrangedSubview(newChatButton)
 
@@ -991,9 +996,6 @@ private extension AIChatContextualSheetViewController {
 
             newChatButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             newChatButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-
-            recentChatsButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-            recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
             titleContainer.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),

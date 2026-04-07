@@ -21,15 +21,17 @@ import Persistence
 import Subscription
 
 protocol SubscriptionPromoPersisting {
-    var fireWindowVisitCount: Int { get set }
+    var fireTabVisitCount: Int { get set }
     var promoDismissedDate: Date? { get set }
+    var promoActioned: Bool { get set }
 }
 
 struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
 
     enum Key: String {
-        case fireWindowVisitCount = "subscription-promo.fire-window-visit-count"
+        case fireTabVisitCount = "subscription-promo.fire-tab-visit-count"
         case promoDismissedDate = "subscription-promo.dismissed-date"
+        case promoActioned = "subscription-promo.actioned"
     }
 
     private let keyValueStore: KeyValueStoring
@@ -38,33 +40,36 @@ struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
         self.keyValueStore = keyValueStore
     }
 
-    var fireWindowVisitCount: Int {
-        get { (try? keyValueStore.object(forKey: Key.fireWindowVisitCount.rawValue) as? Int) ?? 0 }
-        set { try? keyValueStore.set(newValue, forKey: Key.fireWindowVisitCount.rawValue) }
+    var fireTabVisitCount: Int {
+        get { keyValueStore.object(forKey: Key.fireTabVisitCount.rawValue) as? Int ?? 0 }
+        set { keyValueStore.set(newValue, forKey: Key.fireTabVisitCount.rawValue) }
     }
 
     var promoDismissedDate: Date? {
-        get { try? keyValueStore.object(forKey: Key.promoDismissedDate.rawValue) as? Date }
+        get { keyValueStore.object(forKey: Key.promoDismissedDate.rawValue) as? Date }
         set {
             if let value = newValue {
-                try? keyValueStore.set(value, forKey: Key.promoDismissedDate.rawValue)
+                keyValueStore.set(value, forKey: Key.promoDismissedDate.rawValue)
             } else {
-                try? keyValueStore.removeObject(forKey: Key.promoDismissedDate.rawValue)
+                keyValueStore.removeObject(forKey: Key.promoDismissedDate.rawValue)
             }
         }
+    }
+
+    var promoActioned: Bool {
+        get { keyValueStore.object(forKey: Key.promoActioned.rawValue) as? Bool ?? false }
+        set { keyValueStore.set(newValue, forKey: Key.promoActioned.rawValue) }
     }
 }
 
 @MainActor
 final class SubscriptionPromoViewModel: ObservableObject {
 
-    private static let requiredVisitCount = 4
+    private static let requiredVisitCount = 3
     private static let dismissCooldownDays = 28
 
     private let subscriptionManager: any SubscriptionManager
     private var persistor: SubscriptionPromoPersisting
-    private var hasCountedVisit = false
-
     @Published private(set) var shouldShowPromo: Bool = false
     @Published private(set) var isEligibleForFreeTrial: Bool = false
 
@@ -76,8 +81,8 @@ final class SubscriptionPromoViewModel: ObservableObject {
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
     }
 
-    func onFireWindowAppeared() {
-        incrementVisitCountOnce()
+    func onFireTabAppeared() {
+        persistor.fireTabVisitCount += 1
         updatePromoVisibility()
     }
 
@@ -87,6 +92,8 @@ final class SubscriptionPromoViewModel: ObservableObject {
     }
 
     func onPromoButtonTapped() {
+        persistor.promoActioned = true
+        shouldShowPromo = false
         onButtonAction?()
     }
 
@@ -103,7 +110,12 @@ final class SubscriptionPromoViewModel: ObservableObject {
             return
         }
 
-        guard persistor.fireWindowVisitCount >= Self.requiredVisitCount else {
+        guard persistor.fireTabVisitCount >= Self.requiredVisitCount else {
+            shouldShowPromo = false
+            return
+        }
+
+        guard !persistor.promoActioned else {
             shouldShowPromo = false
             return
         }
@@ -118,13 +130,13 @@ final class SubscriptionPromoViewModel: ObservableObject {
     }
 
     private var isUSLocale: Bool {
-        Locale.current.region?.identifier == "US"
-    }
-
-    private func incrementVisitCountOnce() {
-        guard !hasCountedVisit else { return }
-        hasCountedVisit = true
-        persistor.fireWindowVisitCount += 1
+        var regionCode: String?
+        if #available(macOS 13, *) {
+            regionCode = Locale.current.region?.identifier
+        } else {
+            regionCode = Locale.current.regionCode
+        }
+        return (regionCode ?? "US") == "US"
     }
 
     private var isDismissedWithinCooldown: Bool {

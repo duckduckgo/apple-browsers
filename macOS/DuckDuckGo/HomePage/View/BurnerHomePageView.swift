@@ -65,10 +65,10 @@ struct BurnerHomePageView: View {
                         if promoViewModel.shouldShowPromo {
                             SubscriptionPromoView(
                                 actionType: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
+                                promoCardWidth: Self.targetWidth,
                                 onButtonTap: { promoViewModel.onPromoButtonTapped() },
                                 onClose: { promoViewModel.dismiss() }
                             )
-                            .frame(width: Self.targetWidth)
                             .padding(.top, Const.promoTopPadding)
                         }
 

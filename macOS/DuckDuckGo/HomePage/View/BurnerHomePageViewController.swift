@@ -57,8 +57,4 @@ final class BurnerHomePageViewController: NSViewController {
         self.view = NSHostingView(rootView: rootView)
     }
 
-    override func viewDidAppear() {
-        super.viewDidAppear()
-        subscriptionPromoViewModel.onFireWindowAppeared()
-    }
 }

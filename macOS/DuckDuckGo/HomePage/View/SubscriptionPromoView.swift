@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import SwiftUIExtensions
 import PreferencesUI_macOS
 
 struct SubscriptionPromoView: View {
@@ -27,8 +28,11 @@ struct SubscriptionPromoView: View {
     }
 
     private static let narrowThreshold: CGFloat = 300
+    private static let closeButtonSize: CGFloat = 26
+    private static let closeButtonInset: CGFloat = 13
 
     let actionType: ActionType
+    let promoCardWidth: CGFloat
     let onButtonTap: () -> Void
     let onClose: () -> Void
 
@@ -41,35 +45,44 @@ struct SubscriptionPromoView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            cardContent
-                .padding(16)
+            promoCard
+                .padding(.top, Self.closeButtonInset)
+                .padding(.trailing, Self.closeButtonInset)
 
-            if isHovering {
-                CloseButton(icon: .close, size: 16) {
-                    onClose()
-                }
-                .padding(6)
+            CloseButton(icon: .close, size: Self.closeButtonSize, backgroundColor: .white) {
+                onClose()
             }
+            .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 3, x: 0, y: 0)
+            .opacity(isHovering ? 1 : 0)
+            .disabled(!isHovering)
         }
-        .background(
-            GeometryReader { geometry in
-                Color.clear.onAppear {
-                    cardWidth = geometry.size.width
-                }
-                .onChange(of: geometry.size.width) { newWidth in
-                    cardWidth = newWidth
-                }
-            }
-        )
-        .background(Color.homeFavoritesBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.homeFavoritesGhost, lineWidth: 1)
-        )
         .onHover { hovering in
             isHovering = hovering
         }
+    }
+
+    private var promoCard: some View {
+        cardContent
+            .padding(16)
+            .frame(width: promoCardWidth)
+            .background(
+                GeometryReader { geometry in
+                    Color.clear.onAppear {
+                        cardWidth = geometry.size.width
+                    }
+                    .onChange(of: geometry.size.width) { newWidth in
+                        cardWidth = newWidth
+                    }
+                }
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.homeFavoritesBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.homeFavoritesGhost, lineWidth: 1)
+                    )
+            )
     }
 
     @ViewBuilder
@@ -82,7 +95,7 @@ struct SubscriptionPromoView: View {
     }
 
     private var wideLayout: some View {
-        HStack(spacing: 12) {
+        HStack {
             iconView
             textContent
             Spacer()
@@ -92,7 +105,7 @@ struct SubscriptionPromoView: View {
 
     private var narrowLayout: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
+            HStack {
                 iconView
                 textContent
             }
@@ -102,20 +115,20 @@ struct SubscriptionPromoView: View {
     }
 
     private var iconView: some View {
-        Image(.globeMulticolor16)
+        Image(.burnerWindowHomepageSubscriptionPromo)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 40, height: 40)
+            .frame(width: 64, height: 48)
     }
 
     private var textContent: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(UserText.subscriptionPromoTitle)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.primary)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
             Text(UserText.subscriptionPromoSubtitle)
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         }
     }
 
@@ -123,29 +136,17 @@ struct SubscriptionPromoView: View {
     private var actionButton: some View {
         switch actionType {
         case .tryForFree:
-            Button(action: onButtonTap) {
-                Text(UserText.subscriptionPromoTryForFree)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
-                    .background(Color.accentColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
+            Button(UserText.subscriptionPromoTryForFree, action: onButtonTap)
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                .onHover { isHovering in
+                    if isHovering { NSCursor.pointingHand.push() } else { NSCursor.pointingHand.pop() }
+                }
         case .learnMore:
-            Button(action: onButtonTap) {
-                Text(UserText.subscriptionPromoLearnMore)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.primary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color.primary.opacity(0.3), lineWidth: 1)
-                    )
-            }
-            .buttonStyle(.plain)
+            Button(UserText.subscriptionPromoLearnMore, action: onButtonTap)
+                .buttonStyle(DismissActionButtonStyle())
+                .onHover { isHovering in
+                    if isHovering { NSCursor.pointingHand.push() } else { NSCursor.pointingHand.pop() }
+                }
         }
     }
 }

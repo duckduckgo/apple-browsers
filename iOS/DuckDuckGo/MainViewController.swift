@@ -2963,7 +2963,7 @@ class MainViewController: UIViewController {
         action()
     }
     
-    private func navigateToFireMode() {
+    func navigateToFireMode() {
         tabManager.setBrowsingMode(.fire)
         showTabSwitcher()
     }
@@ -3960,6 +3960,10 @@ extension MainViewController: OmniBarDelegate {
         toggleModeStorage.save(mode)
     }
     
+    func onFireModeRequested() {
+        navigateToFireMode()
+    }
+
     func isCurrentTabFireTab() -> Bool {
         tabManager.currentTabsModel.currentTab?.fireTab ?? false
     }

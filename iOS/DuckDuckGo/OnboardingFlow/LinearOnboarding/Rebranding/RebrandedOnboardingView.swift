@@ -414,50 +414,48 @@ extension OnboardingRebranding {
         }
 
         private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration {
-            let tailOffset = onboardingTheme.linearOnboardingMetrics.bubbleTailOffset
-
+            let tailLeadingOffset = 0.7
+            let tailTrailingOffset = 0.2
             switch type {
             case .startOnboardingDialog:
-                // Intro is the only step with extra top margin and no step counter.
                 return BubbleBackedDialogConfiguration(
-                    tailOffset: tailOffset,
+                    tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
                     isVisible: model.introState.showIntroViewContent,
                     showsStepCounter: false
                 )
             case .chooseAppIconDialog:
-                // App icon picker points the tail to the trailing side.
                 return BubbleBackedDialogConfiguration(
-                    tailOffset: tailOffset,
+                    tailOffset: tailLeadingOffset,
                     tailDirection: .trailing,
                     isVisible: true,
                     showsStepCounter: true
                 )
             case .browsersComparisonDialog:
                 return BubbleBackedDialogConfiguration(
-                    tailOffset: tailOffset,
+                    tailOffset: tailTrailingOffset,
                     tailDirection: .leading,
                     isVisible: true,
                     showsStepCounter: true
                 )
             case .addToDockPromoDialog:
                 return BubbleBackedDialogConfiguration(
-                    tailOffset: tailOffset,
+                    tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
                     isVisible: true,
                     showsStepCounter: true
                 )
             case .chooseAddressBarPositionDialog:
                 return BubbleBackedDialogConfiguration(
-                    tailOffset: tailOffset,
+                    tailOffset: tailTrailingOffset,
                     tailDirection: .leading,
                     isVisible: true,
                     showsStepCounter: true
                 )
             case .chooseSearchExperienceDialog:
                 return BubbleBackedDialogConfiguration(
-                    tailOffset: tailOffset,
+                    tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
                     isVisible: true,
                     showsStepCounter: true
@@ -541,7 +539,6 @@ extension OnboardingRebranding {
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
             case .chooseAddressBarPositionDialog: return AddressBarPositionContent.daxAnimation
             case .chooseSearchExperienceDialog: return SearchExperienceContent.daxAnimation
-            default: return nil
             }
         }
 

@@ -163,7 +163,7 @@ class TabSwitcherViewController: UIViewController {
     private var pickerSelectionCancellable: AnyCancellable?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
     private var fireModeCapability: FireModeCapable {
-        FireModeCapability.create(using: featureFlagger)
+        FireModeCapability.create()
     }
 
     required init?(coder: NSCoder,

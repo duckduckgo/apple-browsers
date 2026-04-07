@@ -43,6 +43,12 @@
 /* Title shown to the user when adding the Voice Search lock screen widget */
 "lock.screen.widget.voice.title" = "Búsqueda por voz";
 
+/* Description shown to the user when adding the Duck.ai Voice lock screen widget */
+"lock.screen.widget.voicechat.description" = "Inicia rápidamente un nuevo chat de voz en Duck.ai";
+
+/* Title shown to the user when adding the Duck.ai Voice lock screen widget */
+"lock.screen.widget.voicechat.title" = "Voz de Duck.ai";
+
 /* Description for the control widget when connecting */
 "vpn.control.widget.connecting" = "Conectando...";
 

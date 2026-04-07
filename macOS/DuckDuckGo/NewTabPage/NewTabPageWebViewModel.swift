@@ -20,6 +20,7 @@ import Combine
 import NewTabPage
 import PixelKit
 import PrivacyConfig
+import UniformTypeIdentifiers
 import WebKit
 
 /**
@@ -52,6 +53,7 @@ final class NewTabPageWebViewModel: NSObject {
         super.init()
 
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         webView.load(URLRequest(url: URL.newtab))
         newTabPageUserScript.webView = webView
 
@@ -82,6 +84,24 @@ final class NewTabPageWebViewModel: NSObject {
         }
     }
 
+}
+
+extension NewTabPageWebViewModel: WKUIDelegate {
+    func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
+        guard let window = webView.window else {
+            completionHandler(nil)
+            return
+        }
+
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = parameters.allowsDirectories
+        openPanel.allowsMultipleSelection = true
+        openPanel.allowedContentTypes = [.jpeg, .png, .webP]
+        openPanel.beginSheetModal(for: window) { response in
+            completionHandler(response == .OK ? openPanel.urls : nil)
+        }
+    }
 }
 
 extension NewTabPageWebViewModel: WKNavigationDelegate {

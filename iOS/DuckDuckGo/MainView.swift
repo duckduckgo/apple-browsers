@@ -207,7 +207,7 @@ extension MainViewFactory {
         }
 
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-            if let result = super.hitTest(point, with: event) {
+            if let result = super.hitTest(point, with: event), result != self {
                 return result
             }
             guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
@@ -312,7 +312,12 @@ extension MainViewFactory {
         superview.addSubview(coordinator.topSlideContainer)
     }
 
-    final class UnifiedToggleInputContainer: UIView {}
+    final class UnifiedToggleInputContainer: UIView {
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            let result = super.hitTest(point, with: event)
+            return result == self ? nil : result
+        }
+    }
     private func createUnifiedToggleInputContainer() {
         coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
         coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -485,12 +490,12 @@ extension MainViewFactory {
 
     private func constrainUnifiedInputContentContainer() {
         let container = coordinator.unifiedInputContentContainer!
-        let contentContainer = coordinator.contentContainer!
+        let toolbar = coordinator.toolbar!
         NSLayoutConstraint.activate([
-            container.constrainView(contentContainer, by: .width),
-            container.constrainView(contentContainer, by: .height),
-            container.constrainView(contentContainer, by: .centerX),
-            container.constrainView(contentContainer, by: .centerY),
+            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            container.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
+            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 

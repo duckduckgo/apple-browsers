@@ -75,3 +75,16 @@ final class AIChatSuggestionsReader: AIChatSuggestionsReading {
         suggestionsReader.tearDown()
     }
 }
+
+// MARK: - NilSuggestionsReader
+
+@MainActor
+final class NilSuggestionsReader: AIChatSuggestionsReading {
+    var maxHistoryCount: Int = 0
+
+    func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChat.AIChatSuggestion], recent: [AIChat.AIChatSuggestion]) {
+        return ([], [])
+    }
+
+    func tearDown() {}
+}

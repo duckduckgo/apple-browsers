@@ -144,7 +144,7 @@ class FireExecutor: FireExecuting {
         self.featureFlagger = featureFlagger
         self.idManager = idManager
         self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
-        self.fireModeCapability = FireModeCapability.create(using: featureFlagger)
+        self.fireModeCapability = FireModeCapability.create()
         self.historyCleanerProvider = historyCleanerProvider ??
         { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
                                              privacyConfig: privacyConfigurationManager,

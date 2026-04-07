@@ -134,6 +134,19 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
     }
 
+    public func putChats(_ chats: [DuckAiChatRecord]) throws {
+        do {
+            try dbQueue.write { db in
+                for chat in chats where !chat.chatId.isEmpty {
+                    let record = ChatRecord(chatId: chat.chatId, data: chat.data)
+                    try record.save(db)
+                }
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+    }
+
     public func getAllChats() throws -> [DuckAiChatRecord] {
         do {
             return try dbQueue.read { db in

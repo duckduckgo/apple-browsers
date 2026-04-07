@@ -93,6 +93,72 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    // MARK: - Concurrency
+
+    func testWhenConcurrentPutSettingsThenNoUpdatesAreLost() throws {
+        let iterations = 100
+        let queue1 = DispatchQueue(label: "test.queue1", qos: .userInitiated)
+        let queue2 = DispatchQueue(label: "test.queue2", qos: .userInitiated)
+        let group = DispatchGroup()
+
+        for i in 0..<iterations {
+            group.enter()
+            queue1.async {
+                try? self.handler.putSetting(key: "q1_\(i)", value: i)
+                group.leave()
+            }
+            group.enter()
+            queue2.async {
+                try? self.handler.putSetting(key: "q2_\(i)", value: i)
+                group.leave()
+            }
+        }
+
+        group.wait()
+
+        let all = try handler.getAllSettings()
+        XCTAssertEqual(all.count, iterations * 2, "Expected \(iterations * 2) keys but got \(all.count) — updates were lost")
+        for i in 0..<iterations {
+            XCTAssertNotNil(all["q1_\(i)"], "Missing key q1_\(i)")
+            XCTAssertNotNil(all["q2_\(i)"], "Missing key q2_\(i)")
+        }
+    }
+
+    func testWhenConcurrentDeleteSettingsThenNoUpdatesAreLost() throws {
+        // Pre-populate settings that should survive
+        for i in 0..<100 {
+            try handler.putSetting(key: "keep_\(i)", value: i)
+            try handler.putSetting(key: "delete_\(i)", value: i)
+        }
+
+        let queue1 = DispatchQueue(label: "test.delete1", qos: .userInitiated)
+        let queue2 = DispatchQueue(label: "test.delete2", qos: .userInitiated)
+        let group = DispatchGroup()
+
+        for i in 0..<100 {
+            group.enter()
+            queue1.async {
+                try? self.handler.deleteSetting(key: "delete_\(i)")
+                group.leave()
+            }
+            // Concurrently add new settings while deleting others
+            group.enter()
+            queue2.async {
+                try? self.handler.putSetting(key: "new_\(i)", value: i)
+                group.leave()
+            }
+        }
+
+        group.wait()
+
+        let all = try handler.getAllSettings()
+        for i in 0..<100 {
+            XCTAssertNotNil(all["keep_\(i)"], "Surviving key keep_\(i) was lost")
+            XCTAssertNil(all["delete_\(i)"], "Deleted key delete_\(i) still present")
+            XCTAssertNotNil(all["new_\(i)"], "Concurrently added key new_\(i) was lost")
+        }
+    }
+
     // MARK: - Migration
 
     func testWhenMigrationNotDoneThenReturnsFalse() throws {

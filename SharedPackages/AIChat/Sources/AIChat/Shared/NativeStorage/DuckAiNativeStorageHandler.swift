@@ -24,6 +24,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
     private let settingsStore: any ThrowingKeyedStoring<DuckAiNativeStorageSettings>
     private let dataStore: DuckAiNativeDataStoring
+    private let settingsLock = NSLock()
 
     public init(
         settingsStore: any ThrowingKeyedStoring<DuckAiNativeStorageSettings>,
@@ -36,31 +37,43 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     // MARK: - Settings
 
     public func putSetting(key: String, value: Any) throws {
+        settingsLock.lock()
+        defer { settingsLock.unlock() }
         var settings = try loadSettingsBlob()
         settings[key] = value
         try saveSettingsBlob(settings)
     }
 
     public func getSetting(key: String) throws -> Any? {
+        settingsLock.lock()
+        defer { settingsLock.unlock() }
         let settings = try loadSettingsBlob()
         return settings[key]
     }
 
     public func getAllSettings() throws -> [String: Any] {
+        settingsLock.lock()
+        defer { settingsLock.unlock() }
         return try loadSettingsBlob()
     }
 
     public func deleteSetting(key: String) throws {
+        settingsLock.lock()
+        defer { settingsLock.unlock() }
         var settings = try loadSettingsBlob()
         settings.removeValue(forKey: key)
         try saveSettingsBlob(settings)
     }
 
     public func deleteAllSettings() throws {
+        settingsLock.lock()
+        defer { settingsLock.unlock() }
         try settingsStore.set(nil, for: \.settings)
     }
 
     public func replaceAllSettings(_ settings: [String: Any]) throws {
+        settingsLock.lock()
+        defer { settingsLock.unlock() }
         try saveSettingsBlob(settings)
     }
 

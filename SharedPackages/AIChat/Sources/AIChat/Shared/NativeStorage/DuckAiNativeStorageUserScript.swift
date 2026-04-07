@@ -32,6 +32,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     public let messageOriginPolicy: MessageOriginPolicy
 
     private let handler: DuckAiNativeStorageHandling
+    private let storageQueue = DispatchQueue(label: "com.duckduckgo.native-storage", qos: .userInitiated)
 
     // MARK: - Initialization
 
@@ -85,10 +86,24 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
     }
 
+    // MARK: - Background Storage Helper
+
+    private func performStorageOperation<T>(_ operation: @escaping () throws -> T) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            storageQueue.async {
+                do {
+                    let result = try operation()
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
     // MARK: - Settings Handlers
 
-    @MainActor
-    private func putSetting(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func putSetting(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← putSetting called")
         guard let dict = params as? [String: Any],
               let key = dict["key"] as? String,
@@ -97,7 +112,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            try handler.putSetting(key: key, value: value)
+            try await performStorageOperation {
+                try self.handler.putSetting(key: key, value: value)
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: putSetting '\(key)' succeeded")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putSetting failed for key '\(key)': \(error.localizedDescription)")
@@ -105,8 +122,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return nil
     }
 
-    @MainActor
-    private func getSetting(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func getSetting(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← getSetting called")
         guard let dict = params as? [String: Any],
               let key = dict["key"] as? String else {
@@ -114,7 +130,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            let value = try handler.getSetting(key: key)
+            let value = try await performStorageOperation {
+                try self.handler.getSetting(key: key)
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: getSetting '\(key)' → \(value == nil ? "nil" : "found")")
             return SettingValueResponse(value: AnyCodableValue(value ?? NSNull()))
         } catch {
@@ -123,11 +141,12 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
     }
 
-    @MainActor
-    private func getAllSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func getAllSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← getAllSettings called")
         do {
-            let settings = try handler.getAllSettings()
+            let settings = try await performStorageOperation {
+                try self.handler.getAllSettings()
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: getAllSettings → \(settings.count) keys")
             return AllSettingsResponse(settings: settings.mapValues { AnyCodableValue($0) })
         } catch {
@@ -136,8 +155,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
     }
 
-    @MainActor
-    private func deleteSetting(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func deleteSetting(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← deleteSetting called")
         guard let dict = params as? [String: Any],
               let key = dict["key"] as? String else {
@@ -145,7 +163,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            try handler.deleteSetting(key: key)
+            try await performStorageOperation {
+                try self.handler.deleteSetting(key: key)
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: deleteSetting '\(key)' succeeded")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: deleteSetting failed for key '\(key)': \(error.localizedDescription)")
@@ -153,11 +173,12 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return nil
     }
 
-    @MainActor
-    private func deleteAllSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func deleteAllSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← deleteAllSettings called")
         do {
-            try handler.deleteAllSettings()
+            try await performStorageOperation {
+                try self.handler.deleteAllSettings()
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: deleteAllSettings succeeded")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: deleteAllSettings failed: \(error.localizedDescription)")
@@ -165,8 +186,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return nil
     }
 
-    @MainActor
-    private func replaceAllSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func replaceAllSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← replaceAllSettings called")
         guard let dict = params as? [String: Any],
               let settings = dict["settings"] as? [String: Any] else {
@@ -174,7 +194,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            try handler.replaceAllSettings(settings)
+            try await performStorageOperation {
+                try self.handler.replaceAllSettings(settings)
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: replaceAllSettings succeeded with \(settings.count) keys")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: replaceAllSettings failed: \(error.localizedDescription)")
@@ -184,8 +206,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
 
     // MARK: - Chat Handlers
 
-    @MainActor
-    private func putChat(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func putChat(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← putChat called")
         guard let dict = params as? [String: Any],
               let chatId = dict["chatId"] as? String,
@@ -195,7 +216,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            try handler.putChat(chatId: chatId, data: jsonData)
+            try await performStorageOperation {
+                try self.handler.putChat(chatId: chatId, data: jsonData)
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: putChat '\(chatId)' succeeded (\(jsonData.count) bytes)")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putChat failed for \(chatId): \(error.localizedDescription)")
@@ -203,12 +226,13 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return nil
     }
 
-    @MainActor
-    private func getAllChats(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func getAllChats(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← getAllChats called")
         let chatRecords: [DuckAiChatRecord]
         do {
-            chatRecords = try handler.getAllChats()
+            chatRecords = try await performStorageOperation {
+                try self.handler.getAllChats()
+            }
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: getAllChats failed: \(error.localizedDescription)")
             return AllChatsResponse(chats: [])
@@ -223,8 +247,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return AllChatsResponse(chats: chats)
     }
 
-    @MainActor
-    private func deleteChat(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func deleteChat(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← deleteChat called")
         guard let dict = params as? [String: Any],
               let chatId = dict["chatId"] as? String else {
@@ -232,7 +255,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            try handler.deleteChat(chatId: chatId)
+            try await performStorageOperation {
+                try self.handler.deleteChat(chatId: chatId)
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: deleteChat '\(chatId)' succeeded")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: deleteChat failed for \(chatId): \(error.localizedDescription)")
@@ -240,11 +265,12 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return nil
     }
 
-    @MainActor
-    private func deleteAllChats(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func deleteAllChats(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← deleteAllChats called")
         do {
-            try handler.deleteAllChats()
+            try await performStorageOperation {
+                try self.handler.deleteAllChats()
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: deleteAllChats succeeded")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: deleteAllChats failed: \(error.localizedDescription)")
@@ -254,8 +280,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
 
     // MARK: - File Handlers
 
-    @MainActor
-    private func putFile(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func putFile(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← putFile called")
         guard let dict = params as? [String: Any],
               let uuid = dict["uuid"] as? String,
@@ -270,7 +295,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
         Logger.aiChat.debug("DuckAiNativeStorage: putFile '\(uuid)' for chat '\(chatId)' (\(paramsData.count) bytes, keys: \(dict.keys.sorted().joined(separator: ", ")))")
         do {
-            try handler.putFile(uuid: uuid, chatId: chatId, data: paramsData)
+            try await performStorageOperation {
+                try self.handler.putFile(uuid: uuid, chatId: chatId, data: paramsData)
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: putFile '\(uuid)' stored successfully")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putFile failed for \(uuid): \(error.localizedDescription)")
@@ -278,8 +305,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return nil
     }
 
-    @MainActor
-    private func getFile(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func getFile(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← getFile called")
         guard let dict = params as? [String: Any],
               let uuid = dict["uuid"] as? String else {
@@ -287,7 +313,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            guard let fileContent = try handler.getFile(uuid: uuid) else {
+            guard let fileContent = try await performStorageOperation({ [handler] in
+                try self.handler.getFile(uuid: uuid)
+            }) else {
                 Logger.aiChat.debug("DuckAiNativeStorage: getFile '\(uuid)' → not found")
                 return FileValueResponse(value: nil)
             }
@@ -304,11 +332,12 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
     }
 
-    @MainActor
-    private func listFiles(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func listFiles(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← listFiles called")
         do {
-            let files = try handler.listFiles()
+            let files = try await performStorageOperation {
+                try self.handler.listFiles()
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: listFiles → \(files.count) files")
             return ListFilesResponse(files: files.map {
                 FileMetadataResponse(uuid: $0.uuid, chatId: $0.chatId, dataSize: $0.dataSize)
@@ -319,8 +348,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
     }
 
-    @MainActor
-    private func deleteFile(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func deleteFile(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← deleteFile called")
         guard let dict = params as? [String: Any],
               let uuid = dict["uuid"] as? String else {
@@ -328,7 +356,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            try handler.deleteFile(uuid: uuid)
+            try await performStorageOperation {
+                try self.handler.deleteFile(uuid: uuid)
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: deleteFile '\(uuid)' succeeded")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: deleteFile failed for \(uuid): \(error.localizedDescription)")
@@ -336,11 +366,12 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return nil
     }
 
-    @MainActor
-    private func deleteAllFiles(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func deleteAllFiles(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← deleteAllFiles called")
         do {
-            try handler.deleteAllFiles()
+            try await performStorageOperation {
+                try self.handler.deleteAllFiles()
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: deleteAllFiles succeeded")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: deleteAllFiles failed: \(error.localizedDescription)")
@@ -350,11 +381,12 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
 
     // MARK: - Migration Handlers
 
-    @MainActor
-    private func isMigrationDone(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func isMigrationDone(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← isMigrationDone called")
         do {
-            let done = try handler.isMigrationDone()
+            let done = try await performStorageOperation {
+                try self.handler.isMigrationDone()
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: isMigrationDone → \(done)")
             return MigrationDoneResponse(value: done)
         } catch {
@@ -363,11 +395,12 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
     }
 
-    @MainActor
-    private func markMigrationDone(params: Any, message: UserScriptMessage) -> Encodable? {
+    private func markMigrationDone(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← markMigrationDone called")
         do {
-            try handler.markMigrationDone()
+            try await performStorageOperation {
+                try self.handler.markMigrationDone()
+            }
             Logger.aiChat.debug("DuckAiNativeStorage: markMigrationDone succeeded")
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: markMigrationDone failed: \(error.localizedDescription)")

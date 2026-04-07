@@ -32,7 +32,7 @@ public final class DuckAiNativeStorageProvider {
 
     public let handler: DuckAiNativeStorageHandling
 
-    public init(containerURL: URL, keyStoreProvider: DuckAiKeyStoreProvider = DuckAiKeyStoreProvider()) throws {
+    public init(containerURL: URL, keyStoreProvider: DuckAiKeyStoreProvider) throws {
         let fileManager = FileManager.default
         try fileManager.createDirectory(at: containerURL, withIntermediateDirectories: true)
 

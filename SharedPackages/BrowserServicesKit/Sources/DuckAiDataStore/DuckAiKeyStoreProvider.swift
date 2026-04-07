@@ -29,9 +29,13 @@ public final class DuckAiKeyStoreProvider {
     private static let keychainAccount = "DuckAiNativeDataStore-EncryptionKey"
 
     private let keychainService: KeychainServicing
+    private let accessGroup: String?
 
-    public init(keychainService: KeychainServicing = DefaultKeychainService()) {
+    /// - Parameter accessGroup: Keychain access group for sharing the key across
+    ///   processes (e.g. app + extension). Pass `nil` for device-local only (macOS).
+    public init(keychainService: KeychainServicing = DefaultKeychainService(), accessGroup: String? = nil) {
         self.keychainService = keychainService
+        self.accessGroup = accessGroup
     }
 
     /// Returns the existing encryption key or generates and stores a new one.
@@ -43,16 +47,34 @@ public final class DuckAiKeyStoreProvider {
         return try storeKey(key)
     }
 
+    /// Removes the encryption key from the Keychain.
+    public func deleteKey() throws {
+        let query = baseAttributes()
+        let status = keychainService.delete(query)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw DuckAiNativeDataStoreError.keychainError(status: status)
+        }
+    }
+
     // MARK: - Keychain Operations
 
-    private func readKey() throws -> Data? {
-        let query: [String: Any] = [
+    private func baseAttributes() -> [String: Any] {
+        var attrs: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: Self.keychainService,
             kSecAttrAccount as String: Self.keychainAccount,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
+            kSecAttrSynchronizable as String: false
         ]
+        if let accessGroup {
+            attrs[kSecAttrAccessGroup as String] = accessGroup
+        }
+        return attrs
+    }
+
+    private func readKey() throws -> Data? {
+        var query = baseAttributes()
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
 
         var item: CFTypeRef?
         let status = keychainService.itemMatching(query, &item)
@@ -71,13 +93,9 @@ public final class DuckAiKeyStoreProvider {
     }
 
     private func storeKey(_ key: Data) throws -> Data {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: Self.keychainService,
-            kSecAttrAccount as String: Self.keychainAccount,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
-            kSecValueData as String: key
-        ]
+        var query = baseAttributes()
+        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        query[kSecValueData as String] = key
 
         let status = keychainService.add(query, nil)
 
@@ -102,6 +120,7 @@ public final class DuckAiKeyStoreProvider {
 public protocol KeychainServicing {
     func itemMatching(_ query: [String: Any], _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
     func add(_ attributes: [String: Any], _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
+    func delete(_ query: [String: Any]) -> OSStatus
 }
 
 public struct DefaultKeychainService: KeychainServicing {
@@ -113,5 +132,9 @@ public struct DefaultKeychainService: KeychainServicing {
 
     public func add(_ attributes: [String: Any], _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
         SecItemAdd(attributes as CFDictionary, result)
+    }
+
+    public func delete(_ query: [String: Any]) -> OSStatus {
+        SecItemDelete(query as CFDictionary)
     }
 }

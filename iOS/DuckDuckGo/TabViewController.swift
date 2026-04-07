@@ -1113,13 +1113,19 @@ class TabViewController: UIViewController {
 
         if url == nil {
             url = newURL
-        } else if shouldUpdateAddressBar(for: newURL) {
+        } else if shouldUpdateAddressBar(for: newURL, legacySameHostFallback: true) {
             url = newURL
         }
     }
 
-    private func shouldUpdateAddressBar(for newURL: URL) -> Bool {
-        guard featureFlagger.isFeatureOn(.filterAddressBarUpdates) else { return true }
+    private func shouldUpdateAddressBar(for newURL: URL, legacySameHostFallback: Bool = false) -> Bool {
+        guard featureFlagger.isFeatureOn(.filterAddressBarUpdates) else {
+            if legacySameHostFallback {
+                guard let currentHost = url?.host, let newHost = newURL.host else { return false }
+                return currentHost == newHost
+            }
+            return true
+        }
         return addressBarURLFilter.shouldUpdate(for: newURL, currentURL: url)
     }
 

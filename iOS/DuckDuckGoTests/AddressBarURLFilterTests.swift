@@ -145,17 +145,17 @@ struct AddressBarURLFilterTests {
         #expect(filter.shouldUpdate(for: URL(string: "file:///path/to/file")!, currentURL: URL(string: "https://example.com")!) == true)
     }
 
-    // MARK: - No committed origin fallback
+    // MARK: - No committed origin
 
-    @Test("Allows update when no committed origin exists")
-    func whenNoCommittedOriginThenShouldAllow() {
+    @Test("Blocks update when no committed origin exists")
+    func whenNoCommittedOriginThenShouldBlock() {
         // GIVEN
         let filter = AddressBarURLFilter()
 
         // WHEN/THEN
         let anyURL = URL(string: "https://example.com/page")!
-        #expect(filter.shouldUpdate(for: anyURL, currentURL: nil) == true)
-        #expect(filter.shouldUpdate(for: anyURL, currentURL: URL(string: "https://other.com")!) == true)
+        #expect(filter.shouldUpdate(for: anyURL, currentURL: nil) == false)
+        #expect(filter.shouldUpdate(for: anyURL, currentURL: URL(string: "https://other.com")!) == false)
     }
 
     // MARK: - Lifecycle

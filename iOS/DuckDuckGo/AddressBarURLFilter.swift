@@ -49,11 +49,11 @@ struct AddressBarURLFilter: AddressBarURLFiltering {
             return true
         }
 
-        if let committed = committedSecurityOrigin, !committed.isEmpty {
-            return newURL.securityOrigin == committed
+        guard let committed = committedSecurityOrigin, !committed.isEmpty else {
+            return false
         }
 
-        return true
+        return newURL.securityOrigin == committed
     }
 
     mutating func commitNavigation(for url: URL?) {

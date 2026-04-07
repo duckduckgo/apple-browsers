@@ -61,6 +61,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     @Published private(set) var subtitle: String?
 
     let headerTitle: String
+    let showAnimation: Bool
     let buttons: [FireConfirmationButton]
 
     // MARK: - Private Variables
@@ -91,6 +92,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         self.headerTitle = Self.computeHeaderTitle(isSingleChatConfirmation: isSingleChatConfirmation,
                                                    browsingMode: browsingMode,
                                                    appSettings: appSettings)
+        self.showAnimation = !(isRefinementsEnabled && appSettings.currentFireButtonAnimation == .none)
         self.buttons = Self.makeButtons(fireContext: fireContext,
                                         tabViewModel: tabViewModel,
                                         browsingMode: browsingMode,

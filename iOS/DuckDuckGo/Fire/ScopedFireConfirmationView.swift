@@ -68,7 +68,9 @@ struct ScopedFireConfirmationView: View {
     
     private var headerSection: some View {
         VStack(spacing: Constants.headerSectionSpacing) {
-            animation
+            if viewModel.showAnimation {
+                animation
+            }
             
             VStack(spacing: Constants.headlineTextSpacing) {
                 Text(viewModel.headerTitle)

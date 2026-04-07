@@ -152,9 +152,7 @@ class MainViewCoordinator {
     }
 
     func hideNavigationBarWithBottomPosition() {
-        guard addressBarPosition.isBottom else {
-            return
-        }
+        guard addressBarPosition.isBottom else { return }
 
         navigationBarContainer.isHidden = true
 
@@ -162,9 +160,7 @@ class MainViewCoordinator {
     }
 
     func showNavigationBarWithBottomPosition() {
-        guard addressBarPosition.isBottom else {
-            return
-        }
+        guard addressBarPosition.isBottom else { return }
 
         navigationBarContainer.isHidden = false
 
@@ -425,7 +421,7 @@ class MainViewCoordinator {
     private func resolvedStatusBackgroundColor() -> UIColor {
         switch statusBackgroundPresentation {
         case .standard:
-            standardStatusBackgroundColor ?? statusBackground.backgroundColor ?? UIColor(designSystemColor: .background)
+            standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:

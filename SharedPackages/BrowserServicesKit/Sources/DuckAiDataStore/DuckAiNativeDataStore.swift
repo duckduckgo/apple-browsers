@@ -136,15 +136,20 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
     // MARK: - Files (Implemented in Task 3)
 
-    private func validatedFileURL(for uuid: String) throws -> URL {
+    private func validatedFileUUID(for uuid: String) throws -> String {
         guard let parsed = UUID(uuidString: uuid) else {
             throw DuckAiNativeDataStoreError.invalidFileIdentifier
         }
-        return filesDirectoryURL.appendingPathComponent(parsed.uuidString.lowercased())
+        return parsed.uuidString.lowercased()
+    }
+
+    private func validatedFileURL(for uuid: String) throws -> URL {
+        return filesDirectoryURL.appendingPathComponent(try validatedFileUUID(for: uuid))
     }
 
     public func putFile(uuid: String, chatId: String, data: Data) throws {
-        let fileURL = try validatedFileURL(for: uuid)
+        let normalizedUUID = try validatedFileUUID(for: uuid)
+        let fileURL = filesDirectoryURL.appendingPathComponent(normalizedUUID)
 
         do {
             try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
@@ -153,7 +158,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
 
         let fileName = fileURL.lastPathComponent
-        let record = FileRecord(uuid: uuid, chatId: chatId, dataSize: data.count, filePath: fileName)
+        let record = FileRecord(uuid: normalizedUUID, chatId: chatId, dataSize: data.count, filePath: fileName)
         do {
             try dbQueue.write { db in
                 try record.save(db)
@@ -165,12 +170,13 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func getFile(uuid: String) throws -> DuckAiFileContent? {
-        let fileURL = try validatedFileURL(for: uuid)
+        let normalizedUUID = try validatedFileUUID(for: uuid)
+        let fileURL = filesDirectoryURL.appendingPathComponent(normalizedUUID)
 
         let record: FileRecord?
         do {
             record = try dbQueue.read { db in
-                try FileRecord.fetchOne(db, key: uuid)
+                try FileRecord.fetchOne(db, key: normalizedUUID)
             }
         } catch {
             throw DuckAiNativeDataStoreError.databaseError(error)
@@ -205,12 +211,13 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func deleteFile(uuid: String) throws {
-        let fileURL = try validatedFileURL(for: uuid)
+        let normalizedUUID = try validatedFileUUID(for: uuid)
+        let fileURL = filesDirectoryURL.appendingPathComponent(normalizedUUID)
         try? FileManager.default.removeItem(at: fileURL)
 
         do {
             try dbQueue.write { db in
-                try db.execute(sql: "DELETE FROM duck_ai_files WHERE uuid = ?", arguments: [uuid])
+                try db.execute(sql: "DELETE FROM duck_ai_files WHERE uuid = ?", arguments: [normalizedUUID])
             }
         } catch {
             throw DuckAiNativeDataStoreError.databaseError(error)

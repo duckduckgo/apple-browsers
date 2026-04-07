@@ -33,7 +33,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             syncEnabled: false,
             usedAllocationMB: 256,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 5
+            uptimeMinutes: 5,
+            totalMemoryBytes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
 
@@ -50,7 +51,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             syncEnabled: true,
             usedAllocationMB: 128,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 10
+            uptimeMinutes: 10,
+            totalMemoryBytes: 0
         )
 
         for trigger in MemoryUsageIntervalPixel.Trigger.allCases {
@@ -71,7 +73,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             syncEnabled: true,
             usedAllocationMB: 512,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 240
+            uptimeMinutes: 240,
+            totalMemoryBytes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .h4, context: context)
 
@@ -98,7 +101,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             syncEnabled: false,
             usedAllocationMB: 64,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 0
+            uptimeMinutes: 0,
+            totalMemoryBytes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
 
@@ -152,7 +156,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             syncEnabled: true,
             usedAllocationMB: 128,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 30
+            uptimeMinutes: 30,
+            totalMemoryBytes: 0
         )
         let params = context.parameters
 
@@ -178,7 +183,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             syncEnabled: false,
             usedAllocationMB: 256,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 60
+            uptimeMinutes: 60,
+            totalMemoryBytes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .h1, context: context)
 
@@ -198,7 +204,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             syncEnabled: nil,
             usedAllocationMB: nil,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 5
+            uptimeMinutes: 5,
+            totalMemoryBytes: 0
         )
         let params = context.parameters
 
@@ -223,7 +230,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             syncEnabled: nil,
             usedAllocationMB: nil,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 0
+            uptimeMinutes: 0,
+            totalMemoryBytes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
 

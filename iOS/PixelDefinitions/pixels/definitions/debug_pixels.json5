@@ -3,42 +3,42 @@
         "description": "Fires when the tabswitcher was unable to update the state of a tab that had been updated elsewhere.  Expecting minimumal numbers of these pixels - ideally zero.",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": [["platform", "form_factor"]],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_debug_history-load-tab-history-failed": {
         "description": "Fires when loading tab history from the database fails.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": [["platform", "form_factor"]],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_history-insert-tab-history-failed": {
         "description": "Fires when inserting tab history into the database fails.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": [["platform", "form_factor"]],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_history-remove-tab-history-failed": {
         "description": "Fires when removing tab history from the database fails.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": [["platform", "form_factor"]],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_history-clean-orphaned-tab-history-failed": {
         "description": "Fires when cleaning orphaned tab history from the database fails.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": [["platform", "form_factor"]],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_tabs-model_cross-mode-mismatch": {
         "description": "Fires when a tab operation is attempted on a TabsModel with a different browsing mode than the tab. Indicates a cross-mode invariant violation. Expecting minimumal numbers of these pixels - ideally zero.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": [["platform", "form_factor"]],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -46,6 +46,24 @@
                 "type": "string",
                 "description": "The TabsModel method that detected the mismatch",
                 "enum": ["select", "insert", "move", "remove", "removeTabs"]
+            }
+        ]
+    },
+    "m_pixel_fire_suppressed_storage_error": {
+        "description": "Fired when a daily or unique pixel is suppressed because the storage write for its last-fire date failed. Indicates a broken pixel store that would otherwise cause repeated firing.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "suppressedPixel",
+                "type": "string",
+                "description": "The name of the pixel that was suppressed due to the storage write failure"
             }
         ]
     }

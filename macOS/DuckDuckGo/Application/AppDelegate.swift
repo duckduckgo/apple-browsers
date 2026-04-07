@@ -774,7 +774,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
-        self.tabSuspensionService = TabSuspensionService(windowControllersManager: windowControllersManager, featureFlagger: featureFlagger)
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
@@ -1142,6 +1141,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared,
             launchDate: appLaunchDate,
             logger: .memory
+        )
+
+        tabSuspensionService = TabSuspensionService(
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger,
+            memoryUsageMonitor: memoryUsageMonitor,
+            pixelFiring: PixelKit.shared
         )
 
         super.init()
@@ -1904,7 +1910,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
                        defaultHeaders: [:],
-                       defaults: .netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+                       defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
             let apiHeaders = APIRequest.Headers(userAgent: userAgent, additionalHeaders: headers)

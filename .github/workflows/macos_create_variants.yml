@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Fetch Build Variants
         id: get-build-variants
@@ -65,7 +65,7 @@ jobs:
     steps:
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             .github
@@ -126,7 +126,7 @@ jobs:
     steps:
       - name: Check out the code
         if: ${{ env.success || env.failure }} # Don't execute when cancelled
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             .github

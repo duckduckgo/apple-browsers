@@ -23,7 +23,6 @@ struct UTIViewConfig: Equatable {
     var isExpanded: Bool
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
-    var showsDismissButton: Bool
     var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
     var inputMode: TextEntryMode

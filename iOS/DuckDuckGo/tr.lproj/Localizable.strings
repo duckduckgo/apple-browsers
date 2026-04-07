@@ -1177,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Şaşırt beni!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Listede **DuckDuckGo**'yu bulun, ardından eklemek için **Duck.ai Voice**'a dokunun";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Listede **DuckDuckGo**'yu bulun, ardından eklemek için **VPN kontrolü**ne dokunun";
 
@@ -1461,11 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player'ın işlevselliği YouTube'da yapılan son değişikliklerden etkilendi. Bu sorunları çözmeye çalışıyoruz. Anlayışınız için teşekkür ederiz.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Düzenlemek için widget'a dokunun, ardından **Duck.ai** ve **Duck.ai Voice**'u kısayollarınız olarak ayarlayın";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "**DuckDuckGo**'yu bulup seçin, ardından **Özel Kısayollar**'a kaydırın ve **Widget Ekle**'yi seçin";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Sayfa İçeriğini Ekle";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Duck.ai'a mesajınızla gönderildi";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Duck.ai Voice Kısayolunu Kontrol Merkezinize Ekleyin";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI özellikleri gizli ve isteğe bağlıdır. Verileriniz yapay zekayı eğitmek için kullanılmaz.";
@@ -1485,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Takip Soruları Sorun";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Duck.ai'ı Kontrol Merkezine ekleyin";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Duck.ai Widget'ı Ana Ekrana Ekleyin";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Tarayıcı kısayolları";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Siri aracılığıyla Duck.ai ile konuşun";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adres Çubuğu";
@@ -1508,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "iOS için DuckDuckGo";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Kısayollar";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri Kısayolları, \"Siri, DuckDuckGo Sesli Sohbetini başlat\" gibi hızlı bir sesli komutla Duck.ai sesli sohbetini başlatmanıza olanak tanır. Duck.ai ile sohbet etmenin hızlı, eller serbest bir yoludur.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, DuckDuckGo Sesli Sohbeti başlat.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, DuckDuckGo ile konuş.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, DuckDuckGo ile sesli sohbet et.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Siri'yi kullanarak Duck.ai ile konuş!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "DuckDuckGo aboneliğinizi bu cihaza ekleyin";
@@ -3188,6 +3227,9 @@
 
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Widget'ı Ana Ekrana Ekle";
+
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Duck.ai Kısayollarını Ana Ekranınıza Ekleyin";
 
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "DuckDuckGo VPN Widget'ını Ana Ekranına Ekle";

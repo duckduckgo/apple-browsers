@@ -55,7 +55,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -227,7 +227,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -262,7 +262,7 @@ jobs:
         id: select-simulator
         uses: ./.github/actions/select-ios-simulator
         with:
-          preferred-versions: "26.2"
+          preferred-versions: "26.4"
 
       - name: Resolve package dependencies
         run: |
@@ -375,7 +375,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Create Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:
@@ -396,7 +396,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Close Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:

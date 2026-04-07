@@ -669,6 +669,9 @@ extension Pixel {
         case networkProtectionVPNAccessRevoked
         case networkProtectionUnmanagedSubscriptionError
 
+        case networkProtectionPixelStorageSetupFailure
+        case pixelFireSuppressedStorageError
+
         case networkProtectionMemoryWarning
         case networkProtectionMemoryCritical
         
@@ -2319,6 +2322,8 @@ extension Pixel.Event {
         case .networkProtectionNoAccessTokenFoundError: return "m_netp_no_access_token_found_error"
         case .networkProtectionVPNAccessRevoked: return "m_vpn_access_revoked"
         case .networkProtectionUnmanagedSubscriptionError: return "m_vpn_access_unmanaged_error"
+        case .networkProtectionPixelStorageSetupFailure: return "m_netp_vpn_pixel_storage_setup_failure"
+        case .pixelFireSuppressedStorageError: return "m_pixel_fire_suppressed_storage_error"
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"

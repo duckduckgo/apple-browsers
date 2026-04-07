@@ -593,7 +593,6 @@ extension MainViewController {
             webView.backgroundColor = webViewBackgroundColor
             webView.scrollView.backgroundColor = webViewBackgroundColor
             webView.underPageBackgroundColor = webViewBackgroundColor
-        } else {
         }
     }
 
@@ -771,11 +770,14 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 
 private extension MainViewController {
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
-        if currentTab?.isAITab == true {
+        let isAITabSubmission = currentTab?.isAITab == true
+        if isAITabSubmission {
             viewCoordinator.hideAITabChrome()
-            applyUnifiedInputChromeBackground(.standardChrome)
         }
         loadQuery(query)
+        if isAITabSubmission {
+            applyUnifiedInputChromeBackground(.standardChrome)
+        }
     }
 
     func commitUnifiedToggleStateToCurrentTab() {

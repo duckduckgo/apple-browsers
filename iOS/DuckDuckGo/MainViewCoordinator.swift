@@ -409,6 +409,10 @@ class MainViewCoordinator {
     }
 
     private func endOmnibarStatusBackgroundPresentation() {
+        guard statusBackgroundPresentation == .omnibarEditing else {
+            statusBackgroundPresentationBeforeOmnibarEditing = nil
+            return
+        }
         let restoredPresentation = statusBackgroundPresentationBeforeOmnibarEditing ?? .standard
         statusBackgroundPresentationBeforeOmnibarEditing = nil
         setStatusBackgroundPresentation(restoredPresentation)

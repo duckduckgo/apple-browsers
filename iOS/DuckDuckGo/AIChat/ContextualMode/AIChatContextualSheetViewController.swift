@@ -392,7 +392,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func expandButtonTapped() {
-        dismissRecentChatsPopup()
         pixelHandler.fireExpandButtonTapped()
         let url = sessionState.contextualChatURL ?? aiChatSettings.aiChatURL
         Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.absoluteString)")
@@ -400,19 +399,16 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     @objc private func newChatButtonTapped() {
-        dismissRecentChatsPopup()
         pixelHandler.fireNewChatButtonTapped()
         delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
     }
 
     @objc private func fireButtonTapped() {
-        dismissRecentChatsPopup()
         pixelHandler.fireFireButtonTapped()
         showFireConfirmation()
     }
 
     @objc private func closeButtonTapped() {
-        dismissRecentChatsPopup()
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
 
@@ -522,7 +518,6 @@ private extension AIChatContextualSheetViewController {
     }
 
     func showRecentChatsPopup(with viewModel: AIChatRecentChatsPopupViewModel) {
-        dismissRecentChatsPopup()
         guard let windowScene = view.window?.windowScene else { return }
 
         let popup = AIChatRecentChatsPopupViewController(viewModel: viewModel)
@@ -1100,7 +1095,6 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
     }
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        dismissRecentChatsPopup()
         delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
     }
 }

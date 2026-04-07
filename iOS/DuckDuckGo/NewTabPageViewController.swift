@@ -303,11 +303,10 @@ extension NewTabPageViewController {
         isShowingDuckAICompletionDialog = true
         editingController.setLogoHidden(true)
 
-        let onDismiss = { [weak self] in
+        let onDismiss = { [weak self, weak editingController] in
             guard let self else { return }
             let finishDismissal = {
-                editingController.setLogoHidden(false)
-                self.isShowingDuckAICompletionDialog = false
+                editingController?.setLogoHidden(false)
                 self.daxDialogsManager.dismiss()
                 self.dismissHostingController(didFinishNTPOnboarding: true)
                 ViewHighlighter.hideAll()

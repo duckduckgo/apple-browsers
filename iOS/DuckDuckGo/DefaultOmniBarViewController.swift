@@ -484,35 +484,45 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onQuerySubmitted(_ query: String) {
-        editingStateViewController?.dismissAnimated()
+        editingStateViewController?.dismissAnimated { [weak self] in
+            self?.editingStateViewController = nil
+        }
         omniDelegate?.onOmniQuerySubmitted(query)
     }
 
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
         editingStateViewController?.dismissAnimated { [weak self] in
             guard let self else { return }
+            self.editingStateViewController = nil
             self.omniDelegate?.onPromptSubmitted(query, tools: tools)
         }
     }
 
     func onSelectFavorite(_ favorite: BookmarkEntity) {
-        editingStateViewController?.dismissAnimated()
+        editingStateViewController?.dismissAnimated { [weak self] in
+            self?.editingStateViewController = nil
+        }
         omniDelegate?.onSelectFavorite(favorite)
     }
 
     func onEditFavorite(_ favorite: BookmarkEntity) {
-        editingStateViewController?.dismissAnimated()
+        editingStateViewController?.dismissAnimated { [weak self] in
+            self?.editingStateViewController = nil
+        }
         omniDelegate?.onEditFavorite(favorite)
     }
 
     func onSelectSuggestion(_ suggestion: Suggestion) {
         omniDelegate?.onOmniSuggestionSelected(suggestion)
-        editingStateViewController?.dismissAnimated()
+        editingStateViewController?.dismissAnimated { [weak self] in
+            self?.editingStateViewController = nil
+        }
     }
 
     func onVoiceSearchRequested(from mode: TextEntryMode) {
         editingStateViewController?.dismissAnimated { [weak self] in
             guard let self else { return }
+            self.editingStateViewController = nil
 
             let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
@@ -522,6 +532,7 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onChatHistorySelected(url: URL) {
         editingStateViewController?.dismissAnimated { [weak self] in
             guard let self else { return }
+            self.editingStateViewController = nil
             self.omniDelegate?.onChatHistorySelected(url: url)
         }
     }
@@ -552,6 +563,7 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onVoiceModeRequested() {
         editingStateViewController?.dismissAnimated { [weak self] in
             guard let self else { return }
+            self.editingStateViewController = nil
             self.omniDelegate?.onDuckAIVoiceModeRequested()
         }
     }

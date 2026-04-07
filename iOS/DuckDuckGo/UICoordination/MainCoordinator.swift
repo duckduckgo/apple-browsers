@@ -133,9 +133,10 @@ final class MainCoordinator {
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           fireModePromotionEligibility: fireModePromotionsCoordinator,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
+        FireModeCapability.resolve(using: featureFlagger)
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
-        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence, featureFlagger: featureFlagger)
+        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
         let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
         reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
         let daxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: featureFlagger,
@@ -438,7 +439,6 @@ final class MainCoordinator {
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
                                          tabsPersistence: TabsModelPersisting,
-                                         featureFlagger: FeatureFlagger,
                                          appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModelProviding {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
         let normalModel: TabsModel
@@ -459,8 +459,7 @@ final class MainCoordinator {
         }
         return TabsModelProvider(normalTabsModel: normalModel,
                                  fireModeTabsModel: fireModel,
-                                 persistence: tabsPersistence,
-                                 featureFlagger: featureFlagger)
+                                 persistence: tabsPersistence)
     }
 
     private static func makeTextZoomCoordinatorProvider() -> TextZoomCoordinatorProvider {

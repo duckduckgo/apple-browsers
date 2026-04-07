@@ -57,6 +57,10 @@ class TabViewController: UIViewController {
         static let navigationExpectationInterval = 3.0
     }
 
+    /// Set by `loadVoiceMode()` so that `refreshUnifiedToggleInput` can suppress
+    /// auto-expand even before the `?mode=voice` URL is committed to the web view.
+    var isVoiceModeRequested = false
+
     lazy var borderView = StyledTopBottomBorderView()
 
     @IBOutlet private(set) weak var error: UIView!
@@ -2397,9 +2401,8 @@ extension TabViewController: WKNavigationDelegate {
         case .duck:
             if navigationAction.isTargetingMainFrame() {
                 duckPlayerNavigationHandler.handleDuckNavigation(navigationAction, webView: webView)
-                completion(.cancel)
-                return
             }
+            completion(.cancel)
 
         case .unknown:
             if navigationAction.navigationType == .linkActivated {

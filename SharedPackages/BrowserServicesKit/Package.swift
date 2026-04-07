@@ -17,6 +17,7 @@ let package = Package(
         .library(name: "DDGSync", targets: ["DDGSync"]),
         .library(name: "BrowserServicesKitTestsUtils", targets: ["BrowserServicesKitTestsUtils"]),
         .library(name: "Persistence", targets: ["Persistence"]),
+        .library(name: "DuckAiDataStore", targets: ["DuckAiDataStore"]),
         .library(name: "PersistenceTestingUtils", targets: ["PersistenceTestingUtils"]),
         .library(name: "SecureStorageTestsUtils", targets: ["SecureStorageTestsUtils"]),
         .library(name: "Bookmarks", targets: ["Bookmarks"]),
@@ -58,7 +59,7 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.1.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.10.0"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.10.1"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
@@ -120,6 +121,17 @@ let package = Package(
             name: "Persistence",
             dependencies: [
                 "Common",
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "DuckAiDataStore",
+            dependencies: [
+                "Common",
+                "Persistence",
+                "GRDB",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -702,6 +714,13 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PersistenceTestingUtils",
                 "TrackerRadarKit",
+            ]
+        ),
+        .testTarget(
+            name: "DuckAiDataStoreTests",
+            dependencies: [
+                "DuckAiDataStore",
+                "PersistenceTestingUtils",
             ]
         ),
         .testTarget(

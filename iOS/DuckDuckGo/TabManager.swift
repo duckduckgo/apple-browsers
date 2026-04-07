@@ -78,7 +78,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private let tabsModelProvider: TabsModelProviding
     private var fireModeCapability: FireModeCapable {
-        FireModeCapability.create(using: featureFlagger)
+        FireModeCapability.create()
     }
     private var _currentBrowsingMode: BrowsingMode = .normal
     var currentBrowsingMode: BrowsingMode {

@@ -383,6 +383,8 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213809475913723?focus=true
     case minimalChromeInLandscape
+
+    case aiChatNativeStorage
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -643,7 +645,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .fireMode:
-            Config(source: .disabled)
+            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
         case .autoplayBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking)))
         case .customXSafariRedirectHandling:
@@ -662,6 +664,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton)))
         case .minimalChromeInLandscape:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
+        case .aiChatNativeStorage:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)))
         }
     }
 

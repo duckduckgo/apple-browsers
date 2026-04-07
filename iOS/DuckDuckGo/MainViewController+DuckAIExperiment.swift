@@ -192,9 +192,8 @@ extension MainViewController {
             return
         }
 
-        experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
-        DispatchQueue.main.async { [weak self] in
-            self?.markSearchContextualOnboardingAsSeenForExperiment()
+        ensureExperimentCompletionDialogPresentationPrerequisites()
+        DispatchQueue.main.async {
             newTabPageViewController.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
         }
     }
@@ -202,7 +201,13 @@ extension MainViewController {
     func markSearchContextualOnboardingAsSeenForExperiment() {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
+        daxDialogsManager.overrideShownFlagFor(.afterSearch, flag: true)
+        experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         AppUserDefaults().duckAIOnboardingResumeStep = nil
+        ensureExperimentCompletionDialogPresentationPrerequisites()
+    }
+
+    private func ensureExperimentCompletionDialogPresentationPrerequisites() {
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }

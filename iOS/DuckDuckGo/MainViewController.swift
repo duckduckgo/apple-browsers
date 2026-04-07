@@ -4172,6 +4172,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
         currentNTPEscapeHatch = nil
     }
+
+    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
+        markSearchContextualOnboardingAsSeenForExperiment()
+    }
 }
 
 extension MainViewController: TabDelegate {

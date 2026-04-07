@@ -240,6 +240,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func dismiss() {
+        notifyDuckAICompletionDismissedIfNeeded()
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -351,7 +352,6 @@ extension NewTabPageViewController {
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
-        isShowingDuckAICompletionDialog = false
         dismissHostingController(didFinishNTPOnboarding: false)
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else { return }
@@ -413,10 +413,14 @@ extension NewTabPageViewController {
     }
 
     private func dismissHostingController(didFinishNTPOnboarding: Bool) {
+        let didDismissDuckAICompletionDialog = isShowingDuckAICompletionDialog
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
         isShowingDuckAICompletionDialog = false
+        if didDismissDuckAICompletionDialog {
+            delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
+        }
         if didFinishNTPOnboarding {
             self.newTabPageViewModel.finishOnboarding()
         }
@@ -426,5 +430,11 @@ extension NewTabPageViewController {
         guard isShowingDuckAICompletionDialog else { return }
         daxDialogsManager.dismiss()
         dismissHostingController(didFinishNTPOnboarding: true)
+    }
+
+    private func notifyDuckAICompletionDismissedIfNeeded() {
+        guard isShowingDuckAICompletionDialog else { return }
+        isShowingDuckAICompletionDialog = false
+        delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
     }
 }

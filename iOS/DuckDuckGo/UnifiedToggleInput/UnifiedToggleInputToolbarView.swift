@@ -142,6 +142,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         button.titleLabel?.lineBreakMode = .byTruncatingTail
         button.heightAnchor.constraint(equalToConstant: Constants.chipHeight).isActive = true
+        button.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45).isActive = true
 
         return button
     }()

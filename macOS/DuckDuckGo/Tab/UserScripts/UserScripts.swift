@@ -98,7 +98,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),
-                .exactOrSubdomain(hostname: "duckduckgo.com")
             ]
             if let customHostname = aiChatDebugURLSettings.customURLHostname {
                 originRules.append(.exact(hostname: customHostname))

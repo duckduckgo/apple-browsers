@@ -114,7 +114,6 @@ final class UserScripts: UserScriptsProvider {
            let duckAiNativeStorageHandler {
             let originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),
-                .exactOrSubdomain(hostname: "duckduckgo.com")
             ]
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,

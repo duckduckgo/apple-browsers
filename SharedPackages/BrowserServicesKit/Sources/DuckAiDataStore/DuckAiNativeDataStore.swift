@@ -140,7 +140,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         guard let parsed = UUID(uuidString: uuid) else {
             throw DuckAiNativeDataStoreError.invalidFileIdentifier
         }
-        return parsed.uuidString.lowercased()
+        return parsed.uuidString
     }
 
     private func validatedFileURL(for uuid: String) throws -> URL {

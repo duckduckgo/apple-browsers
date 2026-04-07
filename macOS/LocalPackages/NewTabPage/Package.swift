@@ -63,6 +63,7 @@ let package = Package(
                 "NewTabPage",
                 "Utilities",
                 .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
             ]
         ),
     ]

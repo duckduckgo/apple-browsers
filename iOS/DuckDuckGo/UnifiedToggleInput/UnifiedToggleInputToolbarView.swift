@@ -87,6 +87,11 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { imageButton.isHidden = newValue }
     }
 
+    var isImageButtonEnabled: Bool {
+        get { imageButton.isEnabled }
+        set { imageButton.isEnabled = newValue }
+    }
+
     var isCustomizeResponsesButtonHidden: Bool {
         get { customizeResponsesButton.isHidden }
         set { customizeResponsesButton.isHidden = newValue }

@@ -164,6 +164,7 @@ final class FireExecutorTests: XCTestCase {
     }
     
     override func tearDown() {
+        UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
         mockTabManager = nil
         spyDownloadManager = nil
         mockWebsiteDataManager = nil
@@ -586,6 +587,7 @@ final class FireExecutorTests: XCTestCase {
     func testBurnAIHistoryBothModesCallsDelegateOnSuccess() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
         let executor = makeFireExecutor()
         mockHistoryCleaner.cleanAIChatHistoryResult = .success(())
         
@@ -601,6 +603,7 @@ final class FireExecutorTests: XCTestCase {
     func testBurnAIHistoryBothModesCallsDelegateOnFailure() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
         let executor = makeFireExecutor()
         mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "test", code: 1))
         
@@ -779,6 +782,7 @@ final class FireExecutorTests: XCTestCase {
 
     func testWhenBurningAIHistoryWithFireModeScope_ThenCleanerIsCalledAndSyncIsNotRecorded() async {
         mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
         let executor = makeFireExecutor()
 
         await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
@@ -802,6 +806,7 @@ final class FireExecutorTests: XCTestCase {
 
     func testWhenBurningAIHistoryWithAllScope_ThenBothNormalAndFireModeAreBurned() async {
         mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
         let executor = makeFireExecutor()
 
         await executor.burn(request: makeFireRequest(options: .aiChats, scope: .all), applicationState: .unknown)

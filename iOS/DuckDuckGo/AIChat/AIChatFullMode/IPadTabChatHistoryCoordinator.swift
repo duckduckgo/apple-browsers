@@ -86,13 +86,14 @@ final class IPadTabChatHistoryCoordinator {
     func install(in parentView: UIView,
                  parentViewController: UIViewController,
                  searchContainer: UIView,
+                 isFireTab: Bool,
                  keyboardLayoutGuide: UILayoutGuide) {
         guard historyManager == nil else { return }
         guard iPadTabFeature.isAvailable else { return }
         guard featureFlagger.isFeatureOn(.aiChatSuggestions),
               aiChatSettings.isChatSuggestionsEnabled else { return }
 
-        let (manager, viewModel) = makeHistoryManager()
+        let (manager, viewModel) = makeHistoryManager(isFireTab: isFireTab)
         manager.delegate = delegate
 
         let (wrapper, clipView) = makeFloatingWrapper()
@@ -158,12 +159,20 @@ final class IPadTabChatHistoryCoordinator {
 
     // MARK: - Private Methods
 
-    private func makeHistoryManager() -> (AIChatHistoryManager, AIChatSuggestionsViewModel) {
-        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
-        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        let suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
+    /// Creates an `AIChatHistoryManager` configured for the current tab.
+    /// Fire tabs use a no-op reader that always returns empty results,
+    /// preventing chat history from being fetched or displayed.
+    private func makeHistoryManager(isFireTab: Bool) -> (AIChatHistoryManager, AIChatSuggestionsViewModel) {
+        let suggestionsReader: AIChatSuggestionsReading
+        if isFireTab {
+            suggestionsReader = NilSuggestionsReader()
+        } else {
+            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
 
+        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: aiChatSettings,
                                            viewModel: viewModel,

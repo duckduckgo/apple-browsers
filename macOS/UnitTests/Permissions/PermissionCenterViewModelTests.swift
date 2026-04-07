@@ -17,6 +17,8 @@
 //
 
 import Combine
+import FeatureFlags
+import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -46,9 +48,9 @@ final class PermissionCenterViewModelTests: XCTestCase {
     func testNotificationPermissionsAppearInUI() {
         // Create permissions including notification
         var usedPermissions = Permissions()
-        usedPermissions[.camera] = .active(query: nil)
-        usedPermissions[.notification] = .active(query: nil)
-        usedPermissions[.microphone] = .active(query: nil)
+        usedPermissions[.camera] = .active
+        usedPermissions[.notification] = .active
+        usedPermissions[.microphone] = .active
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -70,9 +72,9 @@ final class PermissionCenterViewModelTests: XCTestCase {
     /// Tests that notification permissions work alongside other permissions.
     func testNotificationPermissionsWorkAlongsideOtherPermissions() {
         var usedPermissions = Permissions()
-        usedPermissions[.camera] = .active(query: nil)
-        usedPermissions[.notification] = .active(query: nil)
-        usedPermissions[.geolocation] = .active(query: nil)
+        usedPermissions[.camera] = .active
+        usedPermissions[.notification] = .active
+        usedPermissions[.geolocation] = .active
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -96,7 +98,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
     /// Verifies requestSystemPermission calls the system permission manager with correct permission type.
     func testWhenRequestSystemPermissionCalledThenSystemManagerRequestsAuthorization() {
         var usedPermissions = Permissions()
-        usedPermissions[.notification] = .active(query: nil)
+        usedPermissions[.notification] = .active
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -119,7 +121,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
         mockSystemPermissionManager.authorizationStateToReturn = .notDetermined
 
         var usedPermissions = Permissions()
-        usedPermissions[.notification] = .active(query: nil)
+        usedPermissions[.notification] = .active
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -154,6 +156,10 @@ final class MockSystemPermissionManager: SystemPermissionManagerProtocol {
     private(set) var lastRequestedPermissionType: PermissionType?
 
     func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
+        return authorizationStateToReturn
+    }
+
+    func cachedAuthorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
         return authorizationStateToReturn
     }
 

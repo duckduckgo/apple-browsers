@@ -27,6 +27,7 @@ extension Logger {
     static var atb = { Logger(subsystem: "ATB", category: "") }()
     static var tabSnapshots = { Logger(subsystem: "Tab Snapshots", category: "") }()
     static var tabLazyLoading = { Logger(subsystem: "Lazy Loading", category: "") }()
+    static var tabSuspension = { Logger(subsystem: "Tab Suspension", category: "") }()
     static var updates = { Logger(subsystem: "Updates", category: "") }()
     static var tabPreview = { Logger(subsystem: "Tab Preview", category: "") }()
     static var maliciousSiteProtection = { Logger(subsystem: "Malsite Protection", category: "") }()

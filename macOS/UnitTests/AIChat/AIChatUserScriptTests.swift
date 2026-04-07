@@ -129,6 +129,20 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didClearMigrationData, "clearMigrationData should be called")
         XCTAssertNil(result, "Expected result to be nil")
     }
+
+    @MainActor func testGetAIChatOpenTabs() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatOpenTabs.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didGetAIChatOpenTabs, "getAIChatOpenTabs should be called")
+    }
+
+    @MainActor func testGetAIChatTabContent() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatTabContent.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didGetAIChatTabContent, "getAIChatTabContent should be called")
+    }
 }
 
 // swiftlint:disable inclusive_language
@@ -269,8 +283,18 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         PassthroughSubject<Void, Never>().eraseToAnyPublisher()
     }
 
-    func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
-    func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    var didGetAIChatOpenTabs = false
+    var didGetAIChatTabContent = false
+
+    func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didGetAIChatOpenTabs = true
+        return nil
+    }
+
+    func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didGetAIChatTabContent = true
+        return nil
+    }
 
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
         chatRestorationDataSubject.eraseToAnyPublisher()

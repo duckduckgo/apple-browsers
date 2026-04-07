@@ -1527,12 +1527,7 @@ class MainViewController: UIViewController {
     @IBAction func onFirePressed() {
 
         func showFireConfirmation() {
-            let presenter = FireConfirmationPresenter(tabsModel: tabManager.allTabsModel,
-                                                      featureFlagger: featureFlagger,
-                                                      historyManager: historyManager,
-                                                      fireproofing: fireproofing,
-                                                      aiChatSettings: aiChatSettings,
-                                                      keyValueFilesStore: keyValueStore)
+            let presenter = FireConfirmationPresenter()
             let source: UIView = findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,

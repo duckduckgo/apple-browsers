@@ -42,9 +42,6 @@ extension TabViewController {
         return settings.isAIChatBrowsingMenuUserSettingsEnabled
     }
 
-    private var dataClearingCapability: DataClearingCapable {
-        DataClearingCapability.create(using: featureFlagger)
-    }
 
     func buildBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
@@ -427,7 +424,7 @@ extension TabViewController {
     }
     
     private func buildClearDataEntry(clearTabsAndData: @escaping () -> Void, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        let title = dataClearingCapability.isEnhancedDataClearingEnabled ? UserText.settingsDeleteTabsAndData : UserText.actionForgetAll
+        let title = UserText.settingsDeleteTabsAndData
         return BrowsingMenuEntry.regular(name: title,
                                          accessibilityLabel: title,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,

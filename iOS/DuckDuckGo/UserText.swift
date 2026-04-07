@@ -47,7 +47,6 @@ public struct UserText {
     public static let actionNewTabForUrl = NSLocalizedString("action.title.newTabForUrl", value: "Open in New Tab", comment: "Open in New Tab action")
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
-    public static let actionForgetAllWithAIChat = NSLocalizedString("action.title.forgetAllWithAIChat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Fire button title when AI chat clearing is enabled")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
 
     // MARK: Scoped Fire Confirmation
@@ -1530,19 +1529,14 @@ public struct UserText {
     public static let settingsGPC = NSLocalizedString("settings.gpc", value: "Global Privacy Control (GPC)", comment: "Settings screen cell text for GPC")
     public static let settingsCookiePopups = NSLocalizedString("settings.cookie.popups", value: "Manage Cookie Pop-ups", comment: "Settings screen cell text for Cookie popups")
     public static let settingsUnprotectedSites = NSLocalizedString("settings.unprotected.sites", value: "Unprotected Sites", comment: "Settings screen cell text for Unprotected Sites")
-    public static let settingsFireproofSites = NSLocalizedString("settings.fireproof.sites", value: "Fireproof Sites", comment: "Settings screen cell text for Fireproof Sites")
     public static let settingsFireproofedSites = NSLocalizedString("settings.fireproofed.sites", value: "Fireproofed Sites", comment: "Settings screen cell text for Fireproofed Sites")
     public static func settingsFireproofedSitesSubtitle(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "settings.fireproofed.sites.subtitle", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
-    public static let settingsClearData = NSLocalizedString("settings.clear.data", value: "Automatically Clear Data", comment: "Settings screen cell text for Automatically Clearing Data")
     public static let settingsAutomaticDataClearing = NSLocalizedString("settings.automatic.data.clearing.title", value: "Automatic Data Clearing", comment: "Settings row title for automatic data clearing")
     public static let settingsDataClearingDescription = NSLocalizedString("settings.data.clearing.description", value: "Deleting your data can help protect your privacy online. Use the Fire Button to clear data manually, or set up automatic clearing.", comment: "Data Clearing settings header description")
     public static let settingsClearBrowsingData = NSLocalizedString("settings.clear.browsing.data", value: "Clear Browsing Data", comment: "Button to clear browsing data")
-    public static let settingsAutoClearTabsAndData = NSLocalizedString("settings.autoclear.tabs.and.data", value: "Clear Tabs and Data", comment: "Autoclear action option to clear tabs and data")
-    public static let settingsAutoClearTabsAndDataWithAIChat = NSLocalizedString("settings.autoclear.tabs.and.data.with.aichat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled")
-    public static let settingsClearAIChatHistory = NSLocalizedString("settings.clear.aichat.history.title", value: "Clear Duck.ai Chats", comment: "Settings screen cell text for clearing AI chat history")
     public static let settingsClearAIChatHistoryFooter = NSLocalizedString("settings.clear.aichat.history.footer", value: "Fire Button will also delete Duck.ai history, including pinned chats.", comment: "Settings screen footer text explaining that Fire Button also clears AI chat history")
 
     // MARK: - Auto Clear Settings
@@ -1589,9 +1583,6 @@ public struct UserText {
     public static let escapeHatchReturnToAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.accessibility.label", value: "Return to %@", comment: "Accessibility label for escape hatch card; %@ is the tab title")
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
     public static let escapeHatchAccessibilityHint = NSLocalizedString("escapeHatch.accessibility.hint", value: "Switches to this tab", comment: "Accessibility hint for the escape hatch card")
-
-    public static let settingsDataClearingForgetAllFootnote = NSLocalizedString("settings.data.clear.forget.all.footnote", value: "Clears all tabs and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
-    public static let settingsDataClearingForgetAllWithAiChatFootnote = NSLocalizedString("settings.data.clear.forget.all.duck.ai.footnote", value: "Clears all tabs, Duck.ai chats, and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
 
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")

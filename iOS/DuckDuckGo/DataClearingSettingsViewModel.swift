@@ -81,12 +81,6 @@ final class DataClearingSettingsViewModel: ObservableObject {
         UserText.settingsAutomaticallyDeleteData
     }
     
-    var footnoteText: String {
-        let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
-
-        return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
-    }
-    
     var autoClearAccessibilityLabel: String {
         autoclearDataEnabled
         ? UserText.autoClearAccessoryOn

@@ -25,7 +25,7 @@ import Foundation
 /// database-level encryption — one symmetric key stored in the Keychain.
 public final class DuckAiKeyStoreProvider {
 
-    private static let keychainService = "DuckDuckGo DuckAi Storage"
+    private static let keychainServiceName = "DuckDuckGo DuckAi Storage"
     private static let keychainAccount = "DuckAiNativeDataStore-EncryptionKey"
 
     private let keychainService: KeychainServicing
@@ -61,7 +61,7 @@ public final class DuckAiKeyStoreProvider {
     private func baseAttributes() -> [String: Any] {
         var attrs: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: Self.keychainService,
+            kSecAttrService as String: Self.keychainServiceName,
             kSecAttrAccount as String: Self.keychainAccount,
             kSecAttrSynchronizable as String: false
         ]

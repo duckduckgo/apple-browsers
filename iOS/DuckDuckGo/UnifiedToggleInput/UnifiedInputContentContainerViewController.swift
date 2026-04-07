@@ -216,20 +216,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setActive(_ active: Bool) {
-        guard active != isContentActive else {
-            return
-        }
+        guard active != isContentActive else { return }
         isContentActive = active
         markNeedsVisibleRefresh()
     }
 
     func refreshVisibleContentIfNeeded() {
-        guard isContentActive else {
-            return
-        }
-        guard needsVisibleRefresh else {
-            return
-        }
+        guard isContentActive else { return }
+        guard needsVisibleRefresh else { return }
 
         needsVisibleRefresh = false
         let currentText = switchBarHandler.currentText

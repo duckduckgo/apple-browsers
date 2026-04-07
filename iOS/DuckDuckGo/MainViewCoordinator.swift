@@ -421,7 +421,7 @@ class MainViewCoordinator {
     private func resolvedStatusBackgroundColor() -> UIColor {
         switch statusBackgroundPresentation {
         case .standard:
-            standardStatusBackgroundColor ?? statusBackground.backgroundColor ?? UIColor(designSystemColor: .background)
+            standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:

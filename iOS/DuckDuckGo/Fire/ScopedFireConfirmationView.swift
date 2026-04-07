@@ -87,7 +87,7 @@ struct ScopedFireConfirmationView: View {
                 }
             }
         }
-        .padding(Constants.headerSectionPadding)
+        .padding(viewModel.showAnimation ? Constants.headerSectionPadding : Constants.headerSectionPaddingNoAnimation)
     }
     
     /// Scope selection buttons
@@ -138,6 +138,7 @@ private extension ScopedFireConfirmationView {
         static let mainSectionSpacing: CGFloat = 16
         static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
+        static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
         static let headlineTextSpacing: CGFloat = 4
         static let buttonSpacing: CGFloat = 16

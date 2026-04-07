@@ -71,6 +71,10 @@ struct MemoryReportingContext {
     /// Minutes elapsed since app launch (raw value, not bucketed).
     let uptimeMinutes: Int
 
+    /// Raw total memory in bytes (physFootprint + webContent). Not bucketed.
+    /// Used for before/after memory delta calculations.
+    let totalMemoryBytes: UInt64
+
     /// Returns context parameters as a dictionary suitable for pixel firing.
     /// Parameters with `nil` values are sent as `"unknown"`.
     var parameters: [String: String] {
@@ -115,6 +119,7 @@ struct MemoryReportingContext {
         }
         let wcTotalMemoryMB = report.webContentMB.map(MemoryReportingBuckets.bucketWebContentMemoryMB)
         let uptimeMinutes = Int(Date().timeIntervalSince(launchDate) / 60.0)
+        let totalMemoryBytes = report.physFootprintBytes + (report.webContentBytes ?? 0)
 
         return MemoryReportingContext(
             browserMemoryMB: browserMemoryMB,
@@ -125,7 +130,8 @@ struct MemoryReportingContext {
             syncEnabled: isSyncEnabled,
             usedAllocationMB: usedAllocationMB,
             wcTotalMemoryMB: wcTotalMemoryMB,
-            uptimeMinutes: uptimeMinutes
+            uptimeMinutes: uptimeMinutes,
+            totalMemoryBytes: totalMemoryBytes
         )
     }
 }

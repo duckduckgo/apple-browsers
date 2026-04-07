@@ -40,13 +40,42 @@ final class AIChatHistoryListViewController: UIViewController {
         static let escapeHatchTopPadding: CGFloat = 16
         static let escapeHatchHeaderHeight: CGFloat = 72
         static let escapeHatchBottomPadding: CGFloat = 16
-        /// Top content inset when escape hatch is shown so the card has visible space below the bar.
         static let escapeHatchTopContentInset: CGFloat = 8
         static let escapeHatchMaxWidth: CGFloat = HomeMessageCollectionViewCell.maximumWidth
         static let escapeHatchMaxWidthPad: CGFloat = HomeMessageCollectionViewCell.maximumWidthPad
     }
 
+    struct TitleLayoutConfiguration {
+        var topPadding: CGFloat = 8
+        var bottomPadding: CGFloat = 8
+        var leadingInset: CGFloat = 24
+        var trailingInset: CGFloat = -60
+        var contentInsetWhenTitle: CGFloat = 0
+        var resetContentOffsetOnTitleChange: Bool = false
+        var tableLayoutMargins: UIEdgeInsets?
+
+        static let `default` = TitleLayoutConfiguration()
+
+        static let unifiedInput = TitleLayoutConfiguration(
+            topPadding: 20,
+            bottomPadding: 26,
+            leadingInset: 18,
+            trailingInset: -60,
+            contentInsetWhenTitle: 0,
+            resetContentOffsetOnTitleChange: true,
+            tableLayoutMargins: UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        )
+    }
+
     // MARK: - Properties
+
+    var titleLayoutConfiguration = TitleLayoutConfiguration.default {
+        didSet {
+            if let margins = titleLayoutConfiguration.tableLayoutMargins {
+                tableView.layoutMargins = margins
+            }
+        }
+    }
 
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
@@ -74,6 +103,21 @@ final class AIChatHistoryListViewController: UIViewController {
 
     private var currentEscapeHatchModel: EscapeHatchModel?
     private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
+
+    private(set) var sectionTitle: String? {
+        didSet {
+            guard sectionTitle != oldValue else { return }
+            updateTableHeader()
+        }
+    }
+
+    private lazy var titleLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = UIFont.daxTitle3()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        return label
+    }()
 
     // MARK: - Initialization
 
@@ -127,6 +171,81 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.isScrollEnabled = !chats.isEmpty
     }
 
+    func setScrollableTitle(_ title: String?) {
+        sectionTitle = title
+    }
+
+    private func updateTableHeader() {
+        let hasTitleContent = !(sectionTitle?.isEmpty ?? true)
+        let hasEscapeHatch = escapeHatchHostingController != nil
+
+        guard hasTitleContent || hasEscapeHatch else {
+            UIView.performWithoutAnimation {
+                tableView.tableHeaderView = nil
+                tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+            }
+            return
+        }
+
+        let container = UIView()
+        container.backgroundColor = UIColor(designSystemColor: .background)
+        var totalHeight: CGFloat = 0
+
+        if hasTitleContent {
+            let config = titleLayoutConfiguration
+            titleLabel.text = sectionTitle
+            container.addSubview(titleLabel)
+            NSLayoutConstraint.activate([
+                titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: config.topPadding),
+                titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: config.leadingInset),
+                titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: config.trailingInset),
+            ])
+            let titleHeight = titleLabel.font.lineHeight
+            totalHeight += config.topPadding + ceil(titleHeight) + config.bottomPadding
+        }
+
+        if hasEscapeHatch, let hosting = escapeHatchHostingController {
+            hosting.view.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(hosting.view)
+
+            let maxWidth = isIPadExperience ? Constants.escapeHatchMaxWidthPad : Constants.escapeHatchMaxWidth
+            let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
+            preferredWidth.priority = .defaultHigh
+
+            let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: Constants.horizontalInset)
+            minimumLeading.priority = .required - 1
+
+            let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Constants.horizontalInset)
+            minimumTrailing.priority = .required - 1
+
+            let topOffset = totalHeight + Constants.escapeHatchTopPadding
+            NSLayoutConstraint.activate([
+                hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
+                preferredWidth,
+                minimumLeading,
+                minimumTrailing,
+                hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: topOffset),
+                hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchHeaderHeight),
+            ])
+
+            totalHeight += Constants.escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
+        }
+
+        let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
+        container.frame = CGRect(x: 0, y: 0, width: width, height: totalHeight)
+        let config = titleLayoutConfiguration
+        let topInset: CGFloat = hasEscapeHatch ? Constants.escapeHatchTopContentInset : config.contentInsetWhenTitle
+        UIView.performWithoutAnimation {
+            tableView.tableHeaderView = container
+            tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
+            if config.resetContentOffsetOnTitleChange {
+                tableView.layoutIfNeeded()
+                tableView.contentOffset = CGPoint(x: 0, y: -tableView.adjustedContentInset.top)
+            }
+        }
+    }
+
     /// Shows or hides the escape hatch (Return to tab card) as the table header. Pass nil to hide.
     func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
         if model == currentEscapeHatchModel {
@@ -148,41 +267,8 @@ final class AIChatHistoryListViewController: UIViewController {
             escapeHatchHostingController = hosting
 
             addChild(hosting)
-
-            let wrapper = UIView()
-            wrapper.backgroundColor = UIColor(designSystemColor: .background)
-            hosting.view.translatesAutoresizingMaskIntoConstraints = false
-            wrapper.addSubview(hosting.view)
-
-            let maxWidth = isIPadExperience ? Constants.escapeHatchMaxWidthPad : Constants.escapeHatchMaxWidth
-            let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
-            preferredWidth.priority = .defaultHigh
-
-            let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: wrapper.leadingAnchor, constant: Constants.horizontalInset)
-            minimumLeading.priority = .required - 1
-
-            let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: wrapper.trailingAnchor, constant: -Constants.horizontalInset)
-            minimumTrailing.priority = .required - 1
-
-            NSLayoutConstraint.activate([
-                hosting.view.centerXAnchor.constraint(equalTo: wrapper.centerXAnchor),
-                hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
-                preferredWidth,
-                minimumLeading,
-                minimumTrailing,
-                hosting.view.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: Constants.escapeHatchTopPadding),
-                hosting.view.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -Constants.escapeHatchBottomPadding)
-            ])
-
+            updateTableHeader()
             hosting.didMove(toParent: self)
-
-            let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
-            let totalHeaderHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
-            wrapper.frame = CGRect(x: 0, y: 0, width: width, height: totalHeaderHeight)
-            UIView.performWithoutAnimation {
-                tableView.tableHeaderView = wrapper
-                tableView.contentInset = UIEdgeInsets(top: Constants.escapeHatchTopContentInset, left: 0, bottom: 0, right: 0)
-            }
             updateScrollEnabled()
         } else {
             if let hosting = escapeHatchHostingController {
@@ -191,10 +277,7 @@ final class AIChatHistoryListViewController: UIViewController {
                 hosting.removeFromParent()
             }
             escapeHatchHostingController = nil
-            UIView.performWithoutAnimation {
-                tableView.tableHeaderView = nil
-                tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
-            }
+            updateTableHeader()
             updateScrollEnabled()
         }
     }

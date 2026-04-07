@@ -28,6 +28,18 @@ struct AutocompleteView: View {
 
     var body: some View {
         List {
+            if let sectionTitle = model.sectionTitle, !sectionTitle.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(sectionTitle)
+                        .daxTitle3()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                    Spacer(minLength: 0)
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 10, leading: 2, bottom: 0, trailing: 0))
+            }
+
             if model.isMessageVisible {
                 HistoryMessageView {
                     model.onDismissMessage()

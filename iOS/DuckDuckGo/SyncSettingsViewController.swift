@@ -26,6 +26,7 @@ import Common
 import os.log
 import PrivacyConfig
 import AttributedMetric
+import Persistence
 
 @MainActor
 class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
@@ -59,6 +60,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let userSession = UserSession()
     let featureFlagger: FeatureFlagger
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
+    let syncSettingsStore: KeyValueStoring
 
     var isSyncEnabled: Bool {
         syncService.account != nil
@@ -85,6 +87,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     }
 
     var cancellables = Set<AnyCancellable>()
+    private var devicePromptCancellable: AnyCancellable?
     let syncPausedStateManager: any SyncPausedStateManaging
     let viewModel: SyncSettingsViewModel
 
@@ -107,7 +110,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         source: String? = nil,
         pairingInfo: PairingInfo? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-        syncAutoRestoreHandler: SyncAutoRestoreHandling
+        syncAutoRestoreHandler: SyncAutoRestoreHandling,
+        syncSettingsStore: KeyValueStoring = UserDefaults.standard
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -118,6 +122,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         self.pairingInfo = pairingInfo
         self.featureFlagger = featureFlagger
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
+        self.syncSettingsStore = syncSettingsStore
 
         let viewModel = SyncSettingsViewModel(
             isOnDevEnvironment: { syncService.serverEnvironment == .development },
@@ -309,10 +314,27 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
         Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
             "is_enabled": isSyncEnabled ? "1" : "0"
         ])
+
         startPairingIfNecessary()
+        observeDevicesForPromptCheck()
+    }
+
+    /// Subscribes to $devices, waits for the first non-empty value, and checks whether to show the "sync another device" prompt.
+    /// This is so that we wait until the device list is loaded before deciding whether to display the prompt.
+    /// Only subscribes if sync is already enabled.
+    private func observeDevicesForPromptCheck() {
+        guard isSyncEnabled else { return }
+        guard devicePromptCancellable == nil else { return }
+        devicePromptCancellable = viewModel.$devices
+            .drop(while: { $0.isEmpty })
+            .prefix(1)
+            .sink { [weak self] _ in
+                self?.viewModel.checkAndShowSyncWithAnotherDevicePrompt()
+            }
     }
 
     func updateOptions() {

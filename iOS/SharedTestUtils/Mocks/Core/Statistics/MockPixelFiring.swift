@@ -129,7 +129,7 @@ final actor PixelFiringMock: PixelFiring, PixelFiringAsync, DailyPixelFiring {
                                   withAdditionalParameters params: [String: String],
                                   includedParameters: [Core.Pixel.QueryParameters],
                                   pixelFiring: any PixelFiring.Type,
-                                  dailyPixelStore: any Persistence.KeyValueStoring,
+                                  dailyPixelStore: any Persistence.ThrowingKeyValueStoring,
                                   onDailyComplete: @escaping ((any Error)?) -> Void,
                                   onCountComplete: @escaping ((any Error)?) -> Void) {
         lastDailyPixelInfo = PixelInfo(pixelName: pixel.name, error: error, params: params, includedParams: includedParameters)

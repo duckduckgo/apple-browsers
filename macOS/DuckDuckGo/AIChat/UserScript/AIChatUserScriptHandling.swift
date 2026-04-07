@@ -312,13 +312,21 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let allTabs = pinnedTabs + tabCollection.tabs
         let currentTabId = mainVC.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
 
+        let faviconManager = NSApp.delegateTyped.faviconManager
         let tabMetadata: [AIChatTabMetadata] = allTabs.compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
+            let favicon: [AIChatPageContextData.PageContextFavicon]
+            if let image = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
+               let base64 = image.base64PNGDataURL {
+                favicon = [AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")]
+            } else {
+                favicon = []
+            }
             return AIChatTabMetadata(
                 tabId: tab.uuid,
                 title: tab.title ?? url.host ?? "",
                 url: url.absoluteString,
-                favicon: faviconData(for: url),
+                favicon: favicon,
                 isCurrentTab: tab.uuid == currentTabId
             )
         }
@@ -358,12 +366,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let pageContext = await pageContextScript.collectAndWait()
 
         // Replace favicon URLs with base64-encoded data to avoid CSP blocking in the sidebar
-        let enrichedContext: AIChatPageContextData? = pageContext.flatMap { ctx in
-            let pageURL = URL(string: ctx.url)
-            let base64Favicon = pageURL.flatMap { faviconData(for: $0) } ?? []
+        let enrichedContext = pageContext.map { ctx -> AIChatPageContextData in
+            guard let pageURL = URL(string: ctx.url),
+                  let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
+                  let base64 = favicon.base64PNGDataURL else {
+                return ctx
+            }
+            let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")
             return AIChatPageContextData(
                 title: ctx.title,
-                favicon: base64Favicon.isEmpty ? ctx.favicon : base64Favicon,
+                favicon: [faviconEntry],
                 url: ctx.url,
                 content: ctx.content,
                 truncated: ctx.truncated,
@@ -371,20 +383,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             )
         }
         return AIChatTabContentResponse(pageContext: enrichedContext)
-    }
-
-    @MainActor
-    private func faviconData(for url: URL) -> [AIChatPageContextData.PageContextFavicon] {
-        // Use the same favicon approach as PageContextTabExtension
-        if let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
-           let cgImage = favicon.cgImage(forProposedRect: nil, context: nil, hints: nil) {
-            let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
-            if let pngData = bitmapRep.representation(using: .png, properties: [:]) {
-                let base64 = "data:image/png;base64,\(pngData.base64EncodedString())"
-                return [AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")]
-            }
-        }
-        return []
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {

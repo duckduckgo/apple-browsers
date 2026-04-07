@@ -464,4 +464,12 @@ fileprivate extension NSImage {
         self.init(size: rep.size)
         addRepresentation(rep)
     }
+
+    /// Returns a `data:image/png;base64,...` string for this image, or nil if encoding fails.
+    var base64PNGDataURL: String? {
+        guard let cgImage = cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
+        guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else { return nil }
+        return "data:image/png;base64,\(pngData.base64EncodedString())"
+    }
 }

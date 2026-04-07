@@ -139,9 +139,6 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
-            Logger.aiChat.debug("[NativeStorage] iOS: Registered subfeature '\(duckAiNativeStorageUserScript.featureName)' with contentScopeUserScriptIsolated (isolated=\(self.contentScopeUserScriptIsolated.scriptContext.isIsolated), context=\(String(describing: self.contentScopeUserScriptIsolated.scriptContext)))")
-        } else {
-            Logger.aiChat.error("[NativeStorage] iOS: duckAiNativeStorageUserScript is nil — NOT registered")
         }
         contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
         contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)

@@ -16,16 +16,31 @@
 //  limitations under the License.
 //
 
+import Common
+import CryptoKit
 import Foundation
 import GRDB
+import os.log
 
 public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
     private let dbQueue: DatabaseQueue
     private let filesDirectoryURL: URL
+    private let encryptionKey: SymmetricKey
 
-    public init(databaseURL: URL, filesDirectoryURL: URL) throws {
+    /// Creates an encrypted data store backed by SQLCipher.
+    ///
+    /// If an existing unencrypted database is found, it is deleted and recreated
+    /// as an encrypted database. This handles the migration from the pre-encryption
+    /// storage format.
+    ///
+    /// - Parameters:
+    ///   - databaseURL: Path to the SQLite database file.
+    ///   - filesDirectoryURL: Directory for storing file attachments on disk.
+    ///   - key: 256-bit symmetric key used for SQLCipher encryption.
+    public init(databaseURL: URL, filesDirectoryURL: URL, key: Data) throws {
         self.filesDirectoryURL = filesDirectoryURL
+        self.encryptionKey = SymmetricKey(data: key)
 
         let fileManager = FileManager.default
         let dbDirectory = databaseURL.deletingLastPathComponent()
@@ -38,12 +53,28 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
 
         do {
-            dbQueue = try DatabaseQueue(path: databaseURL.path)
+            dbQueue = try Self.openDatabase(at: databaseURL, key: key)
         } catch {
             throw DuckAiNativeDataStoreError.databaseError(error)
         }
 
         try Self.runMigrations(on: dbQueue)
+    }
+
+    /// Opens an encrypted database, recreating it if the existing file is unencrypted or corrupt.
+    private static func openDatabase(at url: URL, key: Data) throws -> DatabaseQueue {
+        var config = Configuration()
+        config.prepareDatabase { db in
+            try db.usePassphrase(key)
+        }
+
+        do {
+            return try DatabaseQueue(path: url.path, configuration: config)
+        } catch let error as DatabaseError where [.SQLITE_NOTADB, .SQLITE_CORRUPT].contains(error.resultCode) {
+            Logger.nativeStorageDebug.warning("[NativeStorage] Existing database is unencrypted or corrupt, recreating: \(error.resultCode)")
+            try? FileManager.default.removeItem(at: url)
+            return try DatabaseQueue(path: url.path, configuration: config)
+        }
     }
 
     // MARK: - Migrations
@@ -148,7 +179,13 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         let fileURL = filesDirectoryURL.appendingPathComponent(normalizedUUID)
 
         do {
-            try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            let sealed = try AES.GCM.seal(data, using: encryptionKey)
+            guard let encrypted = sealed.combined else {
+                throw DuckAiNativeDataStoreError.fileEncryptionError
+            }
+            try encrypted.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        } catch let error as DuckAiNativeDataStoreError {
+            throw error
         } catch {
             throw DuckAiNativeDataStoreError.fileWriteError(error)
         }
@@ -185,14 +222,14 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
             return nil
         }
 
-        let data: Data
         do {
-            data = try Data(contentsOf: fileURL)
+            let encrypted = try Data(contentsOf: fileURL)
+            let sealedBox = try AES.GCM.SealedBox(combined: encrypted)
+            let data = try AES.GCM.open(sealedBox, using: encryptionKey)
+            return DuckAiFileContent(uuid: record.uuid, chatId: record.chatId, data: data)
         } catch {
             throw DuckAiNativeDataStoreError.fileReadError(error)
         }
-
-        return DuckAiFileContent(uuid: record.uuid, chatId: record.chatId, data: data)
     }
 
     public func listFiles() throws -> [DuckAiFileMetadata] {

@@ -326,6 +326,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the Suspend Tab / Resume Tab context menu actions for debugging purposes
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213883766662888?focus=true
     case tabSuspensionDebugging
+
+    case aiChatNativeStorage
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -548,6 +550,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .tabSuspensionDebugging:
             Config(source: .disabled)
+        case .aiChatNativeStorage:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         }

@@ -2922,6 +2922,11 @@ class MainViewController: UIViewController {
         if fromDeepLink, currentTab.tabModel.link != nil {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
             loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
+            // Collapse the input that was auto-expanded for the restored tab.
+            // This cancels any pending async activateInput because showCollapsed
+            // sets displayState to .collapsed, failing the guard in showExpanded's
+            // async block.
+            unifiedToggleInputCoordinator?.showCollapsed()
             return
         }
 

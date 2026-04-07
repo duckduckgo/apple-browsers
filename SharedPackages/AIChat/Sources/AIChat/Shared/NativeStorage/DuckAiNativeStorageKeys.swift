@@ -1,7 +1,7 @@
 //
-//  Logger+Multiple.swift
+//  DuckAiNativeStorageKeys.swift
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,13 +17,16 @@
 //
 
 import Foundation
-import os.log
+import Persistence
 
-public extension Logger {
-    static let general = Logger(subsystem: "General", category: "")
+public enum DuckAiNativeStorageKeyNames: String, StorageKeyDescribing {
+    case migrationDone = "duckAiNativeStorage-migrationDone"
+    case settings = "duckAiNativeStorage-settings"
+}
 
-    static let contentBlocking = Logger(subsystem: "Content Blocking", category: "")
-    static let passwordManager = Logger(subsystem: "Password Manager", category: "")
-    static let autoconsent = Logger(subsystem: "Autoconsent", category: "")
-    static let nativeStorageDebug = Logger(subsystem: "AIChatNativeStorage", category: "AIChat")
+public struct DuckAiNativeStorageSettings: StoringKeys {
+    public init() {}
+
+    public let migrationDone = StorageKey<Bool>(DuckAiNativeStorageKeyNames.migrationDone)
+    public let settings = StorageKey<Data>(DuckAiNativeStorageKeyNames.settings)
 }

@@ -1,7 +1,7 @@
 //
-//  Logger+Multiple.swift
+//  DuckAiNativeDataStoreError.swift
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@
 //
 
 import Foundation
-import os.log
 
-public extension Logger {
-    static let general = Logger(subsystem: "General", category: "")
-
-    static let contentBlocking = Logger(subsystem: "Content Blocking", category: "")
-    static let passwordManager = Logger(subsystem: "Password Manager", category: "")
-    static let autoconsent = Logger(subsystem: "Autoconsent", category: "")
-    static let nativeStorageDebug = Logger(subsystem: "AIChatNativeStorage", category: "AIChat")
+public enum DuckAiNativeDataStoreError: Error {
+    case databaseError(Error)
+    case fileWriteError(Error)
+    case fileReadError(Error)
+    case fileNotFound(String)
+    case directoryCreationFailed(Error)
+    case invalidFileIdentifier
 }

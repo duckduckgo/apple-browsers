@@ -28,11 +28,18 @@ struct BurnerHomePageView: View {
     enum Const {
         static let verticalPadding = 40.0
         static let searchBoxVerticalSpacing = 24.0
+        static let promoTopPadding = 16.0
+        static let promoCardSpacing = 16.0
     }
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: AppearancePreferences
     @EnvironmentObject var themeManager: ThemeManager
+
+    var showSubscriptionPromo: Bool = false
+    var isEligibleForFreeTrial: Bool = false
+    var onPromoButtonTap: (() -> Void)?
+    var onPromoClose: (() -> Void)?
 
     private var backgroundColor: Color {
         Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
@@ -58,44 +65,56 @@ struct BurnerHomePageView: View {
         GeometryReader { geometry in
             ZStack {
                 ScrollView {
-                    VStack(spacing: Const.searchBoxVerticalSpacing) {
-                        Spacer(minLength: Const.verticalPadding)
-
-                        Group {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
-                                    .background(Color.homeFavoritesBackground)
-                                    .cornerRadius(12)
-
-                                VStack(alignment: .leading, spacing: 16) {
-                                    HStack {
-                                        Image(.updatedBurnerWindowHome)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 64, height: 48)
-                                            .padding(.leading, -15)
-                                            .padding(.top, -5)
-
-                                        Text(UserText.burnerWindowHeader)
-                                            .font(.system(size: 22, weight: .bold))
-                                            .foregroundColor(Color.primary)
-                                            .padding(.leading, -6)
-                                    }
-
-                                    FeaturesBox()
-                                        .padding(.top, 10)
-                                }
-                                .padding(.horizontal, 40)
-                            }
-                            .frame(height: Self.height)
+                    VStack(spacing: 0) {
+                        if showSubscriptionPromo {
+                            SubscriptionPromoView(
+                                buttonStyle: isEligibleForFreeTrial ? .tryForFree : .learnMore,
+                                onButtonTap: { onPromoButtonTap?() },
+                                onClose: { onPromoClose?() }
+                            )
+                            .frame(width: Self.targetWidth)
+                            .padding(.top, Const.promoTopPadding)
                         }
-                        .frame(width: Self.targetWidth)
 
-                        Spacer(minLength: Const.verticalPadding)
+                        VStack(spacing: Const.searchBoxVerticalSpacing) {
+                            Spacer(minLength: Const.verticalPadding)
+
+                            Group {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
+                                        .background(Color.homeFavoritesBackground)
+                                        .cornerRadius(12)
+
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        HStack {
+                                            Image(.updatedBurnerWindowHome)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 64, height: 48)
+                                                .padding(.leading, -15)
+                                                .padding(.top, -5)
+
+                                            Text(UserText.burnerWindowHeader)
+                                                .font(.system(size: 22, weight: .bold))
+                                                .foregroundColor(Color.primary)
+                                                .padding(.leading, -6)
+                                        }
+
+                                        FeaturesBox()
+                                            .padding(.top, 10)
+                                    }
+                                    .padding(.horizontal, 40)
+                                }
+                                .frame(height: Self.height)
+                            }
+                            .frame(width: Self.targetWidth)
+
+                            Spacer(minLength: Const.verticalPadding)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: max(geometry.size.height - (showSubscriptionPromo ? Const.promoTopPadding + 80 : 0), Self.totalHeight))
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: max(geometry.size.height, Self.totalHeight))
                 }
             }
             .background(backgroundColor)

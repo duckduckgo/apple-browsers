@@ -386,7 +386,7 @@ enum GeneralPixel: PixelKitEvent {
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
-    case dbValueTransformerRegistrationError(error: Error)
+    case dbValueTransformerRegistrationError
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 

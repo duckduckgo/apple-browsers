@@ -80,7 +80,7 @@ struct BurnerHomePageView: View {
                                         Text(UserText.burnerWindowHeader)
                                             .font(.system(size: 22, weight: .bold))
                                             .foregroundColor(Color.primary)
-                                            .padding(.leading, -10)
+                                            .padding(.leading, -6)
                                     }
 
                                     FeaturesBox()

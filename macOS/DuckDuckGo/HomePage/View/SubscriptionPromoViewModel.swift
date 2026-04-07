@@ -81,11 +81,6 @@ final class SubscriptionPromoViewModel: ObservableObject {
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
     }
 
-    func onFireTabAppeared() {
-        persistor.fireTabVisitCount += 1
-        updatePromoVisibility()
-    }
-
     func dismiss() {
         persistor.promoDismissedDate = Date()
         shouldShowPromo = false
@@ -97,9 +92,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
         onButtonAction?()
     }
 
-    // MARK: - Private
-
-    private func updatePromoVisibility() {
+    func updatePromoVisibility() {
         guard isUSLocale else {
             shouldShowPromo = false
             return
@@ -109,7 +102,8 @@ final class SubscriptionPromoViewModel: ObservableObject {
             shouldShowPromo = false
             return
         }
-
+        
+        print("👀 fire tab visit count \(persistor.fireTabVisitCount)")
         guard persistor.fireTabVisitCount >= Self.requiredVisitCount else {
             shouldShowPromo = false
             return

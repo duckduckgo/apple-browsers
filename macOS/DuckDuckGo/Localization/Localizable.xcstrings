@@ -98666,6 +98666,54 @@
         }
       }
     },
+    "subscription.promo.learn.more" : {
+      "comment" : "Button title to learn more about subscription on promo card",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Learn More"
+          }
+        }
+      }
+    },
+    "subscription.promo.subtitle" : {
+      "comment" : "Subtitle for subscription promo card shown on the Fire Window home page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Protect more of what you do online."
+          }
+        }
+      }
+    },
+    "subscription.promo.title" : {
+      "comment" : "Title for subscription promo card shown on the Fire Window home page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go beyond the Fire Window with our VPN"
+          }
+        }
+      }
+    },
+    "subscription.promo.try.for.free" : {
+      "comment" : "Button title for free trial offer on subscription promo card",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try For Free"
+          }
+        }
+      }
+    },
     "subscription.settings.menu.item" : {
       "comment" : "Title for Subscription Settings item in the options menu",
       "extractionState" : "extracted_with_value",

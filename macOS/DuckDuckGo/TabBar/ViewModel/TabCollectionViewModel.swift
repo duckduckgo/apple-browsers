@@ -399,6 +399,10 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+            if isBurner {
+                var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+                persistor.fireTabVisitCount += 1
+            }
         }
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
         if selected {

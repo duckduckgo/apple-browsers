@@ -33,11 +33,10 @@ final class BurnerHomePageViewController: NSViewController {
     }
 
     init(appearancePreferences: AppearancePreferences? = nil,
-         themeManager: ThemeManager? = nil,
-         subscriptionPromoViewModel: SubscriptionPromoViewModel? = nil) {
+         themeManager: ThemeManager? = nil) {
         self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
-        self.subscriptionPromoViewModel = subscriptionPromoViewModel ?? SubscriptionPromoViewModel(
+        self.subscriptionPromoViewModel = SubscriptionPromoViewModel(
             subscriptionManager: NSApp.delegateTyped.subscriptionManager
         )
 
@@ -49,12 +48,21 @@ final class BurnerHomePageViewController: NSViewController {
     }
 
     override func loadView() {
-        let rootView = BurnerHomePageView()
+        let rootView = BurnerHomePageView(promoViewModel: subscriptionPromoViewModel)
             .environmentObject(appearancePreferences)
             .environmentObject(themeManager)
-            .environmentObject(subscriptionPromoViewModel)
 
         self.view = NSHostingView(rootView: rootView)
+    }
+
+    private var hasEvaluatedPromo = false
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        if !hasEvaluatedPromo {
+            hasEvaluatedPromo = true
+            subscriptionPromoViewModel.updatePromoVisibility()
+        }
     }
 
 }

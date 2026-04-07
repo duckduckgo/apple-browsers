@@ -1092,9 +1092,7 @@ final class BrowserTabViewController: NSViewController {
             // We only use HTML New Tab Page in regular windows for now
             if tabCollectionViewModel.isBurner {
                 removeAllTabContent()
-                let burnerHomePage = burnerHomePageViewControllerCreatingIfNeeded()
-                burnerHomePage.subscriptionPromoViewModel.onFireTabAppeared()
-                addAndLayoutChildBesideSidebar(burnerHomePage)
+                addAndLayoutChildBesideSidebar(burnerHomePageViewControllerCreatingIfNeeded())
             } else {
                 updateTabIfNeeded(tabViewModel: tabViewModel)
             }
@@ -1212,16 +1210,19 @@ final class BrowserTabViewController: NSViewController {
         return burnerHomePageViewController ?? {
             let burnerHomePageViewController = BurnerHomePageViewController()
             burnerHomePageViewController.openSubscriptionPage = { [weak self] in
-                guard let self,
-                      let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
-                          SubscriptionFunnelOrigin.fireWindowPromo.rawValue
-                      )?.url else { return }
-                let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true, burnerMode: self.tabCollectionViewModel.burnerMode)
-                self.tabCollectionViewModel.append(tab: tab)
+                self?.openSubscriptionPurchasePage()
             }
             self.burnerHomePageViewController = burnerHomePageViewController
             return burnerHomePageViewController
         }()
+    }
+
+    private func openSubscriptionPurchasePage() {
+        guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
+            SubscriptionFunnelOrigin.fireWindowPromo.rawValue
+        )?.url else { return }
+        let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        tabCollectionViewModel.append(tab: tab)
     }
 
     // MARK: - DataBrokerProtection

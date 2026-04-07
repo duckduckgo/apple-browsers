@@ -32,10 +32,11 @@ struct BurnerHomePageView: View {
         static let estimatedPromoCardHeight = 80.0
     }
 
+    @ObservedObject var promoViewModel: SubscriptionPromoViewModel
+
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: AppearancePreferences
     @EnvironmentObject var themeManager: ThemeManager
-    @EnvironmentObject var promoViewModel: SubscriptionPromoViewModel
 
     private var backgroundColor: Color {
         Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 import SwiftUI
 
 // MARK: - Skip Environment Key
@@ -154,3 +156,5 @@ public struct TypingText: View {
             .onDisappear { state.stop() }
     }
 }
+
+#endif

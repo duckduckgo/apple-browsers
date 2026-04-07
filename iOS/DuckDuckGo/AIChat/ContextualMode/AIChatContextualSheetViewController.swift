@@ -423,7 +423,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         isFetchingRecentChats = true
         Task { @MainActor in
             defer { isFetchingRecentChats = false }
-            guard let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader) else { return }
+            guard let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader),
+                  view.window != nil, !isBeingDismissed else { return }
             showRecentChatsPopup(with: viewModel)
         }
     }

@@ -112,6 +112,6 @@ public struct DefaultKeychainService: KeychainServicing {
     }
 
     public func add(_ attributes: [String: Any], _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
-        SecItemAdd(attributes as CFDictionary, nil)
+        SecItemAdd(attributes as CFDictionary, result)
     }
 }

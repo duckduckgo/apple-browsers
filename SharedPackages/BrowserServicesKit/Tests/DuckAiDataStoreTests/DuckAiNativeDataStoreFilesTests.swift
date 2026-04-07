@@ -52,7 +52,7 @@ final class DuckAiNativeDataStoreFilesTests: XCTestCase {
         try sut.putFile(uuid: uuid, chatId: chatId, data: data)
 
         let result = try sut.getFile(uuid: uuid)
-        XCTAssertEqual(result, DuckAiFileContent(uuid: uuid, chatId: chatId, data: data))
+        XCTAssertEqual(result, DuckAiFileContent(uuid: uuid.lowercased(), chatId: chatId, data: data))
     }
 
     func testWhenPutFileThenFileExistsOnDisk() throws {
@@ -79,8 +79,8 @@ final class DuckAiNativeDataStoreFilesTests: XCTestCase {
         XCTAssertEqual(metadata.count, 2)
 
         let sorted = metadata.sorted { $0.uuid < $1.uuid }
-        XCTAssertEqual(sorted[0], DuckAiFileMetadata(uuid: uuid1, chatId: "chat-1", dataSize: data1.count))
-        XCTAssertEqual(sorted[1], DuckAiFileMetadata(uuid: uuid2, chatId: "chat-2", dataSize: data2.count))
+        XCTAssertEqual(sorted[0], DuckAiFileMetadata(uuid: uuid1.lowercased(), chatId: "chat-1", dataSize: data1.count))
+        XCTAssertEqual(sorted[1], DuckAiFileMetadata(uuid: uuid2.lowercased(), chatId: "chat-2", dataSize: data2.count))
     }
 
     func testWhenDeleteFileThenFileRemovedFromDiskAndDb() throws {
@@ -129,7 +129,7 @@ final class DuckAiNativeDataStoreFilesTests: XCTestCase {
         XCTAssertEqual(files.count, 1)
 
         let result = try sut.getFile(uuid: uuid)
-        XCTAssertEqual(result, DuckAiFileContent(uuid: uuid, chatId: "chat-1", data: updatedData))
+        XCTAssertEqual(result, DuckAiFileContent(uuid: uuid.lowercased(), chatId: "chat-1", data: updatedData))
     }
 
     // MARK: - UUID Validation

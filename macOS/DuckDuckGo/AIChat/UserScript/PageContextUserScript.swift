@@ -66,31 +66,55 @@ final class PageContextUserScript: NSObject, Subfeature {
         broker?.push(method: MessageName.collect.rawValue, params: nil, for: self, into: webView)
     }
 
-    /// Requests collecting page context and awaits the result.
-    /// Used by the tab picker to extract content from a specific tab.
+    /// Requests page context collection and awaits the result with a timeout.
+    ///
+    /// Used by the tab picker to extract content from a specific tab. The page context
+    /// collection is fire-and-forget (`collect()`), with results arriving asynchronously
+    /// via `collectionResultSubject`. This method bridges that Combine publisher into
+    /// structured concurrency by racing two tasks:
+    ///
+    /// 1. An `AsyncStream` that wraps the Combine publisher and completes on the first value
+    /// 2. A sleep task that returns `nil` after the timeout
+    ///
+    /// Whichever finishes first wins — `group.next()` returns the first result,
+    /// then `cancelAll()` cancels the loser. No shared mutable state is needed.
+    ///
+    /// - Parameter timeout: Maximum time in seconds to wait for the page script to respond. Defaults to 5 seconds.
+    /// - Returns: The collected page context data, or `nil` if the timeout expires or collection fails.
     @MainActor
-    func collectAndWait(timeout: TimeInterval = 5.0) async -> AIChatPageContextData? {
+    func collectAndWait(timeout: TimeInterval = 5) async -> AIChatPageContextData? {
         collect()
-        return await withCheckedContinuation { continuation in
-            var didResume = false
+
+        // Bridge the Combine subject into an AsyncStream so we can use it in a task group.
+        // Takes only the first value, then finishes. Cancellation tears down the subscription.
+        let stream = AsyncStream<AIChatPageContextData?> { continuation in
             var cancellable: AnyCancellable?
-            let timeoutTask = Task {
-                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                cancellable?.cancel()
-                if !didResume {
-                    didResume = true
-                    continuation.resume(returning: nil)
-                }
-            }
             cancellable = collectionResultSubject
                 .first()
                 .sink { result in
-                    timeoutTask.cancel()
-                    if !didResume {
-                        didResume = true
-                        continuation.resume(returning: result)
-                    }
+                    continuation.yield(result)
+                    continuation.finish()
+                    cancellable?.cancel()
                 }
+            continuation.onTermination = { _ in
+                cancellable?.cancel()
+            }
+        }
+
+        // Race the collection result against the timeout.
+        // The first task to complete provides the return value; the other is cancelled.
+        return await withTaskGroup(of: AIChatPageContextData?.self) { group in
+            group.addTask {
+                for await result in stream { return result }
+                return nil
+            }
+            group.addTask {
+                try? await Task.sleep(interval: timeout)
+                return nil
+            }
+            let result = await group.next()
+            group.cancelAll()
+            return result ?? nil
         }
     }
 

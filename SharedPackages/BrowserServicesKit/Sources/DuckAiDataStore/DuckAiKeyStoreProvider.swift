@@ -40,8 +40,7 @@ public final class DuckAiKeyStoreProvider {
             return existing
         }
         let key = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
-        try storeKey(key)
-        return key
+        return try storeKey(key)
     }
 
     // MARK: - Keychain Operations
@@ -71,7 +70,7 @@ public final class DuckAiKeyStoreProvider {
         }
     }
 
-    private func storeKey(_ key: Data) throws {
+    private func storeKey(_ key: Data) throws -> Data {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: Self.keychainService,
@@ -81,7 +80,17 @@ public final class DuckAiKeyStoreProvider {
         ]
 
         let status = keychainService.add(query, nil)
-        guard status == errSecSuccess else {
+
+        switch status {
+        case errSecSuccess:
+            return key
+        case errSecDuplicateItem:
+            // Another process won the race — use its key, not ours.
+            guard let existing = try readKey() else {
+                throw DuckAiNativeDataStoreError.keychainError(status: status)
+            }
+            return existing
+        default:
             throw DuckAiNativeDataStoreError.keychainError(status: status)
         }
     }

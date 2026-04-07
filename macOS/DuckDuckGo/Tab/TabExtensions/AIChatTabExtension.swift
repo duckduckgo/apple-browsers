@@ -208,6 +208,11 @@ extension AIChatTabExtension: NavigationResponder {
             return .next
         }
 
+        // Allow internal iframe navigations (e.g. about:srcdoc created by duck.ai JS)
+        if navigationAction.url.scheme == "about" {
+            return .next
+        }
+
         // For all other hosts, open in a new tab and cancel sidebar navigation
         guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             return .next

@@ -235,12 +235,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
-    case enhancedDataClearingSettings
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091
-    case burnSingleTab
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
@@ -439,6 +433,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the fire button in the contextual AI chat sheet
     case contextualFireButton
+
+    /// Enables native-side storage for AI Chat (settings, chats, files)
+    case nativeStorage
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

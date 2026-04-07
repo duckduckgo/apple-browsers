@@ -109,8 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Karty a data vymazány";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Vymazat karty, data a chaty Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otevřít na pozadí";
@@ -3342,11 +3340,7 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Vymazat";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Vymazat karty a data";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Vymazat karty, data a chaty Duck.ai";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Zavře všechny otevřené karty";
@@ -3414,14 +3408,10 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Tlačítko Fire Button taky smaže historii Duck.ai, včetně připnutých chatů.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Vymazat chaty Duck.ai";
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Vymazat údaje o prohlížení";
 
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Automaticky vymazat data";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokonči své nastavení";
@@ -3441,11 +3431,7 @@
 /* Settings title for the customize section */
 "settings.customize" = "Přizpůsobit";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Vymaže všechny karty, chaty Duck.ai a data všech webů, které nechrání funkce Fireproof.";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Vymaže všechny karty a data všech webů, které nechrání funkce Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Vymazání dat";
@@ -3505,8 +3491,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animace tlačítka pro mazání";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Stránky s ochranou";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Stránky s ochranou";

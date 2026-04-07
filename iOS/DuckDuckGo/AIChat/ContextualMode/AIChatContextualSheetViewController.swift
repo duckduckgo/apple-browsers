@@ -517,6 +517,7 @@ private extension AIChatContextualSheetViewController {
         guard suggestionsReader != nil else { return }
         Task { @MainActor in
             let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader)
+            guard view.window != nil, !isBeingDismissed else { return }
             recentChatsButton.isHidden = viewModel == nil
         }
     }

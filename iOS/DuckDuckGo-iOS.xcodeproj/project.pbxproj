@@ -1920,6 +1920,12 @@
 		A1F4C5042F8A300000D1A111 /* DataImportHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5012F8A300000D1A111 /* DataImportHubView.swift */; };
 		A1F4C5052F8A300000D1A111 /* DataImportHubViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5022F8A300000D1A111 /* DataImportHubViewController.swift */; };
 		A1F4C5062F8A300000D1A111 /* DataImportHubViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5032F8A300000D1A111 /* DataImportHubViewModel.swift */; };
+		A1F4C50D2F8B000000D1A111 /* ImportSourceDetailConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5082F8B000000D1A111 /* ImportSourceDetailConfig.swift */; };
+		A1F4C50E2F8B000000D1A111 /* ImportSourceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5092F8B000000D1A111 /* ImportSourceSelectionView.swift */; };
+		A1F4C50F2F8B000000D1A111 /* ImportSourceSelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C50A2F8B000000D1A111 /* ImportSourceSelectionViewController.swift */; };
+		A1F4C5102F8B000000D1A111 /* ImportSourceSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C50B2F8B000000D1A111 /* ImportSourceSelectionViewModel.swift */; };
+		A1F4C5112F8B000000D1A111 /* ImportSourceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */; };
+		A1F4C5122F8B000000D1A111 /* ImportSourceDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */; };
 		C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C292D4C0F1A00B6BDF6 /* DataImportViewController.swift */; };
 		C1C23C2F2D4C0F1A00B6BDF6 /* DataImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C282D4C0F1A00B6BDF6 /* DataImportView.swift */; };
 		C1C23C302D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C2D2D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift */; };
@@ -4457,6 +4463,12 @@
 		A1F4C5012F8A300000D1A111 /* DataImportHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubView.swift; sourceTree = "<group>"; };
 		A1F4C5022F8A300000D1A111 /* DataImportHubViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubViewController.swift; sourceTree = "<group>"; };
 		A1F4C5032F8A300000D1A111 /* DataImportHubViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubViewModel.swift; sourceTree = "<group>"; };
+		A1F4C5082F8B000000D1A111 /* ImportSourceDetailConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceDetailConfig.swift; sourceTree = "<group>"; };
+		A1F4C5092F8B000000D1A111 /* ImportSourceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceSelectionView.swift; sourceTree = "<group>"; };
+		A1F4C50A2F8B000000D1A111 /* ImportSourceSelectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceSelectionViewController.swift; sourceTree = "<group>"; };
+		A1F4C50B2F8B000000D1A111 /* ImportSourceSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceSelectionViewModel.swift; sourceTree = "<group>"; };
+		A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceDetailView.swift; sourceTree = "<group>"; };
+		A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceDetailViewController.swift; sourceTree = "<group>"; };
 		C1C23C252D4C0F1A00B6BDF6 /* DataImportSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryView.swift; sourceTree = "<group>"; };
 		C1C23C262D4C0F1A00B6BDF6 /* DataImportSummaryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewController.swift; sourceTree = "<group>"; };
 		C1C23C272D4C0F1A00B6BDF6 /* DataImportSummaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewModel.swift; sourceTree = "<group>"; };
@@ -9202,6 +9214,12 @@
 				A1F4C5012F8A300000D1A111 /* DataImportHubView.swift */,
 				A1F4C5022F8A300000D1A111 /* DataImportHubViewController.swift */,
 				A1F4C5032F8A300000D1A111 /* DataImportHubViewModel.swift */,
+				A1F4C5082F8B000000D1A111 /* ImportSourceDetailConfig.swift */,
+				A1F4C5092F8B000000D1A111 /* ImportSourceSelectionView.swift */,
+				A1F4C50A2F8B000000D1A111 /* ImportSourceSelectionViewController.swift */,
+				A1F4C50B2F8B000000D1A111 /* ImportSourceSelectionViewModel.swift */,
+				A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */,
+				A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */,
 			);
 			path = Hub;
 			sourceTree = "<group>";
@@ -12397,6 +12415,12 @@
 				A1F4C5042F8A300000D1A111 /* DataImportHubView.swift in Sources */,
 				A1F4C5052F8A300000D1A111 /* DataImportHubViewController.swift in Sources */,
 				A1F4C5062F8A300000D1A111 /* DataImportHubViewModel.swift in Sources */,
+				A1F4C50D2F8B000000D1A111 /* ImportSourceDetailConfig.swift in Sources */,
+				A1F4C50E2F8B000000D1A111 /* ImportSourceSelectionView.swift in Sources */,
+				A1F4C50F2F8B000000D1A111 /* ImportSourceSelectionViewController.swift in Sources */,
+				A1F4C5102F8B000000D1A111 /* ImportSourceSelectionViewModel.swift in Sources */,
+				A1F4C5112F8B000000D1A111 /* ImportSourceDetailView.swift in Sources */,
+				A1F4C5122F8B000000D1A111 /* ImportSourceDetailViewController.swift in Sources */,
 				C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */,
 				C1C23C2F2D4C0F1A00B6BDF6 /* DataImportView.swift in Sources */,
 				80C948022F551DCD002EDB79 /* BrowsingMode.swift in Sources */,

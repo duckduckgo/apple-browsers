@@ -1,0 +1,180 @@
+//
+//  ImportSourceDetailConfig.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import DesignResourcesKitIcons
+
+enum ImportPasswordSource: CaseIterable, Identifiable {
+    case passwordsApp
+    case safari
+    case chrome
+    case syncFromDuckDuckGo
+
+    var id: String {
+        switch self {
+        case .passwordsApp: return "passwordsApp"
+        case .safari: return "safari"
+        case .chrome: return "chrome"
+        case .syncFromDuckDuckGo: return "syncFromDuckDuckGo"
+        }
+    }
+
+    enum Section: CaseIterable {
+        case importFrom
+        case syncFrom
+
+        var title: String {
+            switch self {
+            case .importFrom:
+                return UserText.importSourceSectionImportFrom
+            case .syncFrom:
+                return UserText.importSourceSectionSyncFrom
+            }
+        }
+
+        var sources: [ImportPasswordSource] {
+            switch self {
+            case .importFrom:
+                return [.passwordsApp, .safari, .chrome]
+            case .syncFrom:
+                return [.syncFromDuckDuckGo]
+            }
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .passwordsApp:
+            return UserText.importSourcePasswordsApp
+        case .safari:
+            return UserText.importSourceSafari
+        case .chrome:
+            return UserText.importSourceChrome
+        case .syncFromDuckDuckGo:
+            return UserText.importSourceSyncFromDuckDuckGo
+        }
+    }
+
+    var listIcon: Image {
+        switch self {
+        case .passwordsApp:
+            return Image(.passwordsMulticolor)
+        case .safari:
+            return Image(.safariMulticolor)
+        case .chrome:
+            return Image(.chromeMulticolor)
+        case .syncFromDuckDuckGo:
+            return Image(.appDuckDuckGo32)
+        }
+    }
+
+    // MARK: - Detail Screen Content
+
+    var detailIcon: Image {
+        switch self {
+        case .passwordsApp:
+            return Image(uiImage: DesignSystemImages.Color.Size96.extensionPasswords)
+        case .safari:
+            return Image(uiImage: DesignSystemImages.Color.Size96.extensionSafari)
+        case .chrome:
+            return Image(uiImage: DesignSystemImages.Color.Size96.extensionChrome)
+        case .syncFromDuckDuckGo:
+            return Image(uiImage: DesignSystemImages.Color.Size96.syncPasswordsDesktop)
+        }
+    }
+
+    var detailTitle: String {
+        switch self {
+        case .passwordsApp:
+            return UserText.importDetailPasswordsTitle
+        case .safari:
+            return UserText.importDetailSafariTitle
+        case .chrome:
+            return UserText.importDetailChromeTitle
+        case .syncFromDuckDuckGo:
+            return UserText.importDetailSyncTitle
+        }
+    }
+
+    var detailDescription: String {
+        switch self {
+        case .passwordsApp:
+            return UserText.importDetailPasswordsDescription
+        case .safari:
+            return UserText.importDetailSafariDescription
+        case .chrome:
+            return UserText.importDetailChromeDescription
+        case .syncFromDuckDuckGo:
+            return UserText.importDetailSyncDescription
+        }
+    }
+
+    var steps: [String] {
+        switch self {
+        case .passwordsApp:
+            return [
+                UserText.importDetailPasswordsStep1,
+                UserText.importDetailPasswordsStep2,
+                UserText.importDetailPasswordsStep3
+            ]
+        case .chrome:
+            return [
+                UserText.importDetailChromeStep1,
+                UserText.importDetailChromeStep2,
+                UserText.importDetailChromeStep3
+            ]
+        case .safari, .syncFromDuckDuckGo:
+            return []
+        }
+    }
+
+    var primaryButtonTitle: String? {
+        switch self {
+        case .safari:
+            return UserText.importDetailSafariExportButton
+        case .syncFromDuckDuckGo:
+            return UserText.importDetailSyncButton
+        case .passwordsApp, .chrome:
+            return nil
+        }
+    }
+
+    var primaryButtonHasQRIcon: Bool {
+        switch self {
+        case .syncFromDuckDuckGo: return true
+        default: return false
+        }
+    }
+
+    var bottomSection: BottomSection? {
+        switch self {
+        case .safari:
+            return .uploadFile
+        case .syncFromDuckDuckGo:
+            return .getDesktopBrowser
+        case .passwordsApp, .chrome:
+            return nil
+        }
+    }
+
+    enum BottomSection {
+        case uploadFile
+        case getDesktopBrowser
+    }
+}

@@ -38,6 +38,7 @@ final class DataImportHubViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        setupActions()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -46,10 +47,38 @@ final class DataImportHubViewController: UIViewController {
     }
 
     private func setupView() {
-        // First stacked PR: hub rows are intentionally non-navigational placeholders.
         let controller = UIHostingController(rootView: DataImportHubView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
         installChildViewController(controller)
+    }
+
+    private func setupActions() {
+        viewModel.onAction = { [weak self] action in
+            self?.handleAction(action)
+        }
+    }
+
+    private func handleAction(_ action: DataImportHubViewModel.Action) {
+        switch action {
+        case .importPasswords:
+            navigateToSourceSelection()
+        case .importBookmarksFromSafari, .uploadExportedFile:
+            // Will be tackled in subsequent PR
+            break
+        }
+    }
+
+    private func navigateToSourceSelection() {
+        let sourceSelectionVC = ImportSourceSelectionViewController()
+        sourceSelectionVC.onSourceSelected = { [weak self] source in
+            self?.navigateToSourceDetail(source)
+        }
+        navigationController?.pushViewController(sourceSelectionVC, animated: true)
+    }
+
+    private func navigateToSourceDetail(_ source: ImportPasswordSource) {
+        let detailVC = ImportSourceDetailViewController(source: source)
+        navigationController?.pushViewController(detailVC, animated: true)
     }
 
     private func callOnCancelledIfNeeded() {

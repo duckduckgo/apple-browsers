@@ -1,5 +1,5 @@
 //
-//  DataImportHubViewModel.swift
+//  ImportSourceSelectionViewModel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -18,19 +18,13 @@
 //
 
 import Foundation
-import SwiftUI
 
-final class DataImportHubViewModel: ObservableObject {
+final class ImportSourceSelectionViewModel: ObservableObject {
 
-    enum Action {
-        case importPasswords
-        case importBookmarksFromSafari
-        case uploadExportedFile
-    }
+    let sections = ImportPasswordSource.Section.allCases
+    var onSourceSelected: ((ImportPasswordSource) -> Void)?
 
-    var onAction: ((Action) -> Void)?
-
-    func select(_ action: Action) {
-        onAction?(action)
+    func select(_ source: ImportPasswordSource) {
+        onSourceSelected?(source)
     }
 }

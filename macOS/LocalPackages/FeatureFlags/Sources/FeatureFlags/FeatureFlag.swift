@@ -514,7 +514,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatMultiplePageContexts:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts)), category: .duckAI)
         case .aiChatAttachMoreTabs:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.attachMoreTabs)), category: .duckAI)
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.attachMoreTabs)), category: .duckAI)
         case .aiChatSidebarResizable:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable)), category: .duckAI)
         case .aiChatNtpRecentChats:

@@ -1151,9 +1151,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared
         )
 
-        if let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
+           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
-            duckAiNativeStorageHandler = try? DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL).handler
+            do {
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL).handler
+            } catch {
+                Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
+                duckAiNativeStorageHandler = nil
+            }
         } else {
             duckAiNativeStorageHandler = nil
         }

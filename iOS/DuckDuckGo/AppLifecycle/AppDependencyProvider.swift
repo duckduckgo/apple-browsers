@@ -292,9 +292,15 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               freeTrialConversionService: freeTrialConversionService
         )
 
-        if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
+        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
+           let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
             let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
-            duckAiNativeStorageHandler = try? DuckAiNativeStorageProvider(containerURL: containerURL).handler
+            do {
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: containerURL).handler
+            } catch {
+                Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
+                duckAiNativeStorageHandler = nil
+            }
         } else {
             duckAiNativeStorageHandler = nil
         }

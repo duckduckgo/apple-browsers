@@ -1,4 +1,4 @@
-    //
+//
 //  RebrandedOnboardingView.swift
 //  DuckDuckGo
 //
@@ -62,6 +62,17 @@ enum OnboardingBubbleAnimationMetrics {
     static var isCompactDevice: Bool {
         let screen = UIScreen.main.bounds.size
         return screen.width < referenceScreenSize.width || screen.height < referenceScreenSize.height
+    }
+
+    /// Large-screen threshold (iPad Pro 13″ portrait: 1032 × 1376 pt).
+    /// On large screens, Dax animation positions may be adjusted to avoid looking off-center.
+    static let largeScreenThreshold = CGSize(width: 1000, height: 1300)
+
+    /// `true` on large devices (e.g. iPad Pro 13″) where Dax positioning needs adjustment.
+    static var isLargeScreen: Bool {
+        let screen = UIScreen.main.bounds.size
+        let maxDimension = max(screen.width, screen.height)
+        return maxDimension >= largeScreenThreshold.height
     }
 }
 

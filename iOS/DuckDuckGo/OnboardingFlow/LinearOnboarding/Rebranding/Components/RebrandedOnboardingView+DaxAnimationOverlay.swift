@@ -102,6 +102,33 @@ struct DaxAnimation {
         self.loop = loop
         self.fadeInTime = fadeInTime
     }
+
+    init(animationName: String,
+         size: CGSize,
+         position: DaxAnimation.Position,
+         largeScreenPosition: DaxAnimation.Position?,
+         entranceOffset: CGPoint? = nil,
+         exitOffset: CGPoint? = nil,
+         twoStagesAnimation: Double? = nil,
+         exitDuration: TimeInterval? = nil,
+         fadeOut: Bool = false,
+         loop: Bool = false,
+         fadeInTime: TimeInterval? = nil) {
+        self.animationName = animationName
+        self.size = size
+        if let largeScreenPosition, OnboardingBubbleAnimationMetrics.isLargeScreen {
+            self.position = largeScreenPosition
+        } else {
+            self.position = position
+        }
+        self.entranceOffset = entranceOffset
+        self.exitOffset = exitOffset
+        self.twoStagesAnimation = twoStagesAnimation
+        self.exitDuration = exitDuration
+        self.fadeOut = fadeOut
+        self.loop = loop
+        self.fadeInTime = fadeInTime
+    }
 }
 
 // MARK: - Dax Animation Overlay

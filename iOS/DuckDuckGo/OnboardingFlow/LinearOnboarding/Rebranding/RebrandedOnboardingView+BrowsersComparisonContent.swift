@@ -28,13 +28,15 @@ extension OnboardingRebranding.OnboardingView {
     struct BrowsersComparisonContent: View {
 
         /// Dax "Wing Wave Up" animation
-        static let daxAnimation = DaxAnimation(
-            animationName: "Dax-BrowserComparison",
-            size: CGSize(width: 159.33, height: 180.33),
-            position: .bottom(),
-            twoStagesAnimation: 0.5,
-            exitDuration: 1.0
-        )
+        static var daxAnimation: DaxAnimation {
+            DaxAnimation(
+                animationName: "Dax-WingBottom",
+                size: CGSize(width: 159.33, height: 180.33),
+                position: .bottom(),
+                twoStagesAnimation: 0.5,
+                exitDuration: 1.0
+            )
+        }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.scenePhase) private var scenePhase

@@ -27,15 +27,18 @@ extension OnboardingRebranding.OnboardingView {
     struct IntroDialogContent: View {
 
         /// Dax "Thumbs Up" animation
-        static let daxAnimation = DaxAnimation(
-            animationName: "Dax-Intro",
-            size: CGSize(width: 258, height: 352),
-            position: .left(bottomPadding: 110.0, xOffset: -40.0),
-            entranceOffset: CGPoint(x: -100, y: 0),
-            exitOffset: CGPoint(x: -258, y: 0),
-            exitDuration: 0.5,
-            fadeOut: true
-        )
+        static var daxAnimation: DaxAnimation {
+            DaxAnimation(
+                animationName: "Dax-ThumbUp",
+                size: CGSize(width: 258, height: 352),
+                position: .left(bottomPadding: 110.0, xOffset: -40.0),
+                largeScreenPosition: .left(bottomPadding: 110.0, xOffset: 200.0),
+                entranceOffset: CGPoint(x: -100, y: 0),
+                exitOffset: CGPoint(x: -258, y: 0),
+                exitDuration: 0.5,
+                fadeOut: true
+            )
+        }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
 

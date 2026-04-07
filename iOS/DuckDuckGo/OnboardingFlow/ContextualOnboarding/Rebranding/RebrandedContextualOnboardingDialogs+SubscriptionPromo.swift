@@ -38,7 +38,7 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         static let daxAnimation = DaxAnimation(
-            animationName: "Dax-Subscription",
+            animationName: "Dax-FloatingLeft",
             size: CGSize(width: 86.33, height: 154),
             position: .left(bottomPadding: 18)
         )

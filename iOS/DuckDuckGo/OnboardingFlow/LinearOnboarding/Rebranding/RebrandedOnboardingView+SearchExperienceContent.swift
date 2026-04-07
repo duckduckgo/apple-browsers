@@ -25,13 +25,14 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12192-50600
     struct SearchExperienceContent: View {
 
-        static let daxAnimation = DaxAnimation(
-            animationName: "Dax-SearchExperience",
-            size: CGSize(width: 211, height: 390),
-            position: .left(),
-            twoStagesAnimation: 0.5,
-            exitDuration: 1.0
-        )
+        static var daxAnimation: DaxAnimation {
+            DaxAnimation(
+                animationName: "Dax-WingLeft",
+                size: CGSize(width: 174, height: 208.33),
+                position: .left(bottomPadding: 70.0),
+                twoStagesAnimation: 0.5
+            )
+        }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
 

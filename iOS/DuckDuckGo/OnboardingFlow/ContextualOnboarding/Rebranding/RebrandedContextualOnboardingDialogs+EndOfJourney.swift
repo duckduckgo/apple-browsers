@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Lottie
 import SwiftUI
 import Onboarding
 import MetricBuilder
@@ -44,37 +45,69 @@ extension OnboardingRebranding {
         )
 
         var body: some View {
-            // ZStack(alignment: .top) + maxHeight fills the presenter's available space so that
-            // DaxAnimationOverlay's GeometryReader reports the true screen height and can anchor
-            // Dax to the real bottom of the screen rather than the bottom of the bubble.
-            ZStack(alignment: .top) {
-                if !OnboardingBubbleAnimationMetrics.isCompactDevice {
-                    DaxAnimationOverlay(animation: Self.daxAnimation, playForward: true, isExiting: false)
-                }
-
-                OnboardingBubbleView.withDismissButton(
-                    tailPosition: OnboardingBubbleAnimationMetrics.isCompactDevice ? nil : .bottom(offset: 0.2, direction: .leading),
-                    onDismiss: onManualDismiss
+            OnboardingBubbleView.withDismissButton(
+                tailPosition: OnboardingBubbleAnimationMetrics.isCompactDevice ? nil : .bottom(offset: 0.2, direction: .leading),
+                onDismiss: onManualDismiss
+            ) {
+                OnboardingRebranding.ContextualDaxDialogContent(
+                    orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
+                    title: title,
+                    message: message
                 ) {
-                    OnboardingRebranding.ContextualDaxDialogContent(
-                        orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                        title: title,
-                        message: message
-                    ) {
-                        Button(action: dismissAction) {
-                            Text(cta)
-                        }
-                        .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
-                        .buttonStyle(theme.primaryButtonStyle.style)
+                    Button(action: dismissAction) {
+                        Text(cta)
                     }
+                    .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
+                    .buttonStyle(theme.primaryButtonStyle.style)
                 }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
-                .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(theme.contextualOnboardingMetrics.containerPadding)
+            .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+            .overlay {
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    ScreenBottomDaxOverlay(animation: Self.daxAnimation)
+                }
+            }
         }
     }
 
+}
+
+// MARK: - Screen-Bottom Dax Overlay
+
+/// Positions the Dax animation at the bottom of the screen using global coordinate calculation.
+/// The animation renders beyond the hosting controller's bounds (clipsToBounds = false).
+private struct ScreenBottomDaxOverlay: View {
+    let animation: DaxAnimation
+
+    /// Distance from the screen bottom to the bottom of the animation (above toolbar).
+    private let screenBottomPadding: CGFloat = 60
+
+    var body: some View {
+        GeometryReader { proxy in
+            let globalFrame = proxy.frame(in: .global)
+            let screenHeight = UIScreen.main.bounds.height
+
+            // How far below this overlay's bottom edge the screen bottom is.
+            let distanceToScreenBottom = screenHeight - globalFrame.maxY
+
+            // X: left-aligned with offset (matching .left(xOffset: -40) from daxAnimation).
+            let xCenter = animation.size.width / 2 + (-40 as CGFloat)
+
+            // Y: push from the overlay's local coordinate space down to the screen bottom,
+            // then offset upward by the padding and half the animation height.
+            let yCenter = proxy.size.height + distanceToScreenBottom - screenBottomPadding - animation.size.height / 2
+
+            Lottie.LottieView {
+                try await DotLottieFile.asset(named: animation.animationName)
+            }
+            .playbackMode(.playing(.toProgress(1, loopMode: .playOnce)))
+            .resizable()
+            .frame(width: animation.size.width, height: animation.size.height)
+            .position(x: xCenter, y: yCenter)
+        }
+        .allowsHitTesting(false)
+    }
 }
 
 private extension OnboardingRebranding.OnboardingEndOfJourneyDialog {

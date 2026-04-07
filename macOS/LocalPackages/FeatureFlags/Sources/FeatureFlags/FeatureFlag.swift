@@ -327,6 +327,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213883766662888?focus=true
     case tabSuspensionDebugging
 
+    /// https://app.asana.com/1/137249556945/project/1204912272578138/task/1213917854190605
+    case aiChatSidebarIframeNavFix
+
     case aiChatNativeStorage
 }
 
@@ -550,6 +553,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .tabSuspensionDebugging:
             Config(source: .disabled)
+        case .aiChatSidebarAllowAboutScheme:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarIframeNavFix)), category: .duckAI)
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
         case .autoplayPolicy:

@@ -442,6 +442,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables native-side storage for AI Chat (settings, chats, files)
     case nativeStorage
+
+    /// Prevents internal iframe navigations (about:srcdoc) from opening new tabs in the sidebar
+    case sidebarIframeNavFix
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

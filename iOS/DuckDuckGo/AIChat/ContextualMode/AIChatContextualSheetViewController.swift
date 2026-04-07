@@ -308,8 +308,10 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     deinit {
         let window = popupWindow
+        let reader = suggestionsReader
         MainActor.assumeIsolated {
             window?.isHidden = true
+            reader?.tearDown()
         }
     }
 

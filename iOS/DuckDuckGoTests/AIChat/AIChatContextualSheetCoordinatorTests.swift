@@ -65,7 +65,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             didRequestToLoadURLs.append(url)
         }
 
-        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool) {
             didRequestExpandURLs.append(url)
         }
 
@@ -260,7 +260,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let expandURL = URL(string: "https://duck.ai/chat/abc123")!
 
         // When
-        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
+        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL, shouldToggleSidebar: false)
 
         // Then
         XCTAssertEqual(mockDelegate.didRequestExpandURLs, [expandURL])
@@ -274,7 +274,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let expandURL = URL(string: "https://duck.ai/chat/abc123")!
 
         // When
-        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
+        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL, shouldToggleSidebar: false)
 
         // Then
         XCTAssertNotNil(sut.sheetViewController)

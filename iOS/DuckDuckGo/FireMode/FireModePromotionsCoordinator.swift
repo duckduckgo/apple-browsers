@@ -63,6 +63,22 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         self.userDefaults = userDefaults
     }
 
+    static func resetState(userDefaults: UserDefaults = .app) {
+        let allKeys = [
+            Keys.hasBurnedTabs,
+            Keys.hasVisitedFireMode,
+            Keys.firstSeenDate,
+            Keys.isDismissed,
+            Keys.isEngaged,
+            Keys.menuPromotionFirstShownDate,
+            Keys.menuPromotionShownCount,
+            Keys.menuPromotionEngaged
+        ]
+        for key in allKeys {
+            userDefaults.removeObject(forKey: key)
+        }
+    }
+
     // MARK: - State Triggers
 
     func markBurnPerformed() {

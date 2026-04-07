@@ -227,7 +227,10 @@ class SettingsLegacyViewProvider: ObservableObject {
         case .legacy(let importScreen):
             return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
         case .hub:
-            return DataImportHubViewController(syncService: syncService)
+            return DataImportHubViewController(syncService: syncService,
+                                                keyValueStore: keyValueStore,
+                                                bookmarksDatabase: bookmarksDatabase,
+                                                favoritesDisplayMode: appSettings.favoritesDisplayMode)
         }
     }
 

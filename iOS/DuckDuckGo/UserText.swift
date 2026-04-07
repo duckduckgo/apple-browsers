@@ -2451,6 +2451,11 @@ public struct UserText {
     public static let importDetailDoneExportingHeader = NSLocalizedString("data.import.detail.done-exporting-header", value: "Done Exporting?", comment: "Section header above the upload file row on the Safari import detail screen")
     public static let importDetailUploadFileRow = NSLocalizedString("data.import.detail.upload-file-row", value: "Upload Exported File...", comment: "Row label on import detail screens that opens a file picker to upload an exported password file")
 
+    // MARK: Safari Export Interstitial
+
+    public static let safariExportInterstitialTip = NSLocalizedString("data.import.safari.interstitial.tip", value: "Tip: Make sure to select\n\"Export to Files\"", comment: "Tip text on the Safari export interstitial reminding users to export to files")
+    public static let safariExportInterstitialButton = NSLocalizedString("data.import.safari.interstitial.button", value: "Open Settings to Export", comment: "Button on the Safari export interstitial that triggers the system import sheet")
+
     public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value: "No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")
     public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value: "The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")
     public static let dataImportFileTypeCsv = NSLocalizedString("data.import.file-type.csv", value: "CSV", comment: "File type for CSV files")

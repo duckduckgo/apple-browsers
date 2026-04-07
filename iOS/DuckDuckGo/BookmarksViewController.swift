@@ -688,7 +688,10 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         case .legacy(let importScreen):
             destinationViewController = makeDataImportViewController(importScreen: importScreen)
         case .hub:
-            destinationViewController = DataImportHubViewController(syncService: syncService)
+            destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                    keyValueStore: keyValueStore,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    favoritesDisplayMode: appSettings.favoritesDisplayMode)
         }
         navigationController?.setToolbarHidden(true, animated: true)
         navigationController?.pushViewController(destinationViewController, animated: true)

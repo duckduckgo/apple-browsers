@@ -186,7 +186,10 @@ final class AutofillSettingsViewController: UIViewController {
         case .legacy(let importScreen):
             destinationViewController = makeDataImportViewController(importScreen: importScreen)
         case .hub:
-            destinationViewController = DataImportHubViewController(syncService: syncService)
+            destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                    keyValueStore: keyValueStore,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    favoritesDisplayMode: favoritesDisplayMode)
         }
         navigationController?.pushViewController(destinationViewController, animated: true)
         Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])

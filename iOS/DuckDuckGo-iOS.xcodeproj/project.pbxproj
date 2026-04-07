@@ -1923,6 +1923,8 @@
 		A1F4C50D2F8B000000D1A111 /* ImportSourceDetailConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5082F8B000000D1A111 /* ImportSourceDetailConfig.swift */; };
 		A1F4C5112F8B000000D1A111 /* ImportSourceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */; };
 		A1F4C5122F8B000000D1A111 /* ImportSourceDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */; };
+		A1F4C5132F8C000000D1A111 /* SafariExportInterstitialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5142F8C000000D1A111 /* SafariExportInterstitialView.swift */; };
+		A1F4C5152F8C000000D1A111 /* SafariExportInterstitialViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5162F8C000000D1A111 /* SafariExportInterstitialViewController.swift */; };
 		C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C292D4C0F1A00B6BDF6 /* DataImportViewController.swift */; };
 		C1C23C2F2D4C0F1A00B6BDF6 /* DataImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C282D4C0F1A00B6BDF6 /* DataImportView.swift */; };
 		C1C23C302D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C2D2D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift */; };
@@ -4463,6 +4465,8 @@
 		A1F4C5082F8B000000D1A111 /* ImportSourceDetailConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceDetailConfig.swift; sourceTree = "<group>"; };
 		A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceDetailView.swift; sourceTree = "<group>"; };
 		A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceDetailViewController.swift; sourceTree = "<group>"; };
+		A1F4C5142F8C000000D1A111 /* SafariExportInterstitialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariExportInterstitialView.swift; sourceTree = "<group>"; };
+		A1F4C5162F8C000000D1A111 /* SafariExportInterstitialViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariExportInterstitialViewController.swift; sourceTree = "<group>"; };
 		C1C23C252D4C0F1A00B6BDF6 /* DataImportSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryView.swift; sourceTree = "<group>"; };
 		C1C23C262D4C0F1A00B6BDF6 /* DataImportSummaryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewController.swift; sourceTree = "<group>"; };
 		C1C23C272D4C0F1A00B6BDF6 /* DataImportSummaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewModel.swift; sourceTree = "<group>"; };
@@ -9211,6 +9215,8 @@
 				A1F4C5082F8B000000D1A111 /* ImportSourceDetailConfig.swift */,
 				A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */,
 				A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */,
+				A1F4C5142F8C000000D1A111 /* SafariExportInterstitialView.swift */,
+				A1F4C5162F8C000000D1A111 /* SafariExportInterstitialViewController.swift */,
 			);
 			path = Hub;
 			sourceTree = "<group>";
@@ -12409,6 +12415,8 @@
 				A1F4C50D2F8B000000D1A111 /* ImportSourceDetailConfig.swift in Sources */,
 				A1F4C5112F8B000000D1A111 /* ImportSourceDetailView.swift in Sources */,
 				A1F4C5122F8B000000D1A111 /* ImportSourceDetailViewController.swift in Sources */,
+				A1F4C5132F8C000000D1A111 /* SafariExportInterstitialView.swift in Sources */,
+				A1F4C5152F8C000000D1A111 /* SafariExportInterstitialViewController.swift in Sources */,
 				C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */,
 				C1C23C2F2D4C0F1A00B6BDF6 /* DataImportView.swift in Sources */,
 				80C948022F551DCD002EDB79 /* BrowsingMode.swift in Sources */,

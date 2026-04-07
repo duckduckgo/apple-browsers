@@ -20,17 +20,29 @@
 import UIKit
 import SwiftUI
 import DDGSync
+import Persistence
+import Bookmarks
 
 final class DataImportHubViewController: UIViewController {
 
     private let viewModel = DataImportHubViewModel()
-    private let syncService: DDGSyncing
     private let onCancelled: (() -> Void)?
     private var didCallOnCancelled = false
 
+    private let syncService: DDGSyncing
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let bookmarksDatabase: CoreDataDatabase
+    private let favoritesDisplayMode: FavoritesDisplayMode
+
     init(syncService: DDGSyncing,
+         keyValueStore: ThrowingKeyValueStoring,
+         bookmarksDatabase: CoreDataDatabase,
+         favoritesDisplayMode: FavoritesDisplayMode,
          onCancelled: (() -> Void)? = nil) {
         self.syncService = syncService
+        self.keyValueStore = keyValueStore
+        self.bookmarksDatabase = bookmarksDatabase
+        self.favoritesDisplayMode = favoritesDisplayMode
         self.onCancelled = onCancelled
         super.init(nibName: nil, bundle: nil)
     }
@@ -64,7 +76,12 @@ final class DataImportHubViewController: UIViewController {
 
     private func navigateToSource(_ source: ImportPasswordSource) {
         if source.hasDetailScreen {
-            let detailVC = ImportSourceDetailViewController(source: source)
+            let detailVC = ImportSourceDetailViewController(
+                source: source,
+                syncService: syncService,
+                keyValueStore: keyValueStore,
+                bookmarksDatabase: bookmarksDatabase,
+                favoritesDisplayMode: favoritesDisplayMode)
             navigationController?.pushViewController(detailVC, animated: true)
         } else {
             navigateToImportViaSync()

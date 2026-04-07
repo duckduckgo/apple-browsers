@@ -65,7 +65,7 @@ struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
 @MainActor
 final class SubscriptionPromoViewModel: ObservableObject {
 
-    private static let requiredVisitCount = 3
+    static let requiredVisitCount = 3
     private static let dismissCooldownDays = 28
 
     private let subscriptionManager: any SubscriptionManager
@@ -79,6 +79,11 @@ final class SubscriptionPromoViewModel: ObservableObject {
          persistor: SubscriptionPromoPersisting? = nil) {
         self.subscriptionManager = subscriptionManager
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+    }
+
+    func restoreState(shouldShowPromo: Bool, isEligibleForFreeTrial: Bool) {
+        self.shouldShowPromo = shouldShowPromo
+        self.isEligibleForFreeTrial = isEligibleForFreeTrial
     }
 
     func dismiss() {

@@ -1092,7 +1092,11 @@ final class BrowserTabViewController: NSViewController {
             // We only use HTML New Tab Page in regular windows for now
             if tabCollectionViewModel.isBurner {
                 removeAllTabContent()
-                addAndLayoutChildBesideSidebar(burnerHomePageViewControllerCreatingIfNeeded())
+                let burnerHomePage = burnerHomePageViewControllerCreatingIfNeeded()
+                if let tab = tabViewModel?.tab {
+                    burnerHomePage.updatePromoState(for: tab)
+                }
+                addAndLayoutChildBesideSidebar(burnerHomePage)
             } else {
                 updateTabIfNeeded(tabViewModel: tabViewModel)
             }

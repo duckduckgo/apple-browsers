@@ -401,7 +401,9 @@ final class TabCollectionViewModel: NSObject {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
             if isBurner {
                 var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
-                persistor.fireTabVisitCount += 1
+                if persistor.fireTabVisitCount < SubscriptionPromoViewModel.requiredVisitCount {
+                    persistor.fireTabVisitCount += 1
+                }
             }
         }
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)

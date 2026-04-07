@@ -55,13 +55,18 @@ final class BurnerHomePageViewController: NSViewController {
         self.view = NSHostingView(rootView: rootView)
     }
 
-    private var hasEvaluatedPromo = false
-
-    override func viewWillAppear() {
-        super.viewWillAppear()
-        if !hasEvaluatedPromo {
-            hasEvaluatedPromo = true
+    func updatePromoState(for tab: Tab) {
+        if let promoExtension = tab.subscriptionPromo, promoExtension.hasEvaluated {
+            subscriptionPromoViewModel.restoreState(
+                shouldShowPromo: promoExtension.shouldShowPromo,
+                isEligibleForFreeTrial: promoExtension.isEligibleForFreeTrial
+            )
+        } else {
             subscriptionPromoViewModel.updatePromoVisibility()
+            tab.subscriptionPromo?.markEvaluated(
+                shouldShowPromo: subscriptionPromoViewModel.shouldShowPromo,
+                isEligibleForFreeTrial: subscriptionPromoViewModel.isEligibleForFreeTrial
+            )
         }
     }
 

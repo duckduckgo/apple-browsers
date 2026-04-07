@@ -212,7 +212,7 @@ extension AIChatTabExtension: NavigationResponder {
         }
 
         // Allow internal iframe navigations (e.g. about:srcdoc created by duck.ai JS)
-        if featureFlagger.isFeatureOn(.aiChatSidebarIframeNavFix),
+        if featureFlagger.isFeatureOn(.aiChatSidebarAboutSchemeNavigationFix),
            navigationAction.url.scheme == "about" {
             return .next
         }

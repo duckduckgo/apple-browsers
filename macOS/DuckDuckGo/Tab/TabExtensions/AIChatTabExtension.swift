@@ -19,6 +19,8 @@
 import Navigation
 import Foundation
 import Combine
+import FeatureFlags
+import PrivacyConfig
 import WebKit
 import AIChat
 import BrowserServicesKit
@@ -35,6 +37,7 @@ final class AIChatTabExtension {
     private let isLoadedInSidebar: Bool
     private weak var webView: WKWebView?
     private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -45,9 +48,11 @@ final class AIChatTabExtension {
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
          isLoadedInSidebar: Bool,
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.isLoadedInSidebar = isLoadedInSidebar
         self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
         pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
@@ -209,7 +214,8 @@ extension AIChatTabExtension: NavigationResponder {
         }
 
         // Allow internal iframe navigations (e.g. about:srcdoc created by duck.ai JS)
-        if navigationAction.url.scheme == "about" {
+        if featureFlagger.isFeatureOn(.aiChatSidebarAboutSchemeNavigationFix),
+           navigationAction.url.scheme == "about" {
             return .next
         }
 

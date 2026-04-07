@@ -958,4 +958,18 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         guard let link = validLink else { return nil }
         return buildKeepSignInEntry(forLink: link, useSmallIcon: false)
     }
+
+    func makeFireModePromotionEntry() -> BrowsingMenuEntry? {
+        guard !tabModel.fireTab,
+              fireModePromotionCoordinator?.isMenuPromotionEligible == true else { return nil }
+        fireModePromotionCoordinator?.markMenuPromotionShown()
+        return .regular(name: UserText.fireModePromotionTitle,
+                        image: DesignSystemImages.Glyphs.Size24.fireTabs,
+                        detailBadge: UserText.fireModeMenuPromotionBadge) { [weak self] in
+            self?.fireModePromotionCoordinator?.markMenuPromotionEngaged()
+            guard let self else { return }
+            // TODO: fire menu promotion engaged pixel
+            self.delegate?.tabDidRequestFireMode(tab: self)
+        }
+    }
 }

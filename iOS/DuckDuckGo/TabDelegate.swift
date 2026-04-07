@@ -145,6 +145,8 @@ protocol TabDelegate: AnyObject {
 
     var isEmailProtectionSignedIn: Bool { get }
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
+
+    func tabDidRequestFireMode(tab: TabViewController)
 }
 
 extension TabDelegate {

@@ -145,11 +145,6 @@ extension MainViewController {
         setBarsVisibility(1, animated: false, animationDuration: nil)
     }
 
-    func applyExperimentDuckAIStatusBackgroundStyle() {
-        viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-        viewCoordinator.topSlideContainer.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-    }
-
     func setExperimentFireControlsLocked(_ locked: Bool) {
         guard experimentDuckAIFireOnboardingFlow.controlsLocked != locked else { return }
         experimentDuckAIFireOnboardingFlow.controlsLocked = locked
@@ -345,7 +340,6 @@ extension MainViewController: OnboardingDelegate {
             self.setBarsVisibility(0, animated: false, animationDuration: nil)
             self.viewCoordinator.toolbar.alpha = 1 // keep toolbar at its off-screen start position
             self.setOnboardingChromeOffscreenStartPosition()
-            self.applyExperimentDuckAIStatusBackgroundStyle()
             self.viewCoordinator.statusBackground.alpha = 0
             self.viewCoordinator.topSlideContainer.alpha = 0
             onboardingTransitionBottomFillView?.alpha = 0
@@ -353,12 +347,9 @@ extension MainViewController: OnboardingDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + chromeRevealDelay) {
                 CATransaction.begin()
                 CATransaction.setCompletionBlock {
-                    self.applyExperimentDuckAIStatusBackgroundStyle()
                     UIView.animate(withDuration: 0.25) {
                         onboardingTransitionSnapshotView?.alpha = 0
                     } completion: { _ in
-                        self.viewCoordinator.statusBackground.alpha = 1
-                        self.viewCoordinator.topSlideContainer.alpha = 1
                         self.hideOnboardingTransitionSnapshot(onboardingTransitionSnapshotView)
                         self.hideOnboardingTransitionBottomFill(onboardingTransitionBottomFillView)
                     }

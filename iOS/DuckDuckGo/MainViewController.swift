@@ -5087,10 +5087,6 @@ extension MainViewController {
         if !themeColorManager.updateThemeColor() {
             updateStatusBarBackgroundColor()
         }
-        if experimentDuckAIFireOnboardingFlow.isRunning {
-            applyExperimentDuckAIStatusBackgroundStyle()
-        }
-
         updateFindInPage()
     }
 
@@ -5101,11 +5097,6 @@ extension MainViewController {
     }
 
     private func updateStatusBarBackgroundColor() {
-        if experimentDuckAIFireOnboardingFlow.isRunning {
-            applyExperimentDuckAIStatusBackgroundStyle()
-            return
-        }
-
         guard !viewCoordinator.isNavigationChromeHidden else { return }
 
         let theme = ThemeManager.shared.currentTheme

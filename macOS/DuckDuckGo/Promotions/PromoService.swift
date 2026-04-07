@@ -37,6 +37,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         /// Timer that fires after promoType.timeoutInterval. On fire, records timeoutResult if !isResultRecorded.
         var timeout: TimedFlag?
 
+        /// Logical instant after which the promo should time out (same clock as `dateProvider`). Used when debug simulated date advances past the deadline before the wall-clock timer fires.
+        var timeoutDeadline: Date?
+
         /// Subscription to isEligiblePublisher. On false, calls hide() so the promo resumes with its chosen result; the result flows through recordResultAndCleanup.
         var eligibilityCancellable: AnyCancellable?
     }
@@ -157,6 +160,21 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         }
     }
 
+    /// Expires any active show sessions whose logical timeout deadline is at or before `dateProvider()` (e.g. after advancing the debug simulated date).
+    func reconcileActivePromoTimeoutsAfterSimulatedDateAdvance() {
+        stateQueue.async { [weak self] in
+            guard let self else { return }
+            let now = currentDate
+            let overdueIds = activeSessions.compactMap { promoId, session -> String? in
+                guard let deadline = session.timeoutDeadline else { return nil }
+                return now >= deadline ? promoId : nil
+            }
+            for promoId in overdueIds {
+                handleTimeout(promoId: promoId)
+            }
+        }
+    }
+
     /// Debug: Force-show a promo by ID, bypassing all evaluation rules. Does not affect history or cooldowns.
     /// No-op for external promos (ExternalPromoDelegate); they control their own visibility.
     func forceShow(promoId: String) {
@@ -216,6 +234,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Publisher for promo triggers.
     private let triggerPublisher: AnyPublisher<PromoTrigger, Never>
 
+    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished.
+    private let isOnboardingCompletedProvider: () -> Bool
+
     /// Triggers to be evaluated after delegate registration and deferral window ends.
     private var bufferedTriggers = Set<PromoTrigger>()
 
@@ -258,6 +279,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         historyStore: PromoHistoryStoring,
         triggerPublisher: AnyPublisher<PromoTrigger, Never>,
         initialExternalActivation: Bool = false,
+        isOnboardingCompletedProvider: @escaping () -> Bool,
         stateQueue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.promoService.state"),
         evaluationDeferralWindow: TimeInterval = 0.5,
         registrationFallbackTimeout: TimeInterval = 1.0,
@@ -268,6 +290,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         self.promos = promos
         self.historyStore = historyStore
         self.triggerPublisher = triggerPublisher
+        self.isOnboardingCompletedProvider = isOnboardingCompletedProvider
         self.stateQueue = stateQueue
         self.dateProvider = dateProvider
         self.resetDebugDate = resetDebugDate
@@ -432,6 +455,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// and showing any that are newly eligible. Triggers are evaluated in promo priority order.
     private func evaluateTriggers(_ triggers: Set<PromoTrigger>) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
+        guard isOnboardingCompletedProvider() else { return }
+
         let matchingPromos = promos.filter { $0.triggers.contains(where: triggers.contains) }
         for promo in matchingPromos {
             (promo.delegate as? PromoDelegate)?.refreshEligibility()
@@ -514,7 +539,10 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             }
 
         var timeout: TimedFlag?
+        var timeoutDeadline: Date?
         if let interval = promo.promoType.timeoutInterval {
+            let showStart = recordToUse.lastShown ?? currentDate
+            timeoutDeadline = showStart.addingTimeInterval(interval)
             let flag = TimedFlag(queue: stateQueue, clearAfter: interval)
             flag.set { [weak self] in
                 self?.handleTimeout(promoId: promoId)
@@ -537,6 +565,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             isResultRecorded: false,
             showTask: showTask,
             timeout: timeout,
+            timeoutDeadline: timeoutDeadline,
             eligibilityCancellable: eligibilityCancellable
         )
         activeSessions[promoId] = session

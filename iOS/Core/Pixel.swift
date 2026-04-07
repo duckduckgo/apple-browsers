@@ -108,6 +108,10 @@ public struct PixelParameters {
 
     public static let enabled = "enabled"
 
+    // Onboarding subscription promotion
+    public static let returningUser = "ru"
+    public static let freeTrial = "free_trial"
+
     // Email manager
     public static let emailKeychainAccessType = "access_type"
     public static let emailKeychainError = "error"
@@ -197,6 +201,12 @@ public struct PixelParameters {
 
     // New Address Bar Picker
     public static let selection = "selection"
+
+    // Autoplay
+    public static let autoplayBlockingMode = "autoplay_blocking_mode"
+
+    // Fire animation
+    public static let fireAnimation = "fireAnimationType"
 }
 
 public struct PixelValues {

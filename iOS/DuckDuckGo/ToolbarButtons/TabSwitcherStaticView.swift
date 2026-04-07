@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 final class TabSwitcherStaticView: UIView {
     private let iconImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobile)
     private let unreadDotImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobileAlertDot)
+    private let fireOverlayImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.fireTabMobile)
 
     let label = UILabel()
 
@@ -42,10 +43,15 @@ final class TabSwitcherStaticView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    var isFireMode: Bool = false {
+        didSet {
+            updateIconState()
+        }
+    }
+
     var hasUnread: Bool = false {
         didSet {
-            unreadDotImageView.isHidden = !hasUnread
-            iconImageView.image = hasUnread ? DesignSystemImages.Glyphs.Size24.tabMobileAlert : DesignSystemImages.Glyphs.Size24.tabMobile
+            updateIconState()
         }
     }
 
@@ -63,12 +69,14 @@ final class TabSwitcherStaticView: UIView {
         addSubview(iconImageView)
         addSubview(label)
         addSubview(unreadDotImageView)
+        addSubview(fireOverlayImageView)
     }
 
     private func setUpConstraints() {
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         label.translatesAutoresizingMaskIntoConstraints = false
         unreadDotImageView.translatesAutoresizingMaskIntoConstraints = false
+        fireOverlayImageView.translatesAutoresizingMaskIntoConstraints = false
 
         let verticalLabelOffsetConstraint = label.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -Metrics.labelYOffset)
         self.verticalLabelOffsetConstraint = verticalLabelOffsetConstraint
@@ -86,6 +94,11 @@ final class TabSwitcherStaticView: UIView {
             unreadDotImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             unreadDotImageView.widthAnchor.constraint(equalToConstant: Metrics.iconSize),
             unreadDotImageView.heightAnchor.constraint(equalToConstant: Metrics.iconSize),
+
+            fireOverlayImageView.leadingAnchor.constraint(equalTo: iconImageView.leadingAnchor, constant: Metrics.fireOverlayLeading),
+            fireOverlayImageView.bottomAnchor.constraint(equalTo: iconImageView.bottomAnchor, constant: Metrics.fireOverlayBottom),
+            fireOverlayImageView.widthAnchor.constraint(equalToConstant: Metrics.fireOverlayWidth),
+            fireOverlayImageView.heightAnchor.constraint(equalToConstant: Metrics.fireOverlayHeight),
         ])
     }
 
@@ -94,14 +107,42 @@ final class TabSwitcherStaticView: UIView {
     }
 
     private func setUpProperties() {
+        clipsToBounds = false
+
         unreadDotImageView.isUserInteractionEnabled = false
         unreadDotImageView.tintColor = UIColor(designSystemColor: .accent)
-
         unreadDotImageView.isHidden = true
+
+        fireOverlayImageView.isUserInteractionEnabled = false
+        fireOverlayImageView.tintColor = UIColor(singleUseColor: .fireModeAccent)
+        fireOverlayImageView.isHidden = true
 
         label.textAlignment = .center
         label.isUserInteractionEnabled = false
         iconImageView.isUserInteractionEnabled = false
+    }
+
+    private func updateIconState() {
+        switch (isFireMode, hasUnread) {
+        case (false, false):
+            iconImageView.image = DesignSystemImages.Glyphs.Size24.tabMobile
+            fireOverlayImageView.isHidden = true
+            unreadDotImageView.isHidden = true
+        case (false, true):
+            iconImageView.image = DesignSystemImages.Glyphs.Size24.tabMobileAlert
+            fireOverlayImageView.isHidden = true
+            unreadDotImageView.isHidden = false
+            unreadDotImageView.tintColor = UIColor(designSystemColor: .accent)
+        case (true, false):
+            iconImageView.image = DesignSystemImages.Glyphs.Size24.fireTabMobileFrame
+            fireOverlayImageView.isHidden = false
+            unreadDotImageView.isHidden = true
+        case (true, true):
+            iconImageView.image = DesignSystemImages.Glyphs.Size24.tabMobileAlert
+            fireOverlayImageView.isHidden = true
+            unreadDotImageView.isHidden = false
+            unreadDotImageView.tintColor = UIColor(singleUseColor: .fireModeAccent)
+        }
     }
 
     override func tintColorDidChange() {
@@ -137,5 +178,10 @@ final class TabSwitcherStaticView: UIView {
 
         static let symbolFontSize = 14.0
         static let symbolFontWeight = UIFont.Weight.semibold
+
+        static let fireOverlayLeading: CGFloat = 16.5
+        static let fireOverlayBottom: CGFloat = -16
+        static let fireOverlayWidth: CGFloat = 9
+        static let fireOverlayHeight: CGFloat = 12
     }
 }

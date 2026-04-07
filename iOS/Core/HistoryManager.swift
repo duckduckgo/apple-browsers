@@ -23,20 +23,21 @@ import BrowserServicesKit
 import History
 import Common
 import Persistence
+import PixelKit
 import os.log
 
 public protocol HistoryManaging {
 
     var isEnabledByUser: Bool { get }
     var history: BrowsingHistory? { get }
-    @MainActor func removeAllHistory() async
+    @MainActor func removeAllHistory() async -> Result<Void, Error>
     @MainActor func deleteHistoryForURL(_ url: URL) async
     @MainActor func addVisit(of url: URL, tabID: String?, fireTab: Bool)
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func commitChanges(url: URL)
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
-    @MainActor func removeTabHistory(for tabIDs: [String]) async
-    @MainActor func removeBrowsingHistory(tabID: String) async
+    @MainActor func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error>
+    @MainActor func removeBrowsingHistory(tabID: String) async -> ActionResult?
 }
 
 public class HistoryManager: HistoryManaging {
@@ -79,10 +80,10 @@ public class HistoryManager: HistoryManaging {
     }
 
     @MainActor
-    public func removeAllHistory() async {
+    public func removeAllHistory() async -> Result<Void, Error> {
         await withCheckedContinuation { continuation in
-            dbCoordinator.burnAll { _ in
-                continuation.resume()
+            dbCoordinator.burnAll { result in
+                continuation.resume(returning: result)
             }
         }
     }
@@ -129,11 +130,13 @@ public class HistoryManager: HistoryManaging {
     /// Tab history tracks which URLs were visited in each tab (used to determine what to burn),
     /// but is not surfaced to the user. Call this when closing tabs to clean up stale records.
     @MainActor
-    public func removeTabHistory(for tabIDs: [String]) async {
+    public func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
         do {
             try await tabHistoryCoordinator.removeVisits(for: tabIDs)
+            return .success(())
         } catch {
             Logger.history.error("Failed to remove tab history: \(error.localizedDescription)")
+            return .failure(error)
         }
     }
 
@@ -142,11 +145,17 @@ public class HistoryManager: HistoryManaging {
     /// This removes the tab's history records from the global browsing history,
     /// used when burning a single tab to clear its footprint from history.
     @MainActor
-    public func removeBrowsingHistory(tabID: String) async {
+    public func removeBrowsingHistory(tabID: String) async -> ActionResult? {
+        var interval = WideEvent.MeasuredInterval.startingNow()
+
         do {
             try await dbCoordinator.burnVisits(for: tabID)
+            interval.complete()
+            return ActionResult(result: .success(()), measuredInterval: interval)
         } catch {
             Logger.history.error("Failed to remove global history for tab: \(error.localizedDescription)")
+            interval.complete()
+            return ActionResult(result: .failure(error), measuredInterval: interval)
         }
     }
 

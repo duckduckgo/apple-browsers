@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Hlasový režim v Duck.ai";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Upravit záložku";
 
@@ -201,6 +204,12 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funkce AI";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Vybrat fotku";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Pořídit fotku";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existující záložky nebudou duplikovány.";
@@ -1079,10 +1088,13 @@
 "Confirm" = "Potvrdit";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontextový onboarding";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Smazat chat";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Smazat tento chat?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Přeskočit";
@@ -1165,6 +1177,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Překvap mě!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Najdi v seznamu **DuckDuckGo** a pro přidání klepni na **Hlasový režim v Duck.ai**";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Najdi v seznamu **DuckDuckGo** a pro přidání klepni na **VPN control** [Ovládání VPN]";
 
@@ -1212,6 +1227,8 @@
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Vlastní URL: %@";
+
+/* No comment provided by engineer. */
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importovat soubor se záložkami...";
@@ -1447,19 +1464,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Funkčnost přehrávače Duck Player ovlivnily nedávné změny na YouTube. Problémy se snažíme opravit. Děkujeme za pochopení.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Klepni na widget, uprav ho a nastav **Duck.ai** a **Hlasový režim v Duck.ai** jako zkratky";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Najdi a vyber **DuckDuckGo**, potom se posuň na **Vlastní zkratky** a vyber **Přidat widget**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Připojit obsah stránky";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Odesláno s tvojí zprávou pro Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-
-/* Title for the Duck.ai contextual onboarding screen */
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Přidání hlasového režimu v Duck.ai do Ovládacího centra";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkce AI u DuckDuckGo jsou soukromé a volitelné. Tvoje data se nepoužívají k trénování umělé inteligence.";
@@ -1479,8 +1497,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Pokládat navazující otázky";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Přidání Duck.ai do Ovládacího centra";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Přidání widgetu Duck.ai na domovskou obrazovku";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Zkratky prohlížeče";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Komunikace s Duck.ai přes Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresní řádek";
@@ -1502,6 +1529,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pro iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Zkratky";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Zkratky Siri ti umožňují spustit hlasový chat Duck.ai pomocí rychlého hlasového příkazu, jako je „Siri, start DuckDuckGo Voice Chat“ [Siri, spusť hlasový chat DuckDuckGo]. Je to rychlý, jak si povídat s Duck.ai, i když máš zrovna plné ruce.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, start DuckDuckGo Voice Chat [Siri, spusť hlasový chat DuckDuckGo].";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, talk to DuckDuckGo [Siri, promluv si s DuckDuckGo].";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, voice chat with DuckDuckGo [Siri, hlasový chat s DuckDuckGo].";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Povídej si s Duck.ai přes Siri.";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Přidej své předplatné DuckDuckGo do tohoto zařízení";
@@ -1572,14 +1617,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Pokračovat v Duck Playeru";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Vždycky otevírat videa na YouTube v přehrávači Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videa otevřená v Duck Playeru se automaticky začnou přehrávat. Pokud chceš přehrávání videí otevřených v Duck Playeru spouštět ručně, vypni tuto volbu.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatické přehrávání videí";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Otevírat videa v soukromém režimu kina, který brání tomu, aby sledovaná videa ovlivňovala tvůj feed na YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Aktivovat Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimentální";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player ti umožní sledovat YouTube bez cílených reklam a brání tomu, aby zhlédnutá videa ovlivňovala tvoje doporučení.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo má všechno, co ti zaručí ochranu soukromí při procházení webu.";
@@ -1589,7 +1646,6 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Více informací";
-
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Otevřít Duck Player na nové kartě";
 
@@ -1601,7 +1657,6 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Výsledky vyhledávání na DuckDuckGo";
-
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Nastavení se projeví po zavření všech panelů.";
 
@@ -1763,6 +1818,18 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Vyskytla se neznámá chyba";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Přepne na tuto kartu";
+
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Zpět na %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Zpět na...";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Zpět na %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2067,6 +2134,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Vzdušný proud";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Pekelná klasika";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
 
@@ -2126,6 +2196,9 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Zeptej se soukromě";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Zeptej se na navazující otázku...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Nainstalovat rozšíření";
@@ -2346,6 +2419,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN byla odpojená, protože platnost předplatného vypršela. Pro opětovné připojení k VPN si DuckDuckGo předplať.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Nelze se autentizovat. Zkontroluj prosím, zda je tvoje předplatné aktivní, a zkus to znovu.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Nelze se připojit k VPN serveru. Zkus to znovu později.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Tvoje předplatné skončilo. Pro připojení k VPN serveru si prosím znovu obnov předplatné.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Došlo k neočekávané chybě. Zkus to znovu. Pokud tento problém přetrvává, přejdi na **O aplikaci** a klepni na **Často kladené otázky a podpora**, kde najdeš pomoc.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "VPN DuckDuckGo se nepodařilo připojit. Zkus to znovu později.";
 
@@ -2442,11 +2527,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS server";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Zkus to znovu později.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Připojení se nezdařilo.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Připojení se nezdařilo";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP adresa";
@@ -2575,6 +2657,8 @@
 "No active subscriptions" = "Žádná aktivní předplatná";
 
 /* No comment provided by engineer. */
+
+/* No comment provided by engineer. */
 "No existing subscription found" = "Žádná existující předplatná nebyla nalezena";
 
 /* No comment provided by engineer. */
@@ -2585,6 +2669,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "Žádné záznamy";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Žádné shody pro \"%@\"";
 
 /* No comment provided by engineer. */
 "No messages" = "Žádné zprávy";
@@ -2612,6 +2699,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "V sestaveních z App Storu se tato obrazovka zobrazí pouze v případě, že jsi přihlášený jako interní uživatel prostřednictvím **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Mám to";
@@ -2703,6 +2793,21 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Než to zapomenu...";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Věděl jsi to?";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Soukromý. Rychlý. S méně reklamami.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "To je vyhledávač DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Jsi připravený na rychlejší prohlížeč, který tě ochrání?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Zdravíme tě.";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Chceš obnovit záložky, hesla a další data z předchozí synchronizace DuckDuckGo?";
 
@@ -2715,15 +2820,6 @@
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Pojďme pokračovat, kde jsi skončil(a)";
 
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Soukromý. Rychlý. S méně reklamami.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "To je vyhledávač DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Jsi připravený na rychlejší prohlížeč, který tě ochrání?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Zdravíme tě.";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Spustit procházení";
 
@@ -2735,6 +2831,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Rozumím. Ostatní tipy přeskočím.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Vyzkoušej to zdarma!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Vyzkoušej to vše zdarma!";
@@ -2783,6 +2882,9 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Odhlášení...";
+
+/* No comment provided by engineer. */
+"Override" = "Přepsat";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nemám přístup k modelům Duck.ai, které jsou jen pro předplatitele";
@@ -3010,10 +3112,7 @@
 "prompt.x-safari-https.try-open.message" = "Některé funkce webových stránek nemusí být v tomto prohlížeči kompatibilní.";
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Tento web chce být otevřen v Safari.";
-
-/* No comment provided by engineer. */
-"REBRANDED" = "REBRANDED";
+"prompt.x-safari-https.try-open.title" = "Tento web chce být otevřen v Safari.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedávné protokoly zpracování";
@@ -3129,6 +3228,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Přidat widget na domovskou obrazovku";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Přidání zkratek Duck.ai na domovskou obrazovku";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Přidej widget VPN DuckDuckGo na svou plochu";
 
@@ -3140,6 +3242,36 @@
 
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Zobrazit v adresním řádku";
+
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Vyber, co uvidíš, když se vrátíš po %@ neaktivity.";
+
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 hodina";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d hodin(y)";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minuta";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minut(y)";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekunda";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekund(y)";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Po nečinnosti";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Nová karta";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Vyhledávání a Duck.ai";
@@ -3188,9 +3320,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Pozice adresního řádku";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Experimentální nabídka prohlížeče";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otevřít odkazy v přidružených aplikacích";
@@ -3327,6 +3456,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Výchozí prohlížeč";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Výchozí poloha přepínače na nových kartách.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Poloha přepínače";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Mazání chatů Duck.ai";
 
@@ -3744,11 +3877,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Plány předplatného";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Tvoje předplatné bylo z tohohle zařízení odstraněno.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Zrušit snížení tarifu";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Tvoje předplatné bylo z tohohle zařízení odstraněno.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Tvůj tarif se %2$@ změní na %1$@.";
@@ -4479,6 +4612,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pořiď si DuckDuckGo pro Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo odstraňuje při sledování videí na YouTube reklamy, takže se můžeš dívat bez přerušení.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blokování reklam na YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Blokovat reklamy na YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Záložky";
 
@@ -4494,44 +4636,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Přepne na tuto kartu";
 
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Zpět na %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Zpět na...";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Zpět na %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Vyber, co uvidíš, když se vrátíš po %@ neaktivity.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 hodina";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d hodin(y)";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 minuta";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d minut(y)";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 sekunda";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d sekund(y)";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po nečinnosti";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nová karta";
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Povolit zvuk a video";
+"autoplay.mode.blockAll" = "Blokovat zvuk a video";
+"autoplay.mode.blockAudio" = "Blokovat zvuk";
+"settings.autoplay" = "Automatické přehrávání";
+"settings.autoplay.duck.player.link" = "Nastavení Duck Player";
+"settings.autoplay.footer" = "Nastavení automatického přehrávání se použije pouze na nově otevřené karty. Změny nelze použít na existující karty, leda po restartu aplikace. Chceš-li spravovat automatické přehrávání v Duck Player, přejdi na ";
+"settings.media.section" = "Média";

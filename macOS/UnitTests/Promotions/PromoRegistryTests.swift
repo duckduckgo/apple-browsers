@@ -41,15 +41,16 @@ final class PromoRegistryTests: XCTestCase {
             keyValueStore: InMemoryThrowingKeyValueStore(),
             notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
             uiHosting: { nil },
-            isOnboardingCompletedProvider: { true }
+            isOnboardingCompletedProvider: { true },
+            dockCustomization: DockCustomizerMock()
         )
         let dependencies = PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
+            isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock()
-        )
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock())
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

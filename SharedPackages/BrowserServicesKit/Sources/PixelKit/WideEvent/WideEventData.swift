@@ -204,13 +204,14 @@ public struct WideEventAppData: Codable {
     /// - Note: This value is only set for mobile devices, to a value of either `phone` or `tablet`.
     public var formFactor: String?
 
-    /// Whether the event was sent by an instance of the app with the internal flag set.
+    /// Legacy property retained for Codable backwards compatibility.
+    /// Previously used to track internal user status in the `app.*` namespace.
+    /// New events should use feature-specific data fields instead.
     public var internalUser: Bool?
 
     public init(name: String = Self.defaultAppName(),
                 version: String = AppVersion.shared.versionNumber,
-                formFactor: String? = nil,
-                internalUser: Bool? = nil) {
+                formFactor: String? = nil) {
         self.name = name
         self.version = version
 
@@ -219,7 +220,6 @@ public struct WideEventAppData: Codable {
         #else
         self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overridden for testing
         #endif
-        self.internalUser = internalUser
     }
 
     /// Returns the appropriate app name for the current platform.
@@ -249,7 +249,6 @@ extension WideEventAppData: WideEventParameterProviding {
             (WideEventParameter.App.name, name),
             (WideEventParameter.App.version, version),
             (WideEventParameter.App.formFactor, formFactor),
-            (WideEventParameter.App.internalUser, internalUser == true ? true : nil),
         ])
     }
 

@@ -18,6 +18,8 @@
 //
 
 import AIChat
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 
 // MARK: - Delegate Protocol
@@ -41,13 +43,14 @@ final class AIChatContextualInputViewController: UIViewController {
         static let horizontalPadding: CGFloat = 20
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
-        static let iPadLandscapeBottomPadding: CGFloat = 16
+        static let iPadBottomPadding: CGFloat = 16
     }
 
     // MARK: - Properties
 
     weak var delegate: AIChatContextualInputViewControllerDelegate?
 
+    private let isContextualSheetImprovementsEnabled: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var nativeInputViewController = AIChatNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
 
@@ -66,11 +69,21 @@ final class AIChatContextualInputViewController: UIViewController {
         return view
     }()
 
+    private lazy var welcomeLabel: UILabel = {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private var welcomeCenterYConstraint: NSLayoutConstraint?
     private var bottomConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, isContextualSheetImprovementsEnabled: Bool = false) {
+        self.isContextualSheetImprovementsEnabled = isContextualSheetImprovementsEnabled
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -91,6 +104,11 @@ final class AIChatContextualInputViewController: UIViewController {
         configureNativeInput()
         configureQuickActions()
         setupKeyboardObservers()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateWelcomeLabelCentering()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -131,12 +149,10 @@ final class AIChatContextualInputViewController: UIViewController {
 
     func showContextChip(_ chipView: UIView) {
         nativeInputViewController.showContextChip(chipView)
-        updateQuickActions()
     }
 
     func hideContextChip() {
         nativeInputViewController.hideContextChip()
-        updateQuickActions()
     }
 
     func updateContextChipState(_ state: AIChatContextChipView.State) {
@@ -155,6 +171,14 @@ private extension AIChatContextualInputViewController {
     func setupUI() {
         view.backgroundColor = .clear
 
+        if isContextualSheetImprovementsEnabled {
+            setupImprovedUI()
+        } else {
+            setupOriginalUI()
+        }
+    }
+
+    func setupOriginalUI() {
         view.addSubview(quickActionsScrollView)
         quickActionsScrollView.addSubview(quickActionsView)
         embedNativeInputViewController()
@@ -181,6 +205,44 @@ private extension AIChatContextualInputViewController {
         ])
     }
 
+    func setupImprovedUI() {
+        view.addSubview(quickActionsScrollView)
+        quickActionsScrollView.addSubview(quickActionsView)
+        view.addSubview(welcomeLabel)
+        embedNativeInputViewController()
+
+        configureWelcomeLabel()
+
+        bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+
+        let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        welcomeCenterYConstraint = centerY
+
+        NSLayoutConstraint.activate([
+            // Scroll view wraps quick actions at natural size, pinned above input
+            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
+
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
+
+            // Welcome label centered horizontally, vertical position set dynamically
+            centerY,
+            welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            welcomeLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            welcomeLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+
+            nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            bottomConstraint!,
+        ])
+    }
+
     func embedNativeInputViewController() {
         addChild(nativeInputViewController)
         nativeInputViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -198,12 +260,49 @@ private extension AIChatContextualInputViewController {
             guard let self else { return }
             delegate?.contextualInputViewController(self, didSelectQuickAction: action)
         }
-        updateQuickActions()
     }
 
-    internal func updateQuickActions() {
-        let actions: [AIChatContextualQuickAction] = [.summarize]
+    internal func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
         quickActionsView.configure(with: actions)
+    }
+
+    func configureWelcomeLabel() {
+        let font = UIFont(name: "DuckSansDisplay-Medium", size: 25) ?? UIFont.daxTitle2()
+        let privatelyColor = UIColor(designSystemColor: .shieldPrivacy)
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+
+        let defaultAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor(designSystemColor: .textPrimary),
+            .paragraphStyle: paragraphStyle
+        ]
+
+        let mutableText = NSMutableAttributedString(string: UserText.aiChatWelcomeAskAnything, attributes: defaultAttributes)
+
+        let shieldImage = DesignSystemImages.Color.Size42.shieldUtility
+        let iconAttachment = NSTextAttachment()
+        iconAttachment.image = shieldImage
+        let iconVerticalOffset = (font.capHeight - shieldImage.size.height) / 2
+        iconAttachment.bounds = CGRect(x: 0, y: iconVerticalOffset, width: shieldImage.size.width, height: shieldImage.size.height)
+        mutableText.append(NSAttributedString(attachment: iconAttachment))
+
+        let privatelyAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: privatelyColor,
+            .paragraphStyle: paragraphStyle
+        ]
+        mutableText.append(NSAttributedString(string: UserText.aiChatWelcomePrivately, attributes: privatelyAttributes))
+
+        welcomeLabel.attributedText = mutableText
+    }
+
+    func updateWelcomeLabelCentering() {
+        guard isContextualSheetImprovementsEnabled else { return }
+        let scrollViewTop = quickActionsScrollView.frame.minY
+        guard scrollViewTop > 0 else { return }
+        welcomeCenterYConstraint?.constant = scrollViewTop / 2
     }
 
     func scrollQuickActionsToBottom() {
@@ -244,9 +343,7 @@ private extension AIChatContextualInputViewController {
 
     func bottomPaddingForOrientation() -> CGFloat {
         guard UIDevice.current.userInterfaceIdiom == .pad else { return 0 }
-        let isLandscape = UIDevice.current.orientation.isLandscape ||
-            (view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
-        return isLandscape ? -Constants.iPadLandscapeBottomPadding : 0
+        return -Constants.iPadBottomPadding
     }
 }
 

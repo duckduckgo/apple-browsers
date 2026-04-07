@@ -34,8 +34,16 @@ final class DataClearingPixelsReporter {
         self.timeProvider = timeProvider
     }
 
+    /// Fires a pixel if manual fire is triggered within 20 seconds of a previous manual fire.
+    ///
+    /// Only tracks manual fire triggers to detect user perceived failures
+    /// (users rapidly pressing the fire button, indicating potential clearing issues).
+    /// Auto-clear triggers are excluded as they follow system timing, not user behavior.
+    ///
+    /// - Parameter isManual: Whether this is a manual fire operation (vs auto-clear).
     @MainActor
-    func fireRetriggerPixelIfNeeded() {
+    func fireRetriggerPixelIfNeeded(isManual: Bool = true) {
+        guard isManual else { return }
         let now = timeProvider()
         if let lastFire = lastFireTime, (now - lastFire) <= retriggerWindow {
             pixelFiring?.fire(DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)

@@ -103,7 +103,6 @@ final class DefaultOmniBarSearchView: UIView {
         textField.tintColor = fireMode
         ? UIColor(singleUseColor: .fireModeAccent)
         : UIColor(designSystemColor: .accent)
-        self.overrideUserInterfaceStyle = fireMode ? .dark : .unspecified
     }
 
     private func setUpSubviews() {
@@ -177,11 +176,18 @@ final class DefaultOmniBarSearchView: UIView {
         DefaultOmniBarView.activateItemSizeConstraints(for: aiChatButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: leftIconContainer)
 
-        // Use autoresizing mask here so it's less code
-        loupeIconView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        dismissButtonView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        loupeIconView.frame = leftIconContainer.bounds
-        dismissButtonView.frame = leftIconContainer.bounds
+        loupeIconView.translatesAutoresizingMaskIntoConstraints = false
+        dismissButtonView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            loupeIconView.topAnchor.constraint(equalTo: leftIconContainer.topAnchor),
+            loupeIconView.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
+            loupeIconView.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
+            loupeIconView.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),
+            dismissButtonView.topAnchor.constraint(equalTo: leftIconContainer.topAnchor),
+            dismissButtonView.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
+            dismissButtonView.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
+            dismissButtonView.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),
+        ])
     }
 
     private func setUpProperties() {

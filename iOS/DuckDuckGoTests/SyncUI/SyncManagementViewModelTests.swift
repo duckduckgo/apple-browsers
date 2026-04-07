@@ -180,9 +180,24 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-   func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
+    func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
         createAccountAndStartSyncingCalled = true
         capturedOptionModel = optionsViewModel
+    }
+
+    func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func simplifiedConfirmAndDisableSync() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
+    }
+
+    var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState { .dismissed }
+
+    func simplifiedSyncAnotherDevicePromptWasDismissed() {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
     func showRecoveryCodeEntry() {

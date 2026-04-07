@@ -23,10 +23,12 @@ import Persistence
 public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
     // Update preferences
     case automaticUpdates = "updates.automatic"
-    case pendingUpdateShown = "pending.update.shown"
 
     // Debug settings
     case debugSparkleCustomFeedURL = "debug.sparkle.custom-feed-url"
+
+    // Install tracking
+    case installBuild = "update.install-build"
 
     // Version tracking
     case previousAppVersion = "previous.app.version"
@@ -45,9 +47,11 @@ public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
 
 /// StoringKeys conforming struct for typed access to UpdateController settings
 public struct UpdateControllerSettings: StoringKeys {
+    // Install tracking
+    public let installBuild = StorageKey<Int>(UpdateControllerStorageKeys.installBuild, assertionHandler: { _ in })
+
     // Update preferences
     public let automaticUpdates = StorageKey<Bool>(UpdateControllerStorageKeys.automaticUpdates, assertionHandler: { _ in })
-    public let pendingUpdateShown = StorageKey<Bool>(UpdateControllerStorageKeys.pendingUpdateShown, assertionHandler: { _ in })
 
     // Debug settings
     public let debugSparkleCustomFeedURL = StorageKey<String>(UpdateControllerStorageKeys.debugSparkleCustomFeedURL, assertionHandler: { _ in })

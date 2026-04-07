@@ -22,6 +22,8 @@ import Combine
 import UniformTypeIdentifiers
 import DesignResourcesKitIcons
 import AIChat
+import BrowserServicesKit
+import FeatureFlags
 import PixelKit
 
 /// A container view that properly handles hit testing when used with MouseBlockingBackgroundView.
@@ -95,6 +97,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var modelsCancellable: AnyCancellable?
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
+    private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
+        featureFlagger: NSApp.delegateTyped.featureFlagger,
+        privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager
+    )
 
     /// Current suggestions height - cached to avoid recalculation
     private(set) var suggestionsHeight: CGFloat = 0
@@ -412,6 +418,38 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             )
         }
 
+        // Handle suggestion deletions (gated by feature flag)
+        let canRemoveSuggestions = NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatRemoveSuggestion)
+        suggestionsView.canDeleteSuggestions = canRemoveSuggestions
+        if canRemoveSuggestions {
+            suggestionsView.onSuggestionDeleted = { [weak self] suggestion in
+                guard let self, let window = self.view.window else { return }
+
+                PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+
+                let alert = NSAlert()
+                alert.messageText = UserText.removeRecentChatConfirmationTitle
+                alert.informativeText = String(format: UserText.removeRecentChatConfirmationMessage, suggestion.title)
+                alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
+                alert.buttons.first?.hasDestructiveAction = true
+                alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+
+                alert.beginSheetModal(for: window) { [weak self] response in
+                    guard let self else { return }
+                    guard response == .OK else {
+                        PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteCancelled, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                        return
+                    }
+                    PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteConfirmed, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                    self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
+                    Task { @MainActor in
+                        _ = await self.historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+                        self.omnibarController.refreshSuggestions()
+                    }
+                }
+            }
+        }
+
         // Bind to view model with height change callback
         suggestionsView.bind(to: omnibarController.suggestionsViewModel) { [weak self] newHeight in
             self?.updateSuggestionsHeight(newHeight)
@@ -635,63 +673,28 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        if omnibarController.hasActiveSubscription {
-            populateSubscribedModelPickerMenu(menu)
-        } else {
-            populateFreeModelPickerMenu(menu)
+        let sections = AIChatModelSectionBuilder.buildSections(
+            models: omnibarController.models,
+            hasActiveSubscription: omnibarController.hasActiveSubscription,
+            advancedSectionHeader: UserText.aiChatModelPickerAdvancedSectionHeader,
+            basicSectionHeader: UserText.aiChatModelPickerBasicModelsSectionHeader
+        )
+
+        for (index, section) in sections.enumerated() {
+            if index > 0 {
+                menu.addItem(.separator())
+            }
+            if let header = section.header {
+                let headerItem = NSMenuItem(title: header, action: nil, keyEquivalent: "")
+                headerItem.isEnabled = false
+                menu.addItem(headerItem)
+            }
+            for model in section.items {
+                menu.addItem(menuItem(for: model))
+            }
         }
 
         return menu
-    }
-
-    /// Free user layout: accessible models first, then "Advanced Models" section with disabled premium models.
-    private func populateFreeModelPickerMenu(_ menu: NSMenu) {
-        let accessible = omnibarController.models.filter { $0.entityHasAccess }
-        let premium = omnibarController.models.filter { !$0.entityHasAccess }
-
-        for model in accessible {
-            menu.addItem(menuItem(for: model))
-        }
-
-        if !premium.isEmpty {
-            menu.addItem(.separator())
-
-            let header = NSMenuItem(title: UserText.aiChatModelPickerAdvancedSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in premium {
-                menu.addItem(menuItem(for: model))
-            }
-        }
-    }
-
-    /// Subscribed user layout: "Advanced Models" section first, then "Basic Models" section with free-tier models.
-    private func populateSubscribedModelPickerMenu(_ menu: NSMenu) {
-        let basic = omnibarController.models.filter { $0.accessTier.contains(AIChatUserTier.free.rawValue) }
-        let advanced = omnibarController.models.filter { !$0.accessTier.contains(AIChatUserTier.free.rawValue) }
-
-        if !advanced.isEmpty {
-            let header = NSMenuItem(title: UserText.aiChatModelPickerAdvancedModelsSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in advanced {
-                menu.addItem(menuItem(for: model))
-            }
-        }
-
-        if !basic.isEmpty {
-            menu.addItem(.separator())
-
-            let header = NSMenuItem(title: UserText.aiChatModelPickerBasicModelsSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in basic {
-                menu.addItem(menuItem(for: model))
-            }
-        }
     }
 
     private func menuItem(for model: AIChatModel) -> NSMenuItem {

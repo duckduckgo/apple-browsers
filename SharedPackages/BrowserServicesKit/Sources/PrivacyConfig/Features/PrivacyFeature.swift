@@ -90,6 +90,7 @@ public enum PrivacyFeature: String {
     case webExtensions
     case forceDarkModeOnWebsites
     case promoQueue
+    case adBlockingExtension
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -132,6 +133,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
     case appStoreUpdateFlow
 
+    /// Hide manual update option and always use automatic updates
+    case automaticUpdatesOnly
+
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
@@ -160,10 +164,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
     case memoryUsageReporting
 
-    /// Failsafe flag to bring back keys sorting in crash collector
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
-    case crashCollectionDisableKeysSorting
-
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
@@ -174,13 +174,19 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     case webViewLookUpAction
 
-    /// Startup Metrics Reporting
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
-    case startupMetrics
+    /// Enables showing browsing history domains in the first-time quit survey
+    case websitesHistoryFirstTimeQuitSurvey
 
     case semaphoreAlwaysVisible
 
     case tabAnimations
+
+    /// Enables lazy reload for the more options menu
+    case lazyMenuRebuild
+
+    case addToDockAppStore
+
+    case screenTimeCleaning
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -219,10 +225,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
 
-    /// Failsafe flag to bring back keys sorting in crash collector
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
-    case crashCollectionDisableKeysSorting
-
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
@@ -239,12 +241,21 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
-    case suppressTrackerAnimationOnColdStart
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213557229772465?focus=true
+    case autoplayBlocking
 
     case customXSafariRedirectHandling
 
     case crashReportOptInStatusResetting
+
+    case fireproofingETLDPlus1
+
+    case screenTimeCleaning
+
+    case minimalChromeInLandscape
+
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
+    case onboardingRebranding
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -301,6 +312,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case foregroundRunningOnAppActive
     case foregroundRunningWhenDashboardOpen
     case clickActionDelayReductionOptimization
+    case continuedProcessing
     case pirRollout
     case goToMarket
     case webViewUserAgent
@@ -371,6 +383,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
 
+    /// Enables the default omnibar toggle position setting for AI Chat
+    case omnibarDefaultPosition
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
@@ -398,6 +413,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables recent AI chats on the New Tab Page omnibar
     case ntpRecentChats
 
+    /// Enables AI chat tools (model selector, image upload) on the New Tab Page omnibar
+    case ntpChatTools
+
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
@@ -406,6 +424,18 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables page context feature on iPad
     case iPadPageContext
+
+    /// Enables voice chat shortcut in the focused address bar
+    case voiceShortcut
+
+    /// Enables improved contextual sheet UX (welcome message, ask about page, etc.)
+    case contextualSheetImprovements
+
+    /// Enables removing individual AI chat suggestions
+    case removeSuggestion
+
+    /// Enables the fire button in the contextual AI chat sheet
+    case contextualFireButton
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -415,9 +445,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable New Tab Page search box
     case omnibar
-
-    /// Global switch to control shared or independent New Tab Page
-    case newTabPagePerTab
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
@@ -504,6 +531,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case blackFridayCampaign
     case allowProTierPurchase
     case freeTrialConversionWideEvent
+    case subscriptionPromoForReinstallers
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -641,6 +669,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
     case embeddedExtension = "embedded"
+    case embeddedRollout
 }
 
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {

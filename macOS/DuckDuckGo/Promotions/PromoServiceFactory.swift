@@ -49,6 +49,7 @@ struct PromoServiceFactory {
             historyStore: historyStore,
             triggerPublisher: PromoTrigger.triggerPublisher,
             initialExternalActivation: dependencies.isExternallyActivated,
+            isOnboardingCompletedProvider: dependencies.isOnboardingCompletedProvider,
             stateQueue: stateQueue,
             dateProvider: dateProvider,
             resetDebugDate: resetDebugDate
@@ -60,6 +61,7 @@ struct PromoServiceFactory {
         var promos: [Promo] = [
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
+            freemiumDBP,
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
             nextSteps,
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),

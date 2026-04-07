@@ -292,12 +292,16 @@ struct OnboardingSecondaryCTAButton: View {
             Text(title)
             .padding(.horizontal, 18)
         }
-        .buttonStyle(OnboardingStyles.ListButtonStyle(maxWidth: nil))
+        .buttonStyle(OnboardingStyles.ListButtonStyle(maxWidth: nil, cornerRadius: Metrics.cornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
                 .inset(by: 0.5)
                 .stroke(strokeColor, lineWidth: 1)
         )
+    }
+
+    private enum Metrics {
+        static let cornerRadius: CGFloat = 5
     }
 
 }

@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 
 /// Handles feature flag changes for web extensions.
@@ -98,10 +99,12 @@ public final class WebExtensionFeatureFlagHandler {
         webExtensionsCancellable = publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
-                if enabled {
-                    self?.handleWebExtensionsFlagEnabled()
-                } else {
-                    self?.handleWebExtensionsFlagDisabled()
+                Task { @MainActor in
+                    if enabled {
+                        self?.handleWebExtensionsFlagEnabled()
+                    } else {
+                        self?.handleWebExtensionsFlagDisabled()
+                    }
                 }
             }
     }
@@ -112,14 +115,17 @@ public final class WebExtensionFeatureFlagHandler {
         embeddedExtensionCancellable = publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
-                if enabled {
-                    self?.handleEmbeddedExtensionFlagEnabled()
-                } else {
-                    self?.handleEmbeddedExtensionFlagDisabled()
+                Task { @MainActor in
+                    if enabled {
+                        self?.handleEmbeddedExtensionFlagEnabled()
+                    } else {
+                        self?.handleEmbeddedExtensionFlagDisabled()
+                    }
                 }
             }
     }
 
+    @MainActor
     private func handleWebExtensionsFlagEnabled() {
         guard let onFeatureFlagEnabled else { return }
         isWebExtensionsFlagEnabled = true
@@ -130,6 +136,7 @@ public final class WebExtensionFeatureFlagHandler {
         }
     }
 
+    @MainActor
     private func handleWebExtensionsFlagDisabled() {
         isWebExtensionsFlagEnabled = false
         webExtensionsEnableTask?.cancel()
@@ -138,6 +145,7 @@ public final class WebExtensionFeatureFlagHandler {
         onFeatureFlagDisabled()
     }
 
+    @MainActor
     private func handleEmbeddedExtensionFlagEnabled() {
         guard let onEmbeddedExtensionFlagEnabled else { return }
         isEmbeddedExtensionFlagEnabled = true
@@ -148,6 +156,7 @@ public final class WebExtensionFeatureFlagHandler {
         }
     }
 
+    @MainActor
     private func handleEmbeddedExtensionFlagDisabled() {
         isEmbeddedExtensionFlagEnabled = false
         embeddedExtensionEnableTask?.cancel()

@@ -78,12 +78,12 @@ class TabsModelPersistenceTests: XCTestCase {
     }
 
     func testWhenModelSavedThenGetIsNotNil() throws {
-        persistence.save(model: model, for: .normal)
+        _ = persistence.save(model: model, for: .normal)
         XCTAssertNotNil(try persistence.getTabsModel(for: .normal))
     }
 
     func testWhenModelIsSavedThenGetLoadsCompleteTabs() throws {
-        persistence.save(model: model, for: .normal)
+        _ = persistence.save(model: model, for: .normal)
 
         let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)
@@ -95,7 +95,7 @@ class TabsModelPersistenceTests: XCTestCase {
     func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() throws {
         let model = self.model
         model.select(tab: model.tabs[1])
-        persistence.save(model: model, for: .normal)
+        _ = persistence.save(model: model, for: .normal)
 
         let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)
@@ -138,7 +138,7 @@ class TabsModelPersistenceTests: XCTestCase {
 
     func testWhenFireModelSavedThenGetReturnsModel() throws {
         let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
-        persistence.save(model: fireModel, for: .fire)
+        _ = persistence.save(model: fireModel, for: .fire)
 
         let loaded = try persistence.getTabsModel(for: .fire)
         XCTAssertNotNil(loaded)
@@ -147,16 +147,16 @@ class TabsModelPersistenceTests: XCTestCase {
 
     func testWhenFireModelSavedThenGetLoadsWithFireMode() throws {
         let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
-        persistence.save(model: fireModel, for: .fire)
+        _ = persistence.save(model: fireModel, for: .fire)
 
         let loaded = try persistence.getTabsModel(for: .fire)
         XCTAssertEqual(loaded?.mode, .fire)
     }
 
     func testWhenClearAllThenBothKeysCleared() throws {
-        persistence.save(model: model, for: .normal)
+        _ = persistence.save(model: model, for: .normal)
         let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
-        persistence.save(model: fireModel, for: .fire)
+        _ = persistence.save(model: fireModel, for: .fire)
 
         persistence.clearAll()
 
@@ -165,9 +165,9 @@ class TabsModelPersistenceTests: XCTestCase {
     }
 
     func testWhenClearNormalThenFireModelUntouched() throws {
-        persistence.save(model: model, for: .normal)
+        _ = persistence.save(model: model, for: .normal)
         let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
-        persistence.save(model: fireModel, for: .fire)
+        _ = persistence.save(model: fireModel, for: .fire)
 
         persistence.clear(for: .normal)
 

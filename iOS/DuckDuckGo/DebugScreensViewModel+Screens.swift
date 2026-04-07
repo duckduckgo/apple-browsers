@@ -34,6 +34,20 @@ extension DebugScreensViewModel {
     var screens: [DebugScreen] {
         return [
             // MARK: Actions
+            .action(title: "Clear WebKit Cache", { _ in
+                WKWebsiteDataStore.default().removeData(
+                    ofTypes: [WKWebsiteDataTypeDiskCache,
+                              WKWebsiteDataTypeMemoryCache,
+                              WKWebsiteDataTypeOfflineWebApplicationCache],
+                    modifiedSince: .distantPast) { }
+            }),
+            .action(title: "Clear Cached Scriptlets", { d in
+                if #available(iOS 18.4, *) {
+                    Task { @MainActor in
+                        d.webExtensionManager?.clearCachedScriptlets()
+                    }
+                }
+            }),
             .action(title: "Reset Autoconsent Prompt", { _ in
                 AppUserDefaults().clearAutoconsentUserSetting()
             }),

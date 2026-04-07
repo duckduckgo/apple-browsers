@@ -60,9 +60,11 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
+    var isPhoneLandscape: Bool = false
+
     internal var textFieldTapped = true
-    internal var textEntryMode: TextEntryMode = .search
-    private(set) var selectedTextEntryMode: TextEntryMode = .search
+    internal var textEntryMode: TextEntryMode?
+    var selectedTextEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
@@ -246,6 +248,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onBookmarksPressed = { [weak self] in
             self?.onBookmarksPressed()
         }
+        barView.onPasswordsPressed = { [weak self] in
+            self?.onPasswordsPressed()
+        }
         barView.onAIChatPressed = { [weak self] in
             self?.onAIChatPressed()
         }
@@ -259,10 +264,14 @@ class OmniBarViewController: UIViewController, OmniBar {
             self?.onAIChatBrandingPressed()
         }
         expandableBarView?.onSearchModePressed = { [weak self] in
-            self?.setSelectedTextEntryMode(.search)
+            guard let self else { return }
+            self.setSelectedTextEntryMode(.search)
+            self.omniDelegate?.onTextEntryModeDidChange(.search)
         }
         expandableBarView?.onAIChatModePressed = { [weak self] in
-            self?.setSelectedTextEntryMode(.aiChat)
+            guard let self else { return }
+            self.setSelectedTextEntryMode(.aiChat)
+            self.omniDelegate?.onTextEntryModeDidChange(.aiChat)
         }
         expandableBarView?.onAIChatSendPressed = { [weak self] in
             self?.onAIChatSendPressed()
@@ -349,12 +358,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         textDidChange()
     }
     
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
         textFieldTapped = false
         self.textEntryMode = textEntryMode
         defer {
             textFieldTapped = true
-            self.textEntryMode = .search
+            self.textEntryMode = nil
         }
 
         textField.becomeFirstResponder()
@@ -662,7 +671,10 @@ class OmniBarViewController: UIViewController, OmniBar {
                 let isExpanded = expandableBarView?.isSearchAreaExpanded == true
                 let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
                 if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
-                    selectedTextEntryMode = .search
+                    // Note: selectedTextEntryMode is NOT reset here. It is owned by
+                    // refreshOmniBar (per-tab value) and must survive state transitions
+                    // like cancel/stopBrowsing — otherwise performCancel (0.3s after tab
+                    // switch) would overwrite the per-tab mode with the global default.
                     updateTextFieldPlaceholderForSelectedMode()
                 }
             }
@@ -688,24 +700,36 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
-        barView.isBackButtonHidden = !state.showBackButton
-        barView.isForwardButtonHidden = !state.showForwardButton
-        barView.isBookmarksButtonHidden = !state.showBookmarksButton
+        barView.isBackButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showBackButton
+        barView.isForwardButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showForwardButton
+        let bookmarksHidden = isPhoneLandscape ? state.isBrowsing : !state.showBookmarksButton
+        barView.setBookmarksPosition(leading: isPhoneLandscape, hidden: bookmarksHidden)
+        barView.isPasswordsButtonHidden = isPhoneLandscape ? state.isBrowsing : true
         barView.isAIChatButtonHidden = !state.showAIChatButton
-        
+        barView.isFireButtonHidden = !isPhoneLandscape
+        barView.isTabSwitcherButtonHidden = !isPhoneLandscape
+
         if let expandable = expandableBarView {
-            expandable.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
+            expandable.isExternalRefreshButtonHidden = isPhoneLandscape || !state.showRefreshOutsideAddressBar
             expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
             expandable.selectedModeToggleState = selectedTextEntryMode
 
-            let isAddressBarSelected = textField.isEditing || expandable.isSearchAreaExpanded
+            // Use isFirstResponder, not isEditing — isEditing stays true during
+            // transitions and would keep the search area expanded after tab switches.
+            let isAddressBarSelected = textField.isFirstResponder || expandable.aiChatTextView.isFirstResponder
             let shouldShowModeToggle = state.showAIChatModeToggle && isAddressBarSelected
+
+            // Ensure expanded state does not persist when nothing is focused (e.g. tab switches).
+            if !isAddressBarSelected && expandable.isSearchAreaExpanded {
+                expandable.setSearchAreaExpanded(false, animated: false)
+            }
+
             expandable.isModeToggleHidden = !shouldShowModeToggle
             if shouldShowModeToggle {
                 barView.isAIChatButtonHidden = true
             }
 
-            let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
+            let shouldExpand = isAddressBarSelected && selectedTextEntryMode == .aiChat
             expandable.setSearchAreaExpanded(shouldExpand, animated: false)
 
             expandable.updateLeftIconForMode(shouldShowModeToggle ? selectedTextEntryMode : .search)
@@ -918,17 +942,28 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onBookmarksPressed()
     }
 
+    private func onPasswordsPressed() {
+        omniDelegate?.onPasswordsPressed()
+    }
+
     private func onAIChatPressed() {
         omniDelegate?.onAIChatPressed()
     }
 
     func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+        guard selectedTextEntryMode != mode else { return }
         selectedTextEntryMode = mode
+        expandableBarView?.selectedModeToggleState = mode
         updateTextFieldPlaceholderForSelectedMode()
 
         if state.showAIChatModeToggle {
-            expandableBarView?.setSearchAreaExpanded(mode == .aiChat, animated: true)
-            expandableBarView?.updateLeftIconForMode(mode)
+            // Only expand and show mode-specific icon when the address bar is actually
+            // focused. Without these guards, switching to a duck.ai tab would briefly
+            // flash the expanded search area and duck.ai icon before collapsing.
+            let isFocused = textField.isFirstResponder || (expandableBarView?.aiChatTextView.isFirstResponder == true)
+            let shouldExpand = isFocused && mode == .aiChat
+            expandableBarView?.setSearchAreaExpanded(shouldExpand, animated: true)
+            expandableBarView?.updateLeftIconForMode(isFocused ? mode : .search)
         }
     }
 

@@ -173,6 +173,21 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
         isKeyboardNavigating = true
     }
 
+    // MARK: - Removal
+
+    /// Removes a suggestion from the filtered list.
+    /// - Parameter suggestion: The suggestion to remove.
+    public func removeSuggestion(_ suggestion: AIChatSuggestion) {
+        filteredSuggestions.removeAll { $0.id == suggestion.id }
+
+        // Adjust selection after removal
+        if let index = selectedIndex {
+            if index >= filteredSuggestions.count {
+                selectedIndex = filteredSuggestions.isEmpty ? nil : filteredSuggestions.count - 1
+            }
+        }
+    }
+
     // MARK: - Reset
 
     /// Clears all chats and resets the view model completely.

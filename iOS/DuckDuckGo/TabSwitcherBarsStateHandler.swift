@@ -179,6 +179,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.fireButton.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
         self.duckChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        self.duckChatButton.accessibilityIdentifier = "TabSwitcher.Button.DuckChat"
         self.plusButton.accessibilityLabel = UserText.keyCommandNewTab
         self.doneButton.accessibilityLabel = UserText.navigationTitleDone
         self.editButton.accessibilityLabel = UserText.actionGenericEdit
@@ -253,14 +254,12 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
             isBottomBarHidden = true
         }
 
-        #if compiler(>=6.2)
         if #available(iOS 26, *) {
             newItems.forEach {
                 $0.sharesBackground = false
                 $0.hidesSharedBackground = true
             }
         }
-        #endif
 
         bottomBarItems = newItems
     }
@@ -274,12 +273,10 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
         let barItem = UIBarButtonItem(customView: button)
-#if compiler(>=6.2)
         if #available(iOS 26.0, *) {
             barItem.sharesBackground = false
             barItem.hidesSharedBackground = true
         }
-#endif
 
         return barItem
     }

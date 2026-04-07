@@ -213,6 +213,11 @@ final class AIChatOmnibarController {
         }
     }
 
+    /// Re-fetches suggestions from the database using the current query text.
+    func refreshSuggestions() {
+        fetchSuggestionsIfNeeded(query: currentText)
+    }
+
     // MARK: - Public Methods
 
     /// The persisted model ID. Falls back to the first accessible model if the

@@ -3,7 +3,8 @@
 Localization Utilities
 
 Shared utility functions for localization-related scripts.
-Used by verify_string_extraction.py and check_new_string_translations.py.
+Used by verify_string_extraction.py, check_new_string_translations.py,
+and check_deleted_string_translations.py.
 
 Copyright © 2025 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
@@ -14,7 +15,7 @@ import os
 import plistlib
 import re
 import subprocess
-from typing import Dict, List, Optional, Set
+from typing import Dict, FrozenSet, List, Optional, Set
 
 # =============================================================================
 # Git Utilities
@@ -145,6 +146,53 @@ def parse_stringsdict_file_full(content: str) -> Dict:
 # =============================================================================
 # Platform Utilities
 # =============================================================================
+
+MACOS_LOCALES: FrozenSet[str] = frozenset([
+    "de",  # German
+    "es",  # Spanish
+    "fr",  # French
+    "it",  # Italian
+    "nl",  # Dutch
+    "pl",  # Polish
+    "pt",  # Portuguese
+    "ru",  # Russian
+])
+
+IOS_LOCALES: FrozenSet[str] = frozenset([
+    "bg",  # Bulgarian
+    "cs",  # Czech
+    "da",  # Danish
+    "de",  # German
+    "el",  # Greek
+    "es",  # Spanish
+    "et",  # Estonian
+    "fi",  # Finnish
+    "fr",  # French
+    "hr",  # Croatian
+    "hu",  # Hungarian
+    "it",  # Italian
+    "ja",  # Japanese
+    "lt",  # Lithuanian
+    "lv",  # Latvian
+    "nb",  # Norwegian Bokmål
+    "nl",  # Dutch
+    "pl",  # Polish
+    "pt",  # Portuguese
+    "ro",  # Romanian
+    "ru",  # Russian
+    "sk",  # Slovak
+    "sl",  # Slovenian
+    "sv",  # Swedish
+    "tr",  # Turkish
+])
+
+def get_required_locales(platform: str) -> Set[str]:
+    """Get the required locales for a platform."""
+    if platform == "iOS":
+        return set(IOS_LOCALES)
+    elif platform == "macOS":
+        return set(MACOS_LOCALES)
+    return set()
 
 def get_search_paths(platform: str) -> List[str]:
     """Get the paths to search for source and string files."""

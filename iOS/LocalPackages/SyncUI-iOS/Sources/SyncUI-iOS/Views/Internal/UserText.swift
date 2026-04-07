@@ -81,7 +81,8 @@ public struct UserText {
 
     // Save RecoveryPDF
     static let saveRecoveryPDFButton = NSLocalizedString("save.recovery.pdf.button", bundle: Bundle.module, value: "Save Recovery PDF", comment: "Save RecoveryPDF - Button")
-    static let saveRecoveryPDFFooter = NSLocalizedString("save.recovery.pdf.footer", bundle: Bundle.module, value: "If you lose your device, you will need this recovery code to restore your synced data.", comment: "Save RecoveryPDF - Footer")
+    static let saveRecoveryPDFFooter = NSLocalizedString("save.recovery.pdf.footer", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to this device. Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn more](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Save RecoveryPDF - Footer + Learn More, with markdown link")
+
     // Delete Server Data
     static let deleteServerData = NSLocalizedString("delete.server.data", bundle: Bundle.module, value: "Turn Off and Delete Server Data...", comment: "Delete Server Data - Button")
 
@@ -119,7 +120,7 @@ public struct UserText {
     static let autoRestoreScreenDescription = NSLocalizedString("auto.restore.screen.description", bundle: Bundle.module, value: "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.", comment: "Auto-Restore Screen - Description")
     static let autoRestoreToggleLabel = NSLocalizedString("auto.restore.toggle.label", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore - Toggle Label")
     static let autoRestoreDescription = NSLocalizedString("auto.restore.description", bundle: Bundle.module, value: "Automatically restore your data on this device if you reinstall the app.", comment: "Auto-Restore - Description")
-    static let autoRestoreFooter = NSLocalizedString("auto.restore.learn.more.full", bundle: Bundle.module, value: "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.", comment: "Auto-Restore - Description")
+    static let autoRestoreFooter = NSLocalizedString("auto.restore.toggle.footer", bundle: Bundle.module, value: "Restore your data automatically if you reinstall the app. Sync & Backup data can’t be recovered after 18 months of inactivity.", comment: "Auto-restore section - Footer")
 
     // Device Synced Sheet
     static let deviceSyncedSheetTitle = NSLocalizedString("device.synced.sheet.title", bundle: Bundle.module, value: "Your data is synced!", comment: "Device SyncedSheet - Title")
@@ -217,14 +218,35 @@ public struct UserText {
     static let syncUnavailableMessageUpgradeRequired = NSLocalizedString("sync.warning.data.syncing.disabled.upgrade.required", bundle: Bundle.module, value: "Sorry, but Sync & Backup is no longer available in this app version. Please update DuckDuckGo to the latest version to continue.", comment: "Data syncing unavailable warning message")
 
     // Simplified Sync Settings
-    static let simplifiedSyncToggleTitle = NotLocalizedString("simplified.sync.toggle.title", bundle: Bundle.module, value: "Sync & Backup", comment: "Sync & Backup enabled / disabled toggle title")
-    static let simplifiedSyncHeaderMessage = NotLocalizedString("simplified.sync.header.message", bundle: Bundle.module, value: "Save your bookmarks, autofill data, and Duck.ai chats, and sync them between your devices with end-to-end encryption.", comment: "Description of the Sync & Backup feature (when AI chat sync is available)")
-    static let simplifiedSyncHeaderMessageBasic = NotLocalizedString("simplified.sync.header.message.basic", bundle: Bundle.module, value: "Save your bookmarks and autofill data, and sync them between your devices with end-to-end encryption.", comment: "Description of the Sync & Backup feature")
-    static let simplifiedSyncWithAnotherDeviceButton = NotLocalizedString("simplified.sync.with.another.device.button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync With Another Device sync setup button label")
-    static let simplifiedUseRecoveryCodeButton = NotLocalizedString("simplified.use.recovery.code.button", bundle: Bundle.module, value: "Use Recovery Code", comment: "Use Recovery Code sync setup button label")
-    static let simplifiedAlreadySetUpSectionHeader = NotLocalizedString("simplified.already.set.up.section.header", bundle: Bundle.module, value: "Already set up on another device?", comment: "Sync settings 'Already set up' section header containing useful options")
-    static let simplifiedGetDesktopBrowserTitle = NotLocalizedString("simplified.get.desktop.browser.title", bundle: Bundle.module, value: "Get Desktop Browser", comment: "Button title to get the DuckDuckGo desktop browser.")
-    static let simplifiedGetDesktopBrowserSubtitle = NotLocalizedString("simplified.get.desktop.browser.subtitle", bundle: Bundle.module, value: "DuckDuckGo for Mac and Windows", comment: "Button subtitle to get the DuckDuckGo desktop browser")
+    static let simplifiedSyncToggleTitle = NotLocalizedString("sync.simplified.toggle.title", bundle: Bundle.module, value: "Sync & Backup", comment: "Sync & Backup enabled / disabled toggle title")
+    static let simplifiedSyncHeaderMessage = NotLocalizedString("sync.simplified.header.message", bundle: Bundle.module, value: "Save your bookmarks, autofill data, and Duck.ai chats, and sync them between your devices with end-to-end encryption.", comment: "Description of the Sync & Backup feature (when AI chat sync is available)")
+    static let simplifiedSyncHeaderMessageBasic = NotLocalizedString("sync.simplified.header.message.basic", bundle: Bundle.module, value: "Save your bookmarks and autofill data, and sync them between your devices with end-to-end encryption.", comment: "Description of the Sync & Backup feature")
+    static let simplifiedSyncWithAnotherDeviceButton = NotLocalizedString("sync.simplified.with.another.device.button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync With Another Device sync setup button label")
+    static let simplifiedUseRecoveryCodeButton = NotLocalizedString("sync.simplified.use.recovery.code.button", bundle: Bundle.module, value: "Use Recovery Code", comment: "Use Recovery Code sync setup button label")
+    static let simplifiedAlreadySetUpSectionHeader = NotLocalizedString("sync.simplified.already.set.up.section.header", bundle: Bundle.module, value: "Already set up on another device?", comment: "Sync settings 'Already set up' section header containing useful options")
+    static let simplifiedGetDesktopBrowserTitle = NotLocalizedString("sync.simplified.get.desktop.browser.title", bundle: Bundle.module, value: "Get Desktop Browser", comment: "Button title to get the DuckDuckGo desktop browser.")
+    static let simplifiedGetDesktopBrowserSubtitle = NotLocalizedString("sync.simplified.get.desktop.browser.subtitle", bundle: Bundle.module, value: "DuckDuckGo for Mac and Windows", comment: "Button subtitle to get the DuckDuckGo desktop browser")
+    static let simplifiedSyncAnotherDeviceButton = NotLocalizedString("sync.simplified.another.device.button", bundle: Bundle.module, value: "Sync Another Device", comment: "Primary button to sync another device when sync is enabled")
+    static let simplifiedBookmarksSectionHeader = NotLocalizedString("sync.simplified.bookmarks.section.header", bundle: Bundle.module, value: "Bookmarks", comment: "Bookmarks section header in sync settings")
+    static let simplifiedBookmarksSectionFooterFormat = NotLocalizedString("sync.simplified.bookmarks.section.footer", bundle: Bundle.module, value: "Icon downloads are exposed to your network. [Learn More](%@)", comment: "Simplified Sync Settings - Bookmarks section footer with learn more link. %@ is replaced with the URL.")
+    static let simplifiedDownloadRecoveryCodeButton = NotLocalizedString("sync.simplified.download.recovery.code.button", bundle: Bundle.module, value: "Download Recovery Code", comment: "Sync settings 'Download Recovery Code' button")
+    static let simplifiedCopyRecoveryCodeButton = NotLocalizedString("sync.simplified.copy.recovery.code.button", bundle: Bundle.module, value: "Copy Recovery Code", comment: "Sync settings 'Copy Recovery Code' button")
+    static let simplifiedRecoverySectionFooter = NotLocalizedString("sync.simplified.recovery.section.footer", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to this device — keep it safe.", comment: "Sync settings data recovery section footer")
+    static let simplifiedDeleteSyncDataButton = NotLocalizedString("sync.simplified.delete.sync.data.button", bundle: Bundle.module, value: "Turn Off Sync and Delete Server Data", comment: "Sync settings action button title to turn off sync and delete server data")
+
+    // Simplified Sync Toggle
+    static let simplifiedSyncConnecting = NotLocalizedString("sync.simplified.connecting", bundle: Bundle.module, value: "Connecting...", comment: "Text shown next to toggle while sync is being set up")
+    static let simplifiedSyncEnabledToast = NotLocalizedString("sync.simplified.enabled.toast", bundle: Bundle.module, value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
+    static let simplifiedSyncSetupFailedToast = NotLocalizedString("sync.simplified.setup.failed.toast", bundle: Bundle.module, value: "Failed to enable Sync & Backup", comment: "Toast message shown when sync setup fails")
+    static let simplifiedSyncTurnOffTitle = NotLocalizedString("sync.simplified.turn.off.title", bundle: Bundle.module, value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
+    static let simplifiedSyncTurnOffMessage = NotLocalizedString("sync.simplified.turn.off.message", bundle: Bundle.module, value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
+    static let simplifiedSyncTurnOffAction = NotLocalizedString("sync.simplified.turn.off.action", bundle: Bundle.module, value: "Turn Off", comment: "Alert button to confirm turning off sync")
+
+    // Simplified Sync Another Device Prompt
+    static let simplifiedSyncAnotherDeviceTitle = NotLocalizedString("sync.simplified.another.device.title", bundle: Bundle.module, value: "Sync your data with another device?", comment: "Prompt title after enabling sync")
+    static let simplifiedSyncAnotherDeviceBody = NotLocalizedString("sync.simplified.another.device.body", bundle: Bundle.module, value: "Your bookmarks, autofill data, and Duck.ai chats are securely backed up. Now keep them in sync with your computer or tablet.", comment: "Prompt body text after enabling sync")
+    static let simplifiedSyncAnotherDeviceRemind = NotLocalizedString("sync.simplified.another.device.remind", bundle: Bundle.module, value: "Remind Me Later", comment: "Prompt secondary button on first show")
+    static let simplifiedSyncAnotherDeviceNoThanks = NotLocalizedString("sync.simplified.another.device.nothanks", bundle: Bundle.module, value: "No Thanks", comment: "Prompt secondary button on second show")
 
     // Sync Get Other Devices
     static let syncGetOtherDevicesScreenTitle = NSLocalizedString("sync.get.other.devices.screen.title", bundle: Bundle.module, value: "Get DuckDuckGo", comment: "Title of screen with share links for users to download DuckDuckGo on other devices")

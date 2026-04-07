@@ -120,6 +120,7 @@ extension TabViewController {
             autoconsentManagement: autoconsentManagement,
             websiteDataManager: websiteDataManager,
             fireproofing: fireproofing,
+            favicons: favicons,
             tabInteractionStateSource: tabInteractionStateSource,
             specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
             featureDiscovery: featureDiscovery,
@@ -129,7 +130,8 @@ extension TabViewController {
             productSurfaceTelemetry: productSurfaceTelemetry,
             privacyStats: privacyStats,
             voiceSearchHelper: voiceSearchHelper,
-            darkReaderFeatureSettings: darkReaderFeatureSettings)
+            darkReaderFeatureSettings: darkReaderFeatureSettings,
+            autoplaySettings: autoplaySettings)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

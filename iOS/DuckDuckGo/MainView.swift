@@ -207,7 +207,7 @@ extension MainViewFactory {
         }
 
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-            if let result = super.hitTest(point, with: event) {
+            if let result = super.hitTest(point, with: event), result != self {
                 return result
             }
             guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
@@ -312,7 +312,12 @@ extension MainViewFactory {
         superview.addSubview(coordinator.topSlideContainer)
     }
 
-    final class UnifiedToggleInputContainer: UIView {}
+    final class UnifiedToggleInputContainer: UIView {
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            let result = super.hitTest(point, with: event)
+            return result == self ? nil : result
+        }
+    }
     private func createUnifiedToggleInputContainer() {
         coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
         coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -352,25 +357,25 @@ extension MainViewFactory {
         let toolbar = coordinator.toolbar!
         let navigationBarCollectionView = coordinator.navigationBarCollectionView!
 
-        #if compiler(>=6.2)
         if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
             coordinator.constraints.navigationBarContainerTop = container.topAnchor.constraint(equalTo: guide.topAnchor)
         } else {
             coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
-        #else
-        coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
-        #endif
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
-        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight, relatedBy: .equal)
+        let barHeight = coordinator.omniBar.barView.expectedHeight
+        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: barHeight, relatedBy: .equal)
+        coordinator.constraints.navigationBarContainerMinHeight = container.constrainAttribute(.height, to: barHeight, relatedBy: .greaterThanOrEqual)
+        coordinator.constraints.navigationBarCollectionViewSafeAreaBottom =
+            navigationBarCollectionView.bottomAnchor.constraint(lessThanOrEqualTo: superview.safeAreaLayoutGuide.bottomAnchor)
 
         NSLayoutConstraint.activate([
             coordinator.constraints.navigationBarContainerTop,
             container.constrainView(superview, by: .leading),
             container.constrainView(superview, by: .trailing),
             coordinator.constraints.navigationBarContainerHeight,
-            navigationBarCollectionView.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight),
+            navigationBarCollectionView.constrainAttribute(.height, to: barHeight),
             navigationBarCollectionView.constrainView(container, by: .top),
             navigationBarCollectionView.constrainView(container, by: .leading),
             navigationBarCollectionView.constrainView(container, by: .trailing),
@@ -380,16 +385,12 @@ extension MainViewFactory {
     private func constrainTabBarContainer() {
         let tabBarContainer = coordinator.tabBarContainer!
 
-        #if compiler(>=6.2)
         if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
             coordinator.constraints.tabBarContainerTop = tabBarContainer.topAnchor.constraint(equalTo: guide.topAnchor)
         } else {
             coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
-        #else
-        coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
-        #endif
 
         NSLayoutConstraint.activate([
             tabBarContainer.constrainView(superview, by: .leading),
@@ -489,12 +490,12 @@ extension MainViewFactory {
 
     private func constrainUnifiedInputContentContainer() {
         let container = coordinator.unifiedInputContentContainer!
-        let contentContainer = coordinator.contentContainer!
+        let toolbar = coordinator.toolbar!
         NSLayoutConstraint.activate([
-            container.constrainView(contentContainer, by: .width),
-            container.constrainView(contentContainer, by: .height),
-            container.constrainView(contentContainer, by: .centerX),
-            container.constrainView(contentContainer, by: .centerY),
+            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            container.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
+            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 

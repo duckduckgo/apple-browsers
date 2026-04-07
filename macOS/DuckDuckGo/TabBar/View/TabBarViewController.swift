@@ -179,9 +179,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var leftSideStackLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var rightSideStackView: NSStackView!
     private var duckAIChromeControlContainer: ColorView?
+    var duckAISplitButtonContainer: NSView? { duckAIChromeControlContainer }
+    private var duckAIChromeBlurView: NSVisualEffectView?
     private var duckAIChromeTitleButton: MouseOverButton?
     private var duckAIChromeSidebarButton: MouseOverButton?
     private var duckAIChromeDivider: ColorView?
+
+    private var isFireWindow: Bool {
+        tabCollectionViewModel.isBurner
+    }
 
     private var isChromeSidebarFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
@@ -585,6 +591,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             sidebarButton.isHidden = true
             divider.isHidden = true
             container.isHidden = true
+            updateDuckAIChromeVibrancyBackground()
             return
         }
 
@@ -602,14 +609,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         if !duckAIHidden && !sidebarHidden {
             titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
             sidebarButton.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
+            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
         } else if !duckAIHidden {
             titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
+            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
         } else if !sidebarHidden {
             sidebarButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
             container.backgroundColor = .clear
         }
+
+        updateDuckAIChromeVibrancyBackground()
     }
 
     func refreshDuckAIChromeButtonsVisibility() {
@@ -629,10 +638,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         guard let duckAIChromeControlContainer, let duckAIChromeTitleButton, let duckAIChromeSidebarButton else { return }
 
         let colorsProvider = theme.colorsProvider
-        duckAIChromeControlContainer.backgroundColor = colorsProvider.buttonMouseOverColor
+        duckAIChromeControlContainer.backgroundColor = isFireWindow ? .clear : colorsProvider.buttonMouseOverColor
         duckAIChromeControlContainer.cornerRadius = theme.toolbarButtonsCornerRadius
         duckAIChromeControlContainer.borderColor = nil
         duckAIChromeControlContainer.borderWidth = 0
+
+        updateDuckAIChromeVibrancyBackground()
 
         let titleFont = NSFont.systemFont(ofSize: 13)
         duckAIChromeTitleButton.attributedTitle = NSAttributedString(string: UserText.aiChatTitle, attributes: [
@@ -681,7 +692,49 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             colorsProvider.separatorActiveColor : colorsProvider.separatorColor
     }
 
+    private func updateDuckAIChromeVibrancyBackground() {
+        guard let duckAIChromeControlContainer else { return }
+
+        if isFireWindow {
+            if duckAIChromeBlurView == nil {
+                let vibrancyView = NSVisualEffectView()
+                vibrancyView.translatesAutoresizingMaskIntoConstraints = false
+                vibrancyView.material = .hudWindow
+                vibrancyView.blendingMode = .withinWindow
+                vibrancyView.state = .active
+                vibrancyView.wantsLayer = true
+                vibrancyView.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
+                vibrancyView.layer?.masksToBounds = true
+
+                duckAIChromeControlContainer.addSubview(vibrancyView, positioned: .below, relativeTo: duckAIChromeControlContainer.subviews.first)
+
+                NSLayoutConstraint.activate([
+                    vibrancyView.leadingAnchor.constraint(equalTo: duckAIChromeControlContainer.leadingAnchor),
+                    vibrancyView.trailingAnchor.constraint(equalTo: duckAIChromeControlContainer.trailingAnchor),
+                    vibrancyView.topAnchor.constraint(equalTo: duckAIChromeControlContainer.topAnchor),
+                    vibrancyView.bottomAnchor.constraint(equalTo: duckAIChromeControlContainer.bottomAnchor)
+                ])
+                duckAIChromeBlurView = vibrancyView
+            }
+
+            let shadow = NSShadow()
+            shadow.shadowColor = NSColor.black.withAlphaComponent(0.12)
+            shadow.shadowOffset = CGSize(width: 0, height: -0.5)
+            shadow.shadowBlurRadius = 1.5
+            duckAIChromeControlContainer.shadow = shadow
+            duckAIChromeControlContainer.wantsLayer = true
+            duckAIChromeControlContainer.layer?.masksToBounds = false
+        } else {
+            duckAIChromeBlurView?.removeFromSuperview()
+            duckAIChromeBlurView = nil
+            duckAIChromeControlContainer.shadow = nil
+        }
+    }
+
     private func removeDuckAIChromeSegmentedControl() {
+        duckAIChromeBlurView?.removeFromSuperview()
+        duckAIChromeBlurView = nil
+
         guard let duckAIChromeControlContainer else { return }
         rightSideStackView.removeArrangedSubview(duckAIChromeControlContainer)
         duckAIChromeControlContainer.removeFromSuperview()
@@ -1600,6 +1653,16 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         appendToCollectionView(selected: selected)
     }
 
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {
+        let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
+        guard let collectionView else {
+            Logger.general.error("collection view is nil")
+            return
+        }
+        let indexPathSet = Set(arrayLiteral: IndexPath(item: index.item))
+        collectionView.reloadItems(at: indexPathSet)
+    }
+
     func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool) {
         let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
         guard let collectionView else {
@@ -1826,7 +1889,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         if theme.tabStyleProvider.shouldShowSShapedTab {
             let isRightScrollButtonVisible = !isPinnedTabs && !rightScrollButton.isHidden
             let isLeftScrollButonVisible = !isPinnedTabs && !leftScrollButton.isHidden
-            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 6 : 12, bottom: 0, right: isRightScrollButtonVisible ? 6 : -12)
+            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 10 : 12, bottom: 0, right: isRightScrollButtonVisible ? 10 : -12)
         } else if let flowLayout = collectionViewLayout as? NSCollectionViewFlowLayout {
             return flowLayout.sectionInset
         } else {
@@ -2169,6 +2232,15 @@ extension TabBarViewController: TabBarViewItemDelegate {
         return tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.content.canBeDuplicated ?? false
     }
 
+    func tabBarViewItemNewToTheRightAction(_ tabBarViewItem: TabBarViewItem) {
+        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        insertNewTab(nextTo: tabIndex)
+    }
+
     func tabBarViewItemDuplicateAction(_ tabBarViewItem: TabBarViewItem) {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
@@ -2490,6 +2562,25 @@ extension TabBarViewController: TabBarViewItemDelegate {
         removeFireproofing(from: tab)
     }
 
+    func tabBarViewItemSuspendAction(_ tabBarViewItem: TabBarViewItem) {
+        guard featureFlagger.isFeatureOn(.tabSuspension), featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
+
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        if tabBarViewItem.tabViewModel?.isSuspended == true {
+            tabCollectionViewModel.resumeTab(at: tabIndex)
+        } else {
+            tabCollectionViewModel.suspendTab(at: tabIndex)
+        }
+    }
+
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
@@ -2516,6 +2607,29 @@ extension TabBarViewController: TabBarViewItemDelegate {
                      hasItemsToTheRight: indexPath.item + 1 < (tabCollection?.tabs.count ?? 0))
     }
 
+}
+
+private extension TabBarViewController {
+
+    func insertNewTab(nextTo tabIndex: TabIndex) {
+        /// `New Tab Next to Pinned`:  We'll create a new Tab at the location `0`
+        let targetIndex: TabIndex = tabIndex.isPinnedTab
+            ? .unpinned(.zero)
+            : tabIndex.makeNext()
+
+        let tab = Tab(content: .newtab, burnerMode: tabCollectionViewModel.burnerMode)
+        tabCollectionViewModel.insert(tab, at: targetIndex, selected: true)
+    }
+
+    func tabIndex(forTabBarViewItem item: TabBarViewItem) -> TabIndex? {
+        let isPinned = item.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : collectionView
+        guard let indexPath = collectionView?.indexPath(for: item) else {
+            return nil
+        }
+
+        return isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+    }
 }
 
 extension TabBarViewController {

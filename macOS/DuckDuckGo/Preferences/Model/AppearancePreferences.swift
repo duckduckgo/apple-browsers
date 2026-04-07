@@ -171,14 +171,8 @@ final class DefaultNewTabPageNavigator: NewTabPageNavigator {
                 try? await Task.sleep(interval: 0.2)
             }
             if let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
-                if Application.appDelegate.featureFlagger.isFeatureOn(.newTabPagePerTab) {
-                    if let webView = window.mainViewController.browserTabViewController.webView {
-                        Application.appDelegate.newTabPageCustomizationModel.customizerOpener.openSettings(for: webView)
-                    }
-                } else {
-                    let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
-                    NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
-                }
+                let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
+                NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
             }
         }
     }
@@ -262,6 +256,9 @@ final class AppearancePreferences: ObservableObject {
 
     @Published var themeAppearance: ThemeAppearance {
         didSet {
+            guard oldValue != themeAppearance else {
+                return
+            }
             persistor.themeAppearance = themeAppearance.rawValue
             updateUserInterfaceStyle()
         }
@@ -269,6 +266,9 @@ final class AppearancePreferences: ObservableObject {
 
     @Published var themeName: ThemeName {
         didSet {
+            guard oldValue != themeName else {
+                return
+            }
             persistor.themeName = themeName.rawValue
         }
     }

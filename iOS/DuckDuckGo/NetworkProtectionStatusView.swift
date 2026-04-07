@@ -372,6 +372,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
+                .tint(Color.init(designSystemColor: .accent))
                 .onAppear {
                     tipsModel.handleSnoozeTipShown()
                 }
@@ -400,6 +401,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
+                .tint(Color.init(designSystemColor: .accent))
                 .onAppear {
                     tipsModel.handleWidgetTipShown()
                 }
@@ -448,9 +450,15 @@ private struct NetworkProtectionErrorView: View {
                     .daxBodyBold()
                     .foregroundColor(.primary)
             }
-            Text(message)
-                .daxBodyRegular()
-                .foregroundColor(.primary)
+            if let attributedMessage = try? AttributedString(markdown: message) {
+                Text(attributedMessage)
+                    .daxBodyRegular()
+                    .foregroundColor(.primary)
+            } else {
+                Text(message)
+                    .daxBodyRegular()
+                    .foregroundColor(.primary)
+            }
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

@@ -46,19 +46,23 @@ final class PromoServiceTests: XCTestCase {
     private func makeService(
         promos: [Promo],
         initialExternalActivation: Bool = false,
+        isOnboardingCompletedProvider: @escaping () -> Bool = { true },
         evaluationDeferralWindow: TimeInterval = 0,
         registrationFallbackTimeout: TimeInterval = 0,
-        externalActivationWindow: TimeInterval = 0
+        externalActivationWindow: TimeInterval = 0,
+        dateProvider: @escaping () -> Date = Date.init
     ) -> PromoService {
         PromoService(
             promos: promos,
             historyStore: historyStore,
             triggerPublisher: triggerSubject.eraseToAnyPublisher(),
             initialExternalActivation: initialExternalActivation,
+            isOnboardingCompletedProvider: isOnboardingCompletedProvider,
             stateQueue: testQueue,
             evaluationDeferralWindow: evaluationDeferralWindow,
             registrationFallbackTimeout: registrationFallbackTimeout,
-            externalActivationWindow: externalActivationWindow
+            externalActivationWindow: externalActivationWindow,
+            dateProvider: dateProvider
         )
     }
 
@@ -223,6 +227,93 @@ final class PromoServiceTests: XCTestCase {
         let record = historyStore.record(for: "low-promo")
         XCTAssertEqual(record.timesDismissed, 1)
         XCTAssertTrue(record.actioned)
+    }
+
+    func testWhenOnboardingIncomplete_ThenInternalPromoIsSuppressedUntilOnboardingCompletes() async {
+        // Given
+        var isOnboardingCompleted = false
+        let delegate = MockPromoDelegate(isEligible: true)
+        delegate.setShowResult(.actioned)
+        let promo = PromoTestHelpers.makePromo(id: "onboarding-gated-internal", delegate: delegate)
+        let promoService = makeService(
+            promos: [promo],
+            isOnboardingCompletedProvider: { isOnboardingCompleted }
+        )
+
+        let shownExpectation = XCTestExpectation(description: "promo hidden after onboarding completes")
+        let resultExpectation = XCTestExpectation(description: "promo result recorded")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.contains(where: { $0.id == "onboarding-gated-internal" }) {
+                    shownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        promoService.historyPublisher(for: "onboarding-gated-internal")
+            .compactMap { $0 }
+            .sink { record in
+                if record.actioned, record.timesDismissed == 1 {
+                    resultExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When: onboarding is incomplete
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+
+        // Then: internal promo is suppressed
+        let record = historyStore.record(for: "onboarding-gated-internal")
+        XCTAssertEqual(record.timesDismissed, 0)
+        XCTAssertFalse(record.actioned)
+
+        // When: onboarding completes and a new trigger arrives
+        isOnboardingCompleted = true
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [shownExpectation, resultExpectation], timeout: timeout)
+
+        // Then: promo can now be shown and dismissed
+        let updatedRecord = historyStore.record(for: "onboarding-gated-internal")
+        XCTAssertEqual(updatedRecord.timesDismissed, 1)
+        XCTAssertTrue(updatedRecord.actioned)
+    }
+
+    func testWhenOnboardingIncomplete_ThenExternalPromoVisibilityStillObserved() async {
+        // Given
+        let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
+        let promo = PromoTestHelpers.makePromo(id: "onboarding-gated-external", delegate: externalDelegate)
+        let promoService = makeService(
+            promos: [promo],
+            isOnboardingCompletedProvider: { false }
+        )
+
+        let shownExpectation = XCTestExpectation(description: "external promo visible while onboarding incomplete")
+        let resultExpectation = XCTestExpectation(description: "external promo result recorded")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.contains(where: { $0.id == "onboarding-gated-external" }) {
+                    shownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        promoService.historyPublisher(for: "onboarding-gated-external")
+            .compactMap { $0 }
+            .sink { record in
+                if record.lastShown != nil {
+                    resultExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        externalDelegate.setVisible(true)
+        await fulfillment(of: [shownExpectation, resultExpectation], timeout: timeout)
+
+        // Then
+        XCTAssertTrue(externalDelegate.isVisible)
     }
 
     func testWhenGlobalPromoVisible_ThenOtherContextPromoBlocked() async {
@@ -1155,6 +1246,46 @@ final class PromoServiceTests: XCTestCase {
     }
 
     // MARK: - Timeout and eligibility
+
+    func testWhenSimulatedDateAdvancesPastTimeoutDeadline_ThenReconcileRecordsTimeoutWithoutWallClock() async {
+        // Given: logical clock and a promo whose wall-clock timeout is long, while show() stays suspended
+        var simulatedNow = Date(timeIntervalSince1970: 1_700_000_000)
+        let delegate = MockPromoDelegate(isEligible: true)
+        let promo = PromoTestHelpers.makePromo(
+            id: "sim-timeout-promo",
+            promoType: PromoType(.inlineMessage, customTimeoutInterval: 100, customTimeoutResult: .actioned),
+            delegate: delegate
+        )
+        let promoService = makeService(promos: [promo], dateProvider: { simulatedNow })
+
+        let visibleExpectation = XCTestExpectation(description: "promo visible")
+        let hiddenExpectation = XCTestExpectation(description: "promo hidden after reconcile")
+        var hasSeenVisible = false
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if !promos.isEmpty, !hasSeenVisible {
+                    hasSeenVisible = true
+                    visibleExpectation.fulfill()
+                }
+                if hasSeenVisible, promos.isEmpty {
+                    hiddenExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [visibleExpectation], timeout: timeout)
+
+        simulatedNow = simulatedNow.addingTimeInterval(101)
+        promoService.reconcileActivePromoTimeoutsAfterSimulatedDateAdvance()
+        await fulfillment(of: [hiddenExpectation], timeout: timeout)
+
+        let record = historyStore.record(for: "sim-timeout-promo")
+        XCTAssertTrue(record.actioned)
+        XCTAssertEqual(record.timesDismissed, 1)
+    }
 
     func testWhenTimeoutFiresBeforeShowReturns_ThenTimeoutResultRecorded() async {
         // Given: promo with short timeout

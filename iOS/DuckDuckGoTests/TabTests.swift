@@ -347,6 +347,48 @@ class TabTests: XCTestCase {
     }
 
 
+    // MARK: - AI Chat Conversation Title Tests
+
+    func testWhenAITabHasTitleThenConversationTitleReturnsDisplayTitle() {
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: "Pricing notation in decimals", url: aiURL))
+
+        XCTAssertEqual(tab.aiChatConversationTitle, "Pricing notation in decimals")
+    }
+
+    func testWhenAITabHasDuckDuckGoSuffixThenConversationTitleStripsIt() {
+        let aiURL = URL(string: "https://duckduckgo.com/?ia=chat")!
+        let tab = Tab(link: Link(title: "My Chat at DuckDuckGo", url: aiURL))
+
+        XCTAssertEqual(tab.aiChatConversationTitle, "My Chat")
+    }
+
+    func testWhenAITabHasEmptyTitleThenConversationTitleReturnsNil() {
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: "", url: aiURL))
+
+        XCTAssertNil(tab.aiChatConversationTitle)
+    }
+
+    func testWhenAITabHasNilTitleThenConversationTitleReturnsNil() {
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: nil, url: aiURL))
+
+        XCTAssertNil(tab.aiChatConversationTitle)
+    }
+
+    func testWhenAITabHasNoLinkThenConversationTitleReturnsNil() {
+        let tab = Tab()
+
+        XCTAssertNil(tab.aiChatConversationTitle)
+    }
+
+    func testWhenNonAITabHasTitleThenConversationTitleReturnsNil() {
+        let tab = Tab(link: Link(title: "Some Page", url: URL(string: "https://example.com")!))
+
+        XCTAssertNil(tab.aiChatConversationTitle)
+    }
+
     // MARK: - Contextual Chat URL Tests
 
     func testWhenTabWithContextualChatURLEncodedThenDecodesSuccessfully() {

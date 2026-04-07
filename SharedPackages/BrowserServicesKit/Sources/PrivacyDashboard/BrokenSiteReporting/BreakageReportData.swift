@@ -18,16 +18,16 @@
 
 import Foundation
 
-/// Data collected from breakage reporting subfeature including performance metrics and detector data
+/// Data collected from breakage reporting subfeature including performance metrics
 public struct BreakageReportData {
     public let performanceMetrics: PerformanceMetrics?
-    public let detectorData: DetectorData?
     public let jsPerformance: [Double]?
+    public let breakageData: String?
 
-    public init(performanceMetrics: PerformanceMetrics?, detectorData: DetectorData?, jsPerformance: [Double]?) {
+    public init(performanceMetrics: PerformanceMetrics?, jsPerformance: [Double]?, breakageData: String? = nil) {
         self.performanceMetrics = performanceMetrics
-        self.detectorData = detectorData
         self.jsPerformance = jsPerformance
+        self.breakageData = breakageData
     }
 
     /// Convenience computed property for privacy-aware metrics conversion

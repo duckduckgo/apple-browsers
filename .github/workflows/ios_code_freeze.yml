@@ -12,7 +12,7 @@ on:
         required: false
         type: string
   schedule:
-    - cron: '0 0 * * 1' # 12AM UTC on Monday
+    - cron: '0 1 * * 1' # 1AM UTC on Monday
 
 concurrency:
   group: 'ios-release'
@@ -59,7 +59,7 @@ jobs:
     steps:
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           submodules: recursive

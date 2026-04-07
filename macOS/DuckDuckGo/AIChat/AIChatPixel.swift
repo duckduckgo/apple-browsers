@@ -187,16 +187,16 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a non-pinned recent chat by pressing enter
     case aiChatRecentChatSelectedKeyboard
 
-    // MARK: - Toggle popover pixels
+    // MARK: - Recent chat deletion
 
-    /// Event Trigger: The toggle popover is shown to the user
-    case aiChatTogglePopoverShown
+    /// Event Trigger: User clicks the delete button on a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteButtonClicked
 
-    /// Event Trigger: User clicks the X button to dismiss the toggle popover
-    case aiChatTogglePopoverDismissButtonClicked
+    /// Event Trigger: User confirms deletion of a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteConfirmed
 
-    /// Event Trigger: User clicks the settings button in the toggle popover
-    case aiChatTogglePopoverCustomizeButtonClicked
+    /// Event Trigger: User cancels deletion of a recent chat suggestion in the address bar
+    case aiChatRecentChatDeleteCancelled
 
     case aiChatSyncScopedSyncTokenError(reason: String)
     case aiChatSyncEncryptionError(reason: String)
@@ -222,6 +222,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the model picker menu
     case aiChatAddressBarModelSelected
 
+    /// Event Trigger: User submits a prompt with images from the New Tab Page omnibar
+    case aiChatNtpSubmitWithImage(imageCount: Int)
+
+    /// Event Trigger: User selects a model from the New Tab Page model picker
+    case aiChatNtpModelSelected
+
     /// Event Trigger: Models API fetch fails (endpoint unreachable or returns error)
     case aiChatModelsFetchFailed
 
@@ -246,6 +252,11 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: User completes onboarding with the Duck.ai toggle disabled
     case aiChatOnboardingFinishedToggleOff
+
+    // MARK: - Daily
+
+    /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
+    case aiChatIsEnabled(isEnabled: Bool)
 
     // MARK: -
 
@@ -351,12 +362,13 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_recent_chat_selected_mouse"
         case .aiChatRecentChatSelectedKeyboard:
             return "aichat_recent_chat_selected_keyboard"
-        case .aiChatTogglePopoverShown:
-            return "aichat_toggle_popover_shown"
-        case .aiChatTogglePopoverDismissButtonClicked:
-            return "aichat_toggle_popover_dismiss_button_clicked"
-        case .aiChatTogglePopoverCustomizeButtonClicked:
-            return "aichat_toggle_popover_customize_button_clicked"
+        case .aiChatRecentChatDeleteButtonClicked:
+            return "aichat_recent_chat_delete_button_clicked"
+        case .aiChatRecentChatDeleteConfirmed:
+            return "aichat_recent_chat_delete_confirmed"
+        case .aiChatRecentChatDeleteCancelled:
+            return "aichat_recent_chat_delete_cancelled"
+
         case .aiChatSyncScopedSyncTokenError:
             return "aichat_sync_internal_scoped-sync-token-error"
         case .aiChatSyncEncryptionError:
@@ -385,12 +397,18 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_submit_with_image"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
+        case .aiChatNtpSubmitWithImage:
+            return "aichat_ntp_submit_with_image"
+        case .aiChatNtpModelSelected:
+            return "aichat_ntp_model_selected"
         case .aiChatModelsFetchFailed:
             return "aichat_models_fetch_failed"
         case .aiChatMetricStartNewConversation:
             return "aichat_start_new_conversation"
         case .aiChatMetricSentPromptOngoingChat:
             return "aichat_sent_prompt_ongoing_chat"
+        case .aiChatIsEnabled:
+            return "aichat_is_enabled"
         }
     }
 
@@ -437,9 +455,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
-                .aiChatTogglePopoverShown,
-                .aiChatTogglePopoverDismissButtonClicked,
-                .aiChatTogglePopoverCustomizeButtonClicked,
+                .aiChatRecentChatDeleteButtonClicked,
+                .aiChatRecentChatDeleteConfirmed,
+                .aiChatRecentChatDeleteCancelled,
                 .aiChatOnboardingTogglePreferenceOn,
                 .aiChatOnboardingTogglePreferenceOff,
                 .aiChatOnboardingFinishedToggleOn,
@@ -447,13 +465,17 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarModelSelected,
+                .aiChatNtpModelSelected,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn:
             return nil
-        case .aiChatAddressBarSubmitWithImage(let imageCount):
+        case .aiChatIsEnabled(let isEnabled):
+            return ["is_enabled": isEnabled ? "1" : "0"]
+        case .aiChatAddressBarSubmitWithImage(let imageCount),
+             .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -532,9 +554,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
-                .aiChatTogglePopoverShown,
-                .aiChatTogglePopoverDismissButtonClicked,
-                .aiChatTogglePopoverCustomizeButtonClicked,
+                .aiChatRecentChatDeleteButtonClicked,
+                .aiChatRecentChatDeleteConfirmed,
+                .aiChatRecentChatDeleteCancelled,
                 .aiChatSyncScopedSyncTokenError,
                 .aiChatSyncEncryptionError,
                 .aiChatSyncDecryptionError,
@@ -547,11 +569,14 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarSubmitWithImage,
                 .aiChatAddressBarModelSelected,
+                .aiChatNtpSubmitWithImage,
+                .aiChatNtpModelSelected,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
-                .aiChatTermsAcceptedDuplicateSyncOn:
+                .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatIsEnabled:
             return [.pixelSource]
         }
     }

@@ -37,6 +37,7 @@ final class JobQueueManagerTests: XCTestCase {
     private var mockEventsHandler: MockOperationEventsHandler!
     private var mockJobErrorDelegate: MockBrokerProfileJobStatusReportingDelegate!
     private var mockDependencies: BrokerProfileJobDependencies!
+    private var mockQueueDelegate: MockJobQueueManagerDelegate!
 
     override func setUpWithError() throws {
         mockQueue = MockBrokerProfileJobQueue()
@@ -48,6 +49,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockScanRunner = MockScanSubJobWebRunner()
         mockOptOutRunner = MockOptOutSubJobWebRunner()
         mockEventsHandler = MockOperationEventsHandler()
+        mockQueueDelegate = MockJobQueueManagerDelegate()
 
         mockDependencies = BrokerProfileJobDependencies(database: mockDatabase,
                                                         contentScopeProperties: ContentScopeProperties.mock,
@@ -478,14 +480,101 @@ final class JobQueueManagerTests: XCTestCase {
         XCTAssert(mockOperationsCreator.createdType == .manualScan)
 
         // When
-        sut.execute(.startOptOutOperations(showWebView: false,
-                                           jobDependencies: mockDependencies,
-                                           errorHandler: nil,
-                                           completion: nil))
+        sut.startImmediateOptOutOperationsIfPermitted(showWebView: false,
+                                                      jobDependencies: mockDependencies,
+                                                      errorHandler: nil,
+                                                      completion: nil)
 
         // Then
         XCTAssert(mockOperationsCreator.createdType == .optOut)
         XCTAssertEqual(mockQueue.maxConcurrentOperationCount, expectedConcurrentOperations)
+    }
+
+    func testWhenIndividualJobCompletesSuccessfully_thenDelegateReceivesSameContext() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        sut.delegate = mockQueueDelegate
+
+        let identifier = CompletedJobIdentifier(brokerId: 41, profileQueryId: 43, extractedProfileId: 47, stepType: .optOut)
+
+        sut.dataBrokerOperationDidCompleteSuccessfully(withBrokerURL: "broker.com",
+                                                       version: "1.0.0",
+                                                       dataBrokerParent: nil,
+                                                       identifier: identifier)
+
+        XCTAssertEqual(mockQueueDelegate.completedIdentifiers.count, 1)
+        guard let receivedIdentifier = mockQueueDelegate.completedIdentifiers.first ?? nil else {
+            return XCTFail("Expected completed job identifier")
+        }
+
+        XCTAssertEqual(receivedIdentifier.brokerId, 41)
+        XCTAssertEqual(receivedIdentifier.profileQueryId, 43)
+        XCTAssertEqual(receivedIdentifier.extractedProfileId, 47)
+        XCTAssertEqual(receivedIdentifier.stepType, .optOut)
+    }
+
+    func testWhenIndividualJobErrors_thenDelegateReceivesSameContext() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        sut.delegate = mockQueueDelegate
+
+        let identifier = CompletedJobIdentifier(brokerId: 53, profileQueryId: 59, extractedProfileId: nil, stepType: .scan)
+
+        sut.dataBrokerOperationDidError(DataBrokerProtectionError.actionFailed(actionID: "action", message: "failed"),
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0.0",
+                                        identifier: identifier,
+                                        dataBrokerParent: nil,
+                                        isFreeScan: false)
+
+        XCTAssertEqual(mockQueueDelegate.completedIdentifiers.count, 1)
+        guard let receivedIdentifier = mockQueueDelegate.completedIdentifiers.first ?? nil else {
+            return XCTFail("Expected completed job identifier")
+        }
+
+        XCTAssertEqual(receivedIdentifier.brokerId, 53)
+        XCTAssertEqual(receivedIdentifier.profileQueryId, 59)
+        XCTAssertNil(receivedIdentifier.extractedProfileId)
+        XCTAssertEqual(receivedIdentifier.stepType, .scan)
+    }
+
+    func testWhenStartImmediateOptOut_andCurrentModeIsScheduled_thenCurrentOperationsAreInterrupted() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        mockOperationsCreator.operationCollections = (1...4).map {
+            MockBrokerProfileJob(id: Int64($0), jobType: .scheduledScan, statusReportingDelegate: sut)
+        }
+        var interruptedErrors: DataBrokerProtectionJobsErrorCollection?
+
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+            interruptedErrors = errors
+        } completion: {
+            // no-op
+        }
+
+        mockOperationsCreator.operationCollections = (10...12).map {
+            MockBrokerProfileJob(id: Int64($0), jobType: .optOut, statusReportingDelegate: sut)
+        }
+
+        sut.startImmediateOptOutOperationsIfPermitted(showWebView: false,
+                                                      jobDependencies: mockDependencies,
+                                                      errorHandler: nil,
+                                                      completion: nil)
+
+        XCTAssertEqual(interruptedErrors?.oneTimeError as? BrokerProfileJobQueueError, .interrupted)
+        XCTAssertEqual(mockQueue.didCallCancelCount, 1)
+        XCTAssertEqual(mockOperationsCreator.createdType, .optOut)
+        XCTAssertEqual(mockQueue.maxConcurrentOperationCount, BrokerJobExecutionConfig().concurrentJobsFor(.optOut))
+        XCTAssertEqual(mockQueue.operations.filter { !$0.isCancelled }.count, 3)
     }
 
     func testWhenActionFailedErrorPixelFired_parametersIncludeStepTypeAndParent() {
@@ -503,7 +592,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(error,
                                         withBrokerURL: "broker.com",
                                         version: "1.0.0",
-                                        stepType: .optOut,
+                                        identifier: CompletedJobIdentifier(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .optOut),
                                         dataBrokerParent: "parent.com",
                                         isFreeScan: false)
 
@@ -542,7 +631,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(error,
                                         withBrokerURL: "broker.com",
                                         version: "1.0.0",
-                                        stepType: nil,
+                                        identifier: nil,
                                         dataBrokerParent: nil,
                                         isFreeScan: false)
 
@@ -577,7 +666,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        stepType: .scan,
+                                        identifier: CompletedJobIdentifier(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
                                         dataBrokerParent: nil,
                                         isFreeScan: true)
 
@@ -598,7 +687,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        stepType: .scan,
+                                        identifier: CompletedJobIdentifier(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
                                         dataBrokerParent: nil,
                                         isFreeScan: false)
 
@@ -619,7 +708,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        stepType: .scan,
+                                        identifier: CompletedJobIdentifier(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
                                         dataBrokerParent: nil,
                                         isFreeScan: nil)
 
@@ -640,7 +729,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.actionFailed(actionID: "id", message: "msg"),
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        stepType: .scan,
+                                        identifier: CompletedJobIdentifier(brokerId: 1, profileQueryId: 1, extractedProfileId: nil, stepType: .scan),
                                         dataBrokerParent: nil,
                                         isFreeScan: true)
 
@@ -661,7 +750,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.cancelled,
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        stepType: nil,
+                                        identifier: nil,
                                         dataBrokerParent: nil,
                                         isFreeScan: true)
 
@@ -682,7 +771,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.dataBrokerOperationDidError(DataBrokerProtectionError.cancelled,
                                         withBrokerURL: "broker.com",
                                         version: "1.0",
-                                        stepType: nil,
+                                        identifier: nil,
                                         dataBrokerParent: nil,
                                         isFreeScan: nil)
 
@@ -757,5 +846,18 @@ final class JobQueueManagerTests: XCTestCase {
         let expectedError = BrokerProfileJobQueueError.interrupted
         XCTAssertEqual((errorCollection.oneTimeError as? BrokerProfileJobQueueError), expectedError)
         await fulfillment(of: [expectation], timeout: 2)
+    }
+}
+
+private final class MockJobQueueManagerDelegate: JobQueueManagerDelegate {
+    var didEnqueueOperations = false
+    var completedIdentifiers: [CompletedJobIdentifier?] = []
+
+    func queueManagerWillEnqueueOperations(_ queueManager: any JobQueueManaging) {
+        didEnqueueOperations = true
+    }
+
+    func queueManagerDidCompleteIndividualJob(_ queueManager: any JobQueueManaging, identifier: CompletedJobIdentifier?) {
+        completedIdentifiers.append(identifier)
     }
 }

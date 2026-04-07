@@ -47,6 +47,7 @@
 		<string>/Library/Application Support/Coccoc/</string>
 		<string>/Library/Application Support/TorBrowser-Data/Browser/</string>
 		<string>/Library/Application Support/Arc/User Data/</string>
+		<string>/Library/Preferences/com.apple.dock.plist</string>
 	</array>
 	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
 	<array>

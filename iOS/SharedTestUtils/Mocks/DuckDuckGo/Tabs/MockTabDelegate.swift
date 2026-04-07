@@ -112,6 +112,8 @@ final class MockTabDelegate: TabDelegate {
         didRequestFireButtonPulseCalled = true
     }
 
+    func tabDidRequestDeleteContextualChat(tab: DuckDuckGo.TabViewController, chatID: String) {}
+
     func tabDidRequestPrivacyDashboardButtonPulse(tab: DuckDuckGo.TabViewController, animated: Bool) {
         tabDidRequestPrivacyDashboardButtonPulseCalled = true
         privacyDashboardAnimated = animated
@@ -174,6 +176,7 @@ extension TabViewController {
             autoconsentManagement: MockAutoconsentManagement(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),
+            favicons: Favicons(),
             tabInteractionStateSource: MockTabInteractionStateSource(),
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
@@ -183,7 +186,8 @@ extension TabViewController {
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             privacyStats: MockPrivacyStats(),
             voiceSearchHelper: MockVoiceSearchHelper(),
-            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+            autoplaySettings: MockAutoplaySettings()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -262,4 +266,8 @@ struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
     func setForceDarkModeEnabled(_ enabled: Bool) {}
     func themeDidChange() {}
+}
+
+final class MockAutoplaySettings: AutoplaySettings {
+    var currentAutoplayBlockingMode: AutoplayBlockingMode = .blockAudio
 }

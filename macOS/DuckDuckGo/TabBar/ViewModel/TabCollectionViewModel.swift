@@ -36,6 +36,7 @@ protocol TabCollectionViewModelDelegate: AnyObject {
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
                                 didRemoveTabAt removalIndex: Int,
                                 andSelectTabAt selectionIndex: Int?)
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?)
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel)
@@ -46,7 +47,6 @@ protocol TabCollectionViewModelDelegate: AnyObject {
 final class TabCollectionViewModel: NSObject {
 
     weak var delegate: TabCollectionViewModelDelegate?
-    var newTabPageTabPreloader: NewTabPageTabPreloading?
     weak var windowControllersManager: WindowControllersManagerProtocol?
 
     /// Local tabs collection
@@ -265,7 +265,11 @@ final class TabCollectionViewModel: NSObject {
 
     @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
         shouldReturnToPreviousActiveTab = false
-        return selectWithoutResettingState(at: index, forceChange: forceChange)
+        let result = selectWithoutResettingState(at: index, forceChange: forceChange)
+        if result, let tab = tab(at: index), tab.isSuspended {
+            tab.resume()
+        }
+        return result
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {
@@ -273,7 +277,13 @@ final class TabCollectionViewModel: NSObject {
             return false
         }
 
-        return selectUnpinnedTab(at: index, forceChange: forceChange)
+        let result = selectUnpinnedTab(at: index, forceChange: forceChange)
+
+        if result, tab.isSuspended {
+            tab.resume()
+        }
+
+        return result
     }
 
     @discardableResult func selectDisplayableTabIfPresent(_ content: Tab.TabContent) -> Bool {
@@ -510,9 +520,6 @@ final class TabCollectionViewModel: NSObject {
     }
 
     private func makeTab(for content: Tab.TabContent) -> Tab {
-        if !isBurner, content == .newtab, let preloaded = newTabPageTabPreloader?.newTab() {
-            return preloaded
-        }
         return Tab(content: content, shouldLoadInBackground: true, burnerMode: burnerMode)
     }
 
@@ -766,6 +773,32 @@ final class TabCollectionViewModel: NSObject {
         insert(tab)
     }
 
+    @discardableResult
+    func suspendTab(at tabIndex: TabIndex) -> Bool {
+        guard changesEnabled else { return false }
+        guard let oldTab = tab(at: tabIndex) else {
+            Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
+            return false
+        }
+        guard tabIndex != selectionIndex else { return false }
+        guard oldTab.tabSuspension?.canBeSuspended == true else { return false }
+        guard let suspendedTab = oldTab.makeSuspendedTab() else {
+            return false
+        }
+
+        _ = replaceTab(at: tabIndex, with: suspendedTab)
+        return true
+    }
+
+    func resumeTab(at tabIndex: TabIndex) {
+        guard changesEnabled else { return }
+        guard let tab = tab(at: tabIndex) else {
+            Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
+            return
+        }
+        tab.resume()
+    }
+
     func title(forTabWithURL url: URL) -> String? {
         let matchingTab = tabCollection.tabs.first { tab in
             tab.url == url
@@ -803,6 +836,8 @@ final class TabCollectionViewModel: NSObject {
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
         select(at: selectionIndex, forceChange: forceChange)
+
+        delegate?.tabCollectionViewModel(self, didReplaceTabAt: index)
         return .success(())
     }
 

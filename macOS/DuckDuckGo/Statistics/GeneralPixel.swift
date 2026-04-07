@@ -23,6 +23,7 @@ import ContentBlocking
 import DDGSync
 import PixelKit
 import Suggestions
+import enum UserScript.UserScriptError
 
 enum GeneralPixel: PixelKitEvent {
 
@@ -290,6 +291,7 @@ enum GeneralPixel: PixelKitEvent {
     case userAddedToDockFromMoreOptionsMenu
     case userAddedToDockFromDefaultBrowserSection
     case serpAddedToDock
+    case settingsAddToDockShowMeHowClicked
 
     // SERP Settings
     // See macOS/PixelDefinitions/pixels/serp_settings_pixels.json5
@@ -570,7 +572,7 @@ enum GeneralPixel: PixelKitEvent {
      * - App crashes after this pixel is fired.
      * - Useful for investigating the underlying error causing the failure.
      */
-    case userScriptLoadJSFailed(jsFile: String, error: Error)
+    case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
 
     case attributionXattrCanary(variantMatch: String, originMatch: String)
 
@@ -999,6 +1001,7 @@ enum GeneralPixel: PixelKitEvent {
         case .userAddedToDockFromMoreOptionsMenu: return "m_mac_user_added_to_dock_from_more_options_menu"
         case .userAddedToDockFromDefaultBrowserSection: return "m_mac_user_added_to_dock_from_default_browser_section"
         case .serpAddedToDock: return "m_mac_serp_added_to_dock"
+        case .settingsAddToDockShowMeHowClicked: return "m_mac_settings_add-to-dock_show-me-how-clicked"
 
         case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
         case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
@@ -1475,9 +1478,10 @@ enum GeneralPixel: PixelKitEvent {
             }
             return nil
 
-        case let .userScriptLoadJSFailed(jsFile, error):
+        case let .userScriptLoadJSFailed(jsFile, error, source):
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
+            params[PixelKit.Parameters.userScriptSource] = source.rawValue
             return params
 
         case .attributionXattrCanary(let variantMatch, let originMatch):
@@ -1863,6 +1867,8 @@ enum GeneralPixel: PixelKitEvent {
                 .userScriptLoadJSFailed,
                 .attributionXattrCanary:
             return [.pixelSource]
+        case .settingsAddToDockShowMeHowClicked:
+            return nil
         }
     }
 

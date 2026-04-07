@@ -22,9 +22,10 @@ import Common
 import DDGSync
 import Bookmarks
 import AIChat
-import BrowserServicesKit
+import PixelKit
 import PrivacyConfig
 import UserScript
+import WebKit
 import WKAbstractions
 
 struct FireRequest {
@@ -48,10 +49,13 @@ struct FireRequest {
         case manualFire              // User pressed Fire Button
         case autoClearOnLaunch       // Auto-clear during app launch
         case autoClearOnForeground   // Auto-clear after period of inactivity when returning to foreground
+        case fireModeAutoClear       // Auto-clear fire mode data when all fire tabs are closed
     }
     
     enum Scope {
         case tab(viewModel: TabViewModel)
+        case fireMode
+        case normalMode
         case all
     }
     
@@ -85,31 +89,27 @@ protocol FireExecuting {
 
 class FireExecutor: FireExecuting {
     
-    typealias HistoryCleanerProvider = () -> HistoryCleaning
+    typealias HistoryCleanerProvider = (WKWebsiteDataStore?) -> HistoryCleaning
     
     // MARK: - Variables
-    
+    private let fireWorkers: [FireExecutorWorker]
     private let tabManager: TabManaging
     private let downloadManager: DownloadManaging
-    private let websiteDataManager: WebsiteDataManaging
-    private let daxDialogsManager: DaxDialogsManaging
-    private let syncService: DDGSyncing
-    private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaning?
-    private let fireproofing: Fireproofing
-    private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
-    private let autoconsentManagementProvider: AutoconsentManagementProviding
+    private let favicons: FaviconManaging
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let dataClearingCapability: DataClearingCapable
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let dataStore: (any DDGWebsiteDataStore)?
+    private let fireModeCapability: FireModeCapable
     private let appSettings: AppSettings
-    private let privacyStats: PrivacyStatsProviding?
     private let aiChatSyncCleaner: AIChatSyncCleaning
+    let pixelsReporter: DataClearingPixelsReporter
+    private let dataClearingWideEventService: DataClearingWideEventService?
+    private let aiChatDeleter: AIChatDeleting
+    private let idManager: DataStoreIDManaging
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
-    private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
+    private var dataStoreWarmupWorker: DataStoreWarmupWorker = .init()
     private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
     
@@ -122,6 +122,7 @@ class FireExecutor: FireExecuting {
          syncService: DDGSyncing,
          bookmarksDatabaseCleaner: BookmarkDatabaseCleaning,
          fireproofing: Fireproofing,
+         favicons: FaviconManaging,
          textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
          autoconsentManagementProvider: AutoconsentManagementProviding,
          historyManager: HistoryManaging,
@@ -132,27 +133,54 @@ class FireExecutor: FireExecuting {
          historyCleanerProvider: HistoryCleanerProvider? = nil,
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
-         aiChatSyncCleaner: AIChatSyncCleaning) {
+         aiChatSyncCleaner: AIChatSyncCleaning,
+         pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
+         wideEvent: WideEventManaging? = nil,
+         idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
-        self.websiteDataManager = websiteDataManager
-        self.daxDialogsManager = daxDialogsManager
-        self.syncService = syncService
-        self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
-        self.fireproofing = fireproofing
-        self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
-        self.autoconsentManagementProvider = autoconsentManagementProvider
+        self.favicons = favicons
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
+        self.idManager = idManager
         self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
-        self.privacyConfigurationManager = privacyConfigurationManager
-        self.dataStore = dataStore
+        self.fireModeCapability = FireModeCapability.create(using: featureFlagger)
         self.historyCleanerProvider = historyCleanerProvider ??
-        { return HistoryCleaner(featureFlagger: featureFlagger,
-                                privacyConfig: privacyConfigurationManager)}
+        { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
+                                             privacyConfig: privacyConfigurationManager,
+                                             websiteDataStore: dataStore)}
         self.appSettings = appSettings
-        self.privacyStats = privacyStats
         self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.pixelsReporter = pixelsReporter
+        self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
+        let aiChatDeleter = AIChatDeleter(historyCleanerProvider: self.historyCleanerProvider,
+                                          aiChatSyncCleaner: aiChatSyncCleaner,
+                                          idManager: idManager)
+        self.aiChatDeleter = aiChatDeleter
+        self.fireWorkers = [
+            URLCacheFireWorker(dataClearingWideEventService: dataClearingWideEventService),
+            WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
+                                  dataStore: dataStore,
+                                  dataClearingWideEventService: dataClearingWideEventService),
+            AutoConsentFireWorker(autoconsentManagementProvider: autoconsentManagementProvider,
+                                  dataClearingWideEventService: dataClearingWideEventService),
+            DaxDialogsFireWorker(daxDialogsManager: daxDialogsManager,
+                                 dataClearingWideEventService: dataClearingWideEventService),
+            BookmarksFireWorker(syncService: syncService,
+                                bookmarksDatabaseCleaner: bookmarksDatabaseCleaner,
+                                dataClearingWideEventService: dataClearingWideEventService),
+            TextZoomFireWorker(fireproofing: fireproofing,
+                               textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                               dataClearingWideEventService: dataClearingWideEventService),
+            HistoryFireWorker(historyManager: historyManager,
+                              dataClearingWideEventService: dataClearingWideEventService),
+            PrivacyStatsFireWorker(privacyStats: privacyStats,
+                                   dataClearingWideEventService: dataClearingWideEventService),
+            ContextualChatFireWorker(appSettings: appSettings,
+                                     tabManager: tabManager,
+                                     aiChatDeleter: aiChatDeleter,
+                                     dataClearingWideEventService: dataClearingWideEventService)
+        ]
     }
 
     
@@ -170,14 +198,20 @@ class FireExecutor: FireExecuting {
     func burn(request: FireRequest,
               applicationState: DataStoreWarmup.ApplicationState) async {
         assert(delegate != nil, "Delegate should not be nil. This leads to unexpected behavior.")
-        
+
+        // Fire retrigger pixel at the start of burn to track rapid manual fire operations
+        // Only tracks manual fire triggers (auto-clear is excluded as it follows system timing)
+        pixelsReporter.fireRetriggerPixelIfNeeded(request: request)
+
+        dataClearingWideEventService?.start(request: request)
+
         // Ensure all requested options are prepared
         let unpreparedOptions = request.options.subtracting(preparedOptions)
         if !unpreparedOptions.isEmpty {
             let newRequest = FireRequest(options: unpreparedOptions, trigger: request.trigger, scope: request.scope, source: request.source)
             prepare(for: newRequest)
         }
-        
+
         // Notify delegate that we're starting
         delegate?.willStartBurning(fireRequest: request)
         
@@ -207,10 +241,12 @@ class FireExecutor: FireExecuting {
         
         // Await async tasks
         _ = await (dataTask, aiTask)
-        
+
         // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
-        
+
+        dataClearingWideEventService?.complete()
+
         // Reset prepared state for next burn cycle
         preparedOptions = []
     }
@@ -223,14 +259,18 @@ class FireExecutor: FireExecuting {
               request.options.contains(.data) else {
             return
         }
+        dataClearingWideEventService?.start(.cancelAllDownloads)
         downloadManager.cancelAllDownloads()
+        dataClearingWideEventService?.update(.cancelAllDownloads, result: .success(()))
     }
 
     @MainActor
     private func didFinishBurning(fireRequest: FireRequest) async {
         if case .tab(let viewModel) = fireRequest.scope,
            fireRequest.options.contains(.tabs) {
-            await historyManager.removeTabHistory(for: [viewModel.tab.uid])
+            dataClearingWideEventService?.start(.clearTabs)
+            let result = await historyManager.removeTabHistory(for: [viewModel.tab.uid])
+            dataClearingWideEventService?.update(.clearTabs, result: result)
         }
         delegate?.didFinishBurning(fireRequest: fireRequest)
     }
@@ -264,7 +304,11 @@ class FireExecutor: FireExecuting {
     private func prepareForBurningTabs(scope: FireRequest.Scope) {
         switch scope {
         case .all:
-            tabManager.prepareAllTabsExceptCurrentForDataClearing()
+            tabManager.prepareAllTabsExceptCurrentForDataClearing(browsingMode: nil)
+        case .fireMode:
+            tabManager.prepareAllTabsExceptCurrentForDataClearing(browsingMode: .fire)
+        case .normalMode:
+            tabManager.prepareAllTabsExceptCurrentForDataClearing(browsingMode: .normal)
         case .tab(let viewModel):
             // Only prepare the tab if it's not the current tab
             // Current tabs are prepared during burnTabs
@@ -278,9 +322,23 @@ class FireExecutor: FireExecuting {
     private func burnTabs(scope: FireRequest.Scope, domains: [String]?) {
         switch scope {
         case .all:
-            tabManager.prepareCurrentTabForDataClearing()
-            tabManager.removeAll()
-            Favicons.shared.clearCache(.tabs)
+            tabManager.prepareCurrentTabForDataClearing(browsingMode: nil)
+            dataClearingWideEventService?.start(.clearTabs)
+            let removeAllResult = tabManager.removeAll(browsingMode: nil)
+            dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
+            dataClearingWideEventService?.start(.clearFaviconCache)
+            let faviconResult = favicons.clearCache(.tabs)
+            dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
+        case .fireMode:
+            tabManager.prepareCurrentTabForDataClearing(browsingMode: .fire)
+            dataClearingWideEventService?.start(.clearTabs)
+            let removeAllResult = tabManager.removeAll(browsingMode: .fire)
+            dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
+        case .normalMode:
+            tabManager.prepareCurrentTabForDataClearing(browsingMode: .normal)
+            dataClearingWideEventService?.start(.clearTabs)
+            let removeAllResult = tabManager.removeAll(browsingMode: .normal)
+            dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
         case .tab(let viewModel):
             guard let domains else {
                 Logger.general.error("Expected domains to be present when burning a single tab")
@@ -296,8 +354,10 @@ class FireExecutor: FireExecuting {
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
             // Close the tab and append a new empty tab, reusing existing one if exists
             tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
-            
-            Favicons.shared.removeTabFavicons(forDomains: domains)
+
+            dataClearingWideEventService?.start(.clearFaviconCache)
+            let faviconResult = favicons.removeTabFavicons(forDomains: domains)
+            dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         }
     }
     
@@ -313,104 +373,55 @@ class FireExecutor: FireExecuting {
         }
         burnInProgress = true
 
-        // This needs to happen only once per app launch
-        if let dataStoreWarmup {
-            await dataStoreWarmup.ensureReady(applicationState: applicationState)
-            self.dataStoreWarmup = nil
+        await dataStoreWarmupWorker.setApplicationState(applicationState)
+        await dataStoreWarmupWorker.execute(scope: scope, domains: domains, fireModeCapability: fireModeCapability)
+        
+        let pixel = dataClearingTimedPixel(for: scope)
+        
+        await withTaskGroup(of: Void.self) { group in
+            for worker in fireWorkers {
+                group.addTask {
+                    await worker.execute(scope: scope, domains: domains, fireModeCapability: self.fireModeCapability)
+                }
+            }
         }
-
-        switch scope {
-        case .tab(let viewModel):
-            await burnTabData(tabViewModel: viewModel, domains: domains)
-        case .all:
-            await burnAllData()
-        }
+        let params = dataClearingPixelParams(for: scope, domains: domains)
+        pixel?.fire(withAdditionalParameters: params)
 
         self.burnInProgress = false
     }
     
-    @MainActor
-    private func burnAllData() async {
-        URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
-
-        let pixel = TimedPixel(.forgetAllDataCleared)
-        
-        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
-        //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
-        await websiteDataManager.clear(dataStore: storeToUse)
-        pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.currentTabsModel.count)"]) // TODO: - Customize based on browsing mode
-
-        autoconsentManagementProvider.management(for: .normal).clearCache()
-        daxDialogsManager.clearHeldURLData()
-
-        if self.syncService.authState == .inactive {
-            self.bookmarksDatabaseCleaner?.cleanUpDatabaseNow()
+    private func dataClearingTimedPixel(for scope: FireRequest.Scope) -> TimedPixel? {
+        switch scope {
+        case .tab:
+            return TimedPixel(.singleTabDataCleared)
+        case .fireMode, .normalMode:
+            // TODO: - return new pixel
+            return nil
+        case .all:
+            return TimedPixel(.forgetAllDataCleared)
         }
-
-        self.forgetTextZoom()
-        await historyManager.removeAllHistory()
-        _ = await privacyStats?.clearPrivacyStats()
     }
     
     @MainActor
-    private func burnTabData(tabViewModel: TabViewModel, domains: [String]?) async {
-        guard let domains else {
-            Logger.general.error("Expected domains to be present when burning tab scoped data")
-            return
+    private func dataClearingPixelParams(for scope: FireRequest.Scope, domains: [String]?) -> [String: String] {
+        let tabsModel: TabsModelReading?
+        switch scope {
+        case .tab(let viewModel):
+            let tabType = viewModel.tab.isAITab ? "ai" : "web"
+            return [
+                PixelParameters.tabType: tabType,
+                PixelParameters.domainsCount: "\(domains?.count ?? 0)"
+            ]
+        case .fireMode:
+            tabsModel = self.tabManager.tabsModel(for: .fire)
+        case .normalMode:
+            tabsModel = self.tabManager.tabsModel(for: .normal)
+        case .all:
+            tabsModel = self.tabManager.allTabsModel
         }
-        
-        let timedPixel = TimedPixel(.singleTabDataCleared)
-        
-        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
-        //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
-        
-        // Async tasks
-        async let websiteDataTask: Void = websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
-        async let historyTask: Void = historyManager.removeBrowsingHistory(tabID: tabViewModel.tab.uid)
-        async let contextualChatTask: Void = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
-        
-        // Sync tasks
-        autoconsentManagementProvider.management(for: tabViewModel.tab.autoconsentContext).clearCache(forDomains: domains)
-        forgetTextZoom(forDomains: domains)
-        
-        // Await async tasks
-        _ = await (websiteDataTask, historyTask, contextualChatTask)
-        
-        // Fire completion pixel with timing
-        let tabType = tabViewModel.tab.isAITab ? "ai" : "web"
-        timedPixel.fire(withAdditionalParameters: [
-            PixelParameters.tabType: tabType,
-            PixelParameters.domainsCount: "\(domains.count)"
-        ])
-    }
-    
-    private func forgetTextZoom() {
-        let allowedDomains = fireproofing.allowedDomains
-        let coordinator = textZoomCoordinatorProvider.coordinator(for: .normal) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
-        coordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
-    }
-    
-    private func forgetTextZoom(forDomains domains: [String]) {
-        let allowedDomains = fireproofing.allowedDomains
-        let coordinator = textZoomCoordinatorProvider.coordinator(for: .normal) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
-        coordinator.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: allowedDomains)
-    }
-    
-    @MainActor
-    private func deleteContextualChatIfNeeded(tabViewModel: TabViewModel) async {
-        guard appSettings.autoClearAIChatHistory,
-              let contextualChatID = tabViewModel.currentContextualChatId else {
-            return
-        }
-        let result = await deleteChat(chatID: contextualChatID)
-        switch result {
-        case .success:
-            tabManager.controller(for: tabViewModel.tab)?.aiChatContextualSheetCoordinator.clearActiveChat()
-        case .failure:
-            Logger.aiChat.debug("Failed to delete contextual ai chat")
-        }
+        return [PixelParameters.tabCount: "\(tabsModel?.count ?? 0)"]
+
     }
     
     // MARK: - Clear AI History
@@ -423,7 +434,9 @@ class FireExecutor: FireExecuting {
     /// - The user setting autoClearAIChatHistory should be ignored
     /// - Returns: A boolean indicating if we should run the ai chats burn flow
     private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
-        let chosenThroughNewAutoClearUI = dataClearingCapability.isEnhancedDataClearingEnabled && request.trigger != .manualFire
+        let chosenThroughNewAutoClearUI = dataClearingCapability.isEnhancedDataClearingEnabled
+            && request.trigger != .manualFire
+            && request.trigger != .fireModeAutoClear
 
         var singleChatBurn: Bool = false
         if case .tab = request.scope { singleChatBurn = true }
@@ -435,17 +448,41 @@ class FireExecutor: FireExecuting {
         return request.options.contains(.aiChats) && shouldAllowAIChatsBurn
     }
     
+    @MainActor
     private func burnAIHistory(request: FireRequest) async {
+        dataClearingWideEventService?.start(.clearAIChatHistory)
+        let result: Result<Void, Error>
         switch request.scope {
         case .tab(let viewModel):
-            await burnTabAIHistory(tabViewModel: viewModel)
+            result = await burnTabAIHistory(tabViewModel: viewModel)
+        case .fireMode:
+            if !request.options.contains(.data) { // Invalidating the fire mode datastore makes deleting chats redundant.
+                result = await burnFireModeAIHistory()
+            } else {
+                result = .success(())
+            }
+        case .normalMode:
+            result = await burnNormalModeAIHistory(trigger: request.trigger)
         case .all:
-            await burnAllAIHistory(trigger: request.trigger)
+            result = await burnAllAIHistory(trigger: request.trigger, options: request.options)
         }
+        dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
-    
-    private func burnAllAIHistory(trigger: FireRequest.Trigger) async {
-        let cleaner = historyCleanerProvider()
+
+    @MainActor
+    private func burnAllAIHistory(trigger: FireRequest.Trigger, options: FireRequest.Options) async -> Result<Void, Error> {
+        async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger)
+        let shouldBurnFireModeChats = !options.contains(.data) // Invalidating the fire mode datastore makes deleting chats redundant.
+        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory() : .success(())
+        let (normalResult, fireResult) = await (normalBurnTask, fireBurnTask)
+        if case .failure = normalResult { return normalResult }
+        if case .failure = fireResult { return fireResult }
+        return .success(())
+    }
+
+    @MainActor
+    private func burnNormalModeAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
+        let cleaner = historyCleanerProvider(nil)
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
@@ -459,40 +496,52 @@ class FireExecutor: FireExecuting {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
-    }
-    
-    private func burnTabAIHistory(tabViewModel: TabViewModel) async {
-        if let chatID = await tabViewModel.currentAIChatId {
-            await deleteChat(chatID: chatID)
-        } else {
-            Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
-        }
+        return result
     }
 
-    private func recordAIChatsClearDate(trigger: FireRequest.Trigger) async {
-        switch trigger {
-        case .manualFire:
-            await aiChatSyncCleaner.recordLocalClear(date: Date())
-        case .autoClearOnLaunch, .autoClearOnForeground:
-            await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+    @MainActor
+    private func burnFireModeAIHistory() async -> Result<Void, Error> {
+        guard fireModeCapability.isFireModeEnabled else {
+            return .success(())
         }
-    }
+        guard #available(iOS 17.0, *) else {
+            return .success(())
+        }
 
-    @discardableResult
-    private func deleteChat(chatID: String) async -> Result<Void, Error> {
-        let cleaner = historyCleanerProvider()
-        let result = await cleaner.deleteAIChat(chatID: chatID)
+        let fireDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
+        let cleaner = historyCleanerProvider(fireDataStore)
+        let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSingleDeleteSuccessful)
-            await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
         case .failure(let error):
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSingleDeleteFailed)
-            Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
+            Logger.aiChat.debug("Failed to clear fire mode Duck.ai chat history: \(error.localizedDescription)")
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
         return result
     }
+
+    @MainActor
+    private func burnTabAIHistory(tabViewModel: TabViewModel) async -> Result<Void, Error> {
+        if let chatID = tabViewModel.currentAIChatId {
+            return await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: tabViewModel.tab.fireTab)
+        } else {
+            Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
+            return .success(())
+        }
+    }
+
+    private func recordAIChatsClearDate(trigger: FireRequest.Trigger) async {
+        switch trigger {
+        case .manualFire, .fireModeAutoClear:
+            await aiChatSyncCleaner.recordLocalClear(date: Date())
+        case .autoClearOnLaunch, .autoClearOnForeground:
+            await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+        }
+    }
+
 }

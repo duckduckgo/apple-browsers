@@ -39,6 +39,11 @@ public protocol DataStoreIDManaging {
     
     var currentFireModeID: UUID { get }
     func invalidateCurrentFireModeID()
+
+    /// IDs of fire mode data stores that have been invalidated but not yet
+    /// successfully removed via `WKWebsiteDataStore.remove(forIdentifier:)`.
+    var pendingRemovalFireModeIDs: [UUID] { get }
+    func removePendingRemovalFireModeID(_ id: UUID)
 }
 
 public class DataStoreIDManager: DataStoreIDManaging {
@@ -46,6 +51,7 @@ public class DataStoreIDManager: DataStoreIDManaging {
     enum Constants: String {
         case currentWebContainerID = "com.duckduckgo.ios.webcontainer.id"
         case currentFireModeContainerID = "com.duckduckgo.ios.fireMode.webcontainer.id"
+        case pendingRemovalFireModeContainerIDs = "com.duckduckgo.ios.fireMode.webcontainer.pendingRemoval"
     }
 
     public static let shared = DataStoreIDManager()
@@ -87,7 +93,39 @@ public class DataStoreIDManager: DataStoreIDManaging {
 
     public func invalidateCurrentFireModeID() {
         fireModeIDQueue.sync {
+            guard let uuidString = store.object(forKey: Constants.currentFireModeContainerID.rawValue) as? String,
+                  let existingID = UUID(uuidString: uuidString) else {
+                return
+            }
+            var pending = storedPendingRemovalIDs()
+            if !pending.contains(existingID) {
+                pending.append(existingID)
+                store.set(pending.map(\.uuidString), forKey: Constants.pendingRemovalFireModeContainerIDs.rawValue)
+            }
             store.removeObject(forKey: Constants.currentFireModeContainerID.rawValue)
         }
+    }
+
+    // MARK: - Pending Removal
+
+    public var pendingRemovalFireModeIDs: [UUID] {
+        fireModeIDQueue.sync {
+            storedPendingRemovalIDs()
+        }
+    }
+
+    public func removePendingRemovalFireModeID(_ id: UUID) {
+        fireModeIDQueue.sync {
+            var pending = storedPendingRemovalIDs()
+            pending.removeAll { $0 == id }
+            store.set(pending.map(\.uuidString), forKey: Constants.pendingRemovalFireModeContainerIDs.rawValue)
+        }
+    }
+
+    private func storedPendingRemovalIDs() -> [UUID] {
+        guard let strings = store.object(forKey: Constants.pendingRemovalFireModeContainerIDs.rawValue) as? [String] else {
+            return []
+        }
+        return strings.compactMap { UUID(uuidString: $0) }
     }
 }

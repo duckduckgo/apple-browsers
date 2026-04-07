@@ -45,6 +45,10 @@ class SwipeTabsCoordinator: NSObject {
     
     var isEnabled = false {
         didSet {
+            if !isEnabled {
+                state = .idle
+            }
+            updateLayout()
             collectionView.reloadData()
         }
     }
@@ -269,8 +273,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         guard !state.isIdle else {
-            // Turns out this is needed (we used to have a pixel here)
-            assertionFailure("invalid state")
             return
         }
 

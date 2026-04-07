@@ -24,7 +24,7 @@ import XCTest
 @MainActor
 final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
 
-    // MARK: - Mock
+    // MARK: - Mocks
 
     private final class MockSuggestionsReader: AIChatSuggestionsReading {
         var maxHistoryCount: Int = 50
@@ -32,7 +32,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         var recentToReturn: [AIChatSuggestion] = []
         var fetchCallCount = 0
         var lastMaxChats: Int?
-        var tearDownCallCount = 0
 
         func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
             fetchCallCount += 1
@@ -40,8 +39,24 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
             return (pinned: pinnedToReturn, recent: recentToReturn)
         }
 
-        func tearDown() {
-            tearDownCallCount += 1
+        func tearDown() {}
+    }
+
+    private final class MockDelegate: AIChatRecentChatsPopupViewModelDelegate {
+        var selectedChats: [AIChatSuggestion] = []
+        var viewAllCallCount = 0
+        var dismissCallCount = 0
+
+        func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
+            selectedChats.append(chat)
+        }
+
+        func recentChatsPopupDidSelectViewAll() {
+            viewAllCallCount += 1
+        }
+
+        func recentChatsPopupDidDismiss() {
+            dismissCallCount += 1
         }
     }
 
@@ -80,30 +95,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         XCTAssertEqual(vm.suggestions.count, AIChatRecentChatsPopupViewModel.maxVisibleChats)
     }
 
-    // MARK: - suggestion(at:) Tests
-
-    func testSuggestionAtValidIndex() {
-        let suggestions = makeSuggestions(count: 3)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions, hasMore: false)
-
-        XCTAssertEqual(vm.suggestion(at: 0)?.chatId, "chat-0")
-        XCTAssertEqual(vm.suggestion(at: 2)?.chatId, "chat-2")
-    }
-
-    func testSuggestionAtOutOfBoundsReturnsNil() {
-        let suggestions = makeSuggestions(count: 3)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions, hasMore: false)
-
-        XCTAssertNil(vm.suggestion(at: -1))
-        XCTAssertNil(vm.suggestion(at: 3))
-        XCTAssertNil(vm.suggestion(at: 100))
-    }
-
-    func testSuggestionAtOnEmptyReturnsNil() {
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: [], hasMore: false)
-        XCTAssertNil(vm.suggestion(at: 0))
-    }
-
     // MARK: - Pinned vs Regular Tests
 
     func testPinnedSuggestionPreservesFlag() {
@@ -115,6 +106,62 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         XCTAssertFalse(vm.suggestions[1].isPinned)
     }
 
+    // MARK: - Action Tests
+
+    func testDidSelectChatCallsDelegateWithCorrectSuggestion() {
+        let suggestions = makeSuggestions(count: 3)
+        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions, hasMore: false)
+        let mockDelegate = MockDelegate()
+        vm.delegate = mockDelegate
+
+        vm.didSelectChat(at: 1)
+
+        XCTAssertEqual(mockDelegate.selectedChats.count, 1)
+        XCTAssertEqual(mockDelegate.selectedChats.first?.chatId, "chat-1")
+    }
+
+    func testDidSelectChatOutOfBoundsDoesNotCallDelegate() {
+        let suggestions = makeSuggestions(count: 3)
+        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions, hasMore: false)
+        let mockDelegate = MockDelegate()
+        vm.delegate = mockDelegate
+
+        vm.didSelectChat(at: 5)
+
+        XCTAssertTrue(mockDelegate.selectedChats.isEmpty)
+    }
+
+    func testDidSelectChatNegativeIndexDoesNotCallDelegate() {
+        let suggestions = makeSuggestions(count: 3)
+        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions, hasMore: false)
+        let mockDelegate = MockDelegate()
+        vm.delegate = mockDelegate
+
+        vm.didSelectChat(at: -1)
+
+        XCTAssertTrue(mockDelegate.selectedChats.isEmpty)
+    }
+
+    func testDidSelectViewAllCallsDelegate() {
+        let vm = AIChatRecentChatsPopupViewModel(suggestions: makeSuggestions(count: 5), hasMore: true)
+        let mockDelegate = MockDelegate()
+        vm.delegate = mockDelegate
+
+        vm.didSelectViewAll()
+
+        XCTAssertEqual(mockDelegate.viewAllCallCount, 1)
+    }
+
+    func testDidDismissCallsDelegate() {
+        let vm = AIChatRecentChatsPopupViewModel(suggestions: makeSuggestions(count: 1), hasMore: false)
+        let mockDelegate = MockDelegate()
+        vm.delegate = mockDelegate
+
+        vm.didDismiss()
+
+        XCTAssertEqual(mockDelegate.dismissCallCount, 1)
+    }
+
     // MARK: - fetch() Tests
 
     func testFetchReturnsNilWhenReaderIsNil() async {
@@ -124,8 +171,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
 
     func testFetchReturnsNilWhenNoSuggestions() async {
         let reader = MockSuggestionsReader()
-        reader.pinnedToReturn = []
-        reader.recentToReturn = []
 
         let result = await AIChatRecentChatsPopupViewModel.fetch(using: reader)
 
@@ -177,7 +222,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
 
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.suggestions.count, 2)
-        // Pinned comes first (pinned array is concatenated before recent)
         XCTAssertTrue(result?.suggestions[0].isPinned ?? false)
         XCTAssertFalse(result?.suggestions[1].isPinned ?? true)
     }

@@ -22,15 +22,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 
-// MARK: - Delegate
-
-@MainActor
-protocol AIChatRecentChatsPopupDelegate: AnyObject {
-    func recentChatsPopup(_ popup: AIChatRecentChatsPopupViewController, didSelectChat chat: AIChatSuggestion)
-    func recentChatsPopupDidSelectViewAll(_ popup: AIChatRecentChatsPopupViewController)
-    func recentChatsPopupDidDismiss(_ popup: AIChatRecentChatsPopupViewController)
-}
-
 // MARK: - AIChatRecentChatsPopupViewController
 
 final class AIChatRecentChatsPopupViewController: UIViewController {
@@ -59,7 +50,6 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
 
     // MARK: - Properties
 
-    weak var delegate: AIChatRecentChatsPopupDelegate?
     private let viewModel: AIChatRecentChatsPopupViewModel
 
     // MARK: - UI Components
@@ -319,17 +309,16 @@ private extension AIChatRecentChatsPopupViewController {
     // MARK: - Actions
 
     @objc func backgroundTapped() {
-        delegate?.recentChatsPopupDidDismiss(self)
+        viewModel.didDismiss()
     }
 
     @objc func chatRowTapped(_ gesture: UITapGestureRecognizer) {
-        guard let view = gesture.view,
-              let suggestion = viewModel.suggestion(at: view.tag) else { return }
-        delegate?.recentChatsPopup(self, didSelectChat: suggestion)
+        guard let view = gesture.view else { return }
+        viewModel.didSelectChat(at: view.tag)
     }
 
     @objc func viewAllChatsTapped() {
-        delegate?.recentChatsPopupDidSelectViewAll(self)
+        viewModel.didSelectViewAll()
     }
 }
 

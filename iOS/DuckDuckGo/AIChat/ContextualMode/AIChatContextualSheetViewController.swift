@@ -520,8 +520,8 @@ private extension AIChatContextualSheetViewController {
     func showRecentChatsPopup(with viewModel: AIChatRecentChatsPopupViewModel) {
         guard let windowScene = view.window?.windowScene else { return }
 
+        viewModel.delegate = self
         let popup = AIChatRecentChatsPopupViewController(viewModel: viewModel)
-        popup.delegate = self
 
         // Present on a separate window so the popup is fully independent of the sheet
         let overlay = UIWindow(windowScene: windowScene)
@@ -787,23 +787,23 @@ extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate
     }
 }
 
-// MARK: - AIChatRecentChatsPopupDelegate
+// MARK: - AIChatRecentChatsPopupViewModelDelegate
 
-extension AIChatContextualSheetViewController: AIChatRecentChatsPopupDelegate {
+extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDelegate {
 
-    func recentChatsPopup(_ popup: AIChatRecentChatsPopupViewController, didSelectChat chat: AIChatSuggestion) {
+    func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
         dismissRecentChatsPopup()
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
     }
 
-    func recentChatsPopupDidSelectViewAll(_ popup: AIChatRecentChatsPopupViewController) {
+    func recentChatsPopupDidSelectViewAll() {
         dismissRecentChatsPopup()
         let url = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
     }
 
-    func recentChatsPopupDidDismiss(_ popup: AIChatRecentChatsPopupViewController) {
+    func recentChatsPopupDidDismiss() {
         dismissRecentChatsPopup()
     }
 }

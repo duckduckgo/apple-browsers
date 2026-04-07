@@ -20,6 +20,15 @@
 import AIChat
 import Foundation
 
+// MARK: - Delegate
+
+@MainActor
+protocol AIChatRecentChatsPopupViewModelDelegate: AnyObject {
+    func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion)
+    func recentChatsPopupDidSelectViewAll()
+    func recentChatsPopupDidDismiss()
+}
+
 /// View model for the recent chats popup, extracting presentation logic from the view controller.
 @MainActor
 final class AIChatRecentChatsPopupViewModel {
@@ -29,6 +38,8 @@ final class AIChatRecentChatsPopupViewModel {
     static let maxVisibleChats = 5
 
     // MARK: - Properties
+
+    weak var delegate: AIChatRecentChatsPopupViewModelDelegate?
 
     /// Whether the "View all chats" footer should be shown.
     let showViewAll: Bool
@@ -54,8 +65,24 @@ final class AIChatRecentChatsPopupViewModel {
         !suggestions.isEmpty
     }
 
-    /// Returns the suggestion at the given index, or nil if out of bounds.
-    func suggestion(at index: Int) -> AIChatSuggestion? {
+    // MARK: - Actions
+
+    func didSelectChat(at index: Int) {
+        guard let suggestion = suggestion(at: index) else { return }
+        delegate?.recentChatsPopupDidSelectChat(suggestion)
+    }
+
+    func didSelectViewAll() {
+        delegate?.recentChatsPopupDidSelectViewAll()
+    }
+
+    func didDismiss() {
+        delegate?.recentChatsPopupDidDismiss()
+    }
+
+    // MARK: - Private
+
+    private func suggestion(at index: Int) -> AIChatSuggestion? {
         guard index >= 0, index < suggestions.count else { return nil }
         return suggestions[index]
     }

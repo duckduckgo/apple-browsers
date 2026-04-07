@@ -559,8 +559,12 @@ private extension MainViewController {
             applyBottomOmnibarVisibility(.inactive)
         case .showOmnibarActive:
             applyBottomOmnibarVisibility(.active)
-        case .hideOmnibarEditing:
-            viewCoordinator.hideUnifiedToggleInputOmnibar()
+        case .hideOmnibarEditing(let animated):
+            if animated {
+                viewCoordinator.hideUnifiedToggleInputOmnibar()
+            } else {
+                viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
+            }
             unifiedToggleInputCoordinator?.contentViewController.setActive(false)
             viewCoordinator.hideUnifiedInputContent()
             unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
@@ -616,23 +620,24 @@ private extension MainViewController {
         if isTopPosition && coordinator.isToggleEnabled {
             coordinator.viewController.animateToggleHide(additionalAnimations: { [weak self] in
                 guard let self else { return }
-                self.viewCoordinator.constraints.navigationBarContainerHeight.constant = self.viewCoordinator.standardNavigationBarContainerHeight
-                self.viewCoordinator.superview.layoutIfNeeded()
+                self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 0
             }, completion: { [weak self] in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.deactivateToOmnibar(resetView: false)
+                coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
             })
         } else if isTopPosition {
             UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut, animations: { [weak self] in
-                self?.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                guard let self else { return }
+                self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
+                self.viewCoordinator.unifiedInputContentContainer.alpha = 0
             }, completion: { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.deactivateToOmnibar(resetView: false)
+                coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
             })
         } else {
             coordinator.deactivateToOmnibar()

@@ -269,28 +269,33 @@ class MainViewCoordinator {
         }
 
         UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
-            self.navigationBarCollectionView.alpha = 1
-            self.unifiedToggleInputContainer.alpha = 0
-            self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
-            self.superview.layoutIfNeeded()
+            self.animateUnifiedToggleInputOmnibarDismissLayout()
         } completion: { finished in
-            self.endOmnibarStatusBackgroundPresentation()
-            self.navigationBarContainer.backgroundColor = nil
-            self.suggestionTrayContainer.backgroundColor = .clear
-            self.navigationBarCollectionView.isUserInteractionEnabled = true
+            guard finished else { return }
+            self.finishUnifiedToggleInputOmnibarDismiss()
+        }
+    }
 
-            if self.isNavigationChromeHidden {
-                if finished {
-                    self.navigationBarCollectionView.alpha = 0
-                    self.unifiedToggleInputContainer.isHidden = false
-                    self.unifiedToggleInputContainer.alpha = 1
-                }
-            } else {
-                if finished {
-                    self.unifiedToggleInputContainer.isHidden = true
-                    self.unifiedToggleInputContainer.alpha = 1
-                }
-            }
+    func animateUnifiedToggleInputOmnibarDismissLayout() {
+        navigationBarCollectionView.alpha = 1
+        unifiedToggleInputContainer.alpha = 0
+        constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+        superview.layoutIfNeeded()
+    }
+
+    func finishUnifiedToggleInputOmnibarDismiss() {
+        endOmnibarStatusBackgroundPresentation()
+        navigationBarContainer.backgroundColor = nil
+        suggestionTrayContainer.backgroundColor = .clear
+        navigationBarCollectionView.isUserInteractionEnabled = true
+
+        if isNavigationChromeHidden {
+            navigationBarCollectionView.alpha = 0
+            unifiedToggleInputContainer.isHidden = false
+            unifiedToggleInputContainer.alpha = 1
+        } else {
+            unifiedToggleInputContainer.isHidden = true
+            unifiedToggleInputContainer.alpha = 1
         }
     }
 

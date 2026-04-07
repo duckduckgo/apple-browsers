@@ -222,6 +222,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the model picker menu
     case aiChatAddressBarModelSelected
 
+    /// Event Trigger: User submits a prompt with images from the New Tab Page omnibar
+    case aiChatNtpSubmitWithImage(imageCount: Int)
+
+    /// Event Trigger: User selects a model from the New Tab Page model picker
+    case aiChatNtpModelSelected
+
     /// Event Trigger: Models API fetch fails (endpoint unreachable or returns error)
     case aiChatModelsFetchFailed
 
@@ -391,6 +397,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_submit_with_image"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
+        case .aiChatNtpSubmitWithImage:
+            return "aichat_ntp_submit_with_image"
+        case .aiChatNtpModelSelected:
+            return "aichat_ntp_model_selected"
         case .aiChatModelsFetchFailed:
             return "aichat_models_fetch_failed"
         case .aiChatMetricStartNewConversation:
@@ -455,6 +465,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarModelSelected,
+                .aiChatNtpModelSelected,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
@@ -463,7 +474,8 @@ enum AIChatPixel: PixelKitEvent {
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
-        case .aiChatAddressBarSubmitWithImage(let imageCount):
+        case .aiChatAddressBarSubmitWithImage(let imageCount),
+             .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -557,6 +569,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarSubmitWithImage,
                 .aiChatAddressBarModelSelected,
+                .aiChatNtpSubmitWithImage,
+                .aiChatNtpModelSelected,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,

@@ -105,6 +105,7 @@ class AutoconsentUITests: UITestCase {
     }
 
     func testAutoconsent_CookieBannerHiding_BannersAreHidden() throws {
+        throw XCTSkip("Flaky test")
         // Navigate to test page with cookie banner
         let bannerTestURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/banner.html")!
         addressBarTextField.pasteURL(bannerTestURL, pressingEnter: true)

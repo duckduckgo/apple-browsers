@@ -673,63 +673,28 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        if omnibarController.hasActiveSubscription {
-            populateSubscribedModelPickerMenu(menu)
-        } else {
-            populateFreeModelPickerMenu(menu)
+        let sections = AIChatModelSectionBuilder.buildSections(
+            models: omnibarController.models,
+            hasActiveSubscription: omnibarController.hasActiveSubscription,
+            advancedSectionHeader: UserText.aiChatModelPickerAdvancedSectionHeader,
+            basicSectionHeader: UserText.aiChatModelPickerBasicModelsSectionHeader
+        )
+
+        for (index, section) in sections.enumerated() {
+            if index > 0 {
+                menu.addItem(.separator())
+            }
+            if let header = section.header {
+                let headerItem = NSMenuItem(title: header, action: nil, keyEquivalent: "")
+                headerItem.isEnabled = false
+                menu.addItem(headerItem)
+            }
+            for model in section.items {
+                menu.addItem(menuItem(for: model))
+            }
         }
 
         return menu
-    }
-
-    /// Free user layout: accessible models first, then "Advanced Models" section with disabled premium models.
-    private func populateFreeModelPickerMenu(_ menu: NSMenu) {
-        let accessible = omnibarController.models.filter { $0.entityHasAccess }
-        let premium = omnibarController.models.filter { !$0.entityHasAccess }
-
-        for model in accessible {
-            menu.addItem(menuItem(for: model))
-        }
-
-        if !premium.isEmpty {
-            menu.addItem(.separator())
-
-            let header = NSMenuItem(title: UserText.aiChatModelPickerAdvancedSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in premium {
-                menu.addItem(menuItem(for: model))
-            }
-        }
-    }
-
-    /// Subscribed user layout: "Advanced Models" section first, then "Basic Models" section with free-tier models.
-    private func populateSubscribedModelPickerMenu(_ menu: NSMenu) {
-        let basic = omnibarController.models.filter { $0.accessTier.contains(AIChatUserTier.free.rawValue) }
-        let advanced = omnibarController.models.filter { !$0.accessTier.contains(AIChatUserTier.free.rawValue) }
-
-        if !advanced.isEmpty {
-            let header = NSMenuItem(title: UserText.aiChatModelPickerAdvancedModelsSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in advanced {
-                menu.addItem(menuItem(for: model))
-            }
-        }
-
-        if !basic.isEmpty {
-            menu.addItem(.separator())
-
-            let header = NSMenuItem(title: UserText.aiChatModelPickerBasicModelsSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in basic {
-                menu.addItem(menuItem(for: model))
-            }
-        }
     }
 
     private func menuItem(for model: AIChatModel) -> NSMenuItem {

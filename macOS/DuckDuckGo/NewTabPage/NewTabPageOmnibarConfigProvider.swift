@@ -78,6 +78,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private enum Key: String {
         case newTabPageOmnibarMode
+        case newTabPageSelectedModelId
     }
 
     private enum Constants: Int {
@@ -155,6 +156,31 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var isAIChatRecentChatsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+    }
+
+    var isAIChatToolsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpChatTools)
+    }
+
+    var selectedModelId: String? {
+        get {
+            do {
+                return try keyValueStore.object(forKey: Key.newTabPageSelectedModelId.rawValue) as? String
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to retrieve selectedModelId from keyValueStore: \(error.localizedDescription)")
+                return nil
+            }
+        }
+        set {
+            do {
+                try keyValueStore.set(newValue, forKey: Key.newTabPageSelectedModelId.rawValue)
+                if newValue != nil {
+                    PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                }
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to set selectedModelId in keyValueStore: \(error.localizedDescription)")
+            }
+        }
     }
 
     var showCustomizePopover: Bool {

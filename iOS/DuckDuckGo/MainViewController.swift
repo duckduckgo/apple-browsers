@@ -808,7 +808,7 @@ class MainViewController: UIViewController {
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
-        controller.fireModeCapability = FireModeCapability.create(using: featureFlagger)
+        controller.fireModeCapability = FireModeCapability.create()
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -2922,6 +2922,11 @@ class MainViewController: UIViewController {
         if fromDeepLink, currentTab.tabModel.link != nil {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
             loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
+            // Collapse the input that was auto-expanded for the restored tab.
+            // This cancels any pending async activateInput because showCollapsed
+            // sets displayState to .collapsed, failing the guard in showExpanded's
+            // async block.
+            unifiedToggleInputCoordinator?.showCollapsed()
             return
         }
 
@@ -3742,6 +3747,7 @@ extension MainViewController: OmniBarDelegate {
                 in: view,
                 parentViewController: self,
                 searchContainer: viewCoordinator.omniBar.barView.searchContainer,
+                isFireTab: isCurrentTabFireTab(),
                 keyboardLayoutGuide: view.keyboardLayoutGuide
             )
             iPadTabChatHistoryCoordinator.onSuggestionsVisibilityChanged = { [weak self] _ in

@@ -1209,6 +1209,14 @@ final class BrowserTabViewController: NSViewController {
     private func burnerHomePageViewControllerCreatingIfNeeded() -> BurnerHomePageViewController {
         return burnerHomePageViewController ?? {
             let burnerHomePageViewController = BurnerHomePageViewController()
+            burnerHomePageViewController.openSubscriptionPage = { [weak self] in
+                guard let self,
+                      let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
+                          SubscriptionFunnelOrigin.fireWindowPromo.rawValue
+                      )?.url else { return }
+                let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true, burnerMode: self.tabCollectionViewModel.burnerMode)
+                self.tabCollectionViewModel.append(tab: tab)
+            }
             self.burnerHomePageViewController = burnerHomePageViewController
             return burnerHomePageViewController
         }()

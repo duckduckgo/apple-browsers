@@ -280,7 +280,10 @@ private extension MainViewController {
         }
 
         let hasExistingChat = tab.url?.duckAIChatID != nil
-        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt
+        let tabURL = tab.url ?? tab.link?.url
+        let isVoiceMode = tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested
+        tab.isVoiceModeRequested = false
+        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 
@@ -641,6 +644,7 @@ private extension MainViewController {
         if isAITabSubmission {
             viewCoordinator.hideAITabChrome()
             applyUnifiedInputChromeBackground(.standardChrome, updateWebView: false)
+            // Preempt any synchronous UI refresh triggered by loadQuery so the presentation stays mapped to standard chrome.
         }
         loadQuery(query)
         if isAITabSubmission {

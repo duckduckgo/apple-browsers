@@ -161,6 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let downloadListCoordinator: DownloadListCoordinator
     let autoconsentManagement = AutoconsentManagement()
     let attributedMetricManager: AttributedMetricManager
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     @MainActor
     private(set) lazy var autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator = AutoconsentStatsPopoverCoordinator(
@@ -1149,6 +1150,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             memoryUsageMonitor: memoryUsageMonitor,
             pixelFiring: PixelKit.shared
         )
+
+        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
+           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+            do {
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL).handler
+            } catch {
+                Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
+                duckAiNativeStorageHandler = nil
+            }
+        } else {
+            duckAiNativeStorageHandler = nil
+        }
 
         super.init()
 

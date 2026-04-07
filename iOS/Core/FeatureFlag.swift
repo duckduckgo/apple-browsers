@@ -383,6 +383,8 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213809475913723?focus=true
     case minimalChromeInLandscape
+
+    case aiChatNativeStorage
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -662,6 +664,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton)))
         case .minimalChromeInLandscape:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
+        case .aiChatNativeStorage:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)))
         }
     }
 

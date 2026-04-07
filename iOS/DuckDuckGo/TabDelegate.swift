@@ -26,6 +26,7 @@ enum TabClosingBehavior {
     case createEmptyTabAtSamePosition
     case createOrReuseEmptyTab
     case onlyClose
+    case createNewChat
 }
 
 protocol TabDelegate: AnyObject {

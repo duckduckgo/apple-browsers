@@ -4508,6 +4508,12 @@ extension MainViewController: TabSwitcherDelegate {
     func closeTab(_ tab: Tab,
                   behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true) {
+        
+        func replaceTabWith(newTab: Tab) {
+            tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
+            tabManager.select(newTab, dismissCurrent: false)
+            showBars() // In case the browser chrome bars are hidden when calling this method
+        }
         if #available(iOS 18.4, *) {
             if let closingTabController = tabManager.controller(for: tab) {
                 webExtensionEventsCoordinator?.didCloseTab(closingTabController)
@@ -4521,9 +4527,7 @@ extension MainViewController: TabSwitcherDelegate {
         switch behavior {
         case .createEmptyTabAtSamePosition:
             let newTab = Tab(fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
-            tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
-            tabManager.select(newTab, dismissCurrent: false)
-            showBars() // In case the browser chrome bars are hidden when calling this method
+            replaceTabWith(newTab: newTab)
         case .createOrReuseEmptyTab:
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
             if let existing = tabManager.firstHomeTab() {
@@ -4532,6 +4536,10 @@ extension MainViewController: TabSwitcherDelegate {
                 tabManager.addHomeTab()
             }
             showBars() // In case the browser chrome bars are hidden when calling this method
+        case .createNewChat:
+            let aiChatLink = Link(title: nil, url: aiChatSettings.aiChatURL)
+            let newTab = Tab(link: aiChatLink, fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
+            replaceTabWith(newTab: newTab)
         case .onlyClose:
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
         }

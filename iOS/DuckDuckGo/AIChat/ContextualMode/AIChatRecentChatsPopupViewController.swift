@@ -59,7 +59,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         let view = UIView()
         view.backgroundColor = .clear
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowColor = UIColor(designSystemColor: .shadowTertiary).cgColor
         view.layer.shadowOffset = CGSize(width: 0, height: Constants.shadowOffsetY)
         view.layer.shadowRadius = Constants.shadowRadius
         view.layer.shadowOpacity = Constants.shadowOpacity
@@ -189,8 +189,8 @@ private extension AIChatRecentChatsPopupViewController {
 
         let label = UILabel()
         label.text = title
-        label.font = .systemFont(ofSize: 13, weight: .medium)
-        label.textColor = .tertiaryLabel
+        label.font = .daxFootnoteSemibold()
+        label.textColor = UIColor(designSystemColor: .textTertiary)
         label.translatesAutoresizingMaskIntoConstraints = false
 
         container.addSubview(label)
@@ -215,7 +215,7 @@ private extension AIChatRecentChatsPopupViewController {
         let iconView = UIImageView()
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = .label
+        iconView.tintColor = UIColor(designSystemColor: .icons)
         iconView.image = (suggestion.isPinned
             ? DesignSystemImages.Glyphs.Size24.pin
             : DesignSystemImages.Glyphs.Size24.chat).withRenderingMode(.alwaysTemplate)
@@ -223,8 +223,8 @@ private extension AIChatRecentChatsPopupViewController {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = suggestion.title
-        titleLabel.font = .systemFont(ofSize: 17)
-        titleLabel.textColor = .label
+        titleLabel.font = .daxBodyRegular()
+        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         titleLabel.numberOfLines = 0
         titleLabel.lineBreakMode = .byWordWrapping
 
@@ -278,14 +278,14 @@ private extension AIChatRecentChatsPopupViewController {
         let iconView = UIImageView()
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = .label
+        iconView.tintColor = UIColor(designSystemColor: .icons)
         iconView.image = DesignSystemImages.Glyphs.Size24.list.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = UserText.aiChatViewAllChats
-        titleLabel.font = .systemFont(ofSize: 17)
-        titleLabel.textColor = .label
+        titleLabel.font = .daxBodyRegular()
+        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
 
         container.addSubview(iconView)
         container.addSubview(titleLabel)

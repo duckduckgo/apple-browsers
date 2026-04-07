@@ -143,10 +143,6 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         return parsed.uuidString
     }
 
-    private func validatedFileURL(for uuid: String) throws -> URL {
-        return filesDirectoryURL.appendingPathComponent(try validatedFileUUID(for: uuid))
-    }
-
     public func putFile(uuid: String, chatId: String, data: Data) throws {
         let normalizedUUID = try validatedFileUUID(for: uuid)
         let fileURL = filesDirectoryURL.appendingPathComponent(normalizedUUID)

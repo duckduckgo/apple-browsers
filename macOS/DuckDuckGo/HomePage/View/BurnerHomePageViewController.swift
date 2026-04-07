@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import Subscription
 import SwiftUI
 
 @MainActor
@@ -45,7 +44,7 @@ final class BurnerHomePageViewController: NSViewController {
         super.init(nibName: nil, bundle: nil)
 
         self.subscriptionPromoViewModel.onButtonAction = { [weak self] in
-            self?.navigateToSubscription()
+            self?.openSubscriptionPage?()
         }
     }
 
@@ -61,16 +60,5 @@ final class BurnerHomePageViewController: NSViewController {
     override func viewDidAppear() {
         super.viewDidAppear()
         subscriptionPromoViewModel.onFireWindowAppeared()
-    }
-
-    private func navigateToSubscription() {
-        if let openSubscriptionPage {
-            openSubscriptionPage()
-        } else {
-            guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
-                SubscriptionFunnelOrigin.fireWindowPromo.rawValue
-            )?.url else { return }
-            NSWorkspace.shared.open(url)
-        }
     }
 }

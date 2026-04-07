@@ -21,14 +21,14 @@ import PreferencesUI_macOS
 
 struct SubscriptionPromoView: View {
 
-    enum ButtonStyle {
+    enum ActionType {
         case tryForFree
         case learnMore
     }
 
     private static let narrowThreshold: CGFloat = 300
 
-    let buttonStyle: ButtonStyle
+    let actionType: ActionType
     let onButtonTap: () -> Void
     let onClose: () -> Void
 
@@ -121,7 +121,7 @@ struct SubscriptionPromoView: View {
 
     @ViewBuilder
     private var actionButton: some View {
-        switch buttonStyle {
+        switch actionType {
         case .tryForFree:
             Button(action: onButtonTap) {
                 Text(UserText.subscriptionPromoTryForFree)

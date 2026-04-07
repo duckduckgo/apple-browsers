@@ -29,7 +29,7 @@ struct BurnerHomePageView: View {
         static let verticalPadding = 40.0
         static let searchBoxVerticalSpacing = 24.0
         static let promoTopPadding = 16.0
-        static let promoCardSpacing = 16.0
+        static let estimatedPromoCardHeight = 80.0
     }
 
     @Environment(\.colorScheme) var colorScheme
@@ -64,7 +64,7 @@ struct BurnerHomePageView: View {
                     VStack(spacing: 0) {
                         if promoViewModel.shouldShowPromo {
                             SubscriptionPromoView(
-                                buttonStyle: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
+                                actionType: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
                                 onButtonTap: { promoViewModel.onPromoButtonTapped() },
                                 onClose: { promoViewModel.dismiss() }
                             )
@@ -109,7 +109,7 @@ struct BurnerHomePageView: View {
                             Spacer(minLength: Const.verticalPadding)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(minHeight: max(geometry.size.height - (promoViewModel.shouldShowPromo ? Const.promoTopPadding + 80 : 0), Self.totalHeight))
+                        .frame(minHeight: max(geometry.size.height - (promoViewModel.shouldShowPromo ? Const.promoTopPadding + Const.estimatedPromoCardHeight : 0), Self.totalHeight))
                     }
                 }
             }

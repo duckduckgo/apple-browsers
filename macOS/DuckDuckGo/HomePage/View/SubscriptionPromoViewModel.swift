@@ -17,46 +17,78 @@
 //
 
 import Foundation
+import Persistence
 import Subscription
+
+protocol SubscriptionPromoPersisting {
+    var fireWindowVisitCount: Int { get set }
+    var promoDismissedDate: Date? { get set }
+}
+
+struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
+
+    enum Key: String {
+        case fireWindowVisitCount = "subscription-promo.fire-window-visit-count"
+        case promoDismissedDate = "subscription-promo.dismissed-date"
+    }
+
+    private let keyValueStore: KeyValueStoring
+
+    init(keyValueStore: KeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var fireWindowVisitCount: Int {
+        get { (try? keyValueStore.object(forKey: Key.fireWindowVisitCount.rawValue) as? Int) ?? 0 }
+        set { try? keyValueStore.set(newValue, forKey: Key.fireWindowVisitCount.rawValue) }
+    }
+
+    var promoDismissedDate: Date? {
+        get { try? keyValueStore.object(forKey: Key.promoDismissedDate.rawValue) as? Date }
+        set {
+            if let value = newValue {
+                try? keyValueStore.set(value, forKey: Key.promoDismissedDate.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.promoDismissedDate.rawValue)
+            }
+        }
+    }
+}
 
 @MainActor
 final class SubscriptionPromoViewModel: ObservableObject {
-
-    enum Keys {
-        static let fireWindowVisitCount = "subscriptionPromo.fireWindowVisitCount"
-        static let promoDismissedDate = "subscriptionPromo.dismissedDate"
-    }
 
     private static let requiredVisitCount = 4
     private static let dismissCooldownDays = 28
 
     private let subscriptionManager: any SubscriptionManager
-    private let userDefaults: UserDefaults
+    private var persistor: SubscriptionPromoPersisting
+    private var hasCountedVisit = false
 
     @Published private(set) var shouldShowPromo: Bool = false
     @Published private(set) var isEligibleForFreeTrial: Bool = false
 
+    var onButtonAction: (() -> Void)?
+
     init(subscriptionManager: any SubscriptionManager,
-         userDefaults: UserDefaults = .standard) {
+         persistor: SubscriptionPromoPersisting? = nil) {
         self.subscriptionManager = subscriptionManager
-        self.userDefaults = userDefaults
+        self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
     }
 
     func onFireWindowAppeared() {
-        incrementVisitCount()
+        incrementVisitCountOnce()
         updatePromoVisibility()
     }
 
     func dismiss() {
-        userDefaults.set(Date(), forKey: Keys.promoDismissedDate)
+        persistor.promoDismissedDate = Date()
         shouldShowPromo = false
     }
 
     func onPromoButtonTapped() {
         onButtonAction?()
     }
-
-    var onButtonAction: (() -> Void)?
 
     // MARK: - Private
 
@@ -71,7 +103,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
             return
         }
 
-        guard visitCount >= Self.requiredVisitCount else {
+        guard persistor.fireWindowVisitCount >= Self.requiredVisitCount else {
             shouldShowPromo = false
             return
         }
@@ -89,17 +121,14 @@ final class SubscriptionPromoViewModel: ObservableObject {
         Locale.current.region?.identifier == "US"
     }
 
-    private var visitCount: Int {
-        userDefaults.integer(forKey: Keys.fireWindowVisitCount)
-    }
-
-    private func incrementVisitCount() {
-        let current = visitCount
-        userDefaults.set(current + 1, forKey: Keys.fireWindowVisitCount)
+    private func incrementVisitCountOnce() {
+        guard !hasCountedVisit else { return }
+        hasCountedVisit = true
+        persistor.fireWindowVisitCount += 1
     }
 
     private var isDismissedWithinCooldown: Bool {
-        guard let dismissedDate = userDefaults.object(forKey: Keys.promoDismissedDate) as? Date else {
+        guard let dismissedDate = persistor.promoDismissedDate else {
             return false
         }
         let daysSinceDismissal = Calendar.current.dateComponents([.day], from: dismissedDate, to: Date()).day ?? 0

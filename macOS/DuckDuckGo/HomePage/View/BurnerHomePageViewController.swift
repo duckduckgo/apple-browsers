@@ -24,14 +24,20 @@ final class BurnerHomePageViewController: NSViewController {
 
     let appearancePreferences: AppearancePreferences
     let themeManager: ThemeManager
+    let subscriptionPromoViewModel: SubscriptionPromoViewModel
 
     required init?(coder: NSCoder) {
         fatalError("BurnerHomePageViewController: Bad initializer")
     }
 
-    init(appearancePreferences: AppearancePreferences? = nil, themeManager: ThemeManager? = nil) {
+    init(appearancePreferences: AppearancePreferences? = nil,
+         themeManager: ThemeManager? = nil,
+         subscriptionPromoViewModel: SubscriptionPromoViewModel? = nil) {
         self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
+        self.subscriptionPromoViewModel = subscriptionPromoViewModel ?? SubscriptionPromoViewModel(
+            subscriptionManager: NSApp.delegateTyped.subscriptionManager
+        )
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -40,7 +46,13 @@ final class BurnerHomePageViewController: NSViewController {
         let rootView = BurnerHomePageView()
             .environmentObject(appearancePreferences)
             .environmentObject(themeManager)
+            .environmentObject(subscriptionPromoViewModel)
 
         self.view = NSHostingView(rootView: rootView)
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        subscriptionPromoViewModel.onFireWindowAppeared()
     }
 }

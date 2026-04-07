@@ -35,11 +35,7 @@ struct BurnerHomePageView: View {
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: AppearancePreferences
     @EnvironmentObject var themeManager: ThemeManager
-
-    var showSubscriptionPromo: Bool = false
-    var isEligibleForFreeTrial: Bool = false
-    var onPromoButtonTap: (() -> Void)?
-    var onPromoClose: (() -> Void)?
+    @EnvironmentObject var promoViewModel: SubscriptionPromoViewModel
 
     private var backgroundColor: Color {
         Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
@@ -66,11 +62,11 @@ struct BurnerHomePageView: View {
             ZStack {
                 ScrollView {
                     VStack(spacing: 0) {
-                        if showSubscriptionPromo {
+                        if promoViewModel.shouldShowPromo {
                             SubscriptionPromoView(
-                                buttonStyle: isEligibleForFreeTrial ? .tryForFree : .learnMore,
-                                onButtonTap: { onPromoButtonTap?() },
-                                onClose: { onPromoClose?() }
+                                buttonStyle: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
+                                onButtonTap: { promoViewModel.onPromoButtonTapped() },
+                                onClose: { promoViewModel.dismiss() }
                             )
                             .frame(width: Self.targetWidth)
                             .padding(.top, Const.promoTopPadding)
@@ -113,7 +109,7 @@ struct BurnerHomePageView: View {
                             Spacer(minLength: Const.verticalPadding)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(minHeight: max(geometry.size.height - (showSubscriptionPromo ? Const.promoTopPadding + 80 : 0), Self.totalHeight))
+                        .frame(minHeight: max(geometry.size.height - (promoViewModel.shouldShowPromo ? Const.promoTopPadding + 80 : 0), Self.totalHeight))
                     }
                 }
             }

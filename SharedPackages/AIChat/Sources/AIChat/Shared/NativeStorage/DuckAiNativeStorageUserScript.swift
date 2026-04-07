@@ -313,22 +313,22 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         do {
-            guard let fileContent = try await performStorageOperation({ [handler] in
+            guard let fileContent = try await performStorageOperation({
                 try self.handler.getFile(uuid: uuid)
             }) else {
                 Logger.aiChat.debug("DuckAiNativeStorage: getFile '\(uuid)' → not found")
-                return FileValueResponse(value: nil)
+                return nil
             }
             // Return the stored JSON opaquely — preserves all FE fields exactly as stored
             guard let storedDict = try? JSONSerialization.jsonObject(with: fileContent.data) as? [String: Any] else {
                 Logger.aiChat.error("DuckAiNativeStorage: getFile '\(uuid)' — stored data is not valid JSON")
-                return FileValueResponse(value: nil)
+                return nil
             }
             Logger.aiChat.debug("DuckAiNativeStorage: getFile '\(uuid)' → \(fileContent.data.count) bytes, keys: \(storedDict.keys.sorted().joined(separator: ", "))")
             return storedDict.mapValues { AnyCodableValue($0) }
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: getFile failed for \(uuid): \(error.localizedDescription)")
-            return FileValueResponse(value: nil)
+            return nil
         }
     }
 
@@ -421,10 +421,6 @@ private struct AllSettingsResponse: Encodable {
 
 private struct AllChatsResponse: Encodable {
     let chats: [[String: AnyCodableValue]]
-}
-
-private struct FileValueResponse: Encodable {
-    let value: String?
 }
 
 private struct FileMetadataResponse: Encodable {

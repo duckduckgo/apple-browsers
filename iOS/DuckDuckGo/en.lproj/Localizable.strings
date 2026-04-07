@@ -1162,6 +1162,66 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Import Bookmarks to DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Open Chrome, then follow the steps below in Chrome:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Settings** > **Export Data**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Press **Continue**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Select **DuckDuckGo** as Destination";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Import from Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Done Exporting?";
+
+/* Row subtitle describing the DuckDuckGo desktop browser platforms */
+"data.import.detail.get-desktop-browser.subtitle" = "DuckDuckGo for Mac or Windows";
+
+/* Row title for getting the DuckDuckGo desktop browser on the sync import detail screen */
+"data.import.detail.get-desktop-browser.title" = "Get Our Desktop Browser";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "You need to go to the Passwords app, then follow the steps to import.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Tap **···** > **Export Data to Another App**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Tap **All Passwords** > **Continue**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Select **DuckDuckGo** as Destination";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Import from Passwords";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "First, export your passwords from Safari, then come back here to upload the file.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Export Safari Passwords";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Import from Safari";
+
+/* Primary button on the DuckDuckGo sync import detail screen */
+"data.import.detail.sync.button" = "Sync Passwords";
+
+/* Description on the DuckDuckGo sync import detail screen */
+"data.import.detail.sync.description" = "Sync your passwords from another device.";
+
+/* Navigation title for the DuckDuckGo sync import detail screen */
+"data.import.detail.sync.title" = "Sync from DuckDuckGo";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Upload Exported File...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "No supported data found in the zip file. Please review the Safari export instructions and try again.";
 
@@ -1233,6 +1293,27 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Import Passwords to DuckDuckGo";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Passwords App";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the source selection screen */
+"data.import.source.section.import-from" = "Import From";
+
+/* Section header for sync-based import sources on the source selection screen */
+"data.import.source.section.sync-from" = "Sync From";
+
+/* Navigation title for the import passwords source selection screen */
+"data.import.source.selection.title" = "Import Passwords";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo on Another Device";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Bookmarks";

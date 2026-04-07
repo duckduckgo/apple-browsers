@@ -27,6 +27,7 @@ final class NewTabPageViewModel: ObservableObject {
     @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
     @Published var escapeHatch: EscapeHatchModel?
+    @Published var sectionTitle: String?
     var onEscapeHatchTap: (() -> Void)?
     private(set) var fireTab: Bool
 

@@ -159,7 +159,6 @@ class MainViewCoordinator {
         }
 
         navigationBarContainer.isHidden = false
-        constraints.navigationBarContainerBottom.constant = 0
 
         if isNavigationChromeHidden {
             setContentContainerBottomAnchorMode(.unifiedToggleInput)
@@ -195,7 +194,7 @@ class MainViewCoordinator {
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.alpha = 1
-        updateUnifiedToggleInputColors(isExpanded: false, inputView: nil)
+        updateUnifiedToggleInputColors(inputView: nil)
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
     }
 
@@ -217,7 +216,7 @@ class MainViewCoordinator {
         statusBackground.backgroundColor = inlineBackground
         suggestionTrayContainer.backgroundColor = inlineBackground
 
-        navigationBarContainer.backgroundColor = inlineBackground
+        navigationBarContainer.backgroundColor = .clear
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
 
@@ -225,14 +224,9 @@ class MainViewCoordinator {
         superview.layoutIfNeeded()
     }
 
-    func updateUnifiedToggleInputColors(isExpanded: Bool, inputView: UIView?) {
-        if isExpanded {
-            inputView?.backgroundColor = statusBackground.backgroundColor
-            unifiedToggleInputContainer.backgroundColor = .clear
-        } else {
-            inputView?.backgroundColor = .clear
-            unifiedToggleInputContainer.backgroundColor = .clear
-        }
+    func updateUnifiedToggleInputColors(inputView: UIView?) {
+        inputView?.backgroundColor = .clear
+        unifiedToggleInputContainer.backgroundColor = .clear
     }
 
     @MainActor
@@ -296,11 +290,13 @@ class MainViewCoordinator {
     @MainActor
     func showUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = false
+        superview.insertSubview(statusBackground, belowSubview: unifiedInputContentContainer)
     }
 
     @MainActor
     func hideUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = true
+        superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
     }
 
     // MARK: - AI Tab Chrome
@@ -418,6 +414,14 @@ class MainViewCoordinator {
         case toolbar
         case unifiedToggleInput
         case safeArea
+    }
+
+    func extendContentContainerBehindInput() {
+        setContentContainerBottomAnchorMode(.toolbar)
+    }
+
+    func stopContentContainerBehindInput() {
+        setContentContainerBottomAnchorMode(.unifiedToggleInput)
     }
 
     private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {

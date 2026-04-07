@@ -20,7 +20,6 @@
 import Foundation
 import UIKit
 import Core
-import PrivacyConfig
 
 protocol AutoClearing {
 
@@ -38,26 +37,20 @@ final class AutoClear: AutoClearing {
     private let worker: FireExecuting
     private var timestamp: TimeInterval?
     private let appSettings: AppSettings
-    private let dataClearingCapability: DataClearingCapable
 
     var isClearingEnabled: Bool {
         return AutoClearSettingsModel(settings: appSettings) != nil
     }
 
     init(worker: FireExecuting,
-         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         dataClearingCapability: DataClearingCapable) {
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
         self.worker = worker
         self.appSettings = appSettings
-        self.dataClearingCapability = dataClearingCapability
     }
 
     @MainActor
     func clearDataIfEnabled(launching: Bool = false, applicationState: DataStoreWarmup.ApplicationState = .unknown) async {
-        guard var options = AutoClearSettingsModel(settings: appSettings)?.action else { return }
-        if shouldInjectAIChatsFireOption(into: options) {
-            options.insert(.aiChats)
-        }
+        guard let options = AutoClearSettingsModel(settings: appSettings)?.action else { return }
         let trigger: FireRequest.Trigger = launching ? .autoClearOnLaunch : .autoClearOnForeground
         let request = FireRequest(options: options, trigger: trigger, scope: .all, source: .autoClear)
         await worker.burn(request: request, applicationState: applicationState)
@@ -99,20 +92,6 @@ final class AutoClear: AutoClearing {
         timestamp = nil
         await clearDataIfEnabled(applicationState: applicationState)
     }
-    // Determine whether to inject the `.aiChats` fire option.
-    // 
-    // Criteria:
-    // 1. The user has enabled "auto-clear AI chat history" in settings.
-    // 2. FireOptions currently include `.data` but do NOT already include `.aiChats`.
-    // 
-    // This ensures .aiChats is only injected in the correct (legacy UI) scenarios.
-    private func shouldInjectAIChatsFireOption(into options: FireRequest.Options) -> Bool {
-        options.contains(.data)
-            && !options.contains(.aiChats)
-            && !dataClearingCapability.isEnhancedDataClearingEnabled
-            && appSettings.autoClearAIChatHistory
-    }
-
 }
 
 extension DataStoreWarmup.ApplicationState {

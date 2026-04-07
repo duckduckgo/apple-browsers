@@ -247,7 +247,6 @@ class SyncDebugViewController: UITableViewController {
                 udWrapper.wrappedValue = false
             case .getRecoveryCode:
                 showCopyPasteCodeAlert()
-
             default: break
             }
         case .autoRestore:

@@ -43,7 +43,7 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertFalse(state.isContentVisible)
         XCTAssertFalse(state.isExpanded)
         XCTAssertFalse(state.isFloatingSubmitVisible)
-        XCTAssertEqual(state.headerDisplayMode, .hidden)
+
         XCTAssertFalse(state.inactiveAppearance)
     }
 
@@ -55,49 +55,42 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertTrue(state.isInputVisible)
         XCTAssertFalse(state.isContentVisible)
         XCTAssertFalse(state.isExpanded)
-        XCTAssertEqual(state.headerDisplayMode, .hidden)
+
     }
 
     // MARK: - AI Tab Expanded
 
-    func test_aiTabExpanded_aiChat_onAITab_hidesContent() {
+    func test_aiTabExpanded_aiChat_hidesContent() {
         sut.showExpanded(inputMode: .aiChat)
-        let state = sut.computeRenderState(isOnAITab: true)
+        let state = sut.computeRenderState()
         XCTAssertTrue(state.isInputVisible)
         XCTAssertFalse(state.isContentVisible)
         XCTAssertTrue(state.isExpanded)
-        XCTAssertEqual(state.headerDisplayMode, .hidden)
+
     }
 
-    func test_aiTabExpanded_search_onAITab_showsContentAndHeader() {
+    func test_aiTabExpanded_search_showsContent() {
         sut.showExpanded(inputMode: .search)
-        let state = sut.computeRenderState(isOnAITab: true)
+        let state = sut.computeRenderState()
         XCTAssertTrue(state.isContentVisible)
-        XCTAssertEqual(state.headerDisplayMode, .active)
+
     }
 
-    func test_aiTabExpanded_aiChat_notOnAITab_showsContent() {
-        sut.showExpanded(inputMode: .aiChat)
-        let state = sut.computeRenderState(isOnAITab: false)
-        XCTAssertTrue(state.isContentVisible)
-        XCTAssertEqual(state.headerDisplayMode, .hidden)
-    }
-
-    func test_aiTabExpanded_search_onAITab_keyboardHidden_showsInactive() {
+    func test_aiTabExpanded_search_keyboardHidden_showsInactive() {
         sut.showExpanded(inputMode: .search)
         sut.updateOmnibarInputVisibility(false)
-        let state = sut.computeRenderState(isOnAITab: true)
+        let state = sut.computeRenderState()
         XCTAssertTrue(state.inactiveAppearance)
-        XCTAssertEqual(state.headerDisplayMode, .inactive)
+
     }
 
-    func test_aiTabExpanded_search_onAITab_keyboardShown_showsActive() {
+    func test_aiTabExpanded_search_keyboardShown_showsActive() {
         sut.showExpanded(inputMode: .search)
         sut.updateOmnibarInputVisibility(false)
         sut.updateOmnibarInputVisibility(true)
-        let state = sut.computeRenderState(isOnAITab: true)
+        let state = sut.computeRenderState()
         XCTAssertFalse(state.inactiveAppearance)
-        XCTAssertEqual(state.headerDisplayMode, .active)
+
     }
 
     func test_aiTabExpanded_search_afterPriorKeyboardDismiss_startsActive() {
@@ -105,9 +98,9 @@ final class UTIRenderStateTests: XCTestCase {
         sut.updateOmnibarInputVisibility(false)
         sut.showCollapsed()
         sut.showExpanded(inputMode: .search)
-        let state = sut.computeRenderState(isOnAITab: true)
+        let state = sut.computeRenderState()
         XCTAssertFalse(state.inactiveAppearance)
-        XCTAssertEqual(state.headerDisplayMode, .active)
+
     }
 
     // MARK: - Omnibar Active
@@ -118,7 +111,7 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertTrue(state.isInputVisible)
         XCTAssertTrue(state.isContentVisible)
         XCTAssertTrue(state.isExpanded)
-        XCTAssertEqual(state.headerDisplayMode, .active)
+
         XCTAssertFalse(state.inactiveAppearance)
     }
 
@@ -127,7 +120,6 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState()
         XCTAssertEqual(state.cardPosition, .top)
         XCTAssertTrue(state.usesOmnibarMargins)
-        XCTAssertTrue(state.showsDismissButton)
         XCTAssertTrue(state.isToolbarSubmitHidden)
     }
 
@@ -136,7 +128,6 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState()
         XCTAssertEqual(state.cardPosition, .bottom)
         XCTAssertFalse(state.usesOmnibarMargins)
-        XCTAssertFalse(state.showsDismissButton)
         XCTAssertFalse(state.isToolbarSubmitHidden)
     }
 
@@ -148,7 +139,7 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState()
         XCTAssertTrue(state.isInputVisible)
         XCTAssertTrue(state.isContentVisible)
-        XCTAssertEqual(state.headerDisplayMode, .inactive)
+
         XCTAssertTrue(state.inactiveAppearance)
     }
 

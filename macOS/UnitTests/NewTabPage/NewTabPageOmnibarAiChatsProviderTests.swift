@@ -203,6 +203,8 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
 
     var showCustomizePopover: Bool = false
     var isAIChatRecentChatsEnabled: Bool = true
+    var isAIChatToolsEnabled: Bool = false
+    var selectedModelId: String?
 }
 
 private extension AIChatSuggestion {

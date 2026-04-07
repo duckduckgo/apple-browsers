@@ -75,6 +75,7 @@ private extension AutoplayPolicyTabExtension {
         case .allow:
             return .allow
         case .ask:
+            /// # Note: Autoplay Policy has 3x states. We explicitly remap `ask` > `allowWithSound`
             return .allowWithoutSound
         case .deny:
             return .deny

@@ -154,6 +154,7 @@ enum AutoplayDecision: Hashable {
     }
 
     var permissionDecision: PersistedPermissionDecision {
+        /// # Note: Autoplay Policy has 3x states. We explicitly remap `ask` > `allowWithSound`
         switch self {
         case .allowAll: return .allow
         case .audioMuted: return .ask

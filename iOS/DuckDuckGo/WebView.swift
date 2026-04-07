@@ -23,12 +23,17 @@ import os.log
 
 final class WebView: WKWebView {
     private var customAccesoryView: UIView?
+    private(set) var inputAccessoryViewHidden = false
 
     override var inputAccessoryView: UIView? {
+        if inputAccessoryViewHidden {
+            return nil
+        }
+
         guard customAccesoryView != nil else {
             return super.inputAccessoryView
         }
-        
+
         return customAccesoryView
     }
 
@@ -45,6 +50,12 @@ final class WebView: WKWebView {
         guard customAccesoryView != nil else { return }
 
         customAccesoryView = nil
+        reloadContentViewInputViews()
+    }
+
+    func setInputAccessoryViewHidden(_ hidden: Bool) {
+        guard inputAccessoryViewHidden != hidden else { return }
+        inputAccessoryViewHidden = hidden
         reloadContentViewInputViews()
     }
 

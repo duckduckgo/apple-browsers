@@ -40,7 +40,7 @@ jobs:
       matrix:
         runner: [macos-26-xlarge]
         include:
-          - xcode-version: "26.2"
+          - xcode-version: "26.4"
             runner: macos-26-xlarge
 
     concurrency:
@@ -58,7 +58,7 @@ jobs:
           ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -69,7 +69,7 @@ jobs:
         mode: start
 
     - name: Check out the PIR fake broker code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: DuckDuckGo/pir-fake-broker
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
@@ -143,6 +143,14 @@ jobs:
       with:
         xcode-version: ${{ matrix.xcode-version }}
 
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-pir-e2e
+        restore-keys: |
+          xcode-compilation-cache-pir-e2e-
+
     - name: Run PIR e2e Tests
       id: run-tests
       run: |
@@ -153,6 +161,7 @@ jobs:
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
           ENABLE_TESTABILITY=true \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
           "-only-testing:DBPE2ETests" \
           -retry-tests-on-failure \
           -test-iterations 2 \
@@ -160,6 +169,24 @@ jobs:
           | tee pir-e2e-tests.log
       env:
           PRIVACYPRO_STAGING_ACCESS_TOKEN_V2: ${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}
+
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-pir-e2e-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Report job duration
       if: success() || (always() && steps.run-tests.outcome == 'failure')

@@ -20,12 +20,6 @@
 import AIChat
 import Foundation
 
-/// Represents a single row in the recent chats popup.
-enum AIChatRecentChatsItem: Equatable {
-    case chat(AIChatSuggestion)
-    case viewAllChats
-}
-
 /// View model for the recent chats popup, extracting presentation logic from the view controller.
 @MainActor
 final class AIChatRecentChatsPopupViewModel {
@@ -35,9 +29,6 @@ final class AIChatRecentChatsPopupViewModel {
     static let maxVisibleChats = 5
 
     // MARK: - Properties
-
-    /// The items to display in the popup (chat rows + optional "View all chats").
-    let items: [AIChatRecentChatsItem]
 
     /// Whether the "View all chats" footer should be shown.
     let showViewAll: Bool
@@ -52,22 +43,15 @@ final class AIChatRecentChatsPopupViewModel {
     ///   - suggestions: The chat suggestions to display (will be capped at maxVisibleChats).
     ///   - hasMore: Whether there are more chats beyond the displayed ones.
     init(suggestions: [AIChatSuggestion], hasMore: Bool) {
-        let capped = Array(suggestions.prefix(Self.maxVisibleChats))
-        self.suggestions = capped
+        self.suggestions = Array(suggestions.prefix(Self.maxVisibleChats))
         self.showViewAll = hasMore
-
-        var result: [AIChatRecentChatsItem] = capped.map { .chat($0) }
-        if hasMore {
-            result.append(.viewAllChats)
-        }
-        self.items = result
     }
 
     // MARK: - Queries
 
     /// Whether the popup has any content to display.
     var hasContent: Bool {
-        !items.isEmpty
+        !suggestions.isEmpty
     }
 
     /// Returns the suggestion at the given index, or nil if out of bounds.

@@ -53,7 +53,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         XCTAssertTrue(vm.suggestions.isEmpty)
         XCTAssertFalse(vm.showViewAll)
         XCTAssertFalse(vm.hasContent)
-        XCTAssertTrue(vm.items.isEmpty)
     }
 
     func testInitWithSuggestionsAndNoMore() {
@@ -63,14 +62,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         XCTAssertEqual(vm.suggestions.count, 3)
         XCTAssertFalse(vm.showViewAll)
         XCTAssertTrue(vm.hasContent)
-        XCTAssertEqual(vm.items.count, 3)
-
-        // All items should be chat items
-        for item in vm.items {
-            if case .viewAllChats = item {
-                XCTFail("Should not contain viewAllChats item")
-            }
-        }
     }
 
     func testInitWithSuggestionsAndHasMore() {
@@ -80,10 +71,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         XCTAssertEqual(vm.suggestions.count, 5)
         XCTAssertTrue(vm.showViewAll)
         XCTAssertTrue(vm.hasContent)
-        XCTAssertEqual(vm.items.count, 6) // 5 chats + 1 view all
-
-        // Last item should be viewAllChats
-        XCTAssertEqual(vm.items.last, .viewAllChats)
     }
 
     func testInitCapsAtMaxVisibleChats() {
@@ -91,39 +78,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions, hasMore: true)
 
         XCTAssertEqual(vm.suggestions.count, AIChatRecentChatsPopupViewModel.maxVisibleChats)
-    }
-
-    // MARK: - Items Construction Tests
-
-    func testItemsContainCorrectChatSuggestions() {
-        let suggestions = makeSuggestions(count: 3)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions, hasMore: false)
-
-        for (index, item) in vm.items.enumerated() {
-            guard case .chat(let suggestion) = item else {
-                XCTFail("Expected chat item at index \(index)")
-                return
-            }
-            XCTAssertEqual(suggestion, suggestions[index])
-        }
-    }
-
-    func testItemsWithViewAllAppendsFooter() {
-        let suggestions = makeSuggestions(count: 2)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions, hasMore: true)
-
-        XCTAssertEqual(vm.items.count, 3)
-        if case .chat(let s) = vm.items[0] {
-            XCTAssertEqual(s.chatId, "chat-0")
-        } else {
-            XCTFail("Expected chat item at index 0")
-        }
-        if case .chat(let s) = vm.items[1] {
-            XCTAssertEqual(s.chatId, "chat-1")
-        } else {
-            XCTFail("Expected chat item at index 1")
-        }
-        XCTAssertEqual(vm.items[2], .viewAllChats)
     }
 
     // MARK: - suggestion(at:) Tests
@@ -150,19 +104,15 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         XCTAssertNil(vm.suggestion(at: 0))
     }
 
-    // MARK: - Pinned vs Regular Icon Tests
+    // MARK: - Pinned vs Regular Tests
 
     func testPinnedSuggestionPreservesFlag() {
         let pinned = AIChatSuggestion(id: "1", title: "Pinned", isPinned: true, chatId: "c1")
         let regular = AIChatSuggestion(id: "2", title: "Regular", isPinned: false, chatId: "c2")
         let vm = AIChatRecentChatsPopupViewModel(suggestions: [pinned, regular], hasMore: false)
 
-        if case .chat(let s) = vm.items[0] {
-            XCTAssertTrue(s.isPinned)
-        }
-        if case .chat(let s) = vm.items[1] {
-            XCTAssertFalse(s.isPinned)
-        }
+        XCTAssertTrue(vm.suggestions[0].isPinned)
+        XCTAssertFalse(vm.suggestions[1].isPinned)
     }
 
     // MARK: - fetch() Tests

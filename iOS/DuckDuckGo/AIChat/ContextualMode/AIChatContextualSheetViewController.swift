@@ -121,6 +121,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let suggestionsReader: AIChatSuggestionsReading?
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
+    private var isFetchingRecentChats = false
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
@@ -420,7 +421,10 @@ final class AIChatContextualSheetViewController: UIViewController {
             dismissRecentChatsPopup()
             return
         }
+        guard !isFetchingRecentChats else { return }
+        isFetchingRecentChats = true
         Task { @MainActor in
+            defer { isFetchingRecentChats = false }
             guard let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader) else { return }
             showRecentChatsPopup(with: viewModel)
         }
@@ -518,6 +522,7 @@ private extension AIChatContextualSheetViewController {
     }
 
     func showRecentChatsPopup(with viewModel: AIChatRecentChatsPopupViewModel) {
+        dismissRecentChatsPopup()
         guard let windowScene = view.window?.windowScene else { return }
 
         let popup = AIChatRecentChatsPopupViewController(viewModel: viewModel)

@@ -19,6 +19,8 @@
 import Navigation
 import Foundation
 import Combine
+import FeatureFlags
+import PrivacyConfig
 import WebKit
 import AIChat
 import BrowserServicesKit

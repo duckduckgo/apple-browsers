@@ -222,6 +222,16 @@ struct UserText {
         value: "Quickly start a new AI chat in Duck.ai",
         comment: "Description shown to the user when adding the Duck.ai lock screen widget")
 
+    static let lockScreenVoiceChatTitle = NSLocalizedString(
+        "lock.screen.widget.voicechat.title",
+        value: "Duck.ai Voice",
+        comment: "Title shown to the user when adding the Duck.ai Voice lock screen widget")
+
+    static let lockScreenVoiceChatDescription = NSLocalizedString(
+        "lock.screen.widget.voicechat.description",
+        value: "Quickly start a new voice chat in Duck.ai",
+        comment: "Description shown to the user when adding the Duck.ai Voice lock screen widget")
+
     // MARK: - Quick Actions
     static let quickActionsWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.customshortcuts.display.name",
                                                                   value: "Custom Shortcuts",

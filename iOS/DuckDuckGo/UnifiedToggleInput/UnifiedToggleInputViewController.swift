@@ -30,10 +30,10 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVCDidTapDismiss(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -93,11 +93,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         }
     }
 
-    var showsDismissButton: Bool {
-        get { inputBarView.showsDismissButton }
-        set { inputBarView.showsDismissButton = newValue }
-    }
-
     var cardPosition: UnifiedToggleInputCardPosition {
         get { inputBarView.cardPosition }
         set { inputBarView.cardPosition = newValue }
@@ -116,6 +111,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isToolbarSubmitHidden: Bool {
         get { inputBarView.isToolbarSubmitHidden }
         set { inputBarView.isToolbarSubmitHidden = newValue }
+    }
+
+    var isToolbarAIVoiceChatActive: Bool {
+        get { inputBarView.isToolbarAIVoiceChatActive }
+        set { inputBarView.isToolbarAIVoiceChatActive = newValue }
     }
 
     var isGenerating: Bool = false {
@@ -143,6 +143,16 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isImageButtonHidden: Bool {
         get { inputBarView.isImageButtonHidden }
         set { inputBarView.isImageButtonHidden = newValue }
+    }
+
+    var isImageButtonEnabled: Bool {
+        get { inputBarView.isImageButtonEnabled }
+        set { inputBarView.isImageButtonEnabled = newValue }
+    }
+
+    var modelSupportsImageAttachments: Bool {
+        get { inputBarView.modelSupportsImageAttachments }
+        set { inputBarView.modelSupportsImageAttachments = newValue }
     }
 
     var isCustomizeResponsesButtonHidden: Bool {
@@ -173,7 +183,6 @@ final class UnifiedToggleInputViewController: UIViewController {
     func apply(_ config: UTIViewConfig, animated: Bool) {
         cardPosition = config.cardPosition
         usesOmnibarMargins = config.usesOmnibarMargins
-        showsDismissButton = config.showsDismissButton
         isToolbarSubmitHidden = config.isToolbarSubmitHidden
         isTopBarPosition = config.isTopBarPosition
         setInputMode(config.inputMode, animated: animated)
@@ -195,14 +204,6 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
         inputBarView.animateToggleHide(additionalAnimations: additionalAnimations, completion: completion)
-    }
-
-    func animateDismissReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateDismissReveal(additionalAnimations: additionalAnimations, completion: completion)
-    }
-
-    func animateDismissHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateDismissHide(additionalAnimations: additionalAnimations, completion: completion)
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
@@ -236,7 +237,9 @@ final class UnifiedToggleInputViewController: UIViewController {
         let barView = UnifiedToggleInputView(handler: handler, isToggleEnabled: isToggleEnabled)
         barView.delegate = self
         barView.onNeedsHierarchyLayout = { [weak self] in
-            self?.view.window?.layoutIfNeeded()
+            guard let self else { return }
+            self.view.window?.layoutIfNeeded()
+            self.delegate?.unifiedToggleInputVCDidChangeHeight(self)
         }
         barView.onAttachTapped = { [weak self] in
             guard let self else { return }
@@ -276,9 +279,5 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapSearchGoTo(self)
-    }
-
-    func unifiedToggleInputViewDidTapDismiss(_ view: UnifiedToggleInputView) {
-        delegate?.unifiedToggleInputVCDidTapDismiss(self)
     }
 }

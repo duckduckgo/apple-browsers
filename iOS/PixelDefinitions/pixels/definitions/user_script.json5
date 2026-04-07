@@ -23,12 +23,20 @@
                     "contentblockerrules",
                     "contentScope",
                     "contentScopeIsolated",
+                    "duckAiChatHistory",
+                    "duckAiDataClearing",
                     "findinpage",
                     "fullscreenvideo",
                     "internal-feedback-autofiller",
                     "login-form-detection",
                     "surrogates"
                 ]
+            },
+            {
+                "key": "source",
+                "description": "The component that triggered the JS load failure.",
+                "type": "string",
+                "enum": ["browser", "dbp"]
             }
         ]
     }

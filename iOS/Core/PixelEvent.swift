@@ -167,6 +167,9 @@ extension Pixel {
         case browsingMenuEnableProtection
         case browsingMenuReportBrokenSite
         case browsingMenuFireproof
+        case fireproofingETLDPlus1MigrationStart
+        case fireproofingETLDPlus1MigrationSuccess
+        case fireproofingETLDPlus1MigrationFailed
         case browsingMenuAutofill
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
@@ -665,6 +668,9 @@ extension Pixel {
         case networkProtectionNoAccessTokenFoundError
         case networkProtectionVPNAccessRevoked
         case networkProtectionUnmanagedSubscriptionError
+
+        case networkProtectionPixelStorageSetupFailure
+        case pixelFireSuppressedStorageError
 
         case networkProtectionMemoryWarning
         case networkProtectionMemoryCritical
@@ -1221,6 +1227,30 @@ extension Pixel {
          */
         case subscriptionOnboardingPromotionDismiss
 
+        /**
+         * Event Trigger: The subscription promotion modal is shown to a returning user who skipped onboarding
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the CTA on the skipped-onboarding subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionTap
+
+        /**
+         * Event Trigger: The user dismissed the skipped-onboarding subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoCoordinator`
+         */
+        case subscriptionSkippedOnboardingPromotionDismiss
+
         // Win-back Offer
         case subscriptionWinBackOfferLaunchPromptShown
         case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -1286,6 +1316,8 @@ extension Pixel {
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
         case settingsWhatsNewOpen
+        case settingsAutoplayOpen
+        case settingsAutoplayChanged
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1459,6 +1491,7 @@ extension Pixel {
         case aiChatSettingsDisabled
         case aiChatSettingsAutoContextEnabled
         case aiChatSettingsAutoContextDisabled
+        case aiChatSettingsDefaultTogglePositionChanged
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -1692,6 +1725,10 @@ extension Pixel {
         case webExtensionDarkReaderInstallError
         case webExtensionDarkReaderEnabled
         case webExtensionDarkReaderDisabled
+
+        case webExtensionAdBlockingInstalled
+        case webExtensionAdBlockingUpgraded
+        case webExtensionAdBlockingInstallError
     }
 
 }
@@ -1800,6 +1837,8 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
+        case .settingsAutoplayOpen: return "m_settings_autoplay_open"
+        case .settingsAutoplayChanged: return "m_settings_autoplay_changed"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1821,6 +1860,9 @@ extension Pixel.Event {
         case .browsingMenuEnableProtection: return "mb_wlr"
         case .browsingMenuReportBrokenSite: return "mb_rb"
         case .browsingMenuFireproof: return "mb_f"
+        case .fireproofingETLDPlus1MigrationStart: return "m_fireproofing_etldplus1_migration_start"
+        case .fireproofingETLDPlus1MigrationSuccess: return "m_fireproofing_etldplus1_migration_success"
+        case .fireproofingETLDPlus1MigrationFailed: return "m_fireproofing_etldplus1_migration_failed"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
         case .browsingMenuNewDuckAddress: return "m_menu_new_duck_address"
@@ -2280,6 +2322,8 @@ extension Pixel.Event {
         case .networkProtectionNoAccessTokenFoundError: return "m_netp_no_access_token_found_error"
         case .networkProtectionVPNAccessRevoked: return "m_vpn_access_revoked"
         case .networkProtectionUnmanagedSubscriptionError: return "m_vpn_access_unmanaged_error"
+        case .networkProtectionPixelStorageSetupFailure: return "m_netp_vpn_pixel_storage_setup_failure"
+        case .pixelFireSuppressedStorageError: return "m_pixel_fire_suppressed_storage_error"
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"
@@ -2793,6 +2837,10 @@ extension Pixel.Event {
 
         case .subscriptionOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
 
+        case .subscriptionSkippedOnboardingPromotionImpression: return "m_privacy-pro_skipped_onboarding_promotion_impression"
+        case .subscriptionSkippedOnboardingPromotionTap: return "m_privacy-pro_skipped_onboarding_promotion_tap"
+        case .subscriptionSkippedOnboardingPromotionDismiss: return "m_privacy-pro_skipped_onboarding_promotion_dismiss"
+
         // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_privacy-pro_winback_launch_prompt_shown"
         case .subscriptionWinBackOfferLaunchPromptCTAClicked: return "m_privacy-pro_winback_launch_prompt_clicked"
@@ -3029,6 +3077,7 @@ extension Pixel.Event {
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
         case .aiChatSettingsAutoContextEnabled: return "m_aichat_settings_auto_context_enabled"
         case .aiChatSettingsAutoContextDisabled: return "m_aichat_settings_auto_context_disabled"
+        case .aiChatSettingsDefaultTogglePositionChanged: return "m_aichat_settings_default_toggle_position_changed"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
@@ -3316,6 +3365,10 @@ extension Pixel.Event {
         case .webExtensionDarkReaderInstallError: return "m_web_extension_dark_reader_install_error"
         case .webExtensionDarkReaderEnabled: return "m_web_extension_dark_reader_enabled"
         case .webExtensionDarkReaderDisabled: return "m_web_extension_dark_reader_disabled"
+
+        case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
+        case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
+        case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
         }
     }
 }

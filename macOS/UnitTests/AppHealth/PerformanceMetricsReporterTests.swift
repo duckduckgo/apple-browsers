@@ -42,22 +42,8 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     // MARK: - Feature Flag
 
-    func testWhenFeatureFlagDisabled_ThenDoesNotFirePixel() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let (_, _, reporter) = buildMetricsReporter()
-        let profiler = StartupProfiler()
-
-        // When
-        reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-
-        // Then
-        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
-    }
-
     func testWhenFeatureFlagEnabled_ThenFiresPixel() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
@@ -72,7 +58,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testFiredPixelHasCorrectName() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
@@ -87,7 +72,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testPixelIncludesSystemEnvironmentProperties() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (environment, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
@@ -104,7 +88,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testPixelIncludesSessionRestorationState() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter(restorePreviousSession: true)
         let profiler = StartupProfiler()
 
@@ -119,7 +102,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testPixelIncludesWindowAndTabCount() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
@@ -136,7 +118,6 @@ final class PerformanceMetricsReporterTests: XCTestCase {
 
     func testPixelIncludesTimingMetrics() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
         let metrics = buildStartupMetrics(appDelegateInitDuration: 0.15, mainMenuInitDuration: 0.25, timeToInteractiveDuration: 2.5)
         let profiler = StartupProfiler()
@@ -158,7 +139,7 @@ private extension PerformanceMetricsReporterTests {
     func buildMetricsReporter(restorePreviousSession: Bool = false) -> (SystemEnvironment, WindowContext, PerformanceMetricsReporter) {
         let environment = SystemEnvironment(architecture: "ARM", activeProcessorCount: 8, isOnBattery: false)
         let windowContext = WindowContext(standardTabs: 5, pinnedTabs: 1, windows: 1)
-        let reporter = PerformanceMetricsReporter(environment: environment, featureFlagger: mockFeatureFlagger, pixelFiring: mockPixelFiring, previousSessionRestored: restorePreviousSession, windowContext: windowContext)
+        let reporter = PerformanceMetricsReporter(environment: environment, pixelFiring: mockPixelFiring, previousSessionRestored: restorePreviousSession, windowContext: windowContext)
 
         return (environment, windowContext, reporter)
     }

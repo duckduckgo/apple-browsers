@@ -55,7 +55,7 @@ public actor RemoteMessagingImageLoader: RemoteMessagingImageLoading {
     }
 
     public nonisolated func prefetch(_ urls: [URL]) {
-        for url in urls {
+        for url in Set(urls) {
             Task { [weak self] in _ = try? await self?.loadImage(from: url) }
         }
     }

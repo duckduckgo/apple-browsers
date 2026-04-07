@@ -157,7 +157,7 @@ final class BrowserTabViewController: NSViewController {
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
-         onboardingDialogFactory: ContextualDaxDialogsFactory = DefaultContextualDaxDialogViewFactory(fireCoordinator: NSApp.delegateTyped.fireCoordinator),
+         onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: NSApp.delegateTyped.featureFlagger, fireCoordinator: NSApp.delegateTyped.fireCoordinator),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          windowControllersManager: WindowControllersManagerProtocol = NSApp.delegateTyped.windowControllersManager,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
@@ -813,6 +813,11 @@ final class BrowserTabViewController: NSViewController {
                     return Just(()).eraseToAnyPublisher()
                 }
 
+                // Pre-set the webview frame so WebKit renders at the correct size while offscreen
+                if let bounds = self?.view.bounds {
+                    tabViewModel.tab.webView.frame = bounds
+                }
+
                 // If the current content is the native internal site, delay the webview presentation
                 // until a website renders (or edge cases) to avoid white flash
                 if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.lastURL) &&
@@ -1252,6 +1257,7 @@ final class BrowserTabViewController: NSViewController {
                 dockPreferences: dockPreferences,
                 accessibilityPreferences: accessibilityPreferences,
                 duckPlayerPreferences: duckPlayer.preferences,
+                youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: duckPlayer.preferences),
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                 pinningManager: pinningManager

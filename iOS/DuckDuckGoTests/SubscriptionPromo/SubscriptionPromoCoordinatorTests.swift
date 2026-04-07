@@ -154,9 +154,32 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionImpression.name)
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionSkippedOnboardingPromotionImpression.name)
         XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.returningUser], "true")
         XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.freeTrial], "true")
+    }
+
+    // MARK: - handleCTAAction origin
+
+    func testHandleCTAPostsNotificationWithSkippedOnboardingOrigin() {
+        // Given
+        var capturedDeepLink: SettingsViewModel.SettingsDeepLinkSection?
+        let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
+            capturedDeepLink = notification.object as? SettingsViewModel.SettingsDeepLinkSection
+            return true
+        }
+
+        // When
+        sut.handleCTAAction()
+
+        // Then
+        wait(for: [notificationExpectation], timeout: 1.0)
+        if case let .subscriptionFlow(redirectURLComponents) = capturedDeepLink {
+            let originValue = redirectURLComponents?.queryItems?.first(where: { $0.name == "origin" })?.value
+            XCTAssertEqual(originValue, SubscriptionFunnelOrigin.skippedOnboarding.rawValue)
+        } else {
+            XCTFail("Expected subscriptionFlow deep link")
+        }
     }
 
     // MARK: - handleCTAAction pixels
@@ -172,7 +195,7 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionTap.name)
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionSkippedOnboardingPromotionTap.name)
         XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.returningUser], "true")
         XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.freeTrial], "false")
     }
@@ -204,7 +227,7 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionDismiss.name)
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionSkippedOnboardingPromotionDismiss.name)
         XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.returningUser], "true")
         XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.freeTrial], "true")
     }
@@ -221,7 +244,7 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
         sut = makeSUT()
 
         // Then
-        XCTAssertEqual(sut.proceedButtonText(), UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree)
+        XCTAssertEqual(sut.proceedButtonText(), UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.tryItFree)
     }
 
     func testProceedButtonTextShowsLearnMoreWhenNotEligible() {

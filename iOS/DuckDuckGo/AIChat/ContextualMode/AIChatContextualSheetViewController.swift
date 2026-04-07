@@ -95,6 +95,15 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Types
 
+    /// A view that automatically keeps its corner radius at half its height (pill shape).
+    private final class PillView: UIView {
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            layer.cornerRadius = bounds.height / 2
+            layer.cornerCurve = .continuous
+        }
+    }
+
     /// Factory closure for creating web view controllers, eliminating prop drilling
     typealias WebViewControllerFactory = () -> AIChatContextualWebViewController?
 
@@ -109,8 +118,15 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let pixelHandler: AIChatContextualModePixelFiring
     private let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
+    private let suggestionsReader: AIChatSuggestionsReading?
+    private var recentChatsPopup: AIChatRecentChatsPopupViewController?
+    private var popupWindow: UIWindow?
+    private var isFetchingRecentChats = false
 
-    private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
+    private lazy var contextualInputViewController = AIChatContextualInputViewController(
+        voiceSearchHelper: voiceSearchHelper,
+        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements)
+    )
     private var cancellables = Set<AnyCancellable>()
 
     /// The single web view controller for this sheet, created once and reused
@@ -138,8 +154,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     }()
 
     private lazy var leftButtonContainer: UIView = {
-        let view = UIView()
+        let view = PillView()
         view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -174,6 +191,18 @@ final class AIChatContextualSheetViewController: UIViewController {
         return button
     }()
 
+    private lazy var recentChatsButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(DesignSystemImages.Glyphs.Size24.list, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
+        button.accessibilityLabel = UserText.aiChatRecentChatsButtonAccessibility
+        button.accessibilityTraits = .button
+        button.isHidden = true
+        return button
+    }()
+
     private lazy var titleContainer: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
@@ -201,8 +230,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     }()
 
     private lazy var rightButtonContainer: UIView = {
-        let view = UIView()
+        let view = PillView()
         view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -259,7 +289,8 @@ final class AIChatContextualSheetViewController: UIViewController {
          webViewControllerFactory: @escaping WebViewControllerFactory,
          pixelHandler: AIChatContextualModePixelFiring,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         suggestionsReader: AIChatSuggestionsReading? = nil) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -267,12 +298,22 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.pixelHandler = pixelHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.suggestionsReader = suggestionsReader
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        let window = popupWindow
+        let reader = suggestionsReader
+        DispatchQueue.main.async {
+            window?.isHidden = true
+            reader?.tearDown()
+        }
     }
 
     // MARK: - Lifecycle
@@ -314,10 +355,12 @@ final class AIChatContextualSheetViewController: UIViewController {
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
         showDimmingView(animated: animated)
+        prefetchRecentChatsVisibility()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        dismissRecentChatsPopup()
         view.endEditing(true)
         removeKeyboardObserver()
         pixelHandler.fireSheetDismissed()
@@ -326,7 +369,6 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        updateButtonContainerCornerRadii()
         updateShadowPath()
     }
 
@@ -371,6 +413,21 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     @objc private func closeButtonTapped() {
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
+    }
+
+    @objc private func recentChatsButtonTapped() {
+        if recentChatsPopup != nil {
+            dismissRecentChatsPopup()
+            return
+        }
+        guard !isFetchingRecentChats else { return }
+        isFetchingRecentChats = true
+        Task { @MainActor in
+            defer { isFetchingRecentChats = false }
+            guard let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader),
+                  view.window != nil, !isBeingDismissed else { return }
+            showRecentChatsPopup(with: viewModel)
+        }
     }
 
 }
@@ -454,29 +511,77 @@ private extension AIChatContextualSheetViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestRemoveChip(self)
     }
 
+    // MARK: - Recent Chats Popup
+
+    func prefetchRecentChatsVisibility() {
+        guard suggestionsReader != nil else { return }
+        Task { @MainActor in
+            let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader)
+            guard view.window != nil, !isBeingDismissed else { return }
+            recentChatsButton.isHidden = viewModel == nil
+        }
+    }
+
+    func showRecentChatsPopup(with viewModel: AIChatRecentChatsPopupViewModel) {
+        guard let windowScene = view.window?.windowScene else { return }
+
+        viewModel.delegate = self
+        let popup = AIChatRecentChatsPopupViewController(viewModel: viewModel)
+
+        // Present on a separate window so the popup is fully independent of the sheet
+        let overlay = UIWindow(windowScene: windowScene)
+        overlay.rootViewController = popup
+        overlay.windowLevel = .normal + 1
+        overlay.backgroundColor = .clear
+        overlay.isOpaque = false
+        overlay.overrideUserInterfaceStyle = traitCollection.userInterfaceStyle
+        overlay.makeKeyAndVisible()
+
+        // Convert pill position to screen coordinates for positioning
+        let pillFrameInScreen = leftButtonContainer.convert(leftButtonContainer.bounds, to: nil)
+        popup.anchorContentView(pillFrame: pillFrameInScreen)
+
+        popupWindow = overlay
+        recentChatsPopup = popup
+    }
+
+    func dismissRecentChatsPopup() {
+        guard popupWindow != nil else { return }
+        popupWindow?.isHidden = true
+        popupWindow = nil
+        recentChatsPopup = nil
+        view.window?.makeKey()
+    }
+
     func updateChipUI(chipState: ChipState) {
         switch chipState {
         case .placeholder:
-            if contextualInputViewController.isContextChipVisible {
-                contextualInputViewController.updateContextChipState(.placeholder)
-                contextualInputViewController.setChipTapCallback { [weak self] in
-                    guard let self else { return }
-                    self.pixelHandler.firePageContextPlaceholderTapped()
-                    self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+            if featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) {
+                if contextualInputViewController.isContextChipVisible {
+                    contextualInputViewController.hideContextChip()
                 }
             } else {
-                let chipView = createPlaceholderChipView(
-                    onTapToAttach: { [weak self] in
+                if contextualInputViewController.isContextChipVisible {
+                    contextualInputViewController.updateContextChipState(.placeholder)
+                    contextualInputViewController.setChipTapCallback { [weak self] in
                         guard let self else { return }
                         self.pixelHandler.firePageContextPlaceholderTapped()
                         self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-                    },
-                    onRemove: { [weak self] in
-                        self?.handleChipRemoved()
                     }
-                )
-                contextualInputViewController.showContextChip(chipView)
-                pixelHandler.firePageContextPlaceholderShown()
+                } else {
+                    let chipView = createPlaceholderChipView(
+                        onTapToAttach: { [weak self] in
+                            guard let self else { return }
+                            self.pixelHandler.firePageContextPlaceholderTapped()
+                            self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+                        },
+                        onRemove: { [weak self] in
+                            self?.handleChipRemoved()
+                        }
+                    )
+                    contextualInputViewController.showContextChip(chipView)
+                    pixelHandler.firePageContextPlaceholderShown()
+                }
             }
         case .attached(let context):
             if contextualInputViewController.isContextChipVisible {
@@ -647,12 +752,18 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
+        case .askAboutPage:
+            delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+            contextualInputViewController.becomeFirstResponder()
         case .summarize:
             pixelHandler.fireQuickActionSummarizeSelected()
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-        }
-        if !action.prompt.isEmpty {
-            contextualInputViewController.appendText(action.prompt)
+            if !action.prompt.isEmpty {
+                contextualInputViewController.appendText(action.prompt)
+            }
+        case .summarizePage:
+            pixelHandler.fireQuickActionSummarizeSelected()
+            delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: action.prompt)
         }
     }
 
@@ -678,6 +789,27 @@ extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate
         if let query, !query.isEmpty {
             contextualInputViewController.setText(query)
         }
+    }
+}
+
+// MARK: - AIChatRecentChatsPopupViewModelDelegate
+
+extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDelegate {
+
+    func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
+        dismissRecentChatsPopup()
+        let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+    }
+
+    func recentChatsPopupDidSelectViewAll() {
+        dismissRecentChatsPopup()
+        let url = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+    }
+
+    func recentChatsPopupDidDismiss() {
+        dismissRecentChatsPopup()
     }
 }
 
@@ -747,6 +879,7 @@ private extension AIChatContextualSheetViewController {
     func apply(_ viewState: SheetViewState) {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
         newChatButton.isHidden = !viewState.shouldShowNewChatButton
+        contextualInputViewController.updateQuickActions(with: viewState.quickActions)
 
         switch viewState.content {
         case .nativeInput:
@@ -808,6 +941,13 @@ private extension AIChatContextualSheetViewController {
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.addSubview(leftButtonStack)
         leftButtonStack.addArrangedSubview(expandButton)
+        if suggestionsReader != nil {
+            leftButtonStack.addArrangedSubview(recentChatsButton)
+            NSLayoutConstraint.activate([
+                recentChatsButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+                recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            ])
+        }
         leftButtonStack.addArrangedSubview(newChatButton)
 
         headerView.addSubview(titleContainer)
@@ -882,18 +1022,6 @@ private extension AIChatContextualSheetViewController {
         ])
     }
     
-    func updateButtonContainerCornerRadii() {
-        let leftHeight = leftButtonContainer.bounds.height
-        if leftHeight > 0 {
-            leftButtonContainer.layer.cornerRadius = leftHeight / 2
-        }
-
-        let rightHeight = rightButtonContainer.bounds.height
-        if rightHeight > 0 {
-            rightButtonContainer.layer.cornerRadius = rightHeight / 2
-        }
-    }
-
     func updateShadowPath() {
         let shadowPath = UIBezierPath(
             roundedRect: view.bounds,

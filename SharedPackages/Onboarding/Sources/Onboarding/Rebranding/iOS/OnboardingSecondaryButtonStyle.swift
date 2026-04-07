@@ -41,7 +41,7 @@ struct OnboardingSecondaryButtonStyle: ButtonStyle {
             .foregroundColor(colorPalette.secondaryButtonTextColor)
             .padding(.vertical)
             .padding(.horizontal)
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 40)
+            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44)
             .background(configuration.isPressed ? colorPalette.secondaryButtonPressedColor : colorPalette.secondaryButtonBackgroundColor)
             .cornerRadius(64.0)
     }

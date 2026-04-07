@@ -62,13 +62,154 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.remainingImagesInConversation, 5)
     }
 
+    // MARK: - Model Switch: Preserve Attachments
+
+    func testWhenModelDoesNotSupportImagesThenAttachmentsArePreserved() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [
+            makeModel(id: "image-model", supportsImageUpload: true),
+            makeModel(id: "non-image-model", supportsImageUpload: false)
+        ]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "test.jpg")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+
+        sut.updateSelectedModel("non-image-model")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+    }
+
+    func testWhenModelDoesNotSupportImagesThenStripLayoutSuppressed() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [
+            makeModel(id: "image-model", supportsImageUpload: true),
+            makeModel(id: "non-image-model", supportsImageUpload: false)
+        ]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "test.jpg")
+
+        sut.updateSelectedModel("non-image-model")
+        XCTAssertFalse(sut.viewController.modelSupportsImageAttachments)
+    }
+
+    func testWhenSwitchingBackToImageModelThenStripLayoutRestored() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [
+            makeModel(id: "image-model", supportsImageUpload: true),
+            makeModel(id: "non-image-model", supportsImageUpload: false)
+        ]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "test.jpg")
+
+        sut.updateSelectedModel("non-image-model")
+        sut.updateSelectedModel("image-model")
+        XCTAssertTrue(sut.viewController.modelSupportsImageAttachments)
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+    }
+
+    // MARK: - Image Button Enabled State
+
+    func testWhenStripIsFullThenImageButtonIsDisabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "a.jpg")
+        sut.addImageAttachment(image: image, fileName: "b.jpg")
+        sut.addImageAttachment(image: image, fileName: "c.jpg")
+
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenAttachmentRemovedFromFullStripThenImageButtonIsEnabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "a.jpg")
+        sut.addImageAttachment(image: image, fileName: "b.jpg")
+        sut.addImageAttachment(image: image, fileName: "c.jpg")
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+
+        let firstId = sut.viewController.currentAttachments.first!.id
+        sut.removeAttachment(id: firstId)
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenConversationLimitReachedThenImageButtonIsDisabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        sut.attachmentUsage = AIChatAttachmentUsage(imagesUsed: 5, filesUsed: 0, fileSizeBytesUsed: 0)
+        sut.updateImageButtonVisibility()
+
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenGeneratingThenImageButtonIsDisabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+
+        sut.aiChatStatus = .streaming
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+
+        sut.aiChatStatus = .ready
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenSubmittingOnNonImageModelThenImagesAreNil() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [
+            makeModel(id: "image-model", supportsImageUpload: true),
+            makeModel(id: "non-image-model", supportsImageUpload: false)
+        ]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "test.jpg")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+
+        sut.updateSelectedModel("non-image-model")
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertNil(delegate.submittedImages)
+    }
+
     // MARK: - Helpers
 
-    private func makeCoordinator() -> UnifiedToggleInputCoordinator {
+    private func makeCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences()) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
             isToggleEnabled: true,
-            preferences: StubAIChatPreferences())
+            preferences: preferences)
     }
+
+    private func makeModel(id: String, supportsImageUpload: Bool) -> AIChatModel {
+        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, entityHasAccess: true)
+    }
+}
+
+@MainActor
+private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
+    var submittedImages: [AIChatNativePrompt.NativePromptImage]?
+
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
+        submittedImages = images
+    }
+    func unifiedToggleInputDidSubmitQuery(_ query: String) {}
+    func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidChangeHeight() {}
 }
 
 private final class StubAIChatPreferences: AIChatPreferencesPersisting {

@@ -94,6 +94,12 @@ class SwitchBarButtonsView: UIView {
         }
     }
 
+    var isAIVoiceChatEnabled: Bool = false {
+        didSet {
+            updateAIVoiceChatButtonAppearance()
+        }
+    }
+
     var onClearTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
     var onSearchGoToTapped: (() -> Void)?
@@ -231,5 +237,20 @@ class SwitchBarButtonsView: UIView {
         voiceButton.isHidden = !buttonState.showsVoiceButton
         separatorView.isHidden = !buttonState.showsSeparator
         searchGoToButton.isHidden = !buttonState.showsSearchGoToButton
+    }
+
+    private func updateAIVoiceChatButtonAppearance() {
+        if isAIVoiceChatEnabled {
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.voice)
+            voiceButton.backgroundColor = UIColor(designSystemColor: .accent)
+            voiceButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
+            voiceButton.layer.cornerRadius = Constants.buttonSize / 2
+            voiceButton.clipsToBounds = true
+        } else {
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
+            voiceButton.backgroundColor = .clear
+            voiceButton.tintColor = nil
+            voiceButton.layer.cornerRadius = 0
+        }
     }
 }

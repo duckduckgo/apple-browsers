@@ -44,9 +44,14 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onAttachTapped: (() -> Void)?
     var onModelPickerTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
+    var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
 
     // MARK: - State
+
+    var isAIVoiceChatActive: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
 
     var isSubmitEnabled: Bool = false {
         didSet { updateSubmitButtonState() }
@@ -80,6 +85,11 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isImageButtonHidden: Bool {
         get { imageButton.isHidden }
         set { imageButton.isHidden = newValue }
+    }
+
+    var isImageButtonEnabled: Bool {
+        get { imageButton.isEnabled }
+        set { imageButton.isEnabled = newValue }
     }
 
     var isCustomizeResponsesButtonHidden: Bool {
@@ -232,11 +242,18 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     private func updateSubmitButtonState() {
-        submitButton.isEnabled = isSubmitEnabled
-        submitButton.backgroundColor = isSubmitEnabled
+        updateSubmitButtonAppearance()
+    }
+
+    private func updateSubmitButtonAppearance() {
+        let showVoice = isAIVoiceChatActive && !isSubmitEnabled
+        let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
+        submitButton.setImage(icon, for: .normal)
+        submitButton.isEnabled = isSubmitEnabled || showVoice
+        submitButton.backgroundColor = (isSubmitEnabled || showVoice)
             ? UIColor(designSystemColor: .accent)
             : UIColor(designSystemColor: .controlsFillPrimary)
-        submitButton.tintColor = isSubmitEnabled
+        submitButton.tintColor = (isSubmitEnabled || showVoice)
             ? .white
             : UIColor(designSystemColor: .iconsSecondary)
     }
@@ -256,6 +273,12 @@ final class UnifiedToggleInputToolbarView: UIView {
     @objc private func customizeResponsesTapped() { onCustomizeResponsesTapped?() }
     @objc private func attachTapped() { onAttachTapped?() }
     @objc private func modelPickerTapped() { onModelPickerTapped?() }
-    @objc private func submitTapped() { onSubmitTapped?() }
+    @objc private func submitTapped() {
+        if isAIVoiceChatActive && !isSubmitEnabled {
+            onVoiceTapped?()
+        } else {
+            onSubmitTapped?()
+        }
+    }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
 }

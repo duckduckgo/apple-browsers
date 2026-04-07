@@ -136,8 +136,15 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
     // MARK: - Files (Implemented in Task 3)
 
+    private func validatedFileURL(for uuid: String) throws -> URL {
+        guard let parsed = UUID(uuidString: uuid) else {
+            throw DuckAiNativeDataStoreError.invalidFileIdentifier
+        }
+        return filesDirectoryURL.appendingPathComponent(parsed.uuidString.lowercased())
+    }
+
     public func putFile(uuid: String, chatId: String, data: Data) throws {
-        let fileURL = filesDirectoryURL.appendingPathComponent(uuid)
+        let fileURL = try validatedFileURL(for: uuid)
 
         do {
             try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
@@ -145,7 +152,8 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
             throw DuckAiNativeDataStoreError.fileWriteError(error)
         }
 
-        let record = FileRecord(uuid: uuid, chatId: chatId, dataSize: data.count, filePath: uuid)
+        let fileName = fileURL.lastPathComponent
+        let record = FileRecord(uuid: uuid, chatId: chatId, dataSize: data.count, filePath: fileName)
         do {
             try dbQueue.write { db in
                 try record.save(db)
@@ -157,6 +165,8 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func getFile(uuid: String) throws -> DuckAiFileContent? {
+        let fileURL = try validatedFileURL(for: uuid)
+
         let record: FileRecord?
         do {
             record = try dbQueue.read { db in
@@ -169,8 +179,6 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         guard let record else {
             return nil
         }
-
-        let fileURL = filesDirectoryURL.appendingPathComponent(record.filePath)
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             return nil
         }
@@ -197,7 +205,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func deleteFile(uuid: String) throws {
-        let fileURL = filesDirectoryURL.appendingPathComponent(uuid)
+        let fileURL = try validatedFileURL(for: uuid)
         try? FileManager.default.removeItem(at: fileURL)
 
         do {

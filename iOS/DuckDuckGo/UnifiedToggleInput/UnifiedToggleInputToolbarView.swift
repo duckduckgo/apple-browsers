@@ -142,7 +142,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         button.titleLabel?.lineBreakMode = .byTruncatingTail
         button.heightAnchor.constraint(equalToConstant: Constants.chipHeight).isActive = true
-        button.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45).isActive = true
 
         return button
     }()
@@ -229,7 +228,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         NSLayoutConstraint.activate([
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            outerStack.centerYAnchor.constraint(equalTo: centerYAnchor)
+            outerStack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            modelChipButton.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
         ])
 
         updateSubmitButtonState()

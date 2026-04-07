@@ -387,7 +387,7 @@ public enum FeatureFlag: String {
     case aiChatNativeStorage
 
     /// Failsafe feature flag. Filters intermediate redirect URLs from the address bar.
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1212810377867736
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213972422695959
     case filterAddressBarUpdates
 }
 

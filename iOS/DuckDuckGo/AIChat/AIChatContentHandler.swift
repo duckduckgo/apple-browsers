@@ -165,7 +165,6 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.setPayloadHandler(payloadHandler)
         self.userScript?.webView = webView
         self.userScript?.setPageContextProvider(getPageContext)
-        isFrontendReady = false
     }
     
     /// Sets the initial payload data for the AIChat session.

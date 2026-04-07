@@ -58,6 +58,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private final class MockDelegate: AIChatContextualSheetCoordinatorDelegate {
         var didRequestToLoadURLs: [URL] = []
         var didRequestExpandURLs: [URL] = []
+        var didRequestExpandShouldToggleSidebar: [Bool] = []
         var openSettingsCallCount = 0
         var openSyncSettingsCallCount = 0
 
@@ -67,6 +68,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool) {
             didRequestExpandURLs.append(url)
+            didRequestExpandShouldToggleSidebar.append(shouldToggleSidebar)
         }
 
         func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {

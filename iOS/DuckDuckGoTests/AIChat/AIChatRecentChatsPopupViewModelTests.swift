@@ -67,7 +67,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
 
         XCTAssertTrue(vm.suggestions.isEmpty)
         XCTAssertFalse(vm.showViewAll)
-        XCTAssertFalse(vm.hasContent)
     }
 
     func testInitWithSuggestionsAndNoMore() {
@@ -76,7 +75,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.suggestions.count, 3)
         XCTAssertFalse(vm.showViewAll)
-        XCTAssertTrue(vm.hasContent)
     }
 
     func testInitWithSuggestionsAndHasMore() {
@@ -85,7 +83,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.suggestions.count, 5)
         XCTAssertTrue(vm.showViewAll)
-        XCTAssertTrue(vm.hasContent)
     }
 
     func testInitCapsAtMaxVisibleChats() {

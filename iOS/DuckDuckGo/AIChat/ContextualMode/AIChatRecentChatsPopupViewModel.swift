@@ -58,13 +58,6 @@ final class AIChatRecentChatsPopupViewModel {
         self.showViewAll = hasMore
     }
 
-    // MARK: - Queries
-
-    /// Whether the popup has any content to display.
-    var hasContent: Bool {
-        !suggestions.isEmpty
-    }
-
     // MARK: - Actions
 
     func didSelectChat(at index: Int) {

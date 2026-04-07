@@ -112,9 +112,12 @@ final class UserScripts: UserScriptsProvider {
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
            let duckAiNativeStorageHandler {
-            let originRules: [HostnameMatchingRule] = [
+            var originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),
             ]
+            if let debugHostname = aiChatDebugSettings.messagePolicyHostname {
+                originRules.append(.exact(hostname: debugHostname))
+            }
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
                 originRules: originRules

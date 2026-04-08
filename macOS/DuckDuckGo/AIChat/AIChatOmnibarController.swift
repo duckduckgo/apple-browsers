@@ -435,7 +435,6 @@ final class AIChatOmnibarController {
         let modelId = effectiveModelId
         let mode = effectiveMode
         let toolChoice = effectiveToolChoice
-        let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
 
         Task { @MainActor in
             // Wait for any pending image resizes to complete

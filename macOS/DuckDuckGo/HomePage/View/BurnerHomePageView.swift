@@ -65,7 +65,7 @@ struct BurnerHomePageView: View {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
-                                        .background(Color(designSystemColor: .surfaceSecondary))
+                                        .background(Color(designSystemColor: .surfaceTertiary))
                                         .cornerRadius(12)
 
                                     VStack(alignment: .leading, spacing: 16) {

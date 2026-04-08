@@ -40,7 +40,7 @@ struct SubscriptionPromoView: View {
     var body: some View {
         promoCard
             .overlay(
-                CloseButton(icon: .close, size: Self.closeButtonSize, backgroundColor: Color(designSystemColor: .surfaceSecondary), backgroundColorOnHover: Color(designSystemColor: .surfaceSecondary)) {
+                CloseButton(icon: .close, size: Self.closeButtonSize, backgroundColor: Color(designSystemColor: .surfaceTertiary), backgroundColorOnHover: Color(designSystemColor: .surfaceTertiary)) {
                     onClose()
                 }
                 .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 3, x: 0, y: 0)
@@ -61,7 +61,7 @@ struct SubscriptionPromoView: View {
             .frame(width: promoCardWidth)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(designSystemColor: .surfaceSecondary))
+                    .fill(Color(designSystemColor: .surfaceTertiary))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.homeFavoritesGhost, lineWidth: 1)

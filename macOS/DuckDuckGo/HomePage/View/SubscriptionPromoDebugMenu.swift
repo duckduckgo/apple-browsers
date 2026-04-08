@@ -30,12 +30,29 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
         self.submenu = makeSubmenu()
     }
 
+    private var persistor: SubscriptionPromoUserDefaultsPersistor {
+        SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+    }
+
     private func makeSubmenu() -> NSMenu {
         let menu = NSMenu(title: "")
+        menu.delegate = self
 
+        let visitCountItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        visitCountItem.tag = 1
+        visitCountItem.isEnabled = false
+        menu.addItem(visitCountItem)
+
+        let displayCountItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        displayCountItem.tag = 2
+        displayCountItem.isEnabled = false
+        menu.addItem(displayCountItem)
+
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Reset Fire Tab Visit Count", action: #selector(resetFireTabVisitCount), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Dismissed Date", action: #selector(resetPromoDismissedDate), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Actioned", action: #selector(resetPromoActioned), target: self))
+        menu.addItem(NSMenuItem(title: "Reset Promo Display Count", action: #selector(resetPromoDisplayCount), target: self))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Reset All Promo State", action: #selector(resetAllPromoState), target: self))
 
@@ -54,9 +71,26 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
         UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoActioned.rawValue)
     }
 
+    @objc func resetPromoDisplayCount() {
+        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoDisplayCount.rawValue)
+        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoDisplayWindowStart.rawValue)
+    }
+
     @objc func resetAllPromoState() {
         resetFireTabVisitCount()
         resetPromoDismissedDate()
         resetPromoActioned()
+        resetPromoDisplayCount()
+    }
+}
+
+extension SubscriptionPromoDebugMenu: NSMenuDelegate {
+
+    func menuWillOpen(_ menu: NSMenu) {
+        let visitCount = min(persistor.fireTabVisitCount, SubscriptionPromoViewModel.requiredVisitCount)
+        menu.item(withTag: 1)?.title = "Fire Tab Visit Count: \(visitCount)/\(SubscriptionPromoViewModel.requiredVisitCount)"
+
+        let displayCount = persistor.promoDisplayCount
+        menu.item(withTag: 2)?.title = "Promo Display Count: \(displayCount)/\(SubscriptionPromoViewModel.maxDisplaysPerTimeWindow)"
     }
 }

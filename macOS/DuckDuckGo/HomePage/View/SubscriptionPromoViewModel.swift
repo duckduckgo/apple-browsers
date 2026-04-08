@@ -24,6 +24,8 @@ protocol SubscriptionPromoPersisting {
     var fireTabVisitCount: Int { get set }
     var promoDismissedDate: Date? { get set }
     var promoActioned: Bool { get set }
+    var promoDisplayCount: Int { get set }
+    var promoDisplayWindowStart: Date? { get set }
 }
 
 struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
@@ -32,6 +34,8 @@ struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
         case fireTabVisitCount = "subscription-promo.fire-tab-visit-count"
         case promoDismissedDate = "subscription-promo.dismissed-date"
         case promoActioned = "subscription-promo.actioned"
+        case promoDisplayCount = "subscription-promo.display-count"
+        case promoDisplayWindowStart = "subscription-promo.display-window-start"
     }
 
     private let keyValueStore: KeyValueStoring
@@ -60,6 +64,22 @@ struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
         get { keyValueStore.object(forKey: Key.promoActioned.rawValue) as? Bool ?? false }
         set { keyValueStore.set(newValue, forKey: Key.promoActioned.rawValue) }
     }
+
+    var promoDisplayCount: Int {
+        get { keyValueStore.object(forKey: Key.promoDisplayCount.rawValue) as? Int ?? 0 }
+        set { keyValueStore.set(newValue, forKey: Key.promoDisplayCount.rawValue) }
+    }
+
+    var promoDisplayWindowStart: Date? {
+        get { keyValueStore.object(forKey: Key.promoDisplayWindowStart.rawValue) as? Date }
+        set {
+            if let value = newValue {
+                keyValueStore.set(value, forKey: Key.promoDisplayWindowStart.rawValue)
+            } else {
+                keyValueStore.removeObject(forKey: Key.promoDisplayWindowStart.rawValue)
+            }
+        }
+    }
 }
 
 @MainActor
@@ -67,6 +87,8 @@ final class SubscriptionPromoViewModel: ObservableObject {
 
     static let requiredVisitCount = 3
     private static let dismissCooldownDays = 28
+    static let maxDisplaysPerTimeWindow = 4
+    private static let displayWindowDays = 28
 
     private let subscriptionManager: any SubscriptionManager
     private var persistor: SubscriptionPromoPersisting
@@ -100,7 +122,15 @@ final class SubscriptionPromoViewModel: ObservableObject {
         onButtonAction?()
     }
 
+    /// Display conditions:
+    /// - US locale only
+    /// - Non-subscriber only
+    /// - Fire Tab visited >= 3 times
+    /// - User has not already actioned (tapped "Try for Free" / "Learn More")
+    /// - Not dismissed within the 28-day cooldown
+    /// - Not shown more than 4 times in any given 28-day rolling window
     func updatePromoVisibility() {
+        print("👀 promo display count: \(persistor.promoDisplayCount)")
         guard isUSLocale else {
             shouldShowPromo = false
             return
@@ -126,7 +156,13 @@ final class SubscriptionPromoViewModel: ObservableObject {
             return
         }
 
+        guard !hasReachedDisplayLimit else {
+            shouldShowPromo = false
+            return
+        }
+
         isEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
+        recordPromoDisplay()
         shouldShowPromo = true
     }
 
@@ -138,6 +174,30 @@ final class SubscriptionPromoViewModel: ObservableObject {
             regionCode = locale.regionCode
         }
         return (regionCode ?? "US") == "US"
+    }
+
+    private var hasReachedDisplayLimit: Bool {
+        guard let windowStart = persistor.promoDisplayWindowStart else {
+            return false
+        }
+        let daysSinceWindowStart = Calendar.current.dateComponents([.day], from: windowStart, to: Date()).day ?? 0
+        if daysSinceWindowStart >= Self.displayWindowDays {
+            return false
+        }
+        return persistor.promoDisplayCount >= Self.maxDisplaysPerTimeWindow
+    }
+
+    private func recordPromoDisplay() {
+        if let windowStart = persistor.promoDisplayWindowStart {
+            let daysSinceWindowStart = Calendar.current.dateComponents([.day], from: windowStart, to: Date()).day ?? 0
+            if daysSinceWindowStart >= Self.displayWindowDays {
+                persistor.promoDisplayCount = 0
+                persistor.promoDisplayWindowStart = Date()
+            }
+        } else {
+            persistor.promoDisplayWindowStart = Date()
+        }
+        persistor.promoDisplayCount += 1
     }
 
     private var isDismissedWithinCooldown: Bool {

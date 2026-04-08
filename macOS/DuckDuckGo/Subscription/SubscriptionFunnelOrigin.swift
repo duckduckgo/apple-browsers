@@ -50,8 +50,7 @@ enum SubscriptionFunnelOrigin: String {
     case newTabPageNextStepsCard = "funnel_onboarding_macOS__nextstepscard"
 
     /// User entered the funnel via the subscription promo on the Fire Window home page.
-    /// TBD: https://app.asana.com/1/137249556945/task/1213548699663510?focus=true
-    case fireWindowPromo = "funnel_firewindow_macos"
+    case fireWindowPromo = "funnel_newtab_macos__firewindowvpn"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

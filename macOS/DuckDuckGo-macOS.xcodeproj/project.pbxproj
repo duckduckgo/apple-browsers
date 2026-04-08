@@ -469,6 +469,8 @@
 		36E8D3762F86C96200861037 /* SubscriptionPromoDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D3742F86C96200861037 /* SubscriptionPromoDebugMenu.swift */; };
 		36E8D3782F86EFFD00861037 /* SubscriptionPromoViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D3772F86EFFD00861037 /* SubscriptionPromoViewModelTests.swift */; };
 		36E8D3792F86EFFD00861037 /* SubscriptionPromoViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D3772F86EFFD00861037 /* SubscriptionPromoViewModelTests.swift */; };
+		36E8D37B2F8707C800861037 /* SubscriptionPromoPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D37A2F8707C800861037 /* SubscriptionPromoPixel.swift */; };
+		36E8D37C2F8707C800861037 /* SubscriptionPromoPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D37A2F8707C800861037 /* SubscriptionPromoPixel.swift */; };
 		3701C9CE29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		3701C9CF29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		370245FD2CF7C65400CD79A3 /* PrivacyStatsTrackerDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */; };
@@ -4865,6 +4867,7 @@
 		36E8D3712F857F9000861037 /* SubscriptionPromoTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoTabExtension.swift; sourceTree = "<group>"; };
 		36E8D3742F86C96200861037 /* SubscriptionPromoDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoDebugMenu.swift; sourceTree = "<group>"; };
 		36E8D3772F86EFFD00861037 /* SubscriptionPromoViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoViewModelTests.swift; sourceTree = "<group>"; };
+		36E8D37A2F8707C800861037 /* SubscriptionPromoPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoPixel.swift; sourceTree = "<group>"; };
 		3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxBerkeleyDatabaseReader.swift; sourceTree = "<group>"; };
 		370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTrackerDataProvider.swift; sourceTree = "<group>"; };
 		370270BB2C78AC6F002E44E4 /* NewTabBackgroundPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabBackgroundPixel.swift; sourceTree = "<group>"; };
@@ -11410,6 +11413,7 @@
 		AAE71DB325F66A3F00D74437 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				36E8D37A2F8707C800861037 /* SubscriptionPromoPixel.swift */,
 				36E8D3742F86C96200861037 /* SubscriptionPromoDebugMenu.swift */,
 				1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */,
 				85589E7D27BBB8630038AD11 /* BurnerHomePageViewController.swift */,
@@ -15587,6 +15591,7 @@
 				840B668C2F3A0332001E20C6 /* SparkleDebugHelper.swift in Sources */,
 				BB0DA4BF2DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */,
 				B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */,
+				36E8D37C2F8707C800861037 /* SubscriptionPromoPixel.swift in Sources */,
 				CD33012D2C89B588009AA127 /* ErrorPageHTMLFactory.swift in Sources */,
 				7B60AFFE2C514269008E32A3 /* VPNURLEventHandler.swift in Sources */,
 				376E8C1E2D41920A00D5D2EC /* RecentActivityProvider.swift in Sources */,
@@ -17798,6 +17803,7 @@
 				BB6EE52D2F33C74F009420FA /* MemoryUsagePixel.swift in Sources */,
 				85308E25267FC9F2001ABD76 /* NSAlertExtension.swift in Sources */,
 				B69A14F62B4D701F00B9417D /* AddBookmarkPopoverViewModel.swift in Sources */,
+				36E8D37B2F8707C800861037 /* SubscriptionPromoPixel.swift in Sources */,
 				567A23D72C8871290010F66C /* OnboardingFireButtonDialogViewModel.swift in Sources */,
 				4B59024826B3673600489384 /* ThirdPartyBrowser.swift in Sources */,
 				B60C6F7729B0E286007BFAA8 /* SearchNonexistentDomainNavigationResponder.swift in Sources */,

@@ -19,6 +19,7 @@
 import FeatureFlags
 import Foundation
 import Persistence
+import PixelKit
 import PrivacyConfig
 import Subscription
 
@@ -94,6 +95,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
 
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
+    private let pixelFiring: PixelFiring?
     private var persistor: SubscriptionPromoPersisting
     private let locale: Locale
     @Published private(set) var shouldShowPromo: Bool = false
@@ -104,10 +106,12 @@ final class SubscriptionPromoViewModel: ObservableObject {
 
     init(subscriptionManager: any SubscriptionManager,
          featureFlagger: FeatureFlagger,
+         pixelFiring: PixelFiring? = PixelKit.shared,
          persistor: SubscriptionPromoPersisting? = nil,
          locale: Locale = .current) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
         self.locale = locale
     }
@@ -117,12 +121,14 @@ final class SubscriptionPromoViewModel: ObservableObject {
     }
 
     func dismiss() {
+        pixelFiring?.fire(SubscriptionPromoPixel.promoDismissed(isEligibleForFreeTrial: isEligibleForFreeTrial))
         persistor.promoDismissedDate = Date()
         shouldShowPromo = false
         onDismissAction?()
     }
 
     func onPromoButtonTapped() {
+        pixelFiring?.fire(SubscriptionPromoPixel.promoCtaActioned(isEligibleForFreeTrial: isEligibleForFreeTrial))
         persistor.promoActioned = true
         shouldShowPromo = false
         onButtonAction?()
@@ -176,6 +182,8 @@ final class SubscriptionPromoViewModel: ObservableObject {
         isEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
         recordPromoDisplay()
         shouldShowPromo = true
+
+        pixelFiring?.fire(SubscriptionPromoPixel.promoDisplayed(isEligibleForFreeTrial: isEligibleForFreeTrial))
     }
 
     private var isUSLocale: Bool {

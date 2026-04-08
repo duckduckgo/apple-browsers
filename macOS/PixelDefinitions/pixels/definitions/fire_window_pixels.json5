@@ -41,5 +41,44 @@
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_fire_window_subscription_promo_displayed": {
+        "description": "Fired when the subscription promo card is displayed on the Fire Window home page",
+        "owners": ["htang"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "is_eligible_for_free_trial",
+                "type": "boolean",
+                "description": "Whether the user is eligible for a free trial"
+            }
+        ]
+    },
+    "m_mac_fire_window_subscription_promo_cta_actioned": {
+        "description": "Fired when the user taps the CTA button (Try for Free / Learn More) on the Fire Window subscription promo",
+        "owners": ["htang"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "is_eligible_for_free_trial",
+                "type": "boolean",
+                "description": "Whether the user is eligible for a free trial"
+            }
+        ]
+    },
+    "m_mac_fire_window_subscription_promo_dismissed": {
+        "description": "Fired when the user clicks the close (x) button on the Fire Window subscription promo",
+        "owners": ["htang"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "is_eligible_for_free_trial",
+                "type": "boolean",
+                "description": "Whether the user is eligible for a free trial"
+            }
+        ]
     }
 }

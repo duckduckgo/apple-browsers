@@ -341,6 +341,10 @@ private final class StorageServerState: ObservableObject {
 
     private var server: DuckAiStorageDebugServer?
 
+    deinit {
+        server?.stop()
+    }
+
     func start() {
         guard let handler = AppDependencyProvider.shared.duckAiNativeStorageHandler else {
             errorMessage = "Native storage is not available (feature flag may be disabled)"

@@ -85,14 +85,16 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     }
 
     public func stop() {
-        listener?.cancel()
-        listener = nil
+        queue.sync {
+            listener?.cancel()
+            listener = nil
 
-        for connection in activeConnections {
-            connection.cancel()
+            for connection in activeConnections {
+                connection.cancel()
+            }
+            activeConnections.removeAll()
+            state = .stopped
         }
-        activeConnections.removeAll()
-        state = .stopped
     }
 
     // MARK: - RouteRegistrable

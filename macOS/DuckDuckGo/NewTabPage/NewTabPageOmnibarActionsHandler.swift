@@ -169,6 +169,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     }
 
     func viewAllAiChats(target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        PixelKit.fire(AIChatPixel.aiChatNtpViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+
         let tabOpener = AIChatTabOpener(
             promptHandler: promptHandler,
             aiChatTabManaging: windowControllersManager

@@ -228,6 +228,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the New Tab Page model picker
     case aiChatNtpModelSelected
 
+    /// Event Trigger: User taps "View all chats" from the New Tab Page omnibar
+    case aiChatNtpViewAllChatsClicked
+
+    /// Event Trigger: User taps "View all chats" from the native address bar omnibar
+    case aiChatViewAllChatsClicked
+
     /// Event Trigger: Models API fetch fails (endpoint unreachable or returns error)
     case aiChatModelsFetchFailed
 
@@ -441,6 +447,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_ntp_submit_with_image"
         case .aiChatNtpModelSelected:
             return "aichat_ntp_model_selected"
+        case .aiChatNtpViewAllChatsClicked:
+            return "aichat_ntp_view_all_chats_clicked"
+        case .aiChatViewAllChatsClicked:
+            return "aichat_view_all_chats_clicked"
         case .aiChatModelsFetchFailed:
             return "aichat_models_fetch_failed"
         case .aiChatMetricStartNewConversation:
@@ -530,6 +540,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarModelSelected,
                 .aiChatNtpModelSelected,
+                .aiChatNtpViewAllChatsClicked,
+                .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
@@ -647,6 +659,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarModelSelected,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
+                .aiChatNtpViewAllChatsClicked,
+                .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,

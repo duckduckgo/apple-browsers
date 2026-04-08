@@ -141,5 +141,12 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_view_all_chats_clicked": {
+        "description": "Fired when user taps 'View all chats' from the native address bar omnibar",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

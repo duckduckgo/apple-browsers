@@ -20,9 +20,6 @@ import CryptoKit
 import Foundation
 
 /// Manages a single SQLCipher encryption key for the DuckAi native data store.
-///
-/// Unlike the full SecureVault key hierarchy (L1/L2/L3), DuckAi only needs
-/// database-level encryption — one symmetric key stored in the Keychain.
 public final class DuckAiKeyStoreProvider {
 
     private static let keychainServiceName = "DuckDuckGo DuckAi Storage"

@@ -1599,6 +1599,11 @@ extension Tab {
     func makeSuspendedTab() -> AnyTab? {
         let suspendedTab = UnloadedTab(from: self.makeRestorationData())
         suspendedTab.isSuspended = true
+
+        if let snapshotsExtension = self.tabSnapshots {
+            snapshotsExtension.shouldClearSnapshotOnDeinit = false
+        }
+
         return .unloaded(suspendedTab)
     }
 }

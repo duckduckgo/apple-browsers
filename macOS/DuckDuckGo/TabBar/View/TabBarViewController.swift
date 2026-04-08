@@ -158,7 +158,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var selectionIndexCancellable: AnyCancellable?
     private var mouseDownCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
-    private var hoverMaterializationTimer: Timer?
     private var previousScrollViewWidth: CGFloat = .zero
     var aiChatCoordinator: AIChatCoordinating? {
         didSet {
@@ -2202,37 +2201,11 @@ extension TabBarViewController: TabBarViewItemDelegate {
             if sourceCollectionView?.visibleRect.intersects(tabBarViewItem.view.frame) == true {
                 showTabPreview(for: tabBarViewItem)
             }
-//            scheduleMaterializationOnHover(for: tabBarViewItem)
         } else {
-//            cancelHoverMaterialization()
             if !shouldDisplayTabPreviews {
                 hideTabPreview(withDelay: true, allowQuickRedisplay: true)
             }
         }
-    }
-
-    private func scheduleMaterializationOnHover(for tabBarViewItem: TabBarViewItem) {
-        hoverMaterializationTimer?.invalidate()
-
-        guard let unloadedVM = tabBarViewItem.tabViewModel as? UnloadedTabViewModel else { return }
-
-        let hasSnapshotPreview = unloadedVM.snapshot != nil
-        guard !hasSnapshotPreview else { return }
-
-        let uuid = unloadedVM.unloadedTab.uuid
-
-        hoverMaterializationTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self,
-                      let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) else { return }
-                tabCollectionViewModel.materialize(at: index)
-            }
-        }
-    }
-
-    private func cancelHoverMaterialization() {
-        hoverMaterializationTimer?.invalidate()
-        hoverMaterializationTimer = nil
     }
 
     func tabBarViewItemShouldHideSeparator(_ tabBarViewItem: TabBarViewItem) -> Bool {

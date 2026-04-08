@@ -197,10 +197,10 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     // MARK: - showViewAllAiChats
 
     @MainActor
-    func testShowViewAllAiChats_whenFeatureFlagOff_returnsFalse() throws {
+    func testShowViewAllAiChats_whenRecentChatsFlagOff_returnsFalse() throws {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub = ["aiChatNtpRecentChats": false]
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": false, "aiChatNtpViewAllChats": true]
         let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
         let excessProvider = MockAIChatExcessProvider()
 
@@ -211,10 +211,24 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testShowViewAllAiChats_whenFeatureFlagOn_andNoExcess_returnsFalse() throws {
+    func testShowViewAllAiChats_whenViewAllChatsFlagOff_returnsFalse() throws {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": false]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let excessProvider = MockAIChatExcessProvider()
+
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        XCTAssertFalse(provider.showViewAllAiChats)
+    }
+
+    @MainActor
+    func testShowViewAllAiChats_whenBothFlagsOn_andNoExcess_returnsFalse() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
         let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
         let excessProvider = MockAIChatExcessProvider()
 
@@ -225,10 +239,10 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testShowViewAllAiChats_whenFeatureFlagOn_andHasExcess_returnsTrue() throws {
+    func testShowViewAllAiChats_whenBothFlagsOn_andHasExcess_returnsTrue() throws {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
         let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
         let excessProvider = MockAIChatExcessProvider()
 
@@ -242,7 +256,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testShowViewAllAiChatsPublisher_emitsWhenExcessChanges() throws {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
         let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
         let excessProvider = MockAIChatExcessProvider()
 

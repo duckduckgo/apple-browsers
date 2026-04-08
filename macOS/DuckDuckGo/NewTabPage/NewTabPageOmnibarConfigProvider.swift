@@ -194,14 +194,18 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     var showViewAllAiChats: Bool {
-        featureFlagger.isFeatureOn(.aiChatNtpRecentChats) && hasExcessChats
+        featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+            && featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+            && hasExcessChats
     }
 
     var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> {
         $hasExcessChats
             .map { [weak self] hasExcess in
                 guard let self else { return false }
-                return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats) && hasExcess
+                return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+                    && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+                    && hasExcess
             }
             .eraseToAnyPublisher()
     }

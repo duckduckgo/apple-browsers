@@ -413,6 +413,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables recent AI chats on the New Tab Page omnibar
     case ntpRecentChats
 
+    /// Enables the "View all chats" button on the New Tab Page omnibar
+    case ntpViewAllChats
+
     /// Enables AI chat tools (model selector, image upload) on the New Tab Page omnibar
     case ntpChatTools
 

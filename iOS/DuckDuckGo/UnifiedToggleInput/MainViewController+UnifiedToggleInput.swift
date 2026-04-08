@@ -167,6 +167,7 @@ private extension MainViewController {
             inputVC.view.topAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.topAnchor),
             inputVC.view.leadingAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.leadingAnchor),
             inputVC.view.trailingAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.trailingAnchor),
+            inputVC.view.bottomAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.bottomAnchor),
         ])
         inputVC.didMove(toParent: self)
     }
@@ -223,7 +224,7 @@ private extension MainViewController {
             applyUnifiedInputChromeBackground(chromeBackgroundState)
             viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         }
-        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
+        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
 
         if keyboardShowing,
            !coordinator.viewController.isInputFirstResponder,
@@ -334,10 +335,16 @@ private extension MainViewController {
         guard swipeTabsCoordinator?.tabsModel != nil else { return }
         showBars()
     }
+}
+
+extension MainViewController {
 
     func aiTabChromeBackgroundState(for renderState: UTIRenderState) -> UnifiedInputChromeBackgroundState {
         renderState.isContentVisible ? .aiTabSearchChromeHidden : .aiTabChatChromeHidden
     }
+}
+
+private extension MainViewController {
 
     func syncPreservedAITabPresentation(coordinator: UnifiedToggleInputCoordinator) {
         let renderState = coordinator.computeRenderState()
@@ -393,6 +400,9 @@ private extension MainViewController {
             self?.aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
         }
     }
+}
+
+extension MainViewController {
 
     func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator) {
         let isOnAITab = currentTab?.isAITab == true
@@ -505,118 +515,9 @@ private extension MainViewController {
         let renderState = coordinator.computeRenderState()
         coordinator.floatingSubmitViewController.view.isHidden = !renderState.isFloatingSubmitVisible
     }
+}
 
-    func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
-        switch intent {
-        case .showCollapsed:
-            if unifiedToggleInputCoordinator?.isAITabState == true {
-                applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
-                viewCoordinator.stopContentContainerBehindInput()
-            }
-            viewCoordinator.showUnifiedToggleInput()
-            viewCoordinator.suggestionTrayContainer.isHidden = true
-            if let coordinator = unifiedToggleInputCoordinator {
-                updateUnifiedInputContentVisibility(for: coordinator)
-            } else {
-                viewCoordinator.hideUnifiedInputContent()
-            }
-        case .showExpanded:
-            viewCoordinator.showUnifiedToggleInput()
-            if let coordinator = unifiedToggleInputCoordinator {
-                if coordinator.isAITabState {
-                    let chromeBackgroundState = aiTabChromeBackgroundState(for: coordinator.computeRenderState())
-                    applyUnifiedInputChromeBackground(chromeBackgroundState)
-                    viewCoordinator.extendContentContainerBehindInput()
-                }
-                updateUnifiedInputContentVisibility(for: coordinator)
-            }
-            adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
-        case .showOmnibarEditing(let height, let pendingHeight):
-            viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
-            viewCoordinator.suggestionTrayContainer.isHidden = true
-            let isTopPosition = unifiedToggleInputCoordinator?.cardPosition == .top
-            if let coordinator = unifiedToggleInputCoordinator {
-                if !isTopPosition {
-                    applyBottomOmnibarVisibility(.active)
-                }
-                updateUnifiedInputContentVisibility(for: coordinator)
-                if isTopPosition && coordinator.isToggleEnabled {
-                    let targetHeight = pendingHeight
-                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                    coordinator.animateOmnibarExpansion { [weak self] in
-                        guard let self else { return }
-                        if let targetHeight {
-                            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = targetHeight
-                            self.viewCoordinator.superview.layoutIfNeeded()
-                        }
-                        self.unifiedToggleInputCoordinator?.pushContentInsets()
-                        self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                    }
-                } else if isTopPosition {
-                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                    UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) { [weak self] in
-                        self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                    }
-                }
-            }
-        case .showOmnibarInactive:
-            applyBottomOmnibarVisibility(.inactive)
-        case .showOmnibarActive:
-            applyBottomOmnibarVisibility(.active)
-        case .hideOmnibarEditing(let animated):
-            if animated {
-                viewCoordinator.hideUnifiedToggleInputOmnibar()
-            } else {
-                viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
-            }
-            unifiedToggleInputCoordinator?.contentViewController.setActive(false)
-            viewCoordinator.hideUnifiedInputContent()
-            unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
-            hideSuggestionTray()
-            viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
-            viewCoordinator.suggestionTrayContainer.isHidden = false
-        case .hide:
-            unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
-            viewCoordinator.hideUnifiedToggleInput()
-            unifiedToggleInputCoordinator?.contentViewController.setActive(false)
-            viewCoordinator.hideUnifiedInputContent()
-            unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
-            hideSuggestionTray()
-            viewCoordinator.suggestionTrayContainer.isHidden = false
-        }
-        updateFloatingSubmitVisibility()
-    }
-
-    func syncBottomOmnibarAnchorIfNeeded(for coordinator: UnifiedToggleInputCoordinator) {
-        guard coordinator.cardPosition == .bottom,
-              case .omnibar(let state) = coordinator.displayState,
-              viewCoordinator.addressBarPosition.isBottom else {
-            return
-        }
-        applyBottomOmnibarAnchor(state)
-        viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-    }
-
-    func applyBottomOmnibarVisibility(_ state: UnifiedToggleInputDisplayState.OmnibarState) {
-        guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.cardPosition == .bottom,
-              viewCoordinator.addressBarPosition.isBottom else {
-            recomputeOmnibarEditingHeightIfNeeded()
-            return
-        }
-        applyBottomOmnibarAnchor(state)
-        viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-        recomputeOmnibarEditingHeightIfNeeded()
-    }
-
-    func applyBottomOmnibarAnchor(_ state: UnifiedToggleInputDisplayState.OmnibarState) {
-        switch state {
-        case .active:
-            viewCoordinator.restoreNavBarToKeyboardForOmnibarActive()
-        case .inactive:
-            viewCoordinator.restoreNavBarToToolbarForOmnibarInactive()
-        }
-    }
+private extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
         applyUnifiedInputChromeBackground(.standardChrome)

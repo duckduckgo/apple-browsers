@@ -20,7 +20,6 @@
 import AIChat
 import Combine
 import os.log
-import PhotosUI
 import Subscription
 import UIKit
 
@@ -146,6 +145,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
+    private let attachmentPresenter = UnifiedToggleInputAttachmentPresenter()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -186,6 +187,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
         super.init()
         viewController.delegate = self
+        attachmentPresenter.onExpandIfNeeded = { [weak self] in
+            self?.expandIfOnAITab()
+        }
+        attachmentPresenter.onImagePicked = { [weak self] image, fileName in
+            self?.addImageAttachment(image: image, fileName: fileName)
+        }
         modelStore.onModelsUpdated = { [weak self] in
             self?.updateModelChipLabel()
             self?.updateImageButtonVisibility()
@@ -664,55 +671,25 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateImageButtonVisibility()
     }
 
-    private func buildModelMenuDescription() -> UnifiedToggleInputModelMenu {
-        UnifiedToggleInputModelMenu.build(
+    private func updateModelChipLabel() {
+        let selectedId = modelStore.persistedModelId
+        let shortName = modelMenuFactory.selectedShortName(models: modelStore.models, selectedId: selectedId)
+        if let shortName {
+            viewController.modelName = shortName
+            modelStore.cacheSelectedModelShortName(shortName)
+        }
+        viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
             models: modelStore.models,
-            selectedId: modelStore.persistedModelId,
+            selectedId: selectedId,
             isBottomAnchored: viewController.cardPosition == .bottom,
             hasActiveSubscription: modelStore.subscriptionState.hasActiveSubscription,
             advancedSectionTitle: modelStore.subscriptionState.hasActiveSubscription
                 ? UserText.aiChatAdvancedModelsSectionHeader
                 : UserText.aiChatAdvancedModelsMenuTitle,
             basicSectionTitle: UserText.aiChatBasicModelsSectionHeader
-        )
-    }
-
-    private func buildModelPickerMenu() -> UIMenu {
-        let description = buildModelMenuDescription()
-        let modelLookup = Dictionary(uniqueKeysWithValues: modelStore.models.map { ($0.id, $0) })
-
-        let uiSections: [UIMenu] = description.sections.map { section in
-            let actions = section.items.map { item -> UIAction in
-                let model = modelLookup[item.modelId]
-                return UIAction(
-                    title: item.name,
-                    image: model?.menuIcon,
-                    attributes: item.isDisabled ? .disabled : [],
-                    state: item.isSelected ? .on : .off
-                ) { [weak self] _ in
-                    self?.updateSelectedModel(item.modelId)
-                }
-            }
-
-            var options: UIMenu.Options = .displayInline
-            if !section.items.contains(where: { $0.isDisabled }) {
-                options.insert(.singleSelection)
-            }
-
-            return UIMenu(title: section.title, options: options, children: actions)
+        ) { [weak self] modelId in
+            self?.updateSelectedModel(modelId)
         }
-
-        return UIMenu(children: uiSections)
-    }
-
-    private func updateModelChipLabel() {
-        let selectedId = modelStore.persistedModelId
-        let shortName = modelStore.models.first(where: { $0.id == selectedId })?.shortName
-        if let shortName {
-            viewController.modelName = shortName
-            modelStore.cacheSelectedModelShortName(shortName)
-        }
-        viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : buildModelPickerMenu()
     }
 
     // MARK: - Attachments
@@ -734,42 +711,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard remaining > 0 else { return }
         guard let scene = viewController.view.window?.windowScene,
               let root = scene.keyWindow?.rootViewController else { return }
-
-        let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-
-        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            sheet.addAction(UIAlertAction(title: UserText.aiChatAttachmentOptionTakePhoto, style: .default) { [weak self] _ in
-                self?.presentCamera(from: root)
-            })
-        }
-
-        sheet.addAction(UIAlertAction(title: UserText.aiChatAttachmentOptionChoosePhoto, style: .default) { [weak self] _ in
-            self?.presentPhotoPicker(from: root, remaining: remaining)
-        })
-
-        sheet.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
-
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = viewController.attachButtonView
-        }
-
-        root.present(sheet, animated: true)
-    }
-
-    private func presentCamera(from presenter: UIViewController) {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.delegate = self
-        presenter.present(picker, animated: true)
-    }
-
-    private func presentPhotoPicker(from presenter: UIViewController, remaining: Int) {
-        var config = PHPickerConfiguration()
-        config.filter = .images
-        config.selectionLimit = remaining
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
-        presenter.present(picker, animated: true)
+        attachmentPresenter.presentAttachmentOptions(
+            from: viewController.attachButtonView,
+            presenter: root,
+            remaining: remaining
+        )
     }
 
     private func expandIfOnAITab() {
@@ -950,43 +896,5 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidChangeHeight()
-    }
-}
-
-// MARK: - PHPickerViewControllerDelegate
-
-extension UnifiedToggleInputCoordinator: PHPickerViewControllerDelegate {
-
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-        picker.dismiss(animated: true)
-        expandIfOnAITab()
-        for result in results {
-            let provider = result.itemProvider
-            guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
-            provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
-                guard let image = object as? UIImage else { return }
-                let fileName = provider.suggestedName ?? "image"
-                DispatchQueue.main.async {
-                    self?.addImageAttachment(image: image, fileName: fileName)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - UIImagePickerControllerDelegate
-
-extension UnifiedToggleInputCoordinator: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-        picker.dismiss(animated: true)
-        expandIfOnAITab()
-        guard let image = info[.originalImage] as? UIImage else { return }
-        addImageAttachment(image: image, fileName: "photo")
-    }
-
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        picker.dismiss(animated: true)
-        expandIfOnAITab()
     }
 }

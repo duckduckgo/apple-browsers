@@ -353,9 +353,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
             aiChatHistoryManager?.setSectionTitle(nil)
         case .aiChat:
-            suggestionTrayManager?.setSuggestionsSectionTitle(nil)
+            let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
+            suggestionTrayManager?.setSuggestionsSectionTitle(isURLFallbackShowingContent ? currentSectionTitle : nil)
             suggestionTrayManager?.setFavoritesSectionTitle(nil)
-            aiChatHistoryManager?.setSectionTitle(currentSectionTitle)
+            aiChatHistoryManager?.setSectionTitle(isURLFallbackShowingContent ? nil : currentSectionTitle)
         }
     }
 
@@ -364,13 +365,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let hasFavorites = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let hasAutocomplete = suggestionTrayManager?.shouldDisplaySuggestionTray == true && !hasFavorites
         let hasChatHistory = aiChatHistoryManager?.hasSuggestions == true
+        let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
         switch mode {
         case .search:
             if hasFavorites { return UserText.sectionTitleFavorites }
             if hasAutocomplete { return UserText.sectionTitleSuggestions }
             return ""
         case .aiChat:
-            if isShowingURLFallback { return UserText.sectionTitleSuggestions }
+            if isURLFallbackShowingContent { return UserText.sectionTitleSuggestions }
             if hasChatHistory {
                 return switchBarHandler.currentText.isEmpty ? UserText.aiChatRecentChatsTitle : UserText.aiChatSuggestedChatsTitle
             }
@@ -605,16 +607,17 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let query = switchBarHandler.currentText
         let shouldShow = !hasSuggestions && !query.isBlank
         if shouldShow {
+            let wasShowingURLFallback = isShowingURLFallback
+            isShowingURLFallback = true
             suggestionTrayManager?.showURLOnlySuggestions(for: query, animated: false)
-            if !isShowingURLFallback {
+            if !wasShowingURLFallback {
                 swipeContainerManager?.setSearchPageVisible(true, animated: false)
             }
-            isShowingURLFallback = true
         } else if isShowingURLFallback {
+            isShowingURLFallback = false
             suggestionTrayManager?.hideURLOnlySuggestions(animated: true)
             swipeContainerManager?.setSearchPageVisible(false, animated: true)
             swipeContainerManager?.restoreChatPageVisibility()
-            isShowingURLFallback = false
         }
     }
 

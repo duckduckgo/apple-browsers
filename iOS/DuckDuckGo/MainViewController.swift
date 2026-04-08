@@ -1176,7 +1176,7 @@ class MainViewController: UIViewController {
 
         let coordinator = unifiedToggleInputCoordinator
         let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
-        let isBottomOmnibarKeyboardAnchored = coordinator?.isOmnibarSession == true
+        let isBottomExpandedUTIKeyboardAnchored = (coordinator?.isOmnibarSession == true || coordinator?.isAITabExpanded == true)
             && coordinator?.cardPosition == .bottom
             && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
 
@@ -1196,7 +1196,7 @@ class MainViewController: UIViewController {
 
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
         if !isAITabCollapsed {
-            let newHeight = isBottomOmnibarKeyboardAnchored ? baseInputHeight : max(baseInputHeight, containerHeight)
+            let newHeight = isBottomExpandedUTIKeyboardAnchored ? baseInputHeight : max(baseInputHeight, containerHeight)
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = newHeight
         }
 

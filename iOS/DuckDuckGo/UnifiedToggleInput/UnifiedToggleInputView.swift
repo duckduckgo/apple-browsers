@@ -466,6 +466,8 @@ final class UnifiedToggleInputView: UIView {
             return
         }
 
+        let showToolbar = toggleView.selectedMode == .aiChat
+
         UIView.animate(
             withDuration: Constants.animationDuration,
             delay: 0,
@@ -476,6 +478,11 @@ final class UnifiedToggleInputView: UIView {
                 self.toggleHeightConstraint.constant = Constants.toggleHeight
                 self.toggleView.alpha = 1
                 self.inputTopConstraint.constant = Constants.toggleBottomPadding
+                self.cardView.layer.borderWidth = showToolbar ? 0.5 : 0
+                self.cardView.layer.borderColor = showToolbar ? self.expandedBorderColor : UIColor.clear.cgColor
+                self.toolbarHeightConstraint.constant = showToolbar ? 56 : 0
+                self.toolsToolbar.alpha = showToolbar ? 1 : 0
+                self.updateAttachmentsStripLayout()
                 if self.cardPosition == .top {
                     self.cardTrailingConstraint.constant = -Constants.cardTrailingMarginWithDismiss
                 }

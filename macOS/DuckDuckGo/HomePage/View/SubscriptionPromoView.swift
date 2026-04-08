@@ -27,7 +27,7 @@ struct SubscriptionPromoView: View {
         case learnMore
     }
 
-    private static let narrowThreshold: CGFloat = 300
+    private static let narrowThreshold: CGFloat = 390
     private static let closeButtonSize: CGFloat = 26
     private static let closeButtonInset: CGFloat = 13
 
@@ -49,7 +49,7 @@ struct SubscriptionPromoView: View {
                 .padding(.top, Self.closeButtonInset)
                 .padding(.trailing, Self.closeButtonInset)
 
-            CloseButton(icon: .close, size: Self.closeButtonSize, backgroundColor: .white) {
+            CloseButton(icon: .close, size: Self.closeButtonSize, backgroundColor: Color.homeFavoritesBackground, backgroundColorOnHover: Color.homeFavoritesBackground) {
                 onClose()
             }
             .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 3, x: 0, y: 0)
@@ -63,7 +63,8 @@ struct SubscriptionPromoView: View {
 
     private var promoCard: some View {
         cardContent
-            .padding(16)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 24)
             .frame(width: promoCardWidth)
             .background(
                 GeometryReader { geometry in
@@ -95,9 +96,11 @@ struct SubscriptionPromoView: View {
     }
 
     private var wideLayout: some View {
-        HStack {
-            iconView
-            textContent
+        HStack(spacing: 8) {
+            HStack(spacing: 4) {
+                iconView
+                textContent
+            }
             Spacer()
             actionButton
         }
@@ -105,7 +108,7 @@ struct SubscriptionPromoView: View {
 
     private var narrowLayout: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
+            HStack(spacing: 4) {
                 iconView
                 textContent
             }

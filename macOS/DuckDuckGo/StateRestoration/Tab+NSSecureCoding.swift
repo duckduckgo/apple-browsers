@@ -50,7 +50,7 @@ extension Tab: NSSecureCoding {
             favicon: favicon,
             interactionStateData: getActualInteractionStateData(),
             lastSelectedAt: lastSelectedAt,
-            visitedDomainURLs: localHistory.compactMap(\.identifier),
+            localHistoryIDs: localHistory.compactMap(\.identifier),
             tabSnapshotIdentifier: tabSnapshotIdentifier?.uuidString
         )
     }

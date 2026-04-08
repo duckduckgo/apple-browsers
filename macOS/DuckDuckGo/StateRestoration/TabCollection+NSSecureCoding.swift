@@ -83,7 +83,7 @@ extension TabCollection: NSSecureCoding {
                     favicon: unloaded.favicon,
                     interactionStateData: unloaded.interactionStateData,
                     lastSelectedAt: unloaded.lastSelectedAt,
-                    visitedDomainURLs: unloaded.visitedDomainURLs,
+                    localHistoryIDs: unloaded.localHistoryIDs,
                     tabSnapshotIdentifier: unloaded.tabSnapshotIdentifier
                 )
             }

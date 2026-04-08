@@ -38,7 +38,7 @@ final class UnloadedTab: Identifiable {
     let interactionStateData: Data?
 
     /// Pass-through from HistoryTabExtension — preserved so re-encoding doesn't lose extension state.
-    var visitedDomainURLs: [URL]?
+    var localHistoryIDs: [URL]?
     /// Pass-through from TabSnapshotExtension.
     let tabSnapshotIdentifier: String?
 
@@ -49,7 +49,7 @@ final class UnloadedTab: Identifiable {
          lastSelectedAt: Date? = nil,
          burnerMode: BurnerMode = .regular,
          interactionStateData: Data? = nil,
-         visitedDomainURLs: [URL]? = nil,
+         localHistoryIDs: [URL]? = nil,
          tabSnapshotIdentifier: String? = nil) {
         self.uuid = uuid
         self.content = content
@@ -59,7 +59,7 @@ final class UnloadedTab: Identifiable {
         self.burnerMode = burnerMode
         self.isPersistent = !burnerMode.isBurner
         self.interactionStateData = interactionStateData
-        self.visitedDomainURLs = visitedDomainURLs
+        self.localHistoryIDs = localHistoryIDs
         self.tabSnapshotIdentifier = tabSnapshotIdentifier
     }
 
@@ -72,15 +72,15 @@ final class UnloadedTab: Identifiable {
         self.lastSelectedAt = data.lastSelectedAt
         self.burnerMode = .regular  // Burner tabs are never persisted
         self.isPersistent = true    // Restored tabs always come from persistent storage
-        self.visitedDomainURLs = data.visitedDomainURLs
+        self.localHistoryIDs = data.localHistoryIDs
         self.tabSnapshotIdentifier = data.tabSnapshotIdentifier
     }
 
     func clearNavigationHistory(keepingCurrent: Bool) {
         if keepingCurrent, let currentHost = content.urlForWebView?.host {
-            visitedDomainURLs = visitedDomainURLs?.filter { $0.host == currentHost }
+            localHistoryIDs = localHistoryIDs?.filter { $0.host == currentHost }
         } else {
-            visitedDomainURLs = nil
+            localHistoryIDs = nil
         }
     }
 
@@ -99,8 +99,8 @@ final class UnloadedTab: Identifiable {
                       burnerMode: burnerMode,
                       lastSelectedAt: lastSelectedAt)
 
-        if let visitedDomainURLs {
-            tab.history?.restoreVisitedDomainURLs(visitedDomainURLs)
+        if let localHistoryIDs {
+            tab.history?.restoreLocalHistoryIDs(localHistoryIDs)
         }
         if let snapshotIdString = tabSnapshotIdentifier,
            let snapshotId = UUID(uuidString: snapshotIdString) {

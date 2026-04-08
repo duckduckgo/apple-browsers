@@ -242,7 +242,7 @@ final class TabCollectionTests: XCTestCase {
     func testLocalHistoryDomainsIncludesUnloadedTabVisitedDomains() {
         let unloaded = UnloadedTab(
             content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
-            visitedDomainURLs: [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+            localHistoryIDs: [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
         )
         let tabCollection = TabCollection(tabs: [.unloaded(unloaded)])
 
@@ -304,11 +304,11 @@ final class TabCollectionTests: XCTestCase {
     func testClearNavigationHistoryOnUnloadedTabClearsVisitedDomainURLs() {
         let urls = [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
         let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
-                                   visitedDomainURLs: urls)
+                                   localHistoryIDs: urls)
 
         unloaded.clearNavigationHistory(keepingCurrent: false)
 
-        XCTAssertNil(unloaded.visitedDomainURLs)
+        XCTAssertNil(unloaded.localHistoryIDs)
     }
 
     @MainActor
@@ -316,19 +316,19 @@ final class TabCollectionTests: XCTestCase {
         let duckDuckGoURL = URL.duckDuckGo
         let otherURL = URL(string: "https://example.com")!
         let unloaded = UnloadedTab(content: .url(duckDuckGoURL, credential: nil, source: .pendingStateRestoration),
-                                   visitedDomainURLs: [duckDuckGoURL, otherURL])
+                                   localHistoryIDs: [duckDuckGoURL, otherURL])
 
         unloaded.clearNavigationHistory(keepingCurrent: true)
 
-        XCTAssertEqual(unloaded.visitedDomainURLs?.count, 1)
-        XCTAssertEqual(unloaded.visitedDomainURLs?.first?.host, duckDuckGoURL.host)
+        XCTAssertEqual(unloaded.localHistoryIDs?.count, 1)
+        XCTAssertEqual(unloaded.localHistoryIDs?.first?.host, duckDuckGoURL.host)
     }
 
     @MainActor
     func testRemovedUnloadedTabDomainsCapturedInRemovedTabDomains() {
         let urls = [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
         let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
-                                   visitedDomainURLs: urls)
+                                   localHistoryIDs: urls)
         let tabCollection = TabCollection(tabs: [AnyTab.unloaded(unloaded)])
 
         tabCollection.removeTab(at: 0)
@@ -341,12 +341,12 @@ final class TabCollectionTests: XCTestCase {
     func testClearNavigationHistoryOnAnyTabClearsUnloadedTab() {
         let urls = [URL(string: "https://example.com")!]
         let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
-                                   visitedDomainURLs: urls)
+                                   localHistoryIDs: urls)
         let anyTab = AnyTab.unloaded(unloaded)
 
         anyTab.clearNavigationHistory(keepingCurrent: false)
 
-        XCTAssertNil(unloaded.visitedDomainURLs)
+        XCTAssertNil(unloaded.localHistoryIDs)
     }
 
     // MARK: - AnyTab Identity vs UUID Equality
@@ -405,7 +405,7 @@ class HistoryTabExtensionMock: TabExtension, HistoryExtensionProtocol {
     func getPublicProtocol() -> HistoryExtensionProtocol { self }
 
     func clearNavigationHistory(keepingCurrent: Bool) {}
-    func restoreVisitedDomainURLs(_ urls: [URL]) {
+    func restoreLocalHistoryIDs(_ urls: [URL]) {
         restoredURLs = urls
     }
 }

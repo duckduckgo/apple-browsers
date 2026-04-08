@@ -45,6 +45,7 @@ final class PinnedTabsManager {
         }
     }
 
+    @MainActor
     func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> Tab? {
         guard let tab = tabCollection.tabs[safe: index], let tab = tab.tab else {
             Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
@@ -157,6 +158,13 @@ final class PinnedTabsManager {
             let addedUUIDs = newUUIDs.subtracting(oldUUIDs)
             for tab in newTabs where addedUUIDs.contains(tab.uuid) {
                 if case .loaded(let tab) = tab {
+                    self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
+                }
+            }
+
+            // Detect materialization: existing UUID changed from unloaded to loaded
+            for tab in newTabs where !addedUUIDs.contains(tab.uuid) {
+                if case .loaded(let tab) = tab, self.tabViewModels[tab.uuid] == nil {
                     self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
                 }
             }

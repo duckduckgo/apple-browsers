@@ -70,7 +70,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
 
     /// Pass-through from HistoryTabExtension (coding key: "visitedDomains").
     /// Preserved through suspend/materialize cycle so extension state isn't lost on re-encode.
-    let visitedDomainURLs: [URL]?
+    let localHistoryIDs: [URL]?
 
     /// Pass-through from TabSnapshotExtension (coding key: "TabSnapshotIdentifier").
     let tabSnapshotIdentifier: String?
@@ -105,7 +105,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
         self.lastSelectedAt = decoder.decodeIfPresent(at: NSSecureCodingKeys.lastSelectedAt)
 
         // Extension pass-through fields
-        self.visitedDomainURLs = decoder.decodeObject(of: [NSArray.self, NSURL.self],
+        self.localHistoryIDs = decoder.decodeObject(of: [NSArray.self, NSURL.self],
                                                       forKey: ExtensionCodingKeys.visitedDomains) as? [URL]
         self.tabSnapshotIdentifier = decoder.decodeObject(of: NSString.self,
                                                           forKey: ExtensionCodingKeys.tabSnapshotIdentifier) as? String
@@ -120,7 +120,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
          favicon: NSImage?,
          interactionStateData: Data?,
          lastSelectedAt: Date?,
-         visitedDomainURLs: [URL]?,
+         localHistoryIDs: [URL]?,
          tabSnapshotIdentifier: String?) {
 
         self.uuid = uuid
@@ -129,7 +129,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
         self.favicon = favicon
         self.interactionStateData = interactionStateData
         self.lastSelectedAt = lastSelectedAt
-        self.visitedDomainURLs = visitedDomainURLs
+        self.localHistoryIDs = localHistoryIDs
         self.tabSnapshotIdentifier = tabSnapshotIdentifier
         super.init()
     }
@@ -151,8 +151,8 @@ final class TabRestorationData: NSObject, NSSecureCoding {
         }
 
         // Extension pass-through fields
-        if let visitedDomainURLs {
-            coder.encode(visitedDomainURLs, forKey: ExtensionCodingKeys.visitedDomains)
+        if let localHistoryIDs {
+            coder.encode(localHistoryIDs, forKey: ExtensionCodingKeys.visitedDomains)
         }
         if let tabSnapshotIdentifier {
             coder.encode(tabSnapshotIdentifier, forKey: ExtensionCodingKeys.tabSnapshotIdentifier)

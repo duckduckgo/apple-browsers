@@ -178,13 +178,8 @@ final class HistoryTabExtension: NSObject {
     @MainActor
     private func loadRestoredLocalHistoryIfNeeded() {
         if !localHistoryIDs.isEmpty {
-            let storedLocalHistory = localHistoryIDs.compactMap { id in
-                historyCoordinating.allHistoryVisits?.first(where: { visit in
-                    visit.identifier == id
-                })
-            }
+            _localHistory.append(contentsOf: historyCoordinating.visits(matching: localHistoryIDs))
             localHistoryIDs = []
-            _localHistory.append(contentsOf: storedLocalHistory)
         }
     }
 
@@ -230,6 +225,14 @@ extension HistoryTabExtension: NSCodingExtension {
 }
 
 extension HistoryCoordinating {
+
+    /// Resolves Visit objects from persisted identifiers by looking them up in global history.
+    @MainActor
+    func visits(matching ids: [Visit.ID]) -> [Visit] {
+        ids.compactMap { id in
+            allHistoryVisits?.first(where: { $0.identifier == id })
+        }
+    }
 
     @MainActor
     func addDetectedTracker(_ tracker: DetectedRequest, on url: URL) {
@@ -304,7 +307,7 @@ extension HistoryTabExtension: NavigationResponder {
 protocol HistoryExtensionProtocol: AnyObject, NavigationResponder {
     var localHistory: [Visit] { get }
     func clearNavigationHistory(keepingCurrent: Bool)
-    func restoreVisitedDomainURLs(_ urls: [URL])
+    func restoreLocalHistoryIDs(_ urls: [URL])
 }
 
 extension HistoryTabExtension: HistoryExtensionProtocol, TabExtension {
@@ -312,7 +315,7 @@ extension HistoryTabExtension: HistoryExtensionProtocol, TabExtension {
 
     /// Seed visited-domain IDs from an unloaded tab's persisted state.
     /// Same data that `awakeAfter(using:)` would set from an NSCoder.
-    func restoreVisitedDomainURLs(_ urls: [URL]) {
+    func restoreLocalHistoryIDs(_ urls: [URL]) {
         localHistoryIDs = urls
     }
 }

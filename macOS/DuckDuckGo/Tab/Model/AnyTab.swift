@@ -113,10 +113,14 @@ enum AnyTab: Identifiable {
         }
     }
 
+    @MainActor
     var localHistory: [Visit] {
         switch self {
-        case .unloaded: []
-        case .loaded(let t): t.localHistory
+        case .loaded(let t):
+            return t.localHistory
+        case .unloaded(let unloaded):
+            guard let ids = unloaded.localHistoryIDs, !ids.isEmpty else { return [] }
+            return NSApp.delegateTyped.historyCoordinator.visits(matching: ids)
         }
     }
 
@@ -132,7 +136,7 @@ enum AnyTab: Identifiable {
         case .loaded(let tab):
             tab.localHistoryDomains
         case .unloaded(let unloaded):
-            Set(unloaded.visitedDomainURLs?.compactMap(\.host) ?? [])
+            Set(unloaded.localHistoryIDs?.compactMap(\.host) ?? [])
         }
     }
 

@@ -132,6 +132,7 @@ final class TabCollection: NSObject {
 
     // MARK: - Remove
 
+    @MainActor
     func removeTab(at index: Int, published: Bool = true, forced: Bool = false) -> Bool {
         guard tabs.indices.contains(index) else {
             assertionFailure("TabCollection: Index out of bounds")
@@ -182,16 +183,19 @@ final class TabCollection: NSObject {
 
     // MARK: - Bulk operations
 
+    @MainActor
     func removeAll() {
         tabsWillClose(range: 0..<tabs.count)
         tabs = []
     }
 
+    @MainActor
     func removeAll(andAppend tab: Tab) {
         tabsWillClose(range: 0..<tabs.count)
         tabs = [.loaded(tab)]
     }
 
+    @MainActor
     func removeAll(andAppend tab: AnyTab) {
         tabsWillClose(range: 0..<tabs.count)
         tabs = [tab]
@@ -202,16 +206,19 @@ final class TabCollection: NSObject {
         tabs.removeAll()
     }
 
+    @MainActor
     func removeTabs(before index: Int) {
         tabsWillClose(range: 0..<index)
         tabs.removeSubrange(0..<index)
     }
 
+    @MainActor
     func removeTabs(after index: Int) {
         tabsWillClose(range: (index + 1)..<tabs.count)
         tabs.removeSubrange((index + 1)...)
     }
 
+    @MainActor
     func removeTabs(at indexSet: IndexSet) {
         guard !indexSet.contains(where: { index in
             index < 0 && index >= tabs.count
@@ -233,6 +240,7 @@ final class TabCollection: NSObject {
 
     // MARK: - Replace
 
+    @MainActor
     func replaceTab(at index: Int, with tab: AnyTab, suppressWebExtensionEvents: Bool = false) {
         guard tabs.indices.contains(index) else {
             assertionFailure("TabCollection: Index out of bounds")
@@ -260,12 +268,14 @@ final class TabCollection: NSObject {
     }
 
     /// Convenience overload for replacing with a loaded Tab.
+    @MainActor
     func replaceTab(at index: Int, with tab: Tab) {
         replaceTab(at: index, with: .loaded(tab))
     }
 
     // MARK: - Private
 
+    @MainActor
     private func tabWillClose(at index: Int, forced: Bool) {
         if !forced {
             keepLocalHistory(of: tabs[index])
@@ -277,6 +287,7 @@ final class TabCollection: NSObject {
         }
     }
 
+    @MainActor
     private func tabsWillClose(range: Range<Int>) {
         for i in range {
             keepLocalHistory(of: tabs[i])
@@ -294,12 +305,11 @@ final class TabCollection: NSObject {
     var localHistoryOfRemovedTabs = [Visit]()
     var removedTabDomains = Set<String>()
 
+    @MainActor
     private func keepLocalHistory(of tab: AnyTab) {
-        // Loaded tabs: preserve Visit objects (used elsewhere)
         for visit in tab.localHistory where !localHistoryOfRemovedTabs.contains(visit) {
             localHistoryOfRemovedTabs.append(visit)
         }
-        // All tabs: preserve domain strings (used by fire dialog)
         removedTabDomains.formUnion(tab.localHistoryDomains)
     }
 

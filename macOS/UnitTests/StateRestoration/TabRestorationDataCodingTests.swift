@@ -36,7 +36,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             favicon: nil,
             interactionStateData: interactionState,
             lastSelectedAt: date,
-            visitedDomainURLs: visitedURLs,
+            localHistoryIDs: visitedURLs,
             tabSnapshotIdentifier: snapshotID
         )
 
@@ -47,7 +47,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(decoded.title, "Example")
         XCTAssertEqual(decoded.interactionStateData, interactionState)
         XCTAssertEqual(decoded.lastSelectedAt, date)
-        XCTAssertEqual(decoded.visitedDomainURLs, visitedURLs)
+        XCTAssertEqual(decoded.localHistoryIDs, visitedURLs)
         XCTAssertEqual(decoded.tabSnapshotIdentifier, snapshotID)
     }
 
@@ -61,7 +61,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             favicon: nil,
             interactionStateData: nil,
             lastSelectedAt: nil,
-            visitedDomainURLs: nil,
+            localHistoryIDs: nil,
             tabSnapshotIdentifier: nil
         )
 
@@ -97,7 +97,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             favicon: nil,
             interactionStateData: nil,
             lastSelectedAt: nil,
-            visitedDomainURLs: nil,
+            localHistoryIDs: nil,
             tabSnapshotIdentifier: nil
         )
 
@@ -154,7 +154,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             favicon: nil,
             interactionStateData: nil,
             lastSelectedAt: nil,
-            visitedDomainURLs: nil,
+            localHistoryIDs: nil,
             tabSnapshotIdentifier: nil
         )
 
@@ -165,7 +165,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertNil(decoded.favicon)
         XCTAssertNil(decoded.interactionStateData)
         XCTAssertNil(decoded.lastSelectedAt)
-        XCTAssertNil(decoded.visitedDomainURLs)
+        XCTAssertNil(decoded.localHistoryIDs)
         XCTAssertNil(decoded.tabSnapshotIdentifier)
     }
 
@@ -184,7 +184,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             favicon: nil,
             interactionStateData: interactionState,
             lastSelectedAt: date,
-            visitedDomainURLs: visitedURLs,
+            localHistoryIDs: visitedURLs,
             tabSnapshotIdentifier: snapshotID
         )
 
@@ -196,7 +196,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(unloaded.title, "Unloaded Example")
         XCTAssertEqual(unloaded.interactionStateData, interactionState)
         XCTAssertEqual(unloaded.lastSelectedAt, date)
-        XCTAssertEqual(unloaded.visitedDomainURLs, visitedURLs)
+        XCTAssertEqual(unloaded.localHistoryIDs, visitedURLs)
         XCTAssertEqual(unloaded.tabSnapshotIdentifier, snapshotID)
     }
 
@@ -220,7 +220,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             uuid: "materialized-uuid",
             content: .url(URL(string: "https://example.com")!, credential: nil, source: .pendingStateRestoration),
             title: "Materialized Example",
-            visitedDomainURLs: domainURLs,
+            localHistoryIDs: domainURLs,
             tabSnapshotIdentifier: snapshotID
         )
 
@@ -231,7 +231,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(tab.title, "Materialized Example")
 
         XCTAssertEqual(historyMock.restoredURLs, domainURLs,
-                       "visitedDomainURLs must be injected into HistoryTabExtension")
+                       "localHistoryIDs must be injected into HistoryTabExtension")
         XCTAssertEqual(snapshotMock.setIdentifierValue, UUID(uuidString: snapshotID),
                        "tabSnapshotIdentifier must be injected into TabSnapshotExtension")
     }
@@ -287,7 +287,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             favicon: nil,
             interactionStateData: nil,
             lastSelectedAt: nil,
-            visitedDomainURLs: nil,
+            localHistoryIDs: nil,
             tabSnapshotIdentifier: nil
         )
         archiver.encode([restorationData], forKey: NSKeyedArchiveRootObjectKey)
@@ -331,7 +331,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
             favicon: nil,
             interactionStateData: nil,
             lastSelectedAt: nil,
-            visitedDomainURLs: nil,
+            localHistoryIDs: nil,
             tabSnapshotIdentifier: nil
         )
     }

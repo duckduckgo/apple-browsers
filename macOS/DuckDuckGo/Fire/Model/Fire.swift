@@ -1183,7 +1183,7 @@ final class Fire: FireProtocol {
 extension TabCollection {
 
     // Local history of TabCollection instance including history of already closed tabs
-    var localHistory: [Visit] {
+    @MainActor var localHistory: [Visit] {
         tabs.flatMap { $0.localHistory }
     }
 

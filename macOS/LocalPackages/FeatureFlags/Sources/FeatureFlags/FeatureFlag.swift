@@ -324,6 +324,9 @@ public enum FeatureFlag: String, CaseIterable {
     case tabSuspensionDebugging
 
     case aiChatNativeStorage
+
+    /// Enables the VPN subscription promo card on the Fire Window home page
+    case subscriptionPromoFireWindow
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -548,6 +551,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
+        case .subscriptionPromoFireWindow:
+            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.subscriptionPromoFireWindow)), category: .subscription)
         }
     }
 

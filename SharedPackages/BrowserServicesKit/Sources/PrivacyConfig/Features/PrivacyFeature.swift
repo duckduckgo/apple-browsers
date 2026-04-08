@@ -187,6 +187,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case addToDockAppStore
 
     case screenTimeCleaning
+
+    case subscriptionPromoFireWindow
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

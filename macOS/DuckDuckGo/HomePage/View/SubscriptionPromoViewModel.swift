@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import FeatureFlags
 import Foundation
 import Persistence
+import PrivacyConfig
 import Subscription
 
 protocol SubscriptionPromoPersisting {
@@ -91,6 +93,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
     private static let displayWindowDays = 28
 
     private let subscriptionManager: any SubscriptionManager
+    private let featureFlagger: FeatureFlagger
     private var persistor: SubscriptionPromoPersisting
     private let locale: Locale
     @Published private(set) var shouldShowPromo: Bool = false
@@ -100,9 +103,11 @@ final class SubscriptionPromoViewModel: ObservableObject {
     var onDismissAction: (() -> Void)?
 
     init(subscriptionManager: any SubscriptionManager,
+         featureFlagger: FeatureFlagger,
          persistor: SubscriptionPromoPersisting? = nil,
          locale: Locale = .current) {
         self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
         self.locale = locale
     }
@@ -124,6 +129,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
     }
 
     /// Display conditions:
+    /// - Feature flag enabled (remote releasable)
     /// - Not force-dismissed on this tab (per-tab, lasts for the tab's lifetime)
     /// - US locale only
     /// - Non-subscriber only
@@ -132,6 +138,11 @@ final class SubscriptionPromoViewModel: ObservableObject {
     /// - Not dismissed within the 28-day cooldown
     /// - Not shown more than 4 times in any given 28-day rolling window
     func evaluatePromoVisibility() {
+        guard featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) else {
+            shouldShowPromo = false
+            return
+        }
+
         guard isUSLocale else {
             shouldShowPromo = false
             return

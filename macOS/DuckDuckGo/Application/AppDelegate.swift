@@ -134,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let downloadsPreferences: DownloadsPreferences
     let searchPreferences: SearchPreferences
     let tabsPreferences: TabsPreferences
+    let autoplayPreferences: AutoplayPreferences
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
@@ -161,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let downloadListCoordinator: DownloadListCoordinator
     let autoconsentManagement = AutoconsentManagement()
     let attributedMetricManager: AttributedMetricManager
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     @MainActor
     private(set) lazy var autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator = AutoconsentStatsPopoverCoordinator(
@@ -772,6 +774,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
             windowControllersManager: windowControllersManager
         )
+        autoplayPreferences = AutoplayPreferences()
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
 
@@ -1149,6 +1152,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             memoryUsageMonitor: memoryUsageMonitor,
             pixelFiring: PixelKit.shared
         )
+
+        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
+           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+            do {
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL).handler
+            } catch {
+                Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
+                duckAiNativeStorageHandler = nil
+            }
+        } else {
+            duckAiNativeStorageHandler = nil
+        }
 
         super.init()
 

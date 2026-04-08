@@ -33,6 +33,9 @@ public struct ImageSegmentedPickerConfiguration {
     public var unselectedTextColor: Color
     public var backgroundColor: Color
     public var selectedBackgroundColor: Color
+    public var outerHeight: CGFloat
+    public var innerHeight: CGFloat
+    public var innerHorizontalPadding: CGFloat
 
     /// Creates a new configuration for the image segmented picker.
     ///
@@ -42,18 +45,27 @@ public struct ImageSegmentedPickerConfiguration {
     ///   - unselectedTextColor: The text color for unselected items. Defaults to primary text color.
     ///   - backgroundColor: The picker's background color. Defaults to backdrop color.
     ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to tertiary background color.
+    ///   - outerHeight: The total height of the picker. Defaults to 38.
+    ///   - innerHeight: The height of the selected indicator pill. Defaults to 34.
+    ///   - innerHorizontalPadding: The horizontal padding between the outer edge and the pill. Defaults to 2.
     public init(
         font: Font = .system(size: 14, weight: .medium), /// Color not specified in the design system
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
         backgroundColor: Color = .init(designSystemColor: .backdrop),
-        selectedBackgroundColor: Color = .init(designSystemColor: .surface)
+        selectedBackgroundColor: Color = .init(designSystemColor: .surface),
+        outerHeight: CGFloat = 38,
+        innerHeight: CGFloat = 34,
+        innerHorizontalPadding: CGFloat = 2
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor
         self.unselectedTextColor = unselectedTextColor
         self.backgroundColor = backgroundColor
         self.selectedBackgroundColor = selectedBackgroundColor
+        self.outerHeight = outerHeight
+        self.innerHeight = innerHeight
+        self.innerHorizontalPadding = innerHorizontalPadding
     }
 }
 
@@ -136,12 +148,6 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
 /// ImageSegmentedPickerView(viewModel: viewModel)
 /// ```
 public struct ImageSegmentedPickerView: View {
-    private enum Constants {
-        static let outerHeight: CGFloat = 38
-        static let innerHeight: CGFloat = 34
-        static let innerHorizontalPadding: CGFloat = 2
-    }
-
     @ObservedObject private var viewModel: ImageSegmentedPickerViewModel
     @State private var currentOffset: CGFloat = 0
 
@@ -153,14 +159,17 @@ public struct ImageSegmentedPickerView: View {
     }
 
     public var body: some View {
+        let config = viewModel.configuration
         GeometryReader { geo in
+            let segmentWidth = geo.size.width / CGFloat(viewModel.items.count)
+            let pillWidth = segmentWidth - 2 * config.innerHorizontalPadding
             ZStack {
-                RoundedRectangle(cornerRadius: Constants.outerHeight / 2)
-                    .fill(viewModel.configuration.backgroundColor)
+                RoundedRectangle(cornerRadius: config.outerHeight / 2)
+                    .fill(config.backgroundColor)
 
-                RoundedRectangle(cornerRadius: Constants.innerHeight / 2)
-                    .fill(viewModel.configuration.selectedBackgroundColor)
-                    .frame(width: geo.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight)
+                RoundedRectangle(cornerRadius: config.innerHeight / 2)
+                    .fill(config.selectedBackgroundColor)
+                    .frame(width: pillWidth, height: config.innerHeight)
                     .offset(x: currentOffset)
                     .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
                     .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
@@ -172,10 +181,10 @@ public struct ImageSegmentedPickerView: View {
                         CustomPickerButton(
                             item: item,
                             isSelected: isInSelectedArea,
-                            configuration: viewModel.configuration) {
+                            configuration: config) {
                             viewModel.selectItem(item)
                         }
-                        .frame(width: geo.size.width / CGFloat(viewModel.items.count))
+                        .frame(width: segmentWidth)
                     }
                 }
             }
@@ -198,7 +207,7 @@ public struct ImageSegmentedPickerView: View {
                 }
             }
         }
-        .frame(height: Constants.outerHeight)
+        .frame(height: config.outerHeight)
     }
 
     private func calculateCurrentOffset(geometry: GeometryProxy) -> CGFloat {
@@ -221,18 +230,7 @@ public struct ImageSegmentedPickerView: View {
 
     private func offsetForItemIndex(_ index: Int, geometry: GeometryProxy) -> CGFloat {
         let buttonWidth = geometry.size.width / CGFloat(viewModel.items.count)
-        let baseOffset = CGFloat(index) * buttonWidth - (geometry.size.width / 2) + (buttonWidth / 2)
-
-        let paddingAdjustment: CGFloat
-        if index == 0 {
-            paddingAdjustment = Constants.innerHorizontalPadding
-        } else if index == viewModel.items.count - 1 {
-            paddingAdjustment = -Constants.innerHorizontalPadding
-        } else {
-            paddingAdjustment = 0
-        }
-
-        return baseOffset + paddingAdjustment
+        return CGFloat(index) * buttonWidth - (geometry.size.width / 2) + (buttonWidth / 2)
     }
 
     private func selectedOffset(geometry: GeometryProxy) -> CGFloat {
@@ -245,7 +243,7 @@ public struct ImageSegmentedPickerView: View {
 
     private func isItemInSelectedArea(itemIndex: Int, geometry: GeometryProxy, currentOffset: CGFloat) -> Bool {
         let buttonWidth = geometry.size.width / CGFloat(viewModel.items.count)
-        let selectorWidth = buttonWidth - (Constants.innerHorizontalPadding * 2)
+        let selectorWidth = buttonWidth - (viewModel.configuration.innerHorizontalPadding * 2)
 
         let selectorCenter = currentOffset + (geometry.size.width / 2)
         let selectorLeft = selectorCenter - (selectorWidth / 2)

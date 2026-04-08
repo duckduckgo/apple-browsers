@@ -295,7 +295,7 @@ final class PermissionContextMenu: NSMenu {
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
         case .geolocation:
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")!
-        case .popups, .notification, .externalScheme:
+        case .popups, .notification, .externalScheme, .autoplayPolicy:
             assertionFailure("No settings available")
             return
         }
@@ -352,7 +352,7 @@ private extension NSMenuItem {
     static func alwaysAsk(_ permission: PermissionType, on domain: String, target: PermissionContextMenu, isChecked: Bool) -> NSMenuItem {
         let title: String
         switch permission {
-        case .camera, .microphone, .geolocation, .notification, .externalScheme:
+        case .camera, .microphone, .geolocation, .notification, .externalScheme, .autoplayPolicy:
             title = UserText.privacyDashboardPermissionAsk
         case .popups:
             title = UserText.privacyDashboardPopupsAlwaysAsk
@@ -439,6 +439,8 @@ private extension NSMenuItem {
             title = String(format: UserText.notificationPermissionAuthorizationFormat, domain)
         case .popups:
             title = String(format: UserText.permissionMenuHeaderPopupWindowsFormat, domain)
+        case .autoplayPolicy:
+            title = domain
         }
 
         let attributedTitle = NSMutableAttributedString(string: title)

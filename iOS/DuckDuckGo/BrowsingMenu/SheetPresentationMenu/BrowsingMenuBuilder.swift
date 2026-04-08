@@ -94,10 +94,15 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             .init(entryBuilder.makeClearDataEntry(mobileCustomization: mobileCustomization, clearTabsAndData: clearTabsAndData))
         ].compactMap { $0 }
 
-        let sections = [
-            BrowsingMenuModel.Section(items: shortcutsItems),
-            BrowsingMenuModel.Section(items: privacyItems)
-        ]
+        var sections = [BrowsingMenuModel.Section]()
+
+        // MARK: Fire Mode Promotion
+        if let fireModePromotionEntry = BrowsingMenuModel.Entry(entryBuilder.makeFireModePromotionEntry()) {
+            sections.append(BrowsingMenuModel.Section(items: [fireModePromotionEntry]))
+        }
+
+        sections.append(BrowsingMenuModel.Section(items: shortcutsItems))
+        sections.append(BrowsingMenuModel.Section(items: privacyItems))
 
         return BrowsingMenuModel(
             headerItems: headerItems,
@@ -122,6 +127,11 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         ].compactMap { $0 }
 
         var sections = [BrowsingMenuModel.Section]()
+
+        // MARK: Fire Mode Promotion
+        if let fireModePromotionEntry = BrowsingMenuModel.Entry(entryBuilder.makeFireModePromotionEntry()) {
+            sections.append(BrowsingMenuModel.Section(items: [fireModePromotionEntry]))
+        }
 
         if options.mergeActionsAndBookmarks {
             // MARK: Tab Actions

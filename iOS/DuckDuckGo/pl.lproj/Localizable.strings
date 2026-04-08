@@ -109,8 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Wyczyszczono karty i dane";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Wyczyść karty, dane i czaty Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otwórz w tle";
@@ -3344,11 +3342,7 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Wyczyść";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Wyczyść karty i dane";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Wyczyść karty, dane i czaty Duck.ai";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Zamknij wszystkie otwarte karty";
@@ -3416,14 +3410,10 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Przycisk Fire Button usunie także historię Duck.ai, w tym przypięte czaty.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Wyczyść czaty Duck.ai";
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Wyczyść dane przeglądania";
 
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Automatyczne czyszczenie danych";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokończ swoją konfigurację";
@@ -3443,11 +3433,7 @@
 /* Settings title for the customize section */
 "settings.customize" = "Spersonalizuj";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Czyści wszystkie karty, czaty Duck.ai i dane dla wszystkich witryn, które nie zostały oznaczone jako Fireproof.";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Czyści wszystkie karty i dane dla witryn, które nie zostały oznaczone jako Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Czyszczenie danych";
@@ -3507,8 +3493,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animacja przycisku ognia";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Bezpieczne witryny internetowe";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Zabezpieczone witryny internetowe";

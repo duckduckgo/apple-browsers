@@ -24,6 +24,7 @@ import RemoteMessaging
 final class NewTabPageMessagesModel: ObservableObject {
 
     @Published private(set) var homeMessageViewModels: [HomeMessageViewModel] = []
+    @Published private(set) var isFirePromotionVisible = false
 
     private var observable: NSObjectProtocol?
 
@@ -34,6 +35,9 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let messageActionHandler: RemoteMessagingActionHandling
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
+    private let fireModePromotionEligibility: FireModePromotionCoordinating?
+
+    var onFireModeRequested: (() -> Void)?
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
@@ -41,7 +45,8 @@ final class NewTabPageMessagesModel: ObservableObject {
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          messageActionHandler: RemoteMessagingActionHandling,
          imageLoader: RemoteMessagingImageLoading,
-         pixelReporter: RemoteMessagingPixelReporting? = nil) {
+         pixelReporter: RemoteMessagingPixelReporting? = nil,
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
@@ -49,6 +54,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.messageActionHandler = messageActionHandler
         self.imageLoader = imageLoader
         self.pixelReporter = pixelReporter
+        self.fireModePromotionEligibility = fireModePromotionEligibility
     }
 
     func load() {
@@ -80,8 +86,38 @@ final class NewTabPageMessagesModel: ObservableObject {
     }
 
     private func updateHomeMessageViewModel() {
-        self.homeMessageViewModels = homePageMessagesConfiguration.homeMessages.compactMap(self.homeMessageViewModel(for:))
+        let messages = homePageMessagesConfiguration.homeMessages
+        isFirePromotionVisible = messages.contains(.firePromotion)
+        homeMessageViewModels = messages.compactMap(homeMessageViewModel(for:))
     }
+
+    // MARK: - Fire Mode Promotion Actions
+
+    func firePromotionDidAppear() {
+        // TODO: fire promotion shown pixel
+        fireModePromotionEligibility?.markNTPPromotionShown()
+    }
+
+    @MainActor
+    func firePromotionTryFireTabsTapped() async {
+        fireModePromotionEligibility?.markNTPPromotionEngaged()
+        await dismissHomeMessage(.firePromotion)
+        onFireModeRequested?()
+    }
+
+    @MainActor
+    func firePromotionDismissed() async {
+        fireModePromotionEligibility?.markNTPPromotionDismissed()
+        await dismissHomeMessage(.firePromotion)
+    }
+
+    @MainActor
+    func firePromotionClosed() async {
+        fireModePromotionEligibility?.markNTPPromotionDismissed()
+        await dismissHomeMessage(.firePromotion)
+    }
+
+    // MARK: - HomeMessageViewModel Mapping
 
     private func homeMessageViewModel(for message: HomeMessage) -> HomeMessageViewModel? {
         switch message {
@@ -97,6 +133,9 @@ final class NewTabPageMessagesModel: ObservableObject {
             } onAttachAdditionalParameters: { _, params in
                 params
             }
+        case .firePromotion:
+            return nil
+
         case .remoteMessage(let remoteMessage):
 
             // call didAppear here to support marking messages as shown when they appear on the new tab page

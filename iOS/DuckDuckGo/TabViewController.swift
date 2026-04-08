@@ -57,6 +57,10 @@ class TabViewController: UIViewController {
         static let navigationExpectationInterval = 3.0
     }
 
+    /// Set by `loadVoiceMode()` so that `refreshUnifiedToggleInput` can suppress
+    /// auto-expand even before the `?mode=voice` URL is committed to the web view.
+    var isVoiceModeRequested = false
+
     lazy var borderView = StyledTopBottomBorderView()
 
     @IBOutlet private(set) weak var error: UIView!
@@ -112,6 +116,7 @@ class TabViewController: UIViewController {
     }
     
     weak var delegate: TabDelegate?
+    var fireModePromotionCoordinator: FireModePromotionCoordinating?
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
         get {
             aiChatContentHandler.delegate

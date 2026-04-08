@@ -29,11 +29,19 @@ final class TabCollection: NSObject {
     @Published private(set) var tabs: [AnyTab]
 
     var loadedTabs: [Tab] {
-        tabs.compactMap(\.tab)
+        tabs.compactMap {
+            guard case .loaded(let tab) = $0 else { return nil }
+            return tab
+        }
     }
 
     var loadedTabsPublisher: AnyPublisher<[Tab], Never> {
-        $tabs.map { $0.compactMap(\.tab) }.eraseToAnyPublisher()
+        $tabs.map { tabs in
+            tabs.compactMap {
+                guard case .loaded(let tab) = $0 else { return nil }
+                return tab
+            }
+        }.eraseToAnyPublisher()
     }
 
     let didRemoveTabPublisher = PassthroughSubject<(AnyTab, Int), Never>()
@@ -64,11 +72,11 @@ final class TabCollection: NSObject {
     }
 
     func contains(tab: Tab) -> Bool {
-        tabs.contains(where: { $0.tab === tab })
+        tabs.contains(.loaded(tab))
     }
 
     func firstIndex(of tab: Tab) -> Int? {
-        tabs.firstIndex(where: { $0.tab === tab })
+        tabs.firstIndex(of: .loaded(tab))
     }
 
     // MARK: - Append / Insert (Tab convenience wrappers)

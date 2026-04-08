@@ -28,8 +28,7 @@ struct PermissionCenterView: View {
     @ObservedObject var viewModel: PermissionCenterViewModel
 
     private enum PopoverWidth {
-        static let base: CGFloat = 360
-        static let extraWidth: CGFloat = 380
+        static let base: CGFloat = 400
         static let withPopups: CGFloat = 450
 
         /// Wider widths for languages with longer popup permission strings
@@ -45,18 +44,14 @@ struct PermissionCenterView: View {
         ]
     }
 
-    /// Use a wider popover when popup or external app permissions are present due to longer content
+    /// Use a wider popover when popup is present due to longer content
     private var popoverWidth: CGFloat {
         let hasPopups = viewModel.permissionItems.contains { $0.permissionType == .popups }
-        let hasExternalAppsOrAutoplay = viewModel.permissionItems.contains { $0.isGroupedExternalApps || $0.permissionType == .autoplayPolicy }
-
         if hasPopups {
             if let languageCode = Locale.current.languageCode {
                 return PopoverWidth.withPopupsByLanguage[languageCode] ?? PopoverWidth.withPopups
             }
             return PopoverWidth.withPopups
-        } else if hasExternalAppsOrAutoplay {
-            return PopoverWidth.extraWidth
         }
         return PopoverWidth.base
     }
@@ -370,7 +365,8 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: item.permissionType.systemPermissionDisabledText,
                 linkText: item.permissionType.systemSettingsLinkText,
-                linkColor: .accentColor
+                linkColor: .accentColor,
+                linkOnNewLine: item.permissionType == .notification
             ) {
                 openSystemSettings()
             }

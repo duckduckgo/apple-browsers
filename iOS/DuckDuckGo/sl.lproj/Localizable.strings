@@ -4173,6 +4173,12 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Sinhronizacija in varnostno kopiranje v tej različici aplikacije žal nista več na voljo. Za nadaljevanje DuckDuckGo posodobite na najnovejšo različico.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Zapri zavihek";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Zavihek ni prebran";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Zapri zavihek Domov";
 

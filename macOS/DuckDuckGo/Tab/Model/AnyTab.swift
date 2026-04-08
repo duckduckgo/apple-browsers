@@ -105,6 +105,14 @@ enum AnyTab: Identifiable {
         }
     }
 
+    @MainActor
+    func clearNavigationHistory(keepingCurrent: Bool) {
+        switch self {
+        case .loaded(let tab): tab.clearNavigationHistory(keepingCurrent: keepingCurrent)
+        case .unloaded(let unloaded): unloaded.clearNavigationHistory(keepingCurrent: keepingCurrent)
+        }
+    }
+
     var localHistory: [Visit] {
         switch self {
         case .unloaded: []

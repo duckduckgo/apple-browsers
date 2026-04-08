@@ -38,7 +38,7 @@ final class UnloadedTab: Identifiable {
     let interactionStateData: Data?
 
     /// Pass-through from HistoryTabExtension — preserved so re-encoding doesn't lose extension state.
-    let visitedDomainURLs: [URL]?
+    var visitedDomainURLs: [URL]?
     /// Pass-through from TabSnapshotExtension.
     let tabSnapshotIdentifier: String?
 
@@ -74,6 +74,14 @@ final class UnloadedTab: Identifiable {
         self.isPersistent = true    // Restored tabs always come from persistent storage
         self.visitedDomainURLs = data.visitedDomainURLs
         self.tabSnapshotIdentifier = data.tabSnapshotIdentifier
+    }
+
+    func clearNavigationHistory(keepingCurrent: Bool) {
+        if keepingCurrent, let currentHost = content.urlForWebView?.host {
+            visitedDomainURLs = visitedDomainURLs?.filter { $0.host == currentHost }
+        } else {
+            visitedDomainURLs = nil
+        }
     }
 
     /// Creates a full `Tab` from this unloaded tab's stored data.

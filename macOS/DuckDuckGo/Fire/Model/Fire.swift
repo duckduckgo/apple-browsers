@@ -1197,7 +1197,7 @@ extension TabCollection {
     }
 
     var localHistoryDomainsOfRemovedTabs: Set<String> {
-        var domains = Set<String>()
+        var domains = removedTabDomains
         for visit in localHistoryOfRemovedTabs {
             if let host = visit.historyEntry?.url.host {
                 domains.insert(host)

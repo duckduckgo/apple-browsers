@@ -298,6 +298,57 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertTrue(anyTab.tab === tab)
     }
 
+    // MARK: - Clear Navigation History
+
+    @MainActor
+    func testClearNavigationHistoryOnUnloadedTabClearsVisitedDomainURLs() {
+        let urls = [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                   visitedDomainURLs: urls)
+
+        unloaded.clearNavigationHistory(keepingCurrent: false)
+
+        XCTAssertNil(unloaded.visitedDomainURLs)
+    }
+
+    @MainActor
+    func testClearNavigationHistoryKeepingCurrentPreservesCurrentDomain() {
+        let duckDuckGoURL = URL.duckDuckGo
+        let otherURL = URL(string: "https://example.com")!
+        let unloaded = UnloadedTab(content: .url(duckDuckGoURL, credential: nil, source: .pendingStateRestoration),
+                                   visitedDomainURLs: [duckDuckGoURL, otherURL])
+
+        unloaded.clearNavigationHistory(keepingCurrent: true)
+
+        XCTAssertEqual(unloaded.visitedDomainURLs?.count, 1)
+        XCTAssertEqual(unloaded.visitedDomainURLs?.first?.host, duckDuckGoURL.host)
+    }
+
+    @MainActor
+    func testRemovedUnloadedTabDomainsCapturedInRemovedTabDomains() {
+        let urls = [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                   visitedDomainURLs: urls)
+        let tabCollection = TabCollection(tabs: [AnyTab.unloaded(unloaded)])
+
+        tabCollection.removeTab(at: 0)
+
+        XCTAssertTrue(tabCollection.removedTabDomains.contains("example.com"))
+        XCTAssertTrue(tabCollection.removedTabDomains.contains("test.org"))
+    }
+
+    @MainActor
+    func testClearNavigationHistoryOnAnyTabClearsUnloadedTab() {
+        let urls = [URL(string: "https://example.com")!]
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                   visitedDomainURLs: urls)
+        let anyTab = AnyTab.unloaded(unloaded)
+
+        anyTab.clearNavigationHistory(keepingCurrent: false)
+
+        XCTAssertNil(unloaded.visitedDomainURLs)
+    }
+
     // MARK: - AnyTab Identity vs UUID Equality
 
     @MainActor

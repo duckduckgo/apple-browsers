@@ -292,12 +292,15 @@ final class TabCollection: NSObject {
 
     // Visits of removed tabs used for fire button logic
     var localHistoryOfRemovedTabs = [Visit]()
+    var removedTabDomains = Set<String>()
 
     private func keepLocalHistory(of tab: AnyTab) {
-        // Unloaded tabs have no navigation history
+        // Loaded tabs: preserve Visit objects (used elsewhere)
         for visit in tab.localHistory where !localHistoryOfRemovedTabs.contains(visit) {
             localHistoryOfRemovedTabs.append(visit)
         }
+        // All tabs: preserve domain strings (used by fire dialog)
+        removedTabDomains.formUnion(tab.localHistoryDomains)
     }
 
 }

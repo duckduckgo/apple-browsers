@@ -53,7 +53,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
 
         do {
-            dbQueue = try Self.openDatabase(at: databaseURL, key: key)
+            dbQueue = try Self.openDatabase(at: databaseURL, key: key, filesDirectoryURL: filesDirectoryURL)
         } catch {
             throw DuckAiNativeDataStoreError.databaseError(error)
         }
@@ -62,7 +62,9 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     /// Opens an encrypted database, recreating it if the existing file is unencrypted or corrupt.
-    private static func openDatabase(at url: URL, key: Data) throws -> DatabaseQueue {
+    /// When recreating, also removes orphaned files from `filesDirectoryURL` to ensure
+    /// no plaintext data persists on disk.
+    private static func openDatabase(at url: URL, key: Data, filesDirectoryURL: URL) throws -> DatabaseQueue {
         var config = Configuration()
         config.prepareDatabase { db in
             try db.usePassphrase(key)
@@ -73,7 +75,16 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         } catch let error as DatabaseError where [.SQLITE_NOTADB, .SQLITE_CORRUPT].contains(error.resultCode) {
             Logger.nativeStorageDebug.warning("[NativeStorage] Existing database is unencrypted or corrupt, recreating: \(error.resultCode)")
             try? FileManager.default.removeItem(at: url)
+            Self.removeOrphanedFiles(in: filesDirectoryURL)
             return try DatabaseQueue(path: url.path, configuration: config)
+        }
+    }
+
+    private static func removeOrphanedFiles(in directory: URL) {
+        let fileManager = FileManager.default
+        guard let contents = try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
+        for fileURL in contents {
+            try? fileManager.removeItem(at: fileURL)
         }
     }
 

@@ -363,6 +363,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             pageContextScript.webView = tab.webView
         }
 
+        // If webView is still nil (e.g. suspended tab), return immediately instead of waiting for timeout
+        guard pageContextScript.webView != nil else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
         let pageContext = await pageContextScript.collectAndWait()
 
         // Replace favicon URLs with base64-encoded data to avoid CSP blocking in the sidebar

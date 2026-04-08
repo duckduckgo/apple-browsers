@@ -465,6 +465,8 @@
 		36E19A062F3230D900556F78 /* DataClearingPixelsReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A042F3230D200556F78 /* DataClearingPixelsReporter.swift */; };
 		36E8D3722F857F9000861037 /* SubscriptionPromoTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D3712F857F9000861037 /* SubscriptionPromoTabExtension.swift */; };
 		36E8D3732F857F9000861037 /* SubscriptionPromoTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D3712F857F9000861037 /* SubscriptionPromoTabExtension.swift */; };
+		36E8D3752F86C96200861037 /* SubscriptionPromoDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D3742F86C96200861037 /* SubscriptionPromoDebugMenu.swift */; };
+		36E8D3762F86C96200861037 /* SubscriptionPromoDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D3742F86C96200861037 /* SubscriptionPromoDebugMenu.swift */; };
 		3701C9CE29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		3701C9CF29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		370245FD2CF7C65400CD79A3 /* PrivacyStatsTrackerDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */; };
@@ -4859,6 +4861,7 @@
 		36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporterTests.swift; sourceTree = "<group>"; };
 		36E19A042F3230D200556F78 /* DataClearingPixelsReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporter.swift; sourceTree = "<group>"; };
 		36E8D3712F857F9000861037 /* SubscriptionPromoTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoTabExtension.swift; sourceTree = "<group>"; };
+		36E8D3742F86C96200861037 /* SubscriptionPromoDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoDebugMenu.swift; sourceTree = "<group>"; };
 		3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxBerkeleyDatabaseReader.swift; sourceTree = "<group>"; };
 		370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTrackerDataProvider.swift; sourceTree = "<group>"; };
 		370270BB2C78AC6F002E44E4 /* NewTabBackgroundPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabBackgroundPixel.swift; sourceTree = "<group>"; };
@@ -11403,6 +11406,7 @@
 		AAE71DB325F66A3F00D74437 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				36E8D3742F86C96200861037 /* SubscriptionPromoDebugMenu.swift */,
 				1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */,
 				85589E7D27BBB8630038AD11 /* BurnerHomePageViewController.swift */,
 				4AC1AE4AED1E4A4C95A36533 /* SubscriptionPromoView.swift */,
@@ -14855,6 +14859,7 @@
 				BBDE001C2D6DE6A800109F88 /* DefaultBrowserAndDockPromptPopover.swift in Sources */,
 				D6E0ACB22CE36DCA005D3486 /* DuckPlayerOverlayPixels.swift in Sources */,
 				EDB8375F2EDEF27C00505C15 /* PasswordEntryExampleView.swift in Sources */,
+				36E8D3762F86C96200861037 /* SubscriptionPromoDebugMenu.swift in Sources */,
 				3707C718294B5D0F00682A9F /* AdClickAttributionTabExtension.swift in Sources */,
 				31EF1E812B63FFB800E6DB17 /* DataBrokerProtectionManager.swift in Sources */,
 				B6AFE6BC29A5D3F8002FF962 /* PrivacyDashboardTabExtension.swift in Sources */,
@@ -17064,6 +17069,7 @@
 				1D5C232A2F150A680055046E /* AIChatSuggestionsView.swift in Sources */,
 				1D94E7992F333CA1008315A2 /* AIChatOmnibarToolButton.swift in Sources */,
 				7B6879242EF07ECA00F9964B /* SystemPermissionWarningView.swift in Sources */,
+				36E8D3752F86C96200861037 /* SubscriptionPromoDebugMenu.swift in Sources */,
 				7B6879272EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift in Sources */,
 				B626A76D29928B1600053070 /* TestsClosureNavigationResponder.swift in Sources */,
 				9FFBEE772DDEDE870058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift in Sources */,

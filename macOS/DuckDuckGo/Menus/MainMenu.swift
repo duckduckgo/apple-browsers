@@ -941,6 +941,8 @@ final class MainMenu: NSMenu {
 
             FreemiumDebugMenu()
 
+            SubscriptionPromoDebugMenu()
+
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
                     .submenu(NetworkProtectionDebugMenu(pinningManager: pinningManager))

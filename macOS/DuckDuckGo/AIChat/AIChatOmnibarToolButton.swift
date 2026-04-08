@@ -77,14 +77,19 @@ final class AIChatOmnibarToolButton: NSView {
         }
     }
 
+    /// When true, the icon stays at the leading position even when the label is hidden.
+    /// Use this for buttons that toggle their label on/off to prevent icon shifting.
+    var keepIconLeadingAligned: Bool = false
+
     /// Optional text label shown next to the icon. When set, the button expands horizontally.
     var label: String? {
         didSet {
             let hasLabel = label.map { !$0.isEmpty } ?? false
             textLabel.stringValue = label ?? ""
             textLabel.isHidden = !hasLabel
-            iconCenterXConstraint?.isActive = !hasLabel
-            iconLeadingConstraint?.isActive = hasLabel
+            let useLeading = hasLabel || keepIconLeadingAligned
+            iconCenterXConstraint?.isActive = !useLeading
+            iconLeadingConstraint?.isActive = useLeading
             invalidateIntrinsicContentSize()
         }
     }

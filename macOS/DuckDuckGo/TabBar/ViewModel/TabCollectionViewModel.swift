@@ -840,7 +840,9 @@ final class TabCollectionViewModel: NSObject {
 
     func resumeTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
-        materialize(at: tabIndex)
+        if let tab = materialize(at: tabIndex), tab.isSuspended {
+            tab.resume()
+        }
     }
 
     func title(forTabWithURL url: URL) -> String? {

@@ -70,15 +70,18 @@ final class SubscriptionPromoViewModel: ObservableObject {
 
     private let subscriptionManager: any SubscriptionManager
     private var persistor: SubscriptionPromoPersisting
+    private let locale: Locale
     @Published private(set) var shouldShowPromo: Bool = false
     @Published private(set) var isEligibleForFreeTrial: Bool = false
 
     var onButtonAction: (() -> Void)?
 
     init(subscriptionManager: any SubscriptionManager,
-         persistor: SubscriptionPromoPersisting? = nil) {
+         persistor: SubscriptionPromoPersisting? = nil,
+         locale: Locale = .current) {
         self.subscriptionManager = subscriptionManager
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+        self.locale = locale
     }
 
     func restoreState(shouldShowPromo: Bool, isEligibleForFreeTrial: Bool) {
@@ -107,8 +110,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
             shouldShowPromo = false
             return
         }
-        
-        print("👀 fire tab visit count \(persistor.fireTabVisitCount)")
+
         guard persistor.fireTabVisitCount >= Self.requiredVisitCount else {
             shouldShowPromo = false
             return
@@ -131,9 +133,9 @@ final class SubscriptionPromoViewModel: ObservableObject {
     private var isUSLocale: Bool {
         var regionCode: String?
         if #available(macOS 13, *) {
-            regionCode = Locale.current.region?.identifier
+            regionCode = locale.region?.identifier
         } else {
-            regionCode = Locale.current.regionCode
+            regionCode = locale.regionCode
         }
         return (regionCode ?? "US") == "US"
     }

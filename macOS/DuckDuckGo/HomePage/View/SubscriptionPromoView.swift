@@ -44,21 +44,20 @@ struct SubscriptionPromoView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            promoCard
-                .padding(.top, Self.closeButtonInset)
-                .padding(.trailing, Self.closeButtonInset)
-
-            CloseButton(icon: .close, size: Self.closeButtonSize, backgroundColor: Color.homeFavoritesBackground, backgroundColorOnHover: Color.homeFavoritesBackground) {
-                onClose()
+        promoCard
+            .overlay(
+                CloseButton(icon: .close, size: Self.closeButtonSize, backgroundColor: Color(designSystemColor: .surfaceSecondary), backgroundColorOnHover: Color(designSystemColor: .surfaceSecondary)) {
+                    onClose()
+                }
+                .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 3, x: 0, y: 0)
+                .offset(x: Self.closeButtonInset, y: -Self.closeButtonInset)
+                .opacity(isHovering ? 1 : 0)
+                .disabled(!isHovering)
+                , alignment: .topTrailing
+            )
+            .onHover { hovering in
+                isHovering = hovering
             }
-            .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 3, x: 0, y: 0)
-            .opacity(isHovering ? 1 : 0)
-            .disabled(!isHovering)
-        }
-        .onHover { hovering in
-            isHovering = hovering
-        }
     }
 
     private var promoCard: some View {
@@ -78,7 +77,7 @@ struct SubscriptionPromoView: View {
             )
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.homeFavoritesBackground)
+                    .fill(Color(designSystemColor: .surfaceSecondary))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.homeFavoritesGhost, lineWidth: 1)
@@ -113,7 +112,6 @@ struct SubscriptionPromoView: View {
                 textContent
             }
             actionButton
-                .frame(maxWidth: .infinity)
         }
     }
 
@@ -135,21 +133,22 @@ struct SubscriptionPromoView: View {
         }
     }
 
-    @ViewBuilder
+
     private var actionButton: some View {
-        switch actionType {
-        case .tryForFree:
-            Button(UserText.subscriptionPromoTryForFree, action: onButtonTap)
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
-                .onHover { isHovering in
-                    if isHovering { NSCursor.pointingHand.push() } else { NSCursor.pointingHand.pop() }
-                }
-        case .learnMore:
-            Button(UserText.subscriptionPromoLearnMore, action: onButtonTap)
-                .buttonStyle(DismissActionButtonStyle())
-                .onHover { isHovering in
-                    if isHovering { NSCursor.pointingHand.push() } else { NSCursor.pointingHand.pop() }
-                }
+        let isFreeTrial = actionType == .tryForFree
+        return Button(action: onButtonTap) {
+            Text(isFreeTrial ? UserText.subscriptionPromoTryForFree : UserText.subscriptionPromoLearnMore)
+                .font(.system(size: 13))
+                .foregroundColor(isFreeTrial ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textPrimary))
+                .frame(maxWidth: isNarrow ? .infinity : nil)
+                .padding(.vertical, 9.5)
+                .padding(.horizontal, 12)
+                .background(isFreeTrial ? Color(designSystemColor: .buttonsPrimaryDefault) : Color(designSystemColor: .controlsFillPrimary))
+                .cornerRadius(8)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onHover { isHovering in
+            if isHovering { NSCursor.pointingHand.push() } else { NSCursor.pointingHand.pop() }
         }
     }
 }

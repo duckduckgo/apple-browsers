@@ -18,6 +18,7 @@
 
 import AppKit
 import SwiftUI
+import Subscription
 
 @MainActor
 final class BurnerHomePageViewController: NSViewController {
@@ -33,11 +34,12 @@ final class BurnerHomePageViewController: NSViewController {
     }
 
     init(appearancePreferences: AppearancePreferences? = nil,
-         themeManager: ThemeManager? = nil) {
+         themeManager: ThemeManager? = nil,
+         subscriptionManager: (any SubscriptionManager)? = nil) {
         self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
         self.subscriptionPromoViewModel = SubscriptionPromoViewModel(
-            subscriptionManager: NSApp.delegateTyped.subscriptionManager
+            subscriptionManager: subscriptionManager ?? NSApp.delegateTyped.subscriptionManager
         )
 
         super.init(nibName: nil, bundle: nil)

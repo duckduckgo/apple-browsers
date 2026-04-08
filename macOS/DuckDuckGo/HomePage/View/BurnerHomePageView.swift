@@ -21,20 +21,19 @@ import SwiftUI
 
 struct BurnerHomePageView: View {
 
-    static let targetWidth: CGFloat = 508
+    static let targetWidth: CGFloat = 504
     static let height: CGFloat = 273
     static let totalHeight: CGFloat = height + 2 * Const.verticalPadding
 
     enum Const {
         static let verticalPadding = 40.0
         static let searchBoxVerticalSpacing = 24.0
-        static let promoTopPadding = 16.0
-        static let estimatedPromoCardHeight = 80.0
+        static let promoTopPadding = 24.0
     }
 
     @ObservedObject var promoViewModel: SubscriptionPromoViewModel
+    @State private var promoCardHeight: CGFloat = 0
 
-    @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: AppearancePreferences
     @EnvironmentObject var themeManager: ThemeManager
 
@@ -42,21 +41,6 @@ struct BurnerHomePageView: View {
         Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
     }
 
-    private var infoBackgroundColor: Color {
-        return colorScheme == .dark ? Color.white.opacity(0.03) : backgroundColor
-    }
-
-    private var infoStrokeColor1: Color {
-        return colorScheme == .dark ? Color.white.opacity(0.03) : Color.clear
-    }
-
-    private var infoStrokeColor2: Color {
-        return colorScheme == .dark ? Color.black.opacity(0.12) : Color.gray.opacity(0.09)
-    }
-
-    private var infoShadowColor: Color {
-        return colorScheme == .dark ? Color.black.opacity(0.12) : Color.black.opacity(0.05)
-    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -71,6 +55,7 @@ struct BurnerHomePageView: View {
                                 onClose: { promoViewModel.dismiss() }
                             )
                             .padding(.top, Const.promoTopPadding)
+                            .readSize { promoCardHeight = $0.height }
                         }
 
                         VStack(spacing: Const.searchBoxVerticalSpacing) {
@@ -80,7 +65,7 @@ struct BurnerHomePageView: View {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
-                                        .background(Color.homeFavoritesBackground)
+                                        .background(Color(designSystemColor: .surfaceSecondary))
                                         .cornerRadius(12)
 
                                     VStack(alignment: .leading, spacing: 16) {
@@ -94,7 +79,7 @@ struct BurnerHomePageView: View {
 
                                             Text(UserText.burnerWindowHeader)
                                                 .font(.system(size: 22, weight: .bold))
-                                                .foregroundColor(Color.primary)
+                                                .foregroundColor(Color(designSystemColor: .textPrimary))
                                                 .padding(.leading, -6)
                                         }
 
@@ -110,7 +95,7 @@ struct BurnerHomePageView: View {
                             Spacer(minLength: Const.verticalPadding)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(minHeight: max(geometry.size.height - (promoViewModel.shouldShowPromo ? Const.promoTopPadding + Const.estimatedPromoCardHeight : 0), Self.totalHeight))
+                        .frame(minHeight: max(geometry.size.height - (promoViewModel.shouldShowPromo ? promoCardHeight : 0), Self.totalHeight))
                     }
                 }
             }
@@ -127,10 +112,10 @@ struct FeaturesBox: View {
                 Image(.burnerWindowIcon1)
                     .resizable()
                     .frame(width: 16, height: 16)
-                    .foregroundColor(Color.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
                 Text(UserText.burnerHomepageDescription1)
                     .font(.system(size: 13))
-                    .foregroundColor(Color.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
 
             }
 
@@ -138,20 +123,20 @@ struct FeaturesBox: View {
                 Image(.burnerWindowIcon2)
                     .resizable()
                     .frame(width: 16, height: 16)
-                    .foregroundColor(Color.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
                 Text(UserText.burnerHomepageDescription2)
                     .font(.system(size: 13))
-                    .foregroundColor(Color.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
             }
 
             HStack {
                 Image(.burnerWindowIcon3)
                     .resizable()
                     .frame(width: 16, height: 16)
-                    .foregroundColor(Color.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
                 Text(UserText.burnerHomepageDescription3)
                     .font(.system(size: 13))
-                    .foregroundColor(Color.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
             }
 
             Divider()
@@ -160,12 +145,12 @@ struct FeaturesBox: View {
                 Image(.burnerWindowIcon4)
                     .resizable()
                     .frame(width: 16, height: 16)
-                    .foregroundColor(Color.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
                     .opacity(0.6)
                     .padding(.top, -20)
                 Text(UserText.burnerHomepageDescription4)
                     .font(.system(size: 13))
-                    .foregroundColor(Color.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
             }
         }
     }

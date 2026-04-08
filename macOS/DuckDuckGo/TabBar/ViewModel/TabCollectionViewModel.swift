@@ -766,21 +766,19 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        // Materialize if unloaded before duplicating
-        let loadedTab: Tab
-        if let tab = tab.tab {
-            loadedTab = tab
-        } else {
-            guard let tab = materialize(at: tabIndex) else { return }
-            loadedTab = tab
-        }
-
         if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            guard let loadedTab = materialize(at: tabIndex) else { return }
             redirectOpenOutsidePopup(loadedTab)
             return
         }
 
-        let tabCopy = Tab(content: loadedTab.content.loadedFromCache(), favicon: loadedTab.favicon, interactionStateData: loadedTab.getActualInteractionStateData(), shouldLoadInBackground: true, burnerMode: burnerMode)
+        let tabCopy = AnyTab.unloaded(UnloadedTab(
+            content: tab.content.loadedFromCache(),
+            title: tab.title,
+            favicon: tab.favicon,
+            burnerMode: tab.burnerMode,
+            interactionStateData: tab.interactionStateData
+        ))
         let newIndex = tabIndex.makeNext()
 
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)

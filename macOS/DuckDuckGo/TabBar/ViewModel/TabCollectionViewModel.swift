@@ -287,13 +287,21 @@ final class TabCollectionViewModel: NSObject {
 
     // MARK: - Selection
 
-    @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
+    @discardableResult func selectTab(at index: TabIndex, forceChange: Bool = false) -> Tab? {
         shouldReturnToPreviousActiveTab = false
         let result = selectWithoutResettingState(at: index, forceChange: forceChange)
-        if result, let tab = tab(at: index)?.tab, tab.isSuspended {
+        guard result else { return nil }
+
+        let tab = materialize(at: index)
+
+        if let tab, tab.isSuspended {
             tab.resume()
         }
-        return result
+        return tab
+    }
+
+    @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
+        selectTab(at: index, forceChange: forceChange) != nil
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {
@@ -321,8 +329,7 @@ final class TabCollectionViewModel: NSObject {
         }
 
         guard let index = indexInAllTabs(where: { $0.content.matchesDisplayableTab(content) }),
-              let tab = materialize(at: index),
-              select(at: index)
+              let tab = selectTab(at: index)
         else {
             return false
         }

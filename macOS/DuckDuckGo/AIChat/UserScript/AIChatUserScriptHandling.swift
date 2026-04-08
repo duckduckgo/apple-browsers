@@ -379,7 +379,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 url: ctx.url,
                 content: ctx.content,
                 truncated: ctx.truncated,
-                fullContentLength: ctx.fullContentLength
+                fullContentLength: ctx.fullContentLength,
+                attachable: ctx.attachable
             )
         }
         return AIChatTabContentResponse(pageContext: enrichedContext)

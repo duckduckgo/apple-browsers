@@ -132,7 +132,7 @@ final class PinnedTabsManager {
             .asVoid()
             .sink { [weak self] in
                 if NSApp.windows.filter({ $0 is MainWindow }).count == 1 {
-                    self?.tabCollection.tabs.forEach { $0.tab?.stopAllMediaAndLoading() }
+                    self?.tabCollection.loadedTabs.forEach { $0.stopAllMediaAndLoading() }
                 }
             }
     }

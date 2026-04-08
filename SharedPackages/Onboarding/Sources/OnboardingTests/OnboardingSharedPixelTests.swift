@@ -103,6 +103,26 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.parameters?["value"], "suggested")
     }
 
+    func testWhenCustomizeEventClickedWithValuesThenUsesValues() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.customization(.clicked([.bookmarksBar, .restoreSession])))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.parameters?["value"], "bookmarks_bar,restore_session")
+    }
+
+    func testWhenCustomizeEventClickedWithNoValuesThenUsesDismiss() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.customization(.clicked([])))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.parameters?["value"], "dismiss")
+    }
+
     func testWhenInstallTypeIsProvidedThenItParameterIsIncluded() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(installType: .newInstall, pixelFiring: pixelFiring)

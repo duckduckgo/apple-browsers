@@ -103,7 +103,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
     case addToDock(EngagementEvent)
     case importData(EngagementEvent)
     case duckPlayer(EngagementEvent)
-    case customization(EngagementEvent)
+    case customization(CustomizeEvent)
     case searchExperience(SearchExperienceEvent)
 
     // Contextual onboarding events
@@ -143,6 +143,17 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
 
         case shown
         case clicked(Value)
+    }
+
+    public enum CustomizeEvent {
+        public enum Value: String {
+            case bookmarksBar = "bookmarks_bar"
+            case restoreSession = "restore_session"
+            case homeButton = "home_button"
+        }
+
+        case shown
+        case clicked([Value])
     }
 }
 
@@ -194,6 +205,7 @@ private extension OnboardingSharedPixelEvent {
     private struct ParameterValues {
         static let shown = "shown"
         static let clicked = "clicked"
+        static let dismiss = "dismiss"
     }
 
     var eventType: String {
@@ -203,7 +215,6 @@ private extension OnboardingSharedPixelEvent {
                 .addToDock(let event),
                 .importData(let event),
                 .duckPlayer(let event),
-                .customization(let event),
                 .searchResults(let event),
                 .trackersBlocked(let event),
                 .fireButton(let event),
@@ -223,6 +234,13 @@ private extension OnboardingSharedPixelEvent {
             }
         case .search(let event),
                 .visitSite(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .customization(let event):
             switch event {
             case .shown:
                 return ParameterValues.shown
@@ -239,7 +257,6 @@ private extension OnboardingSharedPixelEvent {
                 .addToDock(let event),
                 .importData(let event),
                 .duckPlayer(let event),
-                .customization(let event),
                 .searchResults(let event),
                 .trackersBlocked(let event),
                 .fireButton(let event),
@@ -264,6 +281,17 @@ private extension OnboardingSharedPixelEvent {
                 return nil
             case .clicked(let value):
                 return value.rawValue
+            }
+        case .customization(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                if value.isEmpty {
+                    return ParameterValues.dismiss
+                } else {
+                    return value.map { $0.rawValue }.joined(separator: ",")
+                }
             }
         }
     }

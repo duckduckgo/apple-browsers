@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import SecureStorage
 import XCTest
 @testable import DuckAiDataStore
 
@@ -146,7 +147,7 @@ final class DuckAiKeyStoreProviderTests: XCTestCase {
 
 // MARK: - MockKeychainService
 
-private final class MockKeychainService: KeychainServicing {
+private final class MockKeychainService: KeychainService {
 
     var storedData: Data?
     var itemMatchingStatus: OSStatus = errSecSuccess
@@ -191,5 +192,9 @@ private final class MockKeychainService: KeychainServicing {
             storedData = nil
         }
         return deleteStatus
+    }
+
+    func update(_ query: [String: Any], _ attributesToUpdate: [String: Any]) -> OSStatus {
+        errSecSuccess
     }
 }

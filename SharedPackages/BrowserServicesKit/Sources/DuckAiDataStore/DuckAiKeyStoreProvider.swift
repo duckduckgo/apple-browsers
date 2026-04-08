@@ -18,6 +18,7 @@
 
 import CryptoKit
 import Foundation
+import SecureStorage
 
 /// Manages a single SQLCipher encryption key for the DuckAi native data store.
 public final class DuckAiKeyStoreProvider {
@@ -25,12 +26,12 @@ public final class DuckAiKeyStoreProvider {
     private static let keychainServiceName = "DuckDuckGo DuckAi Storage"
     private static let keychainAccount = "DuckAiNativeDataStore-EncryptionKey"
 
-    private let keychainService: KeychainServicing
+    private let keychainService: KeychainService
     private let accessGroup: String?
 
     /// - Parameter accessGroup: Keychain access group for sharing the key across
     ///   processes (e.g. app + extension). Pass `nil` for device-local only (macOS).
-    public init(keychainService: KeychainServicing = DefaultKeychainService(), accessGroup: String? = nil) {
+    public init(keychainService: KeychainService = DefaultKeychainService(), accessGroup: String? = nil) {
         self.keychainService = keychainService
         self.accessGroup = accessGroup
     }
@@ -108,30 +109,5 @@ public final class DuckAiKeyStoreProvider {
         default:
             throw DuckAiNativeDataStoreError.keychainError(status: status)
         }
-    }
-}
-
-// MARK: - Keychain Abstraction
-
-/// Protocol wrapping Keychain operations to enable testing.
-public protocol KeychainServicing {
-    func itemMatching(_ query: [String: Any], _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
-    func add(_ attributes: [String: Any], _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
-    func delete(_ query: [String: Any]) -> OSStatus
-}
-
-public struct DefaultKeychainService: KeychainServicing {
-    public init() {}
-
-    public func itemMatching(_ query: [String: Any], _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
-        SecItemCopyMatching(query as CFDictionary, result)
-    }
-
-    public func add(_ attributes: [String: Any], _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
-        SecItemAdd(attributes as CFDictionary, result)
-    }
-
-    public func delete(_ query: [String: Any]) -> OSStatus {
-        SecItemDelete(query as CFDictionary)
     }
 }

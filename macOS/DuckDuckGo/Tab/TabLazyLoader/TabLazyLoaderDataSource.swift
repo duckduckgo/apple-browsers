@@ -35,7 +35,7 @@ protocol TabLazyLoaderDataSource: AnyObject {
 
     var totalTabCount: Int { get }
     var unloadedTabCount: Int { get }
-    func isSuspended(at index: Int) -> Bool
+    func isUnloaded(at index: Int) -> Bool
     func materialize(at index: TabIndex) -> Tab?
 }
 
@@ -98,7 +98,7 @@ extension TabCollectionViewModel: TabLazyLoaderDataSource {
 
     var totalTabCount: Int { tabCollection.tabs.count }
 
-    func isSuspended(at index: Int) -> Bool {
+    func isUnloaded(at index: Int) -> Bool {
         guard tabCollection.tabs.indices.contains(index) else { return false }
         if case .unloaded = tabCollection.tabs[index] { return true }
         return false

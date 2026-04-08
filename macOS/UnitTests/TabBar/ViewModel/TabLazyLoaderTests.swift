@@ -91,10 +91,12 @@ private final class TabLazyLoaderDataSourceMock: TabLazyLoaderDataSource {
 
     var isSelectedTabLoadingSubject = PassthroughSubject<Bool, Never>()
 
-    var totalTabCount: Int { loadedTabs.count }
-    var unloadedTabCount: Int { 0 }
-    func isSuspended(at index: Int) -> Bool { false }
-    func materialize(at index: TabIndex) -> TabMock? { nil }
+    var totalTabCount: Int = 0
+    var unloadedTabCount: Int = 0
+    var isUnloadedHandler: (Int) -> Bool = { _ in false }
+    func isUnloaded(at index: Int) -> Bool { isUnloadedHandler(index) }
+    var materializeHandler: (TabIndex) -> TabMock? = { _ in nil }
+    func materialize(at index: TabIndex) -> TabMock? { materializeHandler(index) }
 }
 
 class TabLazyLoaderTests: XCTestCase {
@@ -343,6 +345,44 @@ class TabLazyLoaderTests: XCTestCase {
 
         XCTAssertEqual(reloadedTabsUrls, [newTab.url, oldTab.url])
         XCTAssertEqual(isLazyLoadingPausedEvents, [false, true, false])
+    }
+
+    func testWhenPinnedTabIsSelectedThenUnloadedTabMaterializationStartsFromFirstUnpinnedTab() async throws {
+        let reloadExpectation = expectation(description: "TabMock.reload() called")
+        reloadExpectation.expectedFulfillmentCount = 3
+
+        // A non-URL tab is selected (pinned), so loading starts immediately.
+        dataSource.selectedTab = .mockNotUrl
+        dataSource.selectedTabIndex = .pinned(2)
+
+        // No loaded tabs — only unloaded ones. This ensures findTabToLoad() returns nil
+        // and the loader falls through to findNextUnloadedTabIndex() → materialize().
+        dataSource.loadedTabs = []
+        dataSource.loadedPinnedTabs = []
+        dataSource.unloadedTabCount = 3
+        dataSource.totalTabCount = 3
+
+        // Track which tabs are still unloaded. Once materialized, a tab must no longer
+        // report as unloaded — otherwise the loader keeps materializing the same index.
+        var unloadedIndices: Set<Int> = [0, 1, 2]
+        dataSource.isUnloadedHandler = { unloadedIndices.contains($0) }
+
+        var materializedIndices = [Int]()
+        dataSource.materializeHandler = { index in
+            materializedIndices.append(index.item)
+            unloadedIndices.remove(index.item)
+            return TabMock(isUrl: true, reloadExpectation: reloadExpectation)
+        }
+
+        let lazyLoader = try XCTUnwrap(TabLazyLoader(dataSource: dataSource))
+
+        await waitForLoadingDidFinishEvent(lazyLoader, and: [reloadExpectation]) {
+            lazyLoader.scheduleLazyLoading()
+        }
+
+        // With a pinned tab selected, materialization should start from the first unpinned
+        // tab (index 0) and expand outward, not from the pinned tab's positional index.
+        XCTAssertEqual(materializedIndices, [0, 1, 2])
     }
 
     @MainActor

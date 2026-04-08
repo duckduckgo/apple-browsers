@@ -839,7 +839,7 @@ final class TabCollectionViewModel: NSObject {
             return false
         }
         guard tabIndex != selectionIndex else { return false }
-        guard let loadedTab = oldTab.tab, loadedTab.tabSuspension?.canBeSuspended == true else { return false }
+        guard case .loaded(let loadedTab) = oldTab, loadedTab.tabSuspension?.canBeSuspended == true else { return false }
         guard let suspendedTab = loadedTab.makeSuspendedTab() else {
             return false
         }

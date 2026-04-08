@@ -59,7 +59,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatOmnibarOnboarding,
                 .standaloneMigration,
                 .aiChatMultiplePageContexts,
-                .aiChatImageGeneration,
+                .aiChatOmnibarImageGeneration,
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
                 .aiChatChromeSidebar,

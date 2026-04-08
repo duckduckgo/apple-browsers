@@ -428,7 +428,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case contextualFireButton
 
     /// Enables image generation mode toggle in the Duck.ai omnibar
-    case imageGeneration
+    case omnibarImageGeneration
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

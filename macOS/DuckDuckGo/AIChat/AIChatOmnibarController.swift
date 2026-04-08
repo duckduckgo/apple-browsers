@@ -88,7 +88,7 @@ final class AIChatOmnibarController {
 
     /// Whether the image generation button is available.
     var isImageGenerationEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatImageGeneration)
+        featureFlagger.isFeatureOn(.aiChatOmnibarImageGeneration)
     }
 
     func toggleImageGenerationMode() {

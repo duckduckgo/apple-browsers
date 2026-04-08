@@ -259,7 +259,7 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatMultiplePageContexts
 
     /// Enables the image generation mode toggle in the Duck.ai omnibar
-    case aiChatImageGeneration
+    case aiChatOmnibarImageGeneration
 
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
@@ -343,7 +343,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
                 .aiChatChromeSidebar,
-                .aiChatImageGeneration,
+                .aiChatOmnibarImageGeneration,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .promoQueue,
@@ -444,7 +444,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
                 .aiChatMultiplePageContexts,
-                .aiChatImageGeneration,
+                .aiChatOmnibarImageGeneration,
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
@@ -623,8 +623,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatMultiplePageContexts:
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
-        case .aiChatImageGeneration:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.imageGeneration))
+        case .aiChatOmnibarImageGeneration:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarImageGeneration))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:

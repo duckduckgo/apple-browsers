@@ -395,6 +395,14 @@ class OnboardingManagerTests: XCTestCase {
 
     // MARK: Shared pixels
 
+    func testWelcomeShownPixelFired_WhenOnboardingStarted() {
+        // When
+        manager.onboardingStarted()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.welcome(.shown)])
+    }
+
     func testExpectedShownPixelsFired_WhenStepShown() {
         // When
         manager.stepShown(step: .welcome)

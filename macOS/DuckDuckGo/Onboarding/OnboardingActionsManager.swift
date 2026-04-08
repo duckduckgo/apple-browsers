@@ -224,6 +224,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func onboardingStarted() {
         navigation.updatePreventUserInteraction(prevent: true)
+        stepShown(step: .welcome)
     }
 
     @MainActor

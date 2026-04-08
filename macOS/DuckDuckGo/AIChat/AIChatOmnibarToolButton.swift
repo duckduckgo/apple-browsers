@@ -49,8 +49,17 @@ final class AIChatOmnibarToolButton: NSView {
         return label
     }()
 
+    private let trailingImageView: NonInteractiveImageView = {
+        let imageView = NonInteractiveImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.isHidden = true
+        return imageView
+    }()
+
     private var iconCenterXConstraint: NSLayoutConstraint?
     private var iconLeadingConstraint: NSLayoutConstraint?
+    private var trailingImageTrailingConstraint: NSLayoutConstraint?
 
     private let backgroundLayer = CALayer()
 
@@ -76,6 +85,17 @@ final class AIChatOmnibarToolButton: NSView {
             textLabel.isHidden = !hasLabel
             iconCenterXConstraint?.isActive = !hasLabel
             iconLeadingConstraint?.isActive = hasLabel
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    /// Optional trailing image (e.g., close icon). Shown after the label when set.
+    var trailingImage: NSImage? {
+        didSet {
+            let hasTrailing = trailingImage != nil
+            trailingImageView.image = trailingImage
+            trailingImageView.isHidden = !hasTrailing
+            trailingImageTrailingConstraint?.isActive = hasTrailing
             invalidateIntrinsicContentSize()
         }
     }
@@ -130,10 +150,16 @@ final class AIChatOmnibarToolButton: NSView {
         }
     }
 
+    private static let trailingImageSize: CGFloat = 12
+
     override var intrinsicContentSize: NSSize {
         if let label, !label.isEmpty {
             let labelWidth = textLabel.intrinsicContentSize.width
-            return NSSize(width: Constants.iconSize + labelWidth + 18, height: Constants.buttonSize)
+            var width = Constants.iconSize + labelWidth + 20
+            if trailingImage != nil {
+                width += Self.trailingImageSize + 4
+            }
+            return NSSize(width: width, height: Constants.buttonSize)
         }
         return NSSize(width: Constants.buttonSize, height: Constants.buttonSize)
     }
@@ -174,11 +200,15 @@ final class AIChatOmnibarToolButton: NSView {
         // Setup icon image view
         addSubview(iconImageView)
         addSubview(textLabel)
+        addSubview(trailingImageView)
 
         iconCenterXConstraint = iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor)
         iconCenterXConstraint?.isActive = true
-        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6)
+        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8)
         iconLeadingConstraint?.isActive = false
+
+        trailingImageTrailingConstraint = trailingImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
+        trailingImageTrailingConstraint?.isActive = false
 
         NSLayoutConstraint.activate([
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -187,6 +217,11 @@ final class AIChatOmnibarToolButton: NSView {
 
             textLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 4),
             textLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            trailingImageView.leadingAnchor.constraint(equalTo: textLabel.trailingAnchor, constant: 4),
+            trailingImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            trailingImageView.widthAnchor.constraint(equalToConstant: Self.trailingImageSize),
+            trailingImageView.heightAnchor.constraint(equalToConstant: Self.trailingImageSize),
         ])
 
         updateAppearance()
@@ -222,6 +257,7 @@ final class AIChatOmnibarToolButton: NSView {
                 backgroundLayer.opacity = 0
                 iconImageView.contentTintColor = NSColor.secondaryLabelColor
                 textLabel.textColor = NSColor.secondaryLabelColor
+                trailingImageView.contentTintColor = NSColor.secondaryLabelColor
                 CATransaction.commit()
                 return
             }
@@ -256,6 +292,7 @@ final class AIChatOmnibarToolButton: NSView {
             }
             iconImageView.contentTintColor = effectiveTint
             textLabel.textColor = effectiveTint ?? .labelColor
+            trailingImageView.contentTintColor = effectiveTint
         }
 
         CATransaction.commit()

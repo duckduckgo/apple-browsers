@@ -2936,6 +2936,18 @@
         }
       }
     },
+    "aichat.image-gen-tool.subtitle" : {
+      "comment" : "Subtitle for Create Image tool in the tools dropdown menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn text into images"
+          }
+        }
+      }
+    },
     "aichat.image-upload-button.tooltip" : {
       "comment" : "Tooltip for the image upload button in AI chat omnibar",
       "extractionState" : "extracted_with_value",
@@ -4276,6 +4288,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Поиск"
+          }
+        }
+      }
+    },
+    "aichat.tools-button.label" : {
+      "comment" : "Label for the tools dropdown button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tools"
           }
         }
       }

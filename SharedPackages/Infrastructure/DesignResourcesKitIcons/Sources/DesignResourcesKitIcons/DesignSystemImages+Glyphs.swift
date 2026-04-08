@@ -40,6 +40,7 @@ public extension DesignSystemImages {
             public static var car: DesignSystemImage { .init(resource: .car12) }
             public static var check: DesignSystemImage { .init(resource: .check12) }
             public static var chip: DesignSystemImage { .init(resource: .chip12) }
+            public static var closeSmall: DesignSystemImage { .init(resource: .closeSmall12) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie12) }
             public static var currency: DesignSystemImage { .init(resource: .currency12) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile12) }

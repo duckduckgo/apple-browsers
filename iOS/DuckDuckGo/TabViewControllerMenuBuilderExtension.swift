@@ -42,9 +42,6 @@ extension TabViewController {
         return settings.isAIChatBrowsingMenuUserSettingsEnabled
     }
 
-    private var dataClearingCapability: DataClearingCapable {
-        DataClearingCapability.create(using: featureFlagger)
-    }
 
     func buildBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
@@ -427,7 +424,7 @@ extension TabViewController {
     }
     
     private func buildClearDataEntry(clearTabsAndData: @escaping () -> Void, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        let title = dataClearingCapability.isEnhancedDataClearingEnabled ? UserText.settingsDeleteTabsAndData : UserText.actionForgetAll
+        let title = UserText.settingsDeleteTabsAndData
         return BrowsingMenuEntry.regular(name: title,
                                          accessibilityLabel: title,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
@@ -960,5 +957,19 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
         return buildKeepSignInEntry(forLink: link, useSmallIcon: false)
+    }
+
+    func makeFireModePromotionEntry() -> BrowsingMenuEntry? {
+        guard !tabModel.fireTab,
+              fireModePromotionCoordinator?.isMenuPromotionEligible == true else { return nil }
+        fireModePromotionCoordinator?.markMenuPromotionShown()
+        return .regular(name: UserText.fireModePromotionTitle,
+                        image: DesignSystemImages.Glyphs.Size24.fireTabs,
+                        detailBadge: UserText.fireModeMenuPromotionBadge) { [weak self] in
+            self?.fireModePromotionCoordinator?.markMenuPromotionEngaged()
+            guard let self else { return }
+            // TODO: fire menu promotion engaged pixel
+            self.delegate?.tabDidRequestFireMode(tab: self)
+        }
     }
 }

@@ -201,6 +201,8 @@ private extension AIChatContextualSheetCoordinator {
             sessionState.restoreChat(with: restoreURL)
         }
 
+        let suggestionsReader = makeSuggestionsReaderIfEnabled()
+
         let sheetVC = AIChatContextualSheetViewController(
             sessionState: sessionState,
             aiChatSettings: aiChatSettings,
@@ -210,12 +212,20 @@ private extension AIChatContextualSheetCoordinator {
                 return self.makeWebViewController()
             },
             pixelHandler: pixelHandler,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            suggestionsReader: suggestionsReader
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC
-        
+
         presentingVC.present(sheetVC, animated: true)
+    }
+
+    func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
+        guard featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) else { return nil }
+        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+        let settings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+        return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: settings)
     }
 
     func startObservingContextUpdates() {
@@ -334,7 +344,6 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         stopObservingContextUpdates()
         sessionState.cancelManualAttach()
     }
-
 
     func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController) {
         viewController.dismiss(animated: true) { [weak self] in

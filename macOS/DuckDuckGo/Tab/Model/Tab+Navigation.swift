@@ -69,6 +69,9 @@ extension Tab: NavigationResponder {
 
             .struct(redirectNavigationResponder),
 
+            // set autoplay policy based on user preferences
+            .weak(nullable: self.autoplayPolicy),
+
             // ensure Content Blocking Rules are applied before navigation
             .weak(nullable: self.contentBlockingAndSurrogates),
             // update click-to-load state

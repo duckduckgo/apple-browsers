@@ -131,6 +131,7 @@ class SuggestionTrayViewController: UIViewController {
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
+        let fireModePromotionEligibility: FireModePromotionCoordinating?
         let appSettings: AppSettings
         let subscriptionManager: any SubscriptionManager
         let internalUserCommands: URLBasedDebugCommands
@@ -377,6 +378,7 @@ class SuggestionTrayViewController: UIViewController {
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
+            fireModePromotionEligibility: dependencies.fireModePromotionEligibility,
             appSettings: dependencies.appSettings,
             faviconsCache: dependencies.faviconsCache,
             subscriptionManager: dependencies.subscriptionManager,

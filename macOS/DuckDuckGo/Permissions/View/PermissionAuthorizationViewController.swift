@@ -39,6 +39,8 @@ extension PermissionType {
             else { return scheme }
 
             return app
+        case .autoplayPolicy:
+            return UserText.permissionAutoplay
         }
     }
 }
@@ -161,6 +163,8 @@ final class PermissionAuthorizationViewController: NSViewController {
                                                   query.permissions.localizedDescription)
         case .geolocation:
             descriptionLabel.stringValue = String(format: UserText.locationPermissionAuthorizationFormat, query.domain)
+        case .autoplayPolicy:
+            break // Autoplay policy does not use authorization flow
         }
         alwaysAllowCheckbox.title = UserText.permissionAlwaysAllowOnDomainCheckbox
         domainNameLabel.stringValue = query.domain.isEmpty ? "" : "“" + query.domain + "”"

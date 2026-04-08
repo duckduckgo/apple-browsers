@@ -80,7 +80,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return geolocationAuthorizationState
         case .notification:
             return await notificationService.authorizationStatus.asSystemPermissionState
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             return .authorized
         }
     }
@@ -92,7 +92,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return geolocationAuthorizationState
         case .notification:
             return notificationService.cachedAuthorizationStatus.asSystemPermissionState
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             return .authorized
         }
     }
@@ -104,7 +104,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return isGeolocationAuthorizationRequired
         case .notification:
             return isNotificationAuthorizationRequired
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             return false // These don't require system permission through our two-step flow
         }
     }
@@ -130,7 +130,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
                 }
             }
             return nil
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             // These don't require system permission through our two-step flow
             completion(.authorized)
             return nil

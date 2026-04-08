@@ -87,6 +87,8 @@ struct WebExtensionsDebugView: View {
 
             darkReaderSection
 
+            scriptletInfoSection
+
             if !installedExtensions.isEmpty {
                 Section {
                     Button(role: .destructive) {
@@ -110,6 +112,43 @@ struct WebExtensionsDebugView: View {
         }
         .refreshable {
             refreshExtensions()
+        }
+    }
+
+    @ViewBuilder
+    private var scriptletInfoSection: some View {
+        let debugInfo = webExtensionManager.scriptletDebugInfo()
+        if !debugInfo.isEmpty {
+            Section {
+                ForEach(debugInfo) { info in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(info.extensionType.rawValue)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        HStack {
+                            Text(verbatim: "Cached:")
+                            Text(info.cachedVersion ?? "none")
+                                .foregroundColor(.secondary)
+                        }
+                        .font(.caption2)
+                        HStack {
+                            Text(verbatim: "Installed:")
+                            Text(info.installedVersion ?? "none")
+                                .foregroundColor(.secondary)
+                        }
+                        .font(.caption2)
+                        if !info.scriptletPaths.isEmpty {
+                            ForEach(info.scriptletPaths, id: \.self) { path in
+                                Text(path)
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text(verbatim: "Scriptlets")
+            }
         }
     }
 

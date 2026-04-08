@@ -21,6 +21,32 @@ import Foundation
 import UIKit
 import Combine
 
+/// Used to track the status of whether or not we've shown the Sync Another Device prompt
+/// to the user, whether it's been dismissed, and whether we need to show it again.
+///
+public enum SyncAnotherDevicePromptState: Int {
+    case notYetShown = 0
+    case remindedOnce = 1
+    case dismissed = 2
+
+    public static let storageKey = "sync.simplified.sync-another-device-prompt.state"
+
+    public var shouldShow: Bool { self != .dismissed }
+
+    public var dismissButtonTitle: String {
+        switch self {
+        case .notYetShown:
+            return UserText.simplifiedSyncAnotherDeviceRemind
+        case .remindedOnce, .dismissed:
+            return UserText.simplifiedSyncAnotherDeviceNoThanks
+        }
+    }
+
+    public var next: SyncAnotherDevicePromptState {
+        SyncAnotherDevicePromptState(rawValue: rawValue + 1) ?? .dismissed
+    }
+}
+
 public protocol SyncManagementViewModelDelegate: AnyObject {
 
     func authenticateUser() async throws
@@ -47,6 +73,12 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
+
+    // Simplified sync setup experiment
+    func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
+    func simplifiedConfirmAndDisableSync() async -> Bool
+    func simplifiedSyncAnotherDevicePromptWasDismissed()
+    var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState { get }
 
     var syncBookmarksPausedTitle: String? { get }
     var syncCredentialsPausedTitle: String? { get }
@@ -116,6 +148,7 @@ public class SyncSettingsViewModel: ObservableObject {
     public enum SyncSetupEntryPoint: Equatable {
         case backup
         case pairing
+        case simplifiedToggle
     }
 
     public enum PreservedAccountContinuation: Equatable {
@@ -143,7 +176,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var invalidCredentialsTitles: [String] = []
     @Published public var invalidCreditCardsTitles: [String] = []
 
-    @Published var isBusy = false
+    @Published public var isBusy = false
     @Published var recoveryCode = ""
 
     @Published public var isDataSyncingAvailable: Bool = true
@@ -154,6 +187,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAppVersionNotSupported: Bool = false
     @Published public var isSyncWithSetUpSheetVisible: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
+    @Published public var isSyncWithAnotherDevicePromptVisible: Bool = false
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
@@ -325,6 +359,8 @@ public class SyncSettingsViewModel: ObservableObject {
                 isSyncWithSetUpSheetVisible = true
             case .pairing:
                 delegate?.showSyncWithAnotherDevice()
+            case .simplifiedToggle:
+                beginSimplifiedSyncSetup()
             }
         case .recover:
             isRecoverSyncedDataSheetVisible = true
@@ -352,6 +388,53 @@ public class SyncSettingsViewModel: ObservableObject {
     public func startSyncPressed() {
         isBusy = true
         delegate?.createAccountAndStartSyncing(optionsViewModel: self)
+    }
+
+    public func enableSyncToggleTapped() {
+        guard !isBusy else { return }
+        guard isAccountCreationAvailable else { return }
+        Task { @MainActor in
+            await beginFlow(for: .setup(.simplifiedToggle))
+        }
+    }
+
+    @MainActor
+    public func beginSimplifiedSyncSetup() {
+        guard let delegate else { return }
+        isBusy = true
+        delegate.simplifiedCreateAccountAndStartSyncing(optionsViewModel: self)
+    }
+
+    public func disableSyncToggleTapped() {
+        guard !isBusy else { return }
+        isBusy = true
+        Task { @MainActor in
+            defer { isBusy = false }
+            guard await commonAuthenticate() else { return }
+            if await delegate?.simplifiedConfirmAndDisableSync() == true {
+                isSyncEnabled = false
+            }
+        }
+    }
+
+    public var simplifiedSyncAnotherDevicePromptDismissButtonTitle: String {
+        delegate?.simplifiedSyncAnotherDevicePromptState.dismissButtonTitle ?? UserText.simplifiedSyncAnotherDeviceNoThanks
+    }
+
+    public func checkAndShowSyncWithAnotherDevicePrompt() {
+        guard !isBusy else { return }
+        guard isSyncEnabled else { return }
+        guard devices.count == 1 else { return }
+        guard delegate?.simplifiedSyncAnotherDevicePromptState.shouldShow == true else { return }
+        isSyncWithAnotherDevicePromptVisible = true
+    }
+
+    public func dismissSyncWithAnotherDevicePrompt() {
+        isSyncWithAnotherDevicePromptVisible = false
+    }
+
+    public func syncWithAnotherDevicePromptDidDismiss() {
+        delegate?.simplifiedSyncAnotherDevicePromptWasDismissed()
     }
 
     public func copyCode() {

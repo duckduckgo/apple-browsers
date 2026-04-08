@@ -87,6 +87,11 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { imageButton.isHidden = newValue }
     }
 
+    var isImageButtonEnabled: Bool {
+        get { imageButton.isEnabled }
+        set { imageButton.isEnabled = newValue }
+    }
+
     var isCustomizeResponsesButtonHidden: Bool {
         get { customizeResponsesButton.isHidden }
         set { customizeResponsesButton.isHidden = newValue }
@@ -114,6 +119,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         )
         config.imagePlacement = .trailing
         config.imagePadding = Constants.chipSpacing
+        config.titleLineBreakMode = .byTruncatingTail
         config.contentInsets = NSDirectionalEdgeInsets(
             top: 0,
             leading: Constants.chipHorizontalPadding,
@@ -132,6 +138,9 @@ final class UnifiedToggleInputToolbarView: UIView {
 
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        button.titleLabel?.lineBreakMode = .byTruncatingTail
         button.heightAnchor.constraint(equalToConstant: Constants.chipHeight).isActive = true
 
         return button
@@ -145,6 +154,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.layer.cornerRadius = Constants.toolButtonSize / 2
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = UserText.aiChatToolbarSubmitButtonAccessibilityLabel
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         NSLayoutConstraint.activate([
@@ -162,6 +173,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.layer.cornerRadius = 14
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = "Stop generating"
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
         button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
@@ -196,12 +209,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
         rightGroup.translatesAutoresizingMaskIntoConstraints = false
+        rightGroup.setContentHuggingPriority(.required, for: .horizontal)
+        rightGroup.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
         outerStack.axis = .horizontal
@@ -212,7 +228,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         NSLayoutConstraint.activate([
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            outerStack.centerYAnchor.constraint(equalTo: centerYAnchor)
+            outerStack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            modelChipButton.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
         ])
 
         updateSubmitButtonState()

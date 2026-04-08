@@ -144,6 +144,8 @@ enum Preferences {
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection),
                                         windowControllersManager: model.searchPreferences.windowControllersManager)
+                case .youTubeAdBlocking:
+                    YouTubeAdBlockingView(model: model.youTubeAdBlockingPreferences)
                 case .general:
                     GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: model.downloadsPreferences,
@@ -151,6 +153,7 @@ enum Preferences {
                                 tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
+                                autoplayModel: NSApp.delegateTyped.autoplayPreferences,
                                 dockModel: model.dockPreferences)
                 case .sync:
                     SyncView()

@@ -37,16 +37,11 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion)
     func unifiedInputEditingStateDidSelectChatHistory(url: URL)
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
+    func unifiedInputEditingStateDidRequestFireMode()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
 }
 
 final class UnifiedInputContentContainerViewController: UIViewController {
-
-    enum HeaderDisplayMode: Equatable {
-        case hidden
-        case active
-        case inactive
-    }
 
     // MARK: - Properties
 
@@ -59,14 +54,29 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var contentContainerView = UIView()
-    private lazy var inlineHeaderView: UnifiedInputTopHeaderView = {
-        let view = UnifiedInputTopHeaderView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.isHidden = true
-        view.onDismissTapped = { [weak self] in
-            self?.onDismissRequested?()
+    private lazy var floatingDismissButton: UIButton = {
+        let button: UIButton
+        if #available(iOS 26, *) {
+            var config = UIButton.Configuration.glass()
+            config.image = UIImage(systemName: "xmark")
+            config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+            button = UIButton(configuration: config)
+        } else {
+            button = UIButton(type: .system)
+            let image = UIImage(systemName: "xmark")?
+                .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
+            button.setImage(image, for: .normal)
+            button.tintColor = UIColor(designSystemColor: .textPrimary)
+            button.backgroundColor = UIColor(designSystemColor: .surface)
+            button.layer.cornerRadius = 22
+            button.layer.shadowColor = UIColor.black.cgColor
+            button.layer.shadowOpacity = 0.1
+            button.layer.shadowRadius = 4
+            button.layer.shadowOffset = CGSize(width: 0, height: 2)
         }
-        return view
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(handleFloatingDismissTap), for: .primaryActionTriggered)
+        return button
     }()
 
     private var isLandscapeOrientation: Bool = false {
@@ -82,11 +92,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var isUsingTopBarPosition: Bool
     private var isAdjustedForTopBar: Bool
     private(set) var currentSectionTitle: String?
-    private var headerDisplayMode: HeaderDisplayMode = .hidden
 
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
-    private weak var contentContainerViewTopConstraint: NSLayoutConstraint?
 
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
@@ -98,6 +106,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var swipeContainerManager: SwipeContainerManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private var aiChatHistoryManager: AIChatHistoryManager?
+    private var isShowingURLFallback = false
+    private var isContentActive = false
+    private var needsVisibleRefresh = true
+    private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
+
+    private var chatHasSuggestions: Bool {
+        aiChatHistoryManager?.hasSuggestions ?? false
+    }
+
     private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
 
@@ -176,25 +193,55 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
+        applyURLFallbackForModeChange(mode)
         if !animated {
             swipeContainerManager?.animateProgrammaticModeChanges = false
         }
         if switchBarHandler.currentToggleState != mode {
             switchBarHandler.setToggleState(mode)
         }
+        updateSectionTitle()
+        view.layoutIfNeeded()
+
         swipeContainerManager?.syncVisibleMode(animated: animated)
         swipeContainerManager?.animateProgrammaticModeChanges = true
-        updateSectionTitle()
     }
 
-    func setHeaderDisplayMode(_ mode: HeaderDisplayMode) {
-        guard headerDisplayMode != mode else { return }
-        headerDisplayMode = mode
-        renderHeader()
+    func setDismissButtonVisible(_ visible: Bool) {
+        floatingDismissButton.isHidden = !visible
+    }
+
+    func setActive(_ active: Bool) {
+        guard active != isContentActive else { return }
+        isContentActive = active
+        markNeedsVisibleRefresh()
+    }
+
+    func refreshVisibleContentIfNeeded() {
+        guard isContentActive else { return }
+        guard needsVisibleRefresh else { return }
+
+        needsVisibleRefresh = false
+        let currentText = switchBarHandler.currentText
+        let mode = switchBarHandler.currentToggleState
+        suggestionTrayManager?.handleQueryUpdate(currentText, animated: false)
+        applyURLFallbackForModeChange(mode)
+        updateSectionTitle()
+        updateDaxVisibility()
+        applyRequestedContentInset()
+        swipeContainerManager?.syncVisibleMode(animated: false)
+        view.layoutIfNeeded()
     }
 
     func setText(_ text: String) {
         switchBarHandler.updateCurrentText(text)
+        if !isContentActive {
+            markNeedsVisibleRefresh()
+        }
     }
 
     override func viewWillLayoutSubviews() {
@@ -236,6 +283,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Metrics.horizontalMarginForCompactLayout : 0
         self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
         self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
         self.updateDaxVisibility()
         self.updateLayoutForCurrentOrientation()
     }
@@ -243,7 +294,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func setupView() {
         view.backgroundColor = Metrics.backgroundColor
         setUpContentContainer()
-        setUpInlineHeaderView()
+        setUpFloatingDismissButton()
         setUpSwipeDownGesture()
     }
 
@@ -255,21 +306,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         contentContainerViewLeadingConstraint?.isActive = true
         contentContainerViewTrailingConstraint = contentContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
         contentContainerViewTrailingConstraint?.isActive = true
-        contentContainerViewTopConstraint = contentContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-        contentContainerViewTopConstraint?.isActive = true
+        contentContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
 
         NSLayoutConstraint.activate([
             contentContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
     }
 
-    private func setUpInlineHeaderView() {
-        view.addSubview(inlineHeaderView)
+    private func setUpFloatingDismissButton() {
+        view.addSubview(floatingDismissButton)
         NSLayoutConstraint.activate([
-            inlineHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            inlineHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            inlineHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            inlineHeaderView.heightAnchor.constraint(equalToConstant: Metrics.inlineHeaderHeight)
+            floatingDismissButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            floatingDismissButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            floatingDismissButton.widthAnchor.constraint(equalToConstant: 44),
+            floatingDismissButton.heightAnchor.constraint(equalToConstant: 44),
         ])
     }
 
@@ -289,8 +339,24 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func updateSectionTitle() {
         let text = computedSectionTitleText()
         currentSectionTitle = text.isEmpty ? nil : text
-        swipeContainerManager?.containerViewController.additionalSafeAreaInsets.top = Metrics.contentTopInset
-        renderHeader()
+
+        let mode = switchBarHandler.currentToggleState
+        switch mode {
+        case .search:
+            let hasFavorites = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
+            if hasFavorites {
+                suggestionTrayManager?.setFavoritesSectionTitle(currentSectionTitle)
+                suggestionTrayManager?.setSuggestionsSectionTitle(nil)
+            } else {
+                suggestionTrayManager?.setSuggestionsSectionTitle(currentSectionTitle)
+                suggestionTrayManager?.setFavoritesSectionTitle(nil)
+            }
+            aiChatHistoryManager?.setSectionTitle(nil)
+        case .aiChat:
+            suggestionTrayManager?.setSuggestionsSectionTitle(nil)
+            suggestionTrayManager?.setFavoritesSectionTitle(nil)
+            aiChatHistoryManager?.setSectionTitle(currentSectionTitle)
+        }
     }
 
     private func computedSectionTitleText() -> String {
@@ -304,6 +370,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             if hasAutocomplete { return UserText.sectionTitleSuggestions }
             return ""
         case .aiChat:
+            if isShowingURLFallback { return UserText.sectionTitleSuggestions }
             if hasChatHistory {
                 return switchBarHandler.currentText.isEmpty ? UserText.aiChatRecentChatsTitle : UserText.aiChatSuggestedChatsTitle
             }
@@ -344,21 +411,21 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func installChatHistoryList() {
         guard let swipeContainerManager else { return }
 
-        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
-        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        let suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-
-        let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                           aiChatSettings: aiChatSettings,
-                                           viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
+        let manager = makeAIChatHistoryManager()
         manager.delegate = self
+        manager.titleLayoutConfiguration = .unifiedInput
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
         aiChatHistoryManager = manager
         manager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] hasSuggestions in
                 guard let self else { return }
+                guard self.isContentActive else {
+                    self.markNeedsVisibleRefresh()
+                    return
+                }
+                self.updateURLFallbackSuggestions(hasSuggestions: hasSuggestions, mode: self.switchBarHandler.currentToggleState)
                 self.updateSectionTitle()
                 self.scheduleAnimation {
                     self.updateDaxVisibility()
@@ -366,6 +433,24 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// Creates an `AIChatHistoryManager` configured for the current tab.
+    /// Fire tabs use a no-op reader that always returns empty results,
+    /// preventing chat history from being fetched or displayed.
+    private func makeAIChatHistoryManager() -> AIChatHistoryManager {
+        let suggestionsReader: AIChatSuggestionsReading
+        if switchBarHandler.isFireTab {
+            suggestionsReader = NilSuggestionsReader()
+        } else {
+            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
+
+        return AIChatHistoryManager(suggestionsReader: suggestionsReader,
+                                    aiChatSettings: aiChatSettings,
+                                    viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
     }
 
     private func installDaxLogoView() {
@@ -382,13 +467,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .sink { [weak self] currentText in
                 guard let self else { return }
 
+                guard self.isContentActive else {
+                    self.markNeedsVisibleRefresh()
+                    return
+                }
+                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
+                self.updateSectionTitle()
+
                 scheduleAnimation {
                     self.updateDaxVisibility()
                     self.view.layoutIfNeeded()
                 }
 
-                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
-                self.updateSectionTitle()
+                self.updateURLFallbackForCurrentText()
             }
             .store(in: &cancellables)
 
@@ -400,50 +491,22 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateSectionTitle()
     }
 
-    private func renderHeader() {
-        if isUsingTopBarPosition {
-            if let currentSectionTitle, !currentSectionTitle.isEmpty {
-                inlineHeaderView.isHidden = false
-                inlineHeaderView.setTitleLayoutPosition(.topBarSection)
-                inlineHeaderView.configure(title: currentSectionTitle)
-                inlineHeaderView.setDismissButtonHidden(true)
-                contentContainerViewTopConstraint?.constant = Metrics.topBarSectionHeaderHeight
-            } else {
-                inlineHeaderView.isHidden = true
-                contentContainerViewTopConstraint?.constant = 0
-            }
-            return
-        }
-
-        switch headerDisplayMode {
-        case .hidden:
-            inlineHeaderView.isHidden = true
-            inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
-            inlineHeaderView.setDismissButtonHidden(false)
-            contentContainerViewTopConstraint?.constant = 0
-        case .active:
-            inlineHeaderView.isHidden = false
-            inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
-            inlineHeaderView.configure(title: currentSectionTitle)
-            inlineHeaderView.setDismissButtonHidden(false)
-            contentContainerViewTopConstraint?.constant = Metrics.inlineHeaderHeight
-        case .inactive:
-            inlineHeaderView.isHidden = false
-            inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
-            inlineHeaderView.configure(title: currentSectionTitle)
-            inlineHeaderView.setDismissButtonHidden(true)
-            contentContainerViewTopConstraint?.constant = Metrics.inlineHeaderHeight
-        }
-    }
-
     private func observeRemoteMessagesChanges() {
         notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
+                guard self.isContentActive else {
+                    self.markNeedsVisibleRefresh()
+                    return
+                }
                 self.suggestionTrayManager?.showInitialSuggestions()
                 self.updateDaxVisibility()
             }
+    }
+
+    private func markNeedsVisibleRefresh() {
+        needsVisibleRefresh = true
     }
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
@@ -483,6 +546,30 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         onSwipeDownRequested?()
     }
 
+    func setContentInset(top: CGFloat, bottom: CGFloat) {
+        requestedContentInset = (top, bottom)
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
+        applyRequestedContentInset()
+    }
+
+    private func applyRequestedContentInset() {
+        var insets = UIEdgeInsets(
+            top: requestedContentInset.top,
+            left: 0,
+            bottom: requestedContentInset.bottom,
+            right: 0
+        )
+        insets.top += Metrics.contentTopInset
+        swipeContainerManager?.containerViewController.additionalSafeAreaInsets = insets
+    }
+
+    @objc private func handleFloatingDismissTap() {
+        onDismissRequested?()
+    }
+
     private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
         voiceSearchController.delegate = self
@@ -497,28 +584,81 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func updateDaxVisibility() {
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
+        let isChatHistoryPending = aiChatHistoryManager != nil
+            && aiChatHistoryManager?.hasCompletedInitialFetch != true
+            && switchBarHandler.currentToggleState == .aiChat
+        let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
 
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
         } else {
-            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory
+            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
         updateSectionTitle()
     }
 
+    // MARK: - URL Fallback Suggestions
+
+    private func applyURLFallbackForModeChange(_ mode: TextEntryMode) {
+        restoreFullSuggestions()
+        if mode == .aiChat {
+            updateURLFallbackSuggestions(hasSuggestions: chatHasSuggestions, mode: mode)
+        }
+    }
+
+    private func restoreFullSuggestions() {
+        guard isShowingURLFallback else { return }
+        suggestionTrayManager?.resetSuggestionFilter()
+        swipeContainerManager?.setSearchPageVisible(false, animated: false)
+        isShowingURLFallback = false
+    }
+
+    private func updateURLFallbackForCurrentText() {
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
+        let mode = switchBarHandler.currentToggleState
+        guard mode == .aiChat else { return }
+        updateURLFallbackSuggestions(hasSuggestions: chatHasSuggestions, mode: mode)
+    }
+
+    private func updateURLFallbackSuggestions(hasSuggestions: Bool, mode: TextEntryMode) {
+        guard mode == .aiChat else {
+            restoreFullSuggestions()
+            return
+        }
+        let query = switchBarHandler.currentText
+        let shouldShow = !hasSuggestions && !query.isBlank
+        if shouldShow {
+            suggestionTrayManager?.showURLOnlySuggestions(for: query, animated: false)
+            if !isShowingURLFallback {
+                swipeContainerManager?.setSearchPageVisible(true, animated: false)
+            }
+            isShowingURLFallback = true
+        } else if isShowingURLFallback {
+            suggestionTrayManager?.hideURLOnlySuggestions(animated: true)
+            swipeContainerManager?.setSearchPageVisible(false, animated: true)
+            swipeContainerManager?.restoreChatPageVisibility()
+            isShowingURLFallback = false
+        }
+    }
+
     private enum Metrics {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
-        static let inlineHeaderHeight: CGFloat = 60
-        static let topBarSectionHeaderHeight: CGFloat = 68
         static let contentTopInset: CGFloat = 10
     }
 }
@@ -528,6 +668,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 extension UnifiedInputContentContainerViewController: SwipeContainerViewControllerDelegate {
 
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didSwipeToMode mode: TextEntryMode) {
+        applyURLFallbackForModeChange(mode)
         switchBarHandler.setToggleState(mode)
         delegate?.unifiedInputEditingStateDidChangeMode(mode)
         scheduleAnimation {
@@ -545,6 +686,7 @@ extension UnifiedInputContentContainerViewController: SwipeContainerViewControll
 extension UnifiedInputContentContainerViewController: FadeOutContainerViewControllerDelegate {
 
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
+        applyURLFallbackForModeChange(mode)
         switchBarHandler.setToggleState(mode)
         delegate?.unifiedInputEditingStateDidChangeMode(mode)
     }
@@ -555,6 +697,10 @@ extension UnifiedInputContentContainerViewController: FadeOutContainerViewContro
 
     func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
         return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
+    }
+
+    func fadeOutContainerViewControllerShouldKeepSearchVisible(_ controller: FadeOutContainerViewController) -> Bool {
+        return isShowingURLFallback
     }
 }
 
@@ -580,6 +726,18 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
         delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
+    }
+
+    func suggestionTrayManagerDidRequestFireMode(_ manager: SuggestionTrayManager) {
+        delegate?.unifiedInputEditingStateDidRequestFireMode()
+    }
+
+    func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
+        updateDaxVisibility()
     }
 }
 

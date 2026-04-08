@@ -35,6 +35,7 @@ extension Preferences {
         @ObservedObject var tabsModel: TabsPreferences
         @ObservedObject var dataClearingModel: DataClearingPreferences
         @ObservedObject var maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences
+        @ObservedObject var autoplayModel: AutoplayPreferences
         @ObservedObject var dockModel: DockPreferencesModel
         @State private var showingCustomHomePageSheet = false
         let featureFlagger = NSApp.delegateTyped.featureFlagger
@@ -319,6 +320,21 @@ extension Preferences {
                                 .accessibilityIdentifier("PreferencesGeneralView.warnBeforeQuitting")
                             ToggleMenuItem(UserText.settingsConfirmCloseCheckbox, isOn: $tabsModel.warnBeforeClosingPinnedTabs)
                                 .accessibilityIdentifier("PreferencesGeneralView.warnBeforeClosingPinnedTabs")
+                        }
+                    }
+                }
+
+                // SECTION: Permissions
+                if featureFlagger.isFeatureOn(.autoplayPolicy) {
+                    PreferencePaneSection(UserText.permissionsSection) {
+                        PreferencePaneSubSection {
+                            HStack {
+                                Picker(UserText.autoplayLabel, selection: $autoplayModel.autoplayBlockingMode) {
+                                    ForEach(AutoplayBlockingMode.allCases, id: \.self) { mode in
+                                        Text(mode.description).tag(mode)
+                                    }
+                                }
+                            }
                         }
                     }
                 }

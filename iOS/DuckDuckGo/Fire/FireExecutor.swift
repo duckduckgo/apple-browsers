@@ -98,7 +98,6 @@ class FireExecutor: FireExecuting {
     private let favicons: FaviconManaging
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
-    private let dataClearingCapability: DataClearingCapable
     private let fireModeCapability: FireModeCapable
     private let appSettings: AppSettings
     private let aiChatSyncCleaner: AIChatSyncCleaning
@@ -127,7 +126,6 @@ class FireExecutor: FireExecuting {
          autoconsentManagementProvider: AutoconsentManagementProviding,
          historyManager: HistoryManaging,
          featureFlagger: FeatureFlagger,
-         dataClearingCapability: DataClearingCapable? = nil,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          dataStore: (any DDGWebsiteDataStore)? = nil,
          historyCleanerProvider: HistoryCleanerProvider? = nil,
@@ -143,8 +141,7 @@ class FireExecutor: FireExecuting {
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.idManager = idManager
-        self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
-        self.fireModeCapability = FireModeCapability.create(using: featureFlagger)
+        self.fireModeCapability = FireModeCapability.create()
         self.historyCleanerProvider = historyCleanerProvider ??
         { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
                                              privacyConfig: privacyConfigurationManager,
@@ -426,22 +423,17 @@ class FireExecutor: FireExecuting {
     
     // MARK: - Clear AI History
     
-    /// For auto-clear with enhancedDataClearingSettings FF ON:
-    /// - User configures what to clear via the enhanced settings UI
-    /// For manual fire OR auto-clear with FF OFF (legacy):
-    /// - AI chats clear only if autoClearAIChatHistory setting is enabled
-    /// For single chat burning:
-    /// - The user setting autoClearAIChatHistory should be ignored
-    /// - Returns: A boolean indicating if we should run the ai chats burn flow
+    /// For auto-clear: User configures what to clear via the settings UI
+    /// For manual fire: AI chats clear only if autoClearAIChatHistory setting is enabled
+    /// For single chat burning: The user setting autoClearAIChatHistory should be ignored
     private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
-        let chosenThroughNewAutoClearUI = dataClearingCapability.isEnhancedDataClearingEnabled
-            && request.trigger != .manualFire
+        let chosenThroughAutoClearUI = request.trigger != .manualFire
             && request.trigger != .fireModeAutoClear
 
         var singleChatBurn: Bool = false
         if case .tab = request.scope { singleChatBurn = true }
 
-        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI
+        let shouldAllowAIChatsBurn = chosenThroughAutoClearUI
         || appSettings.autoClearAIChatHistory
         || singleChatBurn
 
@@ -469,6 +461,7 @@ class FireExecutor: FireExecuting {
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
 
+    @MainActor
     private func burnAllAIHistory(trigger: FireRequest.Trigger, options: FireRequest.Options) async -> Result<Void, Error> {
         async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger)
         let shouldBurnFireModeChats = !options.contains(.data) // Invalidating the fire mode datastore makes deleting chats redundant.
@@ -479,6 +472,7 @@ class FireExecutor: FireExecuting {
         return .success(())
     }
 
+    @MainActor
     private func burnNormalModeAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
         let cleaner = historyCleanerProvider(nil)
         let result = await cleaner.cleanAIChatHistory()

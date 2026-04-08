@@ -45,7 +45,7 @@ public final class UpdateWideEventData: WideEventData {
         featureName: "sparkle-update",
         mobileMetaType: "ios-sparkle-update",
         desktopMetaType: "macos-sparkle-update",
-        version: "1.0.1"
+        version: "1.0.2"
     )
 
     // Required protocol properties
@@ -66,6 +66,7 @@ public final class UpdateWideEventData: WideEventData {
     public var osVersion: String
 
     // Optional contextual data
+    public var internalUser: Bool?
     public var cancellationReason: CancellationReason?
     public var diskSpaceRemainingBytes: UInt64?
     public var timeSinceLastUpdateBucket: TimeSinceUpdateBucket?
@@ -175,6 +176,7 @@ public final class UpdateWideEventData: WideEventData {
                 updateConfiguration: UpdateConfiguration,
                 lastKnownStep: UpdateStep? = nil,
                 osVersion: String = ProcessInfo.processInfo.operatingSystemVersionString,
+                internalUser: Bool? = nil,
                 cancellationReason: CancellationReason? = nil,
                 diskSpaceRemainingBytes: UInt64? = nil,
                 timeSinceLastUpdateBucket: TimeSinceUpdateBucket? = nil,
@@ -195,6 +197,7 @@ public final class UpdateWideEventData: WideEventData {
         self.updateConfiguration = updateConfiguration
         self.lastKnownStep = lastKnownStep
         self.osVersion = osVersion
+        self.internalUser = internalUser
         self.cancellationReason = cancellationReason
         self.diskSpaceRemainingBytes = diskSpaceRemainingBytes
         self.timeSinceLastUpdateBucket = timeSinceLastUpdateBucket
@@ -219,6 +222,7 @@ public final class UpdateWideEventData: WideEventData {
             ("feature.data.ext.update_configuration", updateConfiguration.rawValue),
             ("feature.data.ext.last_known_step", lastKnownStep?.rawValue),
             ("feature.data.ext.os_version", osVersion),
+            ("feature.data.ext.internal_user", (internalUser ?? appData.internalUser) == true ? true : nil),
             ("feature.data.ext.cancellation_reason", cancellationReason?.rawValue),
             ("feature.data.ext.disk_space_remaining_bytes", diskSpaceRemainingBytes),
             ("feature.data.ext.time_since_last_update", timeSinceLastUpdateBucket?.rawValue),

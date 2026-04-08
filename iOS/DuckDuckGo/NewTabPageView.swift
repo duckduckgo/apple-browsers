@@ -92,6 +92,15 @@ private extension NewTabPageView {
                         .padding(.top, Metrics.nonGridSectionTopPadding)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
 
+                    if let title = viewModel.sectionTitle, !title.isEmpty {
+                        Text(title)
+                            .daxTitle3()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, Metrics.sectionTitleTopPadding)
+                            .padding(.trailing, Metrics.sectionTitleTrailingPadding)
+                    }
+
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -151,7 +160,7 @@ private extension NewTabPageView {
     }
 
     private var shouldShowLogoInEmptyState: Bool {
-        guard messagesModel.homeMessageViewModels.isEmpty else { return false }
+        guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true
@@ -169,7 +178,27 @@ private extension NewTabPageView {
         }
     }
 
+    @ViewBuilder
     private var messagesSectionView: some View {
+        if messagesModel.isFirePromotionVisible {
+            FireModePromotionCardView(
+                onTryFireTabs: {
+                    Task { await messagesModel.firePromotionTryFireTabsTapped() }
+                },
+                onDismiss: {
+                    Task { await messagesModel.firePromotionDismissed() }
+                },
+                onClose: {
+                    Task { await messagesModel.firePromotionClosed() }
+                },
+                onDidAppear: {
+                    messagesModel.firePromotionDidAppear()
+                }
+            )
+            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+            .transition(.scale.combined(with: .opacity))
+        }
+
         ForEach(messagesModel.homeMessageViewModels, id: \.messageId) { messageModel in
             HomeMessageView(viewModel: messageModel)
                 .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
@@ -209,6 +238,8 @@ private struct Metrics {
     static let sectionSpacing = 32.0
     static let nonGridSectionTopPadding = -8.0
     static let updatedNonGridSectionHorizontalPadding = -8.0
+    static let sectionTitleTopPadding = -7.0
+    static let sectionTitleTrailingPadding = 60.0
 
     static let messageMaximumWidth: CGFloat = 380
     static let messageMaximumWidthPad: CGFloat = 455

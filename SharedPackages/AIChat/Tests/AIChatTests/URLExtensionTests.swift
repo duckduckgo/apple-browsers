@@ -263,6 +263,38 @@ final class URLExtensionTests: XCTestCase {
         }
     }
 
+    // MARK: - Voice Mode Tests
+
+    func testIsDuckAIVoiceModeWithVoiceURL() {
+        let url = URL(string: "https://duck.ai?mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithVoiceURLAndOtherParams() {
+        let url = URL(string: "https://duck.ai?q=hello&mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithDuckDuckGoDomain() {
+        let url = URL(string: "https://duckduckgo.com/?ia=chat&mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithNonVoiceURL() {
+        let url = URL(string: "https://duck.ai")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithDifferentModeValue() {
+        let url = URL(string: "https://duck.ai?mode=chat")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithNonDuckAIURL() {
+        let url = URL(string: "https://example.com?mode=voice")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
     // MARK: - Chat ID Tests
 
     func testDuckAIChatIDWithValidChatID() {

@@ -538,6 +538,11 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onSwitchToTab(tab)
     }
 
+    func onFireModeRequested() {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onFireModeRequested()
+    }
+
     func onToggleModeSwitched(to mode: TextEntryMode) {
         // Sync the editing state's toggle back to selectedTextEntryMode so that
         // commitToggleStateToCurrentTab reads the correct value on submission.

@@ -372,6 +372,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
+                .tint(Color.init(designSystemColor: .accent))
                 .onAppear {
                     tipsModel.handleSnoozeTipShown()
                 }
@@ -400,6 +401,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
+                .tint(Color.init(designSystemColor: .accent))
                 .onAppear {
                     tipsModel.handleWidgetTipShown()
                 }

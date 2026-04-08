@@ -58,7 +58,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Backgrounds
     private static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
-    private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
+    private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
     private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
 
     // Shadow
@@ -95,8 +95,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Fire Tabs
     private static let fireModeAccent = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+    private static let fireModeAccentDark = DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin40)
     private static let fireModeAccentTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Mandarin.mandarin60)
-    private static let fireModeBackground = DynamicColor(lightColor: x3D3D3D, darkColor: surfaceCanvas.darkColor)
+    private static let fireModeBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x080808)
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
@@ -120,6 +121,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Alert
     private static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
     private static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
+    private static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 
     // Destructive
     private static let destructivePrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed20)
@@ -202,6 +204,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accentGlowSecondary: return accentGlowSecondary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
+        case .shieldPrivacy: return shieldPrivacy
         case .border: return border
         case .textLink: return textLink
         case .textPlaceholder: return textPlaceholder
@@ -277,6 +280,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .toolbarButton:
             return DynamicColor(lightColor: x1F1F1F.opacity(0.918), darkColor: .tint(0.905))
         case .fireModeAccent: return fireModeAccent
+        case .fireModeAccentDark: return fireModeAccentDark
         case .fireModeAccentTertiary: return fireModeAccentTertiary
         case .fireModeBackground: return fireModeBackground
         }

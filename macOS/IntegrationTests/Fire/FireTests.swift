@@ -53,6 +53,9 @@ final class FireTests: XCTestCase {
             }
             cancellables = []
         }
+        // Allow WebKit IPC to settle after closing windows to avoid
+        // WebProcessProxy::mainPages() assertion failures (EXC_BREAKPOINT)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
     }
 
     // MARK: - Tests

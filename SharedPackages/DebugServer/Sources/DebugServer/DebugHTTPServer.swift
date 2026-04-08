@@ -74,8 +74,6 @@ public final class DebugHTTPServer: HTTPServerProtocol {
             connection.cancel()
         }
         activeConnections.removeAll()
-        routes.removeAll()
-        prefixRoutes.removeAll()
         state = .stopped
     }
 
@@ -156,11 +154,10 @@ public final class DebugHTTPServer: HTTPServerProtocol {
             var data = accumulated
             data.append(chunk)
 
-            if let remaining = self.remainingBodyBytes(in: data) {
-                if remaining > 0 {
-                    receiveData(on: connection, accumulated: data)
-                    return
-                }
+            let remaining = self.remainingBodyBytes(in: data)
+            if remaining == nil || remaining! > 0 {
+                receiveData(on: connection, accumulated: data)
+                return
             }
 
             let response = processRequest(data)

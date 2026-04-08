@@ -37,7 +37,10 @@ public final class DuckAiStorageDebugServer {
         return false
     }
 
+    private let port: UInt16
+
     public init(storageHandler: DuckAiNativeStorageHandling, port: UInt16 = 8080) {
+        self.port = port
         self.server = DebugHTTPServer(port: port)
         self.storageHandler = storageHandler
     }
@@ -45,7 +48,7 @@ public final class DuckAiStorageDebugServer {
     public func start() throws {
         registerRoutes()
         try server.start()
-        logger.info("DuckAi Storage Debug Server started on port 8080")
+        logger.info("DuckAi Storage Debug Server started on port \(self.port)")
     }
 
     public func stop() {
@@ -318,6 +321,10 @@ extension DuckAiStorageDebugServer {
                 return d.innerHTML;
             }
 
+            function escJS(str) {
+                return (str || '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, "\\\\'");
+            }
+
             function formatTime(iso) {
                 if (!iso) return '';
                 try { return new Date(iso).toLocaleString(); } catch { return iso; }
@@ -363,8 +370,8 @@ extension DuckAiStorageDebugServer {
                     <div class="chat-header">
                         <span class="chat-title">${esc(chat.title || chat.chatId)}</span>
                         <span style="display:flex;gap:6px;">
-                            <button class="toggle-btn" onclick="toggleChat('${chat.chatId}')">Collapse</button>
-                            <button class="danger small" onclick="deleteChat('${chat.chatId}')">Delete</button>
+                            <button class="toggle-btn" onclick="toggleChat('${escJS(chat.chatId)}')">Collapse</button>
+                            <button class="danger small" onclick="deleteChat('${escJS(chat.chatId)}')">Delete</button>
                         </span>
                     </div>
                     <div class="chat-meta">${pinned}${model}${lastEdit}${msgCount}<span style="color:#555">${esc(chat.chatId)}</span></div>
@@ -445,7 +452,7 @@ extension DuckAiStorageDebugServer {
                         <td>${esc(f.chatId)}</td>
                         <td>${f.dataSize} bytes</td>
                         <td><div class="chat-image-placeholder" data-file-id="${esc(f.uuid)}">Loading...</div></td>
-                        <td><button class="danger small" onclick="deleteFile('${f.uuid}')">Delete</button></td>
+                        <td><button class="danger small" onclick="deleteFile('${escJS(f.uuid)}')">Delete</button></td>
                     </tr>`;
                 }
                 html += '</table>';

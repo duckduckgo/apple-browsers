@@ -187,8 +187,7 @@ extension TabIndex {
     /// 6. Try to find the previous tab
     @MainActor
     func calculateSelectedTabIndexAfterClosing(for viewModel: TabCollectionViewModel, removedTab: AnyTab) -> TabIndex? {
-        // Only loaded tabs can have parent relationships; unloaded tabs fall through to default logic
-        if let loadedTab = removedTab.tab, let parentTabId = loadedTab.parentTabID {
+        if let parentTabId = removedTab.parentTabID {
             if let nextTabWithSameParent = findNextTabWithSameParent(for: viewModel, parentTabId: parentTabId) {
                 return nextTabWithSameParent
             }
@@ -197,7 +196,7 @@ extension TabIndex {
                 return previousTabWithSameParent
             }
 
-            if let parentTab = loadedTab.parentTab, let parentTabIndex = viewModel.indexInAllTabs(of: parentTab) {
+            if let parentTab = removedTab.parentTab, let parentTabIndex = viewModel.indexInAllTabs(of: parentTab) {
                 return parentTabIndex
             }
         }

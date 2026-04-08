@@ -93,6 +93,20 @@ enum AnyTab: Identifiable {
     var isUrl: Bool { content.isExternalUrl }
     var url: URL? { content.urlForWebView }
 
+    var parentTab: Tab? {
+        switch self {
+        case .loaded(let tab): tab.parentTab
+        case .unloaded: nil
+        }
+    }
+
+    var parentTabID: String? {
+        switch self {
+        case .loaded(let tab): tab.parentTabID
+        case .unloaded: nil
+        }
+    }
+
     /// Returns the loaded `Tab`, or `nil` if unloaded.
     var tab: Tab? {
         if case .loaded(let t) = self { t } else { nil }

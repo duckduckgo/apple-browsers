@@ -150,7 +150,7 @@ final class TabCollectionViewModel: NSObject {
     /// Redirects tab opening out of a popup window to the main window
     private func redirectOpenOutsidePopup(_ tab: Tab, parentTab: Tab? = nil, selected: Bool = true) {
         guard let manager = windowControllersManager else { return }
-        if let parentTab = parentTab ?? tab.parentTab ?? tabCollection.tabs.first?.tab?.parentTab,
+        if let parentTab = parentTab ?? tab.parentTab ?? tabCollection.tabs.first?.parentTab,
            parentTab.burnerMode == tab.burnerMode {
             manager.openTab(tab, afterParentTab: parentTab, selected: selected)
         } else {
@@ -520,7 +520,7 @@ final class TabCollectionViewModel: NSObject {
 
         // Insert at the end of the child tabs
         var newIndex = parentTabIndex.isPinnedTab ? 0 : parentTabIndex.item + 1
-        while tabCollection.tabs[safe: newIndex]?.tab?.parentTab === parentTab { newIndex += 1 }
+        while tabCollection.tabs[safe: newIndex]?.parentTab === parentTab { newIndex += 1 }
         insert(tab, at: .unpinned(newIndex), selected: selected)
     }
 
@@ -599,7 +599,7 @@ final class TabCollectionViewModel: NSObject {
         guard changesEnabled || forceChange else { return }
 
         let removedTab = tabCollection.tabs[safe: index]
-        let parentTab = removedTab?.tab?.parentTab
+        let parentTab = removedTab?.parentTab
         guard tabCollection.removeTab(at: index, published: published, forced: forceChange) else { return }
 
         didRemoveTab(removedTab!,
@@ -693,7 +693,7 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        let parentTab = movedTab.tab?.parentTab
+        let parentTab = movedTab.parentTab
         guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
             return
         }

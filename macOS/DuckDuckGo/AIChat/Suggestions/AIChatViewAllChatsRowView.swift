@@ -63,7 +63,7 @@ final class AIChatViewAllChatsRowView: NSView {
     private let keyboardShortcutView: KeyboardShortcutView = {
         let view = KeyboardShortcutView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.configure(with: ["↑", "↓"])
+        view.configure(with: ["⌃", "⏎"])
         return view
     }()
 

@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FeatureFlags
 import Foundation
 import History
 import os.log
@@ -399,7 +400,7 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
-            if isBurner {
+            if isBurner, NSApp.delegateTyped.featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
                 var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
                 if persistor.fireTabVisitCount < SubscriptionPromoViewModel.requiredVisitCount {
                     persistor.fireTabVisitCount += 1

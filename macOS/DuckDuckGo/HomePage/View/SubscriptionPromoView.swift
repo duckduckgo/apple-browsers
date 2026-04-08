@@ -49,9 +49,7 @@ struct SubscriptionPromoView: View {
                 .disabled(!isHovering)
                 , alignment: .topTrailing
             )
-            .onHover { hovering in
-                isHovering = hovering
-            }
+            .onHover { isHovering = $0 }
     }
 
     private var promoCard: some View {
@@ -111,8 +109,12 @@ struct SubscriptionPromoView: View {
                 .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
-        .onHover { isHovering in
-            if isHovering { NSCursor.pointingHand.push() } else { NSCursor.pointingHand.pop() }
-        }
+        .onHover(perform: NSCursor.pointingHand.pushOrPop)
+    }
+}
+
+private extension NSCursor {
+    func pushOrPop(_ isHovering: Bool) {
+        isHovering ? push() : NSCursor.pop()
     }
 }

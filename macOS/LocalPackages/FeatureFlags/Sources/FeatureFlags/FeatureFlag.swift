@@ -552,7 +552,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
         case .subscriptionPromoFireWindow:
-            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.subscriptionPromoFireWindow)), category: .subscription)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoFireWindow)), category: .subscription)
         }
     }
 

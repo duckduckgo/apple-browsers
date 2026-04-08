@@ -187,8 +187,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case addToDockAppStore
 
     case screenTimeCleaning
-
-    case subscriptionPromoFireWindow
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -537,6 +535,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
+    case subscriptionPromoFireWindow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

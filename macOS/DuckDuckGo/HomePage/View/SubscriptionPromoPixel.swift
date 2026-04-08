@@ -32,6 +32,10 @@ enum SubscriptionPromoPixel: PixelKitEvent {
         }
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+
     var parameters: [String: String]? {
         switch self {
         case .promoDisplayed(let isEligibleForFreeTrial),

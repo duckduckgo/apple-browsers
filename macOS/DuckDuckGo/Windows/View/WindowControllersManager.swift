@@ -501,7 +501,7 @@ extension WindowControllersManager {
         if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             parentWindowController.window?.beginSheet(feedbackFormWindow)
         } else {
-            let tabCollection = TabCollection(tabs: [] as [AnyTab])
+            let tabCollection = TabCollection()
             let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
             let window = WindowsManager.openNewWindow(with: tabCollectionViewModel)
             window?.beginSheet(feedbackFormWindow)
@@ -510,7 +510,7 @@ extension WindowControllersManager {
 
     func showMainWindow() {
         guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController == nil else { return }
-        let tabCollection = TabCollection(tabs: [] as [AnyTab])
+        let tabCollection = TabCollection()
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
     }

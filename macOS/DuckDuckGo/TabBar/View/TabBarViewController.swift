@@ -2577,7 +2577,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]?.tab
+              let tab = tabCollection?.tabs[safe: indexPath.item]
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return

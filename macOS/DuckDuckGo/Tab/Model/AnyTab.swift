@@ -119,6 +119,13 @@ enum AnyTab: Identifiable {
         }
     }
 
+    func muteUnmuteTab() {
+        // Unloaded tabs have no audio — intentionally a no-op.
+        if case .loaded(let tab) = self {
+            tab.muteUnmuteTab()
+        }
+    }
+
     @MainActor
     func clearNavigationHistory(keepingCurrent: Bool) {
         switch self {

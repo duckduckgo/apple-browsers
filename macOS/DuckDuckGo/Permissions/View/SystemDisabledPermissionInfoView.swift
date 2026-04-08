@@ -71,15 +71,15 @@ struct SystemDisabledPermissionInfoView: View {
         }
     }
 
-    /// Whether to add a space between warning text and link (notification has no trailing space, location does)
-    private var needsSpaceBetweenWarningAndLink: Bool {
+    /// Separator between warning text and link text
+    private var linkSeparator: String {
         switch permissionType {
         case .notification:
-            return true
+            return "\n"
         case .geolocation:
-            return false  // Location string already has trailing space
+            return ""  // Location string already has trailing space
         default:
-            return true
+            return " "
         }
     }
 
@@ -107,24 +107,14 @@ struct SystemDisabledPermissionInfoView: View {
         .background(Color(designSystemColor: .surfaceSecondary))
     }
 
-    @ViewBuilder
     private var warningWithLink: some View {
-        if needsSpaceBetweenWarningAndLink {
-            Text(warningText)
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-            + Text(" ")
-            + Text(settingsLinkText)
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textLink))
-        } else {
-            Text(warningText)
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-            + Text(settingsLinkText)
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textLink))
-        }
+        Text(warningText)
+            .font(.system(size: 12))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+        + Text(linkSeparator)
+        + Text(settingsLinkText)
+            .font(.system(size: 12))
+            .foregroundColor(Color(designSystemColor: .textLink))
     }
 
     private func openSystemSettings() {

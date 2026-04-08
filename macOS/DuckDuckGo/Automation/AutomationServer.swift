@@ -71,34 +71,33 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
 
     /// Iterates over all tabs (pinned and unpinned) across all windows.
     /// Pinned tabs are shared across windows, so they are only yielded once.
-    private func forEachTab(_ body: (Tab) -> Void) {
+    private func forEachTab(_ body: (AnyTab) -> Void) {
         var seenPinnedTabUUIDs = Set<String>()
 
         for windowController in windowControllersManager.mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
 
-            for tab in tabCollectionViewModel.pinnedTabs where !seenPinnedTabUUIDs.contains(tab.uuid) {
+            for tab in tabCollectionViewModel.pinnedTabsCollection?.tabs ?? [] where !seenPinnedTabUUIDs.contains(tab.uuid) {
                 seenPinnedTabUUIDs.insert(tab.uuid)
                 body(tab)
             }
 
-            for tab in tabCollectionViewModel.loadedTabs {
+            for tab in tabCollectionViewModel.tabs {
                 body(tab)
             }
         }
     }
 
     /// Finds a tab matching the predicate across all windows, returning the window controller and tab index.
-    private func findTab(where predicate: (Tab) -> Bool) -> (windowController: MainWindowController, index: TabIndex)? {
+    private func findTab(where predicate: (AnyTab) -> Bool) -> (windowController: MainWindowController, index: TabIndex)? {
         for windowController in windowControllersManager.mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
 
-            if let index = tabCollectionViewModel.pinnedTabs.firstIndex(where: predicate) {
+            if let index = tabCollectionViewModel.pinnedTabsCollection?.tabs.firstIndex(where: predicate) {
                 return (windowController, .pinned(index))
             }
 
-            if let tab = tabCollectionViewModel.loadedTabs.first(where: predicate),
-               let index = tabCollectionViewModel.tabCollection.firstIndex(of: tab) {
+            if let index = tabCollectionViewModel.tabCollection.tabs.firstIndex(where: predicate) {
                 return (windowController, .unpinned(index))
             }
         }

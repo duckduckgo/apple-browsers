@@ -321,7 +321,7 @@ final class TabCollectionViewModel: NSObject {
         }
 
         guard let index = indexInAllTabs(where: { $0.content.matchesDisplayableTab(content) }),
-              let tab = tab(at: index)?.tab,
+              let tab = materialize(at: index),
               select(at: index)
         else {
             return false

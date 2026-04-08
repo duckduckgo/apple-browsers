@@ -112,6 +112,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
     private(set) var inputMode: TextEntryMode = .aiChat
+    private let toggleModeStorage: ToggleModeStoring
+    private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
 
@@ -172,9 +174,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isToggleEnabled: Bool,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-        subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager
+        subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
+        toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     ) {
         self.isToggleEnabled = isToggleEnabled
+        self.toggleModeStorage = toggleModeStorage
         self.modelStore = UTIModelStore(
             modelsService: modelsService,
             preferences: preferences,
@@ -248,6 +252,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func showCollapsed() {
         displayState = .aiTab(.collapsed)
         inputMode = .aiChat
+        self.committedInputMode = .aiChat
         isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
@@ -261,6 +266,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
         displayState = .aiTab(.expanded)
         self.inputMode = inputMode
+        self.committedInputMode = inputMode
         isInputVisibleForKeyboard = true
 
         let renderState = computeRenderState()
@@ -308,6 +314,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let effectiveInputMode = isToggleEnabled ? inputMode : .search
         displayState = .omnibar(.active)
         self.inputMode = effectiveInputMode
+        self.committedInputMode = effectiveInputMode
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
         updateToolbarAIVoiceChat()
@@ -355,6 +362,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func deactivateToOmnibar(resetView: Bool = true) {
         guard isOmnibarSession else { return }
+        inputMode = committedInputMode
         displayState = .hidden
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
@@ -527,6 +535,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .hidden:
             break
         }
+    }
+
+    // MARK: - Toggle State Persistence
+
+    func commitCurrentToggleState() {
+        committedInputMode = inputMode
+        toggleModeStorage.save(inputMode)
+        delegate?.unifiedToggleInputDidCommitMode(inputMode)
     }
 
     // MARK: - Content & Layout
@@ -864,6 +880,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
+        commitCurrentToggleState()
         setText("")
 
         switch mode {

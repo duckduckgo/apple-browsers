@@ -335,14 +335,16 @@ private struct AIChatStorageServerSection: View {
 
 @MainActor
 private final class StorageServerState: ObservableObject {
-    @Published var isRunning = false
     @Published var errorMessage: String?
     @Published var localIPAddress: String?
 
-    private var server: DuckAiStorageDebugServer?
+    var isRunning: Bool { server != nil }
+
+    @Published private var server: DuckAiStorageDebugServer?
+    private nonisolated(unsafe) var serverForDeinit: DuckAiStorageDebugServer?
 
     deinit {
-        server?.stop()
+        serverForDeinit?.stop()
     }
 
     func start() {
@@ -355,7 +357,7 @@ private final class StorageServerState: ObservableObject {
             let server = DuckAiStorageDebugServer(storageHandler: handler)
             try server.start()
             self.server = server
-            self.isRunning = true
+            self.serverForDeinit = server
             self.errorMessage = nil
             self.localIPAddress = Self.getWiFiAddress()
         } catch {
@@ -366,7 +368,7 @@ private final class StorageServerState: ObservableObject {
     func stop() {
         server?.stop()
         server = nil
-        isRunning = false
+        serverForDeinit = nil
         localIPAddress = nil
     }
 

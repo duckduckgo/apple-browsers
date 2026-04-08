@@ -94,7 +94,7 @@ final class AIChatDebugMenu: NSMenu {
 
     #if DEBUG
     @objc func toggleStorageServer() {
-        if let server = storageDebugServer, server.isRunning {
+        if let server = storageDebugServer {
             server.stop()
             storageDebugServer = nil
             storageServerMenuItem.title = "Start Storage Server"

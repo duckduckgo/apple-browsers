@@ -4175,6 +4175,12 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "К сожалению, функция «Синхронизация и резервное копирование» больше не работает в этой версии приложения. Чтобы продолжить, обновите DuckDuckGo до последней версии.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Закрыть вкладку";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Вкладка не прочитана";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Закрыть домашнюю вкладку";
 

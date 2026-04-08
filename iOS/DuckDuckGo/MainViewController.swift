@@ -1176,6 +1176,9 @@ class MainViewController: UIViewController {
 
         let coordinator = unifiedToggleInputCoordinator
         let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
+        let isBottomOmnibarKeyboardAnchored = coordinator?.isOmnibarSession == true
+            && coordinator?.cardPosition == .bottom
+            && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
 
         let baseInputHeight: CGFloat
         if let coordinator, coordinator.isAITabExpanded || coordinator.isOmnibarSession {
@@ -1193,7 +1196,7 @@ class MainViewController: UIViewController {
 
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
         if !isAITabCollapsed {
-            let newHeight = max(baseInputHeight, containerHeight)
+            let newHeight = isBottomOmnibarKeyboardAnchored ? baseInputHeight : max(baseInputHeight, containerHeight)
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = newHeight
         }
 
@@ -1927,7 +1930,7 @@ class MainViewController: UIViewController {
                 coordinator.hide()
                 coordinator.unbind()
                 viewCoordinator.hideAITabChrome()
-                refreshStatusBarBackgroundAfterAIChrome()
+                applyUnifiedInputChromeBackground(.standardChrome)
             }
             return
         }
@@ -4338,6 +4341,10 @@ extension MainViewController: TabDelegate {
         showFireButtonPulse()
     }
 
+    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController) {
+        currentTab?.submitToggleSidebarAction()
+    }
+
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
                                      privacyConfig: privacyConfigurationManager)
@@ -4997,19 +5004,20 @@ extension MainViewController {
     }
 
     private func updateStatusBarBackgroundColor() {
-        guard !viewCoordinator.isNavigationChromeHidden else { return }
-
         let theme = ThemeManager.shared.currentTheme
+        let color: UIColor
 
         if appSettings.currentAddressBarPosition == .bottom {
-            viewCoordinator.statusBackground.backgroundColor = theme.backgroundColor
+            color = theme.backgroundColor
         } else {
             if AppWidthObserver.shared.isPad && traitCollection.horizontalSizeClass == .regular {
-                viewCoordinator.statusBackground.backgroundColor = theme.tabsBarBackgroundColor
+                color = theme.tabsBarBackgroundColor
             } else {
-                viewCoordinator.statusBackground.backgroundColor = theme.omniBarBackgroundColor
+                color = theme.omniBarBackgroundColor
             }
         }
+
+        viewCoordinator.setStandardStatusBackgroundColor(color)
     }
 
     private func decorate() {
@@ -5228,6 +5236,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         // No action needed for full mode - notification handles metrics
     }
+
 }
 
 private extension UIBarButtonItem {

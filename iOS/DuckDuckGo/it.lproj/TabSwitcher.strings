@@ -1,26 +1,5 @@
-/* Class = "UILabel"; text = "Title"; ObjectID = "1GE-Nf-lKM"; */
-"1GE-Nf-lKM.text" = "Titolo";
-
-/* Class = "UILabel"; text = "Title"; ObjectID = "2GU-MM-UwX"; */
-"2GU-MM-UwX.text" = "Titolo";
-
-/* Class = "UIButton"; accessibilityLabel = "Close Tab"; ObjectID = "ExX-zP-FAE"; */
-"ExX-zP-FAE.accessibilityLabel" = "Chiudi scheda";
-
-/* Class = "UIButton"; accessibilityLabel = "Close Tab"; ObjectID = "G2C-qh-g3T"; */
-"G2C-qh-g3T.accessibilityLabel" = "Chiudi scheda";
-
-/* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "Gyy-py-IOg"; */
-"Gyy-py-IOg.accessibilityLabel" = "Scheda non letta";
-
-/* Class = "UILabel"; text = "Link"; ObjectID = "LbT-NO-T0G"; */
-"LbT-NO-T0G.text" = "Link";
-
 /* Class = "UINavigationItem"; title = "Title"; ObjectID = "P3h-DO-2nT"; */
 "P3h-DO-2nT.title" = "Titolo";
-
-/* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "qrJ-aX-XrW"; */
-"qrJ-aX-XrW.accessibilityLabel" = "Scheda non letta";
 
 /* Class = "UILabel"; text = "Website -- Long Title"; ObjectID = "Uu4-yR-9tN"; */
 "Uu4-yR-9tN.text" = "Sito web -- Titolo lungo";

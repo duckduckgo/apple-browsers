@@ -3931,6 +3931,12 @@ Take back control of your personal information with the browser designed for dat
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Sorry, but Sync & Backup is no longer available in this app version. Please update DuckDuckGo to the latest version to continue.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Close Tab";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Tab Unread";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Close home tab";
 

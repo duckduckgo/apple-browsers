@@ -33,7 +33,7 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL)
 
     /// Called when the user taps expand to open duck.ai in a new tab with the given chat URL.
-    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL)
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool)
 
     /// Called when the user requests to open AI Chat settings.
     func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator)
@@ -336,8 +336,8 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         }
     }
 
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL) {
-        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool) {
+        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url, shouldToggleSidebar: shouldToggleSidebar)
         viewController.dismiss(animated: true) { [weak self] in
             self?.startSessionTimer()
         }

@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -1086,6 +1087,50 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
         AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, entityHasAccess: access)
+    }
+}
+
+// MARK: - Toolbar Layout
+
+@MainActor
+final class UnifiedToggleInputToolbarViewTests: XCTestCase {
+
+    func test_compactWidthWithLongModelName_keepsSubmitButtonVisible() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        sut.modelName = "Claude Haiku 4.5 with a long label"
+
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 280, height: 56))
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+
+        container.layoutIfNeeded()
+
+        guard let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut) else {
+            XCTFail("Expected to find submit button")
+            return
+        }
+
+        let submitFrame = submitButton.convert(submitButton.bounds, to: sut)
+        XCTAssertGreaterThanOrEqual(submitFrame.minX, sut.bounds.minX)
+        XCTAssertLessThanOrEqual(submitFrame.maxX, sut.bounds.maxX)
+    }
+
+    private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
+        for subview in view.subviews {
+            if let button = subview as? UIButton, button.accessibilityLabel == accessibilityLabel {
+                return button
+            }
+            if let button = findButton(accessibilityLabel: accessibilityLabel, in: subview) {
+                return button
+            }
+        }
+        return nil
     }
 }
 

@@ -188,6 +188,7 @@ class MainViewController: UIViewController {
     private var settingsCancellables = Set<AnyCancellable>()
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
+    private var hasCompletedInitialLoad = false
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let subscriptionDataReporter: SubscriptionDataReporting
@@ -1372,6 +1373,7 @@ class MainViewController: UIViewController {
         guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
         loadInitialView()
+        hasCompletedInitialLoad = true
     }
 
     func handlePressEvent(event: UIPressesEvent?) {
@@ -1848,7 +1850,7 @@ class MainViewController: UIViewController {
     }
 
     private func attachTab(tab: TabViewController) {
-        if tab.tabModel.link != nil || tab.tabModel.isAITab {
+        if hasCompletedInitialLoad, tab.tabModel.link != nil || tab.tabModel.isAITab {
             lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         }
         removeHomeScreen()

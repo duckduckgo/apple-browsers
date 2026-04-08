@@ -4173,6 +4173,12 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Üzgünüz, Senkronizasyon ve Yedekleme bu uygulama sürümünde artık kullanılamıyor. Devam etmek için lütfen DuckDuckGo'yu en son sürüme güncelleyin.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Sekmeyi kapat";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Sekme Okunmamış";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Ana sekmeyi kapat";
 

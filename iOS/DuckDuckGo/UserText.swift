@@ -96,6 +96,10 @@ public struct UserText {
     public static let openNewFireTab = NotLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
     public static let closeFireTab = NotLocalizedString("tab.close.closeFireTab", value: "Close fire tab", comment: "Accessibility label on tab cell")
     public static let closeNewTab = NotLocalizedString("tab.close.closeNewTab", value: "Close tab", comment: "Accessibility label on tab cell")
+
+    // MARK: - Tab Cell Accessibility
+    public static let tabCellCloseButtonAccessibility = NSLocalizedString("tab.cell.closeButton.accessibility", value: "Close Tab", comment: "Accessibility label for the close button on a tab cell")
+    public static let tabCellUnreadAccessibility = NSLocalizedString("tab.cell.unread.accessibility", value: "Tab Unread", comment: "Accessibility label for the unread indicator on a tab cell")
     public static let newTabTitle = NotLocalizedString("tab.new.title", value: "New Tab", comment: "New tab title")
     public static let fireTabTitle = NotLocalizedString("tab.fire.title", value: "Fire Tab", comment: "Fire tab title")
 

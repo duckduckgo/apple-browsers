@@ -144,6 +144,19 @@ final class AIChatTabPickerTypesTests: XCTestCase {
 
     func testConfigValuesIncludesSupportsTabPicker() throws {
         let config = AIChatNativeConfigValues(
+            isAIChatHandoffEnabled: false,
+            supportsClosingAIChat: true,
+            supportsOpeningSettings: true,
+            supportsNativePrompt: true,
+            supportsStandaloneMigration: false,
+            supportsNativeChatInput: false,
+            supportsURLChatIDRestoration: false,
+            supportsFullChatRestoration: false,
+            supportsPageContext: false,
+            supportsAIChatFullMode: false,
+            supportsAIChatContextualMode: false,
+            appVersion: "",
+            supportsAIChatSync: false,
             supportsTabPicker: true
         )
 

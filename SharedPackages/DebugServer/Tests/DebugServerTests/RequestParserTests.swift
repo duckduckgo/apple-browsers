@@ -129,6 +129,14 @@ final class RequestParserTests: XCTestCase {
         XCTAssertNil(request.body)
     }
 
+    func testWhenBodyIsShorterThanContentLengthThenThrowsIncompleteBodyError() {
+        let raw = "POST /api HTTP/1.1\r\nContent-Length: 10\r\n\r\n123"
+
+        XCTAssertThrowsError(try parser.parse(raw.data(using: .utf8)!)) { error in
+            XCTAssertEqual(error as? RequestParserError, .incompletebody)
+        }
+    }
+
     // MARK: - Case Insensitive Method
 
     func testWhenMethodIsLowercaseThenItIsParsed() throws {

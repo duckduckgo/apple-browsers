@@ -47,6 +47,7 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     private var activeConnections: [NWConnection] = []
     private var routes: [RouteKey: RouteHandler] = [:]
     private var prefixRoutes: [RouteKey: RouteHandler] = [:]
+    private var isStopping = false
     private let parser = RequestParser()
     private let serializer = ResponseSerializer()
     private let logger = Logger(subsystem: "com.debugserver", category: "HTTPServer")
@@ -64,37 +65,48 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     // MARK: - HTTPServerProtocol
 
     public func start() throws {
-        guard case .stopped = state else { return }
+        try queue.sync {
+            guard case .stopped = state else { return }
 
-        state = .starting
+            state = .starting
+            isStopping = false
 
-        let parameters = NWParameters.tcp
-        let nwPort = NWEndpoint.Port(rawValue: port)!
-        let listener = try NWListener(using: parameters, on: nwPort)
+            let parameters = NWParameters.tcp
+            let nwPort = NWEndpoint.Port(rawValue: port)!
+            let listener = try NWListener(using: parameters, on: nwPort)
 
-        listener.stateUpdateHandler = { [weak self] listenerState in
-            self?.handleListenerStateChange(listenerState)
+            listener.stateUpdateHandler = { [weak self] listenerState in
+                self?.handleListenerStateChange(listenerState)
+            }
+
+            listener.newConnectionHandler = { [weak self] connection in
+                self?.handleNewConnection(connection)
+            }
+
+            self.listener = listener
+            listener.start(queue: queue)
         }
-
-        listener.newConnectionHandler = { [weak self] connection in
-            self?.handleNewConnection(connection)
-        }
-
-        self.listener = listener
-        listener.start(queue: queue)
     }
 
     public func stop() {
-        queue.sync {
-            listener?.cancel()
-            listener = nil
-
-            for connection in activeConnections {
-                connection.cancel()
-            }
-            activeConnections.removeAll()
-            state = .stopped
+        queue.async {
+            self.stopOnQueue()
         }
+    }
+
+    /// Must be called on `queue`.
+    private func stopOnQueue() {
+        guard !isStopping else { return }
+        isStopping = true
+
+        listener?.cancel()
+        listener = nil
+
+        for connection in activeConnections {
+            connection.cancel()
+        }
+        activeConnections.removeAll()
+        state = .stopped
     }
 
     // MARK: - RouteRegistrable
@@ -125,10 +137,12 @@ public final class DebugHTTPServer: HTTPServerProtocol {
         case .failed(let error):
             state = .failed(error.localizedDescription)
             logger.error("DebugServer failed: \(error.localizedDescription)")
-            listener?.cancel()
-            listener = nil
+            stopOnQueue()
         case .cancelled:
-            state = .stopped
+            // stopOnQueue() already set .stopped; avoid a duplicate notification.
+            if !isStopping {
+                state = .stopped
+            }
         default:
             break
         }
@@ -232,10 +246,18 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     }
 
     private func findPrefixHandler(for request: HTTPRequest) -> RouteHandler? {
-        for (key, handler) in prefixRoutes where key.method == request.method && request.path.hasPrefix(key.path) {
-            return handler
+        let matchingRoutes = prefixRoutes.filter { key, _ in
+            key.method == request.method && request.path.hasPrefix(key.path)
         }
-        return nil
+
+        let bestMatch = matchingRoutes.max { lhs, rhs in
+            if lhs.key.path.count == rhs.key.path.count {
+                return lhs.key.path > rhs.key.path
+            }
+            return lhs.key.path.count < rhs.key.path.count
+        }
+
+        return bestMatch?.value
     }
 
     private func sendResponse(_ response: HTTPResponse, on connection: NWConnection) {

@@ -23,6 +23,7 @@ import Combine
 import AIChat
 #if DEBUG
 import AIChatDebugServer
+import DebugServer
 #endif
 
 struct AIChatDebugView: View {
@@ -355,6 +356,11 @@ private final class StorageServerState: ObservableObject {
 
         do {
             let server = DuckAiStorageDebugServer(storageHandler: handler)
+            server.stateDidChange = { [weak self] state in
+                DispatchQueue.main.async {
+                    self?.handleStateChange(state)
+                }
+            }
             try server.start()
             self.server = server
             self.serverForDeinit = server
@@ -362,6 +368,18 @@ private final class StorageServerState: ObservableObject {
             self.localIPAddress = Self.getWiFiAddress()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func handleStateChange(_ state: ServerState) {
+        switch state {
+        case .failed(let message):
+            errorMessage = message
+            server = nil
+            serverForDeinit = nil
+            localIPAddress = nil
+        default:
+            break
         }
     }
 

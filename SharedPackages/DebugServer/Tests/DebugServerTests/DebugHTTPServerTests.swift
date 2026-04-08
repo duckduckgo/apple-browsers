@@ -69,7 +69,16 @@ final class DebugHTTPServerTests: XCTestCase {
         try server.start()
         wait(for: [started], timeout: 5)
 
+        let stopped = expectation(description: "Server stopped")
+        server.stateDidChange = { state in
+            if case .stopped = state {
+                stopped.fulfill()
+            }
+        }
+
         server.stop()
+        wait(for: [stopped], timeout: 5)
+
         XCTAssertEqual(server.state, .stopped)
     }
 
@@ -169,6 +178,27 @@ final class DebugHTTPServerTests: XCTestCase {
         let body = "test-body"
         _ = try performRequest(port: 8097, path: "/echo", method: "POST", body: body)
         XCTAssertEqual(receivedBody, body)
+    }
+
+    func testWhenMultiplePrefixRoutesMatchThenMostSpecificRouteIsUsed() throws {
+        server = DebugHTTPServer(port: 8100)
+        server.addPrefixRoute("/api/", method: .GET) { _ in
+            .text("generic")
+        }
+        server.addPrefixRoute("/api/chats/", method: .GET) { _ in
+            .text("specific")
+        }
+
+        let started = expectation(description: "Server started")
+        server.stateDidChange = { state in
+            if case .running = state { started.fulfill() }
+        }
+
+        try server.start()
+        wait(for: [started], timeout: 5)
+
+        let responseBody = try performRequest(port: 8100, path: "/api/chats/123")
+        XCTAssertEqual(responseBody, "specific")
     }
 
     func testWhenHandlerThrowsThenReturns500() throws {

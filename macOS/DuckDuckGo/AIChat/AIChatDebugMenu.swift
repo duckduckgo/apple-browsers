@@ -19,6 +19,7 @@
 import AIChat
 #if DEBUG
 import AIChatDebugServer
+import DebugServer
 #endif
 import AppKit
 import Persistence
@@ -110,15 +111,14 @@ final class AIChatDebugMenu: NSMenu {
 
             do {
                 let server = DuckAiStorageDebugServer(storageHandler: handler)
-                try server.start()
-                storageDebugServer = server
-                storageServerMenuItem.title = "Stop Storage Server (localhost:8080)"
-
-                if let url = URL(string: "http://localhost:8080") {
-                    DispatchQueue.main.async {
-                        Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
+                server.stateDidChange = { [weak self] state in
+                    Task { @MainActor in
+                        self?.handleStorageServerStateChange(state)
                     }
                 }
+                try server.start()
+                storageDebugServer = server
+                storageServerMenuItem.title = "Starting Storage Server…"
             } catch {
                 let alert = NSAlert()
                 alert.messageText = "Failed to start storage server"
@@ -126,6 +126,27 @@ final class AIChatDebugMenu: NSMenu {
                 alert.addButton(withTitle: "OK")
                 alert.runModal()
             }
+        }
+    }
+
+    @MainActor
+    private func handleStorageServerStateChange(_ state: ServerState) {
+        switch state {
+        case .running(let port):
+            storageServerMenuItem.title = "Stop Storage Server (localhost:\(port))"
+            if let url = URL(string: "http://localhost:\(port)") {
+                Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
+            }
+        case .failed(let message):
+            storageDebugServer = nil
+            storageServerMenuItem.title = "Start Storage Server"
+            let alert = NSAlert()
+            alert.messageText = "Storage server failed"
+            alert.informativeText = message
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        default:
+            break
         }
     }
     #endif

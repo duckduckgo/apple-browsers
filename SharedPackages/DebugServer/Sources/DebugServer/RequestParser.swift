@@ -54,6 +54,7 @@ public struct RequestParser: Sendable {
 
         let (method, path, queryParameters) = try parseRequestLine(requestLine)
         let headers = try parseHeaders(Array(lines.dropFirst()))
+        try validateBodyLength(headers: headers, bodyData: bodyData)
 
         return HTTPRequest(
             method: method,
@@ -139,5 +140,19 @@ public struct RequestParser: Sendable {
         }
 
         return headers
+    }
+
+    private func validateBodyLength(headers: [String: String], bodyData: Data?) throws {
+        guard
+            let contentLengthString = headers.first(where: { $0.key.caseInsensitiveCompare("Content-Length") == .orderedSame })?.value,
+            let contentLength = Int(contentLengthString)
+        else {
+            return
+        }
+
+        let actualBodyLength = bodyData?.count ?? 0
+        if actualBodyLength < contentLength {
+            throw RequestParserError.incompletebody
+        }
     }
 }

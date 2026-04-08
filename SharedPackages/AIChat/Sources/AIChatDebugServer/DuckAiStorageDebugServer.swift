@@ -37,6 +37,11 @@ public final class DuckAiStorageDebugServer {
         return false
     }
 
+    public var stateDidChange: (@Sendable (ServerState) -> Void)? {
+        get { server.stateDidChange }
+        set { server.stateDidChange = newValue }
+    }
+
     private let port: UInt16
 
     public init(storageHandler: DuckAiNativeStorageHandling, port: UInt16 = 8080) {

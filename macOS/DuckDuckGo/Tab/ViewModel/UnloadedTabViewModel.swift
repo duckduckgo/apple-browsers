@@ -42,7 +42,9 @@ final class UnloadedTabViewModel: TabBarViewModel, Previewable {
 
     var tabContent: Tab.TabContent { unloadedTab.content }
     var isPinned: Bool { false }
-    var title: String { unloadedTab.title ?? "" }
+    var title: String {
+        unloadedTab.content.displayTitle(pageTitle: unloadedTab.title, pageURL: url)
+    }
     var url: URL? { unloadedTab.content.urlForWebView }
 
     var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {

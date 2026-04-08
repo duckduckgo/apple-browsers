@@ -407,7 +407,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .delayedWebviewPresentation:
             Config(source: .remoteReleasable(.feature(.delayedWebviewPresentation)))
         case .deferredTabWebViewCreation:
-            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.deferredTabWebViewCreation)))
+            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.deferredTabWebViewCreation)), category: .tabs)
         case .dbpRemoteBrokerDelivery:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery)), category: .dbp)
         case .dbpEmailConfirmationDecoupling:

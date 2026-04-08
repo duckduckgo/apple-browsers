@@ -33,6 +33,7 @@ final class AIChatSuggestionsView: NSView {
         static let separatorHorizontalInset: CGFloat = 12
         static let rowsHorizontalPadding: CGFloat = 4
         static let bottomPadding: CGFloat = 4
+        static let viewAllChatsSeparatorBottomPadding: CGFloat = 8
     }
 
     // MARK: - UI Components
@@ -144,7 +145,7 @@ final class AIChatSuggestionsView: NSView {
         guard count > 0 else { return 0 }
         let separatorTotalHeight = Constants.separatorHeight + Constants.separatorTopPadding + Constants.separatorBottomPadding
         let rowsHeight = CGFloat(count) * Constants.rowHeight
-        let viewAllChatsHeight = showViewAllChats ? Constants.separatorHeight + Constants.rowHeight : 0
+        let viewAllChatsHeight = showViewAllChats ? Constants.separatorHeight + Constants.viewAllChatsSeparatorBottomPadding + Constants.rowHeight : 0
         return separatorTotalHeight + rowsHeight + viewAllChatsHeight + Constants.bottomPadding
     }
 
@@ -220,6 +221,7 @@ final class AIChatSuggestionsView: NSView {
         stackView.addArrangedSubview(separator)
         separator.widthAnchor.constraint(equalTo: stackView.widthAnchor).isActive = true
         separator.heightAnchor.constraint(equalToConstant: Constants.separatorHeight).isActive = true
+        stackView.setCustomSpacing(Constants.viewAllChatsSeparatorBottomPadding, after: separator)
         viewAllChatsSeparatorView = separator
 
         let viewAllRow = AIChatViewAllChatsRowView()

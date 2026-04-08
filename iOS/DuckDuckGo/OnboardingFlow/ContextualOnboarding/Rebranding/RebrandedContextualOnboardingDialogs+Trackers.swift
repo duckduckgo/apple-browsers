@@ -40,9 +40,9 @@ extension OnboardingRebranding {
         let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
         static let daxAnimation = DaxAnimation(
-            animationName: "Dax-TrackersBlocked",
+            animationName: "Dax-WingBottom",
             size: CGSize(width: 390/3, height: 211/3),
-            position: .bottom(leftCenterOffset: 150),
+            position: .bottom(leftCenterOffset: 150, yOffset: -10.0),
             twoStagesAnimation: 0.5
         )
 

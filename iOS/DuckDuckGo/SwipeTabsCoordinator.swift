@@ -401,26 +401,28 @@ class OmniBarCell: UICollectionViewCell {
     weak var coordinator: MainViewCoordinator?
     var controller: OmniBarViewController?
 
+    override var safeAreaInsets: UIEdgeInsets {
+        guard let collectionView = superview as? UICollectionView else {
+            return super.safeAreaInsets
+        }
+        return collectionView.safeAreaInsets
+    }
+
     weak var omniBar: OmniBar? {
         willSet {
-            (omniBar?.barView as? DefaultOmniBarView)?.pinnedSafeAreaInsets = nil
+            (omniBar?.barView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
             omniBar?.barView.removeFromSuperview()
         }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
 
             omniBarView.translatesAutoresizingMaskIntoConstraints = false
-
-            if let defaultOmniBarView = omniBarView as? DefaultOmniBarView,
-               let collectionView = superview as? UICollectionView {
-                defaultOmniBarView.pinnedSafeAreaInsets = collectionView.safeAreaInsets
-            }
-
+            (omniBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = true
             addSubview(omniBarView)
 
             NSLayoutConstraint.activate([
-                omniBarView.leadingAnchor.constraint(equalTo: leadingAnchor),
-                omniBarView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                omniBarView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+                omniBarView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
                 omniBarView.topAnchor.constraint(equalTo: topAnchor),
                 omniBarView.bottomAnchor.constraint(equalTo: bottomAnchor),
             ])

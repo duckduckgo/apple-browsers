@@ -206,18 +206,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
-    /// When set, overrides the dynamic `safeAreaInsets` with a fixed value.
-    /// Used inside `OmniBarCell` to prevent layout shifts during horizontal scrolling,
-    /// where iOS would otherwise recalculate safe area based on the cell's screen position.
-    var pinnedSafeAreaInsets: UIEdgeInsets? {
-        didSet {
-            guard oldValue != pinnedSafeAreaInsets else { return }
-            setNeedsLayout()
-        }
-    }
+    /// When true, `safeAreaInsets` returns `.zero` because the parent container
+    /// (e.g. `OmniBarCell`) already accounts for safe area via its own layout guide constraints.
+    /// This prevents the system-calculated insets from shifting during horizontal scrolling.
+    var safeAreaManagedByContainer = false
 
     override var safeAreaInsets: UIEdgeInsets {
-        pinnedSafeAreaInsets ?? super.safeAreaInsets
+        safeAreaManagedByContainer ? .zero : super.safeAreaInsets
     }
 
     private(set) var layoutMode: OmniBarLayoutMode = .compact

@@ -121,6 +121,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 }
 
 final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
+    var shouldDisplayMoreOptionsMenuShortcut = false
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false

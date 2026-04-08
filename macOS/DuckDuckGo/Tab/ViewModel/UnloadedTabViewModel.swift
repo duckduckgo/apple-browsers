@@ -87,15 +87,6 @@ final class UnloadedTabViewModel: TabBarViewModel, Previewable {
     var isSuspendedPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
     var canBeSuspended: Bool { false }
 
-    // MARK: - TabDataClearing
-
-    /// Unloaded tabs have no webView — signal completion immediately to prevent
-    /// `TabCleanupPreparer` from hanging while waiting for a navigation callback.
-    @MainActor
-    func prepareForDataClearing(caller: TabCleanupPreparer) {
-        caller.reportNoWebViewToClear()
-    }
-
     // MARK: - Previewable
 
     private var cachedSnapshot: NSImage?

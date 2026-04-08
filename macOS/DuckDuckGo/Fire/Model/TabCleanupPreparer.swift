@@ -21,7 +21,7 @@ import PixelKit
 import WebKit
 
 protocol TabCleanupPreparing {
-    @MainActor func prepareTabsForCleanup(_ tabs: [TabViewModel]) async
+    @MainActor func prepareTabsForCleanup(_ tabs: [any TabDataClearing]) async
 }
 
 protocol TabDataClearing {
@@ -43,7 +43,7 @@ final class TabCleanupPreparer: NSObject, WKNavigationDelegate, TabCleanupPrepar
     private var completion: (@MainActor () -> Void)?
 
     @MainActor
-    func prepareTabsForCleanup(_ tabs: [TabViewModel]) async {
+    func prepareTabsForCleanup(_ tabs: [any TabDataClearing]) async {
         guard !tabs.isEmpty else { return }
 
         assert(self.completion == nil)

@@ -374,11 +374,11 @@ final class Fire: FireProtocol {
         let bookmarkDatabaseResult = burnDeletedBookmarks()
         dataClearingWideEventService?.update(.clearBookmarkDatabase, result: bookmarkDatabaseResult)
 
-        let tabViewModels = tabViewModels(of: entity)
+        let tabsToClean = tabsForCleanup(of: entity)
 
         Task {
             if entity.shouldClose {
-                await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
+                await tabCleanupPreparer.prepareTabsForCleanup(tabsToClean)
             }
 
             group.enter()
@@ -514,10 +514,10 @@ final class Fire: FireProtocol {
 
         let windowControllers = windowControllersManager.mainWindowControllers
 
-        let tabViewModels = tabViewModels(of: entity)
+        let tabsToClean = tabsForCleanup(of: entity)
 
         Task {
-            await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
+            await tabCleanupPreparer.prepareTabsForCleanup(tabsToClean)
 
             group.enter()
             dataClearingWideEventService?.start(.clearTabs)
@@ -1103,20 +1103,19 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    private func tabViewModels(of entity: BurningEntity) -> [TabViewModel] {
+    private func tabsForCleanup(of entity: BurningEntity) -> [any TabDataClearing] {
         switch entity {
         case .none:
             return []
         case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _, _):
-            return [tabViewModel]
+            return [AnyTab.loaded(tabViewModel.tab)]
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
-            let pinnedTabViewModels = Array(tabCollectionViewModel.pinnedTabsManager?.tabViewModels.values ?? Dictionary().values)
-            let tabViewModels = tabCollectionViewModel.tabViewModels.values.compactMap { $0 as? TabViewModel }
-            return pinnedTabViewModels + tabViewModels
+            let pinnedTabs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs ?? []
+            return pinnedTabs + tabCollectionViewModel.tabCollection.tabs
         case .allWindows:
-            let pinnedTabViewModels = Array(pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.values })
-            let tabViewModels = windowControllersManager.allTabViewModels
-            return pinnedTabViewModels + tabViewModels
+            let pinnedTabs = pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabCollection.tabs }
+            let windowTabs = windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
+            return pinnedTabs + windowTabs
         }
     }
 

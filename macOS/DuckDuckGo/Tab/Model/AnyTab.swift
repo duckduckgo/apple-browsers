@@ -160,6 +160,22 @@ enum AnyTab: Identifiable {
     }
 }
 
+// MARK: - TabDataClearing
+
+extension AnyTab: TabDataClearing {
+    @MainActor
+    func prepareForDataClearing(caller: TabCleanupPreparer) {
+        switch self {
+        case .loaded(let tab):
+            tab.prepareForDataClearing(caller: caller)
+        case .unloaded:
+            // Unloaded tabs have no WebView — nothing to flush.
+            // Signal immediate completion so TabCleanupPreparer doesn't hang.
+            caller.reportNoWebViewToClear()
+        }
+    }
+}
+
 // MARK: - Hashable (identity-based, using inner object identity)
 //
 // Explicit implementation is required because:

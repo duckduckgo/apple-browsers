@@ -22,7 +22,7 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
 
     var submitSearchHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
     var openSuggestionHandler: ((NewTabPageDataModel.Suggestion, NewTabPageDataModel.OpenTarget) -> Void)?
-    var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
+    var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget, String?, [NewTabPageDataModel.SubmitChatImage]?) -> Void)?
     var openAiChatHandler: ((String, Bool, NewTabPageDataModel.OpenAiChatTrigger, NewTabPageDataModel.OpenTarget) -> Void)?
 
     @MainActor
@@ -36,8 +36,8 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     }
 
     @MainActor
-    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget) {
-        submitChatHandler?(chat, target)
+    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget, modelId: String?, images: [NewTabPageDataModel.SubmitChatImage]?) {
+        submitChatHandler?(chat, target, modelId, images)
     }
 
     @MainActor

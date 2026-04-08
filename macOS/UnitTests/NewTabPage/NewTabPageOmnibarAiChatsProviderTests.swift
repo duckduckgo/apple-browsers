@@ -181,7 +181,7 @@ private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
     var recentChats: [AIChatSuggestion] = []
     var receivedQuery: String?
 
-    func fetchSuggestions(query: String?) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
+    func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
         receivedQuery = query
         return (pinned: pinnedChats, recent: recentChats)
     }
@@ -203,6 +203,8 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
 
     var showCustomizePopover: Bool = false
     var isAIChatRecentChatsEnabled: Bool = true
+    var isAIChatToolsEnabled: Bool = false
+    var selectedModelId: String?
 }
 
 private extension AIChatSuggestion {

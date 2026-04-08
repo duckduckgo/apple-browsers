@@ -109,8 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Faner lukket og data slettet";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Fjern faner, data og Duck.ai-chatter";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Åpne i bakgrunnen";
@@ -1177,6 +1175,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Overrask meg!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Finn **DuckDuckGo** i listen, og trykk deretter på **Duck.ai Voice** for å legge den til";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Finn **DuckDuckGo** i listen og trykk på **VPN-kontroll** for å legge den til";
 
@@ -1461,11 +1462,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Players funksjonalitet har blitt påvirket av nylige endringer i YouTube. Vi jobber med å løse disse problemene og setter pris på forståelsen din.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Trykk på widgeten for å redigere den, og så kan du angi **Duck.ai** og **Duck.ai Voice** som snarveier";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Finn og velg **DuckDuckGo**, og så sveiper du til **Egendefinerte snarveier** og velger **Legg til widget**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Legg ved sideinnhold";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sendt med meldingen din til Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Legg til Duck.ai Voice-snarveien i kontrollsenteret ditt";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "AI-funksjonene i DuckDuckGo er private og valgfrie. Dataene dine brukes ikke til å trene AI.";
@@ -1485,8 +1495,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Still oppfølgingsspørsmål";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Legg til Duck.ai i kontrollsenteret";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Legg til Duck.ai-widgeten på startskjermen";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Snarveier i nettleseren";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Snakk med Duck.ai via Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adressefelt";
@@ -1508,6 +1527,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo for iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Snarveier";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Med Siri-snarveier kan du starte en Duck.ai-talechat med en kort talekommando, som «Siri, start DuckDuckGo talechat». Dette er en rask, håndfri måte å chatte med Duck.ai på.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, start DuckDuckGo talechat.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, snakk med DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, talechat med DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Snakk med Duck.ai ved hjelp av Siri!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Legg til DuckDuckGo-abonnementet ditt på denne enheten";
@@ -3191,6 +3228,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Legg til widgeten på startskjermen";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Legg til Duck.ai-snarveier på startskjermen din";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Legg til DuckDuckGos VPN-widget på startskjermen din";
 
@@ -3302,11 +3342,7 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tilbakestill";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Lukk faner og slett data";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Fjern faner, data og Duck.ai-chatter";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Lukk alle åpne faner";
@@ -3374,14 +3410,10 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button sletter også Duck.ai-historikken, inkludert festede chatter.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Fjern Duck.ai-chatter";
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Fjern nettleserdata";
 
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Slett data automatisk";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Fullfør oppsettet";
@@ -3401,11 +3433,7 @@
 /* Settings title for the customize section */
 "settings.customize" = "Tilpass";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Fjerner alle faner, Duck.ai-chatter og data for nettsteder du ikke har brukt Fireproof på.";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Fjerner alle faner og data for nettsteder du ikke har brukt Fireproof på.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Sletting av data";
@@ -3465,8 +3493,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animasjon for brannknappen";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Brannsikre nettsteder";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Nettsteder med Fireproof";
@@ -4148,6 +4174,12 @@
 
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Beklager, men synkronisering og sikkerhetskopiering er ikke lenger tilgjengelig i denne appversjonen. Oppdater DuckDuckGo til den nyeste versjonen for å fortsette.";
+
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Lukk fane";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Fane ulest";
 
 /* Accessibility label on remove button */
 "tab.close.home" = "Lukk hjem-fane";

@@ -47,7 +47,7 @@ extension TabViewController {
 
         sections.append(UIMenu(title: "", options: .displayInline, children: tabActions))
 
-        let fireModeCapability = FireModeCapability.create(using: featureFlagger)
+        let fireModeCapability = FireModeCapability.create()
         if !isFireTab && fireModeCapability.isFireModeEnabled {
             let fireTabAction = UIAction(title: UserText.actionNewFireTabForUrl,
                                          image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in

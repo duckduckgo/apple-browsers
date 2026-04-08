@@ -109,8 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Vahekaardid ja andmed kustutatud";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Kustuta vahekaardid, andmed ja Duck.ai vestlused";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Ava taustal";
@@ -1177,6 +1175,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Üllata mind!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Leia loendist **DuckDuckGo**, seejärel puuduta suvandit **Duck.ai häälvestlus**, et see lisada";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Leia loendist **DuckDuckGo**, seejärel puuduta **VPN-i juhtimine**, et see lisada";
 
@@ -1461,11 +1462,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playeri funktsionaalsust on mõjutanud hiljutised YouTube'i muudatused. Töötame nende probleemide lahendamise nimel ja täname sind mõistva suhtumise eest.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Puuduta vidinat selle muutmiseks ja seejärel määra otseteedeks **Duck.ai** ja **Duck.ai häälvestlus**";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Leia ja vali **DuckDuckGo**, seejärel libista suvandini **Kohandatud otseteed** ja vali **Lisa vidin**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Lisa lehe sisu";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Saadetud koos sinu sõnumiga Duck.ai-le";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Lisa Duck.ai häälvestluse otsetee juhtimiskeskusesse";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
@@ -1485,8 +1495,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Küsi lisaküsimusi";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lisa Duck.ai vidin avalehele";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Brauseri otseteed";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Räägi Duck.ai-ga Siri abil";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Aadressiriba";
@@ -1508,6 +1527,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Otseteed";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri otseteed lasevad sul alustada Duck.ai häälvestlust kiire häälkäsklusega, näiteks „Siri, alusta DuckDuckGo häälvestlust“. See on kiire ja käed-vaba viis Duck.ai-ga vestlemiseks.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, käivita DuckDuckGo häälvestlus.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, vestle DuckDuckGo-ga.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, alusta häälvestlust DuckDuckGo-ga.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Vestle Duck.ai-ga Siri abil!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Lisa sellesse seadmesse oma DuckDuckGo tellimus";
@@ -3191,6 +3228,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Lisa vidin avakuvale";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Lisa Duck.ai otseteed oma avakuvale";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Lisa DuckDuckGo VPN vidin oma avakuvale";
 
@@ -3302,11 +3342,7 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tühjenda";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Kustuta vahekaardid ja andmed";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Kustuta vahekaardid, andmed ja Duck.ai vestlused";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Sule kõik avatud vahekaardid";
@@ -3374,14 +3410,10 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button kustutab ka Duck.ai ajaloo, sealhulgas kinnitatud vestlused.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Tühjenda Duck.ai vestlused";
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Kustuta sirvimisandmed";
 
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Kustuta andmed automaatselt";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Vii seadistamine lõpule";
@@ -3401,11 +3433,7 @@
 /* Settings title for the customize section */
 "settings.customize" = "Kohanda";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Kustutab kõik vahekaardid, Duck.ai vestlused ja andmed kõigi saitide kohta, mida sa pole tulekindlaks teinud.";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Kustutab kõik vahekaardid ja andmed kõigi saitide kohta, mida sa pole tulekindlaks teinud.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Andmete kustutamine";
@@ -3465,8 +3493,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Tulenupu animatsioon";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Tulekindlad veebisaidid";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Tulekindlad saidid";
@@ -4148,6 +4174,12 @@
 
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Vabandust, kuid sünkroonimine ja varundus pole selles rakenduse versioonis enam saadaval. Jätkamiseks värskenda DuckDuckGo uusimale versioonile.";
+
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Sulge vaheleht";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Vahekaart lugemata";
 
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulge avalehe vahekaart";

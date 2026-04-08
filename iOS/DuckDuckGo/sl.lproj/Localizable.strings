@@ -109,8 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Zavihki in podatki so izbrisani";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Odpri v ozadju";
@@ -1177,6 +1175,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Preseneti me!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Na seznamu poiščite **DuckDuckGo** in nato tapnite **Duck.ai Voice**, da ga dodate";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Poiščite **DuckDuckGo** na seznamu, nato tapnite **Nadzor VPN**, da ga dodate.";
 
@@ -1461,11 +1462,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Nedavne spremembe v YouTubu so vplivale na delovanje predvajalnika Duck Player. Prizadevamo si za odpravljanje teh težav in cenimo vaše razumevanje.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Dotaknite se pripomočka, da ga uredite, nato nastavite **Duck.ai** in **Duck.ai Voice** kot bližnjici";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Poiščite in izberite **DuckDuckGo**, nato povlecite do **Bližnjice po meri** in izberite **Dodaj pripomoček**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Priloži vsebino strani";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Poslano z vašim sporočilom Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Dodajte bližnjico Duck.ai Voice v svoj nadzorni center.";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcije umetne inteligence DuckDuckGo so zasebne in neobvezne. Vaši podatki se ne uporabljajo za usposabljanje umetne inteligence.";
@@ -1485,8 +1495,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Postavite nadaljnja vprašanja";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Dodajte Duck.ai v nadzorno središče";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Dodajte pripomoček Duck.ai na domači zaslon";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Bližnjice za brskalnik";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Pogovarjajte se z Duck.ai prek Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Naslovna vrstica";
@@ -1508,6 +1527,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo za iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Bližnjice";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Bližnjice Siri omogočajo začetek glasovnega klepeta Duck.ai s hitrim glasovnim ukazom, kot je »Siri, zaženi glasovni klepet DuckDuckGo«. To je hiter in prostoročen način za klepet z Duck.ai.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, zaženi glasovni klepet DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, pogovori se z DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, glasovni klepet z DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Pogovarjajte se z Duck.ai s pomočjo Siri!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "V to napravo dodajte svojo naročnino DuckDuckGo";
@@ -3189,6 +3226,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Dodajte pripomoček na domači zaslon";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Dodajte bližnjice Duck.ai na začetni zaslon";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Dodajte pripomoček DuckDuckGo VPN na začetni zaslon";
 
@@ -3300,11 +3340,7 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Počisti";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Počisti zavihke in podatke";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Zaprite vse odprte zavihke";
@@ -3372,14 +3408,10 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button bo izbrisal tudi zgodovino Duck.ai, vključno s pripetimi klepeti.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Počisti klepete Duck.ai";
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Čiščenje podatkov o brskanju";
 
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Samodejno počisti podatke";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokončanje nastavitve";
@@ -3399,11 +3431,7 @@
 /* Settings title for the customize section */
 "settings.customize" = "Prilagodi";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Počisti vse zavihke, klepete Duck.ai in podatke za vsa spletna mesta, ki jih niste zaščitili s funkcijo Fireproof.";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Počisti vse zavihke in podatke za vsa spletna mesta, ki jih niste zaščitili s funkcijo Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Počiščenje podatkov";
@@ -3463,8 +3491,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animacija za gumb ogenj";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Spletne strani s požarno zaščito";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Požarno zaščitena mesta";
@@ -4146,6 +4172,12 @@
 
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Sinhronizacija in varnostno kopiranje v tej različici aplikacije žal nista več na voljo. Za nadaljevanje DuckDuckGo posodobite na najnovejšo različico.";
+
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Zapri zavihek";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Zavihek ni prebran";
 
 /* Accessibility label on remove button */
 "tab.close.home" = "Zapri zavihek Domov";

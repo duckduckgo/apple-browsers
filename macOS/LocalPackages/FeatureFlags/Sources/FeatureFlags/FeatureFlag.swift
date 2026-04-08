@@ -475,7 +475,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         case .contextualOnboarding:
-            return .remoteReleasable(.feature(.contextualOnboarding))
+            return .remoteReleasable(.subfeature(ContextualOnboardingSubfeature.featureEnabled))
         case .credentialsImportPromotionForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppStoreSysex:
@@ -489,7 +489,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .webExtensions:
-            return .remoteReleasable(.feature(.webExtensions))
+            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.featureEnabled))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:
@@ -505,7 +505,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabCrashDebugging:
             return .disabled
         case .delayedWebviewPresentation:
-            return .remoteReleasable(.feature(.delayedWebviewPresentation))
+            return .remoteReleasable(.subfeature(DelayedWebviewPresentationSubfeature.featureEnabled))
         case .dbpRemoteBrokerDelivery:
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:
@@ -531,7 +531,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatOmnibarCluster:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
         case .aiChatSuggestions:
-            return .remoteReleasable(.feature(.duckAiChatHistory))
+            return .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatOmnibarTools:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools))
         case .aiChatOmnibarOnboarding:
@@ -575,7 +575,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience))
         case .attributedMetrics:
-            return .remoteReleasable(.feature(.attributedMetrics))
+            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled))
         case .showHideAIGeneratedImagesSection:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
@@ -583,11 +583,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .popupBlocking:
-            return .remoteReleasable(.feature(.popupBlocking))
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.featureEnabled))
         case .webNotifications:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:
-            return .remoteReleasable(.feature(.combinedPermissionView))
+            return .remoteReleasable(.subfeature(CombinedPermissionViewSubfeature.featureEnabled))
         case .firstTimeQuitSurvey:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .autofillPasswordSearchPrioritizeDomain:
@@ -633,7 +633,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .semaphoreAlwaysVisible:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
-            return .remoteReleasable(.feature(.promoQueue))
+            return .remoteReleasable(.subfeature(PromoQueueSubfeature.featureEnabled))
         case .websitesHistoryFirstTimeQuitSurvey:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .tabAnimations:

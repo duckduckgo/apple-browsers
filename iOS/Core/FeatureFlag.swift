@@ -590,7 +590,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillOnByDefault:
             return .remoteReleasable(.subfeature(AutofillSubfeature.onByDefault))
         case .autofillFailureReporting:
-            return .remoteReleasable(.feature(.autofillBreakageReporter))
+            return .remoteReleasable(.subfeature(AutofillBreakageReporterSubfeature.featureEnabled))
         case .autofillOnForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.onForExistingUsers))
         case .autofillUnknownUsernameCategorization:
@@ -610,7 +610,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .canPromoteImportPasswordsInBrowser:
             return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteImportPasswordsInBrowser))
         case .incontextSignup:
-            return .remoteReleasable(.feature(.incontextSignup))
+            return .remoteReleasable(.subfeature(IncontextSignupSubfeature.featureEnabled))
         case .autoconsentOnByDefault:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.onByDefault))
         case .duckPlayer:
@@ -624,9 +624,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncPromotionPasswords:
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords))
         case .autofillSurveys:
-            return .remoteReleasable(.feature(.autofillSurveys))
+            return .remoteReleasable(.subfeature(AutofillSurveysSubfeature.featureEnabled))
         case .adAttributionReporting:
-            return .remoteReleasable(.feature(.adAttributionReporting))
+            return .remoteReleasable(.subfeature(AdAttributionReportingSubfeature.featureEnabled))
         case .dbpRemoteBrokerDelivery:
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:
@@ -682,9 +682,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .showNTPAfterIdleReturn:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
         case .daxEasterEggLogos:
-            return .remoteReleasable(.feature(.daxEasterEggLogos))
+            return .remoteReleasable(.subfeature(DaxEasterEggLogosSubfeature.featureEnabled))
         case .daxEasterEggPermanentLogo:
-            return .remoteReleasable(.feature(.daxEasterEggPermanentLogo))
+            return .remoteReleasable(.subfeature(DaxEasterEggPermanentLogoSubfeature.featureEnabled))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
@@ -712,7 +712,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .unifiedToggleInput:
             return .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput))
         case .attributedMetrics:
-            return .remoteReleasable(.feature(.attributedMetrics))
+            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingSearchExperience:
             return .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience))
         case .storeSerpSettings:
@@ -742,7 +742,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode))
         case .pageContextFeature:
-            return .remoteReleasable(.feature(.pageContext))
+            return .remoteReleasable(.subfeature(PageContextSubfeature.featureEnabled))
         case .aiChatAutoAttachContextByDefault:
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .multiplePageContexts:
@@ -752,7 +752,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSync:
             return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
-            return .remoteReleasable(.feature(.duckAiChatHistory))
+            return .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled))
         case .showWhatsNewPromptOnDemand:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
 
@@ -767,7 +767,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .uiTestExperiment:
             return .disabled
         case .tabSwitcherTrackerCount:
-            return .remoteReleasable(.feature(.tabSwitcherTrackerCount))
+            return .remoteReleasable(.subfeature(TabSwitcherTrackerCountSubfeature.featureEnabled))
         case .burnSingleTab:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.burnSingleTab))
         case .genericBackgroundTask:
@@ -777,7 +777,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             return .disabled
         case .webExtensions:
-            return .remoteReleasable(.feature(.webExtensions))
+            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.featureEnabled))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:

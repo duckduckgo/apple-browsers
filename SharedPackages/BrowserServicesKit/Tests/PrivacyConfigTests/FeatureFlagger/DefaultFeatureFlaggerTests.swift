@@ -114,7 +114,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_isNOTInternalUser_whenFeature_defaultValueFalse_privacyConfigValueExists_returnsPrivacyConfigValue() {
         let testFlag = DefaultValueTestFlags(defaultValue: .disabled,
-                                             source: .remoteReleasable(.feature(.autofill)))
+                                             source: .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill)))
         internalUserDeciderStore.isInternalUser = false
 
         var embeddedData = Self.embeddedConfig(autofillState: "enabled")
@@ -126,7 +126,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_isNOTInternalUser_whenFeature_defaultValueTrue_privacyConfigValueExists_returnsPrivacyConfigValue() {
         let testFlag = DefaultValueTestFlags(defaultValue: .enabled,
-                                             source: .remoteReleasable(.feature(.autofill)))
+                                             source: .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill)))
         internalUserDeciderStore.isInternalUser = false
 
         var embeddedData = Self.embeddedConfig(autofillState: "enabled")
@@ -138,7 +138,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_isNOTInternalUser_whenFeature_defaultValueFalse_noPrivacyConfigValue_returnsFalse() {
         let testFlag = DefaultValueTestFlags(defaultValue: .disabled,
-                                             source: .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests)))
+                                             source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests)))
         internalUserDeciderStore.isInternalUser = false
 
         assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: false, for: testFlag)
@@ -146,7 +146,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_isNOTInternalUser_whenFeature_defaultValueTrue_noPrivacyConfigValue_returnsTrue() {
         let testFlag = DefaultValueTestFlags(defaultValue: .enabled,
-                                             source: .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests)))
+                                             source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests)))
         internalUserDeciderStore.isInternalUser = false
 
         assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: true, for: testFlag)
@@ -196,7 +196,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_defaultValueInternalOnly_noRemoteConfig_andIsInternalUser_returnsTrue() {
         let testFlag = DefaultValueTestFlags(defaultValue: .internalOnly,
-                                             source: .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests)))
+                                             source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests)))
         internalUserDeciderStore.isInternalUser = true
 
         assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: true, for: testFlag)
@@ -204,7 +204,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_defaultValueInternalOnly_noRemoteConfig_andIsNotInternalUser_returnsFalse() {
         let testFlag = DefaultValueTestFlags(defaultValue: .internalOnly,
-                                             source: .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests)))
+                                             source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests)))
         internalUserDeciderStore.isInternalUser = false
 
         assertFeatureFlagger(with: Self.embeddedConfig(), willReturn: false, for: testFlag)
@@ -212,7 +212,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_defaultValueInternalOnly_remoteConfigEnabled_andIsNotInternalUser_returnsTrue() {
         let testFlag = DefaultValueTestFlags(defaultValue: .internalOnly,
-                                             source: .remoteReleasable(.feature(.autofill)))
+                                             source: .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill)))
         internalUserDeciderStore.isInternalUser = false
 
         let embeddedData = Self.embeddedConfig(autofillState: "enabled")
@@ -221,7 +221,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_defaultValueInternalOnly_remoteConfigDisabled_andIsInternalUser_returnsFalse() {
         let testFlag = DefaultValueTestFlags(defaultValue: .internalOnly,
-                                             source: .remoteReleasable(.feature(.autofill)))
+                                             source: .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill)))
         internalUserDeciderStore.isInternalUser = true
 
         let embeddedData = Self.embeddedConfig(autofillState: "disabled")
@@ -245,7 +245,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
     }
     func testWhenRemoteReleasable_isNOTInternalUser_whenFeature_returnsPrivacyConfigValue() {
         internalUserDeciderStore.isInternalUser = false
-        let sourceProvider = FeatureFlagSource.remoteReleasable(.feature(.autofill))
+        let sourceProvider = FeatureFlagSource.remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
 
         var embeddedData = Self.embeddedConfig(autofillState: "enabled")
         assertFeatureFlagger(with: embeddedData, willReturn: true, for: sourceProvider)
@@ -256,7 +256,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 
     func testWhenRemoteReleasable_isInternalUser_whenFeature_returnsPrivacyConfigValue() {
         internalUserDeciderStore.isInternalUser = true
-        let sourceProvider = FeatureFlagSource.remoteReleasable(.feature(.autofill))
+        let sourceProvider = FeatureFlagSource.remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
 
         var embeddedData = Self.embeddedConfig(autofillState: "enabled")
         assertFeatureFlagger(with: embeddedData, willReturn: true, for: sourceProvider)
@@ -626,15 +626,15 @@ extension FakeExperimentFlags: FeatureFlagDescribing {
         case .disabledFlag:
                 .disabled
         case .internalFlag:
-                .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
+                .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .remoteReleasableFlag:
                 .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
         case .remoteReleasableFeature:
-                .remoteReleasable(.feature(.autofill))
+                .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
         case .internalFlagWithRemoteSubfeature:
                 .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
         case .internalFlagWithRemoteFeature:
-                .remoteReleasable(.feature(.autofill))
+                .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
         }
     }
 }

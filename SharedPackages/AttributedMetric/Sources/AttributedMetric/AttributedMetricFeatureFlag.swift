@@ -67,7 +67,7 @@ extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
     public var source: FeatureFlagSource {
         switch self {
         case .attributedMetrics:
-            return .remoteReleasable(.feature(.attributedMetrics))
+            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled))
         case .emitAllMetrics:
             return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.emitAllMetrics))
         case .retention:

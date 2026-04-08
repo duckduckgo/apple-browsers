@@ -1034,6 +1034,7 @@ extension TabCollectionViewModel {
         case .loaded(let tab):
             return tab
         case .unloaded(let unloaded):
+            Logger.tabLazyLoading.debug("Materializing unloaded tab \(unloaded.uuid) at \(String(reflecting: index))")
             let tab = unloaded.materialize()
             tabCollection(for: index)?.replaceTab(at: index.item, with: .loaded(tab))
             return tab

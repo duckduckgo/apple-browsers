@@ -178,6 +178,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
             lazyLoadTab(tab)
         } else if let index = findNextUnloadedTabIndex(),
                   let tab = dataSource.materialize(at: .unpinned(index)) {
+            Logger.tabLazyLoading.debug("Will materialize and reload unloaded tab at index \(index)")
             lazyLoadTab(tab)
         } else if numberOfTabsInProgress.value == 0 {
             lazyLoadingDidFinishSubject.send(true)

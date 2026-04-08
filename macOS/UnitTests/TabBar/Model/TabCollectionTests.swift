@@ -284,6 +284,20 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertTrue(tabCollection.contains(uuid: unloaded.uuid))
     }
 
+    @MainActor
+    func testAnyTabTabPropertyReturnsNilForUnloaded() {
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let anyTab = AnyTab.unloaded(unloaded)
+        XCTAssertNil(anyTab.tab)
+    }
+
+    @MainActor
+    func testAnyTabTabPropertyReturnsTabForLoaded() {
+        let tab = Tab()
+        let anyTab = AnyTab.loaded(tab)
+        XCTAssertTrue(anyTab.tab === tab)
+    }
+
     // MARK: - AnyTab Identity vs UUID Equality
 
     @MainActor

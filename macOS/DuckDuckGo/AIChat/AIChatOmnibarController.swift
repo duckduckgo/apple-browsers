@@ -427,13 +427,14 @@ final class AIChatOmnibarController {
         let modelId = effectiveModelId
         let mode = effectiveMode
         let toolChoice = effectiveToolChoice
+        let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
 
         Task { @MainActor in
             // Wait for any pending image resizes to complete
             await waitForAttachmentsReady?()
 
-            // Get attachments after resizes are complete
-            let attachments = attachmentsProvider?() ?? []
+            // Get attachments after resizes are complete — only include if model supports images or in image gen mode
+            let attachments = canSendImages ? (attachmentsProvider?() ?? []) : []
             let images = Self.nativePromptImages(from: attachments, supportedFormats: self.selectedModelImageFormats)
 
             if !attachments.isEmpty {

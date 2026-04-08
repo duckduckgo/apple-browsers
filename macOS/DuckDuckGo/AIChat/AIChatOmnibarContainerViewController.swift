@@ -258,6 +258,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.updateToolButtonsVisibility(isEnabled: self.omnibarController.isOmnibarToolsEnabled)
+                self.updateImageUploadVisibility(supportsImageUpload: self.omnibarController.selectedModelSupportsImageUpload)
             }
     }
 

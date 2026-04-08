@@ -232,7 +232,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         guard let dict = params as? [String: Any],
               let chatsArray = dict["chats"] as? [[String: Any]] else {
             Logger.aiChat.error("DuckAiNativeStorage: putChats — invalid params")
-            return nil
+            return SuccessResponse(success: false)
         }
         let records: [DuckAiChatRecord] = chatsArray.compactMap { entry in
             guard let chatId = entry["chatId"] as? String, !chatId.isEmpty,
@@ -247,10 +247,11 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
                 try self.handler.putChats(records)
             }
             Logger.aiChat.debug("DuckAiNativeStorage: putChats succeeded (\(records.count) chats)")
+            return SuccessResponse(success: true)
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putChats failed: \(error.localizedDescription)")
+            return SuccessResponse(success: false)
         }
-        return nil
     }
 
     private func getAllChats(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -458,6 +459,10 @@ private struct FileMetadataResponse: Encodable {
 
 private struct ListFilesResponse: Encodable {
     let files: [FileMetadataResponse]
+}
+
+private struct SuccessResponse: Encodable {
+    let success: Bool
 }
 
 private struct MigrationDoneResponse: Encodable {

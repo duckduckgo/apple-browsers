@@ -47,6 +47,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var homeButtonVisible: Bool?
     var sessionRestoreEnabled: Bool?
     var duckAiInAddressBarEnabled: Bool?
+    var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
 
     func onboardingStarted() {
         onboardingStartedCalled = true
@@ -100,5 +101,9 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     func reportException(with param: [String: String]) {
         reportExceptionCalled = true
         exceptionParams = param
+    }
+
+    func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent) {
+        reportedTelemetryEvent = event
     }
 }

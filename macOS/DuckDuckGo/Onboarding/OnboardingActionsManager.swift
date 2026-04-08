@@ -39,6 +39,12 @@ enum OnboardingExcludedStep: String {
     case addressBarMode
 }
 
+enum OnboardingRow: String, Decodable {
+    case dock
+    case dockInstructions = "dock-instructions"
+    case dataImport = "import"
+}
+
 protocol OnboardingActionsManaging {
     /// Provides the configuration needed to set up the FE onboarding
     var configuration: OnboardingConfiguration { get }
@@ -78,6 +84,9 @@ protocol OnboardingActionsManaging {
 
     /// It is called in case of error loading the pages
     func reportException(with param: [String: String])
+
+    /// Used for any event sent exclusively for telemetry
+    func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent)
 }
 
 protocol OnboardingNavigating: AnyObject {
@@ -109,12 +118,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         let platform = OnboardingPlatform(name: "macos")
         if applicationBuildType.isAppStoreBuild {
             let rows = [
-                featureFlagger.isFeatureOn(.addToDockAppStore) ? "dock-instructions" : nil,
-                "import",
+                featureFlagger.isFeatureOn(.addToDockAppStore) ? OnboardingRow.dockInstructions.rawValue : nil,
+                OnboardingRow.dataImport.rawValue,
             ].compactMap { $0 }
             systemSettings = SystemSettings(rows: rows)
         } else {
-            systemSettings = SystemSettings(rows: ["dock", "import"])
+            systemSettings = SystemSettings(rows: [
+                OnboardingRow.dock.rawValue,
+                OnboardingRow.dataImport.rawValue
+            ])
         }
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let preferredLocale = Bundle.main.preferredLocalizations.first ?? "en"
@@ -300,6 +312,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         let id = param["id"] ?? ""
         PixelKit.fire(GeneralPixel.onboardingExceptionReported(message: message, id: id), frequency: .standard)
         Logger.general.error("Onboarding error: \("\(id): \(message)", privacy: .public)")
+    }
+
+    func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent) {
+        print("*** Telemetry event reported: \(event)")
     }
 
     private func onboardingHasFinished() {

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import PixelKit
 import UserScript
@@ -46,6 +47,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case requestSetAsDefault
         case reportInitException
         case reportPageException
+        case telemetryEvent
     }
 
     init(onboardingActionsManager: OnboardingActionsManaging) {
@@ -69,7 +71,8 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .setDuckAiInAddressBar: setDuckAiInAddressBar,
             .stepCompleted: stepCompleted,
             .reportInitException: reportException,
-            .reportPageException: reportException
+            .reportPageException: reportException,
+            .telemetryEvent: reportTelemetryEvent
     ]
 
     @MainActor
@@ -158,6 +161,12 @@ extension OnboardingUserScript {
     private func reportException(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let params = params as? [String: String] else { return nil }
         onboardingActionsManager.reportException(with: params)
+        return nil
+    }
+
+    private func reportTelemetryEvent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let event: OnboardingUserScript.TelemetryEvent = DecodableHelper.decode(from: params) else { return nil }
+        onboardingActionsManager.reportTelemetryEvent(event)
         return nil
     }
 

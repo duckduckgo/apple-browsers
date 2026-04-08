@@ -928,7 +928,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
             webExtensionAvailability: webExtensionAvailability,
-            dockCustomization: dockCustomization
+            dockCustomization: dockCustomization,
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+            installDateProvider: { AppDelegate.firstLaunchDate }
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,

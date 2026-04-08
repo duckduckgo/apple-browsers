@@ -986,6 +986,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         attachmentsContainerView.isHidden = !showUpload
         if !showUpload {
             attachmentsHeightConstraint?.constant = 0
+            attachmentsErrorLabel.isHidden = true
         } else {
             updateAttachmentsLayout()
         }

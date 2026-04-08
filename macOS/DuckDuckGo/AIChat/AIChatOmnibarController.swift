@@ -414,8 +414,9 @@ final class AIChatOmnibarController {
             return
         }
 
-        // Block submission if too many images are attached
-        if let attachments = attachmentsProvider?(), attachments.count > Self.maxAttachments {
+        // Block submission if too many images are attached and would be sent
+        let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
+        if canSendImages, let attachments = attachmentsProvider?(), attachments.count > Self.maxAttachments {
             return
         }
 

@@ -47,7 +47,7 @@ extension TabViewController: AITabController {
 
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
     func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil) {
-
+        isVoiceModeRequested = false
         aiChatContentHandler.setPayload(payload: payload)
 
         if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -62,6 +62,7 @@ extension TabViewController: AITabController {
     
     /// Loads AIChat in voice mode.
     func loadVoiceMode() {
+        isVoiceModeRequested = true
         let url = aiChatContentHandler.buildVoiceModeURL()
         load(url: url)
     }

@@ -1,0 +1,16 @@
+// Website autoplay settings pixels
+// These pixels are fired when the user changes the global autoplay blocking mode in General preferences
+{
+    "m_mac_autoplay_setting": {
+        "description": "Fired when the user changes the global autoplay blocking mode in General > Permissions preferences",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "The autoplay blocking mode selected by the user",
+                "enum": ["allow-all", "block-audio", "block-all"]
+            }
+        ],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

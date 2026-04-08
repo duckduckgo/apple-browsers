@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Common
 import Combine
 import DDGSync
+import FeatureFlags
 import SwiftUI
 import Networking
 import Subscription
@@ -72,6 +73,7 @@ final class PreferencesSidebarModel: ObservableObject {
     let dockPreferences: DockPreferencesModel
     let accessibilityPreferences: AccessibilityPreferences
     let duckPlayerPreferences: DuckPlayerPreferences
+    let youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .init()
 
@@ -122,6 +124,7 @@ final class PreferencesSidebarModel: ObservableObject {
         dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
+        youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         self.loadSections = loadSections
@@ -143,6 +146,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.dockPreferences = dockPreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.duckPlayerPreferences = duckPlayerPreferences
+        self.youTubeAdBlockingPreferences = youTubeAdBlockingPreferences
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
@@ -183,6 +187,7 @@ final class PreferencesSidebarModel: ObservableObject {
         dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
+        youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         let loadSections = { currentSubscriptionFeatures in
@@ -190,6 +195,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingAIChat: includeAIChat,
+                includingYouTubeAdBlocking: featureFlagger.isFeatureOn(.adBlockingExtension),
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -212,6 +218,7 @@ final class PreferencesSidebarModel: ObservableObject {
                   dockPreferences: dockPreferences,
                   accessibilityPreferences: accessibilityPreferences,
                   duckPlayerPreferences: duckPlayerPreferences,
+                  youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
                   winBackOfferVisibilityManager: winBackOfferVisibilityManager
         )
     }
@@ -232,6 +239,7 @@ final class PreferencesSidebarModel: ObservableObject {
                                                privacyConfigurationManager: PrivacyConfigurationManaging) {
         let duckPlayerFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .duckPlayer)
         let aiChatFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .aiChat)
+        let youTubeAdBlockingFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .adBlockingExtension)
 
         let syncFeatureFlagsDidChange = syncService.featureFlagsPublisher.map { $0.contains(.userInterface) }
             .removeDuplicates()
@@ -239,11 +247,26 @@ final class PreferencesSidebarModel: ObservableObject {
 
         Publishers.Merge(duckPlayerFeatureFlagDidChange, syncFeatureFlagsDidChange)
             .merge(with: aiChatFeatureFlagDidChange)
+            .merge(with: youTubeAdBlockingFeatureFlagDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.refreshSections()
             }
             .store(in: &cancellables)
+
+        subscribeToLocalFeatureFlagOverrideChanges()
+    }
+
+    private func subscribeToLocalFeatureFlagOverrideChanges() {
+        if let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> {
+            overridesHandler.flagDidChangePublisher
+                .filter { flag, _ in flag == .adBlockingExtension }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.refreshSections()
+                }
+                .store(in: &cancellables)
+        }
     }
 
     private func subscribeToSubscriptionChanges() {

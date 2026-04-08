@@ -58,10 +58,12 @@ public protocol WebExtensionManaging: AnyObject {
 
     /// Uninstalls an extension with the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
     func uninstallExtension(identifier: String) throws
 
     /// Uninstalls all extensions.
     @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>]
 
@@ -73,6 +75,7 @@ public protocol WebExtensionManaging: AnyObject {
 
     /// Uninstalls an embedded extension of the given type if it's currently installed.
     @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
     func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType)
 
     /// Finds an installed extension by its embedded type.
@@ -109,4 +112,24 @@ public protocol WebExtensionManaging: AnyObject {
     /// Returns the extension context for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func context(for identifier: String) -> WKWebExtensionContext?
+
+    /// Clears all cached scriptlets from disk and resets in-memory state.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func clearCachedScriptlets()
+
+    /// Returns debug information about cached and installed scriptlets for all known extension types.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func scriptletDebugInfo() -> [ScriptletDebugInfo]
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public struct ScriptletDebugInfo: Identifiable {
+    public let extensionType: DuckDuckGoWebExtensionType
+    public let cachedVersion: String?
+    public let installedVersion: String?
+    public let scriptletPaths: [String]
+
+    public var id: String { extensionType.rawValue }
 }

@@ -1,0 +1,145 @@
+//
+//  UTIModelStore.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import os.log
+import Subscription
+
+@MainActor
+final class UTIModelStore {
+
+    var models: [AIChatModel] = []
+    var subscriptionState: SubscriptionState = .free
+
+    private let modelsService: AIChatModelsProviding
+    private(set) var preferences: AIChatPreferencesPersisting
+    private let subscriptionManager: any SubscriptionManager
+    private var modelsFetchTask: Task<Void, Never>?
+
+    var onModelsUpdated: (() -> Void)?
+
+    init(
+        modelsService: AIChatModelsProviding,
+        preferences: AIChatPreferencesPersisting,
+        subscriptionManager: any SubscriptionManager
+    ) {
+        self.modelsService = modelsService
+        self.preferences = preferences
+        self.subscriptionManager = subscriptionManager
+    }
+
+    var persistedModelId: String? {
+        let id = preferences.selectedModelId
+        if let id, !models.isEmpty {
+            if let model = models.first(where: { $0.id == id }) {
+                return model.entityHasAccess ? id : firstAccessibleModelId
+            }
+            return firstAccessibleModelId
+        }
+        return id ?? firstAccessibleModelId
+    }
+
+    var currentModelId: String? {
+        preferences.selectedModelId
+    }
+
+    var selectedModelSupportsImageUpload: Bool {
+        guard !models.isEmpty else { return false }
+        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
+    }
+
+    private var firstAccessibleModelId: String? {
+        models.first(where: { $0.entityHasAccess })?.id
+    }
+
+    func fetchModels() {
+        modelsFetchTask?.cancel()
+        modelsFetchTask = Task { [weak self] in
+            guard let self else { return }
+            let state = await self.resolveSubscriptionState()
+            guard !Task.isCancelled else { return }
+            self.subscriptionState = state
+            do {
+                let remoteModels = try await modelsService.fetchModels()
+                guard !Task.isCancelled else { return }
+                self.models = Self.resolveModels(from: remoteModels, userTier: state.userTier)
+                self.clearStaleModelSelectionIfNeeded()
+                self.onModelsUpdated?()
+            } catch {
+                os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
+            }
+        }
+    }
+
+    func updateSelectedModel(_ modelId: String) {
+        preferences.selectedModelId = modelId
+        preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+    }
+
+    static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
+        remoteModels.map { remote in
+            if remote.accessTier.isEmpty {
+                return AIChatModel(
+                    id: remote.id,
+                    name: remote.name,
+                    shortName: remote.modelShortName,
+                    provider: .from(id: remote.id, providerString: remote.provider),
+                    supportsImageUpload: remote.supportsImageUpload,
+                    supportedImageFormats: remote.supportsImageUpload ? ["png", "jpeg", "webp"] : [],
+                    entityHasAccess: remote.entityHasAccess,
+                    accessTier: remote.accessTier
+                )
+            }
+            return AIChatModel(remoteModel: remote, userTier: userTier)
+        }
+    }
+
+    nonisolated func resolveSubscriptionState() async -> SubscriptionState {
+        do {
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+            guard subscription.isActive, let tier = subscription.tier else {
+                return .free
+            }
+            let userTier: AIChatUserTier
+            switch tier {
+            case .plus: userTier = .plus
+            case .pro: userTier = .pro
+            }
+            return SubscriptionState(userTier: userTier, hasActiveSubscription: true)
+        } catch {
+            return .free
+        }
+    }
+
+    func cacheSelectedModelShortName(_ shortName: String) {
+        preferences.selectedModelShortName = shortName
+    }
+
+    func clearStaleModelSelectionIfNeeded() {
+        guard let selectedId = preferences.selectedModelId, !models.isEmpty else { return }
+
+        let selectedModel = models.first(where: { $0.id == selectedId })
+        let isStale = selectedModel == nil || selectedModel?.entityHasAccess == false
+
+        if isStale {
+            preferences.selectedModelId = nil
+            preferences.selectedModelShortName = nil
+        }
+    }
+}

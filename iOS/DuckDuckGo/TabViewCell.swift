@@ -248,6 +248,10 @@ final class TabViewCell: UICollectionViewCell {
     var logoImage: UIImage {
         Self.logoImage(for: tab)
     }
+    
+    var accentColor: UIColor {
+        isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+    }
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -361,15 +365,19 @@ final class TabViewCell: UICollectionViewCell {
         } else {
             image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
                 foreground: UIColor(designSystemColor: .accentContentPrimary),
-                background: UIColor(designSystemColor: .accent),
+                background: accentColor,
             )
         }
     }
 
     func updateCurrentTabBorder() {
-        let currentTabColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .decorationTertiary)
+        var borderColor: UIColor {
+            if isFireTab {
+                return UIColor(singleUseColor: .fireModeAccent)
+            }
+            return isSelectionModeEnabled ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .decorationTertiary)
+        }
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
-        let borderColor = isSelectionModeEnabled ? UIColor(designSystemColor: .accent) : currentTabColor
         border.layer.borderColor = borderColor.cgColor
         border.layer.borderWidth = showBorder ? Constants.selectedBorderWidth : Constants.unselectedBorderWidth
     }
@@ -501,7 +509,6 @@ final class TabViewCell: UICollectionViewCell {
 
     private func decorate() {
         border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
-        let accentColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
         unread.image = Self.unreadImageAsset(accentColor: accentColor).image(with: .current)
         removeButton.tintColor = UIColor(designSystemColor: .icons)
 

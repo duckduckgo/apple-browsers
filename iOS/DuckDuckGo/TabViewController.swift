@@ -1330,12 +1330,14 @@ class TabViewController: UIViewController {
         guard let chromeDelegate = chromeDelegate else { return }
 
         if UIDevice.current.userInterfaceIdiom == .pad {
+            controller.preferredContentSize = .init(width: 375, height: 650)
             controller.modalPresentationStyle = .popover
         } else {
             controller.modalPresentationStyle = .formSheet
         }
         present(controller: controller, fromView: chromeDelegate.omniBar.barView.privacyIconView  ?? privacyDashboardAnchor)
-        
+        self.privacyDashboard = controller
+
         featureDiscovery.setWasUsedBefore(.privacyDashboard)
     }
 

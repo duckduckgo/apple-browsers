@@ -37,9 +37,17 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
 /// to coordinate text input and submission.
 @MainActor
 final class AIChatOmnibarController {
+    enum ToolMode: Equatable {
+        case imageGeneration
+        case webSearch
+    }
+
     @Published private(set) var currentText: String = ""
-    @Published private(set) var isImageGenerationMode: Bool = false
+    @Published private(set) var activeToolMode: ToolMode?
     @Published var hasImageAttachments: Bool = false
+
+    var isImageGenerationMode: Bool { activeToolMode == .imageGeneration }
+    var isWebSearchMode: Bool { activeToolMode == .webSearch }
     weak var delegate: AIChatOmnibarControllerDelegate?
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
@@ -86,13 +94,22 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarTools)
     }
 
-    /// Whether the image generation button is available.
+    /// Whether the image generation tool is available.
     var isImageGenerationEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarImageGeneration)
     }
 
+    /// Whether the web search tool is available.
+    var isWebSearchEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
+    }
+
     func toggleImageGenerationMode() {
-        isImageGenerationMode.toggle()
+        activeToolMode = isImageGenerationMode ? nil : .imageGeneration
+    }
+
+    func toggleWebSearchMode() {
+        activeToolMode = isWebSearchMode ? nil : .webSearch
     }
 
     /// Publisher that emits when the omnibar tools enabled state changes.
@@ -286,6 +303,11 @@ final class AIChatOmnibarController {
         isImageGenerationMode ? "image-generation" : nil
     }
 
+    /// The tool choice to include in the prompt payload (e.g., ["WebSearch"]).
+    var effectiveToolChoice: [String]? {
+        isWebSearchMode ? [AIChatRAGTool.webSearch.rawValue] : nil
+    }
+
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
@@ -303,7 +325,7 @@ final class AIChatOmnibarController {
 
     func cleanup() {
         currentText = ""
-        isImageGenerationMode = false
+        activeToolMode = nil
         hasBeenActivated = false
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -401,9 +423,10 @@ final class AIChatOmnibarController {
 
         PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-        // Capture mode/model before async work — cleanup() may reset isImageGenerationMode
+        // Capture mode/model/toolChoice before async work — cleanup() may reset activeToolMode
         let modelId = effectiveModelId
         let mode = effectiveMode
+        let toolChoice = effectiveToolChoice
 
         Task { @MainActor in
             // Wait for any pending image resizes to complete
@@ -422,10 +445,10 @@ final class AIChatOmnibarController {
                 behavior: .currentTab
             )
             // Re-set prompt after tab opener to include images, model selection, and mode (tab opener overwrites with a plain query)
-            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, images: images, modelId: modelId, mode: mode)
+            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode)
             promptHandler.setData(prompt)
 
-            self.isImageGenerationMode = false
+            self.activeToolMode = nil
             onAttachmentsClearRequested?()
             delegate?.aiChatOmnibarControllerDidSubmit(self)
         }

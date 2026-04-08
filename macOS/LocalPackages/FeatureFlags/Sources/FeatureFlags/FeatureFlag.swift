@@ -261,6 +261,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the image generation mode toggle in the Duck.ai omnibar
     case aiChatOmnibarImageGeneration
 
+    /// Enables the web search tool in the Duck.ai omnibar
+    case aiChatOmnibarWebSearch
+
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
@@ -344,6 +347,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarResizable,
                 .aiChatChromeSidebar,
                 .aiChatOmnibarImageGeneration,
+                .aiChatOmnibarWebSearch,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .promoQueue,
@@ -445,6 +449,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsSyncChatsDeletion,
                 .aiChatMultiplePageContexts,
                 .aiChatOmnibarImageGeneration,
+                .aiChatOmnibarWebSearch,
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
@@ -625,6 +630,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
         case .aiChatOmnibarImageGeneration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarImageGeneration))
+        case .aiChatOmnibarWebSearch:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarWebSearch))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:

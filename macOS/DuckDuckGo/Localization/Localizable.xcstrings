@@ -4304,6 +4304,42 @@
         }
       }
     },
+    "aichat.web-search-button.deactivate-tooltip" : {
+      "comment" : "Tooltip for the web search button when web search mode is active",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deactivate web search"
+          }
+        }
+      }
+    },
+    "aichat.web-search-button.label" : {
+      "comment" : "Label for the web search tool button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Web Search"
+          }
+        }
+      }
+    },
+    "aichat.web-search-tool.subtitle" : {
+      "comment" : "Subtitle for Web Search tool in the tools dropdown menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find current information"
+          }
+        }
+      }
+    },
     "alert.sync-bookmarks-bad-data-error-description" : {
       "comment" : "Description for alert shown when sync error occurs because of bad data",
       "extractionState" : "extracted_with_value",

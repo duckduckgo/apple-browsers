@@ -233,16 +233,17 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             .store(in: &cancellables)
 
         Publishers.CombineLatest(
-            omnibarController.$isImageGenerationMode,
+            omnibarController.$activeToolMode,
             omnibarController.$hasImageAttachments
         )
         .receive(on: DispatchQueue.main)
-        .sink { [weak self] isImageGen, hasAttachments in
-            if isImageGen && hasAttachments {
+        .sink { [weak self] toolMode, hasAttachments in
+            switch toolMode {
+            case .imageGeneration where hasAttachments:
                 self?.placeholderLabel.stringValue = UserText.aiChatImageGenWithAttachmentPlaceholder
-            } else if isImageGen {
+            case .imageGeneration:
                 self?.placeholderLabel.stringValue = UserText.aiChatImageGenPlaceholder
-            } else {
+            default:
                 self?.placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder
             }
         }

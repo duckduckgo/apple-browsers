@@ -77,6 +77,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let imageUploadButton = AIChatOmnibarToolButton()
     private let toolsButton = AIChatOmnibarToolButton()
     private let imageGenActiveButton = AIChatOmnibarToolButton()
+    private let webSearchActiveButton = AIChatOmnibarToolButton()
     private let modelPickerButton = AIChatModelPickerButton()
     private let attachmentsContainerView = AIChatImageAttachmentsContainerView()
 
@@ -252,7 +253,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func subscribeToImageGenModeChanges() {
-        imageGenModeCancellable = omnibarController.$isImageGenerationMode
+        imageGenModeCancellable = omnibarController.$activeToolMode
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -284,17 +285,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateToolButtonsVisibility(isEnabled: Bool) {
         let isImageGenMode = omnibarController.isImageGenerationMode
+        let isWebSearchMode = omnibarController.isWebSearchMode
+        let hasActiveToolMode = omnibarController.activeToolMode != nil
+        let hasToolsAvailable = omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled
 
-        toolsButton.isHidden = !isEnabled || !omnibarController.isImageGenerationEnabled
+        toolsButton.isHidden = !isEnabled || !hasToolsAvailable
         imageGenActiveButton.isHidden = !isEnabled || !isImageGenMode
+        webSearchActiveButton.isHidden = !isEnabled || !isWebSearchMode
         imageUploadButton.isHidden = !isEnabled
         if isEnabled {
             imageUploadButton.isHidden = !isImageGenMode && !omnibarController.selectedModelSupportsImageUpload
             imageUploadButton.isEnabled = !attachmentsContainerView.isFull
             let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
             modelPickerButton.isHidden = isImageGenMode || !hasContent
-            // Hide the Tools label in image gen mode (button stays visible)
-            toolsButton.label = isImageGenMode ? nil : UserText.aiChatToolsButtonLabel
+            // Hide the Tools label when any tool mode is active (button stays visible as icon-only)
+            toolsButton.label = hasActiveToolMode ? nil : UserText.aiChatToolsButtonLabel
         } else {
             modelPickerButton.isHidden = true
         }
@@ -305,7 +310,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         updateToolsLeadingConstraint()
 
-        updateImageGenModeUI(isImageGenMode)
+        updateToolModeUI()
 
         // Notify that passthrough height needs recalculation since tools area changed
         onPassthroughHeightNeedsUpdate?()
@@ -324,8 +329,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
-    private func updateImageGenModeUI(_ isImageGenMode: Bool) {
-        // Active pill styling
+    private func updateToolModeUI() {
+        let isImageGenMode = omnibarController.isImageGenerationMode
+        let isWebSearchMode = omnibarController.isWebSearchMode
+
+        // Active pill styling for image gen
         imageGenActiveButton.activeBackgroundColor = isImageGenMode
             ? NSColor(designSystemColor: .accentAltPrimary)
             : nil
@@ -333,11 +341,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             ? NSColor(designSystemColor: .accentAltSecondary)
             : nil
 
+        // Active pill styling for web search
+        webSearchActiveButton.activeBackgroundColor = isWebSearchMode
+            ? NSColor(designSystemColor: .accentAltPrimary)
+            : nil
+        webSearchActiveButton.activePressedBackgroundColor = isWebSearchMode
+            ? NSColor(designSystemColor: .accentAltSecondary)
+            : nil
+
         // Hide suggestions in image gen mode or when attachments are present
         let suppress = shouldSuppressSuggestions
         suggestionsView.isHidden = suppress
-        // Force height recalculation — collapses to 0 when suppressed, restores when leaving
-        suggestionsHeight = -1 // invalidate cache to allow update
+        suggestionsHeight = -1
         updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
     }
 
@@ -415,6 +430,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageGenActiveButton.isHidden = true
         containerView.addSubview(imageGenActiveButton)
 
+        webSearchActiveButton.translatesAutoresizingMaskIntoConstraints = false
+        webSearchActiveButton.target = self
+        webSearchActiveButton.action = #selector(webSearchActiveButtonClicked)
+        webSearchActiveButton.image = DesignSystemImages.Glyphs.Size16.globe
+        webSearchActiveButton.label = UserText.aiChatWebSearchButtonLabel
+        webSearchActiveButton.trailingImage = DesignSystemImages.Glyphs.Size12.closeSmall
+        webSearchActiveButton.toolTip = UserText.aiChatWebSearchDeactivateTooltip
+        webSearchActiveButton.setAccessibilityLabel(UserText.aiChatWebSearchDeactivateTooltip)
+        webSearchActiveButton.isHidden = true
+        containerView.addSubview(webSearchActiveButton)
+
         modelPickerButton.translatesAutoresizingMaskIntoConstraints = false
         modelPickerButton.target = self
         modelPickerButton.action = #selector(modelPickerButtonClicked)
@@ -471,6 +497,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             imageGenActiveButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
             imageGenActiveButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
 
+            webSearchActiveButton.leadingAnchor.constraint(equalTo: toolsButton.trailingAnchor, constant: Constants.toolButtonSpacing),
+            webSearchActiveButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
+            webSearchActiveButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+
             attachmentsContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
             attachmentsContainerView.bottomAnchor.constraint(equalTo: imageUploadButton.topAnchor),
 
@@ -511,6 +541,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Tool buttons sit above suggestions
             toolsButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             imageGenActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
+            webSearchActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             imageUploadButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             modelPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
@@ -666,22 +697,43 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.toggleImageGenerationMode()
     }
 
+    @objc private func webSearchActiveButtonClicked() {
+        omnibarController.toggleWebSearchMode()
+    }
+
     private func buildToolsMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let createImageItem = NSMenuItem()
-        createImageItem.attributedTitle = toolsMenuItemAttributedTitle(
-            title: UserText.aiChatImageGenButtonLabel,
-            subtitle: UserText.aiChatImageGenToolSubtitle
-        )
-        createImageItem.image = DesignSystemImages.Glyphs.Size16.image
-        createImageItem.target = self
-        createImageItem.action = #selector(toolsMenuCreateImageClicked)
-        if omnibarController.isImageGenerationMode {
-            createImageItem.state = .on
+        if omnibarController.isImageGenerationEnabled {
+            let createImageItem = NSMenuItem()
+            createImageItem.attributedTitle = toolsMenuItemAttributedTitle(
+                title: UserText.aiChatImageGenButtonLabel,
+                subtitle: UserText.aiChatImageGenToolSubtitle
+            )
+            createImageItem.image = DesignSystemImages.Glyphs.Size16.image
+            createImageItem.target = self
+            createImageItem.action = #selector(toolsMenuCreateImageClicked)
+            if omnibarController.isImageGenerationMode {
+                createImageItem.state = .on
+            }
+            menu.addItem(createImageItem)
         }
-        menu.addItem(createImageItem)
+
+        if omnibarController.isWebSearchEnabled {
+            let webSearchItem = NSMenuItem()
+            webSearchItem.attributedTitle = toolsMenuItemAttributedTitle(
+                title: UserText.aiChatWebSearchButtonLabel,
+                subtitle: UserText.aiChatWebSearchToolSubtitle
+            )
+            webSearchItem.image = DesignSystemImages.Glyphs.Size16.globe
+            webSearchItem.target = self
+            webSearchItem.action = #selector(toolsMenuWebSearchClicked)
+            if omnibarController.isWebSearchMode {
+                webSearchItem.state = .on
+            }
+            menu.addItem(webSearchItem)
+        }
 
         return menu
     }
@@ -703,6 +755,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func toolsMenuCreateImageClicked() {
         omnibarController.toggleImageGenerationMode()
+    }
+
+    @objc private func toolsMenuWebSearchClicked() {
+        omnibarController.toggleWebSearchMode()
     }
 
     @objc private func imageUploadButtonClicked() {
@@ -995,6 +1051,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageGenActiveButton.tintColor = toolButtonTintColor
         imageGenActiveButton.hoverBackgroundColor = .buttonMouseOver
         imageGenActiveButton.pressedBackgroundColor = .buttonMouseDown
+        webSearchActiveButton.tintColor = toolButtonTintColor
+        webSearchActiveButton.hoverBackgroundColor = .buttonMouseOver
+        webSearchActiveButton.pressedBackgroundColor = .buttonMouseDown
         imageUploadButton.tintColor = toolButtonTintColor
         imageUploadButton.hoverBackgroundColor = .buttonMouseOver
         imageUploadButton.pressedBackgroundColor = .buttonMouseDown

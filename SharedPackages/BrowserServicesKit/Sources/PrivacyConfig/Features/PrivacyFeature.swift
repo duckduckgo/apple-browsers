@@ -429,6 +429,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables image generation mode toggle in the Duck.ai omnibar
     case omnibarImageGeneration
+
+    /// Enables web search tool in the Duck.ai omnibar
+    case omnibarWebSearch
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

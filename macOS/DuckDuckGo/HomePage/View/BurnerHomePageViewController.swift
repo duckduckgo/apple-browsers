@@ -26,6 +26,7 @@ final class BurnerHomePageViewController: NSViewController {
     let appearancePreferences: AppearancePreferences
     let themeManager: ThemeManager
     let subscriptionPromoViewModel: SubscriptionPromoViewModel
+    private weak var currentTab: Tab?
 
     var openSubscriptionPage: (() -> Void)?
 
@@ -47,6 +48,9 @@ final class BurnerHomePageViewController: NSViewController {
         self.subscriptionPromoViewModel.onButtonAction = { [weak self] in
             self?.openSubscriptionPage?()
         }
+        self.subscriptionPromoViewModel.onDismissAction = { [weak self] in
+            self?.currentTab?.subscriptionPromo?.markForceDismissed()
+        }
     }
 
     override func loadView() {
@@ -58,18 +62,23 @@ final class BurnerHomePageViewController: NSViewController {
     }
 
     func updatePromoState(for tab: Tab) {
-        if let promoExtension = tab.subscriptionPromo, promoExtension.hasEvaluated {
-            subscriptionPromoViewModel.restoreState(
-                shouldShowPromo: promoExtension.shouldShowPromo,
-                isEligibleForFreeTrial: promoExtension.isEligibleForFreeTrial
-            )
-        } else {
-            subscriptionPromoViewModel.updatePromoVisibility()
-            tab.subscriptionPromo?.markEvaluated(
-                shouldShowPromo: subscriptionPromoViewModel.shouldShowPromo,
-                isEligibleForFreeTrial: subscriptionPromoViewModel.isEligibleForFreeTrial
-            )
+        currentTab = tab
+
+        if let promoExtension = tab.subscriptionPromo {
+            if promoExtension.forceDismissed {
+                subscriptionPromoViewModel.restoreState(shouldShowPromo: false)
+                return
+            }
+
+            if promoExtension.hasEvaluated {
+                subscriptionPromoViewModel.restoreState(shouldShowPromo: promoExtension.shouldShowPromo)
+                return
+            }
         }
+
+        subscriptionPromoViewModel.evaluatePromoVisibility()
+        tab.subscriptionPromo?.markEvaluated(shouldShowPromo: subscriptionPromoViewModel.shouldShowPromo)
     }
+
 
 }

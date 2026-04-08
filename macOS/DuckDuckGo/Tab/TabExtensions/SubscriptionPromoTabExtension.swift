@@ -22,21 +22,25 @@ final class SubscriptionPromoTabExtension: TabExtension {
 
     private(set) var hasEvaluated = false
     private(set) var shouldShowPromo = false
-    private(set) var isEligibleForFreeTrial = false
+    private(set) var forceDismissed = false
 
-    func markEvaluated(shouldShowPromo: Bool, isEligibleForFreeTrial: Bool) {
+    func markEvaluated(shouldShowPromo: Bool) {
         hasEvaluated = true
         self.shouldShowPromo = shouldShowPromo
-        self.isEligibleForFreeTrial = isEligibleForFreeTrial
+    }
+
+    func markForceDismissed() {
+        forceDismissed = true
     }
 }
 
 protocol SubscriptionPromoTabProtocol: AnyObject {
     var hasEvaluated: Bool { get }
     var shouldShowPromo: Bool { get }
-    var isEligibleForFreeTrial: Bool { get }
+    var forceDismissed: Bool { get }
 
-    func markEvaluated(shouldShowPromo: Bool, isEligibleForFreeTrial: Bool)
+    func markEvaluated(shouldShowPromo: Bool)
+    func markForceDismissed()
 }
 
 extension SubscriptionPromoTabExtension: SubscriptionPromoTabProtocol {

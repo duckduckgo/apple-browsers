@@ -48,7 +48,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertTrue(sut.shouldShowPromo)
     }
@@ -57,7 +57,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.fireTabVisitCount = 3
         sut = makeSUT(locale: Locale(identifier: "en_GB"))
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertFalse(sut.shouldShowPromo)
     }
@@ -67,7 +67,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         subscriptionManager.resultSubscription = .success(makeSubscription())
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertFalse(sut.shouldShowPromo)
     }
@@ -76,7 +76,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.fireTabVisitCount = 2
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertFalse(sut.shouldShowPromo)
     }
@@ -86,7 +86,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoActioned = true
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertFalse(sut.shouldShowPromo)
     }
@@ -98,7 +98,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoDismissedDate = Date()
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertFalse(sut.shouldShowPromo)
     }
@@ -108,7 +108,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertTrue(sut.shouldShowPromo)
     }
@@ -121,7 +121,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoDisplayWindowStart = Date()
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertTrue(sut.shouldShowPromo)
     }
@@ -132,7 +132,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoDisplayWindowStart = Date()
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertFalse(sut.shouldShowPromo)
     }
@@ -143,7 +143,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoDisplayWindowStart = Calendar.current.date(byAdding: .day, value: -29, to: Date())
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertTrue(sut.shouldShowPromo)
     }
@@ -154,7 +154,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoDisplayWindowStart = Calendar.current.date(byAdding: .day, value: -29, to: Date())
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertEqual(persistor.promoDisplayCount, 1)
         XCTAssertNotNil(persistor.promoDisplayWindowStart)
@@ -164,19 +164,19 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 1)
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 2)
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 3)
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 4)
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 4)
         XCTAssertFalse(sut.shouldShowPromo)
     }
@@ -188,20 +188,20 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         sut = makeSUT()
 
         // Show promo 3 times
-        sut.updatePromoVisibility()
-        sut.updatePromoVisibility()
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
+        sut.evaluatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 3)
 
         // 4th display — user dismisses
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 4)
         XCTAssertTrue(sut.shouldShowPromo)
         sut.dismiss()
         XCTAssertFalse(sut.shouldShowPromo)
 
         // Dismiss cooldown still active (same day) — blocked by cooldown
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
@@ -213,14 +213,14 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         sut = makeSUT()
 
         // 4th display — user dismisses
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 4)
         sut.dismiss()
 
         // Simulate dismiss cooldown expiring (29 days ago) but display window still active (started 20 days ago)
         persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertFalse(sut.shouldShowPromo, "Display limit should still block even after dismiss cooldown expires")
         XCTAssertEqual(persistor.promoDisplayCount, 4)
     }
@@ -232,7 +232,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertTrue(sut.shouldShowPromo, "Both cooldown and display window expired — promo should show again")
         XCTAssertEqual(persistor.promoDisplayCount, 1, "Display count should reset for new window")
@@ -243,9 +243,9 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         sut = makeSUT()
 
         // Show promo 3 times, user dismisses on 3rd
-        sut.updatePromoVisibility()
-        sut.updatePromoVisibility()
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
+        sut.evaluatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertEqual(persistor.promoDisplayCount, 3)
         sut.dismiss()
 
@@ -253,7 +253,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
         persistor.promoDisplayWindowStart = Calendar.current.date(byAdding: .day, value: -29, to: Date())
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertTrue(sut.shouldShowPromo)
         XCTAssertEqual(persistor.promoDisplayCount, 1, "Should be first display in a new 28-day window")
@@ -266,7 +266,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         subscriptionManager.isEligibleForFreeTrialResult = true
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertTrue(sut.isEligibleForFreeTrial)
     }
@@ -276,7 +276,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         subscriptionManager.isEligibleForFreeTrialResult = false
         sut = makeSUT()
 
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
 
         XCTAssertFalse(sut.isEligibleForFreeTrial)
     }
@@ -286,7 +286,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
     func testDismissSetsDateAndHidesPromo() {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertTrue(sut.shouldShowPromo)
 
         sut.dismiss()
@@ -295,10 +295,22 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertNotNil(persistor.promoDismissedDate)
     }
 
+    func testDismissCallsOnDismissAction() {
+        persistor.fireTabVisitCount = 3
+        sut = makeSUT()
+        var dismissActionCalled = false
+        sut.onDismissAction = { dismissActionCalled = true }
+
+        sut.evaluatePromoVisibility()
+        sut.dismiss()
+
+        XCTAssertTrue(dismissActionCalled)
+    }
+
     func testOnPromoButtonTappedSetsActionedAndHidesPromo() {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
-        sut.updatePromoVisibility()
+        sut.evaluatePromoVisibility()
         XCTAssertTrue(sut.shouldShowPromo)
 
         sut.onPromoButtonTapped()

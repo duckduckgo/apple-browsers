@@ -48,11 +48,22 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
         displayCountItem.isEnabled = false
         menu.addItem(displayCountItem)
 
+        let dismissedItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        dismissedItem.tag = 3
+        dismissedItem.isEnabled = false
+        menu.addItem(dismissedItem)
+
+        let actionedItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        actionedItem.tag = 4
+        actionedItem.isEnabled = false
+        menu.addItem(actionedItem)
+
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Reset Fire Tab Visit Count", action: #selector(resetFireTabVisitCount), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Dismissed Date", action: #selector(resetPromoDismissedDate), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Actioned", action: #selector(resetPromoActioned), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Display Count", action: #selector(resetPromoDisplayCount), target: self))
+        menu.addItem(NSMenuItem(title: "Reset Promo Display Window Start", action: #selector(resetPromoDisplayWindowStart), target: self))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Reset All Promo State", action: #selector(resetAllPromoState), target: self))
 
@@ -76,11 +87,16 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
         UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoDisplayWindowStart.rawValue)
     }
 
+    @objc func resetPromoDisplayWindowStart() {
+        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoDisplayWindowStart.rawValue)
+    }
+
     @objc func resetAllPromoState() {
         resetFireTabVisitCount()
         resetPromoDismissedDate()
         resetPromoActioned()
         resetPromoDisplayCount()
+        resetPromoDisplayWindowStart()
     }
 }
 
@@ -88,9 +104,30 @@ extension SubscriptionPromoDebugMenu: NSMenuDelegate {
 
     func menuWillOpen(_ menu: NSMenu) {
         let visitCount = min(persistor.fireTabVisitCount, SubscriptionPromoViewModel.requiredVisitCount)
-        menu.item(withTag: 1)?.title = "Fire Tab Visit Count: \(visitCount)/\(SubscriptionPromoViewModel.requiredVisitCount)"
+        menu.item(withTag: 1)?.title = "👀 Fire Tab Visit Count: \(visitCount)/\(SubscriptionPromoViewModel.requiredVisitCount)"
 
         let displayCount = persistor.promoDisplayCount
-        menu.item(withTag: 2)?.title = "Promo Display Count: \(displayCount)/\(SubscriptionPromoViewModel.maxDisplaysPerTimeWindow)"
+        menu.item(withTag: 2)?.title = "👀 Promo Display Count: \(displayCount)/\(SubscriptionPromoViewModel.maxDisplaysPerTimeWindow)"
+
+        let isDismissed = isDismissedWithinCooldown
+        let daysSinceLastDismissed = daysSinceLastDismissed.map { "\($0)" } ?? "N/A"
+        menu.item(withTag: 3)?.title = "👀 Dismissed: \(isDismissed) (days since: \(daysSinceLastDismissed))"
+
+        let isActioned = persistor.promoActioned
+        menu.item(withTag: 4)?.title = "👀 CTA Actioned: \(isActioned)"
+    }
+
+    private var daysSinceLastDismissed: Int? {
+        guard let dismissedDate = persistor.promoDismissedDate else {
+            return nil
+        }
+        return Calendar.current.dateComponents([.day], from: dismissedDate, to: Date()).day ?? 0
+    }
+
+    private var isDismissedWithinCooldown: Bool {
+        guard let days = daysSinceLastDismissed else {
+            return false
+        }
+        return days < 28
     }
 }

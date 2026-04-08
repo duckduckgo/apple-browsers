@@ -97,6 +97,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
     @Published private(set) var isEligibleForFreeTrial: Bool = false
 
     var onButtonAction: (() -> Void)?
+    var onDismissAction: (() -> Void)?
 
     init(subscriptionManager: any SubscriptionManager,
          persistor: SubscriptionPromoPersisting? = nil,
@@ -106,14 +107,14 @@ final class SubscriptionPromoViewModel: ObservableObject {
         self.locale = locale
     }
 
-    func restoreState(shouldShowPromo: Bool, isEligibleForFreeTrial: Bool) {
+    func restoreState(shouldShowPromo: Bool) {
         self.shouldShowPromo = shouldShowPromo
-        self.isEligibleForFreeTrial = isEligibleForFreeTrial
     }
 
     func dismiss() {
         persistor.promoDismissedDate = Date()
         shouldShowPromo = false
+        onDismissAction?()
     }
 
     func onPromoButtonTapped() {
@@ -123,14 +124,14 @@ final class SubscriptionPromoViewModel: ObservableObject {
     }
 
     /// Display conditions:
+    /// - Not force-dismissed on this tab (per-tab, lasts for the tab's lifetime)
     /// - US locale only
     /// - Non-subscriber only
     /// - Fire Tab visited >= 3 times
     /// - User has not already actioned (tapped "Try for Free" / "Learn More")
     /// - Not dismissed within the 28-day cooldown
     /// - Not shown more than 4 times in any given 28-day rolling window
-    func updatePromoVisibility() {
-        print("👀 promo display count: \(persistor.promoDisplayCount)")
+    func evaluatePromoVisibility() {
         guard isUSLocale else {
             shouldShowPromo = false
             return

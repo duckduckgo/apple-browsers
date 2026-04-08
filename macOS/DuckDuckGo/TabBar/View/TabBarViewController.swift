@@ -2215,6 +2215,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
         hoverMaterializationTimer?.invalidate()
 
         guard let unloadedVM = tabBarViewItem.tabViewModel as? UnloadedTabViewModel else { return }
+
+        let hasSnapshotPreview = unloadedVM.snapshot != nil
+        guard !hasSnapshotPreview else { return }
+
         let uuid = unloadedVM.unloadedTab.uuid
 
         hoverMaterializationTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in

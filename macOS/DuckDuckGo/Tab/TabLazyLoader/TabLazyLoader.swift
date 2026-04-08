@@ -170,7 +170,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
 
     private func findAndReloadNextTab() {
         guard numberOfTabsRemaining > 0 else {
-            Logger.tabLazyLoading.debug("Maximum allowed tabs loaded (\(Const.maxNumberOfLazyLoadedTabs), skipping")
+            Logger.tabLazyLoading.debug("Maximum allowed tabs loaded (\(Const.maxNumberOfLazyLoadedTabs)), skipping")
             return
         }
 

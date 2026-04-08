@@ -3965,7 +3965,8 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onSwitchToTab(_ tab: Tab) {
-        guard tabManager.currentTabsModel.tabExists(tab: tab) else {
+        let targetTabsModel = tabManager.tabsModel(for: tab.mode)
+        guard targetTabsModel.tabExists(tab: tab) else {
             viewCoordinator.omniBar.endEditing()
             return
         }
@@ -3976,11 +3977,11 @@ extension MainViewController: OmniBarDelegate {
         }
         let wasAfterIdle = currentTab?.openedAfterIdle ?? false
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
-        selectTab(tab)
         viewCoordinator.omniBar.endEditing()
         if let currentTab {
             closeTab(currentTab)
         }
+        selectTab(tab)
     }
 
     func onToggleModeSwitched() {
@@ -4131,7 +4132,8 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
-        guard tabManager.currentTabsModel.tabExists(tab: tab) else {
+        let targetTabsModel = tabManager.tabsModel(for: tab.mode)
+        guard targetTabsModel.tabExists(tab: tab) else {
             controller.setEscapeHatch(nil)
             currentNTPEscapeHatch = nil
             return
@@ -4524,7 +4526,7 @@ extension MainViewController: TabSwitcherDelegate {
         }
         
         if let tab {
-            tabManager.select(tab, forcingMode: true, dismissCurrent: false)
+            tabManager.select(tab, dismissCurrent: false)
         }
 
         guard let newTab = tabManager.current(createIfNeeded: true) else {

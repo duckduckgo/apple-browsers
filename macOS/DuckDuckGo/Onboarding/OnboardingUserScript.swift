@@ -155,6 +155,9 @@ extension OnboardingUserScript {
         if let params = params as? [String: String], let stepString = params["id"], let step = OnboardingSteps(rawValue: stepString) {
             onboardingActionsManager.stepCompleted(step: step)
         }
+        if let params = params as? [String: String], let stepString = params["next"], let step = OnboardingSteps(rawValue: stepString) {
+            onboardingActionsManager.stepShown(step: step)
+        }
         return nil
     }
 

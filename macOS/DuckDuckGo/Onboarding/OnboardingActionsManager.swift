@@ -83,6 +83,9 @@ protocol OnboardingActionsManaging {
     /// It is called every time the user ends an onboarding step
     func stepCompleted(step _: OnboardingSteps)
 
+    /// It is called every time the user ends an onboarding step with another step to show next
+    func stepShown(step _: OnboardingSteps)
+
     /// It is called in case of error loading the pages
     func reportException(with param: [String: String])
 
@@ -162,6 +165,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         return excludedSteps
     }
+
+    private var didRequestDefaultBrowser: Bool = false
+    private var didToggleDuckPlayer: Bool = false
 
     convenience init(
         navigationDelegate: OnboardingNavigating,
@@ -243,10 +249,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func addToDock() {
         dockCustomization.addToDock()
+        onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
     }
 
     @MainActor
     func importData() async -> Bool {
+        onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
         return await withCheckedContinuation { continuation in
             dataImportProvider.showImportWindow(customTitle: UserText.importDataTitleOnboarding, completion: { [weak self] in
                 guard let self else {
@@ -260,6 +268,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func setAsDefault() {
         try? defaultBrowserProvider.presentDefaultBrowserPrompt()
+        onboardingSharedPixelHandler.fire(.setDefault(.clicked(.engage)))
+        didRequestDefaultBrowser = true
     }
 
     func setBookmarkBar(enabled: Bool) {
@@ -292,6 +302,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     func stepCompleted(step: OnboardingSteps) {
         Logger.general.debug("Onboarding step completed: \("\(step)", privacy: .public)")
         fireStepCompletedPixel(for: step)
+        fireSharedPixelOnStepCompletion(for: step)
     }
 
     private func fireStepCompletedPixel(for step: OnboardingSteps) {
@@ -318,6 +329,72 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
+    private func fireSharedPixelOnStepCompletion(for step: OnboardingSteps) {
+        let pixel: OnboardingSharedPixelEvent?
+        switch step {
+        case .welcome:
+            // This step is measured as part of the getStarted step, when the button is clicked
+            pixel = nil
+        case .getStarted:
+            pixel = .welcome(.clicked(.engage))
+        case .makeDefaultSingle:
+            if !didRequestDefaultBrowser {
+                pixel = .setDefault(.clicked(.dismiss))
+            } else {
+                // If the user sets the default browser, we measure that click when it happens
+                pixel = nil
+            }
+        case .systemSettings:
+            // Each system settings row is measured separately, when it is completed
+            pixel = nil
+        case .duckPlayerSingle:
+            if !didToggleDuckPlayer {
+                pixel = .duckPlayer(.clicked(.dismiss))
+            } else {
+                // If the user previews Duck Player, we measure that click when it happens
+                pixel = nil
+            }
+        case .customize:
+            let enabled: [OnboardingSharedPixelEvent.CustomizeEvent.Value] = [
+                appearancePreferences.showBookmarksBar ? .bookmarksBar : nil,
+                startupPreferences.restorePreviousSession ? .restoreSession : nil,
+                startupPreferences.homeButtonPosition == .left ? .homeButton : nil
+            ].compactMap { $0 }
+            pixel = .customization(.clicked(enabled))
+        case .addressBarMode:
+            let value: OnboardingSharedPixelEvent.SearchExperienceEvent.Value = aiChatPreferencesStorage.showSearchAndDuckAIToggle ? .searchPlusDuckAI : .searchOnly
+            pixel = .searchExperience(.clicked(value))
+        }
+        if let pixel {
+            onboardingSharedPixelHandler.fire(pixel)
+        }
+    }
+
+    func stepShown(step: OnboardingSteps) {
+        let pixel: OnboardingSharedPixelEvent?
+        switch step {
+        case .welcome:
+            pixel = .welcome(.shown)
+        case .getStarted:
+            // This step is measured as part of the welcome step, since it is shown automatically
+            pixel = nil
+        case .makeDefaultSingle:
+            pixel = .setDefault(.shown)
+        case .systemSettings:
+            // Each system settings row is measured separately, when it is shown
+            pixel = nil
+        case .duckPlayerSingle:
+            pixel = .duckPlayer(.shown)
+        case .customize:
+            pixel = .customization(.shown)
+        case .addressBarMode:
+            pixel = .searchExperience(.shown)
+        }
+        if let pixel {
+            onboardingSharedPixelHandler.fire(pixel)
+        }
+    }
+
     func reportException(with param: [String: String]) {
         let message = param["message"] ?? ""
         let id = param["id"] ?? ""
@@ -326,7 +403,27 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent) {
-        print("*** Telemetry event reported: \(event)")
+        switch event {
+        case .dockInstructionsShown:
+            onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
+        case .duckPlayerToggled:
+            didToggleDuckPlayer = true
+            onboardingSharedPixelHandler.fire(.duckPlayer(.clicked(.engage)))
+        case .rowShown(let row):
+            switch row {
+            case .dock, .dockInstructions:
+                onboardingSharedPixelHandler.fire(.addToDock(.shown))
+            case .dataImport:
+                onboardingSharedPixelHandler.fire(.importData(.shown))
+            }
+        case .rowSkipped(let row):
+            switch row {
+            case .dock, .dockInstructions:
+                onboardingSharedPixelHandler.fire(.addToDock(.clicked(.dismiss)))
+            case .dataImport:
+                onboardingSharedPixelHandler.fire(.importData(.clicked(.dismiss)))
+            }
+        }
     }
 
     private func onboardingHasFinished() {

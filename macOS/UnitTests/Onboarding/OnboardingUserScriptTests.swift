@@ -151,6 +151,17 @@ final class OnboardingUserScriptTests: XCTestCase {
     }
 
     @MainActor
+    func testStepCompleted_CallsStepShown_ForNextStep() async throws {
+        let randomStep = OnboardingSteps.allCases.randomElement()!
+        let params = ["next": randomStep.rawValue]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "stepCompleted"))
+
+        let result = try await handler(params, WKScriptMessage.mock())
+        XCTAssertEqual(mockManager.shownStep, randomStep)
+        XCTAssertNil(result)
+    }
+
+    @MainActor
     func testRowShownTelemetryEvent_CallsReportTelemetryEvent_WithExpectedEvent() async throws {
         let rowShown = OnboardingRow.dataImport
         let params = [

@@ -393,6 +393,144 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(self.appearancePersistor.homeButtonPosition, .hidden)
     }
 
+    // MARK: Shared pixels
+
+    func testExpectedShownPixelsFired_WhenStepShown() {
+        // When
+        manager.stepShown(step: .welcome)
+        manager.stepShown(step: .getStarted)
+        manager.stepShown(step: .makeDefaultSingle)
+        manager.stepShown(step: .systemSettings)
+        manager.stepShown(step: .duckPlayerSingle)
+        manager.stepShown(step: .customize)
+        manager.stepShown(step: .addressBarMode)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .welcome(.shown),
+            .setDefault(.shown),
+            .duckPlayer(.shown),
+            .customization(.shown),
+            .searchExperience(.shown)
+        ])
+    }
+
+    func testExpectedShownPixelsFired_WhenRowShownTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.rowShown(.dock))
+        manager.reportTelemetryEvent(.rowShown(.dockInstructions))
+        manager.reportTelemetryEvent(.rowShown(.dataImport))
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .addToDock(.shown),
+            .addToDock(.shown),
+            .importData(.shown)
+        ])
+    }
+
+    func testExpectedDismissPixelsFired_WhenRowSkippedTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.rowSkipped(.dock))
+        manager.reportTelemetryEvent(.rowSkipped(.dockInstructions))
+        manager.reportTelemetryEvent(.rowSkipped(.dataImport))
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .addToDock(.clicked(.dismiss)),
+            .addToDock(.clicked(.dismiss)),
+            .importData(.clicked(.dismiss))
+        ])
+    }
+
+    func testOnlySetDefaultEngagePixelFired_WhenDefaultBrowserRequested() {
+        // When
+        manager.setAsDefault()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.engage))])
+
+        // When
+        manager.stepCompleted(step: .makeDefaultSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.engage))])
+    }
+
+    func testSetDefaultDismissPixelFired_WhenDefaultBrowserStepCompleted_AndDefaultBrowserNotRequested() {
+        // When
+        manager.stepCompleted(step: .makeDefaultSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.dismiss))])
+    }
+
+    func testAddToDockEngagePixelFired_WhenAddedToDock() {
+        // When
+        manager.addToDock()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.addToDock(.clicked(.engage))])
+    }
+
+    func testAddToDockEngagePixelFired_WhenDockInstructionsShownTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.dockInstructionsShown)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.addToDock(.clicked(.engage))])
+    }
+
+    func testImportEngagePixelFired_WhenImportRequested() async {
+        // When
+        _ = await manager.importData()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.importData(.clicked(.engage))])
+    }
+
+    func testOnlyDuckPlayerEngagePixelFired_WhenDuckPlayerToggledTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.duckPlayerToggled)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.engage))])
+
+        // When
+        manager.stepCompleted(step: .duckPlayerSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.engage))])
+    }
+
+    func testDuckPlayerDismissPixelFired_WhenDuckPlayerStepCompleted_AndDuckPlayerNotToggled() {
+        // When
+        manager.stepCompleted(step: .duckPlayerSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.dismiss))])
+    }
+
+    func testCustomizationClickedPixelFired_WithEnabledSettings_WhenCustomizeStepCompleted() {
+        // When
+        manager.setBookmarkBar(enabled: true)
+        manager.setSessionRestore(enabled: false)
+        manager.setHomeButtonPosition(enabled: true)
+        manager.stepCompleted(step: .customize)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.customization(.clicked([.bookmarksBar, .homeButton]))])
+    }
+
+    func testSearchExperienceClickedPixelFired_WithAddressBarSetting_WhenAddressBarModeStepCompleted() {
+        // When
+        manager.setDuckAiInAddressBar(enabled: false)
+        manager.stepCompleted(step: .addressBarMode)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchExperience(.clicked(.searchOnly))])
+    }
+
 }
 
 private class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {

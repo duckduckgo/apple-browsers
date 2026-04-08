@@ -43,6 +43,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var reportExceptionCalled = false
     var exceptionParams: [String: String] = [:]
     var completedStep: OnboardingSteps?
+    var shownStep: OnboardingSteps?
     var bookmarkBarVisible: Bool?
     var homeButtonVisible: Bool?
     var sessionRestoreEnabled: Bool?
@@ -96,6 +97,10 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     func stepCompleted(step: OnboardingSteps) {
         completedStep = step
+    }
+
+    func stepShown(step: OnboardingSteps) {
+        shownStep = step
     }
 
     func reportException(with param: [String: String]) {

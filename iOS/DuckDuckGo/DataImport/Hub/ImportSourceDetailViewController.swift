@@ -226,6 +226,22 @@ final class ImportSourceDetailViewController: UIViewController {
 
         present(summaryVC, animated: true)
     }
+
+    // MARK: - Sync
+
+    private func openSync() {
+        Pixel.fire(pixel: .autofillLoginsImportSync)
+
+        if let settingsVC = navigationController?.children.first as? SettingsHostingController {
+            navigationController?.popToRootViewController(animated: true)
+            settingsVC.viewModel.presentLegacyView(.sync(nil))
+        } else if let mainVC = navigationController?.presentingViewController as? MainViewController
+                    ?? presentingViewController as? MainViewController {
+            mainVC.dismiss(animated: true) {
+                mainVC.segueToSettingsSync(with: nil)
+            }
+        }
+    }
 }
 
 // MARK: - UIDocumentPickerDelegate

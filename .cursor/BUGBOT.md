@@ -115,3 +115,14 @@ Wide events in `iOS/PixelDefinitions/wide_events/definitions/*.json5` use a diff
 - Minor ordering differences in the `parameters` array.
 - Existing definitions in files touched by the PR that were not themselves modified.
 - Schema validation issues that CI tooling (`npm run validate-pixel-defs`) already covers.
+
+## Security-critical code
+
+When a pull request touches **security-sensitive areas** — for example message handlers and user scripts, `WKWebView` configuration, navigation policy (`decidePolicyFor`), special pages / `duck://`, native HTTP clients (`URLSession`, etc.) fetching URLs influenced by web content, subscription or autofill bridges, phishing or TLS error interstitials — run a **browser security review** in addition to the checks above.
+
+Use these rules (in order):
+
+1. **[`.cursor/rules/security-agent-instructions.mdc`](rules/security-agent-instructions.mdc)** — Default silence, reporting threshold (Medium+ or appendix regressions), and compact PR comment format. Path globs do not require a comment on every match.
+2. **[`.cursor/rules/browser-security-review-context.mdc`](rules/browser-security-review-context.mdc)** — Threat model, trust boundaries, vulnerability classes, platform attack surfaces, secure patterns, known findings appendix, and **Section 9** workflow path triggers.
+
+For WebView implementation details that are not strictly security-classification, `webkit-browser.mdc` may still apply. For general privacy requirements, see `privacy-security.mdc`.

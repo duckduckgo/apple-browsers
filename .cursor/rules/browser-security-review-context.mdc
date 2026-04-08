@@ -1,0 +1,441 @@
+---
+alwaysApply: false
+description: iOS and macOS browser security — threat model, vulnerability classes, and WKWebView attack surfaces for PR review (pair with security-agent-instructions.mdc).
+---
+
+# Browser Security Review Context (iOS & macOS)
+
+> **Purpose:** This document provides security context for incremental code reviews of **DuckDuckGo for iOS and macOS** in this repository. It encodes the threat model, known vulnerability classes, risk assessment methodology, and **WebKit / WKWebView** attack surfaces derived from the Special Pages Security Assessment. **Windows, Android, and web extensions are out of scope** for this document.
+
+## How to use this document
+
+1. **Pair with** [security-agent-instructions.mdc](./security-agent-instructions.mdc) — that file defines **silence-by-default** behavior, PR comment format, and when path triggers imply *review* vs. *mandatory comments*.
+2. **Reporting threshold:** Emit a finding only when you can state (a) which trust boundary from Section 1 is at risk, (b) a plausible attacker path from Section 6, and (c) severity at least Medium per Section 2 (or a clear regression from Section 10). Otherwise respond that there is no material issue for this threat model.
+3. **Section 7** is for structured verification; do not dump the entire checklist into PR comments (see `security-agent-instructions.mdc`).
+
+---
+
+## 1. Architecture Overview
+
+The iOS and macOS apps embed **WKWebView** and implement **special pages** — internal browser pages served via the `duck://` custom URI scheme (e.g., `duck://history`, `duck://newtab`, `duck://onboarding`, `duck://settings`).
+
+Special pages communicate with native code through **message handlers** — a bridge between JavaScript in the WebView and the native layer via `window.webkit.messageHandlers`.
+
+### Trust Boundaries
+
+```
+┌─────────────────────────────────────────────────────┐
+│  UNTRUSTED: Web Content (any origin)                │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  SEMI-TRUSTED: duckduckgo.com origins         │  │
+│  │  ┌─────────────────────────────────────────┐  │  │
+│  │  │  TRUSTED: duck:// special pages          │  │  │
+│  │  │  ┌───────────────────────────────────┐   │  │  │
+│  │  │  │  PRIVILEGED: Native bridge layer  │   │  │  │
+│  │  │  └───────────────────────────────────┘   │  │  │
+│  │  └─────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+```
+
+The critical invariant: **untrusted web content must never be able to invoke privileged native operations.** Every finding in this assessment traces back to a violation or weakening of this boundary.
+
+---
+
+## 2. Vulnerability Classification
+
+Severity levels for native app vulnerabilities:
+
+### Critical
+
+- Arbitrary remote code execution
+- Password manager compromise
+- Arbitrary local file access
+
+### High
+
+- Privacy-compromising issues:
+  - Inappropriate cookie access
+  - Leaking usernames, Duck addresses, or email addresses from autofill/password manager
+  - Limited local file access
+  - Unauthorized location access
+  - Leaking true IP address while connected to VPN
+  - Disclosure of browser history
+  - Disclosure of authentication tokens
+- Universal XSS
+- Same-Origin Policy (SOP) bypass / cross-site information leakage
+- Sandbox escape
+
+### Medium
+
+- Detection of arbitrary local files
+- TLS certificate mishandling (accepting untrusted/expired/insecure certs, inaccurate security indicators, HSTS bypass)
+- Launching local applications
+- UI redressing and address spoofing
+
+### Low
+
+- CSP bypass
+- Site permissions bypass
+
+### Out of Scope
+
+- Local attacks (requiring physical access)
+- Application crashes (unless exploitable)
+- Social engineering
+- Lack of binary protections
+
+### Severity Adjustment Factors
+
+Severity may be adjusted (typically by one level) based on:
+
+**Increases severity:**
+
+- No user interaction required (navigate-to-URL-only attacks)
+- Actively exploited or PoC code published
+- Large number of affected users/websites
+
+**Decreases severity:**
+
+- Requires non-default settings or additional installed software
+- Requires user to have granted specific permissions
+- Only applies to misconfigured sites
+- Involves non-reproducible race conditions
+- Requires multiple clicks or timing
+
+---
+
+## 3. Risk Assessment Matrix
+
+Risk is calculated from **Likelihood** and **Impact**.
+
+### Likelihood Factors
+
+- **Skill level required** — basic technical skills → advanced penetration skills
+- **Motivation** — low/no reward → high reward for attackers
+- **Opportunity** — expensive/full access required → no special access needed
+- **Ease of discovery and exploit** — difficult to find and exploit → trivially discoverable
+
+### Impact Factors
+
+- **Technical impact** — loss of confidentiality, integrity, availability, accountability
+- **Business impact** — financial damage, reputation harm, compliance violations, privacy breaches
+
+### Rating Examples
+
+| Rating | Characteristics | Example |
+|--------|-----------------|---------|
+| **High** | Exploit not complex; impact significant (e.g., account takeover without interaction) | Cross-origin subscription token leakage |
+| **Medium** | Impact reduced — no account takeover or PII leak, but unintended consequences (unexpected logout, blind request forgery, bypassing security checks) | Notification icon SSRF, phishing page bypass, cross-site logout |
+| **Low** | Little or no direct impact, but may combine with other issues to weaken browser hardening (reliable crashes, broken internal state) | Onboarding focus hijack DoS, message handler serialization crash |
+
+---
+
+## 4. Known Vulnerability Classes
+
+The following vulnerability classes have been confirmed in production findings. The AI agent **must** flag code changes that introduce or fail to mitigate these patterns.
+
+**Note:** “Must flag” is subject to the **reporting threshold** in [security-agent-instructions.mdc](./security-agent-instructions.mdc): only report when the diff plausibly introduces or worsens one of these patterns with a clear attacker path and sufficient severity.
+
+### 4.1 Cross-Origin Message Handler Reference Leaks
+
+**Root cause (WebKit):** When a page calls `window.open()` targeting a trusted origin, a race condition in WebKit allows the opener to steal the `window.webkit` reference before SOP enforcement activates. This grants the attacker the ability to call any registered `messageHandler` on behalf of the trusted origin.
+
+**What to flag:**
+
+- Any message handler registration that does not validate the calling origin
+- Message handlers that expose sensitive data (tokens, PII, auth credentials) without token-based authentication
+- Handlers accessible from `duckduckgo.com` broadly rather than restricted to specific subdomains/paths
+- Missing `message.frameInfo.isMainFrame` checks
+- Missing `message.frameInfo.securityOrigin` validation
+- Handlers that trust `e.source` without verifying it matches expected windows
+
+**Known mitigations:**
+
+- Dynamic/randomized message handler names (UUID-based, as used by Brave iOS)
+- Origin validation on the native side before processing messages
+- Token protection for sensitive handlers (requiring a per-session secret)
+- Restricting handlers to specific URL paths, not just domain-level checks
+
+### 4.2 PostMessage Origin Validation Failures
+
+**Root cause:** Event listeners for `window.addEventListener('message', ...)` that do not check `e.source` or `e.origin` before executing privileged actions.
+
+**What to flag:**
+
+- Any `message` event listener that processes actions without checking `e.source === window` or validating `e.origin`
+- Handlers that execute destructive operations (logout, data deletion, state changes) based solely on message content
+- Use of `'*'` as targetOrigin in `postMessage` calls from trusted contexts
+
+### 4.3 Blind Server-Side Request Forgery (SSRF) via Native Fetches
+
+**Root cause:** Native code (e.g., `URLSession`) fetching URLs provided by web content without scheme/origin validation. Native fetches bypass CORS, tracker blocking, and do not appear in browser DevTools.
+
+**What to flag:**
+
+- Any native URL fetch (`URLSession` or equivalent) that accepts URLs from web content
+- Missing scheme validation (must block `file://`, `ftp://`, internal network ranges)
+- Missing origin checks (icon/resource URL must match the page's origin)
+- No timeout or file-size limits on fetched resources
+- Fetches that could hit `localhost`, `127.0.0.1`, `192.168.x.x`, `10.x.x.x`, or `169.254.x.x`
+
+### 4.4 Security Page Bypass
+
+**Root cause:** Message handlers for special error pages (phishing warnings, TLS errors) accept `visitSite` commands from untrusted web content, allowing programmatic dismissal of security warnings.
+
+**What to flag:**
+
+- Any message handler method that dismisses or bypasses a security interstitial
+- Missing user-consent verification before allowing navigation past security warnings
+- Race conditions where messages can be sent to a special page before it fully loads
+
+### 4.5 Navigation to Internal URI Schemes
+
+**Root cause:** External web pages can navigate to `duck://` URLs, which should be restricted to browser-internal navigation only.
+
+**What to flag:**
+
+- Missing navigation guards that block external-to-`duck://` navigation
+- `decidePolicyFor` / navigation policy implementations that don't reject `duck://` from untrusted origins
+- `meta refresh`, `window.location`, `window.open`, form actions, or redirects targeting `duck://` URLs
+- URL normalization bugs (encoding tricks, path traversal in `duck://` URLs)
+
+### 4.6 DOM and JavaScript Injection in Special Pages
+
+**Root cause:** Special page message handlers that don't sanitize input, particularly `javascript:` URLs, HTML content, or template strings.
+
+**What to flag:**
+
+- Any handler that processes a URL parameter without sanitizing `javascript:` scheme
+- `innerHTML`, `document.write`, or template literal usage with message-supplied data
+- Missing CSP on special pages
+- DOM clobbering vectors (elements with IDs that shadow globals)
+- SVG injection in rendered content
+
+### 4.7 WebView Object Serialization Crashes
+
+**Root cause:** Webkit's JSC serialization throws unrecoverable errors when processing messages containing getters that throw, leading to tab crashes.
+
+**What to flag:**
+
+- Message handlers that do not wrap `postMessage` processing in try/catch
+- Missing input validation before passing message payloads to native serialization
+- Any path where a malformed message can crash the WebView process
+
+### 4.8 Focus/UI Hijacking
+
+**Root cause:** Special pages (e.g., onboarding) that auto-steal focus can be abused by navigating to them and immediately redirecting away, locking the browser.
+
+**What to flag:**
+
+- Special pages that force-steal focus from other tabs
+- Missing detection for when a special page has been redirected away
+- Navigation to onboarding or setup pages from external origins
+
+---
+
+## 5. Platform-Specific Attack Surfaces (iOS & macOS)
+
+| Attack Surface | Details |
+|----------------|---------|
+| `window.webkit.messageHandlers` | Cross-origin reference leak via `window.open()` race condition. Reported to Apple, fix expected Spring 2026. |
+| Navigation policy timing | `WKNavigationDelegate` / policy decisions can have timing issues analogous to other WebView platforms; ensure `duck://` and dangerous schemes are rejected consistently. |
+| `file://` access | Native fetches (e.g., `URLSession`) accept `file://` scheme, enabling blind local file reads. |
+| Notification icon fetcher | `NotificationIconFetcher.swift` fetches arbitrary URLs via native `URLSession` without origin/scheme validation. |
+| Special pages message handlers | `specialPages`, `contentScopeScripts`, `subscriptionPages`, `identityTheftRestorationPages`, `printHandler`, `autofill` — all potentially accessible cross-origin. |
+| Universal Links | iOS Universal Links can be triggered from special page context; validate end-to-end trust. |
+| JavaScript bridge | Native methods exposed to special pages may be accessible via leaked `window.webkit` reference. |
+
+---
+
+## 6. Threat Scenarios
+
+The AI agent should consider these attacker models when evaluating code changes:
+
+1. **Malicious ad iframe** — Attacker code running in an ad context on any website, attempting to exploit message handlers or navigate to special pages.
+2. **XSS on duckduckgo.com** — Attacker achieves script execution on the SERP or any DDG subdomain, pivoting to access browser-internal APIs that trust DDG origins.
+3. **Compromised third-party script** — A CDN-hosted dependency is compromised, injecting code that targets special page APIs.
+4. **Tab-napping** — User has a special page open in one tab; attacker site in another tab obtains a reference and sends messages.
+5. **Drive-by exploitation** — Attacker site automatically exploits special page vulnerabilities on page load to exfiltrate history, settings, or tokens.
+6. **Phishing enhancement** — Attacker bypasses security interstitials to make phishing pages load without warning.
+
+---
+
+## 7. Testing Methodology Checklist
+
+When the AI agent identifies a potentially vulnerable code path, it should recommend testing from this checklist:
+
+### Agent usage
+
+Use this checklist **internally** to decide what to verify or suggest. **Do not** paste the full checklist into pull request comments. If tests are worth mentioning, list at most one to three targeted cases (see [security-agent-instructions.mdc](./security-agent-instructions.mdc)).
+
+### Window Reference & Lifetime
+
+- [ ] Can external sites obtain `window.webkit` references via `window.open()`?
+- [ ] Do references persist after navigation?
+- [ ] Can `window.open('duck://page', 'targetName')` get references to existing special pages?
+- [ ] Are `window.parent`, `window.top`, `window.frames[]` leaking references?
+
+### Navigation Guards
+
+- [ ] Are `meta refresh`, `307/308` redirects, form actions to `duck://` blocked?
+- [ ] Is `window.location` manipulation from external sites prevented?
+- [ ] Are URL normalization bugs tested (encoding tricks, path traversal)?
+- [ ] Are `javascript:` URLs blocked in all navigation handlers?
+
+### Origin & Trust Boundaries
+
+- [ ] Do `duck://` pages have unique, isolated origins (not `null`)?
+- [ ] Is `localStorage`/`IndexedDB` scoped per special page or shared?
+- [ ] Can `document.domain` be manipulated?
+- [ ] Can special pages relax CSP?
+
+### Message Handlers
+
+- [ ] Is origin validated before processing any message?
+- [ ] Are sensitive handlers token-protected?
+- [ ] Is prototype pollution possible via `Object.assign` / spread on message data?
+- [ ] Are type confusion attacks handled (unexpected types in message params)?
+- [ ] Is message queue flooding considered (thousands of messages to bypass validation)?
+
+### Framing
+
+- [ ] Can special pages be iframed, embedded, or loaded via `<object>` / `<embed>` / `<portal>`?
+- [ ] Is `frame-ancestors` CSP set correctly?
+- [ ] Are sandbox attribute bypass paths tested?
+
+### Input Handling
+
+- [ ] Are search/filter inputs sanitized against XSS?
+- [ ] Is DOM clobbering considered (IDs shadowing globals)?
+- [ ] Is SVG injection tested?
+
+### Data Leakage
+
+- [ ] Can timing attacks infer sensitive data?
+- [ ] Do error messages leak internal state or paths?
+- [ ] Can service workers intercept `duck://` requests?
+
+### Native Bridge
+
+- [ ] Are native methods exposed only to verified special pages?
+- [ ] Are native fetch operations scheme-restricted and origin-validated?
+- [ ] Are file-size and timeout limits enforced?
+
+---
+
+## 8. Secure Coding Patterns (Required)
+
+The snippets below are **illustrative patterns** — adapt names, types, and structure to match the codebase and existing handlers. They are not a literal API contract.
+
+### Message Handler Origin Validation
+
+```swift
+// REQUIRED: Validate origin before processing any message
+@MainActor
+private func isValidRequest(_ message: WKScriptMessage) -> Bool {
+    guard message.frameInfo.isMainFrame else { return false }
+    guard let webViewURL = message.webView?.url,
+          let host = webViewURL.host else { return false }
+    let expectedHost = configuration.expectedHost
+    guard host == expectedHost else { return false }
+    guard message.frameInfo.securityOrigin.host == host else { return false }
+    return true
+}
+```
+
+### Token protection for sensitive handlers
+
+Sensitive handlers (subscriptions, autofill, credentials) should require a **per-session secret or token** checked on the native side before returning data, in addition to origin validation — especially while WebKit cross-origin `window.webkit` reference issues remain mitigated but not eliminated.
+
+### PostMessage Source Validation (JavaScript)
+
+```javascript
+// REQUIRED: Always validate message source
+window.addEventListener('message', (e) => {
+    // Reject cross-window messages
+    if (e.source !== window) return;
+    // Validate origin for cross-origin scenarios
+    if (e.origin !== expectedOrigin) return;
+    // Process message...
+});
+```
+
+### Dynamic Message Handler Names (Mitigation for WebKit leak)
+
+```swift
+// RECOMMENDED: Randomize handler names to prevent cross-origin exploitation
+extension TabContentScriptLoader {
+    static var messageUUID: String {
+        UUID().uuidString.replacingOccurrences(of: "-", with: "")
+    }
+}
+
+static let messageHandlerName = "specialPages_\(messageUUID)"
+```
+
+### Native URL Fetch Validation
+
+```swift
+// REQUIRED: Validate URLs before native fetch
+func isAllowedFetchURL(_ url: URL, pageOrigin: URL) -> Bool {
+    // Block dangerous schemes
+    guard ["https", "http"].contains(url.scheme?.lowercased()) else {
+        return false
+    }
+    // Block internal networks
+    guard !isInternalNetwork(url.host) else { return false }
+    // Enforce same-origin for resource fetches
+    guard url.host == pageOrigin.host else { return false }
+    return true
+}
+```
+
+---
+
+## 9. Review Triggers for the AI Agent
+
+### Workflow path triggers (when to run or attach full context)
+
+When a **pull request** touches paths like the following, **run** a security review (or load this context) so changes are not reviewed without these classes in mind:
+
+- `**/MessageHandler*`, `**/UserScript*`, `**/ScriptMessage*` — message handler registrations or modifications
+- `**/Navigation*`, `**/decidePolicyFor*` — navigation policy changes
+- `**/*SpecialPage*`, `**/*special_page*`, `**/duck://*` — special page implementations
+- `**/postMessage*`, `**/addEventListener('message'*` — cross-window messaging
+- `**/URLSession*`, native `fetch`-wrappers in Swift — native network requests
+- `**/CSP*`, `**/Content-Security-Policy*` — security policy changes
+- `**/subscription*`, `**/autofill*`, `**/email*protection*` — sensitive feature handlers
+- `**/origin*`, `**/securityOrigin*`, `**/isMainFrame*` — origin validation logic
+- `**/WebView*`, `**/WKWebView*` — WebView configuration changes
+- `**/onboarding*`, `**/error*page*`, `**/phishing*` — security interstitial pages
+
+These globs are **broad by design**. They do **not** mean every matching PR requires a security comment. Apply the **reporting threshold** in [security-agent-instructions.mdc](./security-agent-instructions.mdc): many PRs will correctly result in **no material issue**.
+
+### What warrants a comment
+
+Leave a **comment** only when the diff plausibly introduces or worsens a issue described in **Section 4**, or regresses **Section 10**, with a clear attacker path and sufficient severity — as summarized in the instructions file.
+
+---
+
+## 10. Appendix: Known Findings Summary (iOS & macOS)
+
+Cross-platform assessments may track additional issues on other platforms; those are **not listed here**.
+
+| ID | Platform | Finding | Risk | Status |
+|----|----------|---------|------|--------|
+| F1 | macOS | Cross-Origin Subscription Token Leakage via `window.webkit` race | High | Fixed |
+| F3 | macOS | Notification Icon Handler SSRF / Blind File Read via native `URLSession` | Medium | Fixed |
+| F4 | macOS, iOS | Special Error Page Bypass (phishing/TLS warnings dismissed via `visitSite`) | Medium | Open |
+| F5 | macOS, iOS | Email Protection Cross-Site Logout via unvalidated `postMessage` | Medium | Open |
+| F8 | macOS | Onboarding Focus Hijack (DoS via `duck://onboarding` navigation + redirect) | Low | Open |
+| F9 | macOS | Message Handler Serialization Crash (throwing getter in message payload) | Low | Open |
+| F0 | macOS | History Page XSS via unsanitized `javascript:` URL in open handler (incident) | High | Fixed |
+
+### Root Cause Dependency
+
+- **Apple/WebKit:** Cross-origin `window.webkit` reference leak — reported to Apple, fix expected Spring 2026. Mitigation: dynamic message handler names + origin validation + token protection for sensitive handlers.
+
+---
+
+*Derived from the DuckDuckGo Special Pages Security Assessment (Apple platforms). Last updated: 2026-03-24.*

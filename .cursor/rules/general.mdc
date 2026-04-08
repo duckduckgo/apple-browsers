@@ -72,6 +72,7 @@ You MUST list all the available rules and you MUST consult the appropriate rule 
 - `development-commands.mdc` - Build commands
 - `pull-request.mdc` + `branch-naming-conventions.mdc` - PRs and git workflow
 - `analytics-patterns.mdc` - Pixel analytics
+- `security-agent-instructions.mdc` + `browser-security-review-context.mdc` - Bugbot / PR security review for iOS & macOS (trust boundaries, message handlers, WKWebView); see `.cursor/BUGBOT.md`
 
 ## Quick Start Checklist
 

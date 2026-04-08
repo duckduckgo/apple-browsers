@@ -5210,8 +5210,6 @@ extension MainViewController: AIChatContentHandlingDelegate {
         // No action needed for full mode - notification handles metrics
     }
 
-    func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {
-    }
 }
 
 private extension UIBarButtonItem {

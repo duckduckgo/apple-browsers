@@ -46,8 +46,8 @@ final class PinnedTabsManager {
     }
 
     @MainActor
-    func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> Tab? {
-        guard let tab = tabCollection.tabs[safe: index], let tab = tab.tab else {
+    func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> AnyTab? {
+        guard let tab = tabCollection.tabs[safe: index] else {
             Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
             return nil
         }
@@ -60,8 +60,9 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userUnpinnedTab, frequency: .dailyAndStandard)
         }
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: tab)
+        if #available(macOS 15.4, *), case .loaded(let loadedTab) = tab,
+           let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: loadedTab)
         }
         return tab
     }

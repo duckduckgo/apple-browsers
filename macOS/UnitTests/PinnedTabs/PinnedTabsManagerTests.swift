@@ -59,7 +59,7 @@ class PinnedTabsManagerTests: XCTestCase {
         let manager = PinnedTabsManager(tabCollection: .init(tabs: [tabA, tabB]))
 
         let unpinnedTab = manager.unpinTab(at: 1)
-        XCTAssertIdentical(unpinnedTab, tabB)
+        XCTAssertEqual(unpinnedTab, .loaded(tabB))
         XCTAssertFalse(manager.isTabPinned(tabB))
         XCTAssertFalse(manager.isDomainPinned("b.com"))
     }

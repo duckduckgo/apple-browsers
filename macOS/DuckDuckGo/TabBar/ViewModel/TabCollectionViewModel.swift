@@ -480,7 +480,7 @@ final class TabCollectionViewModel: NSObject {
         insert(tab, after: parentTab, selected: selected)
     }
 
-    func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {
+    func insert(_ tab: AnyTab, at index: TabIndex, selected: Bool = true) {
         guard changesEnabled else { return }
         guard let tabCollection = tabCollection(for: index) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Tab collection for index \(String(describing: index)) not found")
@@ -489,7 +489,8 @@ final class TabCollectionViewModel: NSObject {
 
         // Prevent multiple tabs in popup windows: redirect to parent/main window
         if tabCollection.isPopup, !self.tabCollection.tabs.isEmpty {
-            redirectOpenOutsidePopup(tab, selected: selected)
+            guard case .loaded(let loadedTab) = tab else { return }
+            redirectOpenOutsidePopup(loadedTab, selected: selected)
             return
         }
 
@@ -498,6 +499,10 @@ final class TabCollectionViewModel: NSObject {
             select(at: index)
         }
         delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
+    }
+
+    func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {
+        insert(AnyTab.loaded(tab), at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, after parentTab: Tab?, selected: Bool) {
@@ -611,7 +616,7 @@ final class TabCollectionViewModel: NSObject {
         }
         guard let removedTab = pinnedTabsManager?.unpinTab(at: index, published: published) else { return }
 
-        didRemoveTab(.loaded(removedTab), at: .pinned(index), withParent: nil)
+        didRemoveTab(removedTab, at: .pinned(index), withParent: nil)
     }
 
     private func didRemoveTab(_ tab: AnyTab, at index: TabIndex, withParent parentTab: Tab?, forced: Bool = false) {
@@ -816,7 +821,7 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        insert(tab)
+        insert(tab, at: .unpinned(0))
     }
 
     @discardableResult

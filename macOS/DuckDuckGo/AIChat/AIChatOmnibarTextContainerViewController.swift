@@ -436,6 +436,7 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
 
     func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool {
         guard let containerVC = containerViewController else { return false }
+        guard omnibarController.isOmnibarToolsEnabled else { return false }
         let canAttach = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         guard canAttach else { return false }
         var accepted = false

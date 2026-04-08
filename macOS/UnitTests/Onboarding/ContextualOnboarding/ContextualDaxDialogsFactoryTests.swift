@@ -358,7 +358,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
 }
 
 class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
-    
     var measureFireButtonSkippedCalled = false
     var measureFireButtonTryItCalled = false
     var measureLastDialogShownCalled = false

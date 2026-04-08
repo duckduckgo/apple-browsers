@@ -669,48 +669,18 @@ final class BrowserTabViewController: NSViewController {
         // once a dialog is presented we reset the is dismissed flag
         self.wasContextualOnboardingDialogDismissed = false
 
-        let onDismissAction: () -> Void = { [weak self] in
-            guard let self else { return }
-            // we mark the flag for dialog dismissed
-            wasContextualOnboardingDialogDismissed = true
-            delegate?.dismissViewHighlight()
-            self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
-            if let lastDialog = onboardingDialogTypeProvider.lastDialog {
-                self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
-            }
-        }
-
-        let onManualDismissAction = { [weak self] in
-            guard let self else { return }
-            if let lastDialog = onboardingDialogTypeProvider.lastDialog {
-                onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: lastDialog)
-            }
-            onDismissAction()
-        }
-
-        let onGotItPressed = { [weak self] in
-            guard let self else { return }
-
-            onboardingDialogTypeProvider.gotItPressed()
-            onboardingPixelReporter.measureGotItPressed(dialogType: dialogType)
-
-            let currentState = onboardingDialogTypeProvider.lastDialog
-
-            // Reset highlight animations
-            delegate?.dismissViewHighlight()
-
-            // Process state
-            if case .tryFireButton = currentState {
-                delegate?.highlightFireButton()
-            }
-        }
-
         let daxView = onboardingDialogFactory.makeView(
             for: dialogType,
             delegate: tab,
-            onDismiss: onDismissAction,
-            onManualDismiss: onManualDismissAction,
-            onGotItPressed: onGotItPressed,
+            onDismiss: { [weak self] in
+                self?.handleContextualOnboardingOnDismiss()
+            },
+            onManualDismiss: { [weak self] in
+                self?.handleContextualOnboardingOnManualDismiss()
+            },
+            onGotItPressed: { [weak self] in
+                self?.handleContextualOnboardingOnGotItPressed(dialogType: dialogType)
+            },
             onFireButtonPressed: { [weak delegate] in
                 delegate?.dismissViewHighlight()
             },
@@ -733,6 +703,32 @@ final class BrowserTabViewController: NSViewController {
             delegate?.highlightFireButton()
         } else if case .trackers = dialogType {
             delegate?.highlightPrivacyShield()
+        }
+    }
+
+    private func handleContextualOnboardingOnDismiss() {
+        wasContextualOnboardingDialogDismissed = true
+        delegate?.dismissViewHighlight()
+        removeChild(in: containerStackView, webViewContainer: webViewContainer)
+        if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+            onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
+        }
+    }
+
+    private func handleContextualOnboardingOnManualDismiss() {
+        if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+            onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: lastDialog)
+        }
+        handleContextualOnboardingOnDismiss()
+    }
+
+    private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
+        onboardingDialogTypeProvider.gotItPressed()
+        onboardingPixelReporter.measureGotItPressed(dialogType: dialogType)
+        let currentState = onboardingDialogTypeProvider.lastDialog
+        delegate?.dismissViewHighlight()
+        if case .tryFireButton = currentState {
+            delegate?.highlightFireButton()
         }
     }
 

@@ -414,6 +414,11 @@ final class PermissionCenterViewModel: ObservableObject {
         }
     }
 
+    /// Indicates if there is an Autoplay Policy set for the current domain
+    func allowsAutoplayPolicyRemoval() -> Bool {
+        permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy)
+    }
+
     /// Opens a specific blocked popup
     func openBlockedPopup(_ popup: BlockedPopup) {
         openPopup?(popup.query)

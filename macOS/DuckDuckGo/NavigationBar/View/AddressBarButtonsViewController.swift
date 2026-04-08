@@ -840,7 +840,9 @@ final class AddressBarButtonsViewController: NSViewController {
         let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
-        permissionCenterButton.isShown = isPermissionCenterPopoverShown || tabViewModel.shouldShowPermissionCenterButton(
+
+        permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
+            isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
             hasAnyPersistedPermissions: hasAnyPersistedPermissions,
             isMouseOverNavigationBar: isMouseOverNavigationBar
@@ -2840,6 +2842,7 @@ extension TabViewModel {
 
     @MainActor
     func shouldShowPermissionCenterButton(
+        isPermissionCenterPopoverShown: Bool,
         isTextFieldEditorFirstResponder: Bool,
         hasAnyPersistedPermissions: Bool,
         isMouseOverNavigationBar: Bool = false
@@ -2856,7 +2859,8 @@ extension TabViewModel {
         // so user can access permission center to change the decision
         return (shouldShowWhileFocused
             || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
-            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && mustDisplayAutoplayPolicy))
+            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && mustDisplayAutoplayPolicy)
+            || (!isTextFieldEditorFirstResponder && isPermissionCenterPopoverShown))
         && !isShowingErrorPage
     }
 

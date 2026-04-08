@@ -29,7 +29,7 @@ extension OnboardingRebranding.OnboardingView {
         static var daxAnimation: DaxAnimation {
             DaxAnimation(
                 animationName: "Dax-WingLeft",
-                size: CGSize(width: 174, height: 208.33),
+                size: CGSize(width: 116, height: 208.33),
                 position: .left(bottomPadding: 70.0),
                 twoStagesAnimation: 0.5
             )

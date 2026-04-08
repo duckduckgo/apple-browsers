@@ -2202,9 +2202,9 @@ extension TabBarViewController: TabBarViewItemDelegate {
             if sourceCollectionView?.visibleRect.intersects(tabBarViewItem.view.frame) == true {
                 showTabPreview(for: tabBarViewItem)
             }
-            scheduleMaterializationOnHover(for: tabBarViewItem)
+//            scheduleMaterializationOnHover(for: tabBarViewItem)
         } else {
-            cancelHoverMaterialization()
+//            cancelHoverMaterialization()
             if !shouldDisplayTabPreviews {
                 hideTabPreview(withDelay: true, allowQuickRedisplay: true)
             }
@@ -2613,7 +2613,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        if tabBarViewItem.tabViewModel?.isSuspended == true {
+        if tabBarViewItem.tabViewModel is UnloadedTabViewModel {
             tabCollectionViewModel.resumeTab(at: tabIndex)
         } else {
             tabCollectionViewModel.suspendTab(at: tabIndex)

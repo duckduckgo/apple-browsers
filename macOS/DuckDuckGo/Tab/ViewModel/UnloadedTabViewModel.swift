@@ -83,8 +83,9 @@ final class UnloadedTabViewModel: TabBarViewModel, Previewable {
     }
     private let _renderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
 
-    var isSuspended: Bool { true }
-    var isSuspendedPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
+    var isSuspended: Bool {
+        unloadedTab.isSuspended
+    }
     var canBeSuspended: Bool { false }
 
     // MARK: - Previewable

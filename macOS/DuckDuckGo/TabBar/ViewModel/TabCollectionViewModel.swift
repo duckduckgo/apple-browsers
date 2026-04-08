@@ -285,6 +285,28 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    /// This method verifies it `tabViewModels` dictionary value has the correct type
+    /// matching the type of tab it represents.
+    func updateTabBarViewModelIfNeeded(at index: TabIndex) {
+        guard case let .unpinned(unpinnedIndex) = index,
+              let anyTab = tabCollection.tabs[safe: unpinnedIndex],
+              let tabViewModel = tabViewModels[anyTab.uuid]
+        else {
+            return
+        }
+
+        switch anyTab {
+        case .loaded(let tab):
+            if tabViewModel.isSuspended {
+                tabViewModels[anyTab.uuid] = TabViewModel(tab: tab)
+            }
+        case .unloaded(let unloadedTab):
+            if !tabViewModel.isSuspended {
+                tabViewModels[anyTab.uuid] = UnloadedTabViewModel(unloadedTab: unloadedTab)
+            }
+        }
+    }
+
     // MARK: - Selection
 
     @discardableResult func selectTab(at index: TabIndex, forceChange: Bool = false) -> Tab? {
@@ -293,10 +315,6 @@ final class TabCollectionViewModel: NSObject {
         guard result else { return nil }
 
         let tab = materialize(at: index)
-
-        if let tab, tab.isSuspended {
-            tab.resume()
-        }
         return tab
     }
 
@@ -308,14 +326,7 @@ final class TabCollectionViewModel: NSObject {
         guard let index = tabCollection.firstIndex(of: tab) else {
             return false
         }
-
-        let result = selectUnpinnedTab(at: index, forceChange: forceChange)
-
-        if result, tab.isSuspended {
-            tab.resume()
-        }
-
-        return result
+        return selectUnpinnedTab(at: index, forceChange: forceChange)
     }
 
     @discardableResult func selectDisplayableTabIfPresent(_ content: Tab.TabContent) -> Bool {
@@ -850,9 +861,7 @@ final class TabCollectionViewModel: NSObject {
 
     func resumeTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
-        if let tab = materialize(at: tabIndex), tab.isSuspended {
-            tab.resume()
-        }
+        _ = materialize(at: tabIndex)
     }
 
     func title(forTabWithURL url: URL) -> String? {
@@ -878,6 +887,10 @@ final class TabCollectionViewModel: NSObject {
     }
 
     func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false) -> Result<Void, Error> {
+        return replaceTab(at: index, with: .loaded(tab), forceChange: forceChange)
+    }
+
+    func replaceTab(at index: TabIndex, with tab: AnyTab, forceChange: Bool = false) -> Result<Void, Error> {
         guard changesEnabled || forceChange else { return .success(()) }
         guard let tabCollection = tabCollection(for: index) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Tab collection for index \(String(describing: index)) not found")
@@ -885,6 +898,7 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.replaceTab(at: index.item, with: tab)
+        updateTabBarViewModelIfNeeded(at: index)
 
         guard let selectionIndex else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: No tab selected")

@@ -39,7 +39,6 @@ final class TabViewModel: NSObject {
     @Published private(set) var canGoBack: Bool = false
 
     @Published private(set) var canReload: Bool = false
-    @Published private(set) var isSuspended: Bool = false
     @Published private(set) var canBeBookmarked: Bool = false
     @Published private(set) var canShare: Bool = false
     @Published var isLoading: Bool = false {
@@ -157,9 +156,6 @@ final class TabViewModel: NSObject {
             .store(in: &cancellables)
         tab.$loadingProgress
             .assign(to: \.progress, onWeaklyHeld: self)
-            .store(in: &cancellables)
-        tab.$isSuspended
-            .assign(to: \.isSuspended, onWeaklyHeld: self)
             .store(in: &cancellables)
         if case .url(_, credential: _, source: .pendingStateRestoration) = tab.content {
             updateAddressBarStrings()

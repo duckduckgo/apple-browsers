@@ -524,6 +524,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func handleExternalSubmission(_ type: ExternalSubmissionType) {
+        commitCurrentToggleState()
         switch displayState {
         case .omnibar:
             deactivateToOmnibar()

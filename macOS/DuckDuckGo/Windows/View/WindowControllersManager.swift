@@ -398,10 +398,10 @@ extension WindowControllersManager {
         let tabCollection = tabCollectionViewModel.tabCollection
 
         if tabCollection.tabs.count == 1,
-           let firstTab = tabCollection.tabs.first?.tab,
-           case .newtab = firstTab.content,
+           case .newtab = tabCollection.tabs.first?.content,
            !newTab {
-            firstTab.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
+            let tab = tabCollectionViewModel.materialize(at: .unpinned(0))
+            tab?.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
         } else if let tab = tabCollectionViewModel.selectedTabViewModel?.tab, !newTab {
             tab.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
         } else {

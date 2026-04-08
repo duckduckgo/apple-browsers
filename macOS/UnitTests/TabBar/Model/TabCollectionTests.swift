@@ -41,11 +41,11 @@ final class TabCollectionTests: XCTestCase {
 
             let tab1 = Tab()
             tabCollection.append(tab: tab1)
-            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1].tab, tab1)
+            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1], .loaded(tab1))
 
             let tab2 = Tab()
             tabCollection.append(tab: tab2)
-            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1].tab, tab2)
+            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1], .loaded(tab2))
         }
     }
 
@@ -70,12 +70,12 @@ final class TabCollectionTests: XCTestCase {
 
             let tab1 = Tab()
             tabCollection.insert(tab1, at: 0)
-            XCTAssertEqual(tabCollection.tabs[0].tab, tab1)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab1))
 
             let tab2 = Tab()
             tabCollection.insert(tab2, at: 0)
-            XCTAssertEqual(tabCollection.tabs[0].tab, tab2)
-            XCTAssertEqual(tabCollection.tabs[1].tab, tab1)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab2))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab1))
         }
 
     }
@@ -112,8 +112,8 @@ final class TabCollectionTests: XCTestCase {
 
             XCTAssert(tabCollection.removeTab(at: 0))
 
-            XCTAssertEqual(tabCollection.tabs[0].tab, tab2)
-            XCTAssertEqual(tabCollection.tabs[1].tab, tab3)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab2))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab3))
         }
     }
 
@@ -157,8 +157,8 @@ final class TabCollectionTests: XCTestCase {
             tabCollection.moveTab(at: 0, to: -1)
             tabCollection.moveTab(at: 3, to: 0)
             tabCollection.moveTab(at: -1, to: 0)
-            XCTAssertEqual(tabCollection.tabs[0].tab, tab1)
-            XCTAssertEqual(tabCollection.tabs[1].tab, tab2)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab1))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab2))
         }
     }
 
@@ -174,8 +174,8 @@ final class TabCollectionTests: XCTestCase {
 
             tabCollection.moveTab(at: 0, to: 0)
             tabCollection.moveTab(at: 1, to: 1)
-            XCTAssertEqual(tabCollection.tabs[0].tab, tab1)
-            XCTAssertEqual(tabCollection.tabs[1].tab, tab2)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab1))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab2))
         }
     }
 
@@ -192,14 +192,14 @@ final class TabCollectionTests: XCTestCase {
             tabCollection.append(tab: tab3)
 
             tabCollection.moveTab(at: 0, to: 1)
-            XCTAssertEqual(tabCollection.tabs[0].tab, tab2)
-            XCTAssertEqual(tabCollection.tabs[1].tab, tab1)
-            XCTAssertEqual(tabCollection.tabs[2].tab, tab3)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab2))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab1))
+            XCTAssertEqual(tabCollection.tabs[2], .loaded(tab3))
 
             tabCollection.moveTab(at: 0, to: 2)
-            XCTAssertEqual(tabCollection.tabs[0].tab, tab1)
-            XCTAssertEqual(tabCollection.tabs[1].tab, tab3)
-            XCTAssertEqual(tabCollection.tabs[2].tab, tab2)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab1))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab3))
+            XCTAssertEqual(tabCollection.tabs[2], .loaded(tab2))
         }
     }
 
@@ -267,7 +267,7 @@ final class TabCollectionTests: XCTestCase {
 
         XCTAssertTrue(tabCollection.removeTab(at: 1))
         XCTAssertEqual(tabCollection.tabs.count, 1)
-        XCTAssertTrue(tabCollection.tabs[0].tab === loadedTab)
+        XCTAssertEqual(tabCollection.tabs[0], .loaded(loadedTab))
     }
 
     @MainActor
@@ -282,20 +282,6 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertEqual(tabCollection.firstIndex(of: tab1), 0)
         XCTAssertEqual(tabCollection.firstIndex(of: tab2), 2)
         XCTAssertTrue(tabCollection.contains(uuid: unloaded.uuid))
-    }
-
-    @MainActor
-    func testAnyTabTabPropertyReturnsNilForUnloaded() {
-        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
-        let anyTab = AnyTab.unloaded(unloaded)
-        XCTAssertNil(anyTab.tab)
-    }
-
-    @MainActor
-    func testAnyTabTabPropertyReturnsTabForLoaded() {
-        let tab = Tab()
-        let anyTab = AnyTab.loaded(tab)
-        XCTAssertTrue(anyTab.tab === tab)
     }
 
     // MARK: - Clear Navigation History

@@ -38,8 +38,8 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenTabViewModelIsCalledThenAppropriateTabViewModelIsReturned() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
-        XCTAssertEqual(tabCollectionViewModel.tabViewModel(at: 0)?.tab,
-                       tabCollectionViewModel.tabs[0].tab)
+        XCTAssertEqual(tabCollectionViewModel.tabs[0],
+                       tabCollectionViewModel.tabViewModel(at: 0).map { .loaded($0.tab) })
     }
 
     @MainActor
@@ -386,25 +386,25 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenSelectedTabIsRemovedThenNextItemWithLowerIndexIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabs[0].tab
+        let firstTab = tabCollectionViewModel.tabs[0]
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.remove(at: .unpinned(1))
 
-        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel?.tab)
+        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel.map { .loaded($0.tab) })
     }
 
     @MainActor
     func testWhenAllOtherTabsAreRemovedThenRemainedIsAlsoSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabs[0].tab
+        let firstTab = tabCollectionViewModel.tabs[0]
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.appendNewTab()
 
         tabCollectionViewModel.removeAllTabs(except: 0)
 
-        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel?.tab)
+        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel.map { .loaded($0.tab) })
     }
 
     @MainActor
@@ -504,7 +504,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenChildTabIsInsertedAndRemovedAndThereIsAChildTabClose_ThenChildTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let parentTab = tabCollectionViewModel.tabs[0].tab!
+        guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
@@ -518,7 +518,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenChildTabOnLeftHasTheSameParentAndTabOnRightDont_ThenTabOnLeftIsSelectedAfterRemoval() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let parentTab = tabCollectionViewModel.tabs[0].tab!
+        guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
@@ -1323,7 +1323,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         vm.select(at: .unpinned(1))
 
-        XCTAssertNotNil(vm.tabs[1].tab, "Unloaded tab should be materialized after selection")
+        if case .loaded = vm.tabs[1] {} else { XCTFail("Unloaded tab should be materialized after selection") }
         XCTAssertNotNil(vm.tabViewModel(at: 1), "TabViewModel should exist for materialized tab")
         XCTAssertTrue(delegate.didMaterializeCalled)
     }
@@ -1338,10 +1338,9 @@ final class TabCollectionViewModelTests: XCTestCase {
         let tabCollection = TabCollection(tabs: [.unloaded(unloaded)])
         let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
 
-        let materializedTab = vm.tabs[0].tab
-        XCTAssertNotNil(materializedTab, "Init should materialize the selected unloaded tab")
-        XCTAssertEqual(materializedTab?.uuid, "test-uuid")
-        XCTAssertEqual(materializedTab?.url, .duckDuckGo)
+        guard case .loaded(let materializedTab) = vm.tabs[0] else { return XCTFail("Init should materialize the selected unloaded tab") }
+        XCTAssertEqual(materializedTab.uuid, "test-uuid")
+        XCTAssertEqual(materializedTab.url, .duckDuckGo)
     }
 
     @MainActor
@@ -1356,7 +1355,7 @@ final class TabCollectionViewModelTests: XCTestCase {
             pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
         )
 
-        XCTAssertNotNil(vm.tabs[1].tab, "Init should materialize the selected unloaded tab at index 1")
+        if case .loaded = vm.tabs[1] {} else { XCTFail("Init should materialize the selected unloaded tab at index 1") }
         XCTAssertNotNil(vm.tabViewModel(at: 1))
         XCTAssertEqual(vm.selectionIndex, .unpinned(1))
     }

@@ -107,11 +107,6 @@ enum AnyTab: Identifiable {
         }
     }
 
-    /// Returns the loaded `Tab`, or `nil` if unloaded.
-    var tab: Tab? {
-        if case .loaded(let t) = self { t } else { nil }
-    }
-
     func reload() {
         // Unloaded tabs have no web view — intentionally a no-op.
         if case .loaded(let tab) = self {

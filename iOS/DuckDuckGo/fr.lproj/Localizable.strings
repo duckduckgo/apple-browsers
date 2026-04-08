@@ -2831,6 +2831,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "N'oubliez pas : vous pouvez supprimer tous vos onglets, votre historique et vos données de navigation en deux clics avec le Fire Button 🔥";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "J'ai compris ! Je vais ignorer les autres conseils.";
 

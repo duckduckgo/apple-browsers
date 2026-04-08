@@ -2831,6 +2831,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Atenção: podes eliminar todos os separadores, o histórico e os dados de navegação em dois toques com o Fire Button 🔥";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Entendido! Quero ignorar as outras dicas.";
 

@@ -2829,6 +2829,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Θυμηθείτε: μπορείτε να διαγράψετε όλες τις καρτέλες, το ιστορικό και τα δεδομένα περιήγησης με δύο πατήματα με το Fire Button 🔥";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Το κατάλαβα! Θα παραλείψω τις άλλες συμβουλές.";
 

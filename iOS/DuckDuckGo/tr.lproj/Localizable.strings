@@ -2829,6 +2829,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Unutmayın: Fire Button 🔥 ile tüm sekmelerinizi, geçmişinizi ve tarama verilerinizi iki dokunuşla silebilirsiniz";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Anladım! Diğer ipuçlarını atlayacağım.";
 

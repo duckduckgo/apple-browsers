@@ -2831,6 +2831,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Tuletame meelde, et nupu Fire Button 🔥 abil saate kustutada kõik oma vahekaardid, ajaloo ja sirvimisandmed kahe puudutusega";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Sain aru! Jätan muud näpunäited vahele.";
 

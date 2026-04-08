@@ -2831,6 +2831,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Напоминаем: с помощью кнопки Fire Button🔥 можно за пару нажатий закрыть все вкладки, а также стереть историю и скопившиеся в браузере данные.";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Понятно. Тогда мы пропустим остальные советы.";
 

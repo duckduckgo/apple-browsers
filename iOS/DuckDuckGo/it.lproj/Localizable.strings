@@ -2831,6 +2831,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Ricorda: puoi eliminare tutte le schede, la cronologia e i dati di navigazione con due tocchi sul pulsante Fire Button 🔥";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Ho capito! Salterò gli altri suggerimenti.";
 

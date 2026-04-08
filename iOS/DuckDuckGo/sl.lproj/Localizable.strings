@@ -2829,6 +2829,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Ne pozabite: Z gumbom Fire Button 🔥 lahko z dvema dotikoma izbrišete vse zavihke, zgodovino in podatke o brskanju.";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Razumem! Druge nasvete bom preskočil/-a.";
 

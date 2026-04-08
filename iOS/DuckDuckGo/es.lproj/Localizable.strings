@@ -2829,6 +2829,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Recuerda: puedes eliminar todas tus pestañas, historial y datos de navegación en dos toques con el Fire Button 🔥";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Entendido. Me saltaré los otros consejos.";
 

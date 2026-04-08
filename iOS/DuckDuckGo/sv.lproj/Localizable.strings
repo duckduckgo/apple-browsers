@@ -2829,6 +2829,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Kom ihåg att du kan radera alla dina flikar, din historik och dina surfdata med två tryck på Fire Button 🔥";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Jag förstår! Jag hoppar över de andra tipsen.";
 

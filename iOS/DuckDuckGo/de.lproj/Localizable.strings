@@ -2830,6 +2830,9 @@
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Denk daran: Mit dem Fire Button musst du nur zweimal tippen, um alle deine Tabs, den Verlauf und deine Browserdaten zu löschen 🔥";
 
+/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
+"onboarding.skip.message.fireButton" = "Fire Button";
+
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Verstanden. Ich überspringe die anderen Tipps.";
 

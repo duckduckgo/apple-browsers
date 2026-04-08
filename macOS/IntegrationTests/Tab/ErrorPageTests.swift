@@ -267,11 +267,11 @@ class ErrorPageTests: XCTestCase {
         }]
         let eNavigationFailed2 = tab1.$error.compactMap { $0 }.filter {
             $0.errorCode == NSError.noConnection.code
-        }.timeout(5).first().promise()
+        }.timeout(10).first().promise()
 
         tabsViewModel.select(at: .unpinned(0))
 
-        await fulfillment(of: [eServerQueried], timeout: 1)
+        await fulfillment(of: [eServerQueried], timeout: 5)
         let error = try await eNavigationFailed2.value
 
         let c = tab1.$isLoading.dropFirst().sink { isLoading in

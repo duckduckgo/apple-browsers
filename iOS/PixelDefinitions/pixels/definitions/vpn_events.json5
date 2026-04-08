@@ -130,5 +130,12 @@
                 "enum": ["funnel_appsettings_ios", "funnel_systemsettings_multiple", "funnel_others_multiple"]
             }
         ]
+    },
+    "m_netp_vpn_pixel_storage_setup_failure": {
+        "description": "Fired when the VPN packet tunnel provider fails to set up pixel storage during initialization, falling back to UserDefaults",
+        "owners": ["samsymons"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

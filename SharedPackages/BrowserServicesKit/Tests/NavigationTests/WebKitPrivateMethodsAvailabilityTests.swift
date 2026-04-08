@@ -63,6 +63,13 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         }
     }
 
+#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
+    func testWKWebpagePreferencesRespondsTo_autoplayPolicy() {
+        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.autoplayPolicy))
+        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.setAutoplayPolicy))
+    }
+#endif
+
     // MARK: - Functional Tests
 
     func testSessionStateDataFunctionality() throws {

@@ -216,8 +216,8 @@ extension ProgressView {
         let darkColor: UIColor
         let lightColor: UIColor
         if fireMode {
-            darkColor = UIColor(singleUseColor: .fireModeAccent)
-            lightColor = UIColor(singleUseColor: .fireModeAccent)
+            darkColor = UIColor(singleUseColor: .fireModeAccentDark)
+            lightColor = UIColor(singleUseColor: .fireModeAccentDark)
         } else {
             let theme = ThemeManager.shared.currentTheme
             darkColor = theme.progressBarGradientDarkColor

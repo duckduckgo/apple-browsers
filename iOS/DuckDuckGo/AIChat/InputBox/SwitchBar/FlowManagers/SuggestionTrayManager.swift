@@ -50,6 +50,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
+    func suggestionTrayManagerDidRequestFireMode(_ manager: SuggestionTrayManager)
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager)
 }
 
@@ -113,6 +114,14 @@ final class SuggestionTrayManager: NSObject {
     }
     
     // MARK: - Public Methods
+
+    func setSuggestionsSectionTitle(_ title: String?) {
+        suggestionTrayViewController?.setSuggestionsSectionTitle(title)
+    }
+
+    func setFavoritesSectionTitle(_ title: String?) {
+        suggestionTrayViewController?.setFavoritesSectionTitle(title)
+    }
 
     /// Installs the suggestion tray in the provided container view
     func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil) {
@@ -328,5 +337,9 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
 
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
         delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
+    }
+
+    func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
+        delegate?.suggestionTrayManagerDidRequestFireMode(self)
     }
 }

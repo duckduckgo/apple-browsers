@@ -27,7 +27,6 @@ struct SubscriptionPromoView: View {
         case learnMore
     }
 
-    private static let narrowThreshold: CGFloat = 390
     private static let closeButtonSize: CGFloat = 26
     private static let closeButtonInset: CGFloat = 13
 
@@ -37,11 +36,6 @@ struct SubscriptionPromoView: View {
     let onClose: () -> Void
 
     @State private var isHovering = false
-    @State private var cardWidth: CGFloat = 0
-
-    private var isNarrow: Bool {
-        cardWidth < Self.narrowThreshold
-    }
 
     var body: some View {
         promoCard
@@ -66,16 +60,6 @@ struct SubscriptionPromoView: View {
             .padding(.horizontal, 24)
             .frame(width: promoCardWidth)
             .background(
-                GeometryReader { geometry in
-                    Color.clear.onAppear {
-                        cardWidth = geometry.size.width
-                    }
-                    .onChange(of: geometry.size.width) { newWidth in
-                        cardWidth = newWidth
-                    }
-                }
-            )
-            .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(designSystemColor: .surfaceSecondary))
                     .overlay(
@@ -85,32 +69,13 @@ struct SubscriptionPromoView: View {
             )
     }
 
-    @ViewBuilder
     private var cardContent: some View {
-        if isNarrow {
-            narrowLayout
-        } else {
-            wideLayout
-        }
-    }
-
-    private var wideLayout: some View {
         HStack(spacing: 8) {
             HStack(spacing: 4) {
                 iconView
                 textContent
             }
             Spacer()
-            actionButton
-        }
-    }
-
-    private var narrowLayout: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 4) {
-                iconView
-                textContent
-            }
             actionButton
         }
     }
@@ -140,7 +105,6 @@ struct SubscriptionPromoView: View {
             Text(isFreeTrial ? UserText.subscriptionPromoTryForFree : UserText.subscriptionPromoLearnMore)
                 .font(.system(size: 13))
                 .foregroundColor(isFreeTrial ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textPrimary))
-                .frame(maxWidth: isNarrow ? .infinity : nil)
                 .padding(.vertical, 9.5)
                 .padding(.horizontal, 12)
                 .background(isFreeTrial ? Color(designSystemColor: .buttonsPrimaryDefault) : Color(designSystemColor: .controlsFillPrimary))

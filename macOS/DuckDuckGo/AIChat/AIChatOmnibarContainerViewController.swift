@@ -155,7 +155,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
     /// This must be added to the container height calculation by the parent.
     var additionalContentHeight: CGFloat {
-        if omnibarController.isOmnibarToolsEnabled && !attachmentsContainerView.attachments.isEmpty {
+        if omnibarController.isOmnibarToolsEnabled && !attachmentsContainerView.isHidden && !attachmentsContainerView.attachments.isEmpty {
             var height = Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
             if attachmentsContainerView.hasExcessAttachments {
                 height += Constants.attachmentsErrorHeight
@@ -177,8 +177,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Add tool buttons area: button size + spacing above suggestions
             height += Constants.toolButtonSize + Constants.toolButtonBottomInset
 
-            // Add attachments area when there are attachments
-            if !attachmentsContainerView.attachments.isEmpty {
+            // Add attachments area when there are visible attachments
+            if !attachmentsContainerView.isHidden && !attachmentsContainerView.attachments.isEmpty {
                 height += Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
                 if attachmentsContainerView.hasExcessAttachments {
                     height += Constants.attachmentsErrorHeight

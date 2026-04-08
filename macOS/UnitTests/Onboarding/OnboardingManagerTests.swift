@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Onboarding
 import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
@@ -40,6 +41,7 @@ class OnboardingManagerTests: XCTestCase {
     var startupPersistor: StartupPreferencesUserDefaultsPersistor!
     var importProvider: CapturingDataImportProvider!
     var applicationBuildType: MockApplicationBuildType!
+    private var onboardingSharedPixelHandler: MockOnboardingSharedPixelHandler!
 
     @MainActor override func setUp() {
         navigationDelegate = CapturingOnboardingNavigation()
@@ -63,6 +65,7 @@ class OnboardingManagerTests: XCTestCase {
         startupPreferences = StartupPreferences(pinningManager: MockPinningManager(), persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
         applicationBuildType = MockApplicationBuildType()
+        onboardingSharedPixelHandler = MockOnboardingSharedPixelHandler()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -71,7 +74,8 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
-            applicationBuildType: applicationBuildType
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
     }
 
@@ -87,6 +91,7 @@ class OnboardingManagerTests: XCTestCase {
         fireButtonPreferencesPersistor = nil
         importProvider = nil
         applicationBuildType = nil
+        onboardingSharedPixelHandler = nil
     }
 
     func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOff_ExcludesAddressBarMode() {
@@ -117,7 +122,8 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
-            applicationBuildType: applicationBuildType
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
         let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["import"]))
         let expectedConfig = OnboardingConfiguration(
@@ -145,7 +151,8 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
         let systemSettings = SystemSettings(rows: ["dock", "import"])
@@ -175,7 +182,8 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
         let systemSettings = SystemSettings(rows: ["dock", "import"])
@@ -205,7 +213,8 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
         let systemSettings = SystemSettings(rows: ["dock", "import"])
@@ -384,4 +393,16 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(self.appearancePersistor.homeButtonPosition, .hidden)
     }
 
+}
+
+private class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
+    var eventsReceived: [OnboardingSharedPixelEvent] = []
+
+    func fire(_ event: OnboardingSharedPixelEvent) {
+        eventsReceived.append(event)
+    }
+
+    func reset() {
+        eventsReceived = []
+    }
 }

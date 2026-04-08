@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import Common
 import Foundation
+import Onboarding
 import os.log
 import PixelKit
 import PrivacyConfig
@@ -107,6 +108,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
     private let featureFlagger: FeatureFlagger
     private let applicationBuildType: ApplicationBuildType
+    private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private var cancellables = Set<AnyCancellable>()
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
@@ -169,7 +171,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         bookmarkManager: BookmarkManager,
         pinningManager: PinningManager,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        reinstallUserDetection: ReinstallingUserDetecting,
+        installDateProvider: () -> Date
     ) {
         self.init(
             navigationDelegate: navigationDelegate,
@@ -179,7 +183,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             startupPreferences: startupPreferences,
             dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager),
             aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
+                platform: .macOS,
+                installType: reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall,
+                installDate: installDateProvider()
+             )
         )
     }
 
@@ -192,7 +201,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
         featureFlagger: FeatureFlagger,
-        applicationBuildType: ApplicationBuildType = StandardApplicationBuildType()
+        applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
+        onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
@@ -203,6 +213,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
         self.featureFlagger = featureFlagger
         self.applicationBuildType = applicationBuildType
+        self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
     }
 
     func onboardingStarted() {

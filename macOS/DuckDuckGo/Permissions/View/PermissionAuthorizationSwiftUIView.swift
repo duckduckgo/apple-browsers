@@ -27,7 +27,7 @@ import UserNotifications
 
 /// UI-only permission type for the authorization SwiftUI view.
 /// This handles the combined camera+microphone case without modifying the model layer.
-enum PermissionAuthorizationType {
+enum PermissionAuthorizationType: Equatable {
     case camera
     case microphone
     case cameraAndMicrophone
@@ -437,7 +437,8 @@ struct PermissionAuthorizationSwiftUIView: View {
     private var systemPermissionDisabledView: some View {
         SystemPermissionWarningView(
             prefixText: permissionType.systemPermissionDisabledText,
-            linkText: permissionType.systemSettingsLinkText
+            linkText: permissionType.systemSettingsLinkText,
+            linkOnNewLine: permissionType == .notification
         ) {
             openSystemSettings()
         }
@@ -562,7 +563,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         (Text(permissionType.systemPermissionDisabledTextStandalone)
             .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .textSecondary))
-        + Text(" ")
+        + Text(verbatim: permissionType == .notification ? "\n" : " ")
         + Text(permissionType.systemSettingsLinkText)
             .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .textLink)))

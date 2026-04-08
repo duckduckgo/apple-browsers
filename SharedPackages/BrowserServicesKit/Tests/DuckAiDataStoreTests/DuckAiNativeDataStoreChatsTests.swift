@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CryptoKit
 import Foundation
 import XCTest
 @testable import DuckAiDataStore
@@ -30,7 +31,8 @@ final class DuckAiNativeDataStoreChatsTests: XCTestCase {
         tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let databaseURL = tempDirectory.appendingPathComponent("db.sqlite")
         let filesDirectoryURL = tempDirectory.appendingPathComponent("files")
-        sut = try! DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectoryURL)
+        let key = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
+        sut = try! DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectoryURL, key: key)
     }
 
     override func tearDown() {

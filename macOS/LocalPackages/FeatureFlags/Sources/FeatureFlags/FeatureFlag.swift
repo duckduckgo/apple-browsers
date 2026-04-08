@@ -383,7 +383,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .freemiumDBP:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.freemium)), supportsLocalOverriding: false)
         case .contextualOnboarding:
-            Config(source: .remoteReleasable(.subfeature(ContextualOnboardingSubfeature.featureEnabled)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(ContextualOnboardingSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .onboardingRebranding:
             Config(source: .disabled)
         case .unknownUsernameCategorization:
@@ -401,7 +401,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPartialFormSaves:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves)))
         case .webExtensions:
-            Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.featureEnabled)), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.featureEnabled)), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)), category: .webExtensions)
         case .adBlockingExtension:
@@ -413,7 +413,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabCrashDebugging:
             Config(source: .disabled)
         case .delayedWebviewPresentation:
-            Config(source: .remoteReleasable(.subfeature(DelayedWebviewPresentationSubfeature.featureEnabled)))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(DelayedWebviewPresentationSubfeature.featureEnabled)))
         case .dbpRemoteBrokerDelivery:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery)), category: .dbp)
         case .dbpEmailConfirmationDecoupling:
@@ -439,7 +439,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatOmnibarCluster:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster)), category: .duckAI)
         case .aiChatSuggestions:
-            Config(source: .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled)), category: .duckAI)
         case .aiChatOmnibarTools:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools)), category: .duckAI)
         case .aiChatOmnibarOnboarding:
@@ -487,7 +487,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             Config(source: .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience)))
         case .attributedMetrics:
-            Config(source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
         case .showHideAIGeneratedImagesSection:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages)))
         case .standaloneMigration:
@@ -495,11 +495,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .allowProTierPurchase:
             Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase)), category: .subscription)
         case .popupBlocking:
-            Config(source: .remoteReleasable(.subfeature(PopupBlockingSubfeature.featureEnabled)), category: .popupBlocking)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PopupBlockingSubfeature.featureEnabled)), category: .popupBlocking)
         case .webNotifications:
             Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications)), category: .webNotifications)
         case .newPermissionView:
-            Config(source: .remoteReleasable(.subfeature(CombinedPermissionViewSubfeature.featureEnabled)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(CombinedPermissionViewSubfeature.featureEnabled)))
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey)))
         case .autofillPasswordSearchPrioritizeDomain:

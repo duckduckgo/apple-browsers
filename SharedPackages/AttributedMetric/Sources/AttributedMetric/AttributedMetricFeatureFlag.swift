@@ -46,7 +46,9 @@ extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
 
     public var defaultValue: FeatureFlagDefaultValue {
         switch self {
-        case .attributedMetrics, .emitAllMetrics, .retention, .canEmitRetention,
+        case .attributedMetrics:
+            return .enabled
+        case .emitAllMetrics, .retention, .canEmitRetention,
              .searchDaysAvg, .canEmitSearchDaysAvg, .searchCountAvg, .canEmitSearchCountAvg,
              .adClickCountAvg, .canEmitAdClickCountAvg, .aiUsageAvg, .canEmitAIUsageAvg,
              .subscriptionRetention, .canEmitSubscriptionRetention, .syncDevices, .canEmitSyncDevices:

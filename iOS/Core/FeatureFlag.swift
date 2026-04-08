@@ -439,7 +439,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillOnByDefault:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onByDefault)), supportsLocalOverriding: false)
         case .autofillFailureReporting:
-            Config(source: .remoteReleasable(.subfeature(AutofillBreakageReporterSubfeature.featureEnabled)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AutofillBreakageReporterSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .autofillOnForExistingUsers:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onForExistingUsers)), supportsLocalOverriding: false)
         case .autofillUnknownUsernameCategorization:
@@ -455,7 +455,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .inputFocusApi:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.inputFocusApi)), supportsLocalOverriding: false)
         case .incontextSignup:
-            Config(source: .remoteReleasable(.subfeature(IncontextSignupSubfeature.featureEnabled)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(IncontextSignupSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .autoconsentOnByDefault:
             Config(source: .remoteReleasable(.subfeature(AutoconsentSubfeature.onByDefault)), supportsLocalOverriding: false)
         case .duckPlayer:
@@ -469,7 +469,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncPromotionPasswords:
             Config(source: .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords)), supportsLocalOverriding: false)
         case .autofillSurveys:
-            Config(source: .remoteReleasable(.subfeature(AutofillSurveysSubfeature.featureEnabled)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AutofillSurveysSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .adAttributionReporting:
             Config(source: .remoteReleasable(.subfeature(AdAttributionReportingSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .dbpRemoteBrokerDelivery:
@@ -557,7 +557,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .iPadAIToggle:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.iPadAIChatToggle)))
         case .attributedMetrics:
-            Config(source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
         case .onboardingSearchExperience:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience)))
         case .storeSerpSettings:
@@ -587,7 +587,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualDuckAIMode:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode)))
         case .pageContextFeature:
-            Config(source: .remoteReleasable(.subfeature(PageContextSubfeature.featureEnabled)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PageContextSubfeature.featureEnabled)))
         case .aiChatAutoAttachContextByDefault:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault)))
         case .multiplePageContexts:
@@ -597,7 +597,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSync:
             Config(source: .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync)))
         case .aiChatSuggestions:
-            Config(source: .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled)))
         case .aiChatContextualSheetImprovements:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualSheetImprovements)))
         case .showWhatsNewPromptOnDemand:
@@ -623,7 +623,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.onboardingRebranding)))
         case .webExtensions:
-            Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.featureEnabled)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.featureEnabled)))
         case .embeddedExtension:
             Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)))
         case .forceDarkModeOnWebsites:

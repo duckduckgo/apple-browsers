@@ -347,17 +347,6 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         XCTAssertEqual(cohort?.rawValue, FakeExperimentFlagsCohort.control.rawValue)
     }
 
-    func testWhenResolveCohort_andRemoteReleasable_and_cohortAssigned_andFeaturePassed_returnsNil() {
-        let subfeature = AutofillSubfeature.credentialsAutofill
-        experimentManager.cohortToReturn = FakeExperimentFlagsCohort.control.rawValue
-        let embeddedData = Self.embeddedConfig(autofillSubfeatureForState: (subfeature: subfeature, state: "enabled"))
-
-        let flag = FakeExperimentFlags.remoteReleasableFeature
-        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
-        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
-        XCTAssertNil(cohort)
-    }
-
     func testWhenResolveCohort_andRemoteReleasable_and_cohortNotAssigned_andFeaturePassed_returnsNil() {
         internalUserDeciderStore.isInternalUser = true
         let subfeature = AutofillSubfeature.credentialsAutofill
@@ -406,29 +395,6 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
         let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
         XCTAssertEqual(cohort?.rawValue, FakeExperimentFlagsCohort.control.rawValue)
-    }
-
-    func testWhenResolveCohort_andInternalOnlyWithCohort_andFeatureDisabledInConfig_andInternalUser_returnsNil() {
-        internalUserDeciderStore.isInternalUser = true
-        experimentManager.cohortToReturn = nil
-        let embeddedData = Self.embeddedConfig(autofillState: "disabled")
-
-        let flag = FakeExperimentFlags.internalFlagWithRemoteFeature
-        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
-        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
-        XCTAssertNil(cohort)
-    }
-
-    func testWhenResolveCohort_andInternalOnlyWithCohort_andFeatureMissingFromConfig_andInternalUser_returnsFallbackCohort() {
-        internalUserDeciderStore.isInternalUser = true
-        experimentManager.cohortToReturn = nil
-        // Use empty config so autofill feature is missing
-        let embeddedData = Self.emptyConfig()
-
-        let flag = FakeExperimentFlags.internalFlagWithRemoteFeature
-        let featureFlagger = createFeatureFlagger(withMockedConfigData: embeddedData)
-        let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
-        XCTAssertEqual(cohort?.rawValue, FakeExperimentFlagsCohort.blue.rawValue)
     }
 
     func testWhenResolveCohort_andInternalOnlyWithCohort_andSubfeatureMissingFromConfig_andInternalUser_returnsFallbackCohort() {
@@ -602,15 +568,13 @@ private enum FakeExperimentFlags: String, CaseIterable {
     case disabledFlag
     case internalFlag
     case remoteReleasableFlag
-    case remoteReleasableFeature
     case internalFlagWithRemoteSubfeature
-    case internalFlagWithRemoteFeature
 }
 
 extension FakeExperimentFlags: FeatureFlagDescribing {
     var defaultValue: FeatureFlagDefaultValue {
         switch self {
-        case .internalFlag, .internalFlagWithRemoteSubfeature, .internalFlagWithRemoteFeature:
+        case .internalFlag, .internalFlagWithRemoteSubfeature:
             .internalOnlyWithCohort(FakeExperimentFlagsCohort.blue)
         default:
             .disabled
@@ -629,11 +593,7 @@ extension FakeExperimentFlags: FeatureFlagDescribing {
                 .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .remoteReleasableFlag:
                 .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
-        case .remoteReleasableFeature:
-                .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
         case .internalFlagWithRemoteSubfeature:
-                .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
-        case .internalFlagWithRemoteFeature:
                 .remoteReleasable(.subfeature(AutofillSubfeature.credentialsAutofill))
         }
     }

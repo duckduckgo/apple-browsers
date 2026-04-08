@@ -94,7 +94,7 @@ final class TabCollectionViewModel: NSObject {
      * Pinned tabs' view models are shared between windows
      * and are available through `pinnedTabsManager`.
      */
-    private(set) var tabViewModels = [String: any TabBarViewModel]()
+    private(set) var tabViewModels = [TabIdentifier: any TabBarViewModel]()
 
     @Published private(set) var selectionIndex: TabIndex? {
         didSet {

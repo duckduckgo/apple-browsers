@@ -16,40 +16,39 @@
 //  limitations under the License.
 //
 
-#if DEBUG
-
 import AIChat
 import DebugServer
 import DuckAiDataStore
 import Foundation
 import os
 
-/// A debug-only local HTTP server exposing Duck.ai native storage for inspection and manipulation.
+/// A local HTTP server exposing Duck.ai native storage for inspection and manipulation.
 ///
-/// Binds to `localhost:8080` and serves a web dashboard plus REST API for chats, files, and settings.
-final class DuckAiStorageDebugServer {
+/// Serves a web dashboard plus REST API for chats, files, and settings.
+/// Intended for debug builds only — consumers should gate usage with `#if DEBUG`.
+public final class DuckAiStorageDebugServer {
 
     private let server: DebugHTTPServer
     private let storageHandler: DuckAiNativeStorageHandling
     private let logger = Logger(subsystem: "com.duckduckgo", category: "DuckAiStorageDebugServer")
 
-    var isRunning: Bool {
+    public var isRunning: Bool {
         if case .running = server.state { return true }
         return false
     }
 
-    init(storageHandler: DuckAiNativeStorageHandling, port: UInt16 = 8080) {
+    public init(storageHandler: DuckAiNativeStorageHandling, port: UInt16 = 8080) {
         self.server = DebugHTTPServer(port: port)
         self.storageHandler = storageHandler
     }
 
-    func start() throws {
+    public func start() throws {
         registerRoutes()
         try server.start()
         logger.info("DuckAi Storage Debug Server started on port 8080")
     }
 
-    func stop() {
+    public func stop() {
         server.stop()
         logger.info("DuckAi Storage Debug Server stopped")
     }
@@ -488,5 +487,3 @@ extension DuckAiStorageDebugServer {
     """
     // swiftlint:enable line_length function_body_length
 }
-
-#endif

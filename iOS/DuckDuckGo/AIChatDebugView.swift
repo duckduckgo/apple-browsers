@@ -21,12 +21,19 @@
 import SwiftUI
 import Combine
 import AIChat
+#if DEBUG
+import AIChatDebugServer
+#endif
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
 
     var body: some View {
         List {
+            #if DEBUG
+            AIChatStorageServerSection()
+            #endif
+
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
                     Text("Message policy hostname")
@@ -293,6 +300,95 @@ private struct AIChatDebugSessionTimerEntryView: View {
         }
     }
 }
+
+#if DEBUG
+private struct AIChatStorageServerSection: View {
+    @StateObject private var serverState = StorageServerState()
+
+    var body: some View {
+        Section(header: Text("Native Storage Server")) {
+            if serverState.isRunning {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Server running")
+                        .foregroundColor(.green)
+                    if let ip = serverState.localIPAddress {
+                        Text("http://\(ip):8080")
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                    }
+                }
+                Button("Stop Server") {
+                    serverState.stop()
+                }
+                .foregroundColor(.red)
+            } else {
+                if let error = serverState.errorMessage {
+                    Text(error).foregroundColor(.red).font(.caption)
+                }
+                Button("Start Server") {
+                    serverState.start()
+                }
+            }
+        }
+    }
+}
+
+@MainActor
+private final class StorageServerState: ObservableObject {
+    @Published var isRunning = false
+    @Published var errorMessage: String?
+    @Published var localIPAddress: String?
+
+    private var server: DuckAiStorageDebugServer?
+
+    func start() {
+        guard let handler = AppDependencyProvider.shared.duckAiNativeStorageHandler else {
+            errorMessage = "Native storage is not available (feature flag may be disabled)"
+            return
+        }
+
+        do {
+            let server = DuckAiStorageDebugServer(storageHandler: handler)
+            try server.start()
+            self.server = server
+            self.isRunning = true
+            self.errorMessage = nil
+            self.localIPAddress = Self.getWiFiAddress()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stop() {
+        server?.stop()
+        server = nil
+        isRunning = false
+        localIPAddress = nil
+    }
+
+    private static func getWiFiAddress() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return nil }
+        defer { freeifaddrs(ifaddr) }
+
+        for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
+            let interface = ptr.pointee
+            let addrFamily = interface.ifa_addr.pointee.sa_family
+            guard addrFamily == UInt8(AF_INET) else { continue }
+
+            let name = String(cString: interface.ifa_name)
+            guard name == "en0" else { continue }
+
+            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                        &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST)
+            address = String(cString: hostname)
+        }
+        return address
+    }
+}
+#endif
 
 #Preview {
     AIChatDebugView()

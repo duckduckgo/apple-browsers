@@ -17,6 +17,9 @@
 //
 
 import AIChat
+#if DEBUG
+import AIChatDebugServer
+#endif
 import AppKit
 import Persistence
 

@@ -25,4 +25,5 @@ public extension Logger {
     static let contentBlocking = Logger(subsystem: "Content Blocking", category: "")
     static let passwordManager = Logger(subsystem: "Password Manager", category: "")
     static let autoconsent = Logger(subsystem: "Autoconsent", category: "")
+    static let nativeStorageDebug = Logger(subsystem: "AIChatNativeStorage", category: "AIChat")
 }

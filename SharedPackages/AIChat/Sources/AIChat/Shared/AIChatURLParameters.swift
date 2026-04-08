@@ -25,15 +25,25 @@ public enum AIChatURLParameters {
     public static let toolChoiceName = "toolChoice"
     public static let modeName = "mode"
     public static let voiceModeValue = "voice"
+    public static let imageModeValue = "image"
 
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {
+        modeURL(from: baseURL, mode: voiceModeValue)
+    }
+
+    /// Appends `?mode=image` to the given base URL.
+    public static func imageModeURL(from baseURL: URL) -> URL {
+        modeURL(from: baseURL, mode: imageModeValue)
+    }
+
+    private static func modeURL(from baseURL: URL, mode: String) -> URL {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             return baseURL
         }
         var queryItems = components.queryItems ?? []
         queryItems.removeAll { $0.name == modeName }
-        queryItems.append(URLQueryItem(name: modeName, value: voiceModeValue))
+        queryItems.append(URLQueryItem(name: modeName, value: mode))
         components.queryItems = queryItems
         return components.url ?? baseURL
     }

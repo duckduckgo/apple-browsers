@@ -119,6 +119,8 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String)
 
+    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController)
+
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool)
 
     func tabDidRequestSearchBarRect(tab: TabViewController) -> CGRect
@@ -145,6 +147,8 @@ protocol TabDelegate: AnyObject {
 
     var isEmailProtectionSignedIn: Bool { get }
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
+
+    func tabDidRequestFireMode(tab: TabViewController)
 }
 
 extension TabDelegate {

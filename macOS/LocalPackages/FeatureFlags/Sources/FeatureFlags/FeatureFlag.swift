@@ -267,11 +267,17 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case aiChatMultiplePageContexts
 
+    /// Enables attaching content from multiple open tabs to Duck.ai chat
+    case aiChatAttachMoreTabs
+
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1213356927349370?focus=true
     case aiChatNtpRecentChats
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213622362394873
+    case aiChatNtpChatTools
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
@@ -286,6 +292,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
+
+    /// Autoplay policy control via WKWebpagePreferences
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
+    case autoplayPolicy
 
     /// Window Semaphore Fullscreen Behavior Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
@@ -322,6 +332,19 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the Suspend Tab / Resume Tab context menu actions for debugging purposes
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213883766662888?focus=true
     case tabSuspensionDebugging
+
+    /// Enables the Duck.ai top-level main menu shortcut (macOS only, disabled by default)
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1213833143996470
+    case aiChatMainMenuShortcut
+
+    /// Enables the Duck.ai submenu in the more options (hamburger) menu (macOS only, disabled by default)
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1213833143996470
+    case aiChatMoreOptionsMenuShortcut
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213973058005627?focus=true
+    case aiChatSidebarAboutSchemeNavigationFix
+
+    case aiChatNativeStorage
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -512,10 +535,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .aiChatMultiplePageContexts:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts)), category: .duckAI)
+        case .aiChatAttachMoreTabs:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.attachMoreTabs)), category: .duckAI)
         case .aiChatSidebarResizable:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable)), category: .duckAI)
         case .aiChatNtpRecentChats:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats)), category: .duckAI)
+        case .aiChatNtpChatTools:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpChatTools)), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating)), category: .duckAI)
         case .privateProcessName:
@@ -544,6 +571,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .tabSuspensionDebugging:
             Config(source: .disabled)
+        case .aiChatMoreOptionsMenuShortcut:
+            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.moreOptionsMenuShortcut)), category: .duckAI)
+        case .aiChatMainMenuShortcut:
+            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.mainMenuShortcut)), category: .duckAI)
+        case .aiChatSidebarAboutSchemeNavigationFix:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarAboutSchemeNavigationFix)), category: .duckAI)
+        case .aiChatNativeStorage:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
+        case .autoplayPolicy:
+            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         }
     }
 

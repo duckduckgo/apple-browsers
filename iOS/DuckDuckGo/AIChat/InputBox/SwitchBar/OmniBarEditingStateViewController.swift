@@ -41,6 +41,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onChatHistorySelected(url: URL)
     func onDismissRequested()
     func onSwitchToTab(_ tab: Tab)
+    func onFireModeRequested()
     func onToggleModeSwitched(to mode: TextEntryMode)
     func onVoiceModeRequested()
 }
@@ -339,14 +340,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installChatHistoryList() {
         guard let swipeContainerManager else { return }
-
-        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
-        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        let suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-
-        let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                           aiChatSettings: aiChatSettings,
-                                           viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
+        let manager = makeAIChatHistoryManager()
+        
         manager.delegate = self
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
@@ -368,6 +363,24 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
             })
         }
+    }
+    
+    /// Creates ad configured for the current tab.
+    /// Fire tabs use a no-op reader that always returns empty results,
+    /// preventing chat history from being fetched or displayed.
+    private func makeAIChatHistoryManager() -> AIChatHistoryManager {
+        let suggestionsReader: AIChatSuggestionsReading
+        if switchBarHandler.isFireTab {
+            suggestionsReader = NilSuggestionsReader()
+        } else {
+            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
+
+        return AIChatHistoryManager(suggestionsReader: suggestionsReader,
+                                    aiChatSettings: aiChatSettings,
+                                    viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
     }
 
     private func installDaxLogoView() {
@@ -440,14 +453,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
                 self.delegate?.onQueryUpdated(currentText)
 
+                self.updateURLFallbackForCurrentText()
+                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
+
                 scheduleAnimation {
                     self.updateDaxVisibility()
                     self.updateSwipeContainerSafeArea()
                     self.view.layoutIfNeeded()
                 }
 
-                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
-                self.updateURLFallbackForCurrentText()
             }
             .store(in: &cancellables)
 
@@ -654,7 +668,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
         } else {
             isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent
         }
@@ -745,6 +759,10 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
         delegate?.onSwitchToTab(tab)
+    }
+
+    func suggestionTrayManagerDidRequestFireMode(_ manager: SuggestionTrayManager) {
+        delegate?.onFireModeRequested()
     }
 
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {

@@ -179,6 +179,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case semaphoreAlwaysVisible
 
+    /// Autoplay policy control via WKWebpagePreferences
+    case autoplayPolicy
+
     case tabAnimations
 
     /// Enables lazy reload for the more options menu
@@ -232,12 +235,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
-    case enhancedDataClearingSettings
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091
-    case burnSingleTab
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
@@ -256,6 +253,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
+
+    /// https://app.asana.com/1/137249556945/task/1213314048601761
+    case fireMode
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -413,8 +413,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables recent AI chats on the New Tab Page omnibar
     case ntpRecentChats
 
+    /// Enables AI chat tools (model selector, image upload) on the New Tab Page omnibar
+    case ntpChatTools
+
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
+
+    /// Enables attaching content from multiple open tabs to Duck.ai chat
+    case attachMoreTabs
 
     /// Enables page context feature on iPad
     case iPadPageContext
@@ -430,6 +436,18 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the fire button in the contextual AI chat sheet
     case contextualFireButton
+
+    /// Enables the Duck.ai top-level main menu shortcut (macOS only)
+    case mainMenuShortcut
+
+    /// Enables the Duck.ai submenu in the more options (hamburger) menu (macOS only)
+    case moreOptionsMenuShortcut
+
+    /// Enables native-side storage for AI Chat (settings, chats, files)
+    case nativeStorage
+
+    /// Prevents about: scheme navigations (e.g. about:srcdoc) from opening new tabs in the sidebar
+    case sidebarAboutSchemeNavigationFix
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

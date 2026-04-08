@@ -33,17 +33,20 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var remoteMessagingStore: RemoteMessagingStoring
     private let subscriptionDataReporter: SubscriptionDataReporting
     private let isStillOnboarding: () -> Bool
+    private let fireModePromotionEligibility: FireModePromotionCoordinating?
 
     var homeMessages: [HomeMessage] = []
 
     init(variantManager: VariantManager? = nil,
          remoteMessagingStore: RemoteMessagingStoring,
          subscriptionDataReporter: SubscriptionDataReporting,
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
          isStillOnboarding: @escaping () -> Bool
     ) {
         homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
         self.remoteMessagingStore = remoteMessagingStore
         self.subscriptionDataReporter = subscriptionDataReporter
+        self.fireModePromotionEligibility = fireModePromotionEligibility
         self.isStillOnboarding = isStillOnboarding
         homeMessages = buildHomeMessages()
     }
@@ -56,6 +59,11 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         var messages = homeMessageStorage.messagesToBeShown
 
         if isStillOnboarding() {
+            return messages
+        }
+
+        if fireModePromotionEligibility?.isNTPPromotionEligible == true {
+            messages.append(.firePromotion)
             return messages
         }
 
@@ -79,6 +87,11 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         case .remoteMessage(let remoteMessage):
             Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
             await remoteMessagingStore.dismissRemoteMessage(withID: remoteMessage.id)
+            if let index = homeMessages.firstIndex(of: homeMessage) {
+                homeMessages.remove(at: index)
+            }
+            NotificationCenter.default.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+        case .firePromotion:
             if let index = homeMessages.firstIndex(of: homeMessage) {
                 homeMessages.remove(at: index)
             }

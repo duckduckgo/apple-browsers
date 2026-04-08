@@ -37,16 +37,19 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private let configProvider: NewTabPageOmnibarConfigProviding
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
     private let aiChatsProvider: NewTabPageOmnibarAiChatsProviding
+    private let modelsProvider: NewTabPageOmnibarModelsProviding?
     private let actionHandler: NewTabPageOmnibarActionsHandling
     private var cancellables = Set<AnyCancellable>()
 
     public init(configProvider: NewTabPageOmnibarConfigProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
                 aiChatsProvider: NewTabPageOmnibarAiChatsProviding,
+                modelsProvider: NewTabPageOmnibarModelsProviding? = nil,
                 actionHandler: NewTabPageOmnibarActionsHandling) {
         self.configProvider = configProvider
         self.suggestionsProvider = suggestionsProvider
         self.aiChatsProvider = aiChatsProvider
+        self.modelsProvider = modelsProvider
         self.actionHandler = actionHandler
         super.init()
 
@@ -61,6 +64,15 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             }
         }
         .store(in: &cancellables)
+
+        configProvider.modePublisher
+            .filter { $0 == .ai }
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.refreshModelsAndNotify()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -78,12 +90,16 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let aiModelSections = await modelsProvider?.fetchAIModelSections()
         return NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
             showCustomizePopover: configProvider.showCustomizePopover,
-            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled
+            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
+            enableAiChatTools: configProvider.isAIChatToolsEnabled,
+            selectedModelId: configProvider.selectedModelId,
+            aiModelSections: aiModelSections
         )
     }
 
@@ -97,7 +113,16 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         if let showCustomizePopover = config.showCustomizePopover {
             configProvider.showCustomizePopover = showCustomizePopover
         }
+        if let selectedModelId = config.selectedModelId {
+            configProvider.selectedModelId = selectedModelId
+        }
         return nil
+    }
+
+    @MainActor
+    private func refreshModelsAndNotify() async {
+        _ = await modelsProvider?.fetchAIModelSections()
+        notifyConfigUpdated()
     }
 
     @MainActor
@@ -107,7 +132,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
             showCustomizePopover: configProvider.showCustomizePopover,
-            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled
+            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
+            enableAiChatTools: configProvider.isAIChatToolsEnabled,
+            selectedModelId: configProvider.selectedModelId,
+            aiModelSections: modelsProvider?.lastFetchedSections
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -139,7 +167,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.SubmitChatAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        await actionHandler.submitChat(action.chat, target: action.target)
+        await actionHandler.submitChat(action.chat, target: action.target, modelId: action.modelId, images: action.images)
         return nil
     }
 

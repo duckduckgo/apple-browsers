@@ -19,6 +19,7 @@
 import AIChat
 import AppUpdaterShared
 import BrowserServicesKit
+import os.log
 import Foundation
 import HistoryView
 import Persistence
@@ -57,6 +58,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
@@ -64,6 +66,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     // swiftlint:disable:next cyclomatic_complexity
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
@@ -90,6 +93,22 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
+
+        if sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage),
+           let duckAiNativeStorageHandler {
+            var originRules: [HostnameMatchingRule] = [
+                .exactOrSubdomain(hostname: "duck.ai"),
+            ]
+            if let customHostname = aiChatDebugURLSettings.customURLHostname {
+                originRules.append(.exact(hostname: customHostname))
+            }
+            duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
+                handler: duckAiNativeStorageHandler,
+                originRules: originRules
+            )
+        } else {
+            duckAiNativeStorageUserScript = nil
+        }
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
@@ -192,6 +211,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         if let serpSettingsUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        }
+
+        if let duckAiNativeStorageUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
 
         if let specialPages = specialPages {

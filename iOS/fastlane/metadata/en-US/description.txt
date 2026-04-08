@@ -5,7 +5,7 @@ Protect Your Searches by Default: DuckDuckGo Search comes built-in, so you can e
 
 Shield Your Browsing History: Our 3rd-Party Tracker Loading Protection blocks most trackers before they load, greatly exceeding what most popular browsers offer by default.  
 
-Chat Privately with AI: Duck.ai lets you have private conversations with 3rd-party AI models, anonymized by us and never used to train AI. 
+Chat Privately With AI: Duck.ai lets you have private conversations with 3rd-party AI models, anonymized by us and never used to train AI. 
 
 Secure Your Email (Optional): Use Email Protection to block most email trackers and hide your existing email address with @duck.com addresses.   
 
@@ -28,7 +28,7 @@ Subscribers get
 
 •	Our VPN: Secure your connection on up to 5 devices.     
 
-• 	Access to advanced AI models in Duck.ai: Chat privately with AI models built for complex tasks. 
+• 	Access to advanced AI Models in Duck.ai: Chat privately with AI models built for complex tasks. 
 
 •	Personal Information Removal: Find and remove personal info from sites that store and sell it.   
 

@@ -417,11 +417,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
         let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
+        let didModeChange = inputMode != effectiveMode
+        let needsViewSync = viewController.inputMode != effectiveMode
+        guard didModeChange || needsViewSync else { return }
+
         inputMode = effectiveMode
-        viewController.setInputMode(effectiveMode, animated: animated)
-        modeChangeSubject.send(effectiveMode)
+        if needsViewSync {
+            viewController.setInputMode(effectiveMode, animated: animated)
+        }
+        if didModeChange {
+            modeChangeSubject.send(effectiveMode)
+        }
         updateToolbarAIVoiceChat()
-        if effectiveMode == .search {
+        if didModeChange, effectiveMode == .search {
             clearAttachments()
         }
     }
@@ -440,14 +448,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
         let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
         let didModeChange = inputMode != effectiveMode
+        let needsViewSync = viewController.inputMode != effectiveMode
+        guard didModeChange || needsViewSync else { return }
+
         inputMode = effectiveMode
-        if didModeChange || effectiveMode != mode {
+        if needsViewSync {
             viewController.setInputMode(effectiveMode, animated: false)
         }
         if didModeChange {
             modeChangeSubject.send(effectiveMode)
-            updateToolbarAIVoiceChat()
         }
+        updateToolbarAIVoiceChat()
     }
 
     func updateOmnibarInputVisibility(_ isInputVisible: Bool) {
@@ -778,6 +789,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func clearAttachments() {
+        guard !viewController.currentAttachments.isEmpty else { return }
         viewController.removeAllAttachments()
     }
 

@@ -204,10 +204,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             markNeedsVisibleRefresh()
             return
         }
+        let didModeChange = switchBarHandler.currentToggleState != mode
         if !animated {
             swipeContainerManager?.animateProgrammaticModeChanges = false
         }
-        if switchBarHandler.currentToggleState != mode {
+        if didModeChange {
             switchBarHandler.setToggleState(mode)
         }
         let suggestionRefresh: SuggestionRefreshStrategy = mode == .search ? .currentState : .none
@@ -523,6 +524,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setContentInset(top: CGFloat, bottom: CGFloat) {
+        guard requestedContentInset.top != top || requestedContentInset.bottom != bottom else { return }
         requestedContentInset = (top, bottom)
         guard isContentActive else {
             markNeedsVisibleRefresh()
@@ -539,6 +541,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             right: 0
         )
         insets.top += Metrics.contentTopInset
+        guard swipeContainerManager?.containerViewController.additionalSafeAreaInsets != insets else { return }
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets = insets
     }
 
@@ -695,7 +698,6 @@ private extension UnifiedInputContentContainerViewController {
         } else {
             restoreFullSuggestions()
         }
-        updateSectionTitle()
     }
 }
 
@@ -772,7 +774,6 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
             markNeedsVisibleRefresh()
             return
         }
-        updateSectionTitle()
         updateDaxVisibility()
         view.layoutIfNeeded()
     }

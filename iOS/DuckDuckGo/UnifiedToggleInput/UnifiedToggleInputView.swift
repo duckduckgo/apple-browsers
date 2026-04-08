@@ -343,7 +343,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
-        handler.setToggleState(mode)
+        if handler.currentToggleState != mode {
+            handler.setToggleState(mode)
+        }
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
         }

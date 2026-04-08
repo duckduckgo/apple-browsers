@@ -523,6 +523,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.viewController.isInputExpanded, expandedBefore, "expansion state should not change")
     }
 
+    func test_updateInputMode_firstModeChangeFromBottomOmnibar_keepsActivePresentation() {
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
+
+        sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertEqual(sut.displayState, .omnibar(.active))
+        XCTAssertEqual(sut.viewController.inputMode, .aiChat)
+        XCTAssertTrue(sut.viewController.isInputExpanded)
+
+        let renderState = sut.computeRenderState()
+        XCTAssertEqual(renderState.cardPosition, .bottom)
+        XCTAssertTrue(renderState.isInputVisible)
+        XCTAssertTrue(renderState.isContentVisible)
+        XCTAssertTrue(renderState.isExpanded)
+        XCTAssertFalse(renderState.inactiveAppearance)
+    }
+
     func test_updateInputMode_emitsMode() {
         let exp = expectation(description: "modeChangePublisher emits")
         sut.modeChangePublisher

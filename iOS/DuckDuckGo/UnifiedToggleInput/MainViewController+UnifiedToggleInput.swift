@@ -140,6 +140,7 @@ extension MainViewController {
         let height = coordinator.omnibarEditingHeight()
         guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
+        viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         coordinator.pushContentInsets()
     }
 
@@ -535,6 +536,9 @@ private extension MainViewController {
             viewCoordinator.suggestionTrayContainer.isHidden = true
             let isTopPosition = unifiedToggleInputCoordinator?.cardPosition == .top
             if let coordinator = unifiedToggleInputCoordinator {
+                if !isTopPosition {
+                    applyBottomOmnibarVisibility(.active)
+                }
                 updateUnifiedInputContentVisibility(for: coordinator)
                 if isTopPosition && coordinator.isToggleEnabled {
                     let targetHeight = pendingHeight

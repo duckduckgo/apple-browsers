@@ -622,6 +622,7 @@
 		7BFD5FD52C9DA310000FF959 /* VPNAddWidgetTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD42C9DA310000FF959 /* VPNAddWidgetTip.swift */; };
 		7BFD5FD72C9DB9D7000FF959 /* VPNGeoswitchingTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD62C9DB9D7000FF959 /* VPNGeoswitchingTip.swift */; };
 		7BFD5FD92C9DBC24000FF959 /* VPNSnoozeTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */; };
+		801870A92F86CD6800E2DC44 /* LastActiveTabStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 801870A82F86CD6800E2DC44 /* LastActiveTabStore.swift */; };
 		80273AB82ED3E22E00EA03A1 /* SpyDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80273AB72ED3E22B00EA03A1 /* SpyDownloadManager.swift */; };
 		802A826E2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802A826D2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift */; };
 		802A826F2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802A826C2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift */; };
@@ -3030,6 +3031,7 @@
 		7BFD5FD42C9DA310000FF959 /* VPNAddWidgetTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAddWidgetTip.swift; sourceTree = "<group>"; };
 		7BFD5FD62C9DB9D7000FF959 /* VPNGeoswitchingTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNGeoswitchingTip.swift; sourceTree = "<group>"; };
 		7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeTip.swift; sourceTree = "<group>"; };
+		801870A82F86CD6800E2DC44 /* LastActiveTabStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastActiveTabStore.swift; sourceTree = "<group>"; };
 		80273AB72ED3E22B00EA03A1 /* SpyDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpyDownloadManager.swift; sourceTree = "<group>"; };
 		802A826C2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsDeleteHelperTests.swift; sourceTree = "<group>"; };
 		802A826D2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsListDataSourceTests.swift; sourceTree = "<group>"; };
@@ -10099,6 +10101,7 @@
 				85058365219AE9EA00ED4EDB /* HomePageConfiguration.swift */,
 				6F03CAFD2C32DD08004179A8 /* HomePageMessagesConfiguration.swift */,
 				6F40D15A2C34423800BF22F0 /* HomePageDisplayDailyPixelBucket.swift */,
+				801870A82F86CD6800E2DC44 /* LastActiveTabStore.swift */,
 				6FE127372C20492500EB5724 /* NewTabPage.swift */,
 				6FD8E51F2C5BA23200345670 /* NewTabPageViewModel.swift */,
 				CBAD0F202D02EE46006267B8 /* EscapeHatchModel.swift */,
@@ -12138,6 +12141,7 @@
 				C17A8E5F2E26C7D900CAE1B9 /* ImportPasswordsPromptViewModel.swift in Sources */,
 				CBF259582D3AA85900AC63E4 /* VPNService.swift in Sources */,
 				3105BCF12DF214A000EB755E /* AIChatPixelMetricHandler.swift in Sources */,
+				801870A92F86CD6800E2DC44 /* LastActiveTabStore.swift in Sources */,
 				BB7795812E9D532100CF58F4 /* WinBackOfferFeatureFlagger.swift in Sources */,
 				CB258D1329A4F24E00DEBA24 /* ConfigurationStore.swift in Sources */,
 				C17BDC6C2E16D2B70082485E /* ImportPromotionHeaderView.swift in Sources */,

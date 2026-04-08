@@ -77,9 +77,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
 
-    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1213809249616779
-    case deferredTabWebViewCreation
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717886474
     case dbpRemoteBrokerDelivery
 
@@ -417,8 +414,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .delayedWebviewPresentation:
             Config(source: .remoteReleasable(.feature(.delayedWebviewPresentation)))
-        case .deferredTabWebViewCreation:
-            Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.deferredTabWebViewCreation)), category: .tabs)
         case .dbpRemoteBrokerDelivery:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery)), category: .dbp)
         case .dbpEmailConfirmationDecoupling:

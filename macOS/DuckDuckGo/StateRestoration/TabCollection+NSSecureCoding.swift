@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import FeatureFlags
 import Foundation
 
 extension TabCollection: NSSecureCoding {
@@ -25,8 +24,6 @@ extension TabCollection: NSSecureCoding {
     static var supportsSecureCoding: Bool { true }
 
     convenience init?(coder decoder: NSCoder) {
-        let useUnloadedTabs = NSApp.delegateTyped.featureFlagger.isFeatureOn(.deferredTabWebViewCreation)
-
         // Remap Tab's module-qualified class name to TabRestorationData so we can decode
         // archives from old versions (actual Tab objects) and current version (TabRestorationData
         // encoded under Tab's class name for rollback compatibility).
@@ -48,16 +45,8 @@ extension TabCollection: NSSecureCoding {
             unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
         }
 
-        if useUnloadedTabs {
-            let tabs: [AnyTab] = restorationDataArray.map { .unloaded(UnloadedTab(from: $0)) }
-            self.init(tabs: tabs)
-        } else {
-            // Eager restoration: materialize all tabs immediately (pre-feature behavior)
-            let tabs: [Tab] = MainActor.assumeMainThread {
-                restorationDataArray.map { UnloadedTab(from: $0).materialize() }
-            }
-            self.init(tabs: tabs)
-        }
+        let tabs: [AnyTab] = restorationDataArray.map { .unloaded(UnloadedTab(from: $0)) }
+        self.init(tabs: tabs)
     }
 
     func encode(with coder: NSCoder) {

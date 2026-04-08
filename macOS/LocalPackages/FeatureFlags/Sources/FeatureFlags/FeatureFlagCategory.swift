@@ -27,7 +27,6 @@ public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case subscription = "Subscription"
     case popupBlocking = "Popup Blocking"
     case sync = "Sync"
-    case tabs = "Tabs"
     case updates = "Updates"
     case vpn = "VPN"
     case webExtensions = "Web Extensions"

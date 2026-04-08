@@ -3,6 +3,7 @@
         "description": "Fired when the app fails to register Core Data value transformers during database initialization, just before a fatal error",
         "owners": ["samsymons"],
         "triggers": ["other"],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

@@ -921,7 +921,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 // Show or hide the picker depending on whether models are available
                 if omnibarController.isOmnibarToolsEnabled {
                     let hasContent = !models.isEmpty || omnibarController.cachedModelShortName != nil
-                    modelPickerButton.isHidden = !hasContent
+                    modelPickerButton.isHidden = omnibarController.isImageGenerationMode || !hasContent
                 }
                 // Refresh button label once models arrive
                 modelPickerButton.modelName = persistedModelShortName

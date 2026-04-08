@@ -206,6 +206,20 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
+    /// When set, overrides the dynamic `safeAreaInsets` with a fixed value.
+    /// Used inside `OmniBarCell` to prevent layout shifts during horizontal scrolling,
+    /// where iOS would otherwise recalculate safe area based on the cell's screen position.
+    var pinnedSafeAreaInsets: UIEdgeInsets? {
+        didSet {
+            guard oldValue != pinnedSafeAreaInsets else { return }
+            setNeedsLayout()
+        }
+    }
+
+    override var safeAreaInsets: UIEdgeInsets {
+        pinnedSafeAreaInsets ?? super.safeAreaInsets
+    }
+
     private(set) var layoutMode: OmniBarLayoutMode = .compact
 
     func setLayoutMode(_ newMode: OmniBarLayoutMode, animated: Bool = false) {

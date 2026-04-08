@@ -78,6 +78,7 @@ class SwipeTabsCoordinator: NSObject {
         collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.omniBarReuseIdentifier)
         collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.templateReuseIdentifier)
         collectionView.isPagingEnabled = true
+        collectionView.contentInsetAdjustmentBehavior = .never
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.decelerationRate = .fast
@@ -402,17 +403,24 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var omniBar: OmniBar? {
         willSet {
+            (omniBar?.barView as? DefaultOmniBarView)?.pinnedSafeAreaInsets = nil
             omniBar?.barView.removeFromSuperview()
         }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
 
             omniBarView.translatesAutoresizingMaskIntoConstraints = false
+
+            if let defaultOmniBarView = omniBarView as? DefaultOmniBarView,
+               let collectionView = superview as? UICollectionView {
+                defaultOmniBarView.pinnedSafeAreaInsets = collectionView.safeAreaInsets
+            }
+
             addSubview(omniBarView)
 
             NSLayoutConstraint.activate([
-                omniBarView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
-                omniBarView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
+                omniBarView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                omniBarView.trailingAnchor.constraint(equalTo: trailingAnchor),
                 omniBarView.topAnchor.constraint(equalTo: topAnchor),
                 omniBarView.bottomAnchor.constraint(equalTo: bottomAnchor),
             ])

@@ -964,7 +964,8 @@ private extension UnifiedToggleInputCoordinator {
         case .customizeResponses:
             viewController.handler.customizeResponsesButtonTapped()
         case .webSearch:
-            selectTool(.webSearch)
+            toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
+            refreshToolsPresentation()
         }
     }
 

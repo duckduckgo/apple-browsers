@@ -43,6 +43,14 @@ final class UTIToolsController {
         selectedTool = tool
     }
 
+    func toggleSelection(for tool: AIChatRAGTool, modelStore: UTIModelStore) {
+        if selectedTool == tool {
+            clearSelection()
+            return
+        }
+        select(tool, for: modelStore)
+    }
+
     func clearSelection() {
         selectedTool = nil
     }
@@ -161,20 +169,9 @@ struct UTIToolsMenuFactory {
         let state: UIMenuElement.State = isSelected ? .on : .off
         let attributes: UIMenuElement.Attributes = isEnabled ? [] : .disabled
 
-        if #available(iOS 15.0, *) {
-            return UIAction(
-                title: UserText.aiChatToolbarWebSearchToolTitle,
-                subtitle: UserText.aiChatToolbarWebSearchToolSubtitle,
-                image: DesignSystemImages.Glyphs.Size24.globe,
-                attributes: attributes,
-                state: state
-            ) { _ in
-                onSelect(.webSearch)
-            }
-        }
-
         return UIAction(
             title: UserText.aiChatToolbarWebSearchToolTitle,
+            subtitle: UserText.aiChatToolbarWebSearchToolSubtitle,
             image: DesignSystemImages.Glyphs.Size24.globe,
             attributes: attributes,
             state: state

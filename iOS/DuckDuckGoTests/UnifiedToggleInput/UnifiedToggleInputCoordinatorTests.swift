@@ -860,6 +860,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.viewController.selectedTool, .webSearch)
     }
 
+    func test_handleToolsMenuSelection_togglesOffSelectedWebSearchTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.showExpanded()
+        sut.selectTool(.webSearch)
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertNil(sut.selectedTool)
+        XCTAssertNil(sut.viewController.selectedTool)
+    }
+
     func test_updateSelectedModel_clearsSelectedToolWhenNewModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [

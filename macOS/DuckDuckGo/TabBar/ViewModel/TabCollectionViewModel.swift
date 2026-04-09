@@ -897,7 +897,10 @@ final class TabCollectionViewModel: NSObject {
             Logger.tabLazyLoading.error("TabCollectionViewModel: No tab selected")
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
-        select(at: selectionIndex, forceChange: forceChange)
+        if index == selectionIndex {
+            // only reselect if we've replaced a selected tab
+            select(at: selectionIndex, forceChange: forceChange)
+        }
 
         delegate?.tabCollectionViewModel(self, didReplaceTabAt: index)
         return .success(())

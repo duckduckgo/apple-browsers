@@ -157,7 +157,7 @@ extension AIChatWebViewController {
         AIChatURLParameters.voiceModeURL(from: chatModel.aiChatURL)
     }
 
-    private func buildQueryURL(query: String, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
+    private func buildQueryURL(query: String, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
         guard var components = URLComponents(url: chatModel.aiChatURL, resolvingAgainstBaseURL: false) else {
             return chatModel.aiChatURL
         }
@@ -173,7 +173,7 @@ extension AIChatWebViewController {
             queryItems.removeAll { $0.name == QueryParameters.autoSendKey }
             queryItems.append(URLQueryItem(name: QueryParameters.autoSendKey, value: QueryParameters.autoSendValue))
         }
-        if let flowValue = onboardingFlowType.flowQueryValue {
+        if let flowValue = flowType.flowQueryValue {
             queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
             queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
         } else {

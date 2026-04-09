@@ -60,6 +60,8 @@ protocol AIChatUserScriptHandling {
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
+    @MainActor func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -295,6 +297,98 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
         return nil
+    }
+
+    // MARK: - Tab Picker
+
+    @MainActor
+    func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
+            return AIChatOpenTabsResponse(tabs: [])
+        }
+
+        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
+        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
+        let allTabs = pinnedTabs + tabCollection.tabs
+        let currentTabId = mainVC.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+
+        let faviconManager = NSApp.delegateTyped.faviconManager
+        let tabMetadata: [AIChatTabMetadata] = allTabs.compactMap { tab in
+            guard case .url(let url, _, _) = tab.content else { return nil }
+            let favicon: [AIChatPageContextData.PageContextFavicon]
+            if let image = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
+               let base64 = image.base64PNGDataURL {
+                favicon = [AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")]
+            } else {
+                favicon = []
+            }
+            return AIChatTabMetadata(
+                tabId: tab.uuid,
+                title: tab.title ?? url.host ?? "",
+                url: url.absoluteString,
+                favicon: favicon,
+                isCurrentTab: tab.uuid == currentTabId
+            )
+        }
+
+        return AIChatOpenTabsResponse(tabs: tabMetadata)
+    }
+
+    @MainActor
+    func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let params: AIChatTabContentParams = DecodableHelper.decode(from: params) else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
+        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
+        let allTabs = pinnedTabs + tabCollection.tabs
+
+        guard let tab = allTabs.first(where: { $0.uuid == params.tabId }) else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        // Access the tab's PageContextUserScript via its content blocking assets
+        guard let userScripts = tab.userContentController?.contentBlockingAssets?.userScripts as? UserScripts,
+              let pageContextScript = userScripts.pageContextUserScript else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        // Ensure the webView is set — it may have been released for background tabs
+        if pageContextScript.webView == nil {
+            pageContextScript.webView = tab.webView
+        }
+
+        // If webView is still nil (e.g. suspended tab), return immediately instead of waiting for timeout
+        guard pageContextScript.webView != nil else {
+            return AIChatTabContentResponse(pageContext: nil)
+        }
+
+        let pageContext = await pageContextScript.collectAndWait()
+
+        // Replace favicon URLs with base64-encoded data to avoid CSP blocking in the sidebar
+        let enrichedContext = pageContext.map { ctx -> AIChatPageContextData in
+            guard let pageURL = URL(string: ctx.url),
+                  let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
+                  let base64 = favicon.base64PNGDataURL else {
+                return ctx
+            }
+            let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")
+            return AIChatPageContextData(
+                title: ctx.title,
+                favicon: [faviconEntry],
+                url: ctx.url,
+                content: ctx.content,
+                truncated: ctx.truncated,
+                fullContentLength: ctx.fullContentLength,
+                attachable: ctx.attachable
+            )
+        }
+        return AIChatTabContentResponse(pageContext: enrichedContext)
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {

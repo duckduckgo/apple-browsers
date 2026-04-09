@@ -106,14 +106,14 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
             runner='["macos-26-xlarge"]'
-            include='[{"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.2"}]'
+            include='[{"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.4"}]'
           else
             all_os_versions='true'
             runner='["macos-14-xlarge", "macos-15-xlarge", "macos-26-xlarge"]'
             include=$(jq -c <<< '[
               {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "15.4"},
               {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "26.2"},
-              {"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.2"}
+              {"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.4"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -317,6 +317,14 @@ jobs:
         echo "Package resolution failed after $max_attempts attempts"
         exit 1
 
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ui-tests
+        restore-keys: |
+          xcode-compilation-cache-ui-tests-
+
     - name: Build for testing
       working-directory: macOS
       run: |
@@ -325,8 +333,27 @@ jobs:
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
         | tee xcodebuild.log \
         | xcbeautify
+
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Extract and Copy app to /DerivedData
       working-directory: macOS

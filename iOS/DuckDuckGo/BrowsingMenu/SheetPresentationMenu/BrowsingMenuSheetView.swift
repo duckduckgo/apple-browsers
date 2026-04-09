@@ -254,6 +254,7 @@ extension BrowsingMenuModel {
 
         enum Detail {
             case text(String)
+            case badge(String)
         }
 
         var hasDetails: Bool {
@@ -272,14 +273,21 @@ extension BrowsingMenuModel.Entry {
 
             return nil
 
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detail, let tag, let action):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detailText, let detailBadge, let tag, let action):
+            let detail: Detail? = if let detailBadge {
+                .badge(detailBadge)
+            } else if let detailText {
+                .text(detailText)
+            } else {
+                nil
+            }
             self.init(
                 name: name,
                 accessibilityLabel: accessibilityLabel,
                 image: image,
                 showNotificationDot: showNotificationDot,
                 customDotColor: customDotColor,
-                detail: detail.map { .text($0) },
+                detail: detail,
                 action: action,
                 tag: tag,
             )
@@ -337,6 +345,14 @@ private struct MenuRowButton: View {
                         Text(string)
                             .daxBodyRegular()
                             .foregroundStyle(Color(designSystemColor: .textSecondary))
+                    case .badge(let string):
+                        Text(string)
+                            .daxCallout()
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color(singleUseColor: .fireModeAccent))
+                            .clipShape(RoundedRectangle(cornerRadius: 10.5))
                     }
                 }
             }

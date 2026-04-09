@@ -49,11 +49,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-15-xlarge]
+        runner: [macos-26-xlarge]
         include:
-          - xcode-version: 16.4
-            runner: macos-15-xlarge
-            os-version: 15
+          - xcode-version: 26.4
+            runner: macos-26-xlarge
+            os-version: 26
 
     timeout-minutes: 60
 
@@ -155,6 +155,14 @@ jobs:
         log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-perf-tests
+        restore-keys: |
+          xcode-compilation-cache-perf-tests-
+
     - name: Build Performance Tests
       working-directory: macOS
       run: |
@@ -163,8 +171,27 @@ jobs:
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
         | tee xcodebuild.log \
         | xcbeautify
+
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-perf-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Extract and Copy app to /DerivedData
       working-directory: macOS

@@ -127,6 +127,8 @@ extension NewTabPageActionsManager {
                     featureFlagger: featureFlagger,
                     privacyConfig: contentBlocking.privacyConfigurationManager
                 ),
+                localSuggestionsReader: NSApp.delegateTyped.duckAiNativeStorageHandler.map { LocalSuggestionsReader(storageHandler: $0) },
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
                 historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
             )
         )

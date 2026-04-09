@@ -228,6 +228,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: featureFlagger,
                 privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager
             ),
+            localSuggestionsReader: duckAiNativeStorageHandler.map { LocalSuggestionsReader(storageHandler: $0) },
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
             historySettings: AIChatHistorySettings(
                 privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager
             )

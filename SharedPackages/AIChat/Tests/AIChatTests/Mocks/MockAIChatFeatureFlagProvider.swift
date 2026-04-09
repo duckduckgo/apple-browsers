@@ -21,6 +21,7 @@
 final class MockAIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
     var isAIChatSyncEnabledResult = true
     var supportsSyncChatsDeletionResult = true
+    var isLocalStorageManipulationEnabledResult = false
 
     func isAIChatSyncEnabled() -> Bool {
         return isAIChatSyncEnabledResult
@@ -28,5 +29,9 @@ final class MockAIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 
     func supportsSyncChatsDeletion() -> Bool {
         supportsSyncChatsDeletionResult
+    }
+
+    func isLocalStorageManipulationEnabled() -> Bool {
+        isLocalStorageManipulationEnabledResult
     }
 }

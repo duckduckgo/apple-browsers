@@ -467,6 +467,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables web search tool in the Duck.ai omnibar
     case omnibarWebSearch
+
+    /// Enables querying AI Chat data directly from local storage instead of via webview
+    case localStorageManipulation
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

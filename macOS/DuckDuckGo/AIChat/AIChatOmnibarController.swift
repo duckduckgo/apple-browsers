@@ -326,6 +326,7 @@ final class AIChatOmnibarController {
     func cleanup() {
         currentText = ""
         activeToolMode = nil
+        hasImageAttachments = false
         hasBeenActivated = false
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()

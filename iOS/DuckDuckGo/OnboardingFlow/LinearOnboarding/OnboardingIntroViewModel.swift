@@ -275,15 +275,6 @@ final class OnboardingIntroViewModel: ObservableObject {
         )
     }
 
-    var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode {
-        switch resolveDuckAIQueryExperimentCohortID() {
-        case .treatmentB:
-            .search
-        case .treatmentA, .control, .none:
-            .duckAI
-        }
-    }
-
     func restoreSyncAccountAction() {
         pixelReporter.measureAutoRestoreOnboardingRestoreCTAAction()
         restorePromptHandler.restoreSyncAccount()
@@ -335,7 +326,7 @@ private extension OnboardingIntroViewModel {
         case .searchExperienceSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
         case .duckAIQueryExperimentSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog(defaultMode: duckAIQueryExperimentDefaultMode), step: stepInfo()))
         }
 
         state = viewState
@@ -428,11 +419,23 @@ private extension OnboardingIntroViewModel {
         introSteps.insert(.duckAIQueryExperimentSelection, at: currentStepIndex + 1)
     }
 
+    var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode {
+        switch resolveDuckAIQueryExperimentCohortID() {
+        case .treatmentB:
+            .search
+        case .treatmentA:
+            .duckAI
+        case .control, .none:
+            .search
+        }
+    }
+
     func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {
         guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else { return nil }
         // TODO: Temporary override for dev validation; remove once remote cohort mapping is finalized.
-        // return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
-        return .treatmentA
+        let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        if !isRunningTests { return .treatmentA }
+        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
     }
 
     func introDialogType(isReturningUser: Bool) -> OnboardingView.ViewState.Intro.IntroDialogType {

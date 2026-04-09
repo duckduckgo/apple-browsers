@@ -201,18 +201,14 @@ extension MainViewController {
 
     func markSearchContextualOnboardingAsSeenForExperiment() {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
-        daxDialogsManager.setTryVisitSiteMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
-        daxDialogsManager.overrideShownFlagFor(.afterSearch, flag: true)
-        daxDialogsManager.overrideShownFlagFor(.withoutTrackers, flag: true)
-        daxDialogsManager.overrideShownFlagFor(.withOneTracker, flag: true)
-        daxDialogsManager.overrideShownFlagFor(.siteIsMajorTracker, flag: true)
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         AppUserDefaults().duckAIOnboardingResumeStep = nil
         ensureExperimentCompletionDialogPresentationPrerequisites()
     }
 
     private func ensureExperimentCompletionDialogPresentationPrerequisites() {
+        daxDialogsManager.disableContextualDaxDialogs()
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }
@@ -301,7 +297,7 @@ extension MainViewController {
             attachPopoverTo: source,
             tabViewModel: tabManager.viewModelForCurrentTab(),
             pixelSource: FireRequest.Source.browsing,
-            confirmationType: .duckAIExperiment,
+            confirmationType: .duckAIOnboarding,
             daxDialogsManager: daxDialogsManager,
             browsingMode: tabManager.currentBrowsingMode,
             onConfirm: { [weak self] fireRequest in

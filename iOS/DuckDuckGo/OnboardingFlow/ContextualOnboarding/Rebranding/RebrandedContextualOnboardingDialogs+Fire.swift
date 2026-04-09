@@ -26,17 +26,14 @@ extension OnboardingRebranding {
 
     struct OnboardingFireDialog: View {
         @Environment(\.onboardingTheme) private var theme
-        @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var contextualMetrics
 
         let title: String?
         let message: String
-        let isDuckAIExperiment: Bool
         let onManualDismiss: (() -> Void)?
 
-        init(title: String? = nil, message: String, isDuckAIExperiment: Bool = false, onManualDismiss: (() -> Void)? = nil) {
+        init(title: String? = nil, message: String, onManualDismiss: (() -> Void)? = nil) {
             self.title = title
             self.message = message
-            self.isDuckAIExperiment = isDuckAIExperiment
             self.onManualDismiss = onManualDismiss
         }
 
@@ -44,26 +41,14 @@ extension OnboardingRebranding {
             OnboardingBubbleView(tailPosition: nil) {
                 OnboardingRebranding.OnboardingFireDialogContent(
                     title: title,
-                    message: message,
-                    titleBodyVerticalSpacingOverride: isDuckAIExperiment ? contextualMetrics.titleBodyVerticalSpacingVerticalLayout * 0.4 : nil
+                    message: message
                 )
             }
             .ifLet(onManualDismiss) { view, onManualDismiss in
                 view.onboardingDismissable(onManualDismiss)
             }
-            .padding(dialogContainerPadding)
+            .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
-        }
-
-        private var dialogContainerPadding: EdgeInsets {
-            let base = theme.contextualOnboardingMetrics.containerPadding
-            guard isDuckAIExperiment else { return base }
-            return EdgeInsets(
-                top: base.top * 0.75,
-                leading: base.leading,
-                bottom: base.bottom * 0.75,
-                trailing: base.trailing
-            )
         }
     }
 
@@ -73,21 +58,26 @@ extension OnboardingRebranding {
 
         let title: String?
         let message: String
-        let titleBodyVerticalSpacingOverride: CGFloat?
 
-        init(title: String? = nil, message: String, titleBodyVerticalSpacingOverride: CGFloat? = nil) {
+        init(title: String? = nil, message: String) {
             self.title = title
             self.message = message
-            self.titleBodyVerticalSpacingOverride = titleBodyVerticalSpacingOverride
         }
 
         var body: some View {
             OnboardingRebranding.ContextualDaxDialogContent<EmptyView>(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
-                title: title,
-                titleBodyVerticalSpacingOverride: titleBodyVerticalSpacingOverride,
-                message: message
+                title: title.flatMap(AttributedString.init),
+                message: attributedMessage
             )
+        }
+
+        private var attributedMessage: AttributedString {
+            var attributed = AttributedString(message)
+            if let range = attributed.range(of: "Fire Button") {
+                attributed[range].inlinePresentationIntent = .stronglyEmphasized
+            }
+            return attributed
         }
     }
 

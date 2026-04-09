@@ -397,8 +397,8 @@ extension OnboardingRebranding {
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
-            case .duckAIQueryExperimentDialog:
-                experimentSearchExperienceSelectionView()
+            case .duckAIQueryExperimentDialog(let defaultMode):
+                experimentSearchExperienceSelectionView(defaultMode: defaultMode)
             }
         }
 
@@ -509,9 +509,9 @@ extension OnboardingRebranding {
             )
         }
 
-        private func experimentSearchExperienceSelectionView() -> some View {
+        private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryExperimentMode) -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
-                defaultMode: model.duckAIQueryExperimentDefaultMode,
+                defaultMode: defaultMode,
                 visualStyle: .rebranded,
                 onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
                 openAIChatAction: model.openAIChatFromOnboarding,

@@ -69,12 +69,13 @@ final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
                     onSizeUpdate: onSizeUpdate
                 )
             )
-        case .fire:
+        case .fire(let fireVariant):
             rootView = AnyView(
                 fireDialog(
                     title: spec.title,
                     message: spec.message,
                     delegate: delegate,
+                    fireVariant: fireVariant,
                     pixelName: spec.pixelName,
                     allowsManualDismiss: spec.allowsManualDismiss
                 )
@@ -242,11 +243,12 @@ private extension RebrandedContextualDaxDialogFactory {
         title: String?,
         message: String,
         delegate: ContextualOnboardingDelegate,
+        fireVariant: DaxDialogs.BrowsingSpec.SpecType.FireVariant,
         pixelName: Pixel.Event,
         allowsManualDismiss: Bool
     ) -> some View {
-        let isDuckAIExperimentFireDialog = pixelName == .onboardingDuckAIExperimentFireDialogShownUnique
-        let backgroundType: ContextualOnboardingBackgroundType = isDuckAIExperimentFireDialog ? .tryASearchDuckAIExperimentFire : .fireDialog
+        let isDuckAIOnboardingFireDialog = fireVariant == .duckAIOnboarding
+        let backgroundType: ContextualOnboardingBackgroundType = isDuckAIOnboardingFireDialog ? .tryASearchCompleted : .fireDialog
 
         let onManualDismiss: (() -> Void)? = allowsManualDismiss ? { [weak delegate, weak self] in
             self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
@@ -257,7 +259,6 @@ private extension RebrandedContextualDaxDialogFactory {
             OnboardingRebranding.OnboardingFireDialog(
                 title: title,
                 message: message,
-                isDuckAIExperiment: isDuckAIExperimentFireDialog,
                 onManualDismiss: onManualDismiss
             )
         }

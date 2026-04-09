@@ -145,7 +145,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     struct BrowsingSpec: Equatable {
         // swiftlint:disable nesting
 
-        enum SpecType: String {
+        enum SpecType: Equatable {
+            enum FireVariant: Equatable {
+                case standard
+                case duckAIOnboarding
+            }
+
             case afterSearch
             case visitWebsite
             case withoutTrackers
@@ -153,7 +158,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             case siteOwnedByMajorTracker
             case withOneTracker
             case withMultipleTrackers
-            case fire
+            case fire(FireVariant)
             case final
         }
         // swiftlint:enable nesting
@@ -182,11 +187,11 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
                                                        pixelName: .daxDialogsWithTrackersUnique,
                                                        message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithMultipleTrackers)
 
-        static let fire = BrowsingSpec(type: .fire,
+        static let fire = BrowsingSpec(type: .fire(.standard),
                                        pixelName: .daxDialogsFireEducationShownUnique,
                                        message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
 
-        static let fireDuckAIExperiment = BrowsingSpec(type: .fire,
+        static let fireDuckAIOnboarding = BrowsingSpec(type: .fire(.duckAIOnboarding),
                                                        pixelName: .onboardingDuckAIExperimentFireDialogShownUnique,
                                                        title: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle,
                                                        message: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingMessage,
@@ -329,7 +334,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     var isShowingFireDialog: Bool {
         guard let lastShownDaxDialogType else { return false }
-        return lastShownDaxDialogType == .fire
+        if case .fire = lastShownDaxDialogType {
+            return true
+        }
+        return false
     }
 
     func setLastShownDialog(type: BrowsingSpec.SpecType) {
@@ -410,8 +418,13 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         case BrowsingSpec.SpecType.withOneTracker, BrowsingSpec.SpecType.withMultipleTrackers:
             guard let entityNames = blockedEntityNames(privacyInfo.trackerInfo) else { return nil }
             return trackersBlockedMessage(entityNames, isReloadingDialog: true)
-        case BrowsingSpec.SpecType.fire:
-            return .fire
+        case .fire(let variant):
+            switch variant {
+            case .standard:
+                return .fire
+            case .duckAIOnboarding:
+                return .fireDuckAIOnboarding
+            }
         case BrowsingSpec.SpecType.final:
             return nil
         }

@@ -177,8 +177,19 @@ public final class DuckAiStorageDebugServer {
 
     private func registerSettingsRoutes() {
         server.addRoute("/api/settings", method: .GET) { [storageHandler] _ in
+            var result: [String: Any] = [:]
+
             let entries = try storageHandler.getAllEntries()
-            return .json(try JSONSerialization.data(withJSONObject: entries))
+            result["entries"] = entries
+
+            let migrationKeys = ["chats", "files"]
+            var migration: [String: Bool] = [:]
+            for key in migrationKeys {
+                migration[key] = (try? storageHandler.isMigrationDone(key: key)) ?? false
+            }
+            result["migration"] = migration
+
+            return .json(try JSONSerialization.data(withJSONObject: result))
         }
 
         server.addRoute("/api/settings", method: .DELETE) { [storageHandler] _ in

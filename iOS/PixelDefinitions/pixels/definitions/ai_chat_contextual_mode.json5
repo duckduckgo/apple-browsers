@@ -159,5 +159,33 @@
         "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "is_enabled"]
+    },
+    "m_aichat_contextual_quick_action_ask_about_page_selected": {
+        "description": "Fired when the user selects the Ask about page quick action chip in the contextual sheet",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_recent_chats_popup_displayed": {
+        "description": "Fired when the recent chats popup is displayed in the contextual sheet",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_recent_chat_selected": {
+        "description": "Fired when the user selects a chat from the recent chats popup in the contextual sheet",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_view_all_chats_tapped": {
+        "description": "Fired when the user taps View all chats in the recent chats popup to open duck.ai in a new tab",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

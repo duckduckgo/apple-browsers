@@ -108,7 +108,6 @@ class SettingsLegacyViewProvider: ObservableObject {
              autoconsent,
              unprotectedSites,
              fireproofSites,
-             autoclearData,
              keyboard,
              feedback,
              passwordsImport,
@@ -132,13 +131,6 @@ class SettingsLegacyViewProvider: ObservableObject {
         return storyboard.instantiateViewController(identifier: "FireProofSites") { coder in
             return FireproofingSettingsViewController(coder: coder, fireproofing: self.fireproofing, favicons: self.favicons, websiteDataManager: self.websiteDataManager)
         }
-    }
-
-    private func instantiateAutoClearController() -> UIViewController {
-        let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
-        return storyboard.instantiateViewController(identifier: "AutoClearSettingsViewController", creator: { coder in
-            return AutoClearSettingsViewController(appSettings: self.appSettings, coder: coder)
-        })
     }
 
     private func instantiateDebugController() -> UIViewController {
@@ -170,7 +162,6 @@ class SettingsLegacyViewProvider: ObservableObject {
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }
     var feedback: UIViewController { instantiate("Feedback", fromStoryboard: StoryboardName.feedback) }
-    var autoclearData: UIViewController { instantiateAutoClearController() }
     var debug: UIViewController { instantiateDebugController() }
 
     func appIconSettings(onChange: @escaping (AppIcon) -> Void) -> UIViewController {

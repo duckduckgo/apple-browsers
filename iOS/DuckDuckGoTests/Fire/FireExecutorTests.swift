@@ -126,7 +126,6 @@ final class FireExecutorTests: XCTestCase {
     private var mockAutoconsentManagementProvider: MockAutoconsentManagementProvider!
     private var mockHistoryManager: MockHistoryManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockDataClearingCapability: MockDataClearingCapability!
     private var mockPrivacyConfigurationManager: PrivacyConfigurationManagerMock!
     private var mockHistoryCleaner: MockHistoryCleaner!
     private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
@@ -150,16 +149,12 @@ final class FireExecutorTests: XCTestCase {
         mockAutoconsentManagementProvider = MockAutoconsentManagementProvider()
         mockHistoryManager = MockHistoryManager()
         mockFeatureFlagger = MockFeatureFlagger()
-        mockDataClearingCapability = MockDataClearingCapability()
         mockPrivacyConfigurationManager = PrivacyConfigurationManagerMock()
         mockHistoryCleaner = MockHistoryCleaner()
         mockBookmarkDatabaseCleaner = MockBookmarkDatabaseCleaner()
         mockDelegate = MockFireExecutorDelegate()
         mockAppSettings = AppSettingsMock()
         mockAppSettings.autoClearAIChatHistory = true
-        // Enable enhanced data clearing by default
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
-        mockDataClearingCapability.isBurnSingleTabEnabled = true
         mockAIChatSyncCleaner = MockAIChatSyncCleaning()
     }
     
@@ -175,7 +170,6 @@ final class FireExecutorTests: XCTestCase {
         mockAutoconsentManagementProvider = nil
         mockHistoryManager = nil
         mockFeatureFlagger = nil
-        mockDataClearingCapability = nil
         mockPrivacyConfigurationManager = nil
         mockHistoryCleaner = nil
         mockBookmarkDatabaseCleaner = nil
@@ -203,7 +197,6 @@ final class FireExecutorTests: XCTestCase {
             autoconsentManagementProvider: mockAutoconsentManagementProvider,
             historyManager: mockHistoryManager,
             featureFlagger: mockFeatureFlagger,
-            dataClearingCapability: mockDataClearingCapability,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             dataStore: MockWebsiteDataStore(),
             historyCleanerProvider: { dataStore in
@@ -373,7 +366,37 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
         XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
     }
-    
+
+    func testWhenRefinementsEnabledAndAITabBurnedThenOpensNewChat() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireButtonRefinements)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn")
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - AI tab is closed and a new chat is opened instead of homepage
+        XCTAssertTrue(mockTabManager.closeTabAndOpenNewChatCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndOpenNewChatCalledWith, tabViewModel.tab)
+        XCTAssertFalse(mockTabManager.closeTabAndNavigateToHomepageCalled)
+    }
+
+    func testWhenRefinementsDisabledAndAITabBurnedThenNavigatesToHomepage() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn")
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Without refinements, AI tab still navigates to homepage
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertFalse(mockTabManager.closeTabAndOpenNewChatCalled)
+    }
+
     func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {
         // Given
         let executor = makeFireExecutor()
@@ -658,24 +681,8 @@ final class FireExecutorTests: XCTestCase {
     
     // MARK: - Legacy AI Chats Setting Tests
     
-    func testAIChatsNotClearedOnLegacyUIAndDisabledByUser() async {
-        // Given
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = false // enhancedDataClearingSettings disabled
-        mockAppSettings.autoClearAIChatHistory = false
-        let executor = makeFireExecutor()
-        
-        // When
-        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
-        
-        // Then - AI history should NOT be cleared because legacy setting is disabled
-        XCTAssertFalse(mockDelegate.willStartBurningAIHistoryCalled)
-        XCTAssertFalse(mockDelegate.didFinishBurningAIHistoryCalled)
-        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
-    }
-    
     func testWhenScopeIsTabThenAIChatsAreClearedRegardlessOfUserSetting() async {
         // Given
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = false // enhancedDataClearingSettings disabled
         mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
         let executor = makeFireExecutor()
         let chatID = "test-chat-id-123"

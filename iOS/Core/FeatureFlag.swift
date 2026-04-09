@@ -295,9 +295,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
-    case enhancedDataClearingSettings
-
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
@@ -311,9 +308,6 @@ public enum FeatureFlag: String {
     /// Shows tracker count banner in Tab Switcher and related settings item
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case tabSwitcherTrackerCount
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
-    case burnSingleTab
 
    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
     case showNTPAfterIdleReturn
@@ -356,6 +350,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
+    case fireButtonRefinements
 
     /// https://app.asana.com/1/137249556945/project/1202500774821704/task/1212559012504218
     case autoplayBlocking
@@ -608,8 +605,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualSheetImprovements)))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand)))
-        case .enhancedDataClearingSettings:
-            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.enhancedDataClearingSettings)))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput)))
         case .wideEventPostEndpoint:
@@ -618,8 +613,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
         case .tabSwitcherTrackerCount:
             Config(defaultValue: .enabled, source: .remoteReleasable(.feature(.tabSwitcherTrackerCount)))
-        case .burnSingleTab:
-            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.burnSingleTab)))
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn)))
         case .uiTestFeatureFlag:
@@ -646,6 +639,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .fireMode:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
+        case .fireButtonRefinements:
+            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireButtonRefinements)))
         case .autoplayBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking)))
         case .customXSafariRedirectHandling:

@@ -32,9 +32,11 @@ public final class DuckAiNativeStorageProvider {
 
     public let handler: DuckAiNativeStorageHandling
 
-    public init(containerURL: URL) throws {
+    public init(containerURL: URL, keyStoreProvider: DuckAiKeyStoreProvider) throws {
         let fileManager = FileManager.default
         try fileManager.createDirectory(at: containerURL, withIntermediateDirectories: true)
+
+        let encryptionKey = try keyStoreProvider.getOrCreateKey()
 
         let settingsStore = try KeyValueFileStore(
             location: containerURL,
@@ -42,7 +44,8 @@ public final class DuckAiNativeStorageProvider {
         )
         let dataStore = try DuckAiNativeDataStore(
             databaseURL: containerURL.appendingPathComponent("chats.db"),
-            filesDirectoryURL: containerURL.appendingPathComponent("files")
+            filesDirectoryURL: containerURL.appendingPathComponent("files"),
+            key: encryptionKey
         )
         self.handler = DuckAiNativeStorageHandler(
             settingsStore: settingsStore.throwingKeyedStoring(),

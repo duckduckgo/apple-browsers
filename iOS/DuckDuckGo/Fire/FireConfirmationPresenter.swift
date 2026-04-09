@@ -20,20 +20,10 @@
 import Foundation
 import UIKit
 import SwiftUI
-import PrivacyConfig
 import Common
 import Core
-import AIChat
-import Persistence
 
 struct FireConfirmationPresenter {
-    
-    let tabsModel: TabsModelReading
-    let featureFlagger: FeatureFlagger
-    let historyManager: HistoryManaging
-    let fireproofing: Fireproofing
-    let aiChatSettings: AIChatSettingsProvider
-    let keyValueFilesStore: ThrowingKeyValueStoring
     
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
@@ -45,11 +35,7 @@ struct FireConfirmationPresenter {
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
-        if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
-        } else {
-            presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, pixelSource: pixelSource, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
-        }
+        presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
     }
     
     @MainActor
@@ -65,14 +51,10 @@ struct FireConfirmationPresenter {
             assertionFailure("No key window available")
             return
         }
-        if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
-        } else {
-            presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, pixelSource: pixelSource, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
-        }
+        presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
     }
     
-    // MARK: - Scope-based Confirmation (burnSingleTab feature flag)
+    // MARK: - Scope-based Confirmation
     
     @MainActor
         private func presentScopeConfirmationSheet(on viewController: UIViewController,
@@ -109,57 +91,6 @@ struct FireConfirmationPresenter {
                                   presentingWidth: presentingWidth)
             viewController.present(hostingController, animated: true)
         }
-    
-    // MARK: - Granular Confirmation (legacy, currently unused)
-    
-    /// Presents a SwiftUI-based confirmation sheet as an alternative UI for the "Fire" action.
-    /// 
-    /// This function builds a GranularFireConfirmationView hosted in a UIHostingController and presents it
-    /// as either a sheet or popover, depending on the device. Currently, this function is unused but
-    /// demonstrates an alternate UI flow for fire confirmation.
-    @MainActor
-    private func presentGranularConfirmationSheet(on viewController: UIViewController,
-                                                  from source: AnyObject,
-                                                  sourceRect: CGRect,
-                                                  onConfirm: @escaping (FireRequest) -> Void,
-                                                  onCancel: @escaping () -> Void) {
-        let viewModel = makeViewModel(dismissing: viewController,
-                                      onConfirm: onConfirm,
-                                      onCancel: onCancel)
-        let confirmationView = GranularFireConfirmationView(viewModel: viewModel)
-        let hostingController = makeHostingController(with: confirmationView)
-        let presentingWidth = viewController.view.frame.width
-        
-        configurePresentation(for: hostingController,
-                              source: source,
-                              sourceRect: sourceRect,
-                              presentingWidth: presentingWidth)
-        
-        viewController.present(hostingController, animated: true)
-    }
-    
-    @MainActor
-    private func makeViewModel(dismissing viewController: UIViewController,
-                               onConfirm: @escaping (FireRequest) -> Void,
-                               onCancel: @escaping () -> Void) -> GranularFireConfirmationViewModel {
-        GranularFireConfirmationViewModel(
-            tabsModel: tabsModel,
-            historyManager: historyManager,
-            fireproofing: fireproofing,
-            aiChatSettings: aiChatSettings,
-            keyValueFilesStore: keyValueFilesStore,
-            onConfirm: { [weak viewController] fireOptions in
-                viewController?.dismiss(animated: true) {
-                    onConfirm(fireOptions)
-                }
-            },
-            onCancel: { [weak viewController] in
-                viewController?.dismiss(animated: true) {
-                    onCancel()
-                }
-            }
-        )
-    }
     
     // MARK: - Shared Presentation Helpers
         
@@ -244,37 +175,6 @@ struct FireConfirmationPresenter {
         return targetSize.height
     }
     
-    private func presentLegacyConfirmationAlert(on viewController: UIViewController,
-                                                from source: AnyObject,
-                                                sourceRect: CGRect,
-                                                pixelSource: FireRequest.Source,
-                                                browsingMode: BrowsingMode,
-                                                onConfirm: @escaping (FireRequest) -> Void,
-                                                onCancel: @escaping () -> Void) {
-        
-        let alert = ForgetDataAlert.buildAlert(cancelHandler: {
-            onCancel()
-        }, forgetTabsAndDataHandler: {
-            let scope: FireRequest.Scope = browsingMode == .fire ? .fireMode : .all
-            let request = FireRequest(options: .all, trigger: .manualFire, scope: scope, source: pixelSource)
-            onConfirm(request)
-        })
-        if let view = source as? UIView {
-            if let popover = alert.popoverPresentationController {
-                popover.sourceView = view
-                popover.sourceRect = sourceRect
-            }
-            viewController.present(alert, animated: true)
-        } else if let button = source as? UIBarButtonItem {
-            if let customView = button.customView {
-                viewController.present(controller: alert, fromView: customView)
-            } else {
-                viewController.present(controller: alert, fromButtonItem: button)
-            }
-        } else {
-            assertionFailure("Unexpected sender")
-        }
-    }
 }
 
 private extension FireConfirmationPresenter {

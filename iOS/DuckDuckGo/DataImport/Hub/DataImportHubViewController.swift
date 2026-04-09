@@ -19,15 +19,11 @@
 
 import UIKit
 import SwiftUI
-import UniformTypeIdentifiers
 import BrowserKit
-import BrowserServicesKit
 import Core
-import Common
 import DDGSync
 import Persistence
 import Bookmarks
-import PrivacyConfig
 import os.log
 
 final class DataImportHubViewController: UIViewController {
@@ -37,19 +33,21 @@ final class DataImportHubViewController: UIViewController {
     private var didCallOnCancelled = false
 
     private let syncService: DDGSyncing
-    private let keyValueStore: ThrowingKeyValueStoring
-    private let bookmarksDatabase: CoreDataDatabase
-    private let favoritesDisplayMode: FavoritesDisplayMode
+    private let fileUploadCoordinator: DataImportFileUploadCoordinating
 
     init(syncService: DDGSyncing,
          keyValueStore: ThrowingKeyValueStoring,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
+         fileUploadCoordinator: DataImportFileUploadCoordinating? = nil,
          onCancelled: (() -> Void)? = nil) {
         self.syncService = syncService
-        self.keyValueStore = keyValueStore
-        self.bookmarksDatabase = bookmarksDatabase
-        self.favoritesDisplayMode = favoritesDisplayMode
+        self.fileUploadCoordinator = fileUploadCoordinator ?? DataImportFileUploadCoordinator(
+            bookmarksDatabase: bookmarksDatabase,
+            favoritesDisplayMode: favoritesDisplayMode,
+            syncService: syncService,
+            keyValueStore: keyValueStore
+        )
         self.onCancelled = onCancelled
         super.init(nibName: nil, bundle: nil)
     }
@@ -76,7 +74,31 @@ final class DataImportHubViewController: UIViewController {
     }
 
     private func setupActions() {
-        viewModel.onSourceSelected = { [weak self] source in
+        viewModel.onAction = { [weak self] action in
+            self?.handleAction(action)
+        }
+    }
+
+    private lazy var importManager: DataImportManaging = DataImportManager(
+        reporter: SecureVaultReporter(),
+        bookmarksDatabase: bookmarksDatabase,
+        favoritesDisplayMode: favoritesDisplayMode,
+        tld: AppDependencyProvider.shared.storageCache.tld)
+
+    private func handleAction(_ action: DataImportHubViewModel.Action) {
+        switch action {
+        case .importPasswords:
+            navigateToSourceSelection()
+        case .importBookmarksFromSafari:
+            triggerBrowserKitBookmarkImport()
+        case .uploadExportedFile:
+            presentDocumentPicker()
+        }
+    }
+
+    private func navigateToSourceSelection() {
+        let sourceSelectionVC = ImportSourceSelectionViewController()
+        sourceSelectionVC.onSourceSelected = { [weak self] source in
             self?.navigateToSource(source)
         }
     }

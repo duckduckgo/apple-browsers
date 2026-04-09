@@ -1917,6 +1917,7 @@
 		C1C1FF532D085AD70017ACCE /* NibLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C1FF4F2D085AD70017ACCE /* NibLoading.swift */; };
 		C1C23C102D490CA500B6BDF6 /* ImportArchiveReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C0F2D490CA500B6BDF6 /* ImportArchiveReader.swift */; };
 		A1F4C4E22F8A1B9300D1A111 /* DataImportEntryPointHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C4E12F8A1B9300D1A111 /* DataImportEntryPointHandler.swift */; };
+		A1F4C5232F8D000000D1A111 /* DataImportFileUploadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5212F8D000000D1A111 /* DataImportFileUploadCoordinator.swift */; };
 		A1F4C5042F8A300000D1A111 /* DataImportHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5012F8A300000D1A111 /* DataImportHubView.swift */; };
 		A1F4C5052F8A300000D1A111 /* DataImportHubViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5022F8A300000D1A111 /* DataImportHubViewController.swift */; };
 		A1F4C5062F8A300000D1A111 /* DataImportHubViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5032F8A300000D1A111 /* DataImportHubViewModel.swift */; };
@@ -4459,6 +4460,7 @@
 		C1C1FF4F2D085AD70017ACCE /* NibLoading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NibLoading.swift; sourceTree = "<group>"; };
 		C1C23C0F2D490CA500B6BDF6 /* ImportArchiveReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportArchiveReader.swift; sourceTree = "<group>"; };
 		A1F4C4E12F8A1B9300D1A111 /* DataImportEntryPointHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportEntryPointHandler.swift; sourceTree = "<group>"; };
+		A1F4C5212F8D000000D1A111 /* DataImportFileUploadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportFileUploadCoordinator.swift; sourceTree = "<group>"; };
 		A1F4C5012F8A300000D1A111 /* DataImportHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubView.swift; sourceTree = "<group>"; };
 		A1F4C5022F8A300000D1A111 /* DataImportHubViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubViewController.swift; sourceTree = "<group>"; };
 		A1F4C5032F8A300000D1A111 /* DataImportHubViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubViewModel.swift; sourceTree = "<group>"; };
@@ -9225,6 +9227,7 @@
 			isa = PBXGroup;
 			children = (
 				A1F4C4E12F8A1B9300D1A111 /* DataImportEntryPointHandler.swift */,
+				A1F4C5212F8D000000D1A111 /* DataImportFileUploadCoordinator.swift */,
 				A1F4C5072F8A300000D1A111 /* Hub */,
 				C1C23C282D4C0F1A00B6BDF6 /* DataImportView.swift */,
 				C1C23C292D4C0F1A00B6BDF6 /* DataImportViewController.swift */,
@@ -12409,6 +12412,7 @@
 				806DF4092F3B89BD00FBCA3F /* DataClearingCapability.swift in Sources */,
 				F1617C151E57336D00DEDCAF /* TabManager.swift in Sources */,
 				A1F4C4E22F8A1B9300D1A111 /* DataImportEntryPointHandler.swift in Sources */,
+				A1F4C5232F8D000000D1A111 /* DataImportFileUploadCoordinator.swift in Sources */,
 				A1F4C5042F8A300000D1A111 /* DataImportHubView.swift in Sources */,
 				A1F4C5052F8A300000D1A111 /* DataImportHubViewController.swift in Sources */,
 				A1F4C5062F8A300000D1A111 /* DataImportHubViewModel.swift in Sources */,

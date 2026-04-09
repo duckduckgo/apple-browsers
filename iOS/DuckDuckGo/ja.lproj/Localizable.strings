@@ -4175,6 +4175,12 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "申し訳ありませんが、Sync & Backupはこのアプリバージョンでは利用できなくなりました。続行するには、DuckDuckGoを最新バージョンに更新してください。";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "タブを閉じる";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "未読タブ";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "ホームタブを閉じる";
 

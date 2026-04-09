@@ -68,7 +68,9 @@ struct ScopedFireConfirmationView: View {
     
     private var headerSection: some View {
         VStack(spacing: Constants.headerSectionSpacing) {
-            animation
+            if viewModel.showAnimation {
+                animation
+            }
             
             VStack(spacing: Constants.headlineTextSpacing) {
                 Text(viewModel.headerTitle)
@@ -85,30 +87,19 @@ struct ScopedFireConfirmationView: View {
                 }
             }
         }
-        .padding(Constants.headerSectionPadding)
+        .padding(viewModel.showAnimation ? Constants.headerSectionPadding : Constants.headerSectionPaddingNoAnimation)
     }
     
     /// Scope selection buttons
     private var scopeButtons: some View {
         VStack(spacing: Constants.buttonSpacing) {
-            // Primary action button - "Delete All" or "Delete Chat" depending on mode
-            Button(action: {
-                viewModel.burnAllTabs()
-            }) {
-                Text(viewModel.primaryButtonTitle)
-            }
-            .buttonStyle(PrimaryDestructiveButtonStyle())
-            .accessibilityIdentifier("alert.forget-data.confirm")
-            
-            // This Tab button - Secondary Destructive (outline)
-            if viewModel.canBurnSingleTab {
-                Button(action: {
-                    viewModel.burnThisTab()
-                }) {
-                    Text(viewModel.tabScopeButtonTitle)
+            ForEach(viewModel.buttons.indices, id: \.self) { index in
+                let button = viewModel.buttons[index]
+                Button(action: button.action) {
+                    Text(button.title)
                 }
-                .buttonStyle(SecondaryDestructiveButtonStyle())
-                .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
+                .modifier(DestructiveButtonModifier(isPrimary: button.style == .primary))
+                .accessibilityIdentifier(button.accessibilityIdentifier)
             }
         }
     }
@@ -128,6 +119,18 @@ struct ScopedFireConfirmationView: View {
     
 }
 
+private struct DestructiveButtonModifier: ViewModifier {
+    let isPrimary: Bool
+
+    func body(content: Content) -> some View {
+        if isPrimary {
+            content.buttonStyle(PrimaryDestructiveButtonStyle())
+        } else {
+            content.buttonStyle(SecondaryDestructiveButtonStyle())
+        }
+    }
+}
+
 private extension ScopedFireConfirmationView {
     enum Constants {
         static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
@@ -135,6 +138,7 @@ private extension ScopedFireConfirmationView {
         static let mainSectionSpacing: CGFloat = 16
         static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
+        static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
         static let headlineTextSpacing: CGFloat = 4
         static let buttonSpacing: CGFloat = 16

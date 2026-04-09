@@ -4175,6 +4175,12 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Ne pare rău, dar Sincronizarea și copierea de rezervă nu mai este disponibilă în această versiune de aplicație. Te rugăm să actualizezi DuckDuckGo la cea mai recentă versiune pentru a continua.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Închidere filă";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Filă necitită";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Închide fila de pornire";
 

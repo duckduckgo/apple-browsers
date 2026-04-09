@@ -1595,6 +1595,10 @@ extension Pixel {
         case aiChatContextualFireButtonConfirmed
         case aiChatContextualPageContextCollectionEmpty
         case aiChatContextualPageContextCollectionUnavailable
+        case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualRecentChatsPopupDisplayed
+        case aiChatContextualRecentChatSelected
+        case aiChatContextualViewAllChatsTapped
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -3174,6 +3178,10 @@ extension Pixel.Event {
         case .aiChatContextualFireButtonConfirmed: return "m_aichat_contextual_fire_button_confirmed"
         case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
         case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
+        case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
+        case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
+        case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
 
         // MARK: AI Chat Sync
 

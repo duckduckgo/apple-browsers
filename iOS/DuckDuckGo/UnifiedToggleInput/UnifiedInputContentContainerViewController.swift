@@ -107,6 +107,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var suggestionTrayManager: SuggestionTrayManager?
     private var aiChatHistoryManager: AIChatHistoryManager?
     private var isShowingURLFallback = false
+    private var isContentActive = false
+    private var needsVisibleRefresh = true
+    private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
 
     private var chatHasSuggestions: Bool {
         aiChatHistoryManager?.hasSuggestions ?? false
@@ -190,6 +193,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
         syncURLFallbackState(resetFilter: true)
         if !animated {
             swipeContainerManager?.animateProgrammaticModeChanges = false
@@ -208,8 +215,33 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         floatingDismissButton.isHidden = !visible
     }
 
+    func setActive(_ active: Bool) {
+        guard active != isContentActive else { return }
+        isContentActive = active
+        markNeedsVisibleRefresh()
+    }
+
+    func refreshVisibleContentIfNeeded() {
+        guard isContentActive else { return }
+        guard needsVisibleRefresh else { return }
+
+        needsVisibleRefresh = false
+        let currentText = switchBarHandler.currentText
+        let mode = switchBarHandler.currentToggleState
+        suggestionTrayManager?.handleQueryUpdate(currentText, animated: false)
+        syncURLFallbackState(resetFilter: true)
+        updateSectionTitle()
+        updateDaxVisibility()
+        applyRequestedContentInset()
+        swipeContainerManager?.syncVisibleMode(animated: false)
+        view.layoutIfNeeded()
+    }
+
     func setText(_ text: String) {
         switchBarHandler.updateCurrentText(text)
+        if !isContentActive {
+            markNeedsVisibleRefresh()
+        }
     }
 
     override func viewWillLayoutSubviews() {
@@ -251,6 +283,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Metrics.horizontalMarginForCompactLayout : 0
         self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
         self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
         self.updateDaxVisibility()
         self.updateLayoutForCurrentOrientation()
     }
@@ -394,6 +430,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
+                guard self.isContentActive else {
+                    self.markNeedsVisibleRefresh()
+                    return
+                }
                 self.syncURLFallbackState()
                 self.updateSectionTitle()
                 self.scheduleAnimation {
@@ -436,6 +476,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .sink { [weak self] currentText in
                 guard let self else { return }
 
+                guard self.isContentActive else {
+                    self.markNeedsVisibleRefresh()
+                    return
+                }
+
                 self.syncURLFallbackState()
                 self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
                 self.updateSectionTitle()
@@ -460,9 +505,17 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
+                guard self.isContentActive else {
+                    self.markNeedsVisibleRefresh()
+                    return
+                }
                 self.suggestionTrayManager?.showInitialSuggestions()
                 self.updateDaxVisibility()
             }
+    }
+
+    private func markNeedsVisibleRefresh() {
+        needsVisibleRefresh = true
     }
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
@@ -503,7 +556,21 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setContentInset(top: CGFloat, bottom: CGFloat) {
-        var insets = UIEdgeInsets(top: top, left: 0, bottom: bottom, right: 0)
+        requestedContentInset = (top, bottom)
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
+        applyRequestedContentInset()
+    }
+
+    private func applyRequestedContentInset() {
+        var insets = UIEdgeInsets(
+            top: requestedContentInset.top,
+            left: 0,
+            bottom: requestedContentInset.bottom,
+            right: 0
+        )
         insets.top += Metrics.contentTopInset
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets = insets
     }
@@ -526,6 +593,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func updateDaxVisibility() {
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let isShowingTray = suggestionTrayManager?.isShowingSuggestionTray ?? false
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
@@ -651,6 +722,10 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
     }
 
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {
+        guard isContentActive else {
+            markNeedsVisibleRefresh()
+            return
+        }
         updateDaxVisibility()
     }
 }

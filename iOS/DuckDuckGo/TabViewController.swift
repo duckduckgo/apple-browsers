@@ -63,6 +63,8 @@ class TabViewController: UIViewController {
 
     lazy var borderView = StyledTopBottomBorderView()
 
+    @IBOutlet private(set) weak var privacyDashboardAnchor: UIView!
+
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
     @IBOutlet private(set) weak var errorHeader: UILabel!
@@ -72,6 +74,7 @@ class TabViewController: UIViewController {
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
+    var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
     
     /// Stores the visual state of the web view
     /// Used by DuckPlayer to save and restore view appearance when switching between normal browsing and fullscreen (portrail/landscape) video modes.
@@ -1266,22 +1269,6 @@ class TabViewController: UIViewController {
         return url.isDuckDuckGo
     }
 
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-
-        guard let chromeDelegate = chromeDelegate else { return }
-
-        if let controller = segue.destination as? PrivacyDashboardViewController {
-            controller.popoverPresentationController?.delegate = controller
-
-            if let iconView = chromeDelegate.omniBar.barView.privacyIconView {
-                controller.popoverPresentationController?.sourceView = iconView
-                controller.popoverPresentationController?.sourceRect = iconView.bounds
-            }
-            privacyDashboard = controller
-        }
-        
-    }
-
     private var jsAlertController: JSAlertController!
     @IBSegueAction
     func createJSAlertController(coder: NSCoder, sender: Any?, segueIdentifier: String?) -> JSAlertController? {
@@ -1289,16 +1276,6 @@ class TabViewController: UIViewController {
         return self.jsAlertController
     }
 
-    @IBSegueAction
-    private func makePrivacyDashboardViewController(coder: NSCoder) -> PrivacyDashboardViewController? {
-        return PrivacyDashboardViewController(coder: coder,
-                                       privacyInfo: privacyInfo,
-                                       entryPoint: .dashboard,
-                                       privacyConfigurationManager: privacyConfigurationManager,
-                                       contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                              breakageAdditionalInfo: makeBreakageAdditionalInfo())
-    }
-    
     private func addTextZoomObserver() {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(onTextZoomChange),
@@ -1344,7 +1321,24 @@ class TabViewController: UIViewController {
 
     func showPrivacyDashboard() {
         Pixel.fire(pixel: .privacyDashboardOpened, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .privacyDashboard))
-        performSegue(withIdentifier: "PrivacyDashboard", sender: self)
+        let controller = PrivacyDashboardViewController(
+            privacyInfo: privacyInfo,
+            entryPoint: .dashboard,
+            privacyConfigurationManager: privacyConfigurationManager,
+            contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
+            breakageAdditionalInfo: makeBreakageAdditionalInfo())
+
+        guard let chromeDelegate = chromeDelegate else { return }
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            controller.preferredContentSize = .init(width: 375, height: 650)
+            controller.modalPresentationStyle = .popover
+        } else {
+            controller.modalPresentationStyle = .formSheet
+        }
+        present(controller: controller, fromView: chromeDelegate.omniBar.barView.privacyIconView  ?? privacyDashboardAnchor)
+        self.privacyDashboard = controller
+
         featureDiscovery.setWasUsedBefore(.privacyDashboard)
     }
 

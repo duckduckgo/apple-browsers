@@ -1504,15 +1504,16 @@ extension TabBarViewItem: NSMenuDelegate {
         guard
             featureFlagger.isFeatureOn(.tabSuspension),
             featureFlagger.isFeatureOn(.tabSuspensionDebugging),
-            case .url = tabViewModel?.tabContent
+            let tabViewModel,
+            case .url = tabViewModel.tabContent
         else {
             return
         }
 
-        let isSuspended = tabViewModel is UnloadedTabViewModel
+        let isSuspended = tabViewModel.isSuspended
         // This item is only ever visible to internal users so we don't need translations.
         let title = isSuspended ? "Resume Tab" : "Suspend Tab"
-        let canToggleSuspension = isSuspended || (tabViewModel?.canBeSuspended == true)
+        let canToggleSuspension = isSuspended || tabViewModel.canBeSuspended
         let isEnabled = !isSelected && canToggleSuspension
 
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")

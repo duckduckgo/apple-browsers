@@ -658,7 +658,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatContextualFireButton:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton)))
         case .minimalChromeInLandscape:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)))
         }

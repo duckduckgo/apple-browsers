@@ -31,6 +31,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let verticalPadding: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
+        static let selectedToolIconSize: CGFloat = 24
+        static let selectedToolClearButtonSize: CGFloat = 24
         static let leftGroupSpacing: CGFloat = 4
         static let rightGroupSpacing: CGFloat = 8
         static let chipHeight: CGFloat = 40
@@ -165,8 +167,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         imageView.tintColor = UIColor(designSystemColor: .textPrimary)
         imageView.contentMode = .scaleAspectFit
         NSLayoutConstraint.activate([
-            imageView.widthAnchor.constraint(equalToConstant: 24),
-            imageView.heightAnchor.constraint(equalToConstant: 24),
+            imageView.widthAnchor.constraint(equalToConstant: Constants.selectedToolIconSize),
+            imageView.heightAnchor.constraint(equalToConstant: Constants.selectedToolIconSize),
         ])
         return imageView
     }()
@@ -179,8 +181,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.accessibilityLabel = UserText.aiChatToolbarClearSelectedToolAccessibilityLabel
         button.addTarget(self, action: #selector(selectedToolClearTapped), for: .primaryActionTriggered)
         NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 24),
-            button.heightAnchor.constraint(equalToConstant: 24),
+            button.widthAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize),
+            button.heightAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize),
         ])
         return button
     }()
@@ -235,7 +237,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.layer.cornerRadius = 14
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.accessibilityLabel = "Stop generating"
+        button.accessibilityLabel = UserText.aiChatToolbarStopGeneratingButtonAccessibilityLabel
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
         button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
         button.isHidden = true

@@ -116,7 +116,7 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
         experimentDuckAIFireOnboardingFlow.state = .active
-        AppUserDefaults().duckAIOnboardingResumeStep = .duckAIAnswerStep
+        duckAIOnboardingResumeStepStore.resumeStep = .duckAIAnswerStep
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
         showFireButtonPulse()
@@ -203,7 +203,7 @@ extension MainViewController {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
-        AppUserDefaults().duckAIOnboardingResumeStep = nil
+        DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
         ensureExperimentCompletionDialogPresentationPrerequisites()
     }
 
@@ -241,14 +241,12 @@ extension MainViewController {
     // MARK: App resume
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
-        guard AppUserDefaults().duckAIOnboardingResumeStep == .duckAIAnswerStep else {
-            return
-        }
         guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
-            AppUserDefaults().duckAIOnboardingResumeStep = nil
+            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
             return
         }
-        guard currentTab?.isAITab == true else {
+        guard duckAIOnboardingResumeStepStore.resumeStep == .duckAIAnswerStep,
+              currentTab?.isAITab == true else {
             return
         }
 
@@ -267,18 +265,14 @@ extension MainViewController {
     }
 
     func recreateAIChatTabForResumeIfNeeded() {
-        guard let currentURL = currentTab?.url,
-              let components = URLComponents(url: currentURL, resolvingAgainstBaseURL: false) else {
-            return
+        let query = duckAIOnboardingResumeStepStore.resumeExperimentPrompt
+        if query == nil || query?.isEmpty == true {
+            Logger.general.error("DuckAI onboarding resume missing stored prompt; opening AI Chat without a prompt")
         }
-        let queryItems = components.queryItems ?? []
-        let query = queryItems.first(where: { $0.name == AIChatURLParameters.promptQueryName })?.value
-        let autoSend = queryItems.first(where: { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })?.value == AIChatURLParameters.autoSubmitPromptQueryValue
-
         if let tabToClose = currentTab?.tabModel {
             closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
         }
-        openAIChat(query, autoSend: autoSend, onboardingFlowType: .mobileAppOnboarding)
+        openAIChat(query, autoSend: query.map { !$0.isEmpty } ?? false, flowType: .mobileAppOnboarding)
     }
 
     func clearDuckAIWebsiteDataForResumeIfNeeded() async {
@@ -367,7 +361,8 @@ extension MainViewController {
 
         if shouldArmExperimentFireOnboarding {
             experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
-            AppUserDefaults().duckAIOnboardingResumeStep = .duckAIAnswerStep
+            duckAIOnboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+            duckAIOnboardingResumeStepStore.resumeExperimentPrompt = query
             enforceSingleTabAfterOnboardingIfNeeded()
         } else if experimentDuckAIFireOnboardingFlow.state != .completed {
             experimentDuckAIFireOnboardingFlow.state = .idle
@@ -380,7 +375,7 @@ extension MainViewController {
     func clearDuckAIOnboardingResumeStepIfNeeded() {
         if experimentDuckAIFireOnboardingFlow.state != .awaitingFirstResponse,
            experimentDuckAIFireOnboardingFlow.state != .active {
-            AppUserDefaults().duckAIOnboardingResumeStep = nil
+            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
         }
     }
 

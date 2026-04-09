@@ -17,50 +17,53 @@
 //  limitations under the License.
 //
 
-import UIKitExtensions
-import WebKit
-import WidgetKit
+import AIChat
+import Bookmarks
+import BrokenSitePrompt
+import BrowserServicesKit
 import Combine
 import Common
+import Configuration
 import Core
+import DataBrokerProtection_iOS
 import DDGSync
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import Kingfisher
-import BrowserServicesKit
-import Bookmarks
-import Persistence
-import RemoteMessaging
-import PrivacyDashboard
+import NetworkExtension
 import Networking
-import Suggestions
-import Subscription
-import SwiftUI
-import VPN
 import Onboarding
 import os.log
 import PageRefreshMonitor
-import BrokenSitePrompt
-import AIChat
-import NetworkExtension
-import DesignResourcesKit
-import DesignResourcesKitIcons
-import Configuration
+import Persistence
 import PixelKit
-import SystemSettingsPiPTutorial
-import DataBrokerProtection_iOS
-import UserScript
 import PrivacyConfig
+import PrivacyDashboard
+import RemoteMessaging
+import Subscription
+import Suggestions
+import SwiftUI
+import SystemSettingsPiPTutorial
+import UIKitExtensions
+import UserScript
+import VPN
 import WebExtensions
+import WebKit
+import WidgetKit
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
 
-    init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus, tutorialSettings: TutorialSettings) {
-        if AppUserDefaults().duckAIOnboardingResumeStep == .duckAIQueryExperimentSelection {
+    init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus,
+         tutorialSettings: TutorialSettings,
+         resumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil) {
+        let resumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
+        if resumeStepStore.resumeStep == .duckAIQueryExperimentSelection {
             shouldShowOnboarding = true
             return
         }
 
-        if AppUserDefaults().duckAIOnboardingResumeStep == .duckAIAnswerStep {
+        if resumeStepStore.resumeStep == .duckAIAnswerStep {
             shouldShowOnboarding = false
             return
         }
@@ -294,6 +297,7 @@ class MainViewController: UIViewController {
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+    let duckAIOnboardingResumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys>
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
@@ -401,7 +405,8 @@ class MainViewController: UIViewController {
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-        fireModePromotionEligibility: FireModePromotionCoordinating? = nil
+        fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
+        duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -444,6 +449,7 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.keyValueStore = keyValueStore
+        self.duckAIOnboardingResumeStepStore = if let duckAIOnboardingResumeStepStore { duckAIOnboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
@@ -625,7 +631,8 @@ class MainViewController: UIViewController {
     private func configureStartupPresentation() {
         let startupOnboardingDecision = StartupOnboardingDecision(
             onboardingStatus: LaunchOptionsHandler().onboardingStatus,
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            resumeStepStore: duckAIOnboardingResumeStepStore
         )
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding

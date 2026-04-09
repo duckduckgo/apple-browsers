@@ -317,7 +317,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Tool Button Visibility
 
     private var shouldShowToolsButton: Bool {
-        omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled
+        omnibarController.isOmnibarToolsEnabled
+            && (omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled)
     }
 
     private var shouldShowImageUpload: Bool {

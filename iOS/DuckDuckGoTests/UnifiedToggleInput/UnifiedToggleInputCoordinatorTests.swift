@@ -466,7 +466,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_deactivateToOmnibar_fromInactive_hidesOmnibarEditing() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
 
         sut.deactivateToOmnibar()
@@ -475,7 +475,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_isOmnibarSession_trueForInactiveState() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
 
         XCTAssertEqual(sut.displayState, .omnibar(.inactive))
@@ -489,14 +489,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_dismissOmnibarKeyboard_guardsWhenOmnibarInactive() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
         sut.dismissOmnibarKeyboard()
         XCTAssertEqual(sut.displayState, .omnibar(.inactive))
     }
 
     func test_submitSearch_fromOmnibarInactive_deactivates() {
-        sut.activateFromOmnibar(inputMode: .search)
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)

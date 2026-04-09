@@ -83,6 +83,10 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
         try dataStore.putChat(chatId: chatId, data: data)
     }
 
+    public func putChats(_ chats: [DuckAiChatRecord]) throws {
+        try dataStore.putChats(chats)
+    }
+
     public func getAllChats() throws -> [DuckAiChatRecord] {
         try dataStore.getAllChats()
     }

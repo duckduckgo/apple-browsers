@@ -62,6 +62,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewBackgroundTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewFireTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
     func tabLoadingStateDidChange(tab: DuckDuckGo.TabViewController) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didUpdatePreview preview: UIImage) {}
@@ -113,6 +115,8 @@ final class MockTabDelegate: TabDelegate {
     }
 
     func tabDidRequestDeleteContextualChat(tab: DuckDuckGo.TabViewController, chatID: String) {}
+
+    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestPrivacyDashboardButtonPulse(tab: DuckDuckGo.TabViewController, animated: Bool) {
         tabDidRequestPrivacyDashboardButtonPulseCalled = true

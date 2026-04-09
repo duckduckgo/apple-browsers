@@ -4175,6 +4175,12 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Désolés, mais la synchronisation et la sauvegarde ne sont plus disponibles dans cette version de l'application. Veuillez mettre à jour DuckDuckGo avec la dernière version pour continuer.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Fermer l'onglet";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Onglet non lu";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Fermer l'onglet d'accueil";
 

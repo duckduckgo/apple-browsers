@@ -40,7 +40,7 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController)
 
     /// Called when the user taps expand to open duck.ai in a new tab with the current chat URL
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL)
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool)
 
     /// Called when the user requests to open AI Chat settings
     func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController)
@@ -398,7 +398,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         pixelHandler.fireExpandButtonTapped()
         let url = sessionState.contextualChatURL ?? aiChatSettings.aiChatURL
         Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.absoluteString)")
-        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, shouldToggleSidebar: false)
     }
 
     @objc private func newChatButtonTapped() {
@@ -543,6 +543,7 @@ private extension AIChatContextualSheetViewController {
 
         popupWindow = overlay
         recentChatsPopup = popup
+        pixelHandler.fireRecentChatsPopupDisplayed()
     }
 
     func dismissRecentChatsPopup() {
@@ -753,6 +754,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
         case .askAboutPage:
+            pixelHandler.fireQuickActionAskAboutPageSelected()
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
             contextualInputViewController.becomeFirstResponder()
         case .summarize:
@@ -798,14 +800,16 @@ extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDe
 
     func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
         dismissRecentChatsPopup()
+        pixelHandler.fireRecentChatSelected()
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
-        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, shouldToggleSidebar: false)
     }
 
     func recentChatsPopupDidSelectViewAll() {
         dismissRecentChatsPopup()
-        let url = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
-        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        pixelHandler.fireViewAllChatsTapped()
+        let url = aiChatSettings.aiChatURL
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, shouldToggleSidebar: true)
     }
 
     func recentChatsPopupDidDismiss() {

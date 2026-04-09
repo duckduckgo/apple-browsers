@@ -145,21 +145,12 @@ extension MainViewController {
             return
         }
 
-        let storyboard = UIStoryboard(name: "PrivacyDashboard", bundle: nil)
-        let controller = storyboard.instantiateInitialViewController { coder in
-            PrivacyDashboardViewController(coder: coder,
-                                           privacyInfo: privacyInfo,
-                                           entryPoint: entryPoint,
-                                           privacyConfigurationManager: self.privacyConfigurationManager,
-                                           contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
-        }
-        
-        guard let controller = controller else {
-            assertionFailure("PrivacyDashboardViewController not initialised")
-            return
-        }
-        
+        let controller = PrivacyDashboardViewController(privacyInfo: privacyInfo,
+                                                        entryPoint: entryPoint,
+                                                        privacyConfigurationManager: self.privacyConfigurationManager,
+                                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
+                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
+
         currentTab?.privacyDashboard = controller
 
         controller.popoverPresentationController?.delegate = controller

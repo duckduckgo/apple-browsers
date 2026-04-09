@@ -355,7 +355,21 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.submitOpenSettingsActionCallCount, 1)
     }
 
-    func testSubmitToggleSidebarActionCallsUserScript() throws {
+    func testSubmitToggleSidebarActionCallsUserScriptWhenFrontendReady() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .setAIChatHistoryEnabled)
+
+        // When
+        handler.submitToggleSidebarAction()
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitToggleSidebarActionCallCount, 1)
+    }
+
+    func testSubmitToggleSidebarActionQueuesWhenFrontendNotReady() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
         let mockWebView = WKWebView()
@@ -364,7 +378,13 @@ final class AIChatContentHandlerTests: XCTestCase {
         // When
         handler.submitToggleSidebarAction()
 
-        // Then
+        // Then - action is queued, not called immediately
+        XCTAssertEqual(mockUserScript.submitToggleSidebarActionCallCount, 0)
+
+        // When - frontend becomes ready
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .setAIChatHistoryEnabled)
+
+        // Then - queued action is flushed
         XCTAssertEqual(mockUserScript.submitToggleSidebarActionCallCount, 1)
     }
 

@@ -69,6 +69,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
 
         // Chats
         case .putChat: return putChat
+        case .putChats: return putChats
         case .getAllChats: return getAllChats
         case .deleteChat: return deleteChat
         case .deleteAllChats: return deleteAllChats
@@ -224,6 +225,33 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             Logger.aiChat.error("DuckAiNativeStorage: putChat failed for \(chatId): \(error.localizedDescription)")
         }
         return nil
+    }
+
+    private func putChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+        Logger.aiChat.debug("DuckAiNativeStorage: ← putChats called")
+        guard let dict = params as? [String: Any],
+              let chatsArray = dict["chats"] as? [[String: Any]] else {
+            Logger.aiChat.error("DuckAiNativeStorage: putChats — invalid params")
+            return SuccessResponse(success: false)
+        }
+        let records: [DuckAiChatRecord] = chatsArray.compactMap { entry in
+            guard let chatId = entry["chatId"] as? String, !chatId.isEmpty,
+                  let data = entry["data"] as? [String: Any],
+                  let jsonData = try? JSONSerialization.data(withJSONObject: data) else {
+                return nil
+            }
+            return DuckAiChatRecord(chatId: chatId, data: jsonData)
+        }
+        do {
+            try await performStorageOperation {
+                try self.handler.putChats(records)
+            }
+            Logger.aiChat.debug("DuckAiNativeStorage: putChats succeeded (\(records.count) chats)")
+            return SuccessResponse(success: true)
+        } catch {
+            Logger.aiChat.error("DuckAiNativeStorage: putChats failed: \(error.localizedDescription)")
+            return SuccessResponse(success: false)
+        }
     }
 
     private func getAllChats(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -431,6 +459,10 @@ private struct FileMetadataResponse: Encodable {
 
 private struct ListFilesResponse: Encodable {
     let files: [FileMetadataResponse]
+}
+
+private struct SuccessResponse: Encodable {
+    let success: Bool
 }
 
 private struct MigrationDoneResponse: Encodable {

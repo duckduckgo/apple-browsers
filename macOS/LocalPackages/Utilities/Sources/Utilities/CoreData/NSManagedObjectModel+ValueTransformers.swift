@@ -22,15 +22,15 @@ import Foundation
 
 public extension ValueTransformer {
 
-    static func registerValueTransformer(for propertyClass: AnyClass, with keyStore: EncryptionKeyStoring) -> NSValueTransformerName {
+    static func registerValueTransformer(for propertyClass: AnyClass, with keyStore: EncryptionKeyStoring) throws -> NSValueTransformerName {
         guard let encodableType = propertyClass as? (NSObject & NSSecureCoding).Type else {
             fatalError("Unsupported type")
         }
-        func registerValueTransformer<T: NSObject & NSSecureCoding>(for type: T.Type) -> NSValueTransformerName {
-            (try? EncryptedValueTransformer<T>.registerTransformer(keyStore: keyStore))!
+        func registerValueTransformer<T: NSObject & NSSecureCoding>(for type: T.Type) throws -> NSValueTransformerName {
+            try EncryptedValueTransformer<T>.registerTransformer(keyStore: keyStore)
             return EncryptedValueTransformer<T>.transformerName
         }
-        return registerValueTransformer(for: encodableType)
+        return try registerValueTransformer(for: encodableType)
     }
 
 }
@@ -39,7 +39,7 @@ public extension NSManagedObjectModel {
 
     private static let transformerUserInfoKey = "transformer"
     func registerValueTransformers(withAllowedPropertyClasses allowedPropertyClasses: [AnyClass]? = nil,
-                                   keyStore: EncryptionKeyStoring) -> [NSValueTransformerName] {
+                                   keyStore: EncryptionKeyStoring) throws -> [NSValueTransformerName] {
         var registeredTransformers = [NSValueTransformerName]()
         let allowedPropertyClassNames = allowedPropertyClasses.map { Set($0.map(NSStringFromClass)) }
 
@@ -71,7 +71,7 @@ public extension NSManagedObjectModel {
                     continue
                 }
 
-                let transformer = ValueTransformer.registerValueTransformer(for: propertyClass, with: keyStore)
+                let transformer = try ValueTransformer.registerValueTransformer(for: propertyClass, with: keyStore)
                 assert(ValueTransformer(forName: .init(transformerName)) != nil)
                 registeredTransformers.append(transformer)
             }

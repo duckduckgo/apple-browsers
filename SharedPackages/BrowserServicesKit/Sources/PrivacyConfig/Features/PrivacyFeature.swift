@@ -256,6 +256,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
+    case fireButtonRefinements
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -419,6 +422,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
+    /// Enables attaching content from multiple open tabs to Duck.ai chat
+    case attachMoreTabs
+
     /// Enables page context feature on iPad
     case iPadPageContext
 
@@ -433,6 +439,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the fire button in the contextual AI chat sheet
     case contextualFireButton
+
+    /// Enables the Duck.ai top-level main menu shortcut (macOS only)
+    case mainMenuShortcut
+
+    /// Enables the Duck.ai submenu in the more options (hamburger) menu (macOS only)
+    case moreOptionsMenuShortcut
 
     /// Enables native-side storage for AI Chat (settings, chats, files)
     case nativeStorage

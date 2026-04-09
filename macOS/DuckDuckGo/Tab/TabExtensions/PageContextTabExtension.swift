@@ -331,40 +331,21 @@ final class PageContextTabExtension {
     @MainActor private func replaceFaviconURLWithEncodedData(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {
         guard let pageContext = pageContext,
               let pageURL = URL(string: pageContext.url),
-              let favicon = getCurrentFavicon(for: pageURL),
-              let base64Favicon = makeBase64EncodedFavicon(from: favicon) else {
+              let favicon = faviconManagement.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
+              let base64Favicon = favicon.base64PNGDataURL else {
             return pageContext
         }
 
-        // Replace the favicon array with a single data URL entry
-        let faviconData = AIChatPageContextData.PageContextFavicon(href: base64Favicon, rel: "icon")
+        let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64Favicon, rel: "icon")
         return AIChatPageContextData(
             title: pageContext.title,
-            favicon: [faviconData],
+            favicon: [faviconEntry],
             url: pageContext.url,
             content: pageContext.content,
             truncated: pageContext.truncated,
             fullContentLength: pageContext.fullContentLength,
             attachable: pageContext.attachable
         )
-    }
-
-    @MainActor private func getCurrentFavicon(for url: URL) -> NSImage? {
-        faviconManagement.getCachedFavicon(for: url, sizeCategory: .small)?.image
-    }
-
-    private func makeBase64EncodedFavicon(from image: NSImage) -> String? {
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            return nil
-        }
-
-        let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
-        guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else {
-            return nil
-        }
-
-        let base64String = pngData.base64EncodedString()
-        return "data:image/png;base64,\(base64String)"
     }
 }
 

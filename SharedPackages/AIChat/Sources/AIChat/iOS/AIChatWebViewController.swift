@@ -138,11 +138,11 @@ extension AIChatWebViewController {
         webView.load(request)
     }
 
-    func loadQuery(_ query: String, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) {
+    func loadQuery(_ query: String, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) {
         let url = buildQueryURL(
             query: query,
             autoSend: autoSend,
-            onboardingFlowType: onboardingFlowType,
+            flowType: flowType,
             tools: tools
         )
         webView.load(URLRequest(url: url))

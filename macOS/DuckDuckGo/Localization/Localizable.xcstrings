@@ -3279,55 +3279,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privat fragen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Ask privately"
+            "value" : "Ask anything privately"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Pregunta en privado"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Demander en privé"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Chiedi in privato"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vraag privé"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zapytaj prywatnie"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Perguntar em privado"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Задать вопрос (конфиденциально)"
           }
         }
@@ -4156,7 +4156,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Find current information"
+            "value" : "Source answers from the web"
           }
         }
       }

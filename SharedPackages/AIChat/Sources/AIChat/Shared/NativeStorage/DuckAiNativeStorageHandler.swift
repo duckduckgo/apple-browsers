@@ -124,6 +124,8 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     // MARK: - Migration
 
     public func isMigrationDone(key: String) throws -> Bool {
+        settingsLock.lock()
+        defer { settingsLock.unlock() }
         guard let data = try settingsStore.value(for: \.migrationStatus) else {
             return false
         }
@@ -134,6 +136,8 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     }
 
     public func markMigrationDone(key: String) throws {
+        settingsLock.lock()
+        defer { settingsLock.unlock() }
         var dict: [String: Bool] = [:]
         if let data = try settingsStore.value(for: \.migrationStatus),
            let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Bool] {

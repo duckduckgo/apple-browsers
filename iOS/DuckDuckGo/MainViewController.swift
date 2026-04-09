@@ -5512,36 +5512,29 @@ extension MainViewController {
 
     /// Applies customization if enabled, ensures default otherwise.
     private func applyCustomizationForToolbar(_ state: MobileCustomization.State) {
-        guard let browserChrome = viewCoordinator.toolbarFireBarButtonItem.customView as? BrowserChromeButton else {
+        guard let toolbarFireButton = viewCoordinator.toolbarFireBarButtonItem.customView as? BrowserChromeButton else {
             assertionFailure("Expected BrowserChromeButton")
             return
         }
 
+        configureFireButton(toolbarFireButton, state: state)
+
+        if let omniBarFireButton = viewCoordinator.omniBar.barView.fireButton as? BrowserChromeButton {
+            configureFireButton(omniBarFireButton, state: state)
+        }
+    }
+
+    private func configureFireButton(_ button: BrowserChromeButton, state: MobileCustomization.State) {
         if !isNewTabPageVisible && state.isEnabled {
-            browserChrome.setImage(state.currentToolbarButton.largeIcon)
-            browserChrome.menu = UIMenu(children: [
+            button.setImage(state.currentToolbarButton.largeIcon)
+            button.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeToolbarSettings()
                 }
             ])
         } else {
-            browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
-            browserChrome.menu = nil
-        }
-
-        // Update the OmniBar fire button for expanded phone (minimal chrome) layout
-        if let omniBarFireButton = viewCoordinator.omniBar.barView.fireButton as? BrowserChromeButton {
-            if !isNewTabPageVisible && state.isEnabled {
-                omniBarFireButton.setImage(state.currentToolbarButton.largeIcon)
-                omniBarFireButton.menu = UIMenu(children: [
-                    UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
-                        self?.segueToCustomizeToolbarSettings()
-                    }
-                ])
-            } else {
-                omniBarFireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
-                omniBarFireButton.menu = nil
-            }
+            button.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+            button.menu = nil
         }
     }
 

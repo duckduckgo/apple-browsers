@@ -53,25 +53,13 @@
         "description": "Fired on the Welcome step of the linear onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     },
     "m_mac_onboarding_set-default": {
         "description": "Fired on the Set Default Browser step of the linear onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     },
     "m_mac_onboarding_add-to-dock": {
         "description": "Fired on the Add to Dock row of the System Settings step of the linear onboarding flow.",
@@ -90,25 +78,13 @@
         "description": "Fired on the Import row of the System Settings step of the linear onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     },
     "m_mac_onboarding_duck-player": {
         "description": "Fired on the Duck Player step of the linear onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     },
     "m_mac_onboarding_customization": {
         "description": "Fired on the Customization step of the linear onboarding flow.",
@@ -164,13 +140,7 @@
         "description": "Fired on the Search Done step of the contextual onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     },
     "m_mac_onboarding_visit-site": {
         "description": "Fired on the Visit A Site step of the contextual onboarding flow.",
@@ -193,36 +163,18 @@
         "description": "Fired on the Trackers Blocked step of the contextual onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     },
     "m_mac_onboarding_fire-button": {
         "description": "Fired on the Fire Button step of the contextual onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     },
     "m_mac_onboarding_end": {
         "description": "Fired on the final step of the contextual onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "onboardingEventType",
-            "onboardingClickedValue",
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall"
-        ]
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     }
 }

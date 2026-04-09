@@ -304,6 +304,6 @@
     "onboardingDaysSinceInstall": {
         "key": "d",
         "type": "integer",
-        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding",
+        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
     }
 }

@@ -84386,55 +84386,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Autoplay von Websites zulassen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow websites to autoplay"
+            "value" : "Autoplay website media"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Permitir la reproducción automática de sitios web"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Autoriser la lecture automatique des sites Web"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Consenti ai siti web di riprodurre automaticamente"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Laat websites automatisch afspelen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Pozwól sobie na automatyczne odtwarzanie stron"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Permitir a reprodução automática em sites"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Разрешить автовоспроизведение на сайтах"
           }
         }
@@ -84573,7 +84573,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Stop media with sound"
+            "value" : "Stop videos with sound"
           }
         },
         "es" : {

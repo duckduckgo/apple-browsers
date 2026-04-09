@@ -272,8 +272,6 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return dict
         }
         Logger.aiChat.debug("DuckAiNativeStorage: getAllChats → \(chats.count) chats")
-
-
         return AllChatsResponse(chats: chats)
     }
 

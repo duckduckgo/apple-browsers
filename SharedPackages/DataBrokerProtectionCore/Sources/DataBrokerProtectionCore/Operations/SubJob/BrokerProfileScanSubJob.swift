@@ -530,8 +530,7 @@ struct BrokerProfileScanSubJob {
                                                      parent: brokerProfileQueryData.dataBroker.parent ?? "",
                                                      brokerType: brokerProfileQueryData.dataBroker.type,
                                                      vpnConnectionState: vpnConnectionState,
-                                                     vpnBypassStatus: vpnBypassStatus,
-                                                     clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                                     vpnBypassStatus: vpnBypassStatus))
                 }
             }
         }

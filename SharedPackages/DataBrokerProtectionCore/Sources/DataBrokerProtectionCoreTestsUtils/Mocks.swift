@@ -1982,7 +1982,6 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isEmailConfirmationDecouplingFeatureOn: Bool
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
-    public let isClickActionDelayReductionOptimizationOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
     public let isFreemiumPIREnabled: Bool
@@ -1991,7 +1990,6 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
                 isEmailConfirmationDecouplingFeatureOn: Bool = false,
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
-                isClickActionDelayReductionOptimizationOn: Bool = false,
                 isContinuedProcessingFeatureOn: Bool = true,
                 isWebViewUserAgentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false) {
@@ -1999,7 +1997,6 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
-        self.isClickActionDelayReductionOptimizationOn = isClickActionDelayReductionOptimizationOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
         self.isFreemiumPIREnabled = isFreemiumPIREnabled

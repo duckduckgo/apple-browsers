@@ -109,9 +109,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
     case dbpForegroundRunningWhenDashboardOpen
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
-    case dbpClickActionDelayReductionOptimization
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213433655862033?focus=true
     case dbpContinuedProcessing
 
@@ -502,8 +499,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningOnAppActive)))
         case .dbpForegroundRunningWhenDashboardOpen:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen)))
-        case .dbpClickActionDelayReductionOptimization:
-            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization)))
         case .dbpContinuedProcessing:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.continuedProcessing)))
         case .dbpFreemiumPIR:

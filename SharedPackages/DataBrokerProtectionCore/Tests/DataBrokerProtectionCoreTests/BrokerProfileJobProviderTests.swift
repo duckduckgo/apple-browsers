@@ -251,11 +251,10 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         }
     }
 
-    // MARK: - Click Delay Optimization Tests
+    // MARK: - Click Delay Tests
 
-    func testWhenClickDelayOptimizationIsOn_thenCreateOptOutRunnerUsesOptimizedDelay() {
+    func testCreateOptOutRunner_usesOptimizedDelay() {
         // Given
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
         let dependencies = BrokerProfileJobDependencies(
             database: mockDatabase,
             contentScopeProperties: ContentScopeProperties.mock,
@@ -267,7 +266,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
             emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
             captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger,
+            featureFlagger: MockDBPFeatureFlagger(),
             applicationNameForUserAgent: nil
         )
 
@@ -280,12 +279,11 @@ final class BrokerProfileJobProviderTests: XCTestCase {
 
         // Then
         let concreteRunner = runner as! BrokerProfileOptOutSubJobWebRunner
-        XCTAssertEqual(concreteRunner.clickAwaitTime, 3, "Should use optimized 3s delay when flag is ON")
+        XCTAssertEqual(concreteRunner.clickAwaitTime, 3, "Should use 3s delay for opt-out")
     }
 
-    func testWhenClickDelayOptimizationIsOff_thenCreateOptOutRunnerUsesLegacyDelay() {
+    func testCreateScanRunner_usesZeroClickDelay() {
         // Given
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
         let dependencies = BrokerProfileJobDependencies(
             database: mockDatabase,
             contentScopeProperties: ContentScopeProperties.mock,
@@ -297,37 +295,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
             emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
             captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger,
-            applicationNameForUserAgent: nil
-        )
-
-        // When
-        let runner = dependencies.createOptOutRunner(
-            profileQuery: BrokerProfileQueryData.mock(),
-            stageDurationCalculator: MockStageDurationCalculator(),
-            shouldRunNextStep: { true }
-        )
-
-        // Then
-        let concreteRunner = runner as! BrokerProfileOptOutSubJobWebRunner
-        XCTAssertEqual(concreteRunner.clickAwaitTime, 40, "Should use legacy 40s delay when flag is OFF")
-    }
-
-    func testCreateScanRunner_alwaysUsesZeroClickDelay() {
-        // Given
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
-        let dependencies = BrokerProfileJobDependencies(
-            database: mockDatabase,
-            contentScopeProperties: ContentScopeProperties.mock,
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            executionConfig: mockSchedulerConfig,
-            notificationCenter: .default,
-            pixelHandler: mockPixelHandler,
-            eventsHandler: mockEventsHandler,
-            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
-            captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger,
+            featureFlagger: MockDBPFeatureFlagger(),
             applicationNameForUserAgent: nil
         )
 

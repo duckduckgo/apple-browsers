@@ -122,10 +122,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
     }
 
-    var isClickActionDelayReductionOptimizationOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
-    }
-
     var isContinuedProcessingFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
     }

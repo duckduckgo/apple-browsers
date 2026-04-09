@@ -155,8 +155,7 @@ private extension DataBrokerProtectionStatsPixels {
 
     func pixel(for dataBrokerStat: CustomIndividualDataBrokerStat) -> DataBrokerProtectionSharedPixels {
         .customDataBrokerStatsOptoutSubmit(dataBrokerURL: dataBrokerStat.dataBrokerURL,
-                                           optOutSubmitSuccessRate: dataBrokerStat.optoutSubmitSuccessRate,
-                                           clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn)
+                                           optOutSubmitSuccessRate: dataBrokerStat.optoutSubmitSuccessRate)
     }
 
     func fireCustomGlobalStatsPixel(customOptOutStats: CustomOptOutStats) {
@@ -164,8 +163,7 @@ private extension DataBrokerProtectionStatsPixels {
     }
 
     func pixel(for aggregateStat: CustomAggregateBrokersStat) -> DataBrokerProtectionSharedPixels {
-        .customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: aggregateStat.optoutSubmitSuccessRate,
-                                       clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn)
+        .customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: aggregateStat.optoutSubmitSuccessRate)
     }
 }
 

@@ -147,8 +147,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         setStage(.start)
         handler.fire(.optOutStart(dataBroker: dataBrokerURL,
                                   attemptId: attemptId,
-                                  parent: parentURL ?? "",
-                                  clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                  parent: parentURL ?? ""))
     }
 
     func fireOptOutEmailGenerate() {
@@ -204,8 +203,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                    dataBrokerVersion: dataBrokerVersion,
                                    tries: tries,
                                    parent: parentURL ?? "",
-                                   actionId: actionID ?? "",
-                                   clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                   actionId: actionID ?? ""))
     }
 
     func fireOptOutEmailReceive() {
@@ -281,8 +279,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     actionId: actionID ?? "unknown",
                                     actionType: actionType ?? "unknown",
                                     vpnConnectionState: vpnConnectionState,
-                                    vpnBypassStatus: vpnBypassStatus,
-                                    clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                    vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireOptOutConditionFound() {

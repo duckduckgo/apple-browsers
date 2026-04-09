@@ -90,7 +90,7 @@ final class DataImportHubViewController: UIViewController {
         case .importPasswords:
             navigateToSourceSelection()
         case .importBookmarksFromSafari:
-            triggerBrowserKitBookmarkImport()
+            triggerBrowserKitImport()
         case .uploadExportedFile:
             presentDocumentPicker()
         }
@@ -108,9 +108,7 @@ final class DataImportHubViewController: UIViewController {
             let detailVC = ImportSourceDetailViewController(
                 source: source,
                 syncService: syncService,
-                keyValueStore: keyValueStore,
-                bookmarksDatabase: bookmarksDatabase,
-                favoritesDisplayMode: favoritesDisplayMode)
+                fileUploadCoordinator: fileUploadCoordinator)
             navigationController?.pushViewController(detailVC, animated: true)
         } else {
             navigateToImportViaSync()

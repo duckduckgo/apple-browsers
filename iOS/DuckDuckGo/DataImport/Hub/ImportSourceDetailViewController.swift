@@ -91,13 +91,19 @@ final class ImportSourceDetailViewController: UIViewController {
     }
 
     private func triggerBrowserKitImport() {
-#if compiler(>=6.3)
         if #available(iOS 26.4, *) {
-            SFSafariSettings.openExportBrowsingDataSettings { _ in
-                Logger.autofill.debug("Safari browsing data export settings opened.")
+            let scene = view.window?.windowScene
+            let manager = BEBrowserDataImportManager(scene: scene)
+            let metadata = BEImportMetadata(supportForImportFromFiles: false)
+            manager.requestImport(for: metadata) { _, error in
+                if let error {
+                    Logger.autofill.error("BrowserKit requestImport failed: \(error)")
+                }
             }
+            return
+        } else {
+            Logger.autofill.error("BrowserKit requestImport not available on this OS version")
         }
-#endif
     }
 
     // MARK: - File Upload
@@ -114,8 +120,7 @@ final class ImportSourceDetailViewController: UIViewController {
         if let settingsVC = navigationController?.children.first as? SettingsHostingController {
             navigationController?.popToRootViewController(animated: true)
             settingsVC.viewModel.presentLegacyView(.sync(nil))
-        } else if let mainVC = navigationController?.presentingViewController as? MainViewController
-                    ?? presentingViewController as? MainViewController {
+        } else if let mainVC = navigationController?.presentingViewController as? MainViewController ?? presentingViewController as? MainViewController {
             mainVC.dismiss(animated: true) {
                 mainVC.segueToSettingsSync(with: nil)
             }

@@ -33,10 +33,12 @@ extension OnboardingRebranding.OnboardingView {
                 size: CGSize(width: 258, height: 352),
                 position: .left(bottomPadding: 110.0, xOffset: -40.0),
                 largeScreenPosition: .left(bottomPadding: 110.0, xOffset: 200.0),
-                entranceOffset: CGPoint(x: -100, y: 0),
+                entranceOffset: CGPoint(x: -20, y: 0),
                 exitOffset: CGPoint(x: -258, y: 0),
                 exitDuration: 0.5,
-                fadeOut: true
+                fadeOut: true,
+                fadeInTime: 1.0,
+                startDelay: 0.5
             )
         }
 

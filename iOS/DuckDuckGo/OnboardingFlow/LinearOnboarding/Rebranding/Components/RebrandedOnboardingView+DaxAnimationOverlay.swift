@@ -65,6 +65,8 @@ struct DaxAnimation {
     let loop: Bool
     /// When non-nil, the overlay starts at 0% opacity and fades in to 100% over this duration on appear.
     let fadeInTime: TimeInterval?
+    /// Delay in seconds before the Lottie animation starts playing on appear.
+    let startDelay: TimeInterval
 
     /// `true` when the animation slides off-screen **before** the step transition.
     /// The parent must delay the action call by `effectiveExitDuration`.
@@ -91,7 +93,8 @@ struct DaxAnimation {
          exitDuration: TimeInterval? = nil,
          fadeOut: Bool = false,
          loop: Bool = false,
-         fadeInTime: TimeInterval? = nil) {
+         fadeInTime: TimeInterval? = nil,
+         startDelay: TimeInterval = 0) {
         self.animationName = animationName
         self.size = size
         if let largeScreenPosition, OnboardingBubbleAnimationMetrics.isLargeScreen {
@@ -106,6 +109,7 @@ struct DaxAnimation {
         self.fadeOut = fadeOut
         self.loop = loop
         self.fadeInTime = fadeInTime
+        self.startDelay = startDelay
     }
 }
 
@@ -143,12 +147,16 @@ struct DaxAnimationOverlay: View {
     /// Opacity: starts at 0 when `fadeInTime` is set, otherwise 1. Driven to 0 on exit when `fadeOut` is `true`.
     @State private var opacity: Double
 
+    /// `false` until `startDelay` elapses; the entire overlay is hidden until then.
+    @State private var started: Bool
+
     init(animation: DaxAnimation, playForward: Bool, isExiting: Bool) {
         self.animation = animation
         self.playForward = playForward
         self.isExiting = isExiting
         _positionOffset = State(initialValue: animation.entranceOffset ?? .zero)
-        _opacity = State(initialValue: animation.fadeInTime != nil ? 0 : 1)
+        _opacity = State(initialValue: 0)
+        _started = State(initialValue: animation.startDelay <= 0)
     }
 
     /// Lottie playback mode derived from the current state.
@@ -157,6 +165,9 @@ struct DaxAnimationOverlay: View {
     /// - **Two-stage** (`twoStagesAnimation != nil`): entrance plays 0 → midpoint;
     ///   exit (`isExiting == true`) plays midpoint → 1.0.
     private var lottiePlaybackMode: LottiePlaybackMode {
+        guard started else {
+            return .paused
+        }
         if let midPoint = animation.twoStagesAnimation {
             return isExiting
                 ? .playing(.fromProgress(midPoint, toProgress: 1.0, loopMode: .playOnce))
@@ -194,17 +205,22 @@ struct DaxAnimationOverlay: View {
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .onAppear {
-            if animation.entranceOffset != nil {
-                // positionOffset is already at entranceOffset from init; animate straight to the
-                // final position in sync with Lottie starting to play — no intermediate jump needed.
-                withAnimation(.easeOut(duration: OnboardingBubbleAnimationMetrics.daxEntranceDuration)) {
-                    positionOffset = .zero
+            let begin = {
+                started = true
+                if animation.entranceOffset != nil {
+                    withAnimation(.easeOut(duration: OnboardingBubbleAnimationMetrics.daxEntranceDuration)) {
+                        positionOffset = .zero
+                    }
                 }
-            }
-            if let fadeInTime = animation.fadeInTime {
-                withAnimation(.easeIn(duration: fadeInTime)) {
+                let fadeDuration = animation.fadeInTime ?? 0.25
+                withAnimation(.easeIn(duration: fadeDuration)) {
                     opacity = 1
                 }
+            }
+            if animation.startDelay > 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + animation.startDelay, execute: begin)
+            } else {
+                begin()
             }
         }
         .onChange(of: isExiting) { exiting in

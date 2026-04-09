@@ -460,7 +460,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enabled 'View all chats' for Duck.ai in the omnibar
     case viewAllChatsNativeOmnibar
-    
+
     /// Enables image generation mode toggle in the Duck.ai omnibar
     case omnibarImageGeneration
 

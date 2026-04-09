@@ -223,7 +223,7 @@ final class AIChatMenu: NSMenu {
 
     @objc private func viewAllChatsTapped() {
         actions.openNewChat()
-        let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatOpenDuckAiMoreOptionsMenu : .aiChatOpenDuckAiMainMenu
+        let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatViewAllChatsMoreOptionsMenu : .aiChatViewAllChatsMainMenu
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }
 

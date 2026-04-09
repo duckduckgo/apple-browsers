@@ -321,6 +321,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User confirms Delete All Chats from the more options menu
     case aiChatDeleteAllChatsMoreOptionsMenu
 
+    /// Event Trigger: User taps "View All Chats..." from the main menu
+    case aiChatViewAllChatsMainMenu
+
+    /// Event Trigger: User taps "View All Chats..." from the more options menu
+    case aiChatViewAllChatsMoreOptionsMenu
+
     // MARK: - Daily
 
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
@@ -515,6 +521,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_recent_chat_selected_more_options_menu"
         case .aiChatDeleteAllChatsMoreOptionsMenu:
             return "aichat_delete_all_chats_more_options_menu"
+        case .aiChatViewAllChatsMainMenu:
+            return "aichat_view_all_chats_main_menu"
+        case .aiChatViewAllChatsMoreOptionsMenu:
+            return "aichat_view_all_chats_more_options_menu"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
         }
@@ -598,7 +608,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNewVoiceChatMoreOptionsMenu,
                 .aiChatNewImageChatMoreOptionsMenu,
                 .aiChatRecentChatSelectedMoreOptionsMenu,
-                .aiChatDeleteAllChatsMoreOptionsMenu:
+                .aiChatDeleteAllChatsMoreOptionsMenu,
+                .aiChatViewAllChatsMainMenu,
+                .aiChatViewAllChatsMoreOptionsMenu:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
@@ -718,6 +730,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNewImageChatMoreOptionsMenu,
                 .aiChatRecentChatSelectedMoreOptionsMenu,
                 .aiChatDeleteAllChatsMoreOptionsMenu,
+                .aiChatViewAllChatsMainMenu,
+                .aiChatViewAllChatsMoreOptionsMenu,
                 .aiChatAddressBarImageGenerationActivated,
                 .aiChatAddressBarImageGenerationDeactivated,
                 .aiChatAddressBarImageGenerationSubmitted,

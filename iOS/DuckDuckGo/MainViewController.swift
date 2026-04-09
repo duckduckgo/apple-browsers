@@ -1789,12 +1789,12 @@ class MainViewController: UIViewController {
     ///   - query: Optional query string to load in AI Chat
     ///   - autoSend: Whether to automatically send the query. Defaults to `false`.
     ///   - payload: Optional payload data for AI Chat. Defaults to `nil`.
-    ///   - onboardingFlowType: Optional onboarding flow type to hand off to Duck.ai.
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
     private func load(_ query: String? = nil,
                       autoSend: Bool = false,
                       payload: Any? = nil,
-                      onboardingFlowType: AIChatOnboardingFlowType = .default,
+                      flowType: AIChatOnboardingFlowType = .default,
                       tools: [AIChatRAGTool]? = nil,
                       modelId: String? = nil,
                       images: [AIChatNativePrompt.NativePromptImage]? = nil) {
@@ -1810,7 +1810,7 @@ class MainViewController: UIViewController {
                 query,
                 autoSend: autoSend,
                 payload: payload,
-                onboardingFlowType: onboardingFlowType,
+                flowType: flowType,
                 tools: tools,
                 modelId: modelId,
                 images: images
@@ -2990,7 +2990,7 @@ class MainViewController: UIViewController {
     func openAIChat(_ query: String? = nil,
                     autoSend: Bool = false,
                     payload: Any? = nil,
-                    onboardingFlowType: AIChatOnboardingFlowType = .default,
+                    flowType: AIChatOnboardingFlowType = .default,
                     tools: [AIChatRAGTool]? = nil,
                     modelId: String? = nil,
                     images: [AIChatNativePrompt.NativePromptImage]? = nil,
@@ -3001,7 +3001,7 @@ class MainViewController: UIViewController {
                 query,
                 autoSend: autoSend,
                 payload: payload,
-                onboardingFlowType: onboardingFlowType,
+                flowType: flowType,
                 tools: tools,
                 modelId: modelId,
                 images: images,
@@ -3066,14 +3066,14 @@ class MainViewController: UIViewController {
     ///   - query: Optional initial query to send to AI Chat
     ///   - autoSend: Whether to automatically send the query
     ///   - payload: Optional payload data for AI Chat
-    ///   - onboardingFlowType: Optional onboarding flow type to hand off to Duck.ai.
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - modelId: Optional model ID to use for AI Chat
     ///   - images: Optional images to send to AI Chat
     private func openAIChatInTab(_ query: String? = nil,
                                  autoSend: Bool = false,
                                  payload: Any? = nil,
-                                 onboardingFlowType: AIChatOnboardingFlowType = .default,
+                                 flowType: AIChatOnboardingFlowType = .default,
                                  tools: [AIChatRAGTool]? = nil,
                                  modelId: String? = nil,
                                  images: [AIChatNativePrompt.NativePromptImage]? = nil,
@@ -3084,12 +3084,12 @@ class MainViewController: UIViewController {
         }
 
         if fromDeepLink, let currentTab, currentTab.tabModel.link != nil {
-            let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, onboardingFlowType: .default, tools: tools)
+            let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: .default, tools: tools)
             loadUrlInNewTab(chatURL, inheritedAttribution: nil)
             return
         }
 
-        load(query, autoSend: autoSend, payload: payload, onboardingFlowType: onboardingFlowType, tools: tools, modelId: modelId, images: images)
+        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, images: images)
     }
     
     /// Executes the closure if the current tab is an AI tab

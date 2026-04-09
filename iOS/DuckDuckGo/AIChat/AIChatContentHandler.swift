@@ -80,7 +80,7 @@ protocol AIChatContentHandling: AnyObject {
     func setPayload(payload: Any?)
 
     /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
-    func buildQueryURL(query: String?, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?) -> URL
+    func buildQueryURL(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?) -> URL
 
     /// Builds a URL for voice mode (appends `?mode=voice`).
     func buildVoiceModeURL() -> URL
@@ -174,7 +174,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
     
     /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
-    func buildQueryURL(query: String?, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
+    func buildQueryURL(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
         guard let query, var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
             return aiChatSettings.aiChatURL
         }
@@ -191,7 +191,7 @@ final class AIChatContentHandler: AIChatContentHandling {
             queryItems.append(URLQueryItem(name: AIChatURLParameters.autoSubmitPromptQueryName, value: AIChatURLParameters.autoSubmitPromptQueryValue))
         }
 
-        if let flowValue = onboardingFlowType.flowQueryValue {
+        if let flowValue = flowType.flowQueryValue {
             queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
             queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
         } else {

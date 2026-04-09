@@ -354,7 +354,7 @@ extension MainViewController {
         }
     }
 
-    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType) {
+    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {
         let shouldArmExperimentFireOnboarding = autoSend && experimentDuckAIFireOnboardingFlow.state != .completed
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
@@ -369,7 +369,7 @@ extension MainViewController {
         }
 
         setExperimentFireControlsLocked(shouldArmExperimentFireOnboarding)
-        openAIChat(query, autoSend: autoSend, onboardingFlowType: onboardingFlowType)
+        openAIChat(query, autoSend: autoSend, flowType: flowType)
     }
 
     func clearDuckAIOnboardingResumeStepIfNeeded() {

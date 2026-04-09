@@ -110,17 +110,17 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query to send to AI Chat
     ///   - payload: Optional payload data for AI Chat
     ///   - autoSend: Whether to automatically send the query
-    ///   - onboardingFlowType: Optional onboarding flow type to hand off to Duck.ai.
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - viewController: View controller to present the modal on
     @MainActor
     func openAIChat(_ query: String? = nil,
                     payload: Any? = nil,
                     autoSend: Bool = false,
-                    onboardingFlowType: AIChatOnboardingFlowType = .default,
+                    flowType: AIChatOnboardingFlowType = .default,
                     tools: [AIChatRAGTool]? = nil,
                     on viewController: UIViewController) {
-        open(query, payload: payload, autoSend: autoSend, onboardingFlowType: onboardingFlowType, tools: tools,
+        open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
              presentationMode: .modal, viewController: viewController)
     }
 
@@ -130,7 +130,7 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query to send to AI Chat
     ///   - payload: Optional payload data for AI Chat
     ///   - autoSend: Whether to automatically send the query
-    ///   - onboardingFlowType: Optional onboarding flow type to hand off to Duck.ai.
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - containerView: View to embed AI Chat into
     ///   - parentViewController: Parent view controller for managing the child
@@ -139,12 +139,12 @@ final class AIChatViewControllerManager {
     func openAIChatInContainer(_ query: String? = nil,
                                payload: Any? = nil,
                                autoSend: Bool = false,
-                               onboardingFlowType: AIChatOnboardingFlowType = .default,
+                               flowType: AIChatOnboardingFlowType = .default,
                                tools: [AIChatRAGTool]? = nil,
                                in containerView: UIView,
                                parentViewController: UIViewController,
                                completion: (() -> Void)? = nil) {
-        open(query, payload: payload, autoSend: autoSend, onboardingFlowType: onboardingFlowType, tools: tools,
+        open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
              presentationMode: .container, containerView: containerView,
              viewController: parentViewController, completion: completion)
     }
@@ -163,7 +163,7 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query
     ///   - payload: Optional payload data
     ///   - autoSend: Whether to auto-send query
-    ///   - onboardingFlowType: Optional onboarding flow type to hand off to Duck.ai.
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools
     ///   - presentationMode: `.modal` (fires pixels) or `.container` (no pixels)
     ///   - containerView: Required for `.container` mode
@@ -173,7 +173,7 @@ final class AIChatViewControllerManager {
     private func open(_ query: String? = nil,
                       payload: Any? = nil,
                       autoSend: Bool = false,
-                      onboardingFlowType: AIChatOnboardingFlowType = .default,
+                      flowType: AIChatOnboardingFlowType = .default,
                       tools: [AIChatRAGTool]? = nil,
                       presentationMode: AIChatPresentationMode,
                       containerView: UIView? = nil,
@@ -204,7 +204,7 @@ final class AIChatViewControllerManager {
                     query,
                     payload: payload,
                     autoSend: autoSend,
-                    onboardingFlowType: onboardingFlowType,
+                    flowType: flowType,
                     tools: tools,
                     presentationMode: presentationMode,
                     containerView: containerView,
@@ -218,7 +218,7 @@ final class AIChatViewControllerManager {
                 query,
                 payload: payload,
                 autoSend: autoSend,
-                onboardingFlowType: onboardingFlowType,
+                flowType: flowType,
                 tools: tools,
                 presentationMode: presentationMode,
                 containerView: containerView,
@@ -234,7 +234,7 @@ final class AIChatViewControllerManager {
     private func performSetup(_ query: String?,
                               payload: Any?,
                               autoSend: Bool,
-                              onboardingFlowType: AIChatOnboardingFlowType = .default,
+                              flowType: AIChatOnboardingFlowType = .default,
                               tools: [AIChatRAGTool]?,
                               presentationMode: AIChatPresentationMode,
                               containerView: UIView?,
@@ -248,7 +248,7 @@ final class AIChatViewControllerManager {
                 query,
                 payload: payload,
                 autoSend: autoSend,
-                onboardingFlowType: onboardingFlowType,
+                flowType: flowType,
                 tools: tools,
                 on: viewController,
                 voiceMode: voiceMode
@@ -259,7 +259,7 @@ final class AIChatViewControllerManager {
                 query,
                 payload: payload,
                 autoSend: autoSend,
-                onboardingFlowType: onboardingFlowType,
+                flowType: flowType,
                 tools: tools,
                 in: containerView,
                 parentViewController: viewController,
@@ -276,7 +276,7 @@ final class AIChatViewControllerManager {
     private func setupAndPresentAIChat(_ query: String?,
                                        payload: Any?,
                                        autoSend: Bool,
-                                       onboardingFlowType: AIChatOnboardingFlowType = .default,
+                                       flowType: AIChatOnboardingFlowType = .default,
                                        tools: [AIChatRAGTool]?,
                                        on viewController: UIViewController,
                                        voiceMode: Bool = false) {
@@ -286,7 +286,7 @@ final class AIChatViewControllerManager {
             query: query,
             payload: payload,
             autoSend: autoSend,
-            onboardingFlowType: onboardingFlowType,
+            flowType: flowType,
             tools: tools,
             voiceMode: voiceMode
         )
@@ -306,7 +306,7 @@ final class AIChatViewControllerManager {
     private func setupAndAddToContainer(_ query: String?,
                                         payload: Any?,
                                         autoSend: Bool,
-                                        onboardingFlowType: AIChatOnboardingFlowType = .default,
+                                        flowType: AIChatOnboardingFlowType = .default,
                                         tools: [AIChatRAGTool]?,
                                         in containerView: UIView,
                                         parentViewController: UIViewController,
@@ -317,7 +317,7 @@ final class AIChatViewControllerManager {
             query: query,
             payload: payload,
             autoSend: autoSend,
-            onboardingFlowType: onboardingFlowType,
+            flowType: flowType,
             tools: tools
         )
 
@@ -407,7 +407,7 @@ final class AIChatViewControllerManager {
                                          query: String?,
                                          payload: Any?,
                                          autoSend: Bool,
-                                         onboardingFlowType: AIChatOnboardingFlowType = .default,
+                                         flowType: AIChatOnboardingFlowType = .default,
                                          tools: [AIChatRAGTool]?,
                                          voiceMode: Bool = false) {
         if voiceMode {
@@ -419,7 +419,7 @@ final class AIChatViewControllerManager {
             aiChatViewController.loadQuery(
                 query,
                 autoSend: autoSend,
-                onboardingFlowType: onboardingFlowType,
+                flowType: flowType,
                 tools: tools
             )
         }

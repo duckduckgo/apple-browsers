@@ -250,7 +250,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         let showButtons = newMode != .compact
         leadingButtonsContainer.isHidden = !showButtons
         trailingButtonsContainer.isHidden = !showButtons
-        readableSearchAreaWidthConstraint?.isActive = showButtons
+        readableSearchAreaWidthConstraint?.isActive = showButtons && newMode == .expandedPad
         largeSizeSpacingConstraint?.isActive = showButtons
 
         let isExpandedPhone = newMode == .expandedPhone
@@ -568,7 +568,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 brandingView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
                 brandingView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
                 brandingView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
-                searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor)
+                searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor).withPriority(.defaultHigh)
             ]
         }
 

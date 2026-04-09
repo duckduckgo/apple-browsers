@@ -158,63 +158,63 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(sut.canBurnSingleTab)
     }
 
-    // MARK: - DuckAI Experiment Flow Tests
+    // MARK: - DuckAI Onboarding Flow Tests
 
-    func testWhenDuckAIExperimentFlowAndAITabThenCanBurnSingleTabReturnsTrue() {
+    func testWhenDuckAIOnboardingFlowAndAITabThenCanBurnSingleTabReturnsTrue() {
         // Given
         let aiTabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
-        let sut = makeSUT(tabViewModel: aiTabViewModel, flow: .duckAIExperiment)
+        let sut = makeSUT(tabViewModel: aiTabViewModel, flow: .duckAIOnboarding)
 
         // Then
         XCTAssertTrue(sut.canBurnSingleTab)
     }
 
-    func testWhenDuckAIExperimentFlowAndWebTabThenCanBurnSingleTabReturnsFalse() {
+    func testWhenDuckAIOnboardingFlowAndWebTabThenCanBurnSingleTabReturnsFalse() {
         // Given
         let webTabViewModel = createTabViewModel()
-        let sut = makeSUT(tabViewModel: webTabViewModel, flow: .duckAIExperiment)
+        let sut = makeSUT(tabViewModel: webTabViewModel, flow: .duckAIOnboarding)
 
         // Then
         XCTAssertFalse(sut.canBurnSingleTab)
     }
 
-    func testWhenDuckAIExperimentFlowThenHeaderTitleUsesDuckAIExperimentCopy() {
+    func testWhenDuckAIOnboardingFlowThenHeaderTitleUsesContextualChatDeleteCopy() {
         // Given
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
+        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIOnboarding)
 
         // Then
         XCTAssertEqual(sut.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
     }
 
-    func testWhenDuckAIExperimentFlowThenShowsDeleteAllButtonIsFalse() {
+    func testWhenDuckAIOnboardingFlowThenShowsDeleteAllButtonIsFalse() {
         // Given
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
+        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIOnboarding)
 
         // Then
         XCTAssertFalse(sut.showsDeleteAllButton)
     }
 
-    func testWhenDuckAIExperimentFlowThenIsDuckAIExperimentFlowIsTrue() {
+    func testWhenDuckAIOnboardingFlowThenIsDuckAIOnboardingFlowIsTrue() {
         // Given
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
+        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIOnboarding)
 
         // Then
-        XCTAssertTrue(sut.isDuckAIExperimentFlow)
+        XCTAssertTrue(sut.isDuckAIOnboardingFlow)
     }
 
-    func testWhenDuckAIExperimentFlowThenSubtitleIsNil() {
+    func testWhenDuckAIOnboardingFlowThenSubtitleIsNil() {
         // Given
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIExperiment)
+        let sut = makeSUT(tabViewModel: createAITabViewModel(), flow: .duckAIOnboarding)
 
         // Then
         XCTAssertNil(sut.subtitle)
     }
 
-    func testWhenDuckAIExperimentFlowAndBurnThisTabCalledThenRequestUsesAIChatsOption() {
+    func testWhenDuckAIOnboardingFlowAndBurnThisTabCalledThenRequestUsesAIChatsOption() {
         // Given
         var capturedRequest: FireRequest?
         let aiTabViewModel = createAITabViewModel()
-        let sut = makeSUT(tabViewModel: aiTabViewModel, flow: .duckAIExperiment, onConfirm: { request in
+        let sut = makeSUT(tabViewModel: aiTabViewModel, flow: .duckAIOnboarding, onConfirm: { request in
             capturedRequest = request
         })
 

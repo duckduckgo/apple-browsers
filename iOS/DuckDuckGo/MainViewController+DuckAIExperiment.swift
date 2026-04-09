@@ -231,7 +231,7 @@ extension MainViewController {
             attachPopoverTo: source,
             tabViewModel: tabManager.viewModelForCurrentTab(),
             pixelSource: FireRequest.Source.browsing,
-            confirmationType: .duckAIExperiment,
+            confirmationType: .duckAIOnboarding,
             daxDialogsManager: daxDialogsManager,
             browsingMode: tabManager.currentBrowsingMode,
             onConfirm: { [weak self] fireRequest in

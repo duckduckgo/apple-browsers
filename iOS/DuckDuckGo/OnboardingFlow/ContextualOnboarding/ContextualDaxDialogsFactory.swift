@@ -91,7 +91,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                     onSizeUpdate: onSizeUpdate
                 )
             )
-        case .fire:
+        case .fire(_):
             rootView = AnyView(
                 fireDialog(
                     title: spec.title,

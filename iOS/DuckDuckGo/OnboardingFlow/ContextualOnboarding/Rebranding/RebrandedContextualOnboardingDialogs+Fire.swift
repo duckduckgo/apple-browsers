@@ -26,7 +26,6 @@ extension OnboardingRebranding {
 
     struct OnboardingFireDialog: View {
         @Environment(\.onboardingTheme) private var theme
-        @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var contextualMetrics
 
         let title: String?
         let message: String
@@ -45,7 +44,7 @@ extension OnboardingRebranding {
                 OnboardingRebranding.OnboardingFireDialogContent(
                     title: title,
                     message: message,
-                    titleBodyVerticalSpacingOverride: isDuckAIExperiment ? contextualMetrics.titleBodyVerticalSpacingVerticalLayout * 0.4 : nil
+                    titleBodyVerticalSpacingOverride: isDuckAIExperiment ? theme.contextualOnboardingMetrics.titleBodyVerticalSpacingVerticalLayout * 0.4 : nil
                 )
             }
             .ifLet(onManualDismiss) { view, onManualDismiss in

@@ -1395,11 +1395,20 @@ class MainViewController: UIViewController {
     }
     
     private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
+        if targetTab.fireTab {
+            return EscapeHatchModel(
+                title: UserText.escapeHatchFireTabTitle,
+                subtitle: "",
+                tabType: .fire,
+                domain: nil,
+                targetTab: targetTab
+            )
+        }
         if targetTab.isAITab {
             return EscapeHatchModel(
                 title: targetTab.aiChatConversationTitle ?? UserText.omnibarFullAIChatModeDisplayTitle,
                 subtitle: UserText.omnibarFullAIChatModeDisplayTitle,
-                isAITab: true,
+                tabType: .aiChat,
                 domain: nil,
                 targetTab: targetTab
             )
@@ -1409,7 +1418,7 @@ class MainViewController: UIViewController {
             return EscapeHatchModel(
                 title: link.displayTitle,
                 subtitle: subtitle,
-                isAITab: false,
+                tabType: .regular,
                 domain: link.url.host,
                 targetTab: targetTab
             )

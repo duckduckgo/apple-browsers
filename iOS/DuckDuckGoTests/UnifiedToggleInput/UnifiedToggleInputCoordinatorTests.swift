@@ -1137,7 +1137,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_externalSubmission_commitsCurrentMode() {
         sut.activateFromOmnibar(inputMode: .aiChat)
         mockDelegate.committedMode = nil
-        sut.commitCurrentToggleState()
+        sut.handleExternalSubmission(.prompt)
         XCTAssertEqual(mockToggleModeStorage.restore(), .aiChat)
         XCTAssertEqual(mockDelegate.committedMode, .aiChat)
     }

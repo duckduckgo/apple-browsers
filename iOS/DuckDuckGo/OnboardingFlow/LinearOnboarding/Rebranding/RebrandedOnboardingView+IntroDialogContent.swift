@@ -37,8 +37,7 @@ extension OnboardingRebranding.OnboardingView {
                 exitOffset: CGPoint(x: -258, y: 0),
                 exitDuration: 0.5,
                 fadeOut: true,
-                fadeInTime: 1.0,
-                startDelay: 0.5
+                startDelay: 0.75
             )
         }
 

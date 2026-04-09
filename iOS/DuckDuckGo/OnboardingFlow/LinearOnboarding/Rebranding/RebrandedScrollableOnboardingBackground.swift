@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Lottie
 import SwiftUI
 import Onboarding
 
@@ -111,13 +112,40 @@ struct ScrollableOnboardingBackground: View {
     private func backgroundView(for state: OnboardingView.ViewState.Intro, width: CGFloat) -> some View {
         VStack {
             Spacer()
-            state.type.backgroundImage
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: width, alignment: .center)
-                .frame(maxHeight: state.type.backgroundMaxHeight)
+            ZStack(alignment: .bottom) {
+                state.type.backgroundImage
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: width, alignment: .center)
+                    .frame(maxHeight: state.type.backgroundMaxHeight)
+
+                if case .chooseAddressBarPositionDialog = state.type,
+                   !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    embeddedDaxAnimation
+                }
+            }
         }
         .ignoresSafeArea()
+    }
+
+    // MARK: - Embedded Dax (Address Bar step)
+
+    private enum EmbeddedDaxMetrics {
+        static let animationName = "Dax-Floating"
+        static let size = CGSize(width: 100, height: 111.3)
+        static let bottomOffset: CGFloat = 54.0
+    }
+
+    private var embeddedDaxAnimation: some View {
+        Lottie.LottieView {
+            try await DotLottieFile.asset(named: EmbeddedDaxMetrics.animationName)
+        }
+        .playbackMode(.playing(.fromProgress(0, toProgress: 1.0, loopMode: .loop)))
+        .resizable()
+        .id(EmbeddedDaxMetrics.animationName)
+        .frame(width: EmbeddedDaxMetrics.size.width, height: EmbeddedDaxMetrics.size.height)
+        .offset(y: -EmbeddedDaxMetrics.bottomOffset)
+        .allowsHitTesting(false)
     }
 
 }

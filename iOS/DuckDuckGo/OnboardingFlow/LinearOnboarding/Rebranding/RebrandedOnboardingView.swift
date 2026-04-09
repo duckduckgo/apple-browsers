@@ -555,7 +555,7 @@ extension OnboardingRebranding {
             case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation
             case .addToDockPromoDialog: return AddToDockPromoContent.daxAnimation
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
-            case .chooseAddressBarPositionDialog: return AddressBarPositionContent.daxAnimation
+            case .chooseAddressBarPositionDialog: return nil // Dax-Floating is embedded in ScrollableOnboardingBackground
             case .chooseSearchExperienceDialog: return SearchExperienceContent.daxAnimation
             }
         }

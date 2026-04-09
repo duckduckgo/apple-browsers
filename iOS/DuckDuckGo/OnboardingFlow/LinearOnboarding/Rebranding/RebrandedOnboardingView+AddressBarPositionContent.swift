@@ -26,16 +26,6 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-46879
     struct AddressBarPositionContent: View {
 
-        static var daxAnimation: DaxAnimation {
-            DaxAnimation(
-                animationName: "Dax-Floating",
-                size: CGSize(width: 100, height: 111.3),
-                position: .bottom(yOffset: 54.0),
-                loop: true,
-                fadeInTime: 1.5
-            )
-        }
-
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var shouldStartTyping = false

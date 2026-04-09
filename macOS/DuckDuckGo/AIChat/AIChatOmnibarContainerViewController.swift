@@ -293,8 +293,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateSubmitButtonState(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasExcess = attachmentsContainerView.hasExcessAttachments
-        applySubmitButtonAppearance(enabled: hasText && !hasExcess)
+        let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
+        let hasBlockingExcess = canSendImages && attachmentsContainerView.hasExcessAttachments
+        applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
     }
 
     private func applySubmitButtonAppearance(enabled: Bool) {
@@ -1024,6 +1025,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             updateAttachmentsLayout()
         }
 
+        updateSubmitButtonState(for: omnibarController.currentText)
         updateToolsLeadingConstraint()
         onPassthroughHeightNeedsUpdate?()
     }

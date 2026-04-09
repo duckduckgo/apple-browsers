@@ -348,7 +348,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             focusTextViewWithCursorAtEnd()
             return
         }
-        if let _ = containerVC.firstAvailableToolButtonForFocus() {
+        if containerVC.firstAvailableToolButtonForFocus() != nil {
             containerVC.makeFirstAvailableToolButtonFirstResponder()
         } else if containerVC.isModelPickerButtonAvailableForFocus {
             containerVC.makeModelPickerButtonFirstResponder()

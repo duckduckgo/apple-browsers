@@ -323,8 +323,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         toolsButton.isHidden = !isEnabled || !hasToolsAvailable
         imageGenActiveButton.isHidden = !isEnabled || !isImageGenMode
         webSearchActiveButton.isHidden = !isEnabled || !isWebSearchMode
-        imageUploadButton.isHidden = !isEnabled
-        if isEnabled {
+        imageUploadButton.isHidden = !isEnabled && !isImageGenMode
+        if isEnabled || isImageGenMode {
             imageUploadButton.isHidden = !isImageGenMode && !omnibarController.selectedModelSupportsImageUpload
             imageUploadButton.isEnabled = !attachmentsContainerView.isFull
             let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
@@ -334,8 +334,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         } else {
             modelPickerButton.isHidden = true
         }
-        attachmentsContainerView.isHidden = !isEnabled
-        if !isEnabled {
+        attachmentsContainerView.isHidden = !isEnabled && !isImageGenMode
+        if !isEnabled && !isImageGenMode {
             attachmentsHeightConstraint?.constant = 0
         }
 

@@ -41,6 +41,16 @@ protocol SubscriptionPromoTabProtocol: AnyObject {
 
     func markEvaluated(shouldShowPromo: Bool)
     func markForceDismissed()
+
+    var promoState: SubscriptionPromoViewModel.TabPromoState { get }
+}
+
+extension SubscriptionPromoTabProtocol {
+    var promoState: SubscriptionPromoViewModel.TabPromoState {
+        if forceDismissed { return .dismissed }
+        if hasEvaluated { return .evaluated(shouldShowPromo: shouldShowPromo) }
+        return .notEvaluated
+    }
 }
 
 extension SubscriptionPromoTabExtension: SubscriptionPromoTabProtocol {

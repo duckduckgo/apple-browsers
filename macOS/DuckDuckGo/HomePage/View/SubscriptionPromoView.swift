@@ -88,7 +88,7 @@ struct SubscriptionPromoView: View {
     private var textContent: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(UserText.subscriptionPromoTitle)
-                .font(.system(size: 13))
+                .font(.headline)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Text(UserText.subscriptionPromoSubtitle)
                 .font(.system(size: 13))
@@ -109,12 +109,6 @@ struct SubscriptionPromoView: View {
                 .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
-        .onHover(perform: NSCursor.pointingHand.pushOrPop)
-    }
-}
-
-private extension NSCursor {
-    func pushOrPop(_ isHovering: Bool) {
-        isHovering ? push() : NSCursor.pop()
+        .cursor(.pointingHand)
     }
 }

@@ -44,7 +44,7 @@
     },
     "m_mac_fire_window_subscription_promo_displayed": {
         "description": "Fired when the subscription promo card is displayed on the Fire Window home page",
-        "owners": ["htang"],
+        "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
             "appVersion",
@@ -58,7 +58,7 @@
     },
     "m_mac_fire_window_subscription_promo_cta_actioned": {
         "description": "Fired when the user taps the CTA button (Try for Free / Learn More) on the Fire Window subscription promo",
-        "owners": ["htang"],
+        "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
             "appVersion",
@@ -72,7 +72,7 @@
     },
     "m_mac_fire_window_subscription_promo_dismissed": {
         "description": "Fired when the user clicks the close (x) button on the Fire Window subscription promo",
-        "owners": ["htang"],
+        "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
             "appVersion",

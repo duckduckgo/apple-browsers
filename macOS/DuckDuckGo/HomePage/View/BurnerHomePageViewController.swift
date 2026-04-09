@@ -27,7 +27,6 @@ final class BurnerHomePageViewController: NSViewController {
     let appearancePreferences: AppearancePreferences
     let themeManager: ThemeManager
     let subscriptionPromoViewModel: SubscriptionPromoViewModel
-    private weak var currentTab: Tab?
 
     var openSubscriptionPage: (() -> Void)?
 
@@ -51,9 +50,6 @@ final class BurnerHomePageViewController: NSViewController {
         self.subscriptionPromoViewModel.onButtonAction = { [weak self] in
             self?.openSubscriptionPage?()
         }
-        self.subscriptionPromoViewModel.onDismissAction = { [weak self] in
-            self?.currentTab?.subscriptionPromo?.markForceDismissed()
-        }
     }
 
     override func loadView() {
@@ -65,22 +61,16 @@ final class BurnerHomePageViewController: NSViewController {
     }
 
     func updatePromoState(for tab: Tab) {
-        currentTab = tab
+        let tabPromo = tab.subscriptionPromo
 
-        if let promoExtension = tab.subscriptionPromo {
-            if promoExtension.forceDismissed {
-                subscriptionPromoViewModel.restoreState(shouldShowPromo: false)
-                return
-            }
-
-            if promoExtension.hasEvaluated {
-                subscriptionPromoViewModel.restoreState(shouldShowPromo: promoExtension.shouldShowPromo)
-                return
-            }
+        subscriptionPromoViewModel.onPromoEvaluated = { [weak tabPromo] shouldShow in
+            tabPromo?.markEvaluated(shouldShowPromo: shouldShow)
+        }
+        subscriptionPromoViewModel.onPromoDismissed = { [weak tabPromo] in
+            tabPromo?.markForceDismissed()
         }
 
-        subscriptionPromoViewModel.evaluatePromoVisibility()
-        tab.subscriptionPromo?.markEvaluated(shouldShowPromo: subscriptionPromoViewModel.shouldShowPromo)
+        subscriptionPromoViewModel.updateForTab(tabPromo?.promoState ?? .notEvaluated)
     }
 
 

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import FeatureFlags
 import Foundation
 import Persistence
@@ -89,7 +90,7 @@ struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
 final class SubscriptionPromoViewModel: ObservableObject {
 
     static let requiredVisitCount = 3
-    private static let dismissCooldownDays = 28
+    static let dismissCooldownDays = 28
     static let maxDisplaysPerTimeWindow = 4
     private static let displayWindowDays = 28
 
@@ -102,7 +103,8 @@ final class SubscriptionPromoViewModel: ObservableObject {
     @Published private(set) var isEligibleForFreeTrial: Bool = false
 
     var onButtonAction: (() -> Void)?
-    var onDismissAction: (() -> Void)?
+    var onPromoEvaluated: ((Bool) -> Void)?
+    var onPromoDismissed: (() -> Void)?
 
     init(subscriptionManager: any SubscriptionManager,
          featureFlagger: FeatureFlagger,
@@ -116,15 +118,28 @@ final class SubscriptionPromoViewModel: ObservableObject {
         self.locale = locale
     }
 
-    func restoreState(shouldShowPromo: Bool) {
-        self.shouldShowPromo = shouldShowPromo
+    enum TabPromoState {
+        case notEvaluated
+        case evaluated(shouldShowPromo: Bool)
+        case dismissed
+    }
+
+    func updateForTab(_ state: TabPromoState) {
+        switch state {
+        case .dismissed:
+            shouldShowPromo = false
+        case .evaluated(let shouldShow):
+            shouldShowPromo = shouldShow
+        case .notEvaluated:
+            evaluatePromoVisibility()
+        }
     }
 
     func dismiss() {
         pixelFiring?.fire(SubscriptionPromoPixel.promoDismissed(isEligibleForFreeTrial: isEligibleForFreeTrial))
         persistor.promoDismissedDate = Date()
         shouldShowPromo = false
-        onDismissAction?()
+        onPromoDismissed?()
     }
 
     func onPromoButtonTapped() {
@@ -136,48 +151,23 @@ final class SubscriptionPromoViewModel: ObservableObject {
 
     /// Display conditions:
     /// - Feature flag enabled (remote releasable)
-    /// - Not force-dismissed on this tab (per-tab, lasts for the tab's lifetime)
     /// - US locale only
     /// - Non-subscriber only
     /// - Fire Tab visited >= 3 times
     /// - User has not already actioned (tapped "Try for Free" / "Learn More")
     /// - Not dismissed within the 28-day cooldown
     /// - Not shown more than 4 times in any given 28-day rolling window
-    func evaluatePromoVisibility() {
-        guard featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) else {
-            shouldShowPromo = false
-            return
-        }
+    private func evaluatePromoVisibility() {
+        shouldShowPromo = false
+        defer { onPromoEvaluated?(shouldShowPromo) }
 
-        guard isUSLocale else {
-            shouldShowPromo = false
-            return
-        }
-
-        guard !subscriptionManager.isSubscriptionPresent() else {
-            shouldShowPromo = false
-            return
-        }
-
-        guard persistor.fireTabVisitCount >= Self.requiredVisitCount else {
-            shouldShowPromo = false
-            return
-        }
-
-        guard !persistor.promoActioned else {
-            shouldShowPromo = false
-            return
-        }
-
-        guard !isDismissedWithinCooldown else {
-            shouldShowPromo = false
-            return
-        }
-
-        guard !hasReachedDisplayLimit else {
-            shouldShowPromo = false
-            return
-        }
+        guard featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) else { return }
+        guard isUSLocale else { return }
+        guard !subscriptionManager.isSubscriptionPresent() else { return }
+        guard persistor.fireTabVisitCount >= Self.requiredVisitCount else { return }
+        guard !persistor.promoActioned else { return }
+        guard !isDismissedWithinCooldown else { return }
+        guard !hasReachedDisplayLimit else { return }
 
         isEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
         recordPromoDisplay()
@@ -193,14 +183,14 @@ final class SubscriptionPromoViewModel: ObservableObject {
         } else {
             regionCode = locale.regionCode
         }
-        return (regionCode ?? "US") == "US"
+        return regionCode == "US"
     }
 
     private var hasReachedDisplayLimit: Bool {
         guard let windowStart = persistor.promoDisplayWindowStart else {
             return false
         }
-        let daysSinceWindowStart = Calendar.current.dateComponents([.day], from: windowStart, to: Date()).day ?? 0
+        let daysSinceWindowStart = Calendar.current.numberOfDaysBetween(windowStart, and: Date()) ?? 0
         if daysSinceWindowStart >= Self.displayWindowDays {
             return false
         }
@@ -209,7 +199,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
 
     private func recordPromoDisplay() {
         if let windowStart = persistor.promoDisplayWindowStart {
-            let daysSinceWindowStart = Calendar.current.dateComponents([.day], from: windowStart, to: Date()).day ?? 0
+            let daysSinceWindowStart = Calendar.current.numberOfDaysBetween(windowStart, and: Date()) ?? 0
             if daysSinceWindowStart >= Self.displayWindowDays {
                 persistor.promoDisplayCount = 0
                 persistor.promoDisplayWindowStart = Date()
@@ -224,7 +214,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
         guard let dismissedDate = persistor.promoDismissedDate else {
             return false
         }
-        let daysSinceDismissal = Calendar.current.dateComponents([.day], from: dismissedDate, to: Date()).day ?? 0
+        let daysSinceDismissal = Calendar.current.numberOfDaysBetween(dismissedDate, and: Date()) ?? 0
         return daysSinceDismissal < Self.dismissCooldownDays
     }
 }

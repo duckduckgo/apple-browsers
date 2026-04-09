@@ -71,32 +71,38 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
     }
 
     @objc func resetFireTabVisitCount() {
-        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.fireTabVisitCount.rawValue)
+        var p = persistor
+        p.fireTabVisitCount = 0
     }
 
     @objc func resetPromoDismissedDate() {
-        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoDismissedDate.rawValue)
+        var p = persistor
+        p.promoDismissedDate = nil
     }
 
     @objc func resetPromoActioned() {
-        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoActioned.rawValue)
+        var p = persistor
+        p.promoActioned = false
     }
 
     @objc func resetPromoDisplayCount() {
-        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoDisplayCount.rawValue)
-        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoDisplayWindowStart.rawValue)
+        var p = persistor
+        p.promoDisplayCount = 0
+        p.promoDisplayWindowStart = nil
     }
 
     @objc func resetPromoDisplayWindowStart() {
-        UserDefaults.standard.removeObject(forKey: SubscriptionPromoUserDefaultsPersistor.Key.promoDisplayWindowStart.rawValue)
+        var p = persistor
+        p.promoDisplayWindowStart = nil
     }
 
     @objc func resetAllPromoState() {
-        resetFireTabVisitCount()
-        resetPromoDismissedDate()
-        resetPromoActioned()
-        resetPromoDisplayCount()
-        resetPromoDisplayWindowStart()
+        var p = persistor
+        p.fireTabVisitCount = 0
+        p.promoDismissedDate = nil
+        p.promoActioned = false
+        p.promoDisplayCount = 0
+        p.promoDisplayWindowStart = nil
     }
 }
 
@@ -128,6 +134,6 @@ extension SubscriptionPromoDebugMenu: NSMenuDelegate {
         guard let days = daysSinceLastDismissed else {
             return false
         }
-        return days < 28
+        return days < SubscriptionPromoViewModel.dismissCooldownDays
     }
 }

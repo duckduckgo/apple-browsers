@@ -285,25 +285,17 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    /// This method verifies it `tabViewModels` dictionary value has the correct type
-    /// matching the type of tab it represents.
-    func updateTabBarViewModelIfNeeded(at index: TabIndex) {
-        guard case let .unpinned(unpinnedIndex) = index,
-              let anyTab = tabCollection.tabs[safe: unpinnedIndex],
-              let tabViewModel = tabViewModels[anyTab.uuid]
-        else {
+    /// This method ensures that `tabViewModels` dictionary value for `tab`
+    /// has the correct type, matching the type of tab it represents.
+    func updateTabBarViewModelIfNeeded(for tab: AnyTab) {
+        guard let tabViewModel = tabViewModels[tab.uuid] else {
             return
         }
 
-        switch anyTab {
-        case .loaded(let tab):
-            if tabViewModel.isSuspended {
-                tabViewModels[anyTab.uuid] = TabViewModel(tab: tab)
-            }
-        case .unloaded(let unloadedTab):
-            if !tabViewModel.isSuspended {
-                tabViewModels[anyTab.uuid] = UnloadedTabViewModel(unloadedTab: unloadedTab)
-            }
+        if case .loaded(let loadedTab) = tab, tabViewModel is UnloadedTabViewModel {
+            tabViewModels[tab.uuid] = TabViewModel(tab: loadedTab)
+        } else if case .unloaded(let unloadedTab) = tab, tabViewModel is TabViewModel {
+            tabViewModels[tab.uuid] = UnloadedTabViewModel(unloadedTab: unloadedTab)
         }
     }
 
@@ -898,7 +890,7 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.replaceTab(at: index.item, with: tab)
-        updateTabBarViewModelIfNeeded(at: index)
+        updateTabBarViewModelIfNeeded(for: tab)
 
         guard let selectionIndex else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: No tab selected")

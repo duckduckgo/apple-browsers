@@ -314,36 +314,42 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
-    private func updateToolButtonsVisibility(isEnabled: Bool) {
-        let isImageGenMode = omnibarController.isImageGenerationMode
-        let isWebSearchMode = omnibarController.isWebSearchMode
-        let hasActiveToolMode = omnibarController.activeToolMode != nil
-        let hasToolsAvailable = omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled
+    // MARK: - Tool Button Visibility
 
-        toolsButton.isHidden = !isEnabled || !hasToolsAvailable
-        imageGenActiveButton.isHidden = !isEnabled || !isImageGenMode
-        webSearchActiveButton.isHidden = !isEnabled || !isWebSearchMode
-        imageUploadButton.isHidden = !isEnabled && !isImageGenMode
-        if isEnabled || isImageGenMode {
-            imageUploadButton.isHidden = !isImageGenMode && !omnibarController.selectedModelSupportsImageUpload
-            imageUploadButton.isEnabled = !attachmentsContainerView.isFull
-            let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
-            modelPickerButton.isHidden = isImageGenMode || !hasContent
-            // Hide the Tools label when any tool mode is active (button stays visible as icon-only)
-            toolsButton.label = hasActiveToolMode ? nil : UserText.aiChatToolsButtonLabel
-        } else {
-            modelPickerButton.isHidden = true
-        }
-        attachmentsContainerView.isHidden = !isEnabled && !isImageGenMode
-        if !isEnabled && !isImageGenMode {
+    private var shouldShowToolsButton: Bool {
+        omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled
+    }
+
+    private var shouldShowImageUpload: Bool {
+        omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
+    }
+
+    private var shouldShowAttachments: Bool {
+        omnibarController.isOmnibarToolsEnabled || omnibarController.isImageGenerationMode
+    }
+
+    private var shouldShowModelPicker: Bool {
+        guard !omnibarController.isImageGenerationMode else { return false }
+        let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
+        return omnibarController.isOmnibarToolsEnabled && hasContent
+    }
+
+    private func updateToolButtonsVisibility(isEnabled: Bool) {
+        toolsButton.isHidden = !shouldShowToolsButton
+        imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
+        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode
+        imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
+        imageUploadButton.isEnabled = !attachmentsContainerView.isFull
+        modelPickerButton.isHidden = !shouldShowModelPicker
+        toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
+
+        attachmentsContainerView.isHidden = !shouldShowAttachments
+        if !shouldShowAttachments {
             attachmentsHeightConstraint?.constant = 0
         }
 
         updateToolsLeadingConstraint()
-
         updateToolModeUI()
-
-        // Notify that passthrough height needs recalculation since tools area changed
         onPassthroughHeightNeedsUpdate?()
     }
 
@@ -958,11 +964,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] models in
                 guard let self else { return }
-                // Show or hide the picker depending on whether models are available
-                if omnibarController.isOmnibarToolsEnabled {
-                    let hasContent = !models.isEmpty || omnibarController.cachedModelShortName != nil
-                    modelPickerButton.isHidden = omnibarController.isImageGenerationMode || !hasContent
-                }
+                modelPickerButton.isHidden = !shouldShowModelPicker
                 // Refresh button label once models arrive
                 modelPickerButton.modelName = persistedModelShortName
                 // Refresh image upload visibility with updated supportsImageUpload

@@ -300,6 +300,7 @@ class MainViewController: UIViewController {
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
+    lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
@@ -1954,6 +1955,11 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.setSelectedTextEntryMode(tab.tabModel.preferredTextEntryMode)
         }
         refreshUnifiedToggleInput(for: tab)
+
+        if minimalChromeSettings.isFeatureEnabled && !AppWidthObserver.shared.isPad {
+            applyWidth()
+        }
+
         updateBrowsingMenuHeaderDataSource()
     }
 
@@ -2016,7 +2022,7 @@ class MainViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
-        if isKeyboardShowing && !AppWidthObserver.shared.isPad && featureFlagger.isFeatureOn(.minimalChromeInLandscape) {
+        if isKeyboardShowing && !AppWidthObserver.shared.isPad && minimalChromeSettings.isFeatureEnabled {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
@@ -2033,7 +2039,7 @@ class MainViewController: UIViewController {
         }()
 
         let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
-            && (AppWidthObserver.shared.isPad || isInMinimalChromeLayout || featureFlagger.isFeatureOn(.minimalChromeInLandscape))
+            && (AppWidthObserver.shared.isPad || isInMinimalChromeLayout || minimalChromeSettings.isFeatureEnabled)
         if needsWidthUpdate {
             applyWidth(for: size)
         }
@@ -2082,7 +2088,7 @@ class MainViewController: UIViewController {
     }
 
     private func isMinimalChromeMode(for size: CGSize? = nil) -> Bool {
-        guard featureFlagger.isFeatureOn(.minimalChromeInLandscape) else { return false }
+        guard minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false) else { return false }
         let size = size ?? view.bounds.size
         return !AppWidthObserver.shared.isPad
             && (size.width > size.height)

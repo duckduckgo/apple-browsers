@@ -2274,7 +2274,7 @@ public struct UserText {
                 comment: "Title for the search-only option in onboarding picker."
             )
 
-            public static var searchAndDuckAIOption = NSLocalizedString(
+            public static let searchAndDuckAIOption = NSLocalizedString(
                 "onboarding.highlights.searchExperience.searchAndDuckAI",
                 value: "Toggle between\nSearch and Duck.ai",
                 comment: "Title for the search and Duck.ai option in onboarding picker."

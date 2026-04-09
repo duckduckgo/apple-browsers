@@ -1,5 +1,5 @@
 {
-  "originHash" : "a0fb3dddba090188ffa54a52e214e19a30be971e58495435f758afef6a2c3c7f",
+  "originHash" : "b32324aaed8ed51d4bf6449fd9157085dbbea01c480066eabcd737745b8b3645",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "alavrenchuk/ntp-image-generation",
-        "revision" : "faf50568c632cf9a04cdf701323366970b83eb82"
+        "branch" : "pr-releases/alavrenchuk/ntp-image-generation",
+        "revision" : "98e6ce711c2c3523b7ecb07b595737001d269322"
       }
     },
     {

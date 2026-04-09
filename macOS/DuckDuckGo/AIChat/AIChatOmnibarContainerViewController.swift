@@ -742,10 +742,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func imageGenActiveButtonClicked() {
+        PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationDeactivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
         omnibarController.toggleImageGenerationMode()
     }
 
     @objc private func webSearchActiveButtonClicked() {
+        PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchDeactivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
         omnibarController.toggleWebSearchMode()
     }
 
@@ -802,10 +804,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func toolsMenuCreateImageClicked() {
+        if !omnibarController.isImageGenerationMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
         omnibarController.toggleImageGenerationMode()
     }
 
     @objc private func toolsMenuWebSearchClicked() {
+        if !omnibarController.isWebSearchMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
         omnibarController.toggleWebSearchMode()
     }
 

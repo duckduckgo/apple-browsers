@@ -431,6 +431,12 @@ final class AIChatOmnibarController {
 
         PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
+        if isImageGenerationMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        } else if isWebSearchMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
+
         // Capture mode/model/toolChoice before async work — cleanup() may reset activeToolMode
         let modelId = effectiveModelId
         let mode = effectiveMode

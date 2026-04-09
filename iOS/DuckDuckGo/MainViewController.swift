@@ -4441,7 +4441,9 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
-                                     privacyConfig: privacyConfigurationManager)
+                                     privacyConfig: privacyConfigurationManager,
+                                     nativeStorageHandler: duckAiNativeStorageHandler,
+                                     featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
         Task { @MainActor in
             await cleaner.deleteAIChat(chatID: chatID)
         }

@@ -207,6 +207,7 @@ final class MainCoordinator {
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
+                                        duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         wideEvent: wideEvent)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,

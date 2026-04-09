@@ -2869,7 +2869,7 @@ extension TabViewModel {
         // so user can access permission center to change the decision
         return (shouldShowWhileFocused
             || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
-            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && mustDisplayAutoplayPolicy)
+            || (!isTextFieldEditorFirstResponder && mustDisplayAutoplayPolicy)
             || (!isTextFieldEditorFirstResponder && isPermissionCenterPopoverShown))
         && !isShowingErrorPage
     }

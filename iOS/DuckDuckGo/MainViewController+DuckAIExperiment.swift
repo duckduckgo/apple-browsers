@@ -294,12 +294,7 @@ extension MainViewController {
 
     /// Presents the experiment-specific "Delete This Chat" fire confirmation sheet.
     func presentExperimentDuckAIFireConfirmation() {
-        let presenter = FireConfirmationPresenter(tabsModel: tabManager.allTabsModel,
-                                                  featureFlagger: featureFlagger,
-                                                  historyManager: historyManager,
-                                                  fireproofing: fireproofing,
-                                                  aiChatSettings: aiChatSettings,
-                                                  keyValueFilesStore: keyValueStore)
+        let presenter = FireConfirmationPresenter()
         let source: UIView = findFireButton() ?? viewCoordinator.toolbar
         presenter.presentFireConfirmation(
             on: self,
@@ -324,21 +319,14 @@ extension MainViewController {
             }
         )
     }
+
 }
 
-extension MainViewController: OnboardingDelegate {
+// MARK: - Onboarding delegate experiment integration
 
-    func onboardingCompleted(controller: UIViewController) {
-        markOnboardingSeen()
-        guard experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse else {
-            controller.modalTransitionStyle = .crossDissolve
-            controller.dismiss(animated: true) { [weak self] in
-                self?.showBars()
-                self?.newTabPageViewController?.onboardingCompleted()
-            }
-            return
-        }
+extension MainViewController {
 
+    func onboardingCompletedWithExperimentTransition(controller: UIViewController) {
         enforceSingleTabAfterOnboardingIfNeeded()
         let onboardingTransitionSnapshotView = showOnboardingTransitionSnapshot(from: controller)
         controller.dismiss(animated: false) { [weak self] in
@@ -393,17 +381,11 @@ extension MainViewController: OnboardingDelegate {
         openAIChat(query, autoSend: autoSend, onboardingFlowType: onboardingFlowType)
     }
 
-    func markOnboardingSeen() {
-        isStartupOnboardingPending = false
-        tutorialSettings.hasSeenOnboarding = true
+    func clearDuckAIOnboardingResumeStepIfNeeded() {
         if experimentDuckAIFireOnboardingFlow.state != .awaitingFirstResponse,
            experimentDuckAIFireOnboardingFlow.state != .active {
             AppUserDefaults().duckAIOnboardingResumeStep = nil
         }
-    }
-
-    func needsToShowOnboardingIntro() -> Bool {
-        isStartupOnboardingPending || !tutorialSettings.hasSeenOnboarding
     }
 
     private func showOnboardingTransitionSnapshot(from controller: UIViewController) -> UIView? {

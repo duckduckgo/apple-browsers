@@ -680,14 +680,6 @@ class MainViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        if isStartupOnboardingPending {
-            // Keep chrome hidden while onboarding modal is about to be presented.
-            setBarsVisibility(0, animated: false, animationDuration: nil)
-        }
-    }
-
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
         assertionFailure()
         super.performSegue(withIdentifier: identifier, sender: sender)
@@ -4691,9 +4683,7 @@ extension MainViewController: TabSwitcherDelegate {
             let newTab = Tab(fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
             tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
             tabManager.select(newTab, dismissCurrent: false)
-            if !isStartupOnboardingPending {
-                showBars() // In case the browser chrome bars are hidden when calling this method
-            }
+            showBars() // In case the browser chrome bars are hidden when calling this method
         case .createOrReuseEmptyTab:
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
             if let existing = tabManager.firstHomeTab() {
@@ -4701,9 +4691,7 @@ extension MainViewController: TabSwitcherDelegate {
             } else {
                 tabManager.addHomeTab()
             }
-            if !isStartupOnboardingPending {
-                showBars() // In case the browser chrome bars are hidden when calling this method
-            }
+            showBars() // In case the browser chrome bars are hidden when calling this method
         case .onlyClose:
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
         }
@@ -5221,6 +5209,35 @@ extension MainViewController {
     }
 
 }
+
+extension MainViewController: OnboardingDelegate {
+
+    func onboardingCompleted(controller: UIViewController) {
+        markOnboardingSeen()
+        if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse {
+            onboardingCompletedWithExperimentTransition(controller: controller)
+            return
+        }
+
+        showBars()
+        controller.modalTransitionStyle = .crossDissolve
+        controller.dismiss(animated: true) { [weak self] in
+            self?.newTabPageViewController?.onboardingCompleted()
+        }
+    }
+
+    func markOnboardingSeen() {
+        isStartupOnboardingPending = false
+        tutorialSettings.hasSeenOnboarding = true
+        clearDuckAIOnboardingResumeStepIfNeeded()
+    }
+
+    func needsToShowOnboardingIntro() -> Bool {
+        isStartupOnboardingPending || !tutorialSettings.hasSeenOnboarding
+    }
+
+}
+
 
 extension MainViewController: OnboardingNavigationDelegate {
     func navigateFromOnboarding(to url: URL) {

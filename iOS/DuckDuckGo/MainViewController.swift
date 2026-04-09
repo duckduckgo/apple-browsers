@@ -1396,13 +1396,16 @@ class MainViewController: UIViewController {
     
     private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
         if targetTab.fireTab {
-            return EscapeHatchModel(
-                title: UserText.escapeHatchFireTabTitle,
-                subtitle: "",
-                tabType: .fire,
-                domain: nil,
-                targetTab: targetTab
-            )
+            if targetTab.link != nil || targetTab.isAITab {
+                return EscapeHatchModel(
+                    title: UserText.escapeHatchFireTabTitle,
+                    subtitle: "",
+                    tabType: .fire,
+                    domain: nil,
+                    targetTab: targetTab
+                )
+            }
+            return nil
         }
         if targetTab.isAITab {
             return EscapeHatchModel(
@@ -1506,6 +1509,10 @@ class MainViewController: UIViewController {
         let hatch = buildEscapeHatch()
         controller.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
+        
+        if hasCompletedInitialLoad {
+            lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
+        }
 
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
@@ -1859,7 +1866,7 @@ class MainViewController: UIViewController {
     }
 
     private func attachTab(tab: TabViewController) {
-        if hasCompletedInitialLoad, tab.tabModel.link != nil || tab.tabModel.isAITab {
+        if hasCompletedInitialLoad {
             lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         }
         removeHomeScreen()

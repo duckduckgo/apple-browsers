@@ -20,13 +20,7 @@
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpParentBroker",
-            "dbpAttemptId"
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId"]
     },
     "m_mac_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",

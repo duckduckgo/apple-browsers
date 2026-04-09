@@ -133,11 +133,6 @@ extension MainViewController {
         setBarsVisibility(1, animated: false, animationDuration: nil)
     }
 
-    func applyExperimentDuckAIStatusBackgroundStyle() {
-        viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-        viewCoordinator.topSlideContainer.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-    }
-
     func setExperimentFireControlsLocked(_ locked: Bool) {
         guard experimentDuckAIFireOnboardingFlow.controlsLocked != locked else { return }
         experimentDuckAIFireOnboardingFlow.controlsLocked = locked

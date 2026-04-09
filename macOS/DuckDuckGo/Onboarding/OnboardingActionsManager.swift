@@ -452,6 +452,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
+        fireSharedPixelForFinalStep(userSawToggleOnboarding)
 
         guard userSawToggleOnboarding else { return }
 
@@ -459,6 +460,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             ? .aiChatOnboardingFinishedToggleOn
             : .aiChatOnboardingFinishedToggleOff
         PixelKit.fire(togglePixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    private func fireSharedPixelForFinalStep(_ userSawToggleOnboarding: Bool) {
+        if userSawToggleOnboarding {
+            fireSharedPixelOnStepCompletion(for: .addressBarMode)
+        } else {
+            fireSharedPixelOnStepCompletion(for: .customize)
+        }
     }
 
 }

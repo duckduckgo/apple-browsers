@@ -530,10 +530,53 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.customization(.clicked([.bookmarksBar, .homeButton]))])
     }
 
-    func testSearchExperienceClickedPixelFired_WithAddressBarSetting_WhenAddressBarModeStepCompleted() {
+    @MainActor
+    func testCustomizationSharedPixelFired_WhenCustomizeIsFinalStep() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = []
+        let manager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+
+        // When
+        manager.setBookmarkBar(enabled: true)
+        manager.setSessionRestore(enabled: true)
+        manager.setHomeButtonPosition(enabled: true)
+        manager.goToAddressBar()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.customization(.clicked([.bookmarksBar, .restoreSession, .homeButton]))])
+    }
+
+    @MainActor
+    func testSearchExperienceClickedPixelFired_WithAddressBarSetting_WhenAddressBarModeIsFinalStep() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarOnboarding]
+        let manager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            applicationBuildType: applicationBuildType,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+
         // When
         manager.setDuckAiInAddressBar(enabled: false)
-        manager.stepCompleted(step: .addressBarMode)
+        manager.goToAddressBar()
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchExperience(.clicked(.searchOnly))])

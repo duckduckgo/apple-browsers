@@ -835,6 +835,10 @@ final class TabCollectionViewModel: NSObject {
     @discardableResult
     func suspendTab(at tabIndex: TabIndex) -> Bool {
         guard changesEnabled else { return false }
+        guard !isBurner else {
+            assertionFailure("Cannot suspend a burner tab")
+            return false
+        }
         guard let oldTab = tab(at: tabIndex) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
             return false

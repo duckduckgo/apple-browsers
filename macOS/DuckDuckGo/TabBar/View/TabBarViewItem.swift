@@ -1402,7 +1402,9 @@ extension TabBarViewItem: NSMenuDelegate {
             }
         }
 
-        addSuspendResumeMenuItem(to: menu)
+        if !isBurner {
+            addSuspendResumeMenuItem(to: menu)
+        }
 
         if tabViewModel?.canKillWebContentProcess == true {
             menu.addItem(.separator())

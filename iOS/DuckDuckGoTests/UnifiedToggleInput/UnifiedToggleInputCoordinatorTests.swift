@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -373,7 +374,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         let exp = expectation(description: "hideOmnibarEditing intent emitted")
         sut.intentPublisher
-            .sink { if $0 == .hideOmnibarEditing { exp.fulfill() } }
+            .sink { if $0 == .hideOmnibarEditing(animated: true) { exp.fulfill() } }
             .store(in: &cancellables)
 
         sut.deactivateToOmnibar()
@@ -394,15 +395,31 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Omnibar Editing Input Visibility
 
     func test_updateOmnibarInputVisibility_activeToInactive() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
 
         sut.updateOmnibarInputVisibility(false)
 
         XCTAssertEqual(sut.displayState, .omnibar(.inactive))
     }
 
+    func test_updateOmnibarInputVisibility_topOmnibarAwaitFallbackTransitionsToInactive() {
+        sut.activateFromOmnibar(cardPosition: .top)
+
+        sut.updateOmnibarInputVisibility(false)
+
+        XCTAssertEqual(sut.displayState, .omnibar(.active))
+
+        let exp = expectation(description: "top omnibar keyboard await fallback transitions to inactive")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            XCTAssertEqual(self?.sut.displayState, .omnibar(.inactive))
+            exp.fulfill()
+        }
+
+        waitForExpectations(timeout: 1)
+    }
+
     func test_updateOmnibarInputVisibility_inactiveToActive() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
 
         sut.updateOmnibarInputVisibility(true)
@@ -411,7 +428,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_updateOmnibarInputVisibility_emitsInactiveIntent() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         let exp = expectation(description: "showOmnibarInactive intent emitted")
         sut.intentPublisher
             .sink { if $0 == .showOmnibarInactive { exp.fulfill() } }
@@ -423,7 +440,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_updateOmnibarInputVisibility_emitsActiveIntent() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
         let exp = expectation(description: "showOmnibarActive intent emitted")
         sut.intentPublisher
@@ -449,7 +466,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_deactivateToOmnibar_fromInactive_hidesOmnibarEditing() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
 
         sut.deactivateToOmnibar()
@@ -458,7 +475,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_isOmnibarSession_trueForInactiveState() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
 
         XCTAssertEqual(sut.displayState, .omnibar(.inactive))
@@ -472,14 +489,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_dismissOmnibarKeyboard_guardsWhenOmnibarInactive() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
         sut.dismissOmnibarKeyboard()
         XCTAssertEqual(sut.displayState, .omnibar(.inactive))
     }
 
     func test_submitSearch_fromOmnibarInactive_deactivates() {
-        sut.activateFromOmnibar(inputMode: .search)
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
@@ -520,6 +537,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.viewController.inputMode, .search, "inputMode should update")
         XCTAssertEqual(sut.viewController.isInputExpanded, expandedBefore, "expansion state should not change")
+    }
+
+    func test_updateInputMode_firstModeChangeFromBottomOmnibar_keepsActivePresentation() {
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
+
+        sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertEqual(sut.displayState, .omnibar(.active))
+        XCTAssertEqual(sut.viewController.inputMode, .aiChat)
+        XCTAssertTrue(sut.viewController.isInputExpanded)
+
+        let renderState = sut.computeRenderState()
+        XCTAssertEqual(renderState.cardPosition, .bottom)
+        XCTAssertTrue(renderState.isInputVisible)
+        XCTAssertTrue(renderState.isContentVisible)
+        XCTAssertTrue(renderState.isExpanded)
+        XCTAssertFalse(renderState.inactiveAppearance)
     }
 
     func test_updateInputMode_emitsMode() {
@@ -1086,6 +1120,50 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
         AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, entityHasAccess: access)
+    }
+}
+
+// MARK: - Toolbar Layout
+
+@MainActor
+final class UnifiedToggleInputToolbarViewTests: XCTestCase {
+
+    func test_compactWidthWithLongModelName_keepsSubmitButtonVisible() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        sut.modelName = "Claude Haiku 4.5 with a long label"
+
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 280, height: 56))
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+
+        container.layoutIfNeeded()
+
+        guard let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut) else {
+            XCTFail("Expected to find submit button")
+            return
+        }
+
+        let submitFrame = submitButton.convert(submitButton.bounds, to: sut)
+        XCTAssertGreaterThanOrEqual(submitFrame.minX, sut.bounds.minX)
+        XCTAssertLessThanOrEqual(submitFrame.maxX, sut.bounds.maxX)
+    }
+
+    private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
+        for subview in view.subviews {
+            if let button = subview as? UIButton, button.accessibilityLabel == accessibilityLabel {
+                return button
+            }
+            if let button = findButton(accessibilityLabel: accessibilityLabel, in: subview) {
+                return button
+            }
+        }
+        return nil
     }
 }
 

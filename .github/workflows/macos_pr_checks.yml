@@ -276,6 +276,7 @@ jobs:
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
           | tee ${{ matrix.flavor }}-unittests-xcodebuild.log \
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml \
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-unittests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-unittests.xcresult && exit 1; }
 
@@ -296,6 +297,7 @@ jobs:
           "-only-testing:${{ matrix.integration-tests-target }}" \
           -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-integrationtests-xcodebuild.log \
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml \
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-integrationtests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-integrationtests.xcresult && exit 1; }
 

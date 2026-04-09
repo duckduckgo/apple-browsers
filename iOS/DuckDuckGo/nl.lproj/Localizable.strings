@@ -4175,6 +4175,12 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Synchroniseren en back-up is helaas niet langer beschikbaar in deze versie van de app. Werk DuckDuckGo bij naar de nieuwste versie om door te gaan.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Tabblad sluiten";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Ongelezen tabblad";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Starttabblad sluiten";
 

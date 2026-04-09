@@ -285,7 +285,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.title = title
         self.favicon = favicon
         self.parentTab = parentTab
-        self.parentTabID = parentTab?.id
+        self.parentTabID = parentTab?.uuid
         self.securityOrigin = securityOrigin ?? .empty
         self.burnerMode = burnerMode
         self._canBeClosedWithBack = canBeClosedWithBack

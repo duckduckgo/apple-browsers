@@ -885,18 +885,18 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
     }
 
-    func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false) -> Result<Void, Error> {
-        return replaceTab(at: index, with: .loaded(tab), forceChange: forceChange)
+    func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false, keepHistory: Bool = true) -> Result<Void, Error> {
+        return replaceTab(at: index, with: .loaded(tab), forceChange: forceChange, keepHistory: keepHistory)
     }
 
-    func replaceTab(at index: TabIndex, with tab: AnyTab, forceChange: Bool = false) -> Result<Void, Error> {
+    func replaceTab(at index: TabIndex, with tab: AnyTab, forceChange: Bool = false, keepHistory: Bool = true) -> Result<Void, Error> {
         guard changesEnabled || forceChange else { return .success(()) }
         guard let tabCollection = tabCollection(for: index) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Tab collection for index \(String(describing: index)) not found")
             return .failure(TabCollectionViewModelError.tabCollectionAtIndexNotFound(String(describing: index)))
         }
 
-        tabCollection.replaceTab(at: index.item, with: tab)
+        tabCollection.replaceTab(at: index.item, with: tab, keepHistory: keepHistory)
         updateTabBarViewModelIfNeeded(for: tab)
 
         guard let selectionIndex else {
@@ -1052,7 +1052,7 @@ extension TabCollectionViewModel {
         case .unloaded(let unloaded):
             Logger.tabLazyLoading.debug("Materializing unloaded tab \(unloaded.uuid) at \(String(reflecting: index))")
             let tab = unloaded.materialize()
-            _ = replaceTab(at: index, with: tab)
+            _ = replaceTab(at: index, with: tab, keepHistory: false)
             return tab
         }
     }

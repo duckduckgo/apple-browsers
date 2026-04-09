@@ -324,6 +324,19 @@ final class TabCollectionTests: XCTestCase {
     }
 
     @MainActor
+    func testMaterializationDoesNotLeakHistoryIntoRemovedTabDomains() {
+        let urls = [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                   localHistoryIDs: urls)
+        let tabCollection = TabCollection(tabs: [AnyTab.unloaded(unloaded)])
+
+        let loadedTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        tabCollection.replaceTab(at: 0, with: .loaded(loadedTab), keepHistory: false)
+
+        XCTAssertTrue(tabCollection.removedTabDomains.isEmpty)
+    }
+
+    @MainActor
     func testClearNavigationHistoryOnAnyTabClearsUnloadedTab() {
         let urls = [URL(string: "https://example.com")!]
         let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),

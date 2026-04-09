@@ -1882,7 +1882,6 @@
 		4D18EEA2197C40AD97C4B1A7 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
 		4F25DAF90625497DB96B6E8D /* ContextualDaxDialogsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B63E5D7F5349E0ADA3EDEA /* ContextualDaxDialogsProvider.swift */; };
 		5093DFC4902349B9A5AF8683 /* AIChatDeleteChatsDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E61483DDA440CEAD33A5C5 /* AIChatDeleteChatsDialog.swift */; };
-		517D1CC5BBC997B1D17DA1AC /* (null) in Sources */ = {isa = PBXBuildFile; };
 		517D1CC5BBC997B1D17DA1AC /* BuildFile in Sources */ = {isa = PBXBuildFile; };
 		53C5FDE635F54E86A44EF5C6 /* DuckAIChromeButtonsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E090D60EAB41E8BB22CA88 /* DuckAIChromeButtonsPreferences.swift */; };
 		541B2C4D448B4C109EF580A3 /* AIChatFloatingWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1812146DE841448CA4CE3FD1 /* AIChatFloatingWindowController.swift */; };

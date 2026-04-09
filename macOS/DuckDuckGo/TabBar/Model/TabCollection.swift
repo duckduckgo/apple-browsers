@@ -252,13 +252,15 @@ final class TabCollection: NSObject {
     // MARK: - Replace
 
     @MainActor
-    func replaceTab(at index: Int, with tab: AnyTab, suppressWebExtensionEvents: Bool = false) {
+    func replaceTab(at index: Int, with tab: AnyTab, suppressWebExtensionEvents: Bool = false, keepHistory: Bool = true) {
         guard tabs.indices.contains(index) else {
             assertionFailure("TabCollection: Index out of bounds")
             return
         }
 
-        keepLocalHistory(of: tabs[index])
+        if keepHistory {
+            keepLocalHistory(of: tabs[index])
+        }
         let oldTab = tabs[index]
         tabs[index] = tab
 
@@ -280,8 +282,8 @@ final class TabCollection: NSObject {
 
     /// Convenience overload for replacing with a loaded Tab.
     @MainActor
-    func replaceTab(at index: Int, with tab: Tab) {
-        replaceTab(at: index, with: .loaded(tab))
+    func replaceTab(at index: Int, with tab: Tab, keepHistory: Bool = true) {
+        replaceTab(at: index, with: .loaded(tab), keepHistory: keepHistory)
     }
 
     // MARK: - Private

@@ -72,7 +72,7 @@ final class PinnedTabsManager {
         guard case .unloaded(let unloaded) = tabCollection.tabs[safe: index] else { return }
         assertionFailure("Pinned tab should never be suspended")
         let tab = unloaded.materialize()
-        tabCollection.replaceTab(at: index, with: .loaded(tab))
+        tabCollection.replaceTab(at: index, with: .loaded(tab), keepHistory: false)
         tabViewModels[tab.uuid] = TabViewModel(tab: tab)
     }
 

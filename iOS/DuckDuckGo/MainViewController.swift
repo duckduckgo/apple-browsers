@@ -4160,10 +4160,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         guard tab !== currentTab else { return }
         let wasAfterIdle = currentTab?.openedAfterIdle ?? false
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
-        selectTab(tab)
         if let currentTab {
             closeTab(currentTab)
         }
+        selectTab(tab)
         currentNTPEscapeHatch = nil
     }
 

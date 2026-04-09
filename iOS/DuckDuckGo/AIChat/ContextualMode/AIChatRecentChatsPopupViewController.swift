@@ -333,7 +333,7 @@ private extension AIChatRecentChatsPopupViewController {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
-        iconView.image = DesignSystemImages.Glyphs.Size24.aiChatAdd.withRenderingMode(.alwaysTemplate)
+        iconView.image = DesignSystemImages.Glyphs.Size24.compose.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false

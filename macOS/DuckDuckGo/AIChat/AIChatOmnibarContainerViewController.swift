@@ -130,11 +130,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     // MARK: - Tab Navigation Callbacks
 
-    /// Called when the image upload button receives a Tab key press. Wire this to advance focus.
-    var onImageUploadButtonTabPressed: (() -> Void)?
+    /// Called when a tool button receives a Tab key press. Wire this to advance focus to the next visible button.
+    var onToolButtonTabPressed: (() -> Void)?
 
-    /// Called when the model picker button receives a Tab key press. Wire this to advance focus.
-    var onModelPickerButtonTabPressed: (() -> Void)?
+    /// Ordered list of focusable tool buttons. Tab cycles through visible/enabled buttons in this order.
+    private var focusableToolButtons: [AIChatOmnibarToolButton] {
+        [imageUploadButton, toolsButton, imageGenActiveButton, webSearchActiveButton]
+    }
 
     var isImageUploadButtonAvailableForFocus: Bool {
         !imageUploadButton.isHidden && imageUploadButton.isEnabled
@@ -144,12 +146,39 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         !modelPickerButton.isHidden
     }
 
-    func makeImageUploadButtonFirstResponder() {
-        view.window?.makeFirstResponder(imageUploadButton)
+    /// Returns the first visible and enabled tool button available for focus.
+    func firstAvailableToolButtonForFocus() -> AIChatOmnibarToolButton? {
+        focusableToolButtons.first { !$0.isHidden && $0.isEnabled }
+    }
+
+    func makeFirstAvailableToolButtonFirstResponder() {
+        if let button = firstAvailableToolButtonForFocus() {
+            view.window?.makeFirstResponder(button)
+        }
     }
 
     func makeModelPickerButtonFirstResponder() {
         view.window?.makeFirstResponder(modelPickerButton)
+    }
+
+    /// Advances focus to the next tool button after the given one, or to model picker, or back to text view.
+    private func advanceFocusAfter(_ button: AIChatOmnibarToolButton) {
+        let buttons = focusableToolButtons
+        guard let index = buttons.firstIndex(of: button) else {
+            onToolButtonTabPressed?()
+            return
+        }
+        // Find next visible button after current
+        for nextButton in buttons[(index + 1)...] where !nextButton.isHidden && nextButton.isEnabled {
+            view.window?.makeFirstResponder(nextButton)
+            return
+        }
+        // No more tool buttons — try model picker, then text view
+        if isModelPickerButtonAvailableForFocus {
+            makeModelPickerButtonFirstResponder()
+        } else {
+            onToolButtonTabPressed?()
+        }
     }
 
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
@@ -408,7 +437,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.image = DesignSystemImages.Glyphs.Size16.attach
         imageUploadButton.toolTip = UserText.aiChatImageUploadButtonTooltip
         imageUploadButton.setAccessibilityLabel(UserText.aiChatImageUploadButtonTooltip)
-        imageUploadButton.onTabPressed = { [weak self] in self?.onImageUploadButtonTabPressed?() }
+        imageUploadButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.imageUploadButton) }
         containerView.addSubview(imageUploadButton)
 
         toolsButton.translatesAutoresizingMaskIntoConstraints = false
@@ -419,6 +448,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         toolsButton.label = UserText.aiChatToolsButtonLabel
         toolsButton.toolTip = UserText.aiChatToolsButtonLabel
         toolsButton.setAccessibilityLabel(UserText.aiChatToolsButtonLabel)
+        toolsButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.toolsButton) }
         containerView.addSubview(toolsButton)
 
         imageGenActiveButton.translatesAutoresizingMaskIntoConstraints = false
@@ -429,6 +459,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageGenActiveButton.trailingImage = DesignSystemImages.Glyphs.Size12.closeSmall
         imageGenActiveButton.toolTip = UserText.aiChatImageGenDeactivateTooltip
         imageGenActiveButton.setAccessibilityLabel(UserText.aiChatImageGenDeactivateTooltip)
+        imageGenActiveButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.imageGenActiveButton) }
         imageGenActiveButton.isHidden = true
         containerView.addSubview(imageGenActiveButton)
 
@@ -440,6 +471,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         webSearchActiveButton.trailingImage = DesignSystemImages.Glyphs.Size12.closeSmall
         webSearchActiveButton.toolTip = UserText.aiChatWebSearchDeactivateTooltip
         webSearchActiveButton.setAccessibilityLabel(UserText.aiChatWebSearchDeactivateTooltip)
+        webSearchActiveButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.webSearchActiveButton) }
         webSearchActiveButton.isHidden = true
         containerView.addSubview(webSearchActiveButton)
 
@@ -449,7 +481,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.modelName = persistedModelShortName
         modelPickerButton.toolTip = UserText.aiChatModelPickerButtonTooltip
         modelPickerButton.setAccessibilityLabel(UserText.aiChatModelPickerButtonTooltip)
-        modelPickerButton.onTabPressed = { [weak self] in self?.onModelPickerButtonTabPressed?() }
+        modelPickerButton.onTabPressed = { [weak self] in self?.onToolButtonTabPressed?() }
         containerView.addSubview(modelPickerButton)
 
         attachmentsContainerView.translatesAutoresizingMaskIntoConstraints = false

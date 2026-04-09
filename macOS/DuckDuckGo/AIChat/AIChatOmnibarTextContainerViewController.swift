@@ -348,8 +348,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             focusTextViewWithCursorAtEnd()
             return
         }
-        if containerVC.isImageUploadButtonAvailableForFocus {
-            containerVC.makeImageUploadButtonFirstResponder()
+        if let _ = containerVC.firstAvailableToolButtonForFocus() {
+            containerVC.makeFirstAvailableToolButtonFirstResponder()
         } else if containerVC.isModelPickerButtonAvailableForFocus {
             containerVC.makeModelPickerButtonFirstResponder()
         } else {
@@ -360,16 +360,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private func wireTabCycle() {
         guard let containerVC = containerViewController else { return }
 
-        containerVC.onImageUploadButtonTabPressed = { [weak self, weak containerVC] in
-            guard let self, let containerVC else { return }
-            if containerVC.isModelPickerButtonAvailableForFocus {
-                containerVC.makeModelPickerButtonFirstResponder()
-            } else {
-                self.focusTextViewWithCursorAtEnd()
-            }
-        }
-
-        containerVC.onModelPickerButtonTabPressed = { [weak self] in
+        containerVC.onToolButtonTabPressed = { [weak self] in
             self?.focusTextViewWithCursorAtEnd()
         }
     }

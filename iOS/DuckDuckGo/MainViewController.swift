@@ -1593,7 +1593,6 @@ class MainViewController: UIViewController {
         if isExperimentDuckAIFireFlow {
             // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
-            setExperimentFireControlsLocked(false)
             contextualOnboardingPixelReporter.measureDuckAIExperimentFireButtonCTAAction()
             presentExperimentDuckAIFireConfirmation()
             performCancel()
@@ -3670,6 +3669,7 @@ extension MainViewController: OmniBarDelegate {
 
     private func newTabShortcutAction() {
         Pixel.fire(pixel: .tabSwitchLongPressNewTab)
+        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
         performCancel()
         newTab()
     }

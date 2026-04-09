@@ -59,6 +59,9 @@ final class TabCollection: NSObject {
 
     deinit {
 #if DEBUG
+        // Only check loaded tabs — they hold expensive resources (WKWebView, extensions).
+        // Unloaded tabs are lightweight data objects and don't inherit from NSObject
+        // (which ensureObjectDeallocated requires).
         for tab in tabs {
             if case .loaded(let tab) = tab {
                 tab.ensureObjectDeallocated(after: 1.0, do: .interrupt)

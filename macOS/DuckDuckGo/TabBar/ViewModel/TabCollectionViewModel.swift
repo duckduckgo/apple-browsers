@@ -228,7 +228,9 @@ final class TabCollectionViewModel: NSObject {
         // Check that the tab collection deallocates
         tabCollection.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 
-        // Check that all tabs and tab view models deallocate
+        // Only check loaded tabs and their view models — they hold expensive resources.
+        // Unloaded tabs/view models are lightweight data objects and don't inherit from
+        // NSObject (which ensureObjectDeallocated requires).
         for tab in tabCollection.tabs {
             if case .loaded(let tab) = tab {
                 tab.ensureObjectDeallocated(after: 1.0, do: .interrupt)

@@ -843,11 +843,9 @@ final class TabCollectionViewModel: NSObject {
         }
         guard tabIndex != selectionIndex else { return false }
         guard case .loaded(let loadedTab) = oldTab, loadedTab.tabSuspension?.canBeSuspended == true else { return false }
-        guard let suspendedTab = loadedTab.makeSuspendedTab() else {
-            return false
-        }
+        let suspendedTab = loadedTab.makeSuspendedTab()
 
-        _ = replaceTab(at: tabIndex, with: suspendedTab)
+        _ = replaceTab(at: tabIndex, with: .unloaded(suspendedTab))
         return true
     }
 
@@ -855,6 +853,8 @@ final class TabCollectionViewModel: NSObject {
     func resumeTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
         if let tab = materialize(at: tabIndex) {
+            // Reload is called here only to trigger loading a page (simulate selection).
+            // In real world, tabs are resumed on selection which triggers reloading (via private reloadIfNeeded).
             tab.reload()
         }
     }

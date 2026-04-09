@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Core
 import UIKit
 
@@ -223,12 +224,7 @@ extension MainViewController {
 
     /// Presents the experiment-specific "Delete This Chat" fire confirmation sheet.
     func presentExperimentDuckAIFireConfirmation() {
-        let presenter = FireConfirmationPresenter(tabsModel: tabManager.allTabsModel,
-                                                  featureFlagger: featureFlagger,
-                                                  historyManager: historyManager,
-                                                  fireproofing: fireproofing,
-                                                  aiChatSettings: aiChatSettings,
-                                                  keyValueFilesStore: keyValueStore)
+        let presenter = FireConfirmationPresenter()
         let source: UIView = findFireButton() ?? viewCoordinator.toolbar
         presenter.presentFireConfirmation(
             on: self,
@@ -252,5 +248,23 @@ extension MainViewController {
                 self?.showFireButtonPulse()
             }
         )
+    }
+
+    // MARK: - Onboarding delegate experiment integration
+
+    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType) {
+        let shouldArmExperimentFireOnboarding = autoSend && experimentDuckAIFireOnboardingFlow.state != .completed
+        experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
+        experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+
+        if shouldArmExperimentFireOnboarding {
+            experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
+            enforceSingleTabAfterOnboardingIfNeeded()
+        } else if experimentDuckAIFireOnboardingFlow.state != .completed {
+            experimentDuckAIFireOnboardingFlow.state = .idle
+        }
+
+        setExperimentFireControlsLocked(shouldArmExperimentFireOnboarding)
+        openAIChat(query, autoSend: autoSend, onboardingFlowType: onboardingFlowType)
     }
 }

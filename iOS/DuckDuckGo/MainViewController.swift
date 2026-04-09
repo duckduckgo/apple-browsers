@@ -669,14 +669,6 @@ class MainViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        if isStartupOnboardingPending {
-            // Keep chrome hidden while onboarding modal is about to be presented.
-            setBarsVisibility(0, animated: false, animationDuration: nil)
-        }
-    }
-
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
         assertionFailure()
         super.performSegue(withIdentifier: identifier, sender: sender)
@@ -4676,9 +4668,7 @@ extension MainViewController: TabSwitcherDelegate {
             let newTab = Tab(fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
             tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
             tabManager.select(newTab, dismissCurrent: false)
-            if !isStartupOnboardingPending {
-                showBars() // In case the browser chrome bars are hidden when calling this method
-            }
+            showBars() // In case the browser chrome bars are hidden when calling this method
         case .createOrReuseEmptyTab:
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
             if let existing = tabManager.firstHomeTab() {
@@ -4686,9 +4676,7 @@ extension MainViewController: TabSwitcherDelegate {
             } else {
                 tabManager.addHomeTab()
             }
-            if !isStartupOnboardingPending {
-                showBars() // In case the browser chrome bars are hidden when calling this method
-            }
+            showBars() // In case the browser chrome bars are hidden when calling this method
         case .onlyClose:
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
         }
@@ -5209,7 +5197,7 @@ extension MainViewController {
 }
 
 extension MainViewController: OnboardingDelegate {
-        
+
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
         controller.modalTransitionStyle = .crossDissolve
@@ -5219,22 +5207,6 @@ extension MainViewController: OnboardingDelegate {
         }
     }
 
-    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, onboardingFlowType: AIChatOnboardingFlowType) {
-        let shouldArmExperimentFireOnboarding = autoSend && experimentDuckAIFireOnboardingFlow.state != .completed
-        experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
-        experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
-
-        if shouldArmExperimentFireOnboarding {
-            experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
-            enforceSingleTabAfterOnboardingIfNeeded()
-        } else if experimentDuckAIFireOnboardingFlow.state != .completed {
-            experimentDuckAIFireOnboardingFlow.state = .idle
-        }
-
-        setExperimentFireControlsLocked(shouldArmExperimentFireOnboarding)
-        openAIChat(query, autoSend: autoSend, onboardingFlowType: onboardingFlowType)
-    }
-    
     func markOnboardingSeen() {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true

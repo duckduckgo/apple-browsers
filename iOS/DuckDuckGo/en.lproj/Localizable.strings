@@ -3040,12 +3040,6 @@ Take back control of your personal information with the browser designed for dat
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "New Tab";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
-
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Search Only";
-
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
 
